@@ -28,6 +28,8 @@ interface Memo { key: string; value: unknown }
 export class WarmState implements AnalysisRuntime {
   readonly collection: CollectionState;
   judgement = new JudgementState();
+  /** set while the session's start-up runs the analysis: read what the app shares, judge nothing (runtime.ts) */
+  prepareOnly = false;
   readonly localJudgements = new Map<string, JudgementState>();
   /** Lets go of what only the whole-app judgement keeps: its caches, every site's expanded declarations and the merged
    * component graph. The collected files, the component shards and the app-wide phases stay, so a file is judged

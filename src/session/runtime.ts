@@ -10,4 +10,7 @@ export interface AnalysisRuntime {
   /** A declaration from another file that is judged with the ones being judged, because it decides how they are judged
    * (a stylesheet reading a variable the judged file defines). */
   alsoJudged?(declaration: Declaration): boolean;
+  /** Read the app-wide products (collection, the compile, the graphs, the token record, which classes exist) and judge
+   * nothing: a session's start-up, which judges the open page's files one at a time and the whole app when asked. */
+  readonly prepareOnly?: boolean;
 }

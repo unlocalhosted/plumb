@@ -595,6 +595,24 @@ there 1,971 MB to 1,509 MB (this morning's build still runs out of memory at sta
 read 1.5 s in this run against 1.0 s in the first, through code this change does not touch; the next run will say
 whether that is the machine.
 
+## Start-up judges nothing (2026-11-18)
+
+Start-up now runs the analysis in a prepare-only mode (`AnalysisRuntime.prepareOnly`): collection with its component
+shards, the compile, the module and stylesheet graphs, the token record and which classes exist, and nothing judged
+(no declarations expanded, no provenance, habits, ownership, imitation, source rules or reading table). The summary
+the session keeps (files with declarations, files defining variables, spacing steps in use) is read from collection
+and the compile. Pages are judged a file at a time; a project-wide read builds the whole-app report then.
+
+Found on the way, present before: a file whose class literals are also lowered in an importer's collection (an MDX
+components map) lost those sites judged alone (`src/lessons/mdx-components.tsx`: 7 of its 29 declarations). Seven
+of 3,649 algorecall files are like that; they read the whole-app report.
+
+Proof (algorecall, vm-agent): right after a prepared start, before any whole-app report existed, 465 sampled files
+judged alone equal the report built afterwards, findings and declarations (42 ms a file); the summary misses no file
+and its 36 spacing steps match; the whole-app report, when built, matches the earlier fingerprints exactly on
+algorecall and crafting-ui (dependency maps, component graph, raw and classified findings, line and column views).
+Start to ready: 58-59 s before, 44-46 s after.
+
 ## Expected (guesses until measured)
 
 Provenance from 8.6 s to about 1 s, expansion and existence from 7 s to about 1 s: about 13 s off start-up and off
@@ -692,6 +710,24 @@ there 1,971 MB to 1,509 MB (this morning's build still runs out of memory at sta
 0.77 s to 0.11 s, memory after a quiet minute 921 MB to 513 MB. Not explained: algorecall's page right after start
 read 1.5 s in this run against 1.0 s in the first, through code this change does not touch; the next run will say
 whether that is the machine.
+
+## Start-up judges nothing (2026-11-18)
+
+Start-up now runs the analysis in a prepare-only mode (`AnalysisRuntime.prepareOnly`): collection with its component
+shards, the compile, the module and stylesheet graphs, the token record and which classes exist, and nothing judged
+(no declarations expanded, no provenance, habits, ownership, imitation, source rules or reading table). The summary
+the session keeps (files with declarations, files defining variables, spacing steps in use) is read from collection
+and the compile. Pages are judged a file at a time; a project-wide read builds the whole-app report then.
+
+Found on the way, present before: a file whose class literals are also lowered in an importer's collection (an MDX
+components map) lost those sites judged alone (`src/lessons/mdx-components.tsx`: 7 of its 29 declarations). Seven
+of 3,649 algorecall files are like that; they read the whole-app report.
+
+Proof (algorecall, vm-agent): right after a prepared start, before any whole-app report existed, 465 sampled files
+judged alone equal the report built afterwards, findings and declarations (42 ms a file); the summary misses no file
+and its 36 spacing steps match; the whole-app report, when built, matches the earlier fingerprints exactly on
+algorecall and crafting-ui (dependency maps, component graph, raw and classified findings, line and column views).
+Start to ready: 58-59 s before, 44-46 s after.
 
 ## Expected (guesses until measured)
 

@@ -155,7 +155,9 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   profileDuration('rule:existence/classes', performance.now() - existenceStart);
   const prepareStart = performance.now();
   profileProgress('phase:declarations');
-  const sites = collected.sites.map(site => {
+  // start-up of a session reads what the whole app shares and judges nothing (AnalysisRuntime.prepareOnly)
+  const judging = !runtime?.prepareOnly;
+  const sites = !judging ? [] : collected.sites.map(site => {
     const candidate = lowered.candidates.get(site.token);
     return sync('site', [site, candidate], () => ({ ...site, declarations: (candidate?.declarations ?? []).map(declaration => ({
       ...declaration, when: [...site.conditions, ...declaration.when], refs: references(declaration.value),
@@ -167,7 +169,7 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   // Other import-graph files outside source globs still only prove existence.
   const sourceFiles = new Set(input ? [input.file] : [...files, ...collected.computedClassFiles ?? []]);
   const inlineDeclarations = collected.styles.declarations.filter(d => sourceFiles.has(d.site.file));
-  const declarations: Declaration[] = [...sites.flatMap(site => site.declarations), ...css.declarations, ...collected.styles.declarations]
+  const declarations: Declaration[] = !judging ? [] : [...sites.flatMap(site => site.declarations), ...css.declarations, ...collected.styles.declarations]
     .filter(declaration => sourceFiles.has(declaration.site.file) || !!runtime?.alsoJudged?.(declaration));
   // A detected library's states, named on every declaration whose selector carries one of its attributes.
   // Held by the session's memory, not projectFacts' two-second cache: a per-file read takes longer than that, and each
@@ -214,7 +216,7 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   findings.push(...judged.findings);
   const deadStart = performance.now();
   profileProgress('rule:dead');
-  const dead = input ? undefined : sync('deadDecisions', [declarations, record, config.value, judged.usedNumericSpacing], () => deadDecisions(root, declarations, record, config.value, judged.usedNumericSpacing));
+  const dead = input || !judging ? undefined : sync('deadDecisions', [declarations, record, config.value, judged.usedNumericSpacing], () => deadDecisions(root, declarations, record, config.value, judged.usedNumericSpacing));
   if (dead) findings.push(...dead.findings);
   profileDuration('rule:dead', performance.now() - deadStart);
   const provenanceMs = performance.now() - provenanceStart;
@@ -242,17 +244,17 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   for (const inline of collected.styles.sites) for (const declaration of inline.declarations) contexts.set(declaration, `${inline.site.file}:${inline.site.line}:${inline.site.column}`);
   const habits = sync('habits', [declarations, config.value.habits ?? [], contexts, lowered.hoverVariants, options.listHabits, managedFocus, config.value.craft, config.value.craftLayers], () => judgeHabits(declarations, config.value.habits ?? [], contexts, lowered.hoverVariants, options.listHabits, managedFocus, habitOverrides(config.value)));
   findings.push(...habits.findings);
-  if (options.listHabits || config.value.habits?.includes('real-quotes')) {
+  if (judging && (options.listHabits || config.value.habits?.includes('real-quotes'))) {
     const quoted = await realQuotes([...sourceFiles], input ? new Map([[input.file, input.text]]) : undefined);
     findings.push(...quoted);
     const summary = habits.summaries.find(h => h.id === 'real-quotes');
     if (summary && summary.breaks !== null) summary.breaks = quoted.length;
   }
   // packs that read source (docs/briefs/rule-packs.md): security first. Not judged for a CSS snippet being tried.
-  if (!input || input.lang === 'tsx') findings.push(...await judgeSource([...sourceFiles], activeSourceRules(config.value), input ? new Map([[input.file, input.text]]) : undefined));
+  if (judging && (!input || input.lang === 'tsx')) findings.push(...await judgeSource([...sourceFiles], activeSourceRules(config.value), input ? new Map([[input.file, input.text]]) : undefined));
   const habitsMs = performance.now() - habitsStart;
   const imitationStart = performance.now();
-  findings.push(...sync('imitation', [components, collected.sites, declarations, config.value], () => judgeImitation(components, collected.sites, declarations, config.value)));
+  if (judging) findings.push(...sync('imitation', [components, collected.sites, declarations, config.value], () => judgeImitation(components, collected.sites, declarations, config.value)));
   profileDuration('rule:imitation', performance.now() - imitationStart);
   const origins: Report['coverage']['declarations'] = { class: 0, arbitrary: 0, stylesheet: 0, apply: 0, inline: 0, 'custom-property': 0, keyframes: 0 };
   for (const declaration of declarations) origins[declaration.origin]++;

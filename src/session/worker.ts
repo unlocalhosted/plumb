@@ -6,7 +6,7 @@ import { analyze } from '../index.js';
 import { projectSpec } from '../craft-spec.js';
 import type { CheckOptions } from '../index.js';
 import type { LoadedConfig } from '../config.js';
-import type { Report } from '../report.js';
+import type { Declaration, Report } from '../report.js';
 import { drawn } from '../report.js';
 import { ReadingPacker } from './kept.js';
 import { atomicWrite } from '../atomic-write.js';
@@ -241,14 +241,26 @@ function scoped(view: Report, file: string, line?: number, column?: number, text
   const findings = (line === undefined ? fileFindings.get(file) : column === undefined ? lineFindings.get(file)?.get(line) : columnFindings.get(file)?.get(line)?.get(column)) ?? [];
   return { ...view, findings };
 }
+/** Files with class sites in another file's collection (their literals lowered where they are used), per revision. */
+let elsewhere: { revision: number; files: Set<string> } | undefined;
+function sitesElsewhere(): Set<string> {
+  if (elsewhere?.revision !== revision) {
+    const files = new Set<string>();
+    for (const [owner, slice] of state.collection.slices) for (const site of slice.value.sites) if (site.file !== owner) files.add(site.file);
+    elsewhere = { revision, files };
+  }
+  return elsewhere.files;
+}
 async function localReport(file: string): Promise<Report> {
   // A stylesheet's variables and colours are judged against every file that uses them: with nothing changed it is read
   // from the whole-app report, built again if it was let go.
   if (!dirty && (raw || file.endsWith('.css')) || sharedDirty || !state.collection.slices.has(file) && !file.endsWith('.css')) return report();
   // Imported class literals can be lowered only in their consumer's JSX context, and a finding on one carries its
-  // sites in those files too (`gap-[17px]` written in helper.ts, used in App.tsx): judged alone, from the importers'
-  // collections, the other files' sites were lost (e2e/reading-cache). Such a file reads the whole-app report.
-  if (state.collection.consumers.get(file)?.size && !state.collection.slices.get(file)?.value.sites.some(site => site.file === file)) return report();
+  // sites in those files too (`gap-[17px]` written in helper.ts, used in App.tsx; an MDX components map whose classes
+  // are lowered where the map is used): judged alone, the sites in the importers' collections were lost
+  // (e2e/reading-cache; src/lessons/mdx-components.tsx on algorecall, 7 of its 29 declarations). Such a file, 7 of
+  // 3,649 on algorecall, reads the whole-app report.
+  if (sitesElsewhere().has(file)) return report();
   let view = localReports.get(file);
   if (!view) {
     localAnalyses++;
@@ -270,6 +282,29 @@ function queryInputs(files: Iterable<string> = []) {
 }
 const KEEP_SLICE = 30; // ms of building the reading table before the worker looks at its queue again
 let keeping: { of: Report; packer: ReadingPacker; started: number; worked: number; longest: number; slices: number } | undefined;
+/** What `release` keeps of a whole-app report, read instead from what start-up collected and compiled, before any report
+ * exists: the files that declare styles, the files that define CSS variables, and the spacing steps classes use. */
+function preparedSummary(): NonNullable<typeof released> {
+  // the collected files themselves: collection's result is not kept under a phase name the way the compile is
+  const slices = [...state.collection.slices.values()].map(slice => slice.value);
+  const collected = { sites: slices.flatMap(v => v.sites), styles: { declarations: slices.flatMap(v => v.styles.declarations) } };
+  const css = state.shared<{ declarations: Declaration[] }>('css');
+  const lowered = state.shared<{ candidates: ReadonlyMap<string, { declarations: { prop: string; value: string }[] }> }>('tailwind');
+  const declarationFiles = new Set<string>(), customPropertyFiles = new Set<string>(), spacing = new Set<number>();
+  const arbitrary = /(?:^|:)(?:-?[\w-]+-)?\[.+\](?:\/.+)?!?$/;
+  for (const d of [...collected?.styles.declarations ?? [], ...css?.declarations ?? []]) { declarationFiles.add(d.site.file); if (d.prop.startsWith('--')) customPropertyFiles.add(d.site.file); }
+  for (const site of collected?.sites ?? []) {
+    const ds = lowered?.candidates.get(site.token)?.declarations ?? [];
+    if (!ds.length) continue;
+    declarationFiles.add(site.file);
+    for (const d of ds) {
+      if (d.prop.startsWith('--')) customPropertyFiles.add(site.file);
+      const step = !arbitrary.test(site.token) && /^calc\(var\(--spacing\) \* (\d*\.?\d+)\)$/.exec(d.value);
+      if (step) spacing.add(Number(step[1]));
+    }
+  }
+  return { declarationFiles: [...declarationFiles], customPropertyFiles: [...customPropertyFiles], spacingUsed: [...spacing].sort((a, b) => a - b) };
+}
 // Open page first, layer 1 (docs/briefs/analysis-memory.md): the whole-app report is let go after a quiet period, and
 // pages are judged a file at a time against the app-wide products the session keeps. A project-wide read builds the
 // report again and starts the quiet period over.
@@ -449,9 +484,12 @@ parentPort!.on('message', ({ id, method, params }) => {
 });
 try {
   ledger = await readLedger(options.root!);
-  raw = (await analyze({ ...options, ledger: false }, undefined, state)).report;
-  index(await report());
-  releaseLater();
-  sharedInputs = new Set([...state.configurationFiles, ...state.compilerFiles, ...raw.decisions.map(d => d.source.file), ...raw.decisionInventory?.map(d => d.source.file) ?? []]);
+  // Start-up reads what the whole app shares (collection, the compile, the graphs, the token record) and judges
+  // nothing: pages are judged a file at a time, and the whole-app report is built the first time something asks for
+  // it (docs/briefs/analysis-memory.md, open page first). The summary the session keeps comes from what was read.
+  state.prepareOnly = true;
+  try { project = (await analyze({ ...options, ledger: false }, undefined, state)).report; } finally { state.prepareOnly = false; }
+  released = preparedSummary();
+  sharedInputs = new Set([...state.configurationFiles, ...state.compilerFiles, ...project.decisions.map(d => d.source.file), ...project.decisionInventory?.map(d => d.source.file) ?? []]);
   parentPort!.postMessage({ ready: true, health: await dispatch('health', {}), dependencies: dependencies(), patterns: [...state.patterns], files: sourceFiles(), configurationFiles: [...state.configurationFiles], entryGraph: [...state.entryGraph], ...queryInputs() });
 } catch (error) { parentPort!.postMessage({ startupError: errorMessage(error), errorStack: error instanceof Error ? error.stack : undefined, usageError: error instanceof UsageError, ...(error instanceof UsageError ? { errorCode: error.code } : {}) }); }

@@ -2345,6 +2345,11 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **Dead ends:** a pastel pill with brown letters, a brick-red pill, pink gradient blobs over half the frame, a bench with rulers. A misplaced comment once broke the film page, and a render was started without the owner's OK; renders now wait for it.
 - **Proof:** docs/films/panel-stills.png; the three films rendered again in docs/media.
 
+- **Start-up judges nothing (2026-11-18):** the owner asked for open-page-first at start-up. The session now reads
+  what the whole app shares and judges no file until a page or a project-wide view asks. algorecall goes from 58 s to
+  46 s to ready, with every sampled file's findings equal to the full report's. On the way: one MDX components file
+  lost sites judged alone, an older gap in the per-file path; the seven files like it read the full report.
+
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
 - Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".
