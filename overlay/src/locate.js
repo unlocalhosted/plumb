@@ -164,6 +164,16 @@ function currentFiber(fiber) {
   }
   return current;
 }
+/** The element's fiber once React has hydrated the part of the page it is in: polled, since React attaches fibers as
+ * properties, which no observer sees. Null at the timeout, or when the element leaves the page or the read is aborted. */
+async function fiberOf(element, { timeout, signal }) {
+  const until = performance.now() + timeout;
+  for (;;) {
+    const fiber = hostOf(element);
+    if (fiber || !element.isConnected || signal?.aborted || performance.now() >= until) return fiber;
+    await new Promise(resolve => setTimeout(resolve, 50));
+  }
+}
 function hostOf(element) {
   for (let node = element; node && node.nodeType === 1; node = node.parentElement) {
     const key = fiberKey(node);
@@ -327,6 +337,10 @@ export async function locate(element, options = {}) {
     fiber = hostOf(element);
     if (!fiber && !hydrated) return options.explain ? { location: null, reason: 'not-hydrated', detail: {} } : null;
   }
+  // The page counts as hydrated once any part of it has a fiber, but React hydrates a page a part at a time (Next's
+  // boundaries): the part with this element can still be waiting. Read it once React has reached it, bounded; reading it
+  // earlier found no props and no stamp, and answered from the owner stack instead (e2e/hydration, webpack, 1 run in 3).
+  if (!fiber && element?.nodeType === 1 && element.isConnected) fiber = await fiberOf(element, { timeout: 10000, signal: options.signal });
   const stamp = fiber?.memoizedProps?.[STAMP_ATTRIBUTE];
   const parsed = parseStamp(stamp);
   // the request's fields, as the stamp writes them

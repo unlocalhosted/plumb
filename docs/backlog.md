@@ -71,6 +71,17 @@ reserved.)
   Next webpack on every run, also on the commit before the background build: right after load, a click finds the
   heading through the owner stack instead of its stamp, though the stamp resolves when asked a moment later.
   `npm run build` also failed on main at its last step (breakit.js not listed as a served overlay module; fixed).
+  `hydration` fixed the same day: "page hydrated" meant any part of the page had a React fiber, and Next hydrates a
+  page a part at a time, so a click at 270 ms read a heading React hadn't reached and answered from the owner stack.
+  locate now waits, bounded, for the clicked element's own part. Passed 6 runs of 6 on vm-agent (failed about 1 in 3
+  to 5 before).
+- **A place's finding lists other files' places only from the whole-app report (found 2026-11-18).** A hard-coded value
+  is one finding across files (`gap-[13px]` in App.jsx and a helper: one finding, two places). Judged a file at a time,
+  the finding carries only that file's places. With the report built in the background, which one a place query gets
+  depends on whether the build has finished: e2e/locate "review 5" compares a session after an edit with a fresh one
+  and fails on every lone run (it passed in a busy full run, where both took the per-file path). The per-file proofs
+  missed it: they compared each file's own places. Needs a decision: a place answers with the whole app's places
+  (waiting for the build when it is running) or with its own file's, said as such.
 - **Component root ranges depend on build order (2026-11-17).** A component's root class ranges reach the session's
   cache only from a build that keeps the component in its graph; a component first found while building another file
   is missing them in every later graph. Which ones depends on file order. Recording them at discovery changed 77
