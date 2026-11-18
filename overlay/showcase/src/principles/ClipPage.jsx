@@ -34,6 +34,8 @@ const CAM_MS = 900;
 
 // what the clip says, one line a side, in big type above the editor; and the switch in plain words (owner, 2026-11-18)
 const WORDS = {
+  59: { broken: 'Head for a submenu, and the item you cross closes it.', fixed: 'A safe triangle keeps it open while you travel.', names: ['Hand-rolled menu', 'Radix menu'],
+    fix: { fault: 'onPointerEnter={closeSubmenu}', fix: '<DropdownMenu.SubTrigger>' } },
   60: { broken: 'Hover that opens instantly fights with text selection.', fixed: 'A short warm-up makes hover intentional.', names: ['Opens instantly', 'Waits for a pause'],
     // the fix as code, shown once the switch is on the fixed side (owner, 2026-11-18): the warm-up in one property
     fix: { fault: 'transition-delay: 0ms', fix: 'transition-delay: 500ms' } },
@@ -49,6 +51,55 @@ const WORDS = {
 };
 
 const CLIPS = {
+  // heading straight for a submenu crosses the item under it: by hand that closes the submenu; Radix keeps a safe triangle
+  59: async ({ p, box, mark, go, sweep, wait, camera, press, pos }) => {
+    const ARR = { text: 'Arrange' }, TARGET = { text: 'Send backward' }, SUB = '[role=menu][aria-label="Arrange"]';
+    const pt = (b, u = 0.5, v = 0.5) => ({ x: b.x + b.w * u, y: b.y + b.h * v });
+    const NEAR = { x0: 250, x1: 700, yc: 210 };
+    beat('1 · wide: the menu open on the Story card');
+    go(p(140, 470)); await wait(500);
+    beat('2 · camera in on the menu');
+    await camera(NEAR);
+    await sweep(null, pt(box(ARR), 0.45), 600); await wait(500);
+    beat('3 · straight for the submenu: it closes on the way');
+    const was = box(SUB);
+    await sweep(null, pt(box(TARGET), 0.35), 420); await wait(250);
+    if (!box(SUB) && was) mark({ ring: was, tone: 'off', say: 'Closed on the way' });
+    await wait(1500);
+    beat('4 · the long way round');
+    mark(null);
+    await sweep(null, pt(box(ARR), 0.45), 450); await wait(250);
+    await sweep(null, pt(box(ARR), 0.97), 380); await wait(120);
+    await sweep(null, { x: pt(box(ARR), 0.97).x + 70, y: pt(box(ARR)).y }, 300);
+    await sweep(null, pt(box(TARGET), 0.35), 420); await wait(700);
+    beat('5 · camera out, the switch');
+    await camera(null);
+    await press(1);
+    beat('6 · camera in: the same move, a safe triangle');
+    { const L = box('aside[aria-label="Layers"]'), y = pt(box(ARR)).y;   // round the menu, never over it
+      await sweep(null, { x: L.x + L.w * 0.6, y: pos.current.y }, 350);
+      await sweep(null, { x: L.x + L.w * 0.6, y }, 450);
+      await sweep(null, { x: box(ARR).x - 40, y }, 300); }
+    await camera(NEAR);
+    await sweep(null, { x: box(ARR).x - 30, y: pt(box(ARR)).y }, 200);
+    await sweep(null, pt(box(ARR), 0.45), 450);
+    // Radix opens a submenu on a move over its item: rest there, moving a little, until it is out
+    for (let i = 0; i < 12 && !box(SUB); i++) { await sweep(null, pt(box(ARR), 0.45 + (i % 2 ? 0 : 0.04)), 80); await wait(60); }
+    await wait(400);
+    const from = pt(box(ARR), 0.45), sub = box(SUB);
+    const tri = (q) => sub && mark({ tri: [q, { x: sub.x, y: sub.y }, { x: sub.x, y: sub.y + sub.h }] });
+    tri(from); await wait(300);
+    await sweep(null, pt(box(TARGET), 0.35), 420, (q) => (sub && q.x < sub.x ? tri(q) : mark(null)));
+    await wait(150);
+    if (box(SUB)) mark({ ring: box(SUB), tone: 'on', say: 'Stayed open' });
+    await wait(1700);
+    beat('7 · camera out, back to the start');
+    mark(null);
+    await camera(null);
+    await press(0);
+    await sweep(null, p(140, 470), 700); await wait(300);
+    beat('frame: line');
+  },
   // the toolbar: the first waits a quarter second, the next ones come at once; then the text: half a second
   '60-timing': async ({ p, at, go, sweep, wait, camera, press }) => {
     const REST = [470, 610], TOOLS = { x0: 30, x1: 420, yc: 24, ya: 0.16 }, TEXT = { x0: 150, x1: 604, yc: 380 }, SCAR = [256, 336];
@@ -113,6 +164,30 @@ const Arrow = ({ down }) => (
   </svg>
 );
 
+// a clip's own marks, drawn over the editor in plumber's hues: a ring on the part that matters with its verdict in
+// words under it, and a safe triangle (pointer to a submenu's near edge) where one is the lesson
+const HUE = { off: 'var(--pl-pink)', on: '#1a9460' };
+function Marks({ ring, tone = 'off', say, tri }) {
+  const c = HUE[tone];
+  return (
+    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 4 }}>
+      {tri ? (
+        <svg width={W} height={H} style={{ position: 'absolute', inset: 0 }}>
+          <polygon points={tri.map((q) => `${q.x},${q.y}`).join(' ')} fill="rgb(26 148 96 / .16)" stroke="#1a9460" strokeWidth="2" strokeLinejoin="round" />
+        </svg>
+      ) : null}
+      {ring ? (
+        <>
+          <span style={{ position: 'absolute', left: ring.x - 6, top: ring.y - 6, width: ring.w + 12, height: ring.h + 12, borderRadius: 16, boxSizing: 'border-box', border: `3px solid ${c}`,
+            animation: 'clip-ring 280ms cubic-bezier(.3, 1.4, .5, 1) both' }} />
+          {say ? <span style={{ position: 'absolute', left: ring.x - 6, top: ring.y + ring.h + 16, padding: '7px 12px', borderRadius: 8, background: c, color: '#fff',
+            font: '600 22px/1 ui-monospace, Menlo, monospace', whiteSpace: 'nowrap', animation: 'clip-say 360ms cubic-bezier(.2, .8, .2, 1) both' }}>{say}</span> : null}
+        </>
+      ) : null}
+    </div>
+  );
+}
+
 export function ClipPage({ id }) {
   const n = parseInt(id, 10), mod = SCREENS[n], Example = mod?.default, clip = CLIPS[id], words = WORDS[id];
   const scene = (s) => words?.scenes?.[s === 'fixed' ? 1 : 0];
@@ -123,6 +198,7 @@ export function ClipPage({ id }) {
   const [cam, setCam] = useState(null);       // null: at rest; else the transform up close
   const [rest, setRest] = useState(null);     // the editor's place at rest
   const [ptr, setPtr] = useState({ x: 980, y: 700, down: false });
+  const [marks, setMarks] = useState(null); // a clip's own marks, in stage pixels: { ring, tone, say, tri }
   const over = useRef(null), pos = useRef({ x: 980, y: 700 }), held = useRef(0);
 
   useEffect(() => { ensureLook(); window.__filmSpec = {}; }, []);
@@ -165,21 +241,28 @@ export function ClipPage({ id }) {
     // what a mouse at this point would be over: the events a real pointer sends when that changes
     const hit = (p) => {
       const o = stage.current.getBoundingClientRect();
-      const el = document.elementFromPoint(o.left + p.x * fit, o.top + p.y * fit), was = over.current;
-      if (el === was) return;
-      const b = held.current;
-      if (was) { was.dispatchEvent(new PointerEvent('pointerout', { bubbles: true, relatedTarget: el, pointerType: 'mouse', buttons: b })); was.closest('button')?.removeAttribute('data-clip-hover'); }
-      if (el) { el.dispatchEvent(new PointerEvent('pointerover', { bubbles: true, relatedTarget: was, pointerType: 'mouse', buttons: b })); el.closest('[data-tool]')?.setAttribute('data-clip-hover', ''); }
-      over.current = el;
+      const cx = o.left + p.x * fit, cy = o.top + p.y * fit, el = document.elementFromPoint(cx, cy), was = over.current, b = held.current;
+      const at = { pointerType: 'mouse', buttons: b, clientX: cx, clientY: cy, bubbles: true };
+      // every step is a move too: menus (Radix) track where the pointer is going, not only what it is over
+      const move = () => el?.dispatchEvent(new PointerEvent('pointermove', at));
+      if (el === was) { move(); return; }
+      if (was) { was.dispatchEvent(new PointerEvent('pointerout', { ...at, relatedTarget: el })); was.closest('button')?.removeAttribute('data-clip-hover'); }
+      if (el) { el.dispatchEvent(new PointerEvent('pointerover', { ...at, relatedTarget: was })); el.closest('[data-tool]')?.setAttribute('data-clip-hover', ''); }
+      over.current = el; move();
     };
     const go = (p) => { pos.current = p; setPtr((x) => ({ ...x, ...p })); hit(p); };
     // the pointer travels from a to b in ms, eased, one step a frame
-    const sweep = async (a, b, ms) => {
+    const sweep = async (a, b, ms, step) => {
       a ??= pos.current; const steps = Math.max(1, Math.round(ms / 16));
       for (let i = 1; i <= steps && !gone; i++) {
-        const t = i / steps, e = t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
-        go({ x: a.x + (b.x - a.x) * e, y: a.y + (b.y - a.y) * e }); await wait(16);
+        const t = i / steps, e = t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2, q = { x: a.x + (b.x - a.x) * e, y: a.y + (b.y - a.y) * e };
+        go(q); step?.(q); await wait(16);
       }
+    };
+    // a part of the editor in stage pixels, found by selector or by the text it starts with
+    const box = (sel) => {
+      const el = typeof sel === 'string' ? card.current.querySelector(sel) : [...card.current.querySelectorAll('[role=menuitem]')].find((e) => e.innerText.trim().startsWith(sel.text));
+      return el ? toStage(el.getBoundingClientRect()) : null;
     };
     // press at a, drag to b with the button held, release: the page's real text selection follows the pointer
     const caret = (q) => { const o = stage.current.getBoundingClientRect(); return document.caretRangeFromPoint(o.left + q.x * fit, o.top + q.y * fit); };
@@ -197,24 +280,30 @@ export function ClipPage({ id }) {
       held.current = 0; setPtr((x) => ({ ...x, down: false }));
     };
     // camera in on a stretch of the editor (x0..x1 of its 600px fill the frame's width), or back to rest
+    // the pointer rides with the camera, held to the spot on the editor it was over, so a camera move never puts it
+    // over something new (no events are sent while it rides)
+    const ride = async () => {
+      const c = toStage(card.current.getBoundingClientRect()), k = c.w / 600, at = { x: (pos.current.x - c.x) / k, y: (pos.current.y - c.y) / k };
+      for (let t = 0; t <= CAM_MS + 32; t += 16) { await wait(16); const q = p(at.x, at.y); pos.current = q; setPtr((x) => ({ ...x, ...q })); }
+    };
     const camera = async (span) => {
-      if (!span) { setCam(null); await wait(CAM_MS); return; }
+      if (!span) { setCam(null); await ride(); return; }
       const { x0, x1, yc, ya = 0.5 } = span, k = (W - 60) / (x1 - x0);   // x0..x1 fill the width; yc sits ya down the room
       setCam({ k, x: 30 - x0 * k, y: ROOM * ya - yc * k });
-      await wait(CAM_MS);
+      await ride();
     };
     // the pointer goes to a side of the switch and presses it
     const press = async (i) => {
       const b = sw.current.querySelectorAll('button')[i];
       await sweep(null, at(b, 0.5), 650);
       setPtr((x) => ({ ...x, down: true })); await wait(140);
-      getSelection().removeAllRanges(); setSide(i ? 'fixed' : 'broken'); setRound((r) => r + 1);
+      getSelection().removeAllRanges(); setMarks(null); setSide(i ? 'fixed' : 'broken'); setRound((r) => r + 1);
       setPtr((x) => ({ ...x, down: false })); await wait(260);
     };
     (async () => {
       await document.fonts?.ready; await wait(300);
       const t = (el) => (typeof el === 'number' ? tools()[el] : el);
-      await clip({ p, select, at: (el, u) => at(t(el), u), go, sweep, wait, camera, press, tools });
+      await clip({ p, pos, box, mark: setMarks, select, at: (el, u) => at(t(el), u), go, sweep, wait, camera, press, tools });
     })();
     return () => { gone = true; };
   }, [rest, clip]);
@@ -224,7 +313,7 @@ export function ClipPage({ id }) {
   return (
     <div className="pl-light" style={{ position: 'fixed', inset: 0, display: 'grid', placeItems: 'center', background: '#111', overflow: 'hidden', '--pl-off': 'var(--pl-pink)', '--pl-off-bg': 'var(--pl-pink-soft)' }}>
       <div style={{ position: 'relative', width: W * fit, height: H * fit, overflow: 'hidden' }}>
-      <style>{'plumb-overlay { display: none !important; } [data-clip-hover] { background: var(--color-sunken); color: var(--color-ink); } [data-example] ::selection { background: rgb(64 132 255 / .28); } @keyframes clip-say { from { opacity: 0; transform: translateY(14px); filter: blur(6px) } to { opacity: 1; transform: none; filter: none } } body { margin: 0; }'}</style>
+      <style>{'plumb-overlay { display: none !important; } [data-clip-hover] { background: var(--color-sunken); color: var(--color-ink); } [data-example] ::selection { background: rgb(64 132 255 / .28); } @keyframes clip-ring { from { opacity: 0; transform: scale(.97) } to { opacity: 1; transform: none } } @keyframes clip-say { from { opacity: 0; transform: translateY(14px); filter: blur(6px) } to { opacity: 1; transform: none; filter: none } } body { margin: 0; }'}</style>
       <div ref={stage} style={{ width: W, height: H, position: 'absolute', left: 0, top: 0, transformOrigin: '0 0', transform: `scale(${fit})`, overflow: 'hidden', cursor: 'none',
         background: '#f5f4f0', backgroundImage: 'radial-gradient(circle, rgb(28 27 25 / .11) 1.3px, transparent 1.6px)', backgroundSize: '26px 26px' }}>
         <p key={side} style={{ position: 'absolute', left: 90, right: 90, top: 0, height: TOP, margin: 0, display: 'grid', placeItems: 'center', textAlign: 'center', textWrap: 'balance',
@@ -257,6 +346,7 @@ export function ClipPage({ id }) {
         <span style={{ position: 'absolute', right: 40, bottom: 36, display: 'flex', alignItems: 'center', gap: 10, font: '750 22px/1 "Bricolage Grotesque", var(--pl-round)', color: 'rgb(28 27 25 / .55)' }}>
           <Mark size={28} />React Plumber
         </span>
+        {marks ? <Marks {...marks} /> : null}
         <span style={{ position: 'absolute', left: ptr.x - 3, top: ptr.y - 3, pointerEvents: 'none', zIndex: 5 }}><Arrow down={ptr.down} /></span>
       </div>
       </div>
