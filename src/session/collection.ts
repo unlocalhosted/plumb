@@ -1,6 +1,9 @@
 import { profileDuration } from '../profile.js';
+import { environment } from '../paths.js';
 import { parseSync } from 'oxc-parser';
 import { readFileSync } from 'node:fs';
+import { availableParallelism } from 'node:os';
+import { Worker } from 'node:worker_threads';
 import { ResolverFactory } from 'oxc-resolver';
 import { collectClasses } from '../collect/classes.js';
 import { internAll } from '../collect/strings.js';
@@ -26,7 +29,7 @@ type Collection = Awaited<ReturnType<typeof collectClasses>>;
 interface Slice { hash: string; dependencies: Map<string, string>; value: Collection }
 /** The parsed files collection shares while it runs: a file imported by its neighbours is parsed once. Only the most
  * recently used are kept, so a large app never holds every file's syntax tree at once; a dropped one is parsed again. */
-class RecentPrograms extends Map<string, SourceProgram> {
+export class RecentPrograms extends Map<string, SourceProgram> {
   constructor(private limit: number) { super(); }
   override get(key: string): SourceProgram | undefined {
     const value = super.get(key); if (value === undefined) return;
@@ -46,7 +49,7 @@ export class CollectionState {
   private definitions = new Map<string, SourceStyles['declarations']>();
   visitedFiles: string[] = [];
   /** where a whole collection's time goes (profiling): reading text, collecting classes, imports, component shards */
-  spent = { read: 0, classes: 0, imports: 0, shards: 0 };
+  spent = { read: 0, classes: 0, parse: 0, imports: 0, shards: 0 };
   private dirty = new Set<string>();
   private memory: CollectionMemory | undefined;
   /** the hash of each imported file, during one whole collection (files don't change under it) */
@@ -73,7 +76,7 @@ export class CollectionState {
     }
     return dependencies;
   }
-  private async read(file: string, config: PlumbConfig, input?: { file: string; text: string; lang: 'tsx' | 'css' }): Promise<Collection> {
+  private async read(file: string, config: PlumbConfig, input?: { file: string; text: string; lang: 'tsx' | 'css' }, collected?: Collected): Promise<Collection> {
     this.visitedFiles.push(file);
     const old = this.slices.get(file);
     const overlay = !!input && old?.dependencies.has(input.file);
@@ -87,10 +90,13 @@ export class CollectionState {
       try { return sourceHash(path === input?.file ? input.text : readFileSync(path, 'utf8')) === previous; } catch { return false; }
     });
     if (valid) return old.value;
-    const value = await collectClasses([file], config.classHelpers, new Map([...(input ? [[input.file, input.text] as const] : []), ...(text === undefined ? [] : [[file, text] as const])]), undefined, undefined, undefined, this.memory);
+    // collected on another thread (the session's first collection), or here
+    if (collected?.specifiers) this.memory?.specifiers.set(file, collected.specifiers);
+    const value = collected?.value ?? await collectClasses([file], config.classHelpers, new Map([...(input ? [[input.file, input.text] as const] : []), ...(text === undefined ? [] : [[file, text] as const])]), undefined, undefined, undefined, this.memory);
     // the results keep names and values cut from the file's text; the table's copies let the text go
     internAll([value.sites, value.styles, value.diagnostics, value.modules]);
     this.spent.classes += performance.now() - at; at = performance.now();
+    this.spent.parse += value.parseMs;
     if (old && file !== input?.file) {
       const stable = (value: unknown) => JSON.stringify(value, (key, item) => key === 'resolved' ? undefined : item);
       const sites = new Map(old.value.sites.map(site => [stable(site), site]));
@@ -140,15 +146,19 @@ export class CollectionState {
     this.programs = this.memory.programs;
     this.specifiers = this.memory.specifiers;
     this.parsedFiles = []; this.visitedFiles = [];
-    for (const file of files.filter(file => file === input?.file ? input.lang === 'tsx' : /\.[jt]sx?$/.test(file))) {
-      values.push(await this.read(file, config, input));
-      afterFile?.(file);
-    }
+    const sources = files.filter(file => file === input?.file ? input.lang === 'tsx' : /\.[jt]sx?$/.test(file));
+    const threads = !input && this.slices.size === 0 ? collectOnThreads(sources, config) : undefined;
+    try {
+      for (const file of sources) {
+        values.push(await this.read(file, config, input, await threads?.get(file)));
+        afterFile?.(file);
+      }
+    } finally { threads?.stop(); }
     this.programs = this.memory.programs;
     this.specifiers = this.memory.specifiers;
     this.memory = undefined; this.hashes = undefined;
     for (const [name, ms] of Object.entries(this.spent)) profileDuration(`collect:${name}`, ms);
-    this.spent = { read: 0, classes: 0, imports: 0, shards: 0 };
+    this.spent = { read: 0, classes: 0, parse: 0, imports: 0, shards: 0 };
     if (!input) this.dirty.clear();
     const sites = new Map<string, ClassSite>(), modules = new Map<string, ModuleImport[]>();
     const styles: SourceStyles = { declarations: [], sites: [], stylesheets: [], imports: [], definedVariables: [] };
@@ -160,4 +170,28 @@ export class CollectionState {
     return { diagnostics: values.flatMap(value => value.diagnostics), sites: [...sites.values()], styles, modules, computedClassFiles: [...new Set(values.flatMap(value => value.computedClassFiles ?? []))], opaque: values.reduce((sum, v) => sum + v.opaque, 0),
       parseMs: 0, collectMs: 0, inlineMs: 0 };
   }
+}
+
+type Collected = { value: Awaited<ReturnType<typeof collectClasses>>; specifiers?: string[] | undefined };
+/** A session's first collection of a large app on a few threads at once: each file is collected there exactly as it is
+ * here (collectClasses, one file, its own parse cache), and the answers are read back in file order. 3,649 files on
+ * algorecall spent 10.5 s collecting on one thread. Small apps, edits and helpers that can't be sent to a thread (a
+ * function in the config) keep the one thread. */
+const THREADS_FROM = 400;
+function collectOnThreads(files: string[], config: PlumbConfig): { get(file: string): Promise<Collected | undefined>; stop(): void } | undefined {
+  const count = Math.min(4, Math.max(0, availableParallelism() - 2));
+  if (files.length < THREADS_FROM || count < 2 || environment('COLLECT_THREADS') === '0') return undefined;
+  try { structuredClone(config.classHelpers ?? []); } catch { return undefined; }
+  const waiting = new Map<string, { promise: Promise<Collected | undefined>; resolve: (value: Collected | undefined) => void }>();
+  for (const file of files) { let resolve!: (value: Collected | undefined) => void; const promise = new Promise<Collected | undefined>(r => { resolve = r; }); waiting.set(file, { promise, resolve }); }
+  const workers = Array.from({ length: count }, (_, i) => {
+    const share = files.filter((_, at) => at % count === i);
+    const worker = new Worker(new URL('./collect-thread.js', import.meta.url), { workerData: { files: share, classHelpers: config.classHelpers ?? [] } });
+    // an answer that doesn't come (an error, a thread that stopped) is collected here instead
+    worker.on('message', (message: { file: string; value?: Collected['value']; specifiers?: string[]; error?: string }) => waiting.get(message.file)?.resolve(message.value ? { value: message.value, specifiers: message.specifiers } : undefined));
+    const settle = () => { for (const file of share) waiting.get(file)?.resolve(undefined); };
+    worker.on('error', settle); worker.on('exit', settle);
+    return worker;
+  });
+  return { get: file => waiting.get(file)?.promise ?? Promise.resolve(undefined), stop: () => { for (const worker of workers) void worker.terminate(); } };
 }

@@ -805,6 +805,15 @@ whole collection took that to 0.5 s (worker ready at 35.0 s, from 36.9 s; 465 sa
 the background report hashes the same). Next: collecting classes on a few threads at once (plain data, per file),
 the shards staying on the worker thread.
 
+Built the same day (`collectOnThreads`, collection.ts; `collect-thread.ts`): a session's first collection of 400 or
+more files runs `collectClasses` on up to four threads (cores less two), one file at a time with each thread's own
+parse cache, and the session reads the answers in file order and does the rest as before (shared strings, imports
+with the thread's import list, the component shard). Helpers that can't be sent to a thread, small apps and later
+collections keep the one thread; `PLUMB_COLLECT_THREADS=0` switches it off. Parsing was only 1.4 s of the 10.5 s:
+walking the tree was the cost. algorecall: collecting on the worker thread 10.5 s -> 0.9 s; the shards rose 5.9 s ->
+8.9 s because they now parse their file themselves; the worker ready at 28.3 s (34.7 s before), 34 s from launch
+(40 s). 465 sampled files equal the full report; the background report hashes the same.
+
 ## Expected (guesses until measured)
 
 - Step 1 removes most of the 781 MB of trees and a share of the 234 MB that points into them.

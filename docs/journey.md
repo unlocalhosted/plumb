@@ -2435,6 +2435,10 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **Start-up, second cut:** each file re-read and re-hashed every file it imports, so a shared component was read
   hundreds of times. Once per start now: the worker is ready at 35.0 s. What is left is collecting classes (11.1 s)
   and building component maps (6.2 s); collecting can run on several threads, which is next.
+- **Start-up, third cut: threads.** Collecting each file's classes was 10.5 s on one thread, and parsing was only 1.4 s
+  of it. The first collection now runs on up to four threads, the same code per file, answers read back in order.
+  algorecall is ready 34 s after launch (40 s before), the worker at 28.3 s, with the same answers. crafting-ui on the
+  laptop: ready in 5.8 s with threads, 14.9 s without (one run each, busy laptop). Component maps (8.9 s) are next.
 - **The old failing tests, sorted:** the 36 files that failed before this work all pass now (time-outs on a busy
   machine). Of what a full run found, one was ours (the kept reading table skipped while the report built in the
   background; fixed), three passed again, and one Next.js test fails on every run, also before today's work.
