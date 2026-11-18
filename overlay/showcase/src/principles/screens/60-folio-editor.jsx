@@ -89,7 +89,9 @@ const CARDS = [
   { label: 'Tide times', line: 'Low water 07:42, 0.6 m. High water 13:58, 5.4 m.', meta: 'Saltburn · 14 March' },
 ];
 
-export default function FolioEditor({ side = 'broken', onStatus, clip = false }) {
+// timing: the clip of two timings (ClipPage, /clip/60-timing) gives each place its own first wait, { tool, card } in ms
+export default function FolioEditor({ side = 'broken', onStatus, clip = false, timing = null }) {
+  const firstOf = (i) => (timing ? (i >= TOOLS.filter(Boolean).length ? timing.card : timing.tool) : FIRST);
   const root = useRef(null), tip = useRef(null);
   const tt = useRef({ timer: 0, lastClose: -Infinity });
   const [open, setOpen] = useState(null);      // { i, at } of the tooltip on screen
@@ -108,7 +110,7 @@ export default function FolioEditor({ side = 'broken', onStatus, clip = false })
     clearTimeout(tt.current.timer);
     if (fixed && held) return;
     setVisits((v) => [...v.slice(-24), { i, t, shown: null, gone: null, next: warm, box: null, held }]);
-    const wait = fixed ? (warm ? 0 : FIRST) : 0;
+    const wait = fixed ? (warm ? 0 : firstOf(i)) : 0;
     const show = () => {
       tt.current.showing = true;
       setOpen({ i, at: local(root.current)(btns()[i]) });
@@ -222,14 +224,14 @@ export default function FolioEditor({ side = 'broken', onStatus, clip = false })
         // the social clip's marks (ClipPage): no measurements, only the verdict on the card that is open, in words
         <MarksLayer>
           {cur && waiting && fixed && root.current ? (() => {
-            const b = local(root.current)(btns()[cur.i]), k = Math.min(1, (t - cur.t) / FIRST);
+            const b = local(root.current)(btns()[cur.i]), k = Math.min(1, (t - cur.t) / firstOf(cur.i));
             return <span style={{ position: 'absolute', left: b.x, top: b.y + b.h + 1, width: b.w * k, height: 3, borderRadius: 2, background: 'var(--pl-on)' }} />;
           })() : null}
           {open && cur?.box && cur.gone === null ? (
             <>
               <span style={{ position: 'absolute', left: cur.box.x - 4, top: cur.box.y - 4, width: cur.box.w + 8, height: cur.box.h + 8, borderRadius: 10, boxSizing: 'border-box',
                 border: `2px solid ${hue(!fixed)}`, animation: 'pl-clip-ring 260ms cubic-bezier(.3, 1.4, .5, 1) both' }} />
-              <Tag x={cur.box.x} y={cur.box.y + cur.box.h + 20} off={!fixed}>{fixed ? 'Opened after a pause' : cur.held ? 'Opened mid-selection' : 'Opened instantly'}</Tag>
+              <Tag x={cur.box.x} y={cur.box.y + cur.box.h + 20} off={!fixed}>{timing ? (cur.next ? 'Instant' : `After ${firstOf(cur.i)}ms`) : fixed ? 'Opened after a pause' : cur.held ? 'Opened mid-selection' : 'Opened instantly'}</Tag>
               <style>{'@keyframes pl-clip-ring { from { opacity: 0; transform: scale(.96) } to { opacity: 1; transform: none } }'}</style>
             </>
           ) : null}

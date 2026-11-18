@@ -13,7 +13,8 @@ import { spawn } from 'node:child_process';
 import { chromium } from 'playwright';
 import { checkPage, refuse } from './film-script-check.mjs';
 
-const args = process.argv.slice(2), n = Number(args[0]), out = args[1];
+// a clip's id may name a second clip of its screen: 60-timing
+const args = process.argv.slice(2), id = args[0], n = parseInt(id, 10), out = args[1];
 if (!n || !out) { console.error('usage: film-render.mjs <N> <out.mp4> [--fps 60] [--size 1920x1080] [--origin URL]'); process.exit(2); }
 const opt = (name, fallback) => { const i = args.indexOf(name); return i > 0 ? args[i + 1] : fallback; };
 const clip = args.includes('--clip'); // a social clip (/clip/N): 4:5, ends on its last frame so it loops
@@ -27,7 +28,7 @@ page.on('pageerror', (e) => errors.push(String(e)));
 const T0 = Date.now();
 await page.clock.install({ time: T0 });
 await page.clock.pauseAt(T0 + 10); // an installed clock still runs in real time: paused, only the frames below move it
-await page.goto(`${origin}/${clip ? 'clip' : 'film'}/${n}`);
+await page.goto(`${origin}/${clip ? 'clip' : 'film'}/${clip ? id : n}`);
 { const problems = await checkPage(page); if (problems.length) { await browser.close(); refuse(n, problems); } }
 
 // the film's own time, counted here frame by frame (the page's performance.now keeps running in real time while frames

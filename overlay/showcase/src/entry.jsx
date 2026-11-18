@@ -19,9 +19,9 @@ const path = location.pathname.replace(/\/$/, '');
 const rule = path.match(/^\/rule\/(\d+)(\/fixed)?$/);
 const all = path.match(/^\/all(\/fixed)?$/);
 const film = path.match(/^\/film\/(\d+)$/);
-const clip = path.match(/^\/clip\/(\d+)$/);
+const clip = path.match(/^\/clip\/(\d+(?:-[a-z]+)?)$/); // /clip/60, or a second clip of the same screen: /clip/60-timing
 const broken = rule ? !rule[2] : all ? !all[1] : true;
 await (broken ? import('./broken.css') : import('./fixed.css'));
 createRoot(document.getElementById('root')).render(
-  path === '/proto/marks' ? <MarksProto /> : clip ? <ClipPage n={Number(clip[1])} /> : film ? <FilmPage n={Number(film[1])} /> : path === '/primitives' ? <Primitives /> : rule ? <Layout current={Number(rule[1])}><Principle n={Number(rule[1])} /></Layout> : all ? <Shell broken={broken} /> : <Index />,
+  path === '/proto/marks' ? <MarksProto /> : clip ? <ClipPage id={clip[1]} /> : film ? <FilmPage n={Number(film[1])} /> : path === '/primitives' ? <Primitives /> : rule ? <Layout current={Number(rule[1])}><Principle n={Number(rule[1])} /></Layout> : all ? <Shell broken={broken} /> : <Index />,
 );

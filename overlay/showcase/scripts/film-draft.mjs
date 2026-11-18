@@ -16,12 +16,13 @@ import { join, resolve } from 'node:path';
 import { chromium } from 'playwright';
 import { checkPage, refuse } from './film-script-check.mjs';
 
-const args = process.argv.slice(2), n = Number(args[0]);
+// a clip's id may name a second clip of its screen: 60-timing
+const args = process.argv.slice(2), id = args[0], n = parseInt(id, 10);
 if (!n) { console.error('usage: film-draft.mjs <N> [--origin URL] [--out DIR]'); process.exit(2); }
 const opt = (name, fallback) => { const i = args.indexOf(name); return i > 0 ? args[i + 1] : fallback; };
 const origin = opt('--origin', 'http://localhost:4313'), query = opt('--query', '');
 const clip = args.includes('--clip'); // a social clip (/clip/N): 4:5, and it ends on its last frame // --query '?panel=paper': a variant to compare
-const out = resolve(opt('--out', `docs/films/${String(n).padStart(2, '0')}-${clip ? 'clip' : 'draft'}`));
+const out = resolve(opt('--out', `docs/films/${clip ? id : String(n).padStart(2, '0')}-${clip ? 'clip' : 'draft'}`));
 const [VW, VH] = clip ? [1080, 1350] : [1600, 900], TAIL = clip ? 100 : 2500;
 const SETTLE = 900;      // ms after a beat starts before its keyframe: its marks drawn, its camera move mostly done
 const LIMIT = 60000;     // a film never runs longer than this
@@ -45,7 +46,7 @@ await page.exposeFunction('__filmBeat', (name, t) => {
   shots.push(new Promise((ok) => setTimeout(() => page.screenshot({ path: join(out, file) }).then(() => ok(file), () => ok(null)), SETTLE)));
   if (name === 'frame: line') setTimeout(done, TAIL + SETTLE); // the closing line is the last beat; hold a moment past it
 });
-await page.goto(`${origin}/${clip ? 'clip' : 'film'}/${n}${query}`);
+await page.goto(`${origin}/${clip ? 'clip' : 'film'}/${clip ? id : n}${query}`);
 const problems = await checkPage(page);
 if (problems.length) { await ctx.close(); await browser.close(); rmSync(out, { recursive: true, force: true }); refuse(n, problems); }
 await Promise.race([finished, new Promise((ok) => setTimeout(ok, LIMIT))]);

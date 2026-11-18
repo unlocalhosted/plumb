@@ -28,7 +28,7 @@ const W = 1080, H = 1350;
  * owner, 2026-11-18: the toolbar sweep read as intentional; selecting is where an eager card gets in the way
  * ───────────────────────────────────────────────────────── */
 const REST = 1.25;           // the editor's scale at rest (600 × 682 → 750 × 853)
-const TOP = 250, ROOM = 860; // the camera's room, between the caption and the switch; the editor fades at its edges
+const TOP = 300, ROOM = 810; // the camera's room, between the caption and the switch; the editor fades at its edges
 const EASE = 'cubic-bezier(.65, 0, .35, 1)';
 const CAM_MS = 900;
 
@@ -37,9 +37,44 @@ const WORDS = {
   60: { broken: 'Hover that opens instantly fights with text selection.', fixed: 'A short warm-up makes hover intentional.', names: ['Opens instantly', 'Waits for a pause'],
     // the fix as code, shown once the switch is on the fixed side (owner, 2026-11-18): the warm-up in one property
     fix: { fault: 'transition-delay: 0ms', fix: 'transition-delay: 500ms' } },
+  // two places, two right timings, no wrong side (owner, 2026-11-18, answering "what delay do you land on?"): the switch
+  // picks the place; the editor plays its fixed side with the toolbar's own first wait
+  '60-timing': { names: ['Toolbar', 'In text'], side: 'fixed', timing: { tool: 250, card: 500 },
+    scenes: [
+      { say: 'On a toolbar, wait 250ms. Then show the rest instantly.', code: 'transition-delay: 250ms',
+        why: 'People reach for a toolbar on purpose. Once one tooltip is open, they are reading.' },
+      { say: 'In text, wait 500ms. People pass through and select.', code: 'transition-delay: 500ms',
+        why: 'The pointer crosses links on the way elsewhere. A longer pause filters that out.' },
+    ] },
 };
 
 const CLIPS = {
+  // the toolbar: the first waits a quarter second, the next ones come at once; then the text: half a second
+  '60-timing': async ({ p, at, go, sweep, wait, camera, press }) => {
+    const REST = [470, 610], TOOLS = { x0: 30, x1: 420, yc: 24, ya: 0.16 }, TEXT = { x0: 150, x1: 604, yc: 380 }, SCAR = [256, 336];
+    beat('1 · wide: the editor at rest');
+    go(p(...REST)); await wait(500);
+    beat('2 · camera in on the toolbar');
+    await camera(TOOLS);
+    beat('3 · the first tooltip waits a quarter second');
+    await sweep(null, at(1, 0.55), 650); await wait(1000);
+    beat('4 · the next ones come at once');
+    for (const i of [2, 3, 5]) { await sweep(null, at(i, 0.55), 300); await wait(750); }
+    await sweep(null, p(330, 160), 350);
+    beat('5 · camera out, to the text');
+    await camera(null);
+    await press(1);
+    await camera(TEXT);
+    beat('6 · in text, half a second');
+    await sweep(null, p(205, 352), 500); await wait(200);
+    await sweep(null, p(...SCAR), 600); await wait(1500);
+    await sweep(null, p(205, 360), 400); await wait(300);
+    beat('7 · camera out, back to the start');
+    await camera(null);
+    await press(0);
+    await sweep(null, p(...REST), 700); await wait(300);
+    beat('frame: line');
+  },
   // the reader selects a phrase across two links: without a warm-up each card opens mid-selection, over the words
   60: async ({ p, go, sweep, select, wait, camera, press }) => {
     const REST = [205, 352], FROM = [224, 336], TO = [454, 336], SCAR = [256, 336], NEAR = { x0: 150, x1: 604, yc: 380 };
@@ -78,8 +113,9 @@ const Arrow = ({ down }) => (
   </svg>
 );
 
-export function ClipPage({ n }) {
-  const mod = SCREENS[n], Example = mod?.default, clip = CLIPS[n], words = WORDS[n];
+export function ClipPage({ id }) {
+  const n = parseInt(id, 10), mod = SCREENS[n], Example = mod?.default, clip = CLIPS[id], words = WORDS[id];
+  const scene = (s) => words?.scenes?.[s === 'fixed' ? 1 : 0];
   const stage = useRef(null), card = useRef(null), sw = useRef(null);
   const [fit, setFit] = useState(1);
   const [side, setSide] = useState('broken');
@@ -163,8 +199,8 @@ export function ClipPage({ n }) {
     // camera in on a stretch of the editor (x0..x1 of its 600px fill the frame's width), or back to rest
     const camera = async (span) => {
       if (!span) { setCam(null); await wait(CAM_MS); return; }
-      const { x0, x1, yc } = span, k = (W - 60) / (x1 - x0);   // x0..x1 fill the width; yc sits at the room's middle
-      setCam({ k, x: 30 - x0 * k, y: ROOM * 0.5 - yc * k });
+      const { x0, x1, yc, ya = 0.5 } = span, k = (W - 60) / (x1 - x0);   // x0..x1 fill the width; yc sits ya down the room
+      setCam({ k, x: 30 - x0 * k, y: ROOM * ya - yc * k });
       await wait(CAM_MS);
     };
     // the pointer goes to a side of the switch and presses it
@@ -192,16 +228,25 @@ export function ClipPage({ n }) {
       <div ref={stage} style={{ width: W, height: H, position: 'absolute', left: 0, top: 0, transformOrigin: '0 0', transform: `scale(${fit})`, overflow: 'hidden', cursor: 'none',
         background: '#f5f4f0', backgroundImage: 'radial-gradient(circle, rgb(28 27 25 / .11) 1.3px, transparent 1.6px)', backgroundSize: '26px 26px' }}>
         <p key={side} style={{ position: 'absolute', left: 90, right: 90, top: 0, height: TOP, margin: 0, display: 'grid', placeItems: 'center', textAlign: 'center', textWrap: 'balance',
-          font: '700 54px/1.12 "Bricolage Grotesque", var(--pl-round)', letterSpacing: '-0.02em', color: '#1c1b19', animation: 'clip-say 520ms cubic-bezier(.2, .8, .2, 1) both' }}>{words?.[side]}</p>
+          font: '700 54px/1.12 "Bricolage Grotesque", var(--pl-round)', letterSpacing: '-0.02em', color: '#1c1b19', animation: 'clip-say 520ms cubic-bezier(.2, .8, .2, 1) both' }}>
+          <span>{scene(side)?.say ?? words?.[side]}
+            {scene(side)?.why ? <span style={{ display: 'block', margin: '18px auto 0', maxWidth: 760, font: '500 28px/1.3 var(--pl-round, system-ui)', letterSpacing: '-0.005em', color: 'rgb(28 27 25 / .62)' }}>{scene(side).why}</span> : null}
+          </span>
+        </p>
         <div style={{ position: 'absolute', left: 0, top: TOP, right: 0, height: ROOM, overflow: 'hidden', maskImage: 'linear-gradient(transparent, #000 5%, #000 93%, transparent)' }}>
         <div ref={card} data-example style={{ position: 'absolute', left: 0, top: 0, width: 600, transformOrigin: '0 0', transform: tf, transition: `transform ${CAM_MS}ms ${EASE}`, visibility: rest ? 'visible' : 'hidden' }}>
-          <Example key={side + round} side={side} clip />
+          <Example key={side + round} side={words?.side ?? side} timing={words?.timing} clip />
         </div>
         </div>
         <div ref={sw} style={{ position: 'absolute', left: '50%', bottom: 78 / 2.1, transform: 'translateX(-50%)', zoom: 2.1 }}>
           <TechniqueSwitch names={words?.names ?? Example.names} fixed={side === 'fixed'} ready={false} onBack={() => {}} onFix={() => {}} />
         </div>
-        {side === 'fixed' && words?.fix ? (
+        {scene(side) ? (
+          <div key={'code-' + side} style={{ position: 'absolute', left: 0, right: 0, top: TOP + ROOM + 6, display: 'flex', justifyContent: 'center',
+            font: '600 25px/1 ui-monospace, Menlo, monospace', animation: 'clip-say 520ms cubic-bezier(.2, .8, .2, 1) 200ms both' }}>
+            <code style={{ padding: '10px 14px', borderRadius: 10, color: '#fff', background: '#1a9460' }}>{scene(side).code}</code>
+          </div>
+        ) : side === 'fixed' && words?.fix ? (
           <div key={round} style={{ position: 'absolute', left: 0, right: 0, top: TOP + ROOM + 6, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 14,
             font: '600 25px/1 ui-monospace, Menlo, monospace', animation: 'clip-say 520ms cubic-bezier(.2, .8, .2, 1) 200ms both' }}>
             <code style={{ padding: '10px 14px', borderRadius: 10, color: '#fff', background: 'var(--pl-pink)', opacity: 0.6, textDecoration: 'line-through' }}>{words.fix.fault}</code>
