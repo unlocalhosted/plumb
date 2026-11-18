@@ -261,7 +261,7 @@ export class WarmState implements AnalysisRuntime {
       const prebuild = !inputs[2] && /\.[jt]sx?$/;
       if (prebuild && !this.componentMemory.batch) this.componentMemory.batch = componentBatch();
       return await this.collection.collect(inputs[0] as string[], this.config, inputs[2] as Parameters<CollectionState['collect']>[2],
-        prebuild ? file => { if (prebuild.test(file) && !this.shards.has(file)) this.buildShard(file, this.config); } : undefined) as T;
+        prebuild ? file => { if (prebuild.test(file) && !this.shards.has(file)) this.buildShard(file, this.config, false); } : undefined) as T;
     }
     if (name === 'project' || name === 'files') {
       const value = await this.memo(name, [], compute);
@@ -318,6 +318,7 @@ export class WarmState implements AnalysisRuntime {
     if ([...wanted].some(file => !this.shards.has(file))) this.componentMemory.batch = componentBatch();
     try {
     for (const file of wanted) if (!this.shards.has(file)) this.buildShard(file, config);
+    this.reachEdges(wanted);
     } finally { delete this.componentMemory.batch; }
     const graph = this.mergeGraph(files, this.shards);
     this.collection.programs.clear();
@@ -334,33 +335,43 @@ export class WarmState implements AnalysisRuntime {
    * whole app is collected (its parsed code is still in memory then: building every shard afterwards parsed and read
    * each file again, about 3 s on a 3,600-file app), otherwise by componentGraph for the files that lack one. The
    * order is the files' order either way, so the shards are the same. */
-  private buildShard(file: string, config: PlumbConfig): void {
+  /** The import edges of every file `files` reach, for the files whose own were never read: a shard built during
+   * collection reads only its file's imports (the rest are not collected yet, and reading them meant parsing them a
+   * second time, 1.25 s on a 3,600-file app), so the walk across the graph happens here, once collection has them. */
+  private reachEdges(files: Iterable<string>): void {
+    // each file is queued once: a file many others import must not fill the queue (bounded, as the walk always was)
+    const queue = [...new Set(files)], queued = new Set(queue);
+    for (let i = 0; i < queue.length; i++) {
+      const source = queue[i]!;
+      if (!this.dependencyEdges.has(source)) this.readEdges(source);
+      for (const target of this.dependencyEdges.get(source) ?? []) if (!queued.has(target) && queue.length < 20_000) { queued.add(target); queue.push(target); }
+    }
+  }
+  /** One file's import edges, recorded with its consumers; false when it cannot be read. */
+  private readEdges(source: string): boolean {
+    let text = this.collection.programs.get(source)?.text; if (text === undefined) try { text = readFileSync(source, 'utf8'); } catch { return false; }
+    const edges = (this.collection.specifiers.get(source) ?? dependencySpecifiers(source, text)).flatMap(id => {
+      const target = this.componentResolver.resolveFileSync(source, id).path;
+      return target && /\.[cm]?[jt]sx?$/.test(target) ? [target] : [];
+    });
+    this.dependencyEdges.set(source, edges);
+    for (const path of this.componentDependencies.get(source) ?? []) this.componentConsumers.get(path)?.delete(source);
+    this.componentDependencies.set(source, new Set(edges));
+    for (const target of edges) {
+      this.dependencies.add(target);
+      let users = this.componentConsumers.get(target);
+      if (!users) this.componentConsumers.set(target, users = new Set());
+      users.add(source);
+    }
+    return true;
+  }
+  private buildShard(file: string, config: PlumbConfig, deep = true): void {
     // the text collection just parsed, when it is still held; otherwise the file
     let text = this.collection.programs.get(file)?.text ?? ''; if (!this.collection.programs.has(file)) try { text = readFileSync(file, 'utf8'); } catch { /* Component discovery reports this file. */ }
     const hash = sourceHash(text);
     const dependencies = new Set<string>();
-    const queue = [file], visited = new Set<string>();
-    for (let i = 0; i < queue.length; i++) {
-      const source = queue[i]!;
-      if (visited.has(source)) continue;
-      visited.add(source);
-      if (this.dependencyEdges.has(source)) continue;
-      let text = this.collection.programs.get(source)?.text; if (text === undefined) try { text = readFileSync(source, 'utf8'); } catch { continue; }
-      const edges = (this.collection.specifiers.get(source) ?? dependencySpecifiers(source, text)).flatMap(id => {
-        const target = this.componentResolver.resolveFileSync(source, id).path;
-        return target && /\.[cm]?[jt]sx?$/.test(target) ? [target] : [];
-      });
-      this.dependencyEdges.set(source, edges);
-      for (const path of this.componentDependencies.get(source) ?? []) this.componentConsumers.get(path)?.delete(source);
-      this.componentDependencies.set(source, new Set(edges));
-      for (const target of edges) {
-        this.dependencies.add(target);
-        let users = this.componentConsumers.get(target);
-        if (!users) this.componentConsumers.set(target, users = new Set());
-        users.add(source);
-        if (!this.dependencyEdges.has(target) && queue.length < 20_000) queue.push(target);
-      }
-    }
+    // a whole-app collection reads only this file's edges here; the walk across the graph is reachEdges, afterwards
+    if (deep) this.reachEdges([file]); else if (!this.dependencyEdges.has(file)) this.readEdges(file);
     for (const target of this.componentDependencies.get(file) ?? []) dependencies.add(target);
     const shard = discoverComponents(this.root, [file], config, undefined, false, this.collection.programs, true, this.componentMemory);
     for (const identity of shard.components) { dependencies.add(identity.source.file); this.dependencies.add(identity.source.file); }

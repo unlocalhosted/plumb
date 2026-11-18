@@ -163,8 +163,16 @@ export class JudgementState {
     }
     this.judgedFiles = [...new Set(this.provenanceCache.changed.flatMap(key => JSON.parse(key.slice(key.indexOf(':') + 1)) as string[]))];
     this.provenanceCache.keep(keys);
+    // The site order ranks a definition by the first place that uses it, and a derived declaration by its own place:
+    // only those files' declarations need a key, not all of them (one JSON key each was 300,000 on a large app).
+    const wanted = new Set<string>();
+    for (const entries of parts.values()) for (const entry of entries) {
+      if (entry.definition) for (const site of entry.uses) wanted.add((JSON.parse(site) as [string])[0]);
+      else if (!positions.has(entry.declaration)) wanted.add(entry.declaration.site.file);
+    }
     const siteOrder = new Map<string, number>();
     declarations.forEach((d, i) => {
+      if (!wanted.has(d.site.file)) return;
       const site = JSON.stringify([d.site.file, d.site.line, d.site.column]);
       if (!siteOrder.has(site)) siteOrder.set(site, i);
     });

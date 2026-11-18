@@ -8,6 +8,8 @@
  * 100,000 on algorecall); a name that disappears from the code stays in it.
  */
 const table = new Map<string, string>();
+// Objects already put through the table: shared ones (a component identity in thousands of file graphs) are walked once.
+const done = new WeakSet<object>();
 
 export function intern(text: string): string {
   let kept = table.get(text);
@@ -19,7 +21,7 @@ export function intern(text: string): string {
 export function internAll(value: unknown): void {
   const seen = new Set<object>();
   const visit = (item: unknown): void => {
-    if (!item || typeof item !== 'object' || seen.has(item)) return;
+    if (!item || typeof item !== 'object' || seen.has(item) || done.has(item)) return;
     seen.add(item);
     if (Array.isArray(item)) { for (let i = 0; i < item.length; i++) { const v: unknown = item[i]; if (typeof v === 'string') item[i] = intern(v); else visit(v); } return; }
     if (item instanceof Map) { for (const [k, v] of item) { if (typeof v === 'string') item.set(k, intern(v)); else visit(v); } return; }
@@ -28,4 +30,5 @@ export function internAll(value: unknown): void {
     for (const key of Object.keys(record)) { const v = record[key]; if (typeof v === 'string') record[key] = intern(v); else visit(v); }
   };
   visit(value);
+  for (const item of seen) done.add(item);
 }
