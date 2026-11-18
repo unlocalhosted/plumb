@@ -27,7 +27,7 @@ const W = 1080, H = 1350;
  *   14.9s   camera out; back to "At once", the first frame again
  * owner, 2026-11-18: the toolbar sweep read as intentional; selecting is where an eager card gets in the way
  * ───────────────────────────────────────────────────────── */
-const REST = 1.25;           // the editor's scale at rest (600 × 682 → 750 × 853)
+const REST = 1.08;           // the editor's scale at rest (600 × 682 → 648 × 737): whole, inside the room's unfaded middle
 const TOP = 300, ROOM = 810; // the camera's room, between the caption and the switch; the editor fades at its edges
 const EASE = 'cubic-bezier(.65, 0, .35, 1)';
 const CAM_MS = 900;
@@ -233,7 +233,7 @@ export function ClipPage({ id }) {
             {scene(side)?.why ? <span style={{ display: 'block', margin: '18px auto 0', maxWidth: 760, font: '500 28px/1.3 var(--pl-round, system-ui)', letterSpacing: '-0.005em', color: 'rgb(28 27 25 / .62)' }}>{scene(side).why}</span> : null}
           </span>
         </p>
-        <div style={{ position: 'absolute', left: 0, top: TOP, right: 0, height: ROOM, overflow: 'hidden', maskImage: 'linear-gradient(transparent, #000 5%, #000 93%, transparent)' }}>
+        <div style={{ position: 'absolute', left: 0, top: TOP, right: 0, height: ROOM, overflow: 'hidden', maskImage: 'linear-gradient(transparent, #000 3%, #000 95%, transparent)' }}>
         <div ref={card} data-example style={{ position: 'absolute', left: 0, top: 0, width: 600, transformOrigin: '0 0', transform: tf, transition: `transform ${CAM_MS}ms ${EASE}`, visibility: rest ? 'visible' : 'hidden' }}>
           <Example key={side + round} side={words?.side ?? side} timing={words?.timing} clip />
         </div>
