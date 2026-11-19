@@ -42,6 +42,7 @@ import { groupsOf, isNote, placeKey } from './blueprint-panel.js';
 import { glide } from './inplace.js'; // the text styles the code is reaching for
 import { stampOf, parseStamp, sameStamp, stampNames } from './stamp.js';
 import { Scope } from './scope.js';
+import { CONCERNS, concernOf } from './concerns.js'; // what each note is about: Blueprint opens on them
 import { Claims, LEVEL } from './claims.js';
 import { BUTTON_CSS, button } from './kit.js'; // the soft button (design site: Buttons)
 import { soften } from './soft.js'; // its press
@@ -130,6 +131,16 @@ const FIX_CSS_BASE = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   .fx button:not(.pl-act):not(.tb) { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
   .fx :not(.pl-act):not(.tb) > kbd { font: 500 10.5px/1 ui-monospace, monospace; color: var(--pl-text-secondary); margin-left: 2px; }
   .fx .line { display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 7px 0 16px; }
+  /* (scoped under .concerns: .fx button:not(.pl-act):not(.tb) blanks every button's background and outranks .fx .cn) */
+  /* the concerns: quiet words with their counts above the line; the one picked is the current thing (pink's soft) */
+  .fx .concerns { display: flex; flex-wrap: wrap; gap: 2px; padding: 8px 8px 0 9px; }
+  .fx .cn { all: unset; display: inline-flex; align-items: baseline; gap: 5px; padding: 4px 9px; border-radius: 999px; cursor: pointer;
+    font: 500 12px/16px var(--pl-sans, system-ui), sans-serif; color: var(--pl-text-secondary); transition: background-color 120ms var(--pl-ease-out, ease-out), color 120ms; }
+  .fx .cn b { font-weight: 600; color: var(--pl-text-primary); font-variant-numeric: tabular-nums; }
+  @media (hover: hover) and (pointer: fine) { .fx .concerns .cn:hover { background: var(--pl-bg-surface-hover); } }
+  .fx .concerns .cn:focus-visible { box-shadow: 0 0 0 2px var(--pl-border-focus); }
+  .fx .concerns .cn:active { background: var(--pl-bg-inset); }
+  .fx .concerns .cn[aria-pressed="true"] { background: var(--pl-pink-soft); color: var(--pl-pink-ink); } .fx .concerns .cn[aria-pressed="true"] b { color: inherit; }
   .fx .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--pl-heat); box-shadow: 0 0 0 3px color-mix(in oklab, var(--pl-heat) 14%, transparent); flex: none; }
   .fx .count { font-weight: 550; } .fx .count span { color: var(--pl-text-secondary); font-weight: 450; }
   .fx .count .err { color: var(--pl-text-hard-coded); font-weight: 550; }
@@ -513,6 +524,7 @@ export class FixPanel {
       if (!b) return;
       if (b.classList.contains('start')) this.hold(0);
       else if (b.classList.contains('cleanup')) this.#cleanup.start();
+      else if (b.classList.contains('cn')) { this.#concern = b.dataset.c || null; this.#html = ''; this.render(); }
       else if (b.classList.contains('more')) { this.#tools = !this.#tools; this.#html = ''; this.render(); }
       else if (b.classList.contains('tool')) this.#host.tool?.(b.dataset.tool);
       else if (b.classList.contains('bar-close')) this.#host.tool?.('bp-toggle');
@@ -546,7 +558,8 @@ export class FixPanel {
     this.#choice.addEventListener('keydown', onKey);
   }
   get rect() { return this.#el.hidden ? null : this.#el.getBoundingClientRect(); }
-  #editor; #card; #cleanup; #quiet = false; #tools = false; // #tools: the bar's ··· is open (its tools shown inline)
+  #editor; #card; #cleanup; #quiet = false; #tools = false; #concern = null; // #concern: the concern picked in the bar's top row (null: all)
+  // #tools: the bar's ··· is open (its tools shown inline)
   // Alt+click on words opens their editor; a cause in hand is put down first
   edit(el) { if (this.#holding) this.release(); this.#card.close(); this.#editor.edit(el); this.#html = ''; this.render(); }
   // Alt+click on anything else opens its card beside it. One owner of the screen: a cause in hand is put down first, and the panel is its one line while the card is open
@@ -599,7 +612,19 @@ export class FixPanel {
     for (const g of this.#live()) if (!noteOf(g)) n += new Set(g.members.filter((m) => m.el && el.contains(m.el)).map(placeOfMember).filter(Boolean)).size;
     return n;
   }
-  #live() { const open = this.#groups.filter((g) => !this.#taken.has(g.key)); return [...open.filter((g) => !noteOf(g)), ...open.filter(noteOf)]; }
+  #open() { return this.#groups.filter((g) => !this.#taken.has(g.key)); }
+  // the causes to step through: the picked concern's only, problems before notes
+  #live() { const open = this.#open().filter((g) => !this.#concern || concernOf(g.members[0].mark) === this.#concern); return [...open.filter((g) => !noteOf(g)), ...open.filter(noteOf)]; }
+  // the bar's top row: every concern with something to say, with how many (a problem counts its places, a note its elements)
+  #concerns() {
+    const n = new Map();
+    for (const g of this.#open()) { const c = concernOf(g.members[0].mark); n.set(c, (n.get(c) ?? 0) + (noteOf(g) ? g.members.length : placesOf(g))); }
+    const shown = CONCERNS.filter((c) => n.get(c.id));
+    if (shown.length < 2 && !this.#concern) return '';
+    const all = [...n.values()].reduce((a, b) => a + b, 0);
+    const chip = (id, name, count) => `<button class="cn" data-c="${id ?? ''}" aria-pressed="${(this.#concern ?? null) === id}">${esc(name)} <b>${count}</b></button>`;
+    return `<div class="concerns" role="group" aria-label="Show notes about">${chip(null, 'All', all)}${shown.map((c) => chip(c.id, c.short, n.get(c.id))).join('')}</div>`;
+  }
   // the cause in hand, by its key: the list shrinks while its own fix is tried (its finding is gone from the page as
   // previewed), so the cause is kept as it was read; its place in the list follows it
   #cause() {
@@ -1032,9 +1057,11 @@ export class FixPanel {
       const rest = [places && causes ? FIX.fixes(causes) : null, notes && places ? FIX.notes(notes) : null, this.#progress?.notChecked ? FIX.unchecked(this.#progress.notChecked) : null, settled ? null : FIX.stillChecking].filter(Boolean).join(' · ');
       const status = `<span class="status" tabindex="0"${rest ? ` aria-description="${esc(rest)}"` : ''}><i class="dot"></i><span class="count">${places ? FIX.problems(places) : FIX.notes(notes)}</span>${rest ? `<span class="readout" aria-hidden="true">${esc(rest)}</span>` : ''}</span>`;
       void unchecked;
-      html = places || notes
-        ? `<div class="line bar${notice ? ' has-notice' : ''}">${this.#error ? `<span class="quiet-line err">${esc(this.#error)}</span>` : status}${notice}<span class="grow"></span>${tidy}${button(esc(FIX.start), { cls: 'sm start', key: '↵', attrs: 'aria-keyshortcuts="Enter"' })}${end}</div>`
-        : `<div class="line bar${notice ? ' has-notice' : ''}"><span class="quiet-line">${esc(this.#error ?? (!settled ? (this.#host.scope?.() ? FIX.checkingElement : FIX.checking) : this.#progress?.notChecked ? FIX.clearChecked(this.#progress.notChecked) : FIX.clear))}</span>${notice}${settled ? tidy : ''}${end}</div>`;
+      // with the concerns above it, they are the count: the line says nothing they already say (each fact once)
+      const row = this.#concerns();
+      html = row + (places || notes
+        ? `<div class="line bar${notice ? ' has-notice' : ''}">${this.#error ? `<span class="quiet-line err">${esc(this.#error)}</span>` : row ? '' : status}${notice}<span class="grow"></span>${tidy}${button(esc(FIX.start), { cls: 'sm start', key: '↵', attrs: 'aria-keyshortcuts="Enter"' })}${end}</div>`
+        : `<div class="line bar${notice ? ' has-notice' : ''}"><span class="quiet-line">${esc(this.#error ?? (!settled ? (this.#host.scope?.() ? FIX.checkingElement : FIX.checking) : this.#progress?.notChecked ? FIX.clearChecked(this.#progress.notChecked) : FIX.clear))}</span>${notice}${settled ? tidy : ''}${end}</div>`);
     } else {
       const mark = g.members[0].mark, kind = kindOf(mark);
       // a craft finding's name carries an "i": its rule's page, where the why is told in full

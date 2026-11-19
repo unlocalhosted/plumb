@@ -2598,6 +2598,22 @@ field is empty). The table of five writes, before and after. The Next table: eig
   and polish, Accessible and correct, Anti-slop check, Words and clarity, States and behaviour), and three kinds of
   judge shown as a mark (rule, quick read ✦, review ✦✦). The owner's idea of a component shown in every state
   (empty, loading, error) sits under States and behaviour.
+
+### Concerns in Blueprint: the bar's first row
+
+- **What changed:** Blueprint's bar opens on a row of concerns with their counts (on the tells test screens: All 207,
+  Design system 125, Craft 21, Accessible 12, Anti-slop 49). Picking one makes Fix step through only its notes; the
+  picked one is pink's soft, the colour for "current". A concern with nothing to say isn't shown. The line under the
+  row no longer says "134 problems": that count left out notes (advice with no exact edit, which is all of
+  anti-slop), so the row and the line gave two totals for one page.
+- **How each check is placed:** `overlay/src/concerns.js`. Drift is the design system check; a pack names its
+  concern (tells is anti-slop; accessibility, HTML, forms and security are accessible and correct; experience and
+  components are states and behaviour); craft rules are craft and polish, except contrast, hit targets and the like
+  (accessible) and presses, menus and timing (states).
+- **A bug on the way:** the bar's old rule that blanks every button's background outranked the chip's pink, so the
+  picked chip looked unpicked. The chip's rules are now scoped under the row.
+- **Not yet:** the page doesn't dim what is outside the picked concern; Words and clarity has no checks yet.
+- **Media hooks:** `bench/tells/shots/5-concerns-bar.jpg`.
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
 - Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".
