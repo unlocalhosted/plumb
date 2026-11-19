@@ -4344,7 +4344,11 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   rows: Bencho holds everything; Linear lines up but its Business plan carries two buttons at their own width;
   Supabase's taller chosen plan pushes its button, price and list 20 to 64px off its neighbours'. One misread is left:
   Arc's animated price digits make its prices read 14px apart when they are about 4px by eye. The sheet is kept
-  locally (`generator/shots/layer1b-read.png`). The rules haven't been run against plumber's noise test yet.
+  locally (`generator/shots/layer1b-read.png`). Plumber's noise test then ran with them: the well-built page and the
+  demo raise exactly the rules they should (`node --test --test-name-pattern=Noise e2e/craft.test.mjs`, the marks
+  assertion passed for both pages), so the three checks add no noise there. The test still ends red at its next
+  step, which reads the fix bar's summary line; the bar was redesigned in another session ("All concerns 62 Fix")
+  and the pattern no longer matches. That failure is the test's, not these rules'.
 
 ## Open gaps
 - **The mark was never tried among real neighbours** (a row of browser tabs, an npm page, a README header), only on empty tiles. Nobody outside has been asked whether the round leg reads as an R or leans towards a B.
