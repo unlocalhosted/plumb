@@ -151,6 +151,14 @@ function sizeModel(data, family) {
   return { family, spec, kind, lanes, values, twice, byHand, tidy, one, needed: !!one };
 }
 
+// how a colour was written, unless it is code: `color: ink` names a variable, so the colour it comes to is shown with
+// the name beside it (docs/qa/onboarding-2026-11-19.md, gap 5); CSS words (red, currentColor) are values
+function asWritten(text, css) {
+  const m = /^([\w-]+):\s*(.+)$/.exec(text ?? '');
+  const code = m && !/^var\(/.test(m[2]) && /^[A-Za-z_$][\w$]*(?:\.[\w$]+|\(.*\))*$/.test(m[2]) && (/[A-Z$.(_]/.test(m[2]) || !CSS.supports('color', m[2]));
+  // every row here is a colour: the name and the colour it comes to, short enough for the row
+  return code ? `${m[2]} · ${css}` : text ?? css;
+}
 /** The colour screen's model: the palette by hue, and the colours your code types by hand, nearest palette colour first. */
 function colourScreenModel(data) {
   const kind = (data.reading ?? []).find((k) => k.family === 'color');
@@ -260,7 +268,7 @@ export function mountLesson(host, data, { post } = {}) {
     return `<section class="screen">${face(s, 'Colours: a small palette, and a name for each job.', 'Your palette is the colours themselves. Each job (text, a background, a border, a button) gets a name that points at one of them.')}
       <div class="body">
         <div class="part"><h3>Yours, drawn</h3><div class="palette">${col.hues.slice(0, 12).map((h) => `<div class="hue">${h.map((p) => chip(p.value, `${p.name}: ${p.value}`)).join('')}</div>`).join('')}${col.hues.length > 12 ? `<span class="later">and ${col.hues.length - 12} more</span>` : ''}</div>
-          ${col.typed.length ? `<div class="typed">${col.typed.slice(0, 6).map((t) => { const near = col.palette.find((p) => p.name.slice(2) === t.near) ?? col.roles.find((p) => p.name.slice(2) === t.near); return `<div class="t">${chip(t.css, t.css)}<code>${esc(t.written[0]?.text ?? t.css)}</code><span>→</span>${near ? chip(near.value, near.name) : '<i></i>'}<span>${nf.format(t.places)} ${t.places === 1 ? 'place' : 'places'}${near ? `; your ${esc(near.name)}${t.distance === 0 ? ' exactly' : ' is close'}` : ''}</span></div>`; }).join('')}</div>` : ''}
+          ${col.typed.length ? `<div class="typed">${col.typed.slice(0, 6).map((t) => { const near = col.palette.find((p) => p.name.slice(2) === t.near) ?? col.roles.find((p) => p.name.slice(2) === t.near); return `<div class="t">${chip(t.css, t.css)}<code>${esc(asWritten(t.written[0]?.text, t.css))}</code><span>→</span>${near ? chip(near.value, near.name) : '<i></i>'}<span>${nf.format(t.places)} ${t.places === 1 ? 'place' : 'places'}${near ? `; your ${esc(near.name)}${t.distance === 0 ? ' exactly' : ' is close'}` : ''}</span></div>`; }).join('')}</div>` : ''}
           <div class="notice"><span><b>${col.palette.length} ${col.palette.length === 1 ? 'colour' : 'colours'} in your palette, ${col.roles.length} named ${col.roles.length === 1 ? 'use' : 'uses'} built on ${col.palette.length === 1 ? 'it' : 'them'}.</b>${col.byHand ? ` ${nf.format(col.byHand)} ${col.byHand === 1 ? 'place types' : 'places type'} a colour by hand instead; the most common are above, each beside the palette colour it's closest to.` : ''}</span>${col.fixable.length ? `<span><b>${col.fixable.length} named ${col.fixable.length === 1 ? 'use copies' : 'uses copy'} a palette colour</b> instead of pointing at it, so ${col.fixable.length === 1 ? 'it won’t follow' : 'they won’t follow'} if the palette changes.</span>` : ''}</div></div>
         <div class="part"><h3>Why it matters</h3><p>Ten slightly different greys make an app look tired, and changing your brand colour means finding every copy. Named uses that point at one palette change everywhere at once, and let dark mode swap the palette underneath.</p></div>
         <div class="part"><h3>Your choice</h3><div class="choices" role="radiogroup" aria-label="Colours">
