@@ -131,16 +131,31 @@ const FIX_CSS_BASE = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   .fx button:not(.pl-act):not(.tb) { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
   .fx :not(.pl-act):not(.tb) > kbd { font: 500 10.5px/1 ui-monospace, monospace; color: var(--pl-text-secondary); margin-left: 2px; }
   .fx .line { display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 7px 0 16px; }
-  /* (scoped under .concerns: .fx button:not(.pl-act):not(.tb) blanks every button's background and outranks .fx .cn) */
-  /* the concerns: quiet words with their counts above the line; the one picked is the current thing (pink's soft) */
-  .fx .concerns { display: flex; flex-wrap: wrap; gap: 2px; padding: 8px 8px 0 9px; }
-  .fx .cn { all: unset; display: inline-flex; align-items: baseline; gap: 5px; padding: 4px 9px; border-radius: 999px; cursor: pointer;
-    font: 500 12px/16px var(--pl-sans, system-ui), sans-serif; color: var(--pl-text-secondary); transition: background-color 120ms var(--pl-ease-out, ease-out), color 120ms; }
-  .fx .cn b { font-weight: 600; color: var(--pl-text-primary); font-variant-numeric: tabular-nums; }
-  @media (hover: hover) and (pointer: fine) { .fx .concerns .cn:hover { background: var(--pl-bg-surface-hover); } }
-  .fx .concerns .cn:focus-visible { box-shadow: 0 0 0 2px var(--pl-border-focus); }
-  .fx .concerns .cn:active { background: var(--pl-bg-inset); }
-  .fx .concerns .cn[aria-pressed="true"] { background: var(--pl-pink-soft); color: var(--pl-pink-ink); } .fx .concerns .cn[aria-pressed="true"] b { color: inherit; }
+  /* the concern picker: the line's count, a quiet button that opens the list of concerns (rules scoped under .bar:
+     .fx button:not(.pl-act):not(.tb) blanks every button's background and outranks a plain .fx .cpick) */
+  .fx .bar .cpick { all: unset; display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 8px 0 10px; margin-left: -9px; border-radius: 9px; cursor: pointer; white-space: nowrap;
+    font: 500 13px/1 var(--pl-sans, system-ui), sans-serif; color: var(--pl-text-primary); }
+  .fx .bar .cpick b { font-weight: 600; font-variant-numeric: tabular-nums; color: var(--pl-text-secondary); }
+  .fx .bar .cpick .chev { width: 10px; height: 10px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; color: var(--pl-icon-secondary, currentColor); transition: rotate 160ms var(--pl-ease-out, ease-out); }
+  .fx .bar .cpick[aria-expanded="true"] .chev { rotate: 180deg; }
+  @media (hover: hover) and (pointer: fine) { .fx .bar .cpick:hover { background: var(--pl-bg-surface-hover); } }
+  .fx .bar .cpick:focus-visible { box-shadow: 0 0 0 2px var(--pl-border-focus); }
+  .fx .bar .cpick:active { background: var(--pl-bg-inset); }
+  /* ···: a dot while setup steps are left (they are optional, so they never take a place in the line) */
+  .fx .bar .more { position: relative; }
+  .fx .bar .more.has-dot::after { content: ''; position: absolute; top: 6px; right: 6px; width: 6px; height: 6px; border-radius: 50%; background: var(--pl-butter); box-shadow: 0 0 0 1.5px var(--pl-bg-surface); }
+  /* the list that opens above the line, inside the bar: the bar grows upward as one body */
+  .fx .menu { display: flex; flex-direction: column; padding: 6px 6px 2px; border-bottom: 1px solid var(--pl-border-default); animation: pl-menu-in 160ms var(--pl-ease-out, ease-out) both; }
+  @keyframes pl-menu-in { from { opacity: 0; translate: 0 4px; } }
+  @media (prefers-reduced-motion: reduce) { .fx .menu { animation: none; } }
+  .fx .menu .mrow { all: unset; display: flex; align-items: center; gap: 10px; height: 32px; padding: 0 10px; border-radius: 8px; cursor: pointer;
+    font: 500 13px/1 var(--pl-sans, system-ui), sans-serif; color: var(--pl-text-primary); }
+  .fx .menu .mrow span { flex: 1; } .fx .menu .mrow b { font-weight: 600; font-variant-numeric: tabular-nums; color: var(--pl-text-secondary); }
+  .fx .menu .mrow kbd { font: 500 10px/13px var(--pl-mono, monospace); color: var(--pl-text-secondary); }
+  @media (hover: hover) and (pointer: fine) { .fx .menu .mrow:hover { background: var(--pl-bg-surface-hover); } }
+  .fx .menu .mrow:focus-visible { box-shadow: 0 0 0 2px var(--pl-border-focus); }
+  .fx .menu .mrow:active { background: var(--pl-bg-inset); }
+  .fx .menu .mrow[aria-pressed="true"] { background: var(--pl-pink-soft); color: var(--pl-pink-ink); } .fx .menu .mrow[aria-pressed="true"] b { color: inherit; }
   .fx .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--pl-heat); box-shadow: 0 0 0 3px color-mix(in oklab, var(--pl-heat) 14%, transparent); flex: none; }
   .fx .count { font-weight: 550; } .fx .count span { color: var(--pl-text-secondary); font-weight: 450; }
   .fx .count .err { color: var(--pl-text-hard-coded); font-weight: 550; }
@@ -523,12 +538,13 @@ export class FixPanel {
       const b = e.target.closest('button');
       if (!b) return;
       if (b.classList.contains('start')) this.hold(0);
-      else if (b.classList.contains('cleanup')) this.#cleanup.start();
-      else if (b.classList.contains('cn')) { this.#concern = b.dataset.c || null; this.#host.spotlight(this.#concernLit()); this.#html = ''; this.render(); }
-      else if (b.classList.contains('more')) { this.#tools = !this.#tools; this.#html = ''; this.render(); }
-      else if (b.classList.contains('tool')) this.#host.tool?.(b.dataset.tool);
+      else if (b.classList.contains('cleanup')) { this.#menu = null; this.#cleanup.start(); }
+      else if (b.classList.contains('cpick')) { this.#menu = this.#menu === 'concern' ? null : 'concern'; this.#html = ''; this.render(); }
+      else if (b.classList.contains('mrow') && 'c' in b.dataset) { this.#concern = b.dataset.c || null; this.#menu = null; this.#host.spotlight(this.#concernLit()); this.#html = ''; this.render(); }
+      else if (b.classList.contains('more')) { this.#menu = this.#menu === 'more' ? null : 'more'; this.#html = ''; this.render(); }
+      else if (b.classList.contains('tool')) { this.#menu = null; this.#html = ''; this.render(); this.#host.tool?.(b.dataset.tool); }
       else if (b.classList.contains('bar-close')) this.#host.tool?.('bp-toggle');
-      else if (b.classList.contains('setup')) this.#host.openSetup?.();
+      else if (b.classList.contains('setup')) { this.#menu = null; this.#html = ''; this.render(); this.#host.openSetup?.(); }
       else if (b.classList.contains('opt') || b.classList.contains('page')) return; // the control's own (bindControl)
       else if (b.classList.contains('sp')) this.#pick(+b.dataset.i);
       else if (b.classList.contains('take')) this.take();
@@ -558,7 +574,7 @@ export class FixPanel {
     this.#choice.addEventListener('keydown', onKey);
   }
   get rect() { return this.#el.hidden ? null : this.#el.getBoundingClientRect(); }
-  #editor; #card; #cleanup; #quiet = false; #tools = false; #concern = null; // #concern: the concern picked in the bar's top row (null: all)
+  #editor; #card; #cleanup; #quiet = false; #tools = false; #concern = null; #menu = null; // #concern: the concern picked (null: all); #menu: the bar's list open above its line ('concern' | 'more' | null)
   // #tools: the bar's ··· is open (its tools shown inline)
   // Alt+click on words opens their editor; a cause in hand is put down first
   edit(el) { if (this.#holding) this.release(); this.#card.close(); this.#editor.edit(el); this.#html = ''; this.render(); }
@@ -617,15 +633,33 @@ export class FixPanel {
   #live() { const open = this.#open().filter((g) => !this.#concern || concernOf(g.members[0].mark) === this.#concern); return [...open.filter((g) => !noteOf(g)), ...open.filter(noteOf)]; }
   // what the page lights at rest: the picked concern's marks, the rest quiet; nothing picked, nothing singled out
   #concernLit() { return this.#concern ? this.#live().flatMap((g) => g.members.map((m) => m.id)) : []; }
-  // the bar's top row: every concern with something to say, with how many (a problem counts its places, a note its elements)
-  #concerns() {
+  // how much each concern holds now (a problem counts its places, a note its elements), in CONCERNS' order
+  #concernCounts() {
     const n = new Map();
     for (const g of this.#open()) { const c = concernOf(g.members[0].mark); n.set(c, (n.get(c) ?? 0) + (noteOf(g) ? g.members.length : placesOf(g))); }
-    const shown = CONCERNS.filter((c) => n.get(c.id));
-    if (shown.length < 2 && !this.#concern) return '';
-    const all = [...n.values()].reduce((a, b) => a + b, 0);
-    const chip = (id, name, count) => `<button class="cn" data-c="${id ?? ''}" aria-pressed="${(this.#concern ?? null) === id}">${esc(name)} <b>${count}</b></button>`;
-    return `<div class="concerns" role="group" aria-label="Show notes about">${chip(null, 'All', all)}${shown.map((c) => chip(c.id, c.short, n.get(c.id))).join('')}</div>`;
+    return n;
+  }
+  // the bar's one count, and what it shows: the picked concern and how many, opening the list of concerns
+  #concernPick() {
+    const n = this.#concernCounts(), all = [...n.values()].reduce((a, b) => a + b, 0), c = CONCERNS.find((x) => x.id === this.#concern);
+    return `<button class="cpick" aria-haspopup="true" aria-expanded="${this.#menu === 'concern'}"><span class="cname">${esc(c ? c.name : 'All concerns')}</span><b>${c ? n.get(c.id) ?? 0 : all}</b><svg class="chev" viewBox="0 0 10 10" aria-hidden="true"><path d="M2.5 6.2L5 3.8l2.5 2.4"/></svg></button>`;
+  }
+  // the list that opens above the line, inside the bar: the concerns, or the ··· list (setup, clean up, the dock's tools)
+  #menuHtml() {
+    if (this.#menu === 'concern') {
+      const n = this.#concernCounts(), all = [...n.values()].reduce((a, b) => a + b, 0);
+      const row = (id, name, count) => `<button class="mrow" data-c="${id ?? ''}" aria-pressed="${(this.#concern ?? null) === id}"><span>${esc(name)}</span><b>${count}</b></button>`;
+      return `<div class="menu" role="group" aria-label="Show notes about">${row(null, 'All concerns', all)}${CONCERNS.filter((c) => n.get(c.id)).map((c) => row(c.id, c.name, n.get(c.id))).join('')}</div>`;
+    }
+    if (this.#menu === 'more') {
+      const B = FIX.bar, left = this.#host.setupLeft?.() ?? 0;
+      return `<div class="menu" role="group" aria-label="${esc(B.more)}">`
+        + (left ? `<button class="mrow setup"><span>${esc(B.setupOptional)}</span><b>${left}</b></button>` : '')
+        + `<button class="mrow cleanup"><span>${esc(CLEANUP.bar)} ${esc(CLEANUP.barLong)}</span><kbd>C</kbd></button>`
+        + Object.entries(B.tools).map(([t, label]) => `<button class="mrow tool" data-tool="${t}"><span>${esc(label)}</span></button>`).join('')
+        + '</div>';
+    }
+    return '';
   }
   // the cause in hand, by its key: the list shrinks while its own fix is tried (its finding is gone from the page as
   // previewed), so the cause is kept as it was read; its place in the list follows it
@@ -948,6 +982,7 @@ export class FixPanel {
     // a write or an undo out: every key but Esc waits for it (Esc leaves; the flight lands safely without the panel)
     if (this.#writing || this.#undoing) return k !== 'Escape';
     if (this.#cleanup.running) return k === 'Escape' ? this.#cleanup.escape() : this.#cleanup.key(k);
+    if (this.#menu && k === 'Escape') { this.#menu = null; this.#html = ''; this.render(); return true; }
     // Enter on something with focus is that thing's: a button here is pressed (a specimen is already picked, so Enter
     // takes it, as anywhere); a glow on the page, with nothing in hand, holds its own cause (with a cause in hand, the
     // glow a click left focused is that cause's, and Enter takes it)
@@ -1038,10 +1073,10 @@ export class FixPanel {
     const tidy = button(`${esc(CLEANUP.bar)}<span class="long"> ${esc(CLEANUP.barLong)}</span>`, { cls: 'sm quiet cleanup', key: 'C', attrs: 'aria-keyshortcuts="c"', icon: toyOf('icon') });
     // the bar's end: ··· (its tools, only once asked for) and Close; and the setup steps left, said in the line
     const B = FIX.bar, left = this.#host.setupLeft?.() ?? 0;
-    const end = `<button class="more" aria-expanded="${this.#tools}" aria-label="${esc(this.#tools ? B.less : B.more)}" title="${esc(this.#tools ? B.less : B.more)}">${BAR_ICON.more}</button>`
-      + (this.#tools ? `<span class="tools">${Object.entries(B.tools).map(([n, label]) => `<button class="tool" data-tool="${n}" aria-label="${esc(label)}" title="${esc(label)}">${BAR_ICON[n]}</button>`).join('')}</span>` : '')
+    // ··· holds what is optional: the setup steps left (a dot says some are), clean up the whole page, the dock's tools
+    const end = `<button class="more${left ? ' has-dot' : ''}" aria-expanded="${this.#menu === 'more'}" aria-label="${esc(B.more)}" title="${esc(B.more)}">${BAR_ICON.more}</button>`
       + button(esc(B.close), { cls: 'sm quiet bar-close', key: 'Esc', attrs: `aria-keyshortcuts="Escape" aria-label="${esc(B.close)}"` });
-    const notice = left ? `<span class="notice"><b>${esc(B.setup(left))}</b><button class="setup">${esc(B.review)}</button></span>` : '';
+    const notice = ''; // the setup steps are optional: they sit in ··· (owner, 2026-11-19)
     if (this.#cleanup.running) html = this.#cleanup.bar() ?? this.#cleanup.html();
     else if (this.#writing || this.#undoing) html = `<div class="writing"><i></i>${esc(this.#undoing ? FIX.undoing : this.#writingText ?? FIX.writing)}</div>`;
     else if (this.#done) html = `<div class="line done"><svg class="check" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10.5l3.2 3.2L15 6.8"/></svg><span class="words">${esc(this.#doneText ?? FIX.applied(this.#fixedCount))}</span></div>`;
@@ -1059,11 +1094,11 @@ export class FixPanel {
       const rest = [places && causes ? FIX.fixes(causes) : null, notes && places ? FIX.notes(notes) : null, this.#progress?.notChecked ? FIX.unchecked(this.#progress.notChecked) : null, settled ? null : FIX.stillChecking].filter(Boolean).join(' · ');
       const status = `<span class="status" tabindex="0"${rest ? ` aria-description="${esc(rest)}"` : ''}><i class="dot"></i><span class="count">${places ? FIX.problems(places) : FIX.notes(notes)}</span>${rest ? `<span class="readout" aria-hidden="true">${esc(rest)}</span>` : ''}</span>`;
       void unchecked;
-      // with the concerns above it, they are the count: the line says nothing they already say (each fact once)
-      const row = this.#concerns();
-      html = row + (places || notes
-        ? `<div class="line bar${notice ? ' has-notice' : ''}">${this.#error ? `<span class="quiet-line err">${esc(this.#error)}</span>` : row ? '' : status}${notice}<span class="grow"></span>${tidy}${button(esc(FIX.start), { cls: 'sm start', key: '↵', attrs: 'aria-keyshortcuts="Enter"' })}${end}</div>`
-        : `<div class="line bar${notice ? ' has-notice' : ''}"><span class="quiet-line">${esc(this.#error ?? (!settled ? (this.#host.scope?.() ? FIX.checkingElement : FIX.checking) : this.#progress?.notChecked ? FIX.clearChecked(this.#progress.notChecked) : FIX.clear))}</span>${notice}${settled ? tidy : ''}${end}</div>`);
+      // the line's count is the concern picker: what it shows and how many (a problem's places and a note's elements)
+      void status; void tidy;
+      html = this.#menuHtml() + (places || notes
+        ? `<div class="line bar${notice ? ' has-notice' : ''}">${this.#error ? `<span class="quiet-line err">${esc(this.#error)}</span>` : this.#concernPick()}${notice}<span class="grow"></span>${button(esc(FIX.start), { cls: 'sm start', key: '↵', attrs: 'aria-keyshortcuts="Enter"' })}${end}</div>`
+        : `<div class="line bar${notice ? ' has-notice' : ''}"><span class="quiet-line">${esc(this.#error ?? (!settled ? (this.#host.scope?.() ? FIX.checkingElement : FIX.checking) : this.#progress?.notChecked ? FIX.clearChecked(this.#progress.notChecked) : FIX.clear))}</span>${notice}${end}</div>`);
     } else {
       const mark = g.members[0].mark, kind = kindOf(mark);
       // a craft finding's name carries an "i": its rule's page, where the why is told in full

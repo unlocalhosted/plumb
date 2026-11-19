@@ -478,7 +478,7 @@ export const FIX = {
   // rest
   problems: (n) => count(n, 'problem', 'problems'),
   // the Blueprint bar (docs/design/one-bar.md)
-  bar: { more: 'More tools', less: 'Fewer tools', close: 'Close', setup: (n) => count(n, 'setup step', 'setup steps'), review: 'Review',
+  bar: { more: 'More', less: 'Fewer tools', close: 'Close', setup: (n) => count(n, 'setup step', 'setup steps'), setupOptional: 'Setup steps (optional)', review: 'Review',
     tools: { history: 'History', help: 'Help', pick: 'Inspect an element' } },
   fixes: (n) => count(n, 'fix', 'fixes'),
   notes: (n) => count(n, 'note', 'notes'),

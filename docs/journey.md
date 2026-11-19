@@ -2626,6 +2626,20 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **Not yet:** pins still cover a heading's words in a crowded row (the AI receipts card); Words and clarity has no
   checks yet.
 - **Media hooks:** `bench/tells/shots/6-concern-pins.jpg`.
+
+### The bar, cut down
+
+- **The itch:** asked for an X-ray switch in the bar, then "the toolbar has gotten crowded again". The bar carried
+  the concern row, the setup steps and Review, Clean up, Fix, ··· (three more tools), and Close: eleven controls, two
+  of them (Fix and Clean up) both meaning "fix things".
+- **The system behind it:** every new feature got a control in the bar, and nothing ever left it.
+- **What we chose:** the owner: "clean and fix are kinda same, maybe for design system / craft and all add a drop
+  down to kind of select mode", and the setup steps "shoudn't be mandatory". The line is now the concern picker
+  ("All concerns 207 ▾"), Fix, ··· and Close. The picker opens the list of concerns above the line, inside the bar,
+  so the bar grows upward as one body. ··· opens the optional things the same way: the setup steps (a butter dot on
+  ··· while any are left), Clean up page, History, Help, Inspect an element. X-ray moves to Alt next, instead of
+  getting a switch.
+- **Media hooks:** `bench/tells/shots/7-bar-concern-menu.png`, `bench/tells/shots/8-bar-more-menu.png`.
 - **Media hooks:** `bench/tells/shots/5-concerns-bar.jpg`.
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
