@@ -14,6 +14,12 @@ wrong; major gaps cost them minutes or trust; minor ones are rough edges.
 
 ## Blockers
 
+Fixed the same day; tried again on the clean crafting-ui copy: the spacing step draws Tailwind's steps 8 to 64px with
+"1,491 places use your scale" and "258 places type a gap and padding by hand", its rule is
+`spacing: { from: ['css:src/index.css#--spacing'] }` ("each a multiple of 4px"), "Set it up" answers "Done. Your rules
+are in plumber.config, 10 tokens tidied, and 3,332 problems already in your code remembered", no `--text-0` was
+written, and `plumber check` then says "Nothing new since your baseline".
+
 1. **The spacing step doesn't see Tailwind's spacing steps.** crafting-ui sets `--spacing: 0.25rem`; the page said
    "No scale to draw yet", "0 places use your scale", "1,749 places type a gap and padding by hand". On algorecall
    the page said "56 places use your scale" and "37,401 places type a gap and padding by hand", while `plumber state`
@@ -59,6 +65,8 @@ wrong; major gaps cost them minutes or trust; minor ones are rough edges.
 16. Writing a token to 27 places took about 15 seconds, with "Writing it to your code…" and no count.
 17. A hover label read "backgroundColor: MAT": a variable's name where its colour should be.
 18. `plumber doctor` before the overlay is wired says "can't tell from vite.config.ts" instead of the step to take.
+20. The written `plumber.config.ts` opens with 39 comment lines naming every component found ("// Fig:
+    src/components/drawing.tsx:41"), before the rules a person chose.
 19. `install --overlay --write` wrote `"@unlocalhosted/react-plumber/vite";` with double quotes and a semicolon into a
     file that uses neither.
 

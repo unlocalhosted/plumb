@@ -27,9 +27,11 @@ export function familyFor(name: string): Family | undefined {
   if (/^--spacing-/.test(name)) return 'spacing';
   if (/^--color-/.test(name)) return 'color';
   if (/^--radius-/.test(name)) return 'radius';
+  // Tailwind's text shadows (`--text-shadow-2xs: 0px 1px 0px …`) are shadows, not text sizes: read as type, one became a
+  // text size token in the onboarding's merged list (`--text-0: 0px 1px 0px rgb(0 0 0 / 0.15)`)
+  if (/^--(?:shadow|inset-shadow|drop-shadow|text-shadow)-/.test(name)) return 'elevation';
   if (/^--(?:text|font|leading|tracking|default-(?:mono-)?font)-/.test(name)) return 'type';
   if (/^--(?:ease|animate|duration|default-transition)-/.test(name)) return 'motion';
-  if (/^--(?:shadow|inset-shadow|drop-shadow)-/.test(name)) return 'elevation';
   if (/^--z-/.test(name)) return 'z';
   if (/^--opacity-/.test(name)) return 'opacity';
   if (/^--(?:size|container|breakpoint|aspect|perspective|blur|max-width)-/.test(name)) return 'size';

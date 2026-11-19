@@ -17,7 +17,7 @@ export async function pageShell(root: string, token: string): Promise<string> {
     fetch('/__plumb/src/tokens.css').then(r => r.text())]);
   // the page may write too (the system you settle on it): the same token, sent as a header
   const post = (path, body) => fetch(path, { method: 'POST', headers: { 'x-plumb-token': ${JSON.stringify(token)}, 'content-type': 'application/json' }, body: JSON.stringify(body) })
-    .then(async (r) => { const answer = await r.json().catch(() => ({})); if (!r.ok) throw new Error(answer?.error?.message ?? answer?.message ?? ('The server said ' + r.status + '.')); return answer; });
+    .then(async (r) => { const answer = await r.json().catch(() => ({})); if (!r.ok) throw new Error(answer?.error?.message ?? (typeof answer?.error === 'string' ? answer.error : undefined) ?? answer?.message ?? ('The server said ' + r.status + '.')); return answer; });
   mountProjectPage(document.getElementById('page'), data, tokens, { post });
 </script></body></html>
 `;

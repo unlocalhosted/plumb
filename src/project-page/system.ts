@@ -28,8 +28,9 @@ export interface SystemData {
   files: number;
   size: { steps: Step[]; strays: Stray[] };
   radius: { steps: Step[]; strays: Stray[] };
-  /** the spacing steps and the gaps and paddings typed by hand, for the lesson's spacing screen */
-  spacing: { steps: Step[]; strays: Stray[] };
+  /** the spacing steps and the gaps and paddings typed by hand, for the lesson's spacing screen; `numeric`: the theme uses
+   * Tailwind's spacing steps (`p-4` is 4 × `--spacing`), with the base and the file that sets it */
+  spacing: { steps: Step[]; strays: Stray[]; numeric?: { px: number; file: string } };
   weight: { used: { weight: number; places: number; written: Written[] }[] };
   colour: { steps: ColourStep[]; strays: ColourStray[] };
   dead: { class: string; places: number; meant: string[] }[];
@@ -138,6 +139,11 @@ export function systemOf(report: Report): SystemData {
 
   // a scale is the tokens Plumber read as this family, whatever they are named: a length (`--radius-md: 12px`,
   // `--pl-space-4`), or, for text sizes, the size inside a whole text style (`--pl-page-title: 600 20px/28px …`)
+  // Tailwind's spacing steps: each `calc(var(--spacing) * N)` in use is a step of N × the base, named N, as Tailwind
+  // names it (`p-4`); the theme defines no list of its own (algorecall: 98% of spacing on them, drawn as by hand before)
+  const numeric = report.numericSpacing && !report.numericSpacing.replaced ? report.numericSpacing.unit : undefined;
+  const base = numeric ? px(String(numeric.resolved)) : null;
+  const multiple = (value: string): number | null => { const m = /^calc\(\s*var\(--spacing\)\s*\*\s*(-?\d*\.?\d+)\s*\)$/.exec(value.trim()); return m ? Number(m[1]) : null; };
   function scale(family: Report['decisions'][number]['family'], props: Set<string>, least = 0): { steps: Step[]; strays: Stray[] } {
     const steps = new Map<string, Step>();
     for (const d of decisions) {
@@ -152,6 +158,11 @@ export function systemOf(report: Report): SystemData {
       if (!props.has(d.prop)) continue;
       const ref = refs(d).find(r => steps.has(r));
       if (ref) { steps.get(ref)!.uses++; continue; }
+      const n = family === 'spacing' && base ? multiple(String(d.value ?? '')) : null;
+      if (n !== null && n > 0) {
+        const key = `--spacing*${n}`, step = steps.get(key) ?? { name: String(n), px: n * base!, uses: 0 };
+        step.uses++; steps.set(key, step); continue;
+      }
       const value = !scaled(d) ? px(d.resolved) : px(d.value);
       // below `least` is a unit artifact (a unitless or em value read as px), not a size anyone set
       if (value === null || value < Math.max(least, 0.01)) continue;
@@ -251,7 +262,8 @@ export function systemOf(report: Report): SystemData {
     files: typeof files === 'number' ? files : Object.values(files).reduce((sum, n) => sum + n, 0),
     size: scale('type', new Set(['font-size', 'font']), 6),
     radius: scale('radius', new Set(['border-radius'])),
-    spacing: scale('spacing', new Set(['padding', 'padding-top', 'padding-right', 'padding-bottom', 'padding-left', 'padding-inline', 'padding-block', 'margin', 'margin-top', 'margin-right', 'margin-bottom', 'margin-left', 'margin-inline', 'margin-block', 'gap', 'row-gap', 'column-gap']), 1),
+    spacing: { ...scale('spacing', new Set(['padding', 'padding-top', 'padding-right', 'padding-bottom', 'padding-left', 'padding-inline', 'padding-block', 'margin', 'margin-top', 'margin-right', 'margin-bottom', 'margin-left', 'margin-inline', 'margin-block', 'gap', 'row-gap', 'column-gap']), 1),
+      ...(numeric && base ? { numeric: { px: base, file: relative(report.root, numeric.source.file).replaceAll('\\', '/') } } : {}) },
     weight: weights(),
     colour: colours(),
     dead: dead(),

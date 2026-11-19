@@ -182,6 +182,10 @@ export function mountLesson(host, data, { post } = {}) {
   const sizeRule = (m) => {
     const key = m.family === 'type' ? 'type' : m.family;
     if (state.choice[m.family] === 'tidy' && m.one) { const from = [`css:${m.one.lane.file}#${m.one.stem}*`]; return { plain: `Every ${m.spec.noun} uses one of these ${m.one.steps.length}. Anything else, Plumber points out.`, key, from, code: `${key}: { from: ['${from[0]}'] }` }; }
+    // no list of its own, on Tailwind's spacing steps: the rule names the base, as plumber init does
+    const numeric = m.family === 'spacing' && !m.lanes.length ? data.spacing?.numeric : null;
+    if (numeric) { const from = [`css:${numeric.file}#--spacing`];
+      return { plain: `Gaps and paddings use Tailwind's spacing steps, each a multiple of ${nf.format(numeric.px)}px (p-1, p-2, p-4…). Anything else, Plumber points out.`, key, from, code: `${key}: { from: ['${from[0]}'] }` }; }
     const from = m.lanes.length ? m.lanes.map((l) => `css:${l.file}#${l.name}`) : [...new Set((m.kind?.groups ?? []).map((g) => `css:${g.file}`))];
     return { plain: `${m.spec.nouns[0].toUpperCase()}${m.spec.nouns.slice(1)} use the ones you already have. Anything else, Plumber points out.`, key, from, code: `${key}: { from: [${from.map((f) => `'${f}'`).join(', ')}] }` };
   };
@@ -286,15 +290,24 @@ export function mountLesson(host, data, { post } = {}) {
   const setUp = async (b) => {
     const said = root.querySelector('[data-said]');
     b.setAttribute('aria-busy', 'true');
+    let wrote = null;
     try {
-      const edits = editsOf(chosenSystems());
-      const wrote = edits.length ? await post('/__plumb/system-apply', { files: edits, label: 'Your system' }) : null;
+      // every rule names where its steps live before anything is written: an empty one checks nothing, and the config
+      // would be refused after the tokens were already tidied
       const decisions = Object.fromEntries(ORDER.filter((id) => !['welcome', 'rules'].includes(id) && state.decided.has(id)).map((id) => { const r = ruleOf(id); return [r.key, { from: r.from }]; }));
-      const set = await post('/__plumb/setup', { decisions });
+      const empty = Object.entries(decisions).filter(([, d]) => !d.from.length).map(([key]) => ({ spacing: 'spacing', color: 'colours', type: 'text', radius: 'corners' })[key] ?? key);
+      if (empty.length) throw new Error(`Your theme has no ${empty.join(' or ')} to keep yet, so that rule would check nothing. Go back to ${empty[0]} and pick another answer.`);
+      const edits = editsOf(chosenSystems());
+      wrote = edits.length ? await post('/__plumb/system-apply', { files: edits, label: 'Your system' }) : null;
+      const set = await post('/__plumb/setup', { decisions }).catch(async (err) => {
+        // the rules couldn't be saved: the tokens go back as they were, so the app is never half set up
+        if (wrote?.undo) { await post('/__plumb/undo', { id: wrote.undo.id }).catch(() => {}); wrote = null; }
+        throw err;
+      });
       said.innerHTML = `Done. Your rules are in plumber.config${wrote?.written?.length ? `, ${wrote.written.reduce((n, f) => n + f.set + f.added, 0)} tokens tidied` : ''}, and ${nf.format(set.recorded)} ${set.recorded === 1 ? 'problem' : 'problems'} already in your code remembered, so you'll only hear about new ones. `;
       if (wrote?.undo) { const undo = document.createElement('button'); undo.type = 'button'; undo.className = 'tb sm quiet'; undo.innerHTML = '<span class="top"><span class="lb">Undo the token changes</span></span>'; undo.onclick = async () => { try { await post('/__plumb/undo', { id: wrote.undo.id }); said.textContent = 'Token changes undone. Your rules stay in plumber.config.'; } catch (err) { said.textContent = `Couldn’t undo: ${err.message}`; } }; said.append(undo); }
       b.remove();
-    } catch (err) { said.textContent = `Nothing more was written. ${err.message}`; }
+    } catch (err) { said.textContent = `Nothing was changed in your files. ${err.message}`; }
     finally { b.removeAttribute('aria-busy'); }
   };
 
