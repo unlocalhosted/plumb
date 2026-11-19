@@ -37,7 +37,7 @@ written, and `plumber check` then says "Nothing new since your baseline".
 4. **Spacing with no scale offers one choice, "Keep what you have".** Its rule checks nothing. `plumber propose`
    already drafts a scale from the values in use; the page doesn't offer it. (Once gap 1 is fixed, crafting-ui has a
    scale; an app with none still meets this.)
-5. **The colour step's palette looks wrong.** *Palette fixed: colours kept outside the theme that named uses point at count (crafting-ui: 28, not 3). Left: chips group by name, so `--accent` and `--draw` sit one to a row; rows read "color: ink" where the code writes a variable named ink; `color: var(--fg)` still counts as typed by hand.* crafting-ui shows "3 colours in your palette" (white, near-black,
+5. **The colour step's palette looks wrong.** *Palette fixed: colours kept outside the theme that named uses point at count (crafting-ui: 28, not 3). Chips now group by the colour itself (greys, then each hue). Left: rows read "color: ink" where the code writes a variable named ink; `color: var(--fg)` still counts as typed by hand.* crafting-ui shows "3 colours in your palette" (white, near-black,
    black) though its theme has an accent, a drawing blue and status colours. Rows read "color: ink" three times with
    three different swatches. `color: var(--fg)` (23 places) is listed as typed by hand, though it is the token.
 6. **Every command reads the whole app again.** *Answered by the path: the README's quick start is now two commands (`plumber`, then `install --overlay --write`), with the others under "In the terminal instead"; once a config exists, `check` reuses the last result. The commands still don't share a read with each other.* algorecall, vm-agent: `plumber` 61s, `state` 41s, `propose` 64s,
@@ -59,16 +59,19 @@ written, and `plumber check` then says "Nothing new since your baseline".
 ## Minor
 
 12. `plumber --help` lists about 30 commands with no "start here". *Fixed: it opens with "New here? Run plumber in your app's folder, with nothing after it: it opens a page that sets you up."*
-13. At 1024 × 768 the Welcome screen's button sits at the bottom edge, mostly hidden.
-14. The rules summary shows the four rules twice, in the main panel and in the side panel.
+13. At 1024 × 768 the Welcome screen's button sits at the bottom edge, mostly hidden. *Fixed: it follows "What happens", before "Why" and "After".*
+14. The rules summary shows the four rules twice, in the main panel and in the side panel. *Fixed: the rules screen has no side panel.*
 15. The text step suggests "One list of 19" while saying "a few clear levels tell the reader what to read first".
-16. Writing a token to 27 places took about 15 seconds, with "Writing it to your code…" and no count.
-17. A hover label read "backgroundColor: MAT": a variable's name where its colour should be.
+16. Writing a token to 27 places took about 15 seconds, with "Writing it to your code…" and no count. *Fixed: "Writing it to 27 places in your code…".*
+17. A hover label read "backgroundColor: MAT": a variable's name where its colour should be. *Fixed: "backgroundColor: #fff (MAT)"; CSS words (red, auto) stay as written.*
 18. `plumber doctor` before the overlay is wired says "can't tell from vite.config.ts" instead of the step to take. *Fixed: "→ plumber install --overlay shows the line it needs".*
 20. The written `plumber.config.ts` opens with 39 comment lines naming every component found ("// Fig:
     src/components/drawing.tsx:41"), before the rules a person chose. *Fixed: one line, "// Components: 37 found."*
 19. `install --overlay --write` wrote `"@unlocalhosted/react-plumber/vite";` with double quotes and a semicolon into a
     file that uses neither. *Explained: it copies the file's last import, and algorecall's config mixes both styles; its last import has double quotes and a semicolon.*
+
+21. **Found while fixing 16:** a craft finding's card in the compact layout showed no words: its "i" icon had no size
+    there (the rules covered only the other layout) and grew to 273px, pushing the sentence out of the card. *Fixed.*
 
 ## What worked
 

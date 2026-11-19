@@ -680,6 +680,7 @@ export const FIX = {
   applied: (n) => `${count(n, 'change', 'changes')} applied`,
   // a fix writes the moment it is taken: while it is written, then what it changed and where, with Undo
   writing: 'Writing it to your code…',
+  writingPlaces: (n) => `Writing it to ${count(n, 'place', 'places')} in your code…`,
   added: (name, file) => `Added ${name} to ${String(file ?? '').split('/').pop()}`,
   addedUsed: (name, file, cls, n) => `Added ${name} to ${String(file ?? '').split('/').pop()} and used ${cls} at ${count(n, 'place', 'places')}`,
   changed: (from, to, n) => `Changed ${from} to ${to} at ${count(n, 'place', 'places')}`,

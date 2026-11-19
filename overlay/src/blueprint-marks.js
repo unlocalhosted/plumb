@@ -277,6 +277,13 @@ function cutTo(zone, v) {
 }
 const heatOf = (mark, zone) => (soft(mark) || mark.soft ? HEAT.min : zone.off === null ? 0.5 : Math.min(1, HEAT.min + zone.off * HEAT.gain));
 const causeOf = (mark) => `${mark.rule}|${mark.text ?? ''}`;
+// The value as written, unless it is code: `backgroundColor: MAT` names a constant, not a colour, so the colour it
+// comes to is shown with the name beside it (docs/qa/onboarding-2026-11-19.md, gap 17). CSS words (red, auto) are values.
+function writtenAs(mark) {
+  const m = /^([\w-]+):\s*(.+)$/.exec(mark.text ?? '');
+  const code = m && /^[A-Za-z_$][\w$]*(?:\.[\w$]+|\(.*\))*$/.test(m[2]) && /[A-Z$.(_]/.test(m[2]);
+  return code && mark.value && String(mark.value) !== m[2] ? `${m[1]}: ${String(mark.value).slice(0, 28)} (${m[2]})` : mark.text;
+}
 // What the pill says: the class and what it becomes (×n when the cause has more places), or the advice in words
 function pillOf(mark, n) {
   const s = mark.craft?.suggest;
@@ -284,7 +291,7 @@ function pillOf(mark, n) {
   if (s?.kind === 'class') return line(`<b class="from">${esc(s.from || mark.text || '')}</b> <span class="arr">→</span> <b class="to">${esc(s.to)}</b>${n > 1 ? ` <span class="n">×${n}</span>` : ''}`);
   if (s?.kind === 'advice' || mark.family === 'craft') return `<span class="say">${esc(String(s?.text ?? mark.title ?? '').replace(/`/g, ''))}</span>`;
   const c = (mark.choices ?? [])[0];
-  return line(`<b class="from">${esc(mark.text ?? labelOf(mark))}</b> ${c ? `<span class="arr">→</span> <b class="to">${esc(c.label ?? c.name ?? '')}</b>` : '<span class="say">no token is close</span>'}${n > 1 ? ` <span class="n">×${n}</span>` : ''}`);
+  return line(`<b class="from">${esc(writtenAs(mark) ?? labelOf(mark))}</b> ${c ? `<span class="arr">→</span> <b class="to">${esc(c.label ?? c.name ?? '')}</b>` : '<span class="say">no token is close</span>'}${n > 1 ? ` <span class="n">×${n}</span>` : ''}`);
 }
 // One zone, drawn: magenta heat where there is too much, cyan dots where space is missing, blurred by its heat level
 function heatMarkup(zone, level) {

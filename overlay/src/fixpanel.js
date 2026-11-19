@@ -199,14 +199,14 @@ const FIX_CSS_BASE = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   .fx .cause .nav button:hover { background: var(--pl-bg-surface-hover); }
   ${FIX_NOTE_CSS}
   /* the "i" after a craft finding's name: the glyph sits on the text, its 24px target overhangs the line, never moves it */
-  .fx .cause .info { display: inline-grid; place-items: center; width: 24px; height: 24px; margin: -6px -3px -6px 1px; vertical-align: middle; border-radius: 50%;
+  .fx :is(.cause, .one) .info { display: inline-grid; place-items: center; width: 24px; height: 24px; margin: -6px -3px -6px 1px; vertical-align: middle; border-radius: 50%;
     color: var(--pl-text-secondary); text-decoration: none; transition: color 120ms, background-color 120ms, transform 160ms ${SPRING}; }
-  .fx .cause .info svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.3; stroke-linecap: round; }
-  .fx .cause .info .tittle { fill: currentColor; stroke: none; }
-  .fx .cause .info:hover { color: var(--pl-text-primary); background: var(--pl-bg-surface-hover); }
-  .fx .cause .info:active { transform: scale(.88); background: var(--pl-bg-surface-pressed); }
-  .fx .cause .info:focus-visible { outline: 2px solid var(--pl-border-focus); outline-offset: -2px; color: var(--pl-text-primary); }
-  @media (prefers-reduced-motion: reduce) { .fx .cause .info { transition: none; } .fx .cause .info:active { transform: none; } }
+  .fx :is(.cause, .one) .info svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.3; stroke-linecap: round; }
+  .fx :is(.cause, .one) .info .tittle { fill: currentColor; stroke: none; }
+  .fx :is(.cause, .one) .info:hover { color: var(--pl-text-primary); background: var(--pl-bg-surface-hover); }
+  .fx :is(.cause, .one) .info:active { transform: scale(.88); background: var(--pl-bg-surface-pressed); }
+  .fx :is(.cause, .one) .info:focus-visible { outline: 2px solid var(--pl-border-focus); outline-offset: -2px; color: var(--pl-text-primary); }
+  @media (prefers-reduced-motion: reduce) { .fx :is(.cause, .one) .info { transition: none; } .fx :is(.cause, .one) .info:active { transform: none; } }
   .fx .specimens { display: flex; gap: 6px; padding: 10px 14px 6px; }
   .fx .sp { flex: 1 1 0; min-width: 0; max-width: 104px; margin: 0 auto; display: grid; justify-items: center; gap: 6px; padding: 10px 4px 9px; border-radius: 12px; position: relative;
     --hue: 120 120 120; --space: rgb(var(--hue) / .42); --space-line: rgb(var(--hue) / .35); --word: var(--pl-text-secondary); color: var(--pl-text-secondary); transition: box-shadow 180ms, background 180ms; }
@@ -832,12 +832,17 @@ export class FixPanel {
     this.#fixed = g ? elsOf(g) : [];
     this.#fixedCount = 1;
     this.#host.release(); this.#host.spotlight([]);
+    // a fix of many places takes seconds: the line says how many it is writing (27 places took about 15 s, said only
+    // "Writing it to your code…": docs/qa/onboarding-2026-11-19.md, gap 16)
+    const many = g ? placesOf(g) : 0;
+    this.#writingText = many > 1 ? FIX.writingPlaces(many) : null;
     this.#html = ''; this.render();
     let left = { count: 0 };
     // the fix is one step of the timeline: named after its cause, with the laws its rule serves
     const meta = { step: g ? nameOf(g) : FIX.card.steps.fix, laws: g ? g.members.flatMap((m) => m.mark?.laws ?? []) : [] };
     try { left = (await this.#host.applyAll([...this.#tokens.values()], [...this.#keeps.values()], 1, [...this.#swaps.values()], said, { at, key, meta })) ?? left; }
     catch (error) { left = { count: 1, why: error?.message }; }
+    this.#writingText = null;
     // replaced while it ran (the table forbids a second flight, so never): the write would be History's alone
     if (this.#flight !== flight) { if (left.undo?.length || left.group) this.#host.handOff?.({ undo: left.undo ?? [], trace: { group: left.group ?? null } }, said); return; }
     // still the panel's: it moves on. Closed while it ran, and not opened again: the write is History's to say, with its Undo

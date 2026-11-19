@@ -18,6 +18,7 @@ import { GRAVITY_CSS, Gravity } from './gravity.js';
 import { TOY_DEFS, toyOf } from './toys.js';
 import { BUTTON_CSS, button } from './kit.js';
 import { colourModel, decisionsOf, editsOf, lanesOf, systemOf } from './system-review.js';
+import { oklab, toRgb } from './craft-headless.js';
 
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 const nf = new Intl.NumberFormat('en');
@@ -35,6 +36,8 @@ const LESSON_CSS = `
   :host { display: block; color: var(--pl-text-primary); }
   .lesson { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 20rem); gap: var(--pl-page-space-1); align-items: start; }
   @media (max-width: 960px) { .lesson { grid-template-columns: 1fr; } }
+  /* the rules screen shows the rules itself: no second copy beside it */
+  .lesson.whole { grid-template-columns: minmax(0, 1fr); }
 
   /* where you are: a row of toys, the current one lit, the ones to come pale */
   .trail { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: var(--pl-space-4); margin: 0 0 var(--pl-space-4); padding: 0; list-style: none; }
@@ -152,8 +155,15 @@ function sizeModel(data, family) {
 function colourScreenModel(data) {
   const kind = (data.reading ?? []).find((k) => k.family === 'color');
   const model = kind ? colourModel(kind) : { palette: [], roles: [], unused: [], hard: [] };
-  const hueOf = (name) => { const parts = name.split('-'), keep = name.startsWith('--pl-') ? 4 : 3; let n = parts.length; while (n > keep && /^(?:\d+|soft|ink|on|face|line|block|bg|text|accent)$/.test(parts[n - 1])) n--; return parts.slice(0, n).join('-'); };
-  const hues = [...new Set(model.palette.map((p) => hueOf(p.name)))].map((h) => model.palette.filter((p) => hueOf(p.name) === h));
+  // a palette is grouped by the colour itself, not its name: `--accent` and `--draw` share no word, and named that way
+  // most rows held one chip (docs/qa/onboarding-2026-11-19.md, gap 5). Greys together, then each hue in 30° bands,
+  // light to dark within a row; a colour the browser can't read sits by itself at the end.
+  const look = (p) => { const rgb = toRgb(p.value); if (!rgb || rgb[3] === 0) return null; const [l, a, b] = oklab(rgb); return { l, c: Math.hypot(a, b), h: ((Math.atan2(b, a) * 180) / Math.PI + 360) % 360 }; };
+  const looks = new Map(model.palette.map((p) => [p, look(p)]));
+  const hueOf = (p) => { const k = looks.get(p); return !k ? 'other' : k.c < 0.03 ? 'grey' : `hue-${Math.floor(k.h / 30)}`; };
+  const order = (h) => h === 'grey' ? -1 : h === 'other' ? 99 : Number(h.slice(4));
+  const hues = [...new Set(model.palette.map(hueOf))].sort((a, b) => order(a) - order(b))
+    .map((h) => model.palette.filter((p) => hueOf(p) === h).sort((a, b) => (looks.get(b)?.l ?? 0) - (looks.get(a)?.l ?? 0)));
   const typed = (data.colour?.strays ?? []).slice().sort((a, b) => b.places - a.places);
   const byHand = typed.reduce((n, s) => n + s.places, 0);
   const files = [...new Set(kind?.groups.map((g) => g.file) ?? [])];
@@ -206,9 +216,9 @@ export function mountLesson(host, data, { post } = {}) {
     return `<section class="screen">${face(s, `Let's set up how ${esc(data.project ?? 'your app')} looks, on purpose.`, `Plumber read your app (${nf.format(data.files ?? 0)} files). In a few short steps you'll decide its spacing, colours, text and corners.`)}
       <div class="body">
         <div class="part"><h3>What happens</h3><p>Each step shows you what your app does today, drawn, and asks one question. Your answer becomes one of <b>your rules</b>. They fill in on the right as you go.</p></div>
+        <div class="nav">${button('Start with spacing', { key: '→', attrs: 'data-go="spacing"' })}<span class="later">About two minutes. Nothing changes in your files until the last step.</span></div>
         <div class="part"><h3>Why</h3><p>When every screen picks its own gap, colour and size, an app looks a little off everywhere and nobody can say why. A few rules, chosen once, keep it looking like one app as it grows, whoever writes the code.</p></div>
         <div class="part"><h3>After</h3><p>Plumber holds your code to your rules. It shows what breaks one, right on your page, and fixes it with you. What's already there is remembered as it is, so you only hear about new problems.</p></div>
-        <div class="nav">${button('Start with spacing', { key: '→', attrs: 'data-go="spacing"' })}<span class="later">About two minutes. Nothing changes in your files until the last step.</span></div>
       </div></section>`;
   };
 
@@ -268,7 +278,7 @@ export function mountLesson(host, data, { post } = {}) {
     const sizeFamily = Object.keys(screenOf).find((f) => screenOf[f] === state.at);
     const screen = state.at === 'welcome' ? welcome() : state.at === 'colour' ? colourScreen() : sizeFamily ? sizeScreen(sizes[sizeFamily]) : rulesScreen();
     root.innerHTML = `<style>${LANGUAGE_CSS}${SCALE_CSS}${GRAVITY_CSS}${BUTTON_CSS}${LESSON_CSS}</style>${TOY_DEFS}
-      <div class="lesson">${trail()}<div>${screen}</div>${rules()}</div>`;
+      <div class="lesson${state.at === 'rules' ? ' whole' : ''}">${trail()}<div>${screen}</div>${state.at === 'rules' ? '' : rules()}</div>`;
     const g = root.getElementById('gravity');
     if (g && sizeFamily) {
       // for this reader a step is its size, once: three names for 16px are one step here (the names are in Details)
