@@ -27,7 +27,7 @@ import { verdicts } from './verdict.js';
 import { rgb, VIRTUAL, SPEC, elevation } from './craft-read.js';
 import { TIER } from './craft-facets.js';
 import { HEADLESS } from './craft-headless.js';
-import { request } from './api.js';
+import { request, post } from './api.js';
 import { lawsOf } from './laws.js';
 import { paletteOf } from './colours.js';
 
@@ -89,6 +89,20 @@ function inkWant(key, job) {
   INK.queue.set(key, job);
   INK.timer ||= (typeof requestIdleCallback === 'function' ? requestIdleCallback(inkFlush, { timeout: 300 }) : setTimeout(inkFlush, 50));
 }
+// What a line under a heading means, asked of the dev server (POST /__plumb/meaning, src/meaning.ts), which asks the
+// model the project points at. The pairs a pass asks about go as one question when it ends; the answers land like an
+// icon's ink: the elements that asked are judged again. `off` (no model, or no server) is an answer too: nothing is said.
+const MEANING = { done: new Map(), queue: new Map(), timer: 0 };
+function meaningFlush() {
+  MEANING.timer = 0;
+  const batch = [...MEANING.queue].slice(0, 64);
+  for (const [key] of batch) MEANING.queue.delete(key);
+  if (MEANING.queue.size) MEANING.timer = setTimeout(meaningFlush, 0);
+  post('meaning', { pairs: batch.map(([, pair]) => pair) })
+    .then((a) => batch.forEach(([key], i) => MEANING.done.set(key, a?.off === false ? { said: !!a.said[i], similarity: a.similarity[i], stock: a.stock[i] } : 'off')),
+      () => batch.forEach(([key]) => MEANING.done.set(key, 'off')))
+    .then(() => { for (const c of INK.crafts) c.inked(); });
+}
 
 // The measuring layer: every read the rules make, memoised for one pass. Reads only.
 export class Facts {
@@ -119,7 +133,7 @@ export class Facts {
     const real = base.style(el);
     const over = new Proxy(real, { get: (t, k) => (k in sets ? (typeof sets[k] === 'number' ? `${sets[k]}px` : sets[k]) : Reflect.get(t, k, t)) });
     // every read delegates to this pass's memo (its private fields stay its own); only the element's style is new
-    const virtual = { get late() { return base.late; }, set late(v) { base.late = v; }, get asked() { return base.asked; }, rect: (x) => base.rect(x), kids: (x) => base.kids(x), text: (x) => base.text(x), ground: (x) => base.ground(x), metrics: (x) => base.metrics(x), census: (n) => base.census(n), ink: (x) => base.ink(x), stroke: (x) => base.stroke(x), other: (c) => base.other(c), probe: (x, g) => base.probe(x, g), source: (x) => base.source(x), style: (x) => (x === el ? over : base.style(x)) };
+    const virtual = { get late() { return base.late; }, set late(v) { base.late = v; }, get asked() { return base.asked; }, rect: (x) => base.rect(x), kids: (x) => base.kids(x), text: (x) => base.text(x), ground: (x) => base.ground(x), metrics: (x) => base.metrics(x), census: (n) => base.census(n), ink: (x) => base.ink(x), meaning: (h, l) => base.meaning(h, l), stroke: (x) => base.stroke(x), other: (c) => base.other(c), probe: (x, g) => base.probe(x, g), source: (x) => base.source(x), style: (x) => (x === el ? over : base.style(x)) };
     virtual.box = Facts.prototype.box.bind(virtual);
     virtual.with = Facts.prototype.with.bind(virtual);
     if (classes !== undefined) VIRTUAL.set(el, classes);
@@ -229,6 +243,15 @@ export class Facts {
       if (cs.stroke === 'none' || cs.display === 'none' || !(px(cs.strokeWidth) > 0)) continue;
       return cs.vectorEffect === 'non-scaling-stroke' ? px(cs.strokeWidth) : px(cs.strokeWidth) * scale;
     }
+    return null;
+  }
+  // Whether `line` says what `heading` says: { said, similarity, stock }, or 'off' when no model can be asked; null
+  // while the answer is on its way (the element is judged again when it lands)
+  meaning(heading, line) {
+    const key = heading + '\n' + line, hit = MEANING.done.get(key);
+    if (hit !== undefined) return hit;
+    this.late = true;
+    if (!MEANING.queue.has(key)) { MEANING.queue.set(key, { heading, line }); MEANING.timer ||= setTimeout(meaningFlush, 0); }
     return null;
   }
   // The headless facts (craft-headless.js): another condition's page, a gesture's timeline, the element's source.

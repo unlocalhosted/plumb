@@ -79,12 +79,14 @@ export function boundInSource(text, line, column = 1) {
 
 // The meaning test, for subtitle-echo (U3): whether the line under a heading says anything the heading does not. The
 // page finds the pair; a sentence-embedding model (all-MiniLM-L6-v2, unit vectors, so similarity is a dot product)
-// scores it, asked by the CLI (src/meaning.ts). A line with a specific in it (a number, a date, a price, a code in
+// scores it, asked of the dev server (POST /__plumb/meaning, src/meaning.ts), so the overlay and `plumber craft`
+// read it alike. A line with a specific in it (a number, a date, a price, a code in
 // capitals) adds a fact and is kept without asking. Otherwise it is said when it is close to the heading, or loosely
 // close and close to stock product copy. Set on 24 hand-labelled pairs and checked on 24 held out
 // (docs/briefs/rule-packs.md §4h): 23 of 24 and 24 of 24, no false hits.
-export const MEANING_RULES = new Set(['tells/subtitle-echo']);
 export const MEANING_CUTS = { echo: 0.45, near: 0.2, stock: 0.4 };
+// close: the line's similarity to its heading; stocky: its highest similarity to a stock line
+export const meaningSaid = (close, stocky) => close >= MEANING_CUTS.echo || (close >= MEANING_CUTS.near && stocky >= MEANING_CUTS.stock);
 export const STOCK_LINES = ['Everything you need to stay organized.', 'Powerful tools to help you grow.', 'Track and manage your work with ease.', 'Stay connected with your team.', 'Simple, fast, and secure.', 'Get started in minutes.', 'Take control of your workflow.', 'Insights that help you make better decisions.', 'Collaborate with anyone, anywhere.', 'Keep everything in sync.', 'Your all-in-one workspace.', 'Built for teams of every size.', "Discover what's possible.", 'Make the most of your time.', 'Find what you need, fast.', 'The smarter way to work.'];
 const MONTH = /\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b/i;
 export const hasSpecific = (line) => /\d|[$€£%]/.test(line) || MONTH.test(line) || /\b[A-Z]{2,}\b/.test(line.replace(/^\S+/, ''));

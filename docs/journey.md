@@ -2543,6 +2543,22 @@ field is empty). The table of five writes, before and after. The Next table: eig
   read the page as having no source at all. The test app is now deleted after each run instead.
 - **Media hooks:** the settings screen with "Language" and "Email" marked and "Sessions", "Data retention" and
   "Danger zone" left alone.
+
+### The app asks too, not only the command line
+
+- **The itch:** the owner picked "Overlay asks the model" next. Only the command-line run asked the model, so in the
+  app the check was silent.
+- **The system behind it:** the model sat behind the CLI's own process, so only the CLI could ask it. The browser
+  cannot reach the model service either, because it is on vm-agent's private network.
+- **What we chose and why:** the dev server asks now. It already runs beside every app plumber watches and holds the
+  project's settings, so it now answers a new question, "does this line say what its heading says?"
+  (`POST /__plumb/meaning`). The page sends every pair it finds in one question and judges those elements again
+  when the answers land, the same way it already waits for an icon's shape to be measured. The CLI reads pages
+  through that same path, so it no longer has a model step of its own: one place decides, for the app and the CLI
+  alike. With no model set (`PLUMBER_MEANING_URL`), the answer is "off" and nothing is said.
+- **The proof:** the sloppy test screens through the dev server give the same 7 subtitle notes as the CLI-only
+  version did. With the model unset they give none, and the other 40 notes are unchanged. Not yet looked at in the
+  app's own panel.
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
 - Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".
@@ -3992,6 +4008,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 ## Shipped · 2026-W47
 - Plumber flags a subtitle that only repeats its heading ("Billing" over "Manage your billing and subscription") and leaves one that adds a fact alone, by asking a small language model on vm-agent; with no model set up it stays silent ([entry](#subtitles-that-repeat-the-heading-a-model-on-vm-agent-judges-them-2026-11-19)).
 - Plumber no longer makes a Tailwind app reload while it writes its own cache ([entry](#subtitles-that-repeat-the-heading-a-model-on-vm-agent-judges-them-2026-11-19)).
+- The subtitle check now works inside the app as well as from the command line: the dev server asks the model ([entry](#subtitles-that-repeat-the-heading-a-model-on-vm-agent-judges-them-2026-11-19)).
 - Plumber now points out the marks of a generated screen on your page: labels in capitals over every heading, "01 02 03" with no order, NEW badges and pulsing dots that track nothing, emoji, icons in tinted squares, glows and two-hue gradients, cards that grow on hover, stock words. A badge or dot that only shows under a condition in your code is left alone ([entry](#tells-marks-of-a-generated-screen-read-off-the-page-2026-11-19)).
 - Plumber builds the whole-app list of findings in the background after start-up and after each edit, so asking for it no longer waits 18 s on a 3,600-file app, and pages keep answering in about 30 ms while it builds ([entry](#the-whole-app-report-builds-itself-in-the-background-2026-11-18)).
 - In Break it, press F on a note and plumber shows its fix on your live page under the same stress, then checks the page again and says what the fix itself breaks; on crafting-ui a long topic wraps inside its sentence, a one-step rail leaves itself out, and 11px labels grow in rem ([entry](#break-it-broken-then-fixed-on-the-page-2026-11-17)). On its own branch.

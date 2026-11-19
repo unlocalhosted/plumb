@@ -75,6 +75,8 @@ export const methods = [
   { http: 'try', engine: 'try', post: true },
   { http: 'refresh', engine: 'refresh', patient: true },
   { engine: 'traced', patient: true },
+  // does the line under a heading say what the heading says (src/meaning.ts): asked of the model the project points at
+  { http: 'meaning', post: true, read: true, rpc: false },
   { http: 'health' },
 ] as const satisfies readonly Row[];
 

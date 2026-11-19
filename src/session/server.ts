@@ -14,6 +14,7 @@ import type { CheckOptions } from '../index.js';
 import { BusyError, errorCode, errorDiagnostic, errorMessage, UsageError } from '../errors.js';
 import type { ErrorCode } from '../errors.js';
 import { validateRequest } from './schema.js';
+import { judgePairs } from '../meaning.js';
 import { isIP } from 'node:net';
 import { isOverlayModule, overlayClient } from '../hosts/client.js';
 
@@ -268,6 +269,12 @@ async function dispatchOnce(session: Session, method: string, params: Record<str
   if (method === 'decisions') return read('decisions', []);
   if (method === 'spec') return read('spec', []);
   if (method === 'causes') return session.causes();
+  if (method === 'meaning') {
+    const pairs = params.pairs;
+    if (!Array.isArray(pairs) || pairs.length > 64 || pairs.some(p => !object(p) || typeof p.heading !== 'string' || typeof p.line !== 'string' || p.heading.length > 200 || p.line.length > 400))
+      throw new UsageError('pairs must be a list of up to 64 { heading, line } strings.');
+    return judgePairs(pairs as { heading: string; line: string }[]);
+  }
   if (method === 'system-page') return session.projectSystem();
   if (method === 'health') return session.health();
   if (method === 'refresh') return session.refresh();
