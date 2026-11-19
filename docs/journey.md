@@ -2737,7 +2737,17 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **The proof:** Enter on the test screens put "11 places use Tailwind's default font size" in hand: the ring sat
   round "Click the button above…" with the choice row under it, no pins, and a rest elsewhere opened no X-ray card.
   `bench/tells/shots/17-fix-ring.jpg`.
-- **Not checked:** whether the ring's pulse replays on scroll (the ring is drawn again each frame its place moves).
+- **The ring becomes corner marks:** "instead of like the whole box wide rectangle what other tasteful way". Four ways
+  went on one page (`overlay/demo/fix-highlight.html`): corner marks, a ring hugging the words, a highlighter stroke,
+  a spotlight. The owner chose corner marks: four small pink crop marks, nothing crossing the content, settling in
+  from a little outside. They sit round what you see: an element of words alone is marked round its words (the
+  full-width line of short centred words had a page-wide ring), anything else round its box. On the test screens
+  the first fix, on "Live · v2.4 · All systems operational", gets four marks tight round that line.
+  `bench/tells/shots/20-fix-corner-marks.jpg`.
+- **A slip while testing:** pressing Enter to open a fix took one that was already open, and wrote "text-sm to
+  text-body at 11 places" into the throwaway test copy (never the bench source); the test server was restarted to
+  make a fresh copy. Fixes are opened with the Fix button in tests from now on.
+- **Not checked:** whether the marks' settle-in replays on scroll (they are drawn again each frame their place moves).
 - **Media hooks:** `bench/tells/shots/5-concerns-bar.jpg`.
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.

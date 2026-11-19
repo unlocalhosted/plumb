@@ -60,10 +60,14 @@ export const MARKS_CSS = `
     box-shadow: 0 0 0 1px color-mix(in oklab, var(--pl-pink) 35%, transparent), 0 1px 2px rgb(0 0 0 / .12); pointer-events: none;
     animation: pl-pin-in 160ms var(--pl-ease-out, ease-out) both; }
   .bp .labels .cpin b { font-weight: 600; opacity: .7; }
-  /* the element a fix is about: the colour of what is current, a soft glow, one pulse as it arrives */
-  .bp .labels .ring { position: absolute; box-sizing: border-box; pointer-events: none; border: 2px solid var(--pl-pink);
-    box-shadow: 0 0 0 4px color-mix(in oklab, var(--pl-pink) 18%, transparent); animation: pl-ring-in 520ms var(--pl-ease-out, ease-out) both; }
-  @keyframes pl-ring-in { 0% { opacity: 0; scale: 1.04; } 45% { opacity: 1; scale: .995; box-shadow: 0 0 0 9px color-mix(in oklab, var(--pl-pink) 22%, transparent); } 100% { scale: 1; } }
+  /* the element a fix is about: four crop marks in the colour of what is current, settling in from a little outside */
+  .bp .labels .ring { position: absolute; pointer-events: none; animation: pl-ring-in 420ms var(--pl-spring, cubic-bezier(.2, .9, .25, 1.1)) both; }
+  .bp .labels .ring i { position: absolute; width: 10px; height: 10px; border: 2px solid var(--pl-pink); box-sizing: border-box; }
+  .bp .labels .ring .tl { left: 0; top: 0; border-right: 0; border-bottom: 0; border-top-left-radius: 3px; }
+  .bp .labels .ring .tr { right: 0; top: 0; border-left: 0; border-bottom: 0; border-top-right-radius: 3px; }
+  .bp .labels .ring .bl { left: 0; bottom: 0; border-right: 0; border-top: 0; border-bottom-left-radius: 3px; }
+  .bp .labels .ring .br { right: 0; bottom: 0; border-left: 0; border-top: 0; border-bottom-right-radius: 3px; }
+  @keyframes pl-ring-in { from { opacity: 0; scale: 1.06; } }
   @media (prefers-reduced-motion: reduce) { .bp .labels .ring { animation: none; } }
   @keyframes pl-pin-in { from { opacity: 0; translate: 0 3px; } }
   @media (prefers-reduced-motion: reduce) { .bp .labels .cpin { animation: none; } }
@@ -325,10 +329,15 @@ function heatMarkup(zone, level) {
 // The pins for a picked concern's notes: one per element, its first note's name and how many more, at the element's
 // top-left corner (above it when there is room), moved right past any pin already placed
 const escPin = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
-// The ring round the element a fix is about: 4px outside it, its corners rounded as the element's are (plus the gap)
+// The element a fix is about, marked by its corners (owner, 2026-11-20, overlay/demo/fix-highlight.html, A): four
+// small pink crop marks, nothing crossing the content. They sit round what you see: an element of words alone is
+// marked round its words (a full-width line of short centred words would otherwise get page-wide marks), anything
+// else round its box.
 function ringOf(el) {
-  const r = el.getBoundingClientRect(), rad = parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0, g = 4;
-  return `<span class="ring" style="left:${Math.round(r.left - g)}px;top:${Math.round(r.top - g)}px;width:${Math.round(r.width + 2 * g)}px;height:${Math.round(r.height + 2 * g)}px;border-radius:${Math.round(rad + g)}px"></span>`;
+  let r = el.getBoundingClientRect();
+  if (![...el.children].length && el.textContent.trim()) { const range = document.createRange(); range.selectNodeContents(el); const t = range.getBoundingClientRect(); if (t.width > 0 && t.height > 0) r = t; }
+  const g = 5, x = Math.round(r.left - g), y = Math.round(r.top - g), w = Math.round(r.width + 2 * g), h = Math.round(r.height + 2 * g);
+  return `<span class="ring" style="left:${x}px;top:${y}px;width:${w}px;height:${h}px"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i></span>`;
 }
 // where an element's words start (a full-width line of centred words puts its box's corner far from them): its first
 // line of text, else its box
