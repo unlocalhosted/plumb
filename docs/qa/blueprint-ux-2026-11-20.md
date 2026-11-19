@@ -131,7 +131,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** acting. The way out (Close) and the main action (Fix) are hidden while a card is open.
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u06-button-shows-heading-note.jpg`
-- **Status:** fixed fa900ba3
+- **Status:** fixed fa900ba3 · verified (tester, 05:10): the card on "Get started" ends above the bar; Fix and Close stay in view. `docs/qa/shots/2026-11-20/u09-verified.jpg`
 
 ### U10 · The padding and margin numbers in the card read as pairs of random numbers
 - **Where:** X-ray card, the box drawing (Margin, Padding).
@@ -165,7 +165,7 @@ How to read an issue, and what each one needs:
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u12-card-before-reach.jpg` (before),
   `docs/qa/shots/2026-11-20/u12-card-after-click.jpg` (after the click)
-- **Status:** fixed fa900ba3 (same cause as U9: the card was placed at a guessed height, then grew)
+- **Status:** fixed fa900ba3 (same cause as U9: the card was placed at a guessed height, then grew) · verified (tester, 05:10): moving from the button to "Ask your agent" in four steps, the card and its buttons stay at the same place.
 
 ### U13 · One Escape closes the agent note and all of Blueprint
 - **Where:** Blueprint, "Note for your agent" box (from Ask your agent).
@@ -178,7 +178,7 @@ How to read an issue, and what each one needs:
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u13-agent-note.jpg` (the box with its Esc key); after one Escape the bar
   is gone.
-- **Status:** fixed 5fad8eb4
+- **Status:** fixed 5fad8eb4 · verified (tester, 05:11): Escape in the agent note closes the note only; the card and Blueprint stay.
 
 ### U14 · The agent note cuts off the line number
 - **Where:** "Note for your agent" box.
@@ -201,7 +201,7 @@ How to read an issue, and what each one needs:
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u15-fix-first.jpg`; in the page the line has class
   `mt-2 text-sm text-slate-500`, font size 14px, and `--text-body` is 14px.
-- **Status:** fixing
+- **Status:** fixed 3ba15fd8
 
 ### U16 · Two fixes in a row have the same title with different counts
 - **Where:** Fix, fixes 1 and 2 of 50.
@@ -212,7 +212,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding. After Skip it looks like the same fix came back with a different number.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u15-fix-first.jpg`, `docs/qa/shots/2026-11-20/u16-fix-second.jpg`
-- **Status:** open
+- **Status:** fixed 3ba15fd8 (same change as U15: the headline names the class)
 
 ### U17 · Escape in the "Why keep it?" box leaves Fix altogether
 - **Where:** Fix, Keep as is on fix 2.
@@ -224,7 +224,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** intent. Cancel did more than cancel; to get back to fix 2 I have to start Fix again.
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u17-keep-reason.jpg`
-- **Status:** fixed 5fad8eb4
+- **Status:** fixed 5fad8eb4 · verified (tester, 05:09): Keep as is, then Escape, comes back to fix 1 of 49 with its choice row.
 
 ### U18 · The note counts change when I haven't changed anything
 - **Where:** Blueprint bar and the concern list, Ledger screen.
@@ -381,7 +381,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** intent. The loudest button leads me away from the problem.
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u30-padding-note-edit-words.jpg`
-- **Status:** fixed 3290204d (the main action; the padding note still doesn't say what to change, which is the check's own wording)
+- **Status:** fixed 3290204d (the main action; the padding note still doesn't say what to change, which is the check's own wording) · verified (tester, 05:10): the padding note leads with "Ask your agent"; "Edit the words" is gone from it.
 
 ### U31 · Alt+click says "Nothing to fix on this page" on a page with about 200 notes
 - **Where:** outside Blueprint, Alt+click on the paragraph under "Card controls".
@@ -551,4 +551,15 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding. The new, clearer words (from the U15 change) can't be read on a narrow window.
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u44-fix-bar-700.jpg`
+- **Status:** open
+
+### U45 · In the card, the blue highlight in the "text size" row sits under the label, not the value
+- **Where:** X-ray card, top row ("text size base 16px"), on the "Get started" button, after the card fixes.
+- **What I saw:** the blue pill that marks the value now covers "text size base", and "16px" with its ⌄ sits outside
+  it on the dark card. It stays that way after two seconds, so it isn't mid-animation. Before the fixes the pill
+  wrapped "base 16px ⌄".
+- **What I expected:** the pill around the value I can change.
+- **Why it hurts:** understanding. It reads as if the label were the control.
+- **Severity:** 3
+- **Evidence:** `docs/qa/shots/2026-11-20/u45-text-size-row.png`; compare `docs/qa/shots/2026-11-20/u06-button-shows-heading-note.jpg`.
 - **Status:** open
