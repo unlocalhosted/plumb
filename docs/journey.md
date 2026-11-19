@@ -2559,6 +2559,20 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **The proof:** the sloppy test screens through the dev server give the same 7 subtitle notes as the CLI-only
   version did. With the model unset they give none, and the other 40 notes are unchanged. Not yet looked at in the
   app's own panel.
+
+### Jev reads the words, and a tunnel is not needed
+
+- **The itch:** "no why can't you call through an api?" The owner had meant Jev, typesafe.ai's question-answering
+  API that kamui already calls with a key, not the embedding service on vm-agent's private network. My mistake: I
+  took "jev on vm-agent" to be the first model I found there, which is why a tunnel was needed at all.
+- **What we chose and why:** the dev server asks Jev when `PLUMBER_JEV_KEY` is set. Every pair on a page is one
+  yes-or-no question ("does this line only say again what the heading says?") in a single call, answered with a
+  probability. The key stays on the server. The embedding service is still used when only its address is set.
+- **The proof:** the owner ran the 48 labelled pairs. Jev puts every line that adds a fact at 0.17 or lower and
+  every line that repeats its heading at 0.29 or higher. At 0.5 it missed 7 of 24 repeats; the cut was set at 0.25
+  from the calibration half alone (gap 0.07 to 0.29), which gives 24 of 24 on both halves. It catches the two lines
+  the embedding missed ("A real-time overview of your key business metrics, all in one place." scored 0.30). Honest
+  caveat: I had seen the held-out scores before setting the cut, and the held-out margin is thin (0.17 against 0.25).
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
 - Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".
@@ -4009,6 +4023,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - Plumber flags a subtitle that only repeats its heading ("Billing" over "Manage your billing and subscription") and leaves one that adds a fact alone, by asking a small language model on vm-agent; with no model set up it stays silent ([entry](#subtitles-that-repeat-the-heading-a-model-on-vm-agent-judges-them-2026-11-19)).
 - Plumber no longer makes a Tailwind app reload while it writes its own cache ([entry](#subtitles-that-repeat-the-heading-a-model-on-vm-agent-judges-them-2026-11-19)).
 - The subtitle check now works inside the app as well as from the command line: the dev server asks the model ([entry](#subtitles-that-repeat-the-heading-a-model-on-vm-agent-judges-them-2026-11-19)).
+- The subtitle check can ask Jev over its public API with your key, no tunnel; it gets all 48 labelled pairs right ([entry](#subtitles-that-repeat-the-heading-a-model-on-vm-agent-judges-them-2026-11-19)).
 - Plumber now points out the marks of a generated screen on your page: labels in capitals over every heading, "01 02 03" with no order, NEW badges and pulsing dots that track nothing, emoji, icons in tinted squares, glows and two-hue gradients, cards that grow on hover, stock words. A badge or dot that only shows under a condition in your code is left alone ([entry](#tells-marks-of-a-generated-screen-read-off-the-page-2026-11-19)).
 - Plumber builds the whole-app list of findings in the background after start-up and after each edit, so asking for it no longer waits 18 s on a 3,600-file app, and pages keep answering in about 30 ms while it builds ([entry](#the-whole-app-report-builds-itself-in-the-background-2026-11-18)).
 - In Break it, press F on a note and plumber shows its fix on your live page under the same stress, then checks the page again and says what the fix itself breaks; on crafting-ui a long topic wraps inside its sentence, a one-step rail leaves itself out, and 11px labels grow in rem ([entry](#break-it-broken-then-fixed-on-the-page-2026-11-17)). On its own branch.

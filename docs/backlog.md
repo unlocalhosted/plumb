@@ -68,9 +68,9 @@ reserved.)
   the sentence under it), slogans, most narrating captions, and an icon that says nothing its name does not (needs a
   model that embeds images and text together). The subtitle check misses generic lines that share no words with the
   heading ("Customize how the app looks" under "Appearance"), and a blurb under each item of a menu is not looked at.
-- **Nothing starts the model's tunnel (2026-11-19).** The app and the CLI both ask the dev server, which asks the
-  model at `PLUMBER_MEANING_URL`. The service lives on vm-agent's private docker network, so that URL is an SSH
-  tunnel you open yourself; without it the subtitle check is silent.
+- **The Jev key has to be in the dev server's environment (2026-11-19).** The subtitle check asks Jev when
+  `PLUMBER_JEV_KEY` is set where the dev server starts; plumber does not read it from the Keychain or a config file,
+  so an app started without it is silent on subtitles.
 - **A badge drawn by a component (2026-11-19).** The real-state test reads the line a finding points at. A badge
   made by a component (`{deploy.isLive && <Badge>Live</Badge>}`) points inside the component, where there is no
   condition, so a badge bound to data is still flagged. The test runs in the CLI only; the overlay does not apply it
