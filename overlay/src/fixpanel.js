@@ -487,6 +487,16 @@ export class FixPanel {
     this.#el.setAttribute('role', 'region');
     this.#el.setAttribute('aria-label', 'Fix');
     root.append(this.#el);
+    // the floor: how much of the window's bottom the bar takes, as --pl-floor on the overlay, so the panels that open
+    // from the dock (History, Help, Setup) open above the bar, not under it (U19, U27, U29, 2026-11-20). Kept by the
+    // bar's own size: shown, grown taller, hidden
+    const floor = () => {
+      const host = this.#el.getRootNode()?.host, r = this.#el.getBoundingClientRect();
+      if (!host) return;
+      if (this.#el.hidden || !r.height) host.style.removeProperty('--pl-floor');
+      else host.style.setProperty('--pl-floor', `${Math.round(innerHeight - r.top + 12)}px`);
+    };
+    new ResizeObserver(floor).observe(this.#el);
     // the choice is made on the element (design site: Fix bar): its own box beside the place in hand, outside the bar,
     // which clips and blurs what is inside it
     this.#choice = Object.assign(document.createElement('div'), { className: 'fx fx-on', hidden: true });

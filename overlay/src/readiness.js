@@ -47,7 +47,7 @@ export const READY_CSS = `
   .dock[data-fold] .ready .text { display: none; }
   @media (hover: hover) and (pointer: fine) { .dock[data-fold]:hover .ready .text { display: inline; } .dock[data-fold]:hover .ready { padding: 0 8px 0 6px; } }
 
-  .rd { position: fixed; inset-inline-end: var(--pl-space-6); inset-block-end: calc(var(--pl-space-6) + var(--pl-tag-h) + var(--pl-space-4)); width: 380px; max-width: calc(100vw - 2 * var(--pl-space-6)); pointer-events: auto; }
+  .rd { position: fixed; inset-inline-end: var(--pl-space-6); inset-block-end: max(calc(var(--pl-space-6) + var(--pl-tag-h) + var(--pl-space-4)), var(--pl-floor, 0px)); width: 380px; max-width: calc(100vw - 2 * var(--pl-space-6)); pointer-events: auto; }
   .rd .card { display: flex; flex-direction: column; max-height: min(72vh, 600px); padding: 0; overflow: hidden; transform-origin: 100% 100%;
     transition: opacity var(--pl-dur-card) var(--pl-ease-out), transform var(--pl-dur-card) var(--pl-ease-out); }
   .rd[data-enter] .card { opacity: 0; transform: translateY(6px) scale(.985); }
@@ -98,7 +98,7 @@ export const READY_CSS = `
   .rd .foot { display: flex; align-items: center; gap: var(--pl-space-4); padding: var(--pl-space-5) var(--pl-space-6); border-top: 1px solid var(--pl-border-default); background: var(--pl-bg-inset); }
   .rd .foot .count { margin-inline-end: auto; font: var(--pl-card-meta); color: var(--pl-text-secondary); }
   .rd .foot .count[data-tone="on"] { color: var(--pl-on); }
-  .rd-callout { position: fixed; inset-inline-end: var(--pl-space-6); inset-block-end: calc(var(--pl-space-6) + var(--pl-tag-h) + var(--pl-space-4)); max-width: min(380px, calc(100vw - 2 * var(--pl-space-6)));
+  .rd-callout { position: fixed; inset-inline-end: var(--pl-space-6); inset-block-end: max(calc(var(--pl-space-6) + var(--pl-tag-h) + var(--pl-space-4)), var(--pl-floor, 0px)); max-width: min(380px, calc(100vw - 2 * var(--pl-space-6)));
     display: flex; align-items: center; gap: var(--pl-space-4); padding: var(--pl-space-4) var(--pl-space-4) var(--pl-space-4) var(--pl-space-5); pointer-events: auto;
     opacity: 0; transform: translateY(4px); transition: opacity var(--pl-dur-card) var(--pl-ease-out), transform var(--pl-dur-card) var(--pl-ease-out); }
   .rd-callout[data-in] { opacity: 1; transform: none; }

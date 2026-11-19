@@ -19,7 +19,7 @@ export const HISTORY_CSS = `
   @media (hover: hover) and (pointer: fine) { :is(.wt, .tt) button:not(:disabled):hover { background: var(--pl-bg-surface-hover); } }
 
   /* the timeline: the dock grown into a strip, same corner */
-  .tt { position: fixed; inset-inline-end: var(--pl-space-6); inset-block-end: var(--pl-space-6); box-sizing: border-box; pointer-events: auto;
+  .tt { position: fixed; inset-inline-end: var(--pl-space-6); inset-block-end: max(var(--pl-space-6), var(--pl-floor, 0px)); box-sizing: border-box; pointer-events: auto;
     width: min(760px, calc(100vw - 2 * var(--pl-space-6))); display: flex; align-items: flex-end; gap: var(--pl-space-5);
     padding: var(--pl-space-4) var(--pl-space-4) var(--pl-space-4) var(--pl-space-5); }
   .tt[hidden] { display: none; }
