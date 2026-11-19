@@ -520,6 +520,7 @@ export class Blueprint {
   // Keep as is, from the X-ray card's note: its cause goes in hand, and the bar asks why (fixpanel keep)
   // the note an element's X-ray card leads with: its own, the picked concern's first (blueprint-marks noteOf)
   noteOf(el) { return this.#marks?.noteOf(el) ?? null; }
+  zoneEl(id) { return this.#marks?.zoneEl(id) ?? null; }
   keepNote(el, rule) {
     const mark = this.#itemOf(el)?.marks.find((m) => m.rule === rule);
     if (mark && this.#fix.holdMark(el, mark)) this.#fix.keep();

@@ -568,6 +568,9 @@ class PlumbOverlay extends HTMLElement {
       partAt: (e) => {
         const first = e.composedPath()[0];
         if (e.composedPath().includes(self) && !first?.closest?.('.glass, .bp')) return null;
+        // a pin stands for its element: pointing at it reads that element, not what lies under the pin (U8)
+        const pin = first?.closest?.('.cpin');
+        if (pin) return self.#blueprint?.zoneEl(pin.dataset.id) ?? null;
         const hit = () => document.elementFromPoint(e.clientX, e.clientY);
         const el = reachable(self.#blueprint?.active ? self.#blueprint.through(hit) : hit());
         return el && el !== self && el !== document.documentElement && el !== document.body ? el : null;

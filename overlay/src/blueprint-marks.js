@@ -57,7 +57,7 @@ export const MARKS_CSS = `
      chip read as one; never a target (the zone under it is) */
   .bp .labels .cpin { position: absolute; display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 8px; box-sizing: border-box;
     border-radius: 999px; background: var(--pl-pink-soft); color: var(--pl-pink-ink); font: 600 11px/1 var(--pl-sans, system-ui), sans-serif; white-space: nowrap;
-    box-shadow: 0 0 0 1px color-mix(in oklab, var(--pl-pink) 35%, transparent), 0 1px 2px rgb(0 0 0 / .12); pointer-events: none;
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--pl-pink) 35%, transparent), 0 1px 2px rgb(0 0 0 / .12); pointer-events: auto; cursor: pointer; z-index: 2;
     animation: pl-pin-in 160ms var(--pl-ease-out, ease-out) both; }
   .bp .labels .cpin b { font-weight: 600; opacity: .7; }
   /* the element a fix is about: four crop marks in the colour of what is current, settling in from a little outside */
@@ -371,9 +371,9 @@ function inkAt(x, y) {
 const covers = (x, y, w, h) => { for (const fx of [0.04, 0.3, 0.5, 0.7, 0.96]) for (const fy of [0.15, 0.5, 0.85]) if (inkAt(x + w * fx, y + h * fy)) return true; return false; };
 function pinsOf(entries, view) {
   const byEl = new Map();
-  for (const p of entries) { const e = byEl.get(p.item.el); if (e) e.n++; else byEl.set(p.item.el, { r: inkOf(p.item.el, p.er), b: p.er, name: FIX.what(p.mark), n: 1 }); }
+  for (const p of entries) { const e = byEl.get(p.item.el); if (e) e.n++; else byEl.set(p.item.el, { id: p.id, r: inkOf(p.item.el, p.er), b: p.er, name: FIX.what(p.mark), n: 1 }); }
   const placed = [], out = [];
-  for (const { r, b, name, n } of [...byEl.values()].sort((a, b) => a.r.top - b.r.top || a.r.left - b.r.left)) {
+  for (const { id, r, b, name, n } of [...byEl.values()].sort((a, b) => a.r.top - b.r.top || a.r.left - b.r.left)) {
     const w = Math.round(name.length * 6.1 + (n > 1 ? 22 : 0) + 18), h = 20;
     if (r.top > view.h || r.top + r.height < 0) continue;
     // the spots, nearest first: above the words, above the box, below the box, to the right, to the left, then the
@@ -389,7 +389,7 @@ function pinsOf(entries, view) {
     let [x, y] = fits.find(clear) ?? fits[0] ?? [Math.max(4, Math.min(view.w - w - 4, r.left)), Math.max(4, Math.min(view.h - h - 4, r.top + 3))];
     for (let i = 0; i < 12 && !clear([x, y]) && placed.some((q) => x < q.x + q.w + 4 && q.x < x + w + 4 && y < q.y + h && q.y < y + h); i++) x = Math.min(view.w - w - 4, x + 40);
     placed.push({ x, y, w });
-    out.push(`<span class="cpin" style="left:${Math.round(x)}px;top:${Math.round(y)}px">${escPin(name)}${n > 1 ? `<b>+${n - 1}</b>` : ''}</span>`);
+    out.push(`<span class="cpin" data-id="${escPin(id)}" style="left:${Math.round(x)}px;top:${Math.round(y)}px">${escPin(name)}${n > 1 ? `<b>+${n - 1}</b>` : ''}</span>`);
   }
   return out.join('');
 }
@@ -465,7 +465,11 @@ export class MarkLayer {
     this.#svg.addEventListener('click', (e) => { this.#showHint(null); pick(e); });
     this.#svg.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') this.#showHint(null), pick(e); });
     // a label opens its element's first drift
-    this.#labels.addEventListener('click', (e) => { const lbl = e.target.closest?.('.lbl'); if (lbl) this.#open(lbl.dataset.id, e); });
+    this.#labels.addEventListener('click', (e) => { const lbl = e.target.closest?.('.lbl, .cpin'); if (lbl) this.#showHint(null), this.#open(lbl.dataset.id, e); });
+    // a pin is its note (U8, 2026-11-20: the pointer went through a pin to the label under it): pointed at, it says its
+    // pill and X-ray reads its element (zoneEl); clicked, its note opens like its zone's
+    this.#labels.addEventListener('pointerover', (e) => { const pin = e.target.closest?.('.cpin'); if (pin) this.#showHint(pin.dataset.id); });
+    this.#labels.addEventListener('pointerout', (e) => { if (e.target.closest?.('.cpin') && !e.relatedTarget?.closest?.('.cpin')) this.#showHint(null); });
     // the note: on the break under the pointer, or the one that has focus
     this.#hint = document.createElement('div');
     this.#hint.className = 'bp-hint pill pl-dark';
@@ -552,6 +556,9 @@ export class MarkLayer {
     this.#pointed = el;
     this.#redraw();
   }
+
+  // the element a zone (or the pin naming it) is about
+  zoneEl(id) { return this.#nodes.get(id)?.el ?? null; }
 
   // The note the X-ray card leads with, for the element it is on, never another's (U6, 2026-11-20: the card on a
   // button read a heading's note, copied from the pill as the hand passed). The one the pill is saying when the pill
