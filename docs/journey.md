@@ -4285,6 +4285,15 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   screenshots of other products aren't committed.
 - **Media hooks:** the contact sheet beside the distance table; one card with its parts outlined and their measured
   loudness.
+- **"Won't it end up dumb?"** Shown the five reasons, the owner asked whether the system would fall apart without a
+  designer's eye for alignment, the button, icon placement and the card on its page. It would have: the format
+  recorded what was easy to measure, and four reviews had checked its logic, not its eye. The owner chose the eye
+  ("plumber's craft rules, and alignment taste"), named the real worry ("the intent behind the change is not
+  communicated well and no confidence to the user why he accept a certain change"), and agreed the unit should be
+  the row of cards. The brief now has one eye that reads references, judges variants and explains changes, three new
+  alignment checks (shared edges, row lines, how the button fits its card), the row as the unit, and a case every
+  variant must make: what is weak now, what changes, why, and proof that it fixes notes without adding any. A new
+  layer reads the five references with that eye before the owner confirms their reasons.
 
 ## Open gaps
 - **The mark was never tried among real neighbours** (a row of browser tabs, an npm page, a README header), only on empty tiles. Nobody outside has been asked whether the round leg reads as an R or leans towards a B.

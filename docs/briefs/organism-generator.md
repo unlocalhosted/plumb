@@ -1,9 +1,10 @@
 # Brief: an organism generator that learns from other people's taste and draws in ours
 
-Status: layers 0–7 (the engine) ready for owner sign-off, 2026-11-20, after four reviews the same day (see **What
-the reviews changed**). How it feels to use and how it learns your taste moved to
-[organism-generator-learning.md](organism-generator-learning.md), parked until layer 3 here has a result. Nothing
-is built, and no code is written until it is signed off.
+Status: the engine (layers 0–7) was signed off by the owner on 2026-11-20 and layer 1 is done. After seeing layer
+1, the owner reopened three things the same day (see **After layer 1**): the eye that reads and judges is plumber's
+craft rules with alignment taste, the unit is the row of cards, and every change must make its case. This version
+adds them; the owner looks before layer 2 starts. How options are shown and how it learns your taste are in
+[organism-generator-learning.md](organism-generator-learning.md), parked until layer 3 has a result.
 It builds on [engine-foundations.md](engine-foundations.md), which plans the layout generator (F7, "the engine is a
 function you can call on a candidate", layer 6). That brief leaves open how candidates are made. This one answers it.
 
@@ -35,6 +36,14 @@ Later the same day, after the first versions read like "a fancy copy paste":
   delighful enough to attune to my liking"
 - "a lot of time its a salesman job to find what would suit the best for me"
 
+After layer 1, asked whether the system would "fall apart and end up being dumb" without a designer's eye for
+"alignment, cta, icons placement of card in overall page":
+
+- whose eye: "plumber's craft rules, and alignment taste"
+- the bigger worry: "that the intent behind the change is not communicated well and no confidence to the user why
+  he accept a certain change"
+- whether the unit should grow to the row of cards: "yeah"
+
 Pick one card (an organism) in your app. Plumber generates it several ways. Every option is drawn in your own
 system, carries its reasons, and none looks like a stock component library. This brief is the engine that makes and
 judges those options. The learning brief covers how they are shown, and how the generator attunes to you from what
@@ -54,14 +63,47 @@ which of the rest are good enough to keep. Generic structure is kept off the she
 "New" here means new *to you, in this context*: a reference redrawn in your look, or a blend of two. It doesn't
 mean invented from nothing.
 
+## The eye: plumber's craft rules and alignment taste
+
+The same eye reads references, judges what the generator makes, and explains every change. It is plumber's craft
+rules, the checks an experienced design engineer would make by looking ([PRINCIPLES.md](../PRINCIPLES.md)), with
+alignment taste added. One eye for all three means a reason given to the person is always something plumber can see
+and measure.
+
+**What a designer looks at on a pricing row, and what sees it:**
+
+| Lens | What is checked | Seen by |
+|---|---|---|
+| Alignment inside a card | content shares a column, not boxes; text of different sizes sits on one baseline; icons centred on the first line's capital height; optical centring | `craft/content-align`, `craft/baseline-align`, `craft/icon-cap`, `craft/optical-centre` (exist) |
+| Shared edges | how many distinct left edges the card's content uses; good cards use one or two | **new:** `craft/shared-edges` |
+| Row lines | across the row, each job on one line: prices, the first list item, buttons | **new:** `craft/row-lines` |
+| The button | its padding and target; its width against the card (full width or its own); one primary per card; its label says the outcome | `craft/button-padding`, `craft/hit-target` (exist); **new:** `craft/action-fit` |
+| Icons | side, size against the text, stroke weight matched across the card | `craft/icon-side`, `craft/icon-cap`, `craft/stroke-weight` (exist) |
+| Hierarchy and type | distinct weight and grey levels; heading and lead; pairs of related text spaced as pairs | `craft/weight-levels`, `craft/grey-levels`, `craft/heading-lead`, `craft/pair-spacing` (exist) |
+| Space | one rhythm; card padding optically even; inner space smaller than outer | `craft/rhythm`, `craft/card-optical-padding`, `craft/inner-outer-spacing` (exist) |
+| Words | numbers in tabular figures; headings without a widow; text width | `craft/tabular-nums`, `craft/heading-widow`, `craft/measure` (exist) |
+| The row on the page | whether you can compare plans by scanning across; whether the chosen plan stands out without breaking the row lines | `craft/row-lines` and the sibling move |
+
+Each new check is a craft rule like the others (written with the craft-rule skill, its own example, and a principle
+and source), so plumber also says it about any page it reads.
+
+**The designer's read of a specimen.** Every specimen carries a `read`: the observations the eye makes on the
+reference, good and bad, each with its rule and measurement ("prices, lists and buttons each sit on one line across
+the three plans: row lines 3 of 3"). The `kept` reason must point at observations in the read, so a reason is never
+only an opinion.
+
 ## Terminology
 
 Use these words in code, docs and the UI, with these meanings only.
 
 | Word | What it means |
 |---|---|
-| **Organism** | A finished component made of smaller parts, with one purpose: a pricing card, a settings row, an empty state. The unit the generator builds. It never changes anything outside the organism. |
-| **Siblings** | Other instances of the same organism beside it (the three plans in a pricing row). The generator reads whether they exist; it never changes them. |
+| **Organism** | A finished component made of smaller parts, with one purpose: a pricing card, a settings row, an empty state. |
+| **Row** | The organism and its siblings as they sit on the page (three plans side by side). The unit the generator builds: it changes the whole row together, never one card alone. A card with no siblings is a row of one. |
+| **Siblings** | The other instances of the organism in its row. They share one grammar and differ only in content and in a sibling move. |
+| **Designer's read** | Plumber's craft rules and alignment checks run on a card or a row, written as observations a designer would make, each with the rule that saw it and the measurement behind it. |
+| **Row lines** | Lines a job should share across the cards of a row: every price on one line, every list starting on one line, every button on one line. |
+| **The case** | What a variant must show before it can be accepted: what is weak now, what it changes, why, and proof. See **The case for a change**. |
 | **Job** | One thing the organism has to do for the person: say what it is (*identity*), say what it costs (*price*), make the case (*proof*), get the click (*action*). Jobs come from a fixed list (below). |
 | **Job tree** | An organism's jobs, nested and counted: `card[ status?, identity, price, proof×3–6, action, secondary-action? ]`. |
 | **Kind** | A human name for a family of job trees ("pricing card"), used to report coverage. Matching never uses kinds; it uses job overlap. |
@@ -204,11 +246,32 @@ changes before any shelf is built on it.
    made and judged once, in the background, and cached; how it is shown is the learning brief's job.
 10. **Log the funnel.** Every step's count, why each candidate left, and coverage. An empty pool shows the funnel.
 
-### Sibling moves stay on the picked card
+### Building the row
 
-The generator builds one organism and never changes its siblings. So a move about siblings is drawn only with
-expressions that change the picked card itself. If the picked card isn't the chosen one, `single-out` doesn't apply
-and the variant is structure only. Building a whole row of siblings waits until single cards work.
+The generator builds the picked card and its siblings together, with one grammar. Content differs per card; a
+sibling move (`single-out`) marks the chosen plan. Row lines are hard: in every variant, each job sits on one line
+across the row, and a variant that breaks a row line is dropped. Reading the card (step 1) reads the row: every
+sibling's content records and which one is chosen.
+
+## The case for a change
+
+The owner's worry is that a change arrives without its intent, so there is no reason to trust it. So no variant is
+shown without its case, in four parts, each built from what the eye measured:
+
+1. **Now:** what is weak in your row today, from the designer's read of it: "Your three buttons sit at different
+   heights; the price is quieter than the plan name; the list uses three left edges."
+2. **The change:** what this variant does, in plain words, one line per change: "Prices move above the list. Buttons
+   line up at the bottom. One left edge."
+3. **Why:** the reference behind it and its kept reason, plus the observations from its read that this variant
+   carries over: "From Bencho's plan cards, kept because the deal reads in one glance."
+4. **Proof:** the read before and after: findings resolved, findings added, row lines held, shared edges, taste
+   features. "Fixes 4 of 6 notes, adds none; row lines 3 of 3."
+
+Two rules make the proof honest:
+
+- **A variant that adds a finding is never shown.** A change can't trade one problem for another silently.
+- **A variant that resolves nothing says so.** It is offered as "a different direction, not a fix", so the person
+  knows they are choosing taste, not correcting a fault.
 
 ## The taste ladder
 
@@ -361,6 +424,7 @@ One layer at a time, each seen working before the next.
 |---|---|---|
 | 0 | Sign-off on this brief | This page, agreed |
 | 1 | The specimen format and validator; 5 pricing cards written by hand, with sidecars, chosen to differ in structure (not five stacks) | Five specimens that pass validation, with their structure distances to each other |
+| 1b | **The designer's read:** the three new alignment checks as craft rules; the read of each of the five reference rows; reasons pointed at it | Each reference's row with its observations drawn on it; the owner confirms or rewrites each kept reason against them |
 | 2 | Molecules for the pricing jobs, by hand (3 price, 3 proof, 2 identity, 2 action, 2 status) | The molecules on one sheet at each rank and density |
 | 3 | **The dialect trip by hand, with a control:** the 5 built strictly from specimen, molecules and table as static HTML, no generator, no off-screen build. Every decision none of them supplied is written down. A sixth card, the **control**, uses the same molecules with only the placement rules and no specimen. The first taste ladder is set up and all six are placed on it | Six cards in toys side by side, unlabelled, and the list of missing decisions. If the owner can't tell the specimen cards from the control, or the control ranks as high, the shelf isn't earning its cost and the product is a molecule combinator: layers 4–5 are dropped or rethought. If the five aren't distinct and good, the thesis fails here |
 | 4 | The round trip on the 5, each captured twice | Per-slot diffs within tolerance for at least 4 of 5, and the same ranks from both captures |
@@ -377,8 +441,12 @@ Layer 7 needs the off-screen build (engine-foundations layer 6). Layers 1–6 do
   and a lead strength, and the molecule turns them into sizes in our look.
 - **Moves are only what grammar and molecules can't say.** "Lead with price" is the hierarchy field and "prove with a quote" is
   a molecule choice, so neither is a move.
-- **The generator never touches siblings.** Sibling moves use expressions on the picked card only. Rows of cards
-  wait.
+- **The unit is the row.** A designer judges a pricing card by how it compares with its neighbours, so the
+  generator builds the row with one grammar and holds row lines as a hard rule.
+- **One eye: plumber's craft rules with alignment taste.** It reads references, judges variants and explains
+  changes, so every reason shown is something plumber measured. Three alignment checks are added as craft rules.
+- **Every variant makes its case.** Now, the change, why, proof. A variant that adds a finding is never shown; one
+  that fixes nothing says it is a different direction.
 - **Structure only, labelled, rather than ended.** A variant whose move can't be drawn can still be a good structure;
   it says so and ranks lower.
 - **Generic is a curation check, drift is the run-time check.** A variant inherits its specimen's structure, so its
@@ -413,6 +481,13 @@ after Translate; uses body size for every ratio; labels structure-only variants;
 narrows the round trip's claim; pins the seen history; gives the blind mix a count and a bar; and asks layer 3 for
 the list of decisions the spec didn't supply.
 
+**After layer 1**, the owner asked whether the system would "end up being dumb" without a designer's eye. It
+would have: the format recorded what was easy to measure (order, loudness, spacing) and nothing a designer points
+at (alignment, the button, icons, the card in its row, the words), and the reviews had checked the format's logic,
+not its eye. This version makes plumber's craft rules, with three new alignment checks, the one eye that reads
+references, judges variants and explains changes; makes the row the unit, with row lines as a hard rule; and adds
+the case every variant must make. Layer 1b reads the five references with that eye before layer 2.
+
 **Third review**, which recommended sign-off after two additions. This version adds a control card to layer 3, makes
 molecules the app's real components with content records for binding, gives a capture rule for ranks and lead
 strength, makes the blind mix use fresh cards, an unfamiliar judge and a stricter bar, splits input density from
@@ -439,6 +514,11 @@ Everything about showing options and learning from use moved to the learning bri
 review.
 
 ## Not known
+
+- Whether the craft rules' read of a reference finds what the owner sees in it. Layer 1b shows the five reads beside
+  the owner's own reasons.
+- Whether row lines are too strict for rows whose cards hold very different amounts (a free plan with three lines
+  against a business plan with twelve).
 
 - Whether a hand-built dialect trip comes out distinct and good (layer 3). The brief stands or falls on it.
 - Whether generic and kept specimens separate in grammar space at all (layer 5). The Stripe example's structure is
