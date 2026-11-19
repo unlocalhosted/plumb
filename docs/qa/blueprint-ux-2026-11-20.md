@@ -249,7 +249,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding. The line that says what the ticks are for is the one hidden.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u19-setup-panel.jpg`
-- **Status:** fixed 19a65b6d (same cause as U27: panels placed for the dock, not the bar)
+- **Status:** fixed 19a65b6d (same cause as U27: panels placed for the dock, not the bar) · verified (tester, 05:20): the setup panel ends above the bar; its footer and Copy for agent are clear. `docs/qa/shots/2026-11-20/u19-verified.jpg`
 
 ### U20 · Two setup steps are the same command
 - **Where:** Setup steps, "Choose your rules" and "Start from today's problems".
@@ -322,7 +322,7 @@ How to read an issue, and what each one needs:
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u24-cleanup-census.png`; in the overlay, `.cu` is 520px wide and its
   `.body` 718px.
-- **Status:** open
+- **Status:** fixing
 
 ### U26 · While Clean up is open the Blueprint bar is gone, and the only visible button is Try again
 - **Where:** Clean up panel.
@@ -345,7 +345,7 @@ How to read an issue, and what each one needs:
   disabled with no reason in view.
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u27-history-under-bar.jpg`
-- **Status:** fixed 19a65b6d
+- **Status:** fixed 19a65b6d · verified (tester, 05:19): History opens above the bar with its timeline in view. `docs/qa/shots/2026-11-20/u27-verified-u54-history.jpg` (its words are U54)
 
 ### U28 · History's one entry doesn't read as a sentence
 - **Where:** History strip, the only entry.
@@ -369,7 +369,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u28-help.jpg`
-- **Status:** fixed 19a65b6d (the panel above the bar) and 5e3aae8e (the long key wraps)
+- **Status:** fixed 19a65b6d (the panel above the bar) and 5e3aae8e (the long key wraps) · verified (tester, 05:19): Help sits above the bar; "Alt + two-finger scroll" wraps and the Space row shows. `docs/qa/shots/2026-11-20/u29-verified.jpg`
 
 ### U30 · "Edit the words" is the main button on notes that aren't about words
 - **Where:** X-ray card, pink note "Padding looks bigger than it is" on the "Get started" button.
@@ -419,7 +419,7 @@ How to read an issue, and what each one needs:
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u33-craft-output.txt` (the run's text output); the curl and dig results
   above.
-- **Status:** fixed 74694792 (no link until the docs site has an address; PLUMBER_DOCS_ORIGIN sets one)
+- **Status:** fixed 74694792 (no link until the docs site has an address; PLUMBER_DOCS_ORIGIN sets one) · verified (tester, 05:21): `plumber craft` on the same page prints no "Read more" lines (0 of 70 findings).
 
 ### U34 · The weight note tells me to use an existing weight, then to add a new one
 - **Where:** `plumber craft`, rule craft/weight-levels (8 findings on this page).
@@ -517,7 +517,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding. I'm asked to choose a fix for a thing I can't see.
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u41-crafting-fix-under-header.jpg`
-- **Status:** fixing
+- **Status:** fixed 3d132589 (the element comes in below the sticky header; the choice row weighs what it would hide and now sits beside the line, clear of the header and the heading)
 
 ### U42 · The fix for a heavy line is a hard-coded value
 - **Where:** same fix, "2 places: line too heavy. This 1px line is 2 pixels thick on a 2× screen."
@@ -551,7 +551,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding. The new, clearer words (from the U15 change) can't be read on a narrow window.
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u44-fix-bar-700.jpg`
-- **Status:** fixed b784f053
+- **Status:** fixed b784f053 · verified (tester, 05:18): at 700px both lines wrap in full. `docs/qa/shots/2026-11-20/u44-verified-700.jpg`
 
 ### U45 · In the card, the blue highlight in the "text size" row sits under the label, not the value
 - **Where:** X-ray card, top row ("text size base 16px"), on the "Get started" button, after the card fixes.
@@ -659,4 +659,18 @@ How to read an issue, and what each one needs:
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u53-space-held.jpg` (taken while held); in the overlay the host gets
   `data-bp-pass` and `path.hit` turns `pointer-events: none`.
+- **Status:** open
+
+### U54 · History's timeline doesn't say what its parts or buttons do
+- **Where:** ··· → History, after one resize and its undo.
+- **What I saw:** a timeline with the headings "Changed since", "Size", "Undo" and "Now", a tooltip "Undo w-xs → ø",
+  and two buttons "Undo change ⌫" and "Undo step ⇧⌫". Opening it also scrolled the page down to the three cards
+  and outlined them. I can't tell what "Changed since" means, what ø stands for, how a change differs from a step,
+  or what "Undo change" does when the last entry is already an undo.
+- **What I expected:** each entry in plain words ("Card width set to w-xs, 3 places · undone"), and button names
+  that say the result ("Put w-xs back").
+- **Why it hurts:** understanding and intent. History is where I go to get out of trouble, and I can't predict what
+  its buttons will do to my code.
+- **Severity:** 3
+- **Evidence:** `docs/qa/shots/2026-11-20/u27-verified-u54-history.jpg`
 - **Status:** open
