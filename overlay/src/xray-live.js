@@ -359,6 +359,8 @@ export function mountXray(o) {
     const show = ready || !!pinned || !!held || changes.size > 0;
     if (!show) { clearTimeout(restT); restT = setTimeout(() => { ready = true; restAt = ptNow; if (shown?.isConnected && !o.paused?.()) draw(shown); }, REST); }
     if (!!noting || !show) shrink(); else card.hidden = false;
+    // the value's highlight is measured once the card shows: measured while it was hidden, it sat at the row's start
+    if (!card.hidden) thumbAt(0, 0, true);
     if (first && !card.hidden) { card.removeAttribute('data-enter'); void card.offsetWidth; card.setAttribute('data-enter', ''); grow(el); }
     if (first) requestAnimationFrame(() => card.removeAttribute('data-fresh'));
     shown = el; shownKey = o.key(el) ? placeKey(el) : null;
@@ -582,8 +584,16 @@ export function mountXray(o) {
   };
   const thumbAt = (pull = 0, dir = 0, still = false) => {
     const h = inHand; if (!h) return;
-    const row = h.p.row, t = row.querySelector('.thumb'), r = row.getBoundingClientRect();
-    const box1 = (s) => { const el = s === 'value' ? row.querySelector('.val') : row.querySelector(`[data-s="${s}"]`), b = el.getBoundingClientRect(); return { x: b.left - r.left - 3, w: b.width + 6 }; };
+    const row = h.p.row, t = row.querySelector('.thumb');
+    // measured in the row's own layout, not on screen: the card grows from the pill with a scale, and a thumb measured
+    // mid-grow sat over the label, not the value (U45, 2026-11-20)
+    const box1 = (s) => {
+      const el = s === 'value' ? row.querySelector('.val') : row.querySelector(`[data-s="${s}"]`);
+      let x = 0, n = el;
+      for (; n && n !== row; n = n.offsetParent) x += n.offsetLeft;
+      if (n !== row) { const r = row.getBoundingClientRect(), b = el.getBoundingClientRect(); return { x: b.left - r.left - 3, w: b.width + 6 }; }
+      return { x: x - 3, w: el.offsetWidth + 6 };
+    };
     const i = h.segs.indexOf(h.seg), next = h.segs[i + dir];
     const from = box1(h.seg), to = next ? box1(next) : from;
     const k = next ? Math.min(1, Math.max(0, pull)) : 0, lean = next ? 0 : dir * Math.min(6, pull * 18);
