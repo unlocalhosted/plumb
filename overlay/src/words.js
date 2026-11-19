@@ -475,6 +475,11 @@ export const written = (cls) => { const m = /\[(?:[a-z-]+:)?(.+)\]!?$/.exec(Stri
 const FAMILY = { spacing: 'Spacing', radius: 'Corner', color: 'Colour', elevation: 'Shadow', shadow: 'Shadow', z: 'Layer order', motion: 'Timing' };
 
 export const FIX = {
+  // a Tailwind default in hand (U15, U16, 2026-11-20): the headline names the class, so two in a row read apart; the
+  // detail says what it is, and when one of your tokens is the same size, that nothing moves and why to take it
+  frameworkHead: (n, noun, cls, prop) => `${n} ${noun} use${n === 1 ? 's' : ''} ${cls}, Tailwind’s default ${prop}`,
+  frameworkSame: (value, token) => `is ${value}, the same as your ${token}. Use your name for it, so it changes when your theme does.`,
+  frameworkOff: (value, prop, tokens) => `is ${value}, Tailwind’s size, not one of your ${prop} tokens: ${tokens}.`,
   // rest
   problems: (n) => count(n, 'problem', 'problems'),
   // the Blueprint bar (docs/design/one-bar.md)

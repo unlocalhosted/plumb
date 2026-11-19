@@ -1209,10 +1209,14 @@ export class FixPanel {
       const cls = nameOf(g), isClass = !!cls && /[a-z]/i.test(cls) && !/^-?[\d.]+[a-z%]*$/i.test(cls);
       const now = framework && isClass ? cls : unitOf(v?.now?.n) ?? cls ?? null;
       const sayLine = mark.family === 'craft' ? `${n} ${nounOf(g, n)}: ${String(what).replace(/^./, (c) => c.toLowerCase())}`
+        : prop && framework && isClass ? FIX.frameworkHead(n, nounOf(g, n), cls, prop)
         : prop && framework ? `${n} ${nounOf(g, n)} use${n === 1 ? 's' : ''} Tailwind’s default ${prop}` : prop ? `${n} ${nounOf(g, n)} ${n === 1 ? 'has' : 'have'} a hard-coded ${prop}` : `${n} ${nounOf(g, n)}: ${what.toLowerCase()}`;
       const tokens = v?.ready ? [...new Map([...v.options].sort((a, b) => (a.n ?? 0) - (b.n ?? 0)).map((o) => [unitOf(o.n) ?? o.label, 1])).keys()].filter(Boolean) : [];
+      // a Tailwind default the size of one of your tokens: nothing on screen moves, so the line says so
+      const nowPx = unitOf(v?.now?.n), same = framework && isClass && nowPx && v?.ready
+        ? v.options.find((o) => Number.isFinite(o.n) && Math.abs(o.n - v.now.n) < 0.5 && (o.cls ?? o.label) && (o.cls ?? o.label) !== cls) : null;
       const moreLine = mark.family === 'craft' ? esc(String(mark.title ?? mark.because ?? ''))
-        : `${now != null && now !== '' ? `<span class="pl-pill" data-hue="coral">${esc(String(now))}</span> ` : ''}${esc(framework ? (tokens.length && prop ? `isn’t one of your ${prop} tokens: ${listOf(tokens)}.` : `comes from Tailwind’s defaults. Your theme doesn’t set it.`) : tokens.length && prop ? `isn’t one of your ${prop} tokens: ${listOf(tokens)}.` : prop ? `isn’t one of your ${prop} tokens.`
+        : `${now != null && now !== '' ? `<span class="pl-pill" data-hue="coral">${esc(String(now))}</span> ` : ''}${esc(framework ? (same ? FIX.frameworkSame(nowPx, same.cls ?? same.label) : nowPx && isClass && tokens.length && prop ? FIX.frameworkOff(nowPx, prop, listOf(tokens.filter((t) => t !== nowPx))) : tokens.length && prop ? `isn’t one of your ${prop} tokens: ${listOf(tokens)}.` : `comes from Tailwind’s defaults. Your theme doesn’t set it.`) : tokens.length && prop ? `isn’t one of your ${prop} tokens: ${listOf(tokens)}.` : prop ? `isn’t one of your ${prop} tokens.`
           // no property word: say the value against your steps, never the headline again
           : /by-value|matches/.test(mark.rule ?? '') ? 'is typed by hand. Your theme has a token with this value.' : tokens.length ? `isn’t one of your steps: ${listOf(tokens)}.` : 'isn’t in your theme.')}`;
       const nav = `<span class="onav"><button class="prev" aria-label="Previous fix">‹</button><span>${esc(FIX.position(g, live, noteOf))}</span><button class="next" aria-label="Next fix">›</button></span>`;
