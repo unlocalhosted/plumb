@@ -347,15 +347,47 @@ function inkOf(el, r) {
   const first = [...range.getClientRects()].find((q) => q.width > 0 && q.height > 0);
   return first ? { left: first.left, top: first.top, width: first.width, height: first.height } : r;
 }
+// Is anything of the page's own under this spot: words, a control, a picture? Sampled on a small grid, so a pin is
+// never set over what a person reads (U2, 2026-11-20: pins hid a "FEATURE" label and a button's top edge).
+const SOLID = 'img, svg, video, canvas, picture, input, select, textarea, button, [role=button], hr';
+function inkAt(x, y) {
+  const hit = document.elementsFromPoint(x, y).find((e) => !e.closest('plumb-overlay, [data-plumb-layer]'));
+  if (!hit || hit === document.body || hit === document.documentElement) return false;
+  if (hit.closest(SOLID)) return true;
+  // a small thing with a fill or an edge of its own (a link drawn as a button, a badge): covering its box hides it
+  for (let e = hit, i = 0; e && e !== document.body && i < 3; e = e.parentElement, i++) {
+    const s = getComputedStyle(e), r = e.getBoundingClientRect();
+    if (r.width * r.height > innerWidth * innerHeight / 8) break;
+    if (!/rgba\(.*,\s*0\)|transparent/.test(s.backgroundColor) || parseFloat(s.borderTopWidth) > 0 && !/rgba\(.*,\s*0\)|transparent/.test(s.borderTopColor)) return true;
+  }
+  const range = document.createRange();
+  for (const n of hit.childNodes) {
+    if (n.nodeType !== 3 || !n.nodeValue.trim()) continue;
+    range.selectNodeContents(n);
+    for (const q of range.getClientRects()) if (x >= q.left - 2 && x <= q.right + 2 && y >= q.top - 1 && y <= q.bottom + 1) return true;
+  }
+  return false;
+}
+const covers = (x, y, w, h) => { for (const fx of [0.04, 0.3, 0.5, 0.7, 0.96]) for (const fy of [0.15, 0.5, 0.85]) if (inkAt(x + w * fx, y + h * fy)) return true; return false; };
 function pinsOf(entries, view) {
   const byEl = new Map();
-  for (const p of entries) { const e = byEl.get(p.item.el); if (e) e.n++; else byEl.set(p.item.el, { r: inkOf(p.item.el, p.er), name: FIX.what(p.mark), n: 1 }); }
+  for (const p of entries) { const e = byEl.get(p.item.el); if (e) e.n++; else byEl.set(p.item.el, { r: inkOf(p.item.el, p.er), b: p.er, name: FIX.what(p.mark), n: 1 }); }
   const placed = [], out = [];
-  for (const { r, name, n } of [...byEl.values()].sort((a, b) => a.r.top - b.r.top || a.r.left - b.r.left)) {
+  for (const { r, b, name, n } of [...byEl.values()].sort((a, b) => a.r.top - b.r.top || a.r.left - b.r.left)) {
     const w = Math.round(name.length * 6.1 + (n > 1 ? 22 : 0) + 18), h = 20;
-    let x = Math.max(4, Math.min(view.w - w - 4, r.left)), y = r.top >= h + 6 ? r.top - h - 3 : r.top + 3;
-    if (y > view.h || y + h < 0) continue;
-    for (let i = 0; i < 12 && placed.some((q) => x < q.x + q.w + 4 && q.x < x + w + 4 && y < q.y + h && q.y < y + h); i++) x = Math.min(view.w - w - 4, x + 40);
+    if (r.top > view.h || r.top + r.height < 0) continue;
+    // the spots, nearest first: above the words, above the box, below the box, to the right, to the left, then the
+    // same above and below from the right-hand end. The first inside the window that hides nothing (no words, no
+    // control, no other pin) wins; with none free, the first inside the window
+    const bottom = b.top + b.height, right = r.left + r.width, mid = r.top + (r.height - h) / 2;
+    const spots = [[r.left, r.top - h - 3], [b.left, b.top - h - 3], [b.left, bottom + 3], [right + 6, mid], [r.left - w - 6, mid],
+      [right - w, b.top - h - 3], [right - w, bottom + 3]];
+    for (const q of spots) q[0] = Math.max(4, Math.min(view.w - w - 4, q[0]));
+    const inside = ([, y]) => y >= 4 && y + h <= view.h - 4;
+    const clear = ([x, y]) => !placed.some((q) => x < q.x + q.w + 4 && q.x < x + w + 4 && y < q.y + h + 2 && q.y < y + h + 2) && !covers(x, y, w, h);
+    const fits = spots.filter(inside);
+    let [x, y] = fits.find(clear) ?? fits[0] ?? [Math.max(4, Math.min(view.w - w - 4, r.left)), Math.max(4, Math.min(view.h - h - 4, r.top + 3))];
+    for (let i = 0; i < 12 && !clear([x, y]) && placed.some((q) => x < q.x + q.w + 4 && q.x < x + w + 4 && y < q.y + h && q.y < y + h); i++) x = Math.min(view.w - w - 4, x + 40);
     placed.push({ x, y, w });
     out.push(`<span class="cpin" style="left:${Math.round(x)}px;top:${Math.round(y)}px">${escPin(name)}${n > 1 ? `<b>+${n - 1}</b>` : ''}</span>`);
   }
