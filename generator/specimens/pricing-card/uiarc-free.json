@@ -1,20 +1,103 @@
 {
   "id": "uiarc-free",
   "kind": "pricing card",
-  "status": "draft",
-  "jobs": [{ "job": "media" }, { "job": "identity" }, { "job": "price" }, { "job": "meta" }, { "job": "action" }],
-  "order": ["media", "identity", "price", "meta", "action"],
-  "nesting": { "stack": [{ "row": ["media", "identity", "price"] }, "meta", "action"] },
-  "hierarchy": { "identity": 1, "action": 2, "meta": 3, "price": 4 },
+  "status": "kept",
+  "jobs": [
+    {
+      "job": "media"
+    },
+    {
+      "job": "identity"
+    },
+    {
+      "job": "price"
+    },
+    {
+      "job": "meta"
+    },
+    {
+      "job": "action"
+    }
+  ],
+  "order": [
+    "media",
+    "identity",
+    "price",
+    "meta",
+    "action"
+  ],
+  "nesting": {
+    "stack": [
+      {
+        "row": [
+          "media",
+          "identity",
+          "price"
+        ]
+      },
+      "meta",
+      "action"
+    ]
+  },
+  "hierarchy": {
+    "identity": 1,
+    "action": 2,
+    "meta": 3,
+    "price": 4
+  },
   "lead": "flat",
-  "colour": { "media": "ink", "identity": "ink", "price": "quieter", "meta": "quieter", "action": "link" },
-  "space": { "inside": 1.1, "between": 1.3, "across": 0.9 },
+  "colour": {
+    "media": "ink",
+    "identity": "ink",
+    "price": "quieter",
+    "meta": "quieter",
+    "action": "link"
+  },
+  "space": {
+    "inside": 1.1,
+    "between": 1.3,
+    "across": 0.9
+  },
   "grouping": "one row, then space",
-  "container": { "ground": "surface", "edge": "line", "shape": "medium" },
+  "container": {
+    "ground": "surface",
+    "edge": "line",
+    "shape": "medium"
+  },
   "density": "compact",
-  "fit": { "width": [38, 46], "words": { "identity": 1, "price": 2, "meta": 20, "action": 3 }, "counts": {}, "itemWords": 0 },
-  "move": { "type": "bind", "args": { "a": "identity", "b": "price" }, "scope": "organism", "words": "the price is said on the same line as the name" },
-  "kept": { "by": "proposed", "why": "a free plan doesn't need a price tag: the price is a quiet word beside the name, and the card is about what you get" },
+  "fit": {
+    "width": [
+      38,
+      46
+    ],
+    "words": {
+      "identity": 1,
+      "price": 2,
+      "meta": 20,
+      "action": 3
+    },
+    "counts": {},
+    "itemWords": 0
+  },
+  "move": {
+    "type": "bind",
+    "args": {
+      "a": "identity",
+      "b": "price"
+    },
+    "scope": "organism",
+    "words": "the price is said on the same line as the name"
+  },
+  "kept": {
+    "by": "owner",
+    "why": "On a free plan the price isn't news, so we didn't make a headline of it. It's a quiet word beside the name, and the card spends its room on what you actually get.",
+    "confirmed": "2026-11-20",
+    "worded": "by Claude in a designer's voice, confirmed by the owner"
+  },
   "generic": null,
-  "source": { "url": "https://uiarc.dev/pricing", "captured": "2026-11-20", "sidecar": "generator/sidecars/uiarc-free.json" }
+  "source": {
+    "url": "https://uiarc.dev/pricing",
+    "captured": "2026-11-20",
+    "sidecar": "generator/sidecars/uiarc-free.json"
+  }
 }

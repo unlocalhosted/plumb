@@ -51,12 +51,14 @@ for (const f of files) {
   }
   need(s.kept && s.kept.why && ['owner', 'proposed'].includes(s.kept.by), 'kept needs a why and who (owner, or proposed until the owner confirms)');
   if (s.status === 'kept') need(s.kept?.by === 'owner', 'only the owner can keep a specimen');
+  // `only`: what the owner keeps it for, when not all of it (Supabase is kept for its order, not its alignment)
+  if (s.kept?.only) need(Array.isArray(s.kept.only) && s.kept.only.every((f) => ['order', 'nesting', 'hierarchy', 'space', 'grouping', 'container', 'density', 'move'].includes(f)), 'kept.only names grammar fields');
   need(s.source && s.source.url && s.source.sidecar, 'source needs url and sidecar');
   const { source, ...grammar } = s;
   const abs = JSON.stringify(grammar).match(ABSOLUTE);
   need(!abs, `holds an absolute value ("${abs?.[0]}"); it belongs in the sidecar or a molecule`);
   if (errors.length) { failed++; console.log(`✗ ${s.id}\n  - ${errors.join('\n  - ')}`); }
-  else console.log(`✓ ${s.id}  ${s.status}${s.kept.by === 'proposed' ? ' (reason proposed, owner to confirm)' : ''}`);
+  else console.log(`✓ ${s.id}  ${s.status}${s.kept.by === 'proposed' ? ' (reason proposed, owner to confirm)' : ''}${s.kept.only ? ` for its ${s.kept.only.join(', ')} only` : ''}`);
   specimens.push(s);
 }
 

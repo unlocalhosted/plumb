@@ -273,6 +273,14 @@ Two rules make the proof honest:
 - **A variant that resolves nothing says so.** It is offered as "a different direction, not a fix", so the person
   knows they are choosing taste, not correcting a fault.
 
+**How it is said: a designer explaining a decision to a client.** The owner, 2026-11-20: "rephrase things like a
+human designer would explain a client his decision behind a certain design". Every reason the person reads (a
+specimen's `kept` line, the case's why, a pitch) is written that way: what we did, and what it does for the people
+using it. "We put the button before the price. By the time someone reaches the cost, they already know what the plan
+is for, so the price confirms a choice instead of starting one." Never a measurement read out as the reason ("row
+lines 3 of 3"); the measurement is the proof under it. The first five kept reasons are written in this voice
+(`generator/specimens/pricing-card/`).
+
 ## The taste ladder
 
 Everything else in this brief keeps out what is bad: rules, tells, drift, curation. None of it says how good a

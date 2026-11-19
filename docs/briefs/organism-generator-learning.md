@@ -31,7 +31,8 @@ guess, and learns from what you do. Words are optional.
    page ("3 plans side by side", "the price is the second thing on your card today"), measured taste features ("one
    alignment edge, a clear lead"), and the specimen's `kept` line, which is the owner's own reason for keeping the
    reference ("the price is read first and the list never competes with it"). A model may phrase it but may not add
-   a claim. "People scan for the number" is not allowed unless a measured fact says so.
+   a claim. It is phrased the way a designer explains a decision to a client: what we did, and what it does for the
+   people using it (the engine brief, **The case for a change**). "People scan for the number" is not allowed unless a measured fact says so.
 5. **You react** by doing what you'd do anyway: apply, keep, tweak, undo, shuffle, compare.
 6. **It mentions what it has noticed** only after the same pattern shows in at least five signals across two
    sessions ("You've undone every card with a big price; showing quieter ones"). One line, dismissable.

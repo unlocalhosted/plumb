@@ -4349,6 +4349,13 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   assertion passed for both pages), so the three checks add no noise there. The test still ends red at its next
   step, which reads the fix bar's summary line; the bar was redesigned in another session ("All concerns 62 Fix")
   and the pattern no longer matches. That failure is the test's, not these rules'.
+- **The five reasons, in a designer's voice.** Shown each card's reason beside its read, the owner agreed with them
+  and asked for one change: "rephrase things like a human designer would explain a client his decision behind a
+  certain design". All five were rewritten that way (Supabase's: "We put the button before the price. By the time
+  someone reaches the cost, they already know what the plan is for, so the price confirms a choice instead of
+  starting one.") and the five specimens are now kept. Supabase is kept for its order only, because its read shows
+  its plans don't line up. The voice became a rule in the brief for every reason, case and pitch the generator shows:
+  measurements are the proof under a reason, never the reason.
 
 ## Open gaps
 - **The mark was never tried among real neighbours** (a row of browser tabs, an npm page, a README header), only on empty tiles. Nobody outside has been asked whether the round leg reads as an R or leans towards a B.

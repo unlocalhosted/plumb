@@ -1,20 +1,135 @@
 {
   "id": "supabase-pro",
   "kind": "pricing card",
-  "status": "draft",
-  "jobs": [{ "job": "identity" }, { "job": "status", "optional": true }, { "job": "meta" }, { "job": "action" }, { "job": "price" }, { "job": "help" }, { "job": "proof", "count": [7, 10] }],
-  "order": ["identity", "status", "meta", "action", "price", "help", "proof"],
-  "nesting": { "stack": [{ "row": ["identity", "status"] }, "meta", "action", { "group": ["price", "help"] }, { "list": "proof" }] },
-  "hierarchy": { "price": 1, "identity": 2, "help": 3, "proof": 3, "meta": 4, "status": 4, "action": 5 },
+  "status": "kept",
+  "jobs": [
+    {
+      "job": "identity"
+    },
+    {
+      "job": "status",
+      "optional": true
+    },
+    {
+      "job": "meta"
+    },
+    {
+      "job": "action"
+    },
+    {
+      "job": "price"
+    },
+    {
+      "job": "help"
+    },
+    {
+      "job": "proof",
+      "count": [
+        7,
+        10
+      ]
+    }
+  ],
+  "order": [
+    "identity",
+    "status",
+    "meta",
+    "action",
+    "price",
+    "help",
+    "proof"
+  ],
+  "nesting": {
+    "stack": [
+      {
+        "row": [
+          "identity",
+          "status"
+        ]
+      },
+      "meta",
+      "action",
+      {
+        "group": [
+          "price",
+          "help"
+        ]
+      },
+      {
+        "list": "proof"
+      }
+    ]
+  },
+  "hierarchy": {
+    "price": 1,
+    "identity": 2,
+    "help": 3,
+    "proof": 3,
+    "meta": 4,
+    "status": 4,
+    "action": 5
+  },
   "lead": "strong",
-  "colour": { "identity": "ink", "status": "chip", "meta": "quieter", "action": "the-action", "price": "ink", "help": "ink", "proof": "ink" },
-  "space": { "inside": 1, "between": 5 },
+  "colour": {
+    "identity": "ink",
+    "status": "chip",
+    "meta": "quieter",
+    "action": "the-action",
+    "price": "ink",
+    "help": "ink",
+    "proof": "ink"
+  },
+  "space": {
+    "inside": 1,
+    "between": 5
+  },
   "grouping": "space",
-  "container": { "ground": "surface", "edge": "line", "shape": "medium" },
+  "container": {
+    "ground": "surface",
+    "edge": "line",
+    "shape": "medium"
+  },
   "density": "airy",
-  "fit": { "width": [20, 23], "words": { "identity": 1, "meta": 10, "price": 3, "help": 10 }, "counts": { "proof": [7, 10] }, "itemWords": 8 },
-  "move": { "type": "single-out", "args": { "which": "recommended" }, "scope": "siblings", "words": "the recommended plan stands out from its row" },
-  "kept": { "by": "proposed", "why": "the button comes before the price, so you decide on what the plan is for and then check what it costs" },
+  "fit": {
+    "width": [
+      20,
+      23
+    ],
+    "words": {
+      "identity": 1,
+      "meta": 10,
+      "price": 3,
+      "help": 10
+    },
+    "counts": {
+      "proof": [
+        7,
+        10
+      ]
+    },
+    "itemWords": 8
+  },
+  "move": {
+    "type": "single-out",
+    "args": {
+      "which": "recommended"
+    },
+    "scope": "siblings",
+    "words": "the recommended plan stands out from its row"
+  },
+  "kept": {
+    "by": "owner",
+    "why": "We put the button before the price. By the time someone reaches the cost, they already know what the plan is for, so the price confirms a choice instead of starting one.",
+    "confirmed": "2026-11-20",
+    "worded": "by Claude in a designer's voice, confirmed by the owner",
+    "only": [
+      "order"
+    ]
+  },
   "generic": null,
-  "source": { "url": "https://supabase.com/pricing", "captured": "2026-11-20", "sidecar": "generator/sidecars/supabase-pro.json" }
+  "source": {
+    "url": "https://supabase.com/pricing",
+    "captured": "2026-11-20",
+    "sidecar": "generator/sidecars/supabase-pro.json"
+  }
 }
