@@ -1,0 +1,20 @@
+{
+  "id": "bencho-forever",
+  "kind": "pricing card",
+  "status": "draft",
+  "jobs": [{ "job": "identity" }, { "job": "status", "optional": true }, { "job": "price" }, { "job": "proof", "count": [4, 7] }, { "job": "action" }, { "job": "help" }],
+  "order": ["identity", "status", "price", "proof", "action", "help"],
+  "nesting": { "stack": [{ "row": ["identity", "status"], "ends": true }, "price", { "list": "proof" }, { "group": ["action", "help"] }] },
+  "hierarchy": { "price": 1, "identity": 2, "help": 2, "action": 3, "status": 3, "proof": 4 },
+  "lead": "clear",
+  "colour": { "identity": "ink", "status": "chip", "price": "ink", "proof": "ink", "action": "the-action", "help": "quieter" },
+  "space": { "inside": 0.7, "between": 1.7, "pinned": "action" },
+  "grouping": "space",
+  "container": { "ground": "inverse", "edge": "none", "shape": "large" },
+  "density": "balanced",
+  "fit": { "width": [24, 28], "words": { "identity": 1, "status": 2, "price": 4, "help": 5 }, "counts": { "proof": [4, 7] }, "itemWords": 5 },
+  "move": { "type": "single-out", "args": { "which": "recommended" }, "scope": "siblings", "words": "the recommended plan stands out from its row" },
+  "kept": { "by": "proposed", "why": "the badge sits on the name's line and the old price is struck through beside the new one, so the deal reads in one glance" },
+  "generic": null,
+  "source": { "url": "https://bencho.dev/pricing", "captured": "2026-11-20", "sidecar": "generator/sidecars/bencho-forever.json" }
+}

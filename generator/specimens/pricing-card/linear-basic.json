@@ -1,0 +1,20 @@
+{
+  "id": "linear-basic",
+  "kind": "pricing card",
+  "status": "draft",
+  "jobs": [{ "job": "identity" }, { "job": "price" }, { "job": "input", "optional": true }, { "job": "proof", "count": [5, 7] }, { "job": "action" }],
+  "order": ["identity", "price", "input", "proof", "action"],
+  "nesting": { "stack": [{ "group": ["identity", "price"] }, "input", { "list": "proof" }, "action"] },
+  "hierarchy": { "identity": 1, "price": 2, "action": 2, "proof": 3, "input": 4 },
+  "lead": "clear",
+  "colour": { "identity": "ink", "price": "ink", "input": "quieter", "proof": "ink", "action": "the-action-quiet" },
+  "space": { "inside": 0.6, "between": 3, "pinned": "action" },
+  "grouping": "space",
+  "container": { "ground": "none", "edge": "none", "shape": "none" },
+  "density": "airy",
+  "fit": { "width": [22, 26], "words": { "identity": 1, "price": 4 }, "counts": { "proof": [5, 7] }, "itemWords": 5 },
+  "move": null,
+  "kept": { "by": "proposed", "why": "the plan name leads and the price stays quiet, so the plans read as products, not price tags; no box, only space" },
+  "generic": null,
+  "source": { "url": "https://linear.app/pricing", "captured": "2026-11-20", "sidecar": "generator/sidecars/linear-basic.json" }
+}

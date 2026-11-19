@@ -1,0 +1,20 @@
+{
+  "id": "uiarc-lifetime",
+  "kind": "pricing card",
+  "status": "draft",
+  "jobs": [{ "job": "status", "optional": true }, { "job": "identity" }, { "job": "price" }, { "job": "meta" }, { "job": "proof", "count": [3, 5] }, { "job": "action" }],
+  "order": ["status", "identity", "price", "meta", "proof", "action"],
+  "nesting": { "stack": ["status", "identity", { "group": ["price", "meta"] }, "divider", { "list": "proof" }, "action"] },
+  "hierarchy": { "price": 1, "identity": 2, "action": 3, "meta": 4, "proof": 4, "status": 5 },
+  "lead": "strong",
+  "colour": { "status": "chip", "identity": "ink", "price": "ink", "meta": "quieter", "proof": "quieter", "action": "the-action" },
+  "space": { "inside": 0.6, "between": 3.5 },
+  "grouping": "space, one divider",
+  "container": { "ground": "tinted", "edge": "none", "shape": "medium" },
+  "density": "airy",
+  "fit": { "width": [40, 52], "words": { "status": 1, "identity": 6, "price": 2, "meta": 7 }, "counts": { "proof": [3, 5] }, "itemWords": 8 },
+  "move": { "type": "single-out", "args": { "which": "recommended" }, "scope": "siblings", "words": "the recommended plan stands out from its row" },
+  "kept": { "by": "proposed", "why": "the name is what you get (pay once, keep it forever), and the price is the biggest thing on the page" },
+  "generic": null,
+  "source": { "url": "https://uiarc.dev/pricing", "captured": "2026-11-20", "sidecar": "generator/sidecars/uiarc-lifetime.json" }
+}

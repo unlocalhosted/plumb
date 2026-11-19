@@ -271,3 +271,20 @@ All free under the Unsplash License, hotlinked from images.unsplash.com as Unspl
 - What: Picbreeder (Secretan, Stanley and others), where people breed images by picking the ones they like.
 - Why: a model for how the owner's keep and never picks should steer the generator over time.
 - What it changed: the keep and never weights in the organism generator brief. Nothing built.
+
+## 2026-11-20 · beui.dev, uiarc.dev and bencho.dev, component sites to learn taste from (shared by the owner)
+- What: [beui.dev](https://beui.dev/), [uiarc.dev](https://uiarc.dev/) and [bencho.dev](https://bencho.dev/), three component sites
+  the owner pointed at while the first pricing-card specimens were being collected.
+- Why: the owner's words: "you could look into" and "few more suggestions", as sources for the organism generator's
+  shelf of references.
+- What it changed: all three are mostly animated and interaction components (beUI: "Animated components for React
+  and React Native", MIT; Bencho: "micro-interactions"), so they belong to the later motion brief. Their own pricing
+  pages gave two of the first five specimens (Arc's lifetime and Free cards, Bencho's Forever card)
+  ([journey](journey.md#37-five-real-pricing-cards-written-down-as-specimens-2026-11-20-organism-generator-layer-1)).
+
+## 2026-11-20 · Linear and Supabase pricing pages (found by us)
+- What: [linear.app/pricing](https://linear.app/pricing) (Basic plan) and [supabase.com/pricing](https://supabase.com/pricing)
+  (Pro plan), read on 2026-11-20 at 1280×900.
+- Why: two pricing cards with structures unlike the others: a name-led card with no box, and a card that puts its
+  button before its price.
+- What it changed: two of the first five specimens (`generator/specimens/pricing-card/`).

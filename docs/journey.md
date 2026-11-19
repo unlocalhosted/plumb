@@ -4232,6 +4232,28 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   [a parked brief](briefs/organism-generator-learning.md), rewritten with a simple first model, fewer signals with
   exact meanings, reasons built only from facts, and a test that swaps the model's top pick out of first place.
 
+### 37. Five real pricing cards, written down as specimens (2026-11-20, organism generator layer 1)
+- **The itch:** the organism generator's engine was signed off; its first layer needed real references in the new
+  format, chosen to differ in structure so later layers can test whether "distinct" means anything.
+- **How we did it:** a headless browser opened each pricing page, and a small script read the chosen card's parts:
+  their boxes, sizes, weights, colours and the gaps between them, kept as a sidecar file. The specimen itself was
+  then written by hand from those numbers, holding only ratios, ranks and roles. A validator checks the format and
+  prints how far apart the structures are.
+- **What was picked and why:** Linear's Basic plan (the name leads, the price is quiet, no box), Supabase's Pro plan
+  (the button comes before the price), Arc's lifetime plan (an outcome sentence as the name, a huge price), Arc's Free
+  plan (one row: icon, name and price), and Bencho's Forever plan (badge on the name's line, the old price struck
+  through). Arc and Bencho came from sites the owner shared that day (beui.dev, uiarc.dev, bencho.dev); those three
+  are mostly motion and interaction components, kept for the later motion brief.
+- **What it found:** twelve decisions the brief didn't supply, listed in `generator/open-decisions.md`. The two that
+  matter most: the loudness rule ranks a solid green button as the quietest part of Supabase's card, and the distance
+  calls Linear's and Arc's lifetime cards the nearest pair (0.19), because it ignores which part leads and whether
+  there's a box. All five reasons for keeping a card are proposals; the owner hasn't confirmed them.
+- **Proof:** `node generator/validate.mjs` passes all five and prints the distance table (nearest pairs 0.19 to 0.41,
+  furthest 0.52). The contact sheet of the five cards is kept locally (`generator/shots/layer1-sheet.png`), since
+  screenshots of other products aren't committed.
+- **Media hooks:** the contact sheet beside the distance table; one card with its parts outlined and their measured
+  loudness.
+
 ## Open gaps
 - **The mark was never tried among real neighbours** (a row of browser tabs, an npm page, a README header), only on empty tiles. Nobody outside has been asked whether the round leg reads as an R or leans towards a B.
 - Resizing: a size between your steps always lands on the nearest one; there is no way yet to keep an exact size as
