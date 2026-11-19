@@ -1401,16 +1401,20 @@ export const declaredGap = {
       }
       return l < r ? { left: l, right: r, width: r - l } : k.getBoundingClientRect();
     };
-    const drawn = kids.map(inkOf).sort((a, b) => a.left - b.left);
+    const drawn = kids.map((k) => ({ ...inkOf(k), k })).sort((a, b) => a.left - b.left);
     if (drawn.some((r) => r.width <= 0) || el.clientWidth <= 0) return []; // not laid out (a closed sheet, a hidden tab)
-    const closest = Math.max(0, Math.round(Math.min(...drawn.slice(1).map((r, n) => (r.left - drawn[n].right) / k1))));
+    const apart = drawn.slice(1).map((r, n) => (r.left - drawn[n].right) / k1), at = apart.indexOf(Math.min(...apart));
+    const closest = Math.max(0, Math.round(apart[at]));
+    // the two parts it is about, by their first words, so the note says between what (U3, 2026-11-20)
+    const called = (k) => { const t = (k.textContent ?? '').replace(/\s+/g, ' ').trim(); if (!t) return null; const w = t.split(' '); return w.length > 3 ? `${w.slice(0, 3).join(' ')}…` : t; };
+    const a = called(drawn[at].k), b = called(drawn[at + 1].k);
     // the gap: never less than the distance inside its own parts (outer at least inner: a group sits further from its
     // neighbour than its own items sit from each other); else the gap of the layout around it; else its text size.
     // On the theme's spacing scale, else Tailwind's 4px steps
     const gap = gapFor();
     const touching = closest <= 1;
     return [{
-      ...say(this.id, { closest, touching }),
+      ...say(this.id, { closest, touching, a, b }),
       key: this.id, text: utility(el, 'justify') ?? 'gap', props: ['column-gap'], value: '0px', n: closest,
       evidence: { closest, want: gap.px, from: gap.from }, confidence: touching ? 0.9 : 0.84,
       suggest: { kind: 'class', from: '', to: gap.cls, why: 'keeps a set distance between the parts, whatever is left over', sets: { columnGap: gap.px } },
