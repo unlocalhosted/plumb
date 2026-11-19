@@ -480,3 +480,27 @@ How to read an issue, and what each one needs:
 - **Evidence:** `docs/qa/shots/2026-11-20/u38-system-json.jpg`; `overlay/src/project-page.js` header says "The CLI
   serves it".
 - **Status:** open
+
+### U39 · On crafting-ui, picking "Design system check" pins nothing
+- **Where:** Blueprint on the owner's crafting-ui home page (localhost:5180), 1280×800.
+- **What I did:** opened Blueprint (51 notes), picked Design system check (10), looked at the page and scrolled
+  down a screen.
+- **What I saw:** no pins anywhere, at the top or after scrolling. In the overlay there are no pin elements at all
+  for this concern, while Craft and polish on the same page draws 6.
+- **What I expected:** 10 pins, or a line in the bar saying where the 10 are ("all 10 are further down" or "these
+  are about your theme file, not one element").
+- **Why it hurts:** understanding. The list says there are 10 problems and the page shows none.
+- **Severity:** 2
+- **Evidence:** `docs/qa/shots/2026-11-20/u39-crafting-ds-no-pins.jpg`
+- **Status:** open
+
+### U40 · Three identical "Line too heavy" pins in a row, with no way to tell which line
+- **Where:** Blueprint, Craft and polish, crafting-ui home page after scrolling one screen.
+- **What I saw:** three "Line too heavy" pins side by side at the top edge of the grid drawing, partly under the
+  page's sticky header, and a fourth further down. 21 notes, 6 pins. I can't tell which lines are too heavy or why
+  three pins share one spot.
+- **What I expected:** one pin per thing, on the line it is about, and pins kept below a sticky header.
+- **Why it hurts:** understanding.
+- **Severity:** 3
+- **Evidence:** `docs/qa/shots/2026-11-20/u40-crafting-craft-pins.jpg`
+- **Status:** open
