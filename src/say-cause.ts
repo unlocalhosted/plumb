@@ -23,8 +23,13 @@ export function sayCause(cause: Cause, report: Report): string {
   const raw = step ? step.resolved ?? step.value : undefined;
   // a person says 16px, not 1rem; a colour's value (oklch(…)) says nothing a name doesn't
   const value = cause.family === 'color' ? undefined : raw && /^[\d.]+rem$/.test(raw) ? `${Number(raw.slice(0, -3)) * 16}px` : raw;
+  // a step far from the value is no answer: 16px body text "closest to" a 12.8px chrome size (algorecall) is bad advice
+  const pixels = (text: string | undefined) => { const m = /^(-?[\d.]+)px$/.exec(text ?? ''); return m ? Number(m[1]) : undefined; };
+  const from = pixels(cause.label), to = pixels(value);
+  const far = from !== undefined && to !== undefined && from > 0 && Math.abs(to - from) / from > 0.15;
   if (cause.suggestion) {
     text += cause.suggestion.exact ? ` Your theme calls it ${cause.suggestion.name}.`
+      : far ? ` Nothing in ${stepOf[cause.family] ?? 'your theme'} is near it.`
       : ` The closest in ${stepOf[cause.family] ?? 'your theme'} is ${cause.suggestion.name}${value ? ` (${value})` : ''}.`;
   }
   if (cause.rendersNothing) text += ` ${cause.rendersNothing === cause.count ? 'All of them render' : cause.rendersNothing === 1 ? '1 renders' : `${cause.rendersNothing} render`} nothing.`;

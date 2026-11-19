@@ -53,7 +53,7 @@ written, and `plumber check` then says "Nothing new since your baseline".
    Review · Clean up · Fix · Close") and a card per cause, with the choice on the element.
 10. **A blank page on a large app.** *Fixed: the page says "Reading <app>…" ("A large app takes a few seconds.") until it draws, and a failed read says why instead of staying white.* algorecall's page was white for 10 to 15 seconds while it loaded, with nothing
     saying it was working.
-11. **A first headline that looks wrong.** algorecall's first run: "You set text size 16px 7 ways, in 3,049 places.
+11. **A first headline that looks wrong.** *Explained and fixed: algorecall's own type scale is four small chrome sizes (11 to 14px; its reading text uses Tailwind's sizes), so the nearest of its steps to 16px was the largest of them. A step more than 15% away is no longer offered: the sentence says nothing in your type scale is near it. Left as a known limit: px is worked out from a 16px root, and algorecall's root is 110% (0.8rem is 14.08px there, not 12.8px).* algorecall's first run: "You set text size 16px 7 ways, in 3,049 places.
     The closest in your type scale is sm-minus (12.8px)." 12.8px is not close to 16px. To check.
 
 ## Minor
