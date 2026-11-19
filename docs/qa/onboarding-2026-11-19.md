@@ -58,17 +58,17 @@ written, and `plumber check` then says "Nothing new since your baseline".
 
 ## Minor
 
-12. `plumber --help` lists about 30 commands with no "start here".
+12. `plumber --help` lists about 30 commands with no "start here". *Fixed: it opens with "New here? Run plumber in your app's folder, with nothing after it: it opens a page that sets you up."*
 13. At 1024 × 768 the Welcome screen's button sits at the bottom edge, mostly hidden.
 14. The rules summary shows the four rules twice, in the main panel and in the side panel.
 15. The text step suggests "One list of 19" while saying "a few clear levels tell the reader what to read first".
 16. Writing a token to 27 places took about 15 seconds, with "Writing it to your code…" and no count.
 17. A hover label read "backgroundColor: MAT": a variable's name where its colour should be.
-18. `plumber doctor` before the overlay is wired says "can't tell from vite.config.ts" instead of the step to take.
+18. `plumber doctor` before the overlay is wired says "can't tell from vite.config.ts" instead of the step to take. *Fixed: "→ plumber install --overlay shows the line it needs".*
 20. The written `plumber.config.ts` opens with 39 comment lines naming every component found ("// Fig:
-    src/components/drawing.tsx:41"), before the rules a person chose.
+    src/components/drawing.tsx:41"), before the rules a person chose. *Fixed: one line, "// Components: 37 found."*
 19. `install --overlay --write` wrote `"@unlocalhosted/react-plumber/vite";` with double quotes and a semicolon into a
-    file that uses neither.
+    file that uses neither. *Explained: it copies the file's last import, and algorecall's config mixes both styles; its last import has double quotes and a semicolon.*
 
 ## What worked
 

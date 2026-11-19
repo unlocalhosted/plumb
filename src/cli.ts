@@ -38,6 +38,9 @@ import { withCliProgress } from './cli-progress.js';
 import { profileProgress } from './profile.js';
 
 const help = `React Plumber ${tool.version}: design decisions, habits and ledger
+
+New here? Run plumber in your app's folder, with nothing after it: it opens a page that sets you up.
+
 Usage: plumber [check] [--json] [--verbose] [--root <dir>] [--config <path>]
        plumber presets [--json] [--root <dir>] [--config <path>]
        plumber serve [--port <number> | --stdio] [--overlay --origin <url> [--served-root <dir>]] [--root <dir>] [--config <path>]

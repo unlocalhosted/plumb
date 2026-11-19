@@ -137,8 +137,8 @@ export async function initProject(root: string, options: InitOptions, print: (te
     const serialized = JSON.stringify(config, null, 2);
     let text = '// Inferred by React Plumber. Review token sources and habits with the design owner.\n' +
       (written ? `// Tokens proposed from your code were written to ${written.split(' to ')[1]?.split(' (')[0] ?? 'your theme'}; each has a drafted reason to confirm.\n` : '') +
+      // one line: a list of every component found pushed the rules a person chose below the fold (39 lines on crafting-ui)
       `// Components: ${components.length} found${from && useShadcn ? ` from ${from}` : ''}.\n` +
-      components.map(component => `// ${component.name}: ${pathFrom(root, component.source.file)}:${component.source.line}\n`).join('') +
       `export default ${serialized};\n`;
     // each token source says how its tokens were read, so a wrong reading is seen here and fixed by moving the line
     const readings = new Map<string, string[]>();

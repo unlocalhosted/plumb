@@ -133,7 +133,7 @@ export async function doctor(root: string, configPath?: string): Promise<{ text:
     ok = false;
     const detail = broken.id === 'locate.plugin' ? `Plumber isn't in ${where}` : plain(broken.title);
     text += row('✗', 'Shows on your page', `${detail} → ${oneCommand(broken)}`);
-  } else if (unsure) text += row('–', 'Shows on your page', `can't tell from ${where} → plumber doctor --verbose`);
+  } else if (unsure) text += row('–', 'Shows on your page', `can't tell from ${where} → plumber install --overlay shows the line it needs`);
   else text += row('✓', 'Shows on your page', `Plumber is in ${where}`);
 
   // the facts name paths relative to the project

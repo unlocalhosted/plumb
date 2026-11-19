@@ -54,7 +54,8 @@ test('three-command transcript: first look, init baseline, detected agents and C
   assert.match(initialized, /Accepted \d+ tokens as inferred/);
   const text = await readFile(join(directory, 'plumber.config.ts'), 'utf8');
   assert.match(text, /Components: 2 found from directory:src\/components\/ui/);
-  assert.match(text, /Unused: src\/components\/ui\/Button.tsx/);
+  // one line for the components, not one per component (onboarding gap 20)
+  assert.doesNotMatch(text, /Unused: src\/components\/ui\/Button.tsx/);
   const configured = await import(`file://${join(directory, 'plumber.config.ts')}`);
   assert.deepEqual(configured.default.habits, defaults);
   const readme = await readFile(join(root, 'README.md'), 'utf8');
@@ -139,7 +140,7 @@ test('a family with no tokens gets a proposed theme file first; the repeated val
   const asked = await fixture(t);
   await file(asked, 'src/styles.css', css);
   const unattended = run(asked, ['init']).stdout;
-  assert.match(unattended, /Left your theme as it is \(no terminal to ask\): spacing\. To add them: plumber propose --family spacing --write\./);
+  assert.match(unattended, /Left your theme as it is \(no terminal to ask\): spacing\. To add them: npx plumber propose --family spacing --write\./);
   assert.equal(await readFile(join(asked, 'src/styles.css'), 'utf8'), css);
   // the step it names writes them
   assert.match(run(asked, ['propose', '--family', 'spacing', '--write']).stdout, /src\/theme\.css/);
@@ -201,8 +202,8 @@ test('nested install puts workflow at git root, scopes approval to ledger owners
 test('doctor reports missing setup and broken config/ledger in independent check lines', async t => {
   const directory = await fixture(t);
   let output = run(directory, ['doctor', '--verbose'], 1).stdout;
-  assert.match(output, /fix Config:\s+no config\s+Run plumber init/);
-  assert.match(output, /fix Ledger:\s+no .plumber\/ledger.jsonl\s+Run plumber init/);
+  assert.match(output, /fix Config:\s+no config\s+Run npx plumber init/);
+  assert.match(output, /fix Ledger:\s+no .plumber\/ledger.jsonl\s+Run npx plumber init/);
   run(directory, ['init']);
   await file(directory, '.plumber/ledger.jsonl', '{broken\n');
   await file(directory, 'plumber.config.ts', 'export default { unknown: true };\n');
