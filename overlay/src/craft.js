@@ -99,7 +99,7 @@ function meaningFlush() {
   for (const [key] of batch) MEANING.queue.delete(key);
   if (MEANING.queue.size) MEANING.timer = setTimeout(meaningFlush, 0);
   post('meaning', { pairs: batch.map(([, pair]) => pair) })
-    .then((a) => batch.forEach(([key], i) => MEANING.done.set(key, a?.off === false ? { said: !!a.said[i], similarity: a.similarity[i], stock: a.stock[i] } : 'off')),
+    .then((a) => batch.forEach(([key], i) => MEANING.done.set(key, a?.off === false ? { said: !!a.said[i], model: a.model, similarity: a.similarity[i], stock: a.stock[i] } : 'off')),
       () => batch.forEach(([key]) => MEANING.done.set(key, 'off')))
     .then(() => { for (const c of INK.crafts) c.inked(); });
 }
@@ -245,7 +245,7 @@ export class Facts {
     }
     return null;
   }
-  // Whether `line` says what `heading` says: { said, similarity, stock }, or 'off' when no model can be asked; null
+  // Whether `line` says what `heading` says: { said, model, similarity, stock }, or 'off' when no model can be asked; null
   // while the answer is on its way (the element is judged again when it lands)
   meaning(heading, line) {
     const key = heading + '\n' + line, hit = MEANING.done.get(key);

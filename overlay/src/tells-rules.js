@@ -216,7 +216,7 @@ export const subtitleEcho = rule('subtitle-echo', 'subtitle', 'h1,h2,h3,h4', fun
   if (hasSpecific(line) || !shown(el, facts) || !shown(next, facts)) return;
   const answer = facts.meaning(heading, line);
   if (!answer?.said) return;
-  const out = found(this, next, { heading: quote(heading, 30), similarity: answer.similarity, stock: answer.stock }, { value: quote(line, 60), confidence: 0.8, advice: 'Delete the line, or replace it with a fact the heading does not give.' });
+  const out = found(this, next, { heading: quote(heading, 30), model: answer.model, similarity: answer.similarity, stock: answer.stock }, { value: quote(line, 60), confidence: 0.8, advice: 'Delete the line, or replace it with a fact the heading does not give.' });
   // named by its words, not its tag: rows drawn from one line of a list are told apart, so each pair is asked on its
   // own (the read keeps one finding per rule, text and place, craft-run.js)
   out[0].text = quote(line, 60);

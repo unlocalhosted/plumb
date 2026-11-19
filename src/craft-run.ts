@@ -18,7 +18,9 @@ export interface CraftRecord {
   /** the laws of UX the rule measures (overlay/src/laws.js); [] when its root is not one; null when unmapped */
   laws?: { id: string; name: string }[] | null;
   text: string; value: unknown; confidence: number | null;
-  evidence: Record<string, unknown>; soft?: boolean; judged?: boolean; file: string | null; line: number | null; column: number | null; component: string | null; tag: string; count: number;
+  evidence: Record<string, unknown>;
+  /** what decided it: a fixed rule over the drawn page, or a model reading the words (evidence.model names which) */
+  by?: 'rule' | 'model'; soft?: boolean; judged?: boolean; file: string | null; line: number | null; column: number | null; component: string | null; tag: string; count: number;
 }
 export interface CraftPage { route: string; url: string; read: number; complete: boolean; findings: CraftRecord[]; spec?: unknown }
 export interface CraftRunOptions { url: string; routes: string[]; root: string; timeout: number; viewport?: { width: number; height: number }; pairs?: boolean; probe?: boolean; probeBudget?: number; probeDrag?: boolean; judge?: boolean; scope?: string; recordProbe?: string }

@@ -7,7 +7,7 @@
  * the source each craft finding lives.
  *
  *  window.__plumb.craft({ timeout, scope }) → { route, url, read, complete, findings: [{ rule, title, because, action,
- *    text, value, confidence, evidence, file, line, column, component, tag, count }] }
+ *    text, value, confidence, evidence, by ('rule' | 'model'), file, line, column, component, tag, count }] }
  *
  *  dedupe  rows of a list share one site: one finding per rule, text and source site, `count` says how many elements
  *  hidden  read without drawing: the overlay's blueprint stays out of sight while it reads (a page asking for itself)
@@ -246,7 +246,9 @@ async function readOnce(overlay, { timeout = 60000, quiet = 600, grey = false, s
         if (hit) { hit.count++; continue; }
         found.set(key, {
           rule: m.rule, title: m.title, because: m.because, action: m.action, laws: m.laws ?? null, text: m.text, value: m.value ?? null,
-          confidence: m.craft?.confidence ?? null, evidence: m.craft?.evidence ?? {}, suggest: m.craft?.suggest ?? null, soft: !!m.soft,
+          confidence: m.craft?.confidence ?? null, evidence: m.craft?.evidence ?? {},
+          // what decided it: a fixed rule over the drawn page, or a model reading the words (evidence.model names it)
+          by: m.craft?.evidence?.model ? 'model' : 'rule', suggest: m.craft?.suggest ?? null, soft: !!m.soft,
           file: site?.file ?? item.file ?? null, line: site?.line ?? null, column: site?.column ?? null,
           component: site?.component ?? null, tag: item.el.localName, count: 1,
         });

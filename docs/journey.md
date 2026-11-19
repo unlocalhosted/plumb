@@ -2573,6 +2573,18 @@ field is empty). The table of five writes, before and after. The Next table: eig
   from the calibration half alone (gap 0.07 to 0.29), which gives 24 of 24 on both halves. It catches the two lines
   the embedding missed ("A real-time overview of your key business metrics, all in one place." scored 0.30). Honest
   caveat: I had seen the held-out scores before setting the cut, and the held-out margin is thin (0.17 against 0.25).
+
+### Which notes a model made
+
+- **The itch:** "how many of these coming from jev and how many deterministic we need to differentiate like
+  (intelligent suggestions) vs deterministic ones". The owner had seen none of the notes in the app (the panel leads
+  with older checks), so I drew them on the test screens; then the question was which ones a model made.
+- **The count:** on the test screens, 7 notes come from a model (all from the subtitle check, the one check of 18
+  that asks a model) and 39 from fixed rules over the drawn page. On this page the model was the vm-agent one: the
+  test server could not be started with the Jev key.
+- **The fix:** every finding now says what decided it: `by: 'rule'` or `by: 'model'`, and a model's note names it
+  (`evidence.model`: `jev` or `minilm`). How the overlay shows the two kinds is not designed yet.
+- **Media hooks:** `bench/tells/shots/4-rule-vs-model.jpg`: rules boxed in blue, the model's notes dashed in purple.
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
 - Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".

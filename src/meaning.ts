@@ -10,7 +10,8 @@
 import { STOCK_LINES, hasSpecific, meaningSaid } from '../overlay/src/pack-tells.js';
 
 type Pair = { heading: string; line: string };
-export type MeaningAnswer = { off: true; why: string } | { off: false; said: boolean[]; similarity: number[]; stock: number[] };
+// `model` names what judged: 'jev' (typesafe.ai) or 'minilm' (the embedding service)
+export type MeaningAnswer = { off: true; why: string } | { off: false; model: 'jev' | 'minilm'; said: boolean[]; similarity: number[]; stock: number[] };
 const dot = (a: number[], b: number[]): number => a.reduce((s, x, i) => s + x * (b[i] ?? 0), 0);
 const round = (x: number): number => Math.round(x * 100) / 100;
 
@@ -71,7 +72,7 @@ export async function judgePairs(pairs: Pair[], url = process.env.PLUMBER_MEANIN
         if (process.env.PLUMBER_DEBUG) process.stderr.write(`meaning (jev): ${said[i] ? 'said' : 'kept'} ${similarity[i]} ${pairs[i]!.heading} | ${pairs[i]!.line}\n`);
       });
       warned = '';
-      return { off: false, said, similarity, stock: pairs.map(() => 0) };
+      return { off: false, model: 'jev', said, similarity, stock: pairs.map(() => 0) };
     } catch (error) {
       const why = (error as Error).message;
       if (warned !== why) process.stderr.write(`plumber: Jev could not be asked (${why}); subtitle checks are off.\n`);
@@ -93,7 +94,7 @@ export async function judgePairs(pairs: Pair[], url = process.env.PLUMBER_MEANIN
       if (process.env.PLUMBER_DEBUG) process.stderr.write(`meaning: ${said[i] ? 'said' : 'kept'} ${similarity[i]} ${stocky[i]} ${pairs[i]!.heading} | ${pairs[i]!.line}\n`);
     });
     warned = '';
-    return { off: false, said, similarity, stock: stocky };
+    return { off: false, model: 'minilm', said, similarity, stock: stocky };
   } catch (error) {
     const why = (error as Error).message;
     // said once per failure, not once per question
