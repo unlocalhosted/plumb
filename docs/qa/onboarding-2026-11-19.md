@@ -37,7 +37,7 @@ written, and `plumber check` then says "Nothing new since your baseline".
 4. **Spacing with no scale offers one choice, "Keep what you have".** Its rule checks nothing. `plumber propose`
    already drafts a scale from the values in use; the page doesn't offer it. (Once gap 1 is fixed, crafting-ui has a
    scale; an app with none still meets this.)
-5. **The colour step's palette looks wrong.** crafting-ui shows "3 colours in your palette" (white, near-black,
+5. **The colour step's palette looks wrong.** *Palette fixed: colours kept outside the theme that named uses point at count (crafting-ui: 28, not 3). Left: chips group by name, so `--accent` and `--draw` sit one to a row; rows read "color: ink" where the code writes a variable named ink; `color: var(--fg)` still counts as typed by hand.* crafting-ui shows "3 colours in your palette" (white, near-black,
    black) though its theme has an accent, a drawing blue and status colours. Rows read "color: ink" three times with
    three different swatches. `color: var(--fg)` (23 places) is listed as typed by hand, though it is the token.
 6. **Every command reads the whole app again.** algorecall, vm-agent: `plumber` 61s, `state` 41s, `propose` 64s,

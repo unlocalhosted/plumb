@@ -163,6 +163,13 @@ export function colourModel(kind) {
     if (!refs.length && !startsWithJob(t.name)) palette.push(t);
     else roles.push({ ...t, refs, job: jobOf(t.name) ?? 'other', raw: !refs.length });
   }
+  // a colour kept outside the theme (`--accent: oklch(…)` in :root, light and dark) that named uses point at
+  // (`--color-accent: var(--accent)`) is palette too, with the colour it resolves to: crafting-ui's accent, drawing blue
+  // and status colours were missing, its palette read as 3 (docs/qa/onboarding-2026-11-19.md, gap 5)
+  const known = new Set(all.map((t) => t.name));
+  for (const r of roles) for (const ref of r.refs) if (!known.has(ref) && r.refs.length === 1 && r.value && !/var\(/.test(r.value)) {
+    known.add(ref); palette.push({ name: ref, value: r.value, raw: r.value, file: r.file });
+  }
   const pointed = new Set(roles.flatMap((r) => r.refs));
   const unused = palette.filter((p) => !pointed.has(p.name));
   // a role holding a raw colour, and the palette colour it equals exactly (the only safe move)
