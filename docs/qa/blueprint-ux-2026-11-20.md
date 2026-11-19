@@ -153,3 +153,39 @@ How to read an issue, and what each one needs:
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u07-craft-button-no-note.jpg`
 - **Status:** open
+
+### U12 · The card jumps up as I reach for its buttons, so my click lands on something else
+- **Where:** Blueprint, X-ray card on the "Get started" button, with the pink note on top.
+- **What I did:** moved from the button into the card and rested on "Ask your agent", then clicked without moving.
+- **What I saw:** between resting and clicking, the card moved up about 45px (its top went from 252px to 180px on
+  the page) and the row under the hand changed from "text size" to "right 0px". The click landed on the margin row,
+  not on Ask your agent. Nothing I expected happened.
+- **What I expected:** once the hand is on the card, the card stays where it is.
+- **Why it hurts:** intent. A button moves away as I click it, and I hit whatever slid under the pointer.
+- **Severity:** 2
+- **Evidence:** `docs/qa/shots/2026-11-20/u12-card-before-reach.jpg` (before),
+  `docs/qa/shots/2026-11-20/u12-card-after-click.jpg` (after the click)
+- **Status:** open
+
+### U13 · One Escape closes the agent note and all of Blueprint
+- **Where:** Blueprint, "Note for your agent" box (from Ask your agent).
+- **What I did:** opened the note, copied it with ⌘↵ ("Copied with its place"), pressed Escape once. The box shows
+  an "Esc" key on its corner, so I read it as "Esc closes this box".
+- **What I saw:** the note closed and Blueprint closed with it: no bar, no pins, back to the plain page.
+- **What I expected:** Escape closes the innermost thing, the note; a second Escape closes Blueprint.
+- **Why it hurts:** intent. I lose my place (the open card, the element I was on) for pressing the key the box told
+  me to press.
+- **Severity:** 2
+- **Evidence:** `docs/qa/shots/2026-11-20/u13-agent-note.jpg` (the box with its Esc key); after one Escape the bar
+  is gone.
+- **Status:** open
+
+### U14 · The agent note cuts off the line number
+- **Where:** "Note for your agent" box.
+- **What I saw:** the place reads "a · fixtures/.tells-app/src/App.jsx:…", so I can't see which line the note is
+  about. The path is the long part; the line is the part I need.
+- **What I expected:** the file name and line kept whole ("App.jsx:23"), the folders shortened if something must go.
+- **Why it hurts:** understanding.
+- **Severity:** 4
+- **Evidence:** `docs/qa/shots/2026-11-20/u13-agent-note.jpg`
+- **Status:** open
