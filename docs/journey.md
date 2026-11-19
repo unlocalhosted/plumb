@@ -2615,9 +2615,17 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **The page follows the pick:** picking a concern lights only its marks on the page and quiets the rest (the same
   spotlight the fix in hand uses); putting a fix down returns to the concern, not to everything. Counted on the test
   screens: 27 marks lit for anti-slop, 67 for the design system check, 8 for accessible, none singled out under All.
-- **Not yet:** a note with no exact edit (all of anti-slop) is drawn as a faint glow along its element's edge, and
-  lit it is still close to invisible, so the page barely shows the pick. How notes are drawn on the page is the next
-  design question. Words and clarity has no checks yet.
+- **Notes get pins:** a note with no exact edit (all of anti-slop) was drawn as a faint glow along its element's
+  edge, close to invisible even when lit. Offered a pin with its name or an outline, the owner chose "A pin with its
+  name". With a concern picked and no fix in hand, each element with a note in it gets one pill where its words start
+  (above the line when there is room), naming its first note and "+N" for more, in the picked chip's pink so the two
+  read as one; pins nudge sideways off each other. 24 pins on the test screens' first view of anti-slop.
+- **Two bugs on the way:** an older `.pin` style (a 16px dot pulled 8px up and left) collapsed the pills into pink
+  dots, so the class is `cpin`; and a pin at the corner of a full-width line of centred words sat far from them, so
+  it is placed by the words' first line.
+- **Not yet:** pins still cover a heading's words in a crowded row (the AI receipts card); Words and clarity has no
+  checks yet.
+- **Media hooks:** `bench/tells/shots/6-concern-pins.jpg`.
 - **Media hooks:** `bench/tells/shots/5-concerns-bar.jpg`.
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.

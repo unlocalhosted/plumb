@@ -53,6 +53,15 @@ export const MARKS_CSS = `
   .bp .light rect { fill: none; stroke: var(--pl-instrument); stroke-width: 2px; }
   .bp svg.under { pointer-events: none; }
   .bp .labels { position: absolute; inset: 0; }
+  /* a picked concern's notes, named at their element's corner: the picked concern's own pink, so the pin and the bar's
+     chip read as one; never a target (the zone under it is) */
+  .bp .labels .cpin { position: absolute; display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 8px; box-sizing: border-box;
+    border-radius: 999px; background: var(--pl-pink-soft); color: var(--pl-pink-ink); font: 600 11px/1 var(--pl-sans, system-ui), sans-serif; white-space: nowrap;
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--pl-pink) 35%, transparent), 0 1px 2px rgb(0 0 0 / .12); pointer-events: none;
+    animation: pl-pin-in 160ms var(--pl-ease-out, ease-out) both; }
+  .bp .labels .cpin b { font-weight: 600; opacity: .7; }
+  @keyframes pl-pin-in { from { opacity: 0; translate: 0 3px; } }
+  @media (prefers-reduced-motion: reduce) { .bp .labels .cpin { animation: none; } }
   .bp svg[role="group"] { pointer-events: none; }
   .bp .lbl { position: absolute; display: flex; align-items: center; gap: var(--pl-space-2); height: ${TAG_H}px; padding: 0 var(--pl-space-3); box-sizing: border-box;
     border-radius: var(--pl-radius-tag); font: 500 11px/1 var(--pl-mono); white-space: nowrap; pointer-events: auto; cursor: pointer;
@@ -304,6 +313,32 @@ function heatMarkup(zone, level) {
   for (const [x, y, w, h] of zone.words) warm += `<rect x="${x.toFixed(1)}" y="${(y + h * 0.15).toFixed(1)}" width="${w.toFixed(1)}" height="${(h * 0.7).toFixed(1)}" rx="${(h * 0.35).toFixed(1)}"/>`;
   if (zone.edge) { const r = zone.edge; warm += `<rect class="edge" x="${(r.left + 2).toFixed(1)}" y="${(r.top + 2).toFixed(1)}" width="${Math.max(0, r.width - 4).toFixed(1)}" height="${Math.max(0, r.height - 4).toFixed(1)}" rx="${Math.max(0, zone.radius - 2).toFixed(1)}"/>`; }
   return (warm ? `<g class="warm" filter="url(#pl-heat-${level})">${warm}</g>` : '') + (dots ? `<g class="dots" filter="url(#pl-dots)">${dots}</g>` : '');
+}
+
+// The pins for a picked concern's notes: one per element, its first note's name and how many more, at the element's
+// top-left corner (above it when there is room), moved right past any pin already placed
+const escPin = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+// where an element's words start (a full-width line of centred words puts its box's corner far from them): its first
+// line of text, else its box
+function inkOf(el, r) {
+  if (![...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())) return r;
+  const range = document.createRange(); range.selectNodeContents(el);
+  const first = [...range.getClientRects()].find((q) => q.width > 0 && q.height > 0);
+  return first ? { left: first.left, top: first.top, width: first.width, height: first.height } : r;
+}
+function pinsOf(entries, view) {
+  const byEl = new Map();
+  for (const p of entries) { const e = byEl.get(p.item.el); if (e) e.n++; else byEl.set(p.item.el, { r: inkOf(p.item.el, p.er), name: FIX.what(p.mark), n: 1 }); }
+  const placed = [], out = [];
+  for (const { r, name, n } of [...byEl.values()].sort((a, b) => a.r.top - b.r.top || a.r.left - b.r.left)) {
+    const w = Math.round(name.length * 6.1 + (n > 1 ? 22 : 0) + 18), h = 20;
+    let x = Math.max(4, Math.min(view.w - w - 4, r.left)), y = r.top >= h + 6 ? r.top - h - 3 : r.top + 3;
+    if (y > view.h || y + h < 0) continue;
+    for (let i = 0; i < 12 && placed.some((q) => x < q.x + q.w + 4 && q.x < x + w + 4 && y < q.y + h && q.y < y + h); i++) x = Math.min(view.w - w - 4, x + 40);
+    placed.push({ x, y, w });
+    out.push(`<span class="cpin" style="left:${Math.round(x)}px;top:${Math.round(y)}px">${escPin(name)}${n > 1 ? `<b>+${n - 1}</b>` : ''}</span>`);
+  }
+  return out.join('');
 }
 
 export class MarkLayer {
@@ -749,9 +784,11 @@ export class MarkLayer {
     }
     performance.measure('plumb:marks-write-marks', { start: tWrite });
     const tRest = performance.now();
-    // registration draws no dim, outlines, labels or spotlight boxes: the heat says it all
+    // registration draws no dim, outlines or spotlight boxes: the heat says it all. A picked concern (lit, no fix in
+    // hand) names its notes: one pin per element at its corner, nudged along so no two cover each other
     if (this.#outlineMarkup) (this.#outlines.innerHTML = ''), (this.#outlineMarkup = '');
-    if (this.#labelMarkup) (this.#labels.innerHTML = ''), (this.#labelMarkup = '');
+    const pins = lit.size && !this.#lead ? pinsOf(plan.filter((p) => p.zone && lit.has(p.id) && p.mark.family === 'craft'), view) : '';
+    if (pins !== this.#labelMarkup) (this.#labels.innerHTML = pins), (this.#labelMarkup = pins);
     if (this.#lightMarkup) (this.#light.innerHTML = ''), (this.#lightMarkup = '');
     if (this.#dimPath) (this.#dim.style.removeProperty('clip-path'), (this.#dimPath = ''));
     performance.measure('plumb:marks-write-rest', { start: tRest });
