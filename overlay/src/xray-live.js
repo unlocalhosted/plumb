@@ -296,6 +296,10 @@ export function mountXray(o) {
     if (first && !card.hidden) { card.removeAttribute('data-enter'); void card.offsetWidth; card.setAttribute('data-enter', ''); grow(); }
     if (first) requestAnimationFrame(() => card.removeAttribute('data-fresh'));
     shown = el; shownKey = o.key(el) ? placeKey(el) : null;
+    // the card's first line is the note of the element it is on now, never the one it grew on: the card follows the hand
+    // from element to element without closing, and kept the first one's note ("Badge for flavour" on a label that has
+    // none). Read once the page's pill has caught up with the pointer (same move, after this draw)
+    requestAnimationFrame(() => { if (shown !== el || card.hidden) return; const h = C.getRootNode().querySelector('.bp-hint[data-on]'), html = h ? h.innerHTML : ''; if (said.innerHTML !== html) said.innerHTML = html; said.hidden = !html; });
     cursor();
   };
 

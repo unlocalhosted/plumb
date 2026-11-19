@@ -2673,6 +2673,11 @@ field is empty). The table of five writes, before and after. The Next table: eig
   pill in 220 ms. With no pill (an element with no note) it grows from the pointer; with reduced motion it just
   appears. Measured on the test screens: the card grew from the "Stock word" pill's box (297×45) to its place.
   `bench/tells/shots/14-pill-grown-card.jpg`.
+- **A bug the owner caught:** "what is this badge the flavour thing its constant and doesnt change at all". The card
+  copied the pill's words once, when it grew, and the card follows the hand from element to element without closing,
+  so it kept saying "Badge for flavour" (the NEW badge's note) on a FEATURE label. The first line is now read again
+  each time the card moves: on that label it says "Label over a heading", its own note, and disappears where the
+  element has none.
 - **Not yet:** a click doesn't pin the card open; a card that grew from the pointer shrinks back to where the pointer
   was then, not where it is now.
 - **Media hooks:** `bench/tells/shots/5-concerns-bar.jpg`.
