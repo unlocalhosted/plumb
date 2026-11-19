@@ -1891,10 +1891,18 @@ export const textWrapRole = {
     const body = px(facts.style(document.body).fontSize) || 16, fs = px(s.fontSize);
     const heading = el.matches('h1, h2, h3, h4') || fs >= body * 1.5;
     // the lines as drawn: their widths, from the words' own boxes
-    const range = document.createRange(), rows = new Map(), boxes = [];
+    // a box joins the line its middle falls inside, so a badge set smaller beside the words (its top a few px off
+    // theirs) stays on their line instead of counting as a second one
+    const range = document.createRange(), rows = [], boxes = [];
     for (const t of textNodes(el)) { range.selectNodeContents(t); boxes.push(...range.getClientRects()); }
-    for (const q of boxes) { if (q.width < 1) continue; const k = Math.round(q.top); const row = rows.get(k) ?? { l: Infinity, r: -Infinity }; row.l = Math.min(row.l, q.left); row.r = Math.max(row.r, q.right); rows.set(k, row); }
-    const widths = [...rows.entries()].sort((a, b) => a[0] - b[0]).map(([, w]) => w.r - w.l);
+    for (const q of boxes) {
+      if (q.width < 1) continue;
+      const mid = q.top + q.height / 2;
+      let row = rows.find((w) => mid >= w.t && mid <= w.b) ?? rows.find((w) => w.t + (w.b - w.t) / 2 >= q.top && w.t + (w.b - w.t) / 2 <= q.bottom);
+      if (!row) rows.push(row = { t: q.top, b: q.bottom, l: Infinity, r: -Infinity });
+      row.l = Math.min(row.l, q.left); row.r = Math.max(row.r, q.right);
+    }
+    const widths = rows.sort((a, b) => a.t - b.t).map((w) => w.r - w.l);
     const lines = widths.length;
     if (lines < 2) return [];
     const ratio = widths.at(-1) / Math.max(...widths.slice(0, -1));
