@@ -2612,7 +2612,12 @@ field is empty). The table of five writes, before and after. The Next table: eig
   (accessible) and presses, menus and timing (states).
 - **A bug on the way:** the bar's old rule that blanks every button's background outranked the chip's pink, so the
   picked chip looked unpicked. The chip's rules are now scoped under the row.
-- **Not yet:** the page doesn't dim what is outside the picked concern; Words and clarity has no checks yet.
+- **The page follows the pick:** picking a concern lights only its marks on the page and quiets the rest (the same
+  spotlight the fix in hand uses); putting a fix down returns to the concern, not to everything. Counted on the test
+  screens: 27 marks lit for anti-slop, 67 for the design system check, 8 for accessible, none singled out under All.
+- **Not yet:** a note with no exact edit (all of anti-slop) is drawn as a faint glow along its element's edge, and
+  lit it is still close to invisible, so the page barely shows the pick. How notes are drawn on the page is the next
+  design question. Words and clarity has no checks yet.
 - **Media hooks:** `bench/tells/shots/5-concerns-bar.jpg`.
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.

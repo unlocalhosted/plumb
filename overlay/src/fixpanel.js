@@ -524,7 +524,7 @@ export class FixPanel {
       if (!b) return;
       if (b.classList.contains('start')) this.hold(0);
       else if (b.classList.contains('cleanup')) this.#cleanup.start();
-      else if (b.classList.contains('cn')) { this.#concern = b.dataset.c || null; this.#html = ''; this.render(); }
+      else if (b.classList.contains('cn')) { this.#concern = b.dataset.c || null; this.#host.spotlight(this.#concernLit()); this.#html = ''; this.render(); }
       else if (b.classList.contains('more')) { this.#tools = !this.#tools; this.#html = ''; this.render(); }
       else if (b.classList.contains('tool')) this.#host.tool?.(b.dataset.tool);
       else if (b.classList.contains('bar-close')) this.#host.tool?.('bp-toggle');
@@ -615,6 +615,8 @@ export class FixPanel {
   #open() { return this.#groups.filter((g) => !this.#taken.has(g.key)); }
   // the causes to step through: the picked concern's only, problems before notes
   #live() { const open = this.#open().filter((g) => !this.#concern || concernOf(g.members[0].mark) === this.#concern); return [...open.filter((g) => !noteOf(g)), ...open.filter(noteOf)]; }
+  // what the page lights at rest: the picked concern's marks, the rest quiet; nothing picked, nothing singled out
+  #concernLit() { return this.#concern ? this.#live().flatMap((g) => g.members.map((m) => m.id)) : []; }
   // the bar's top row: every concern with something to say, with how many (a problem counts its places, a note its elements)
   #concerns() {
     const n = new Map();
@@ -722,7 +724,7 @@ export class FixPanel {
     if (g) this.#unpreviewToken(g);
     this.#letGo(false);
     this.#host.release();
-    this.#host.spotlight([]);
+    this.#host.spotlight(this.#concernLit());
     this.render();
   }
   skip(by) {
