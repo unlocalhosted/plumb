@@ -4294,6 +4294,13 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   alignment checks (shared edges, row lines, how the button fits its card), the row as the unit, and a case every
   variant must make: what is weak now, what changes, why, and proof that it fixes notes without adding any. A new
   layer reads the five references with that eye before the owner confirms their reasons.
+- **The first read, with the eye as it is today.** Plumber's craft engine, bundled into one script and put into each
+  reference page, judged the five rows (27 to 277 elements each). On these well-made cards it found little, and
+  nearly all of it small: half-pixel sizes, corner curves, a shadow, one baseline. It said nothing about why any
+  card is good, and nothing about alignment across a row. Twice it disagreed with taste: it called Supabase's "Most
+  Popular" badge decoration (in a row it marks the chosen plan, which is the point) and Arc's soft two-colour
+  gradient a sign of generated pages. So the eye can find faults but can't yet say what is right, which is what a
+  reference's read and a variant's case both need.
 
 ## Open gaps
 - **The mark was never tried among real neighbours** (a row of browser tabs, an npm page, a README header), only on empty tiles. Nobody outside has been asked whether the round leg reads as an R or leans towards a B.

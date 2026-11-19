@@ -43,3 +43,4 @@ docs/films/*-draft/
 # organism generator: screenshots and sidecars (absolute values and text from other products) stay local
 /generator/shots/
 /generator/sidecars/
+/generator/reads/
