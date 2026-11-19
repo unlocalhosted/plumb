@@ -406,9 +406,18 @@ function pinsOf(entries, view) {
   const byEl = new Map();
   for (const p of entries) { const e = byEl.get(p.item.el); if (e) e.n++; else byEl.set(p.item.el, { id: p.id, r: inkOf(p.item.el, p.er), b: p.er, name: FIX.what(p.mark), n: 1 }); }
   const placed = [], out = [], head = pinnedTop();
-  for (const { id, r, b, name, n } of [...byEl.values()].sort((a, b) => a.r.top - b.r.top || a.r.left - b.r.left)) {
-    const w = Math.round(name.length * 6.1 + (n > 1 ? 22 : 0) + 18), h = 20;
-    if (r.top > view.h || r.top + r.height <= head) continue; // off screen, or wholly under the page's header
+  // a kind of note is named once on screen: the same name on several elements is one pin, at the topmost of them, with
+  // how many (×20); their glows mark each one. Pinned one by one, a row of the same name said nothing (U39, U40:
+  // 26 "Tailwind's default, not yours" overlapping, three "Line too heavy" side by side)
+  const seen = (e) => e.r.top <= view.h && e.r.top + e.r.height > head;
+  const byName = new Map();
+  for (const e of [...byEl.values()].filter(seen).sort((a, b) => a.r.top - b.r.top || a.r.left - b.r.left)) {
+    const k = byName.get(e.name);
+    if (k) k.m++; else byName.set(e.name, { ...e, m: 1 });
+  }
+  for (const { id, r, b, name, n, m } of byName.values()) {
+    const more = m > 1 ? `×${m}` : n > 1 ? `+${n - 1}` : '';
+    const w = Math.round(name.length * 6.1 + (more ? more.length * 6 + 10 : 0) + 18), h = 20;
     // the spots, nearest first: above the words, above the box, below the box, to the right, to the left, then the
     // same above and below from the right-hand end. The first inside the window that hides nothing (no words, no
     // control, no other pin) wins; with none free, the first inside the window
@@ -422,7 +431,7 @@ function pinsOf(entries, view) {
     let [x, y] = fits.find(clear) ?? fits[0] ?? [Math.max(4, Math.min(view.w - w - 4, r.left)), Math.max(head + 4, Math.min(view.h - h - 4, r.top + 3))];
     for (let i = 0; i < 12 && !clear([x, y]) && placed.some((q) => x < q.x + q.w + 4 && q.x < x + w + 4 && y < q.y + h && q.y < y + h); i++) x = Math.min(view.w - w - 4, x + 40);
     placed.push({ x, y, w });
-    out.push(`<span class="cpin" data-id="${escPin(id)}" style="left:${Math.round(x)}px;top:${Math.round(y)}px">${escPin(name)}${n > 1 ? `<b>+${n - 1}</b>` : ''}</span>`);
+    out.push(`<span class="cpin" data-id="${escPin(id)}" style="left:${Math.round(x)}px;top:${Math.round(y)}px">${escPin(name)}${more ? `<b>${more}</b>` : ''}</span>`);
   }
   return out.join('');
 }
@@ -903,7 +912,7 @@ export class MarkLayer {
     // a fix in hand: its element alone is marked, a pink ring a little outside it that follows its corners; the pins step
     // aside so the ring is the one mark on the page
     const held = this.#inHand?.isConnected ? this.#inHand : null;
-    const pins = held ? ringOf(held) : lit.size && !this.#lead ? pinsOf(plan.filter((p) => p.zone && lit.has(p.id) && p.mark.family === 'craft'), view) : '';
+    const pins = held ? ringOf(held) : lit.size && !this.#lead ? pinsOf(plan.filter((p) => p.zone && lit.has(p.id)), view) /* every picked concern names its notes, not only craft: a design-system note was a faint glow with no name, and the page looked empty (U39) */ : '';
     if (pins !== this.#labelMarkup) (this.#labels.innerHTML = pins), (this.#labelMarkup = pins);
     if (this.#lightMarkup) (this.#light.innerHTML = ''), (this.#lightMarkup = '');
     if (this.#dimPath) (this.#dim.style.removeProperty('clip-path'), (this.#dimPath = ''));
