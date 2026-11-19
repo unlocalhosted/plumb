@@ -632,7 +632,7 @@ export class FixPanel {
   #handOver(card) { const el = card.target; card.close(); if (!el || !this.holdEl(el, 'none')) this.hold(0); }
 
   // each opening starts unread: the last one's count and its settled mark never stand in for this reading
-  show(on) { if (on) { const rest = undoing_(); if (rest) queueMicrotask(() => this.#undo(rest)); this.#el.dataset.scheme = darkGround() ? 'dark' : 'light'; this.#el.classList.toggle('pl-dark', this.#el.dataset.scheme === 'dark'); this.#el.classList.toggle('pl-light', this.#el.dataset.scheme !== 'dark'); this.#choice.dataset.scheme = this.#el.dataset.scheme; this.#choice.className = `fx fx-on ${this.#el.dataset.scheme === 'dark' ? 'pl-dark' : 'pl-light'}`; for (const w of written_()) if (!this.#taken.has(w.key)) this.#taken.set(w.key, { key: w.key, members: [] }); } if (on !== this.#on) { this.#groups = []; this.#progress = null; this.#steady = null; this.#notice = null; clearTimeout(this.#noticeTimer); this.#el.removeAttribute('data-settled'); this.#send(on ? (this.#flight?.kind === 'undoing' ? 'openUndoing' : this.#flight?.kind === 'writing' ? 'openWriting' : 'open') : 'close'); } this.#el.hidden = !on; if (!on) { this.#choice.hidden = true; this.#onHtml = ""; this.#editor.close(); this.#card.close(); this.#letGo(false); this.#done = false; const last = this.#last; if (last?.undo?.length || last?.group) this.#host.handOff?.({ undo: last.undo ?? [], trace: { group: last.group ?? null } }, last.text); this.#last = null; this.#resumeAt = null; if (this.#cleanup.running) this.#cleanup.stop(); } else this.#cleanup.resume(); this.render(); }
+  show(on) { if (on) { const rest = undoing_(); if (rest) queueMicrotask(() => this.#undo(rest)); this.#el.dataset.scheme = darkGround() ? 'dark' : 'light'; this.#el.classList.toggle('pl-dark', this.#el.dataset.scheme === 'dark'); this.#el.classList.toggle('pl-light', this.#el.dataset.scheme !== 'dark'); this.#choice.dataset.scheme = this.#el.dataset.scheme; this.#choice.className = `fx fx-on ${this.#el.dataset.scheme === 'dark' ? 'pl-dark' : 'pl-light'}`; for (const w of written_()) if (!this.#taken.has(w.key)) this.#taken.set(w.key, { key: w.key, members: [] }); } if (on !== this.#on) { this.#groups = []; this.#progress = null; this.#steady = null; this.#notice = null; clearTimeout(this.#noticeTimer); this.#el.removeAttribute('data-settled'); this.#send(on ? (this.#flight?.kind === 'undoing' ? 'openUndoing' : this.#flight?.kind === 'writing' ? 'openWriting' : 'open') : 'close'); } this.#el.hidden = !on; if (!on) { this.#scrollHome(); this.#choice.hidden = true; this.#onHtml = ""; this.#editor.close(); this.#card.close(); this.#letGo(false); this.#done = false; const last = this.#last; if (last?.undo?.length || last?.group) this.#host.handOff?.({ undo: last.undo ?? [], trace: { group: last.group ?? null } }, last.text); this.#last = null; this.#resumeAt = null; if (this.#cleanup.running) this.#cleanup.stop(); } else this.#cleanup.resume(); this.render(); }
   // the reader handed on the page: causes, most places first; a cause taken stays taken until it is written
   // While a cause is in hand the page is read as previewed (its fix, and what that fix also mends, gone from it): the
   // causes stay as they were read before, and the new reading is taken when the cause is put down
@@ -784,8 +784,16 @@ export class FixPanel {
     if (!by) return;
     let box = el.parentElement;
     while (box && box !== document.body && box !== document.documentElement && !(/(auto|scroll|overlay)/.test(getComputedStyle(box).overflowY) && box.scrollHeight > box.clientHeight)) box = box.parentElement;
-    (box && box !== document.body && box !== document.documentElement ? box : document.scrollingElement ?? document.documentElement)
-      .scrollBy({ top: by, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
+    const scroller = box && box !== document.body && box !== document.documentElement ? box : document.scrollingElement ?? document.documentElement;
+    // where the page was before Fix first moved it: leaving Fix or Blueprint puts it back (U49; the README promises "the
+    // page is put back exactly")
+    this.#home ??= { scroller, top: scroller.scrollTop };
+    scroller.scrollBy({ top: by, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
+  }
+  #home = null;
+  #scrollHome() {
+    const h = this.#home; this.#home = null;
+    if (h?.scroller.isConnected && Math.abs(h.scroller.scrollTop - h.top) > 1) h.scroller.scrollTo({ top: h.top, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
   }
   // a glow clicked on the page: its cause
   holdMark(el, mark) {
@@ -1078,7 +1086,7 @@ export class FixPanel {
     if (k === 'ArrowLeft') { this.skip(-1); return true; }
     // the why box open: Esc is its Cancel, wherever the focus is; the fix in hand stays (U17, 2026-11-20)
     if (k === 'Escape' && this.#keeping) { this.#closeKeep(); return true; }
-    if (k === 'Escape') { const g = this.#cause(); this.#send('escape'); this.#putDown(g); return true; }
+    if (k === 'Escape') { const g = this.#cause(); this.#send('escape'); this.#putDown(g); this.#scrollHome(); return true; }
     return false;
   }
 
