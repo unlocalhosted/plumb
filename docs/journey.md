@@ -2773,6 +2773,38 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **Left, named:** a note in the fix's choice offers only Keep as is and Skip, not the card's Edit the words and Ask
   your agent, and it can sit over the heading next to it.
 - **Media hooks:** `bench/tells/shots/5-concerns-bar.jpg`.
+
+### Blueprint walked by a tester and fixed as it went (2026-11-20)
+
+- **The itch:** the owner kept meeting small failures in Blueprint one at a time. Two sessions now share one file
+  (`docs/qa/blueprint-ux-2026-11-20.md`): one walks plumber the way a person does and writes each issue down, the
+  other fixes them worst first.
+- **First batch, by cause:**
+  1. **A note on a heading that was fine** (U1). "Heading lines uneven" sat on one-line headings with a NEW or AI
+     badge. The check counted lines by the exact top of each run of words, and the smaller badge starts a few pixels
+     higher. Lines are now grouped by where the words overlap from top to bottom.
+  2. **Pins on top of the words they mark** (U2). A pin always went just above its element's top-left corner, so it
+     hid a FEATURE label, the top of a button, and was cut off by the window. It now tries seven spots around the
+     element and takes the first one that covers no words, control, picture, small filled box or other pin.
+  3. **The card showing another element's note** (U6, U7). The X-ray card copied its note from the small pill by
+     the pointer when it opened. That pill is about whatever zone the hand is over, which can be the element it just
+     passed: the card on a button offered to make the button an h2. With a concern picked, the pill only showed the
+     top zone, so the picked note never reached the card. The card now asks for its own element's note, the picked
+     concern's first.
+  4. **Pins you couldn't point at** (U8). They were drawn under the zones and ignored the pointer, so pointing at a
+     pin read the label under it. A pin now stands for its element: pointed at, its card opens; clicked, its note.
+  5. **One Escape closing too much** (U13, U17). The rule "the overlay's own fields keep their keys" named only
+     single-line inputs, so Escape in the agent note (a textarea) closed Blueprint. The "Why keep it?" box leaves
+     the focus on the page, so its Escape reached the fix bar and left Fix. Both now close only the box.
+  6. **The card over the bar, and moving under the hand** (U9, U12). The card was placed while still hidden, so it
+     measured 0 and was placed as if 420px tall; with its note it is about 560px, so it ran over Fix and Close. Its
+     note also arrived a frame after placing, and the next placing moved the card up as the hand reached for Ask
+     your agent. The note now goes in first and the card is measured as it will show.
+- **How each was checked:** on the Ledger test screen at 1280×800, in the case the tester described: the pins'
+  positions read from the page, the card's note and box measured (before 252–813px over a bar at 730px, after
+  161–722px), Escape pressed in each box.
+- **Media hooks:** the tester's shots in `docs/qa/shots/2026-11-20/` (`u02-craft-pins.jpg`,
+  `u06-button-shows-heading-note.jpg`) as the before; a still of the same screens now.
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
 - Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".
@@ -4302,6 +4334,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- In Blueprint, a pin no longer covers the words it marks and can be pointed at; the X-ray card always shows its own element's note, stays above the bar and holds still as you reach for it; Escape closes only the box you are in ([entry](#blueprint-walked-by-a-tester-and-fixed-as-it-went-2026-11-20)).
 - Plumber flags a subtitle that only repeats its heading ("Billing" over "Manage your billing and subscription") and leaves one that adds a fact alone, by asking a small language model on vm-agent; with no model set up it stays silent ([entry](#subtitles-that-repeat-the-heading-a-model-on-vm-agent-judges-them-2026-11-19)).
 - Plumber no longer makes a Tailwind app reload while it writes its own cache ([entry](#subtitles-that-repeat-the-heading-a-model-on-vm-agent-judges-them-2026-11-19)).
 - The subtitle check now works inside the app as well as from the command line: the dev server asks the model ([entry](#subtitles-that-repeat-the-heading-a-model-on-vm-agent-judges-them-2026-11-19)).
