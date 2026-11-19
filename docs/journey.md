@@ -2805,6 +2805,39 @@ field is empty). The table of five writes, before and after. The Next table: eig
   161–722px), Escape pressed in each box.
 - **Media hooks:** the tester's shots in `docs/qa/shots/2026-11-20/` (`u02-craft-pins.jpg`,
   `u06-button-shows-heading-note.jpg`) as the before; a still of the same screens now.
+
+### The second batch of fixes from the Blueprint walk (2026-11-20)
+
+- **The itch:** the tester kept walking: Fix and Clean up, History, Help and Setup, a narrow window, the CLI, and
+  the owner's crafting-ui.
+- **Fixed, by cause:**
+  1. **Notes that read as facts** (U4, U15, U16). "mt-8. This works out to 2rem." and "text-sm isn't one of your
+     font size tokens: 12px and 14px" (text-sm is 14px) never said what was wrong, and two fixes in a row had the
+     same title. The words for a design-system note now say the problem in the owner's terms ("isn't one of your
+     tokens", "won't change when your theme does"), a Tailwind default names its class in the headline, and when
+     one of your tokens is the same size the line says so: nothing on screen moves, and why it is still worth
+     taking. "Typed by hand" became "hard-coded" everywhere it was left.
+  2. **Edit the words on a padding note** (U30). The card's main button was chosen by whether the element held
+     words. Each check already declares what it is about; only a note about the words leads with Edit the words.
+  3. **Panels under the bar** (U19, U27, U29). History, Help and Setup were each placed a fixed distance from the
+     bottom, written for the dock. Blueprint's bar now keeps one measure of the room it takes, and they open above
+     it.
+  4. **A cut-off fix bar on a narrow window** (U44, after the new words were longer). Its lines can wrap now.
+  5. **The value highlight on the label** (U45, a slip from the card fixes). It was measured while the card was
+     hidden or still growing; it is measured in the card's own layout, when the card shows.
+  6. **A fix under a sticky header** (U41, on crafting-ui). Fix scrolled the element in with 16px to spare, blind
+     to the page's header; it now measures the header and brings the element in below it. The choice row also
+     weighs what each spot would hide, so it no longer sits over the heading beside its line, the gap left open
+     at the end of the last entry.
+  7. **Clean up cut off on the right** (U25, U26, part of U24). The panel's grid column took its widest unbroken
+     line, so the body was 718px wide in 520px, and the Copy and Close buttons were laid out past the edge. That
+     was why it looked like there was no way to copy the command and no way out.
+  8. **Dead Read more links** (U33). They pointed at a placeholder for a docs site that isn't deployed. No link
+     shows until the site has an address.
+- **How it was checked:** each case as the tester described it, on the Ledger test screen or crafting-ui, read
+  from the page (positions in px, the words on screen); the tester re-walked most and marked them verified in the
+  issue file.
+- **Left for the owner:** what the concern count counts (places, as today, or the fixes you step through; U4).
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
 - Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".
@@ -4350,6 +4383,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- Blueprint's notes say what is wrong in plain words; History, Help and Setup open above the bar; Fix brings an element in below a sticky header with its choice beside it; Clean up's Copy and Close are in view ([entry](#the-second-batch-of-fixes-from-the-blueprint-walk-2026-11-20)).
 - In Blueprint, a pin no longer covers the words it marks and can be pointed at; the X-ray card always shows its own element's note, stays above the bar and holds still as you reach for it; Escape closes only the box you are in ([entry](#blueprint-walked-by-a-tester-and-fixed-as-it-went-2026-11-20)).
 - Plumber flags a subtitle that only repeats its heading ("Billing" over "Manage your billing and subscription") and leaves one that adds a fact alone, by asking a small language model on vm-agent; with no model set up it stays silent ([entry](#subtitles-that-repeat-the-heading-a-model-on-vm-agent-judges-them-2026-11-19)).
 - Plumber no longer makes a Tailwind app reload while it writes its own cache ([entry](#subtitles-that-repeat-the-heading-a-model-on-vm-agent-judges-them-2026-11-19)).
