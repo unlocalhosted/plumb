@@ -2667,6 +2667,14 @@ field is empty). The table of five writes, before and after. The Next table: eig
   part's values wait for the card. Built in layers.
 - **Layer 1, the pills merged:** a note's pill now names the note before its advice ("Stock word" / "Say what it
   does…"), and while it is up X-ray's part pill steps aside. `bench/tells/shots/13-one-pill.jpg`.
+- **Layer 2, grow and shrink:** after a rest of half a second (it was a second) the card grows out of the pill: it
+  starts at the pill's own box and springs to its place in 340 ms, its contents fading in from 40% of the way; the
+  pill's words become the card's first line, and the pills hide while it is open. Moving away runs it back into the
+  pill in 220 ms. With no pill (an element with no note) it grows from the pointer; with reduced motion it just
+  appears. Measured on the test screens: the card grew from the "Stock word" pill's box (297×45) to its place.
+  `bench/tells/shots/14-pill-grown-card.jpg`.
+- **Not yet:** a click doesn't pin the card open; a card that grew from the pointer shrinks back to where the pointer
+  was then, not where it is now.
 - **Media hooks:** `bench/tells/shots/5-concerns-bar.jpg`.
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.

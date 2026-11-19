@@ -44,7 +44,11 @@ export const XRAY_LIVE_CSS = `
   .xr-card[hidden] { display: block; opacity: 0; pointer-events: none; }
   /* the card takes the pointer only once the pointer is over it: until then a click there lands on the page below it */
   .xr-card:not([data-reach]), .xr-card[hidden] { pointer-events: none; }
-  .xr-card { opacity: 1; transition: transform 420ms var(--pl-spring), opacity 200ms var(--pl-ease-out); z-index: 6; }
+  .xr-card { opacity: 1; transition: transform 420ms var(--pl-spring), opacity 200ms var(--pl-ease-out); z-index: 6; transform-origin: 0 0; }
+  /* the pill's words, carried in as the card's first line */
+  .xr-said[hidden] { display: none; }
+  .xr-said { padding: 2px 4px 10px; margin-bottom: 8px; border-bottom: 1px solid var(--pl-border-default); font: 400 13px/1.4 var(--pl-sans); }
+  .xr-said .say { display: block; } .xr-said .nm { display: block; font-weight: 650; margin-bottom: 2px; }
   .xr-many { display: inline-flex; align-items: center; height: 18px; padding: 0 6px; margin-left: 4px; border-radius: 99px; vertical-align: 2px; background: var(--pl-sky-soft); color: var(--pl-sky-ink); font: 600 11px/1 var(--pl-sans); letter-spacing: 0; }
   .xr-many[data-scope="all"] { background: var(--pl-pink-soft); color: var(--pl-pink-ink); } .xr-many[data-scope="one"] { background: var(--pl-bg-inset); color: var(--xr-label); }
   /* the value in hand, beside the pointer: its number and its token, while you drag or scroll */
@@ -128,7 +132,7 @@ export const familyOf = (prop) => (prop === 'width' || prop === 'height' ? 'size
 
 export function mountXray(o) {
   const C = o.container, E = o.events ?? C, watch = o.watch ?? C;
-  C.insertAdjacentHTML('beforeend', '<div class="xr"></div><div class="xr-card" hidden><div class="xr-hand"></div><div class="xr-body"></div></div><div class="xr-live" hidden></div>');
+  C.insertAdjacentHTML('beforeend', '<div class="xr"></div><div class="xr-card" hidden><div class="xr-said" hidden></div><div class="xr-hand"></div><div class="xr-body"></div></div><div class="xr-live" hidden></div>');
   const layer = C.querySelector(':scope > .xr'), card = C.querySelector(':scope > .xr-card'), body = card.querySelector('.xr-body'), hand = card.querySelector('.xr-hand'), live = C.querySelector(':scope > .xr-live');
   const off = []; // every listener added, taken off by destroy()
   const on = (target, type, fn, opts) => { target.addEventListener(type, fn, opts); off.push(() => target.removeEventListener(type, fn, opts)); };
@@ -138,8 +142,42 @@ export function mountXray(o) {
   // like a second"): while things move, only the drawing on the page follows. Once shown, it stays only while the hand
   // stays or heads for it ("it should disappear again as i start moving, but follow the triangle principle"): a move
   // away of more than a few pixels, or a scroll, puts it away and the wait starts again.
-  const REST = 1000, DRIFT = 6;
+  // owner, 2026-11-20: half a second, and the card grows out of the pill it follows, then shrinks back into it
+  const REST = 500, DRIFT = 6;
   let ready = false, restT = 0, ptNow = null, restAt = null;
+  // One body under the pointer (owner, 2026-11-20: "the small card itself to expand and shrink into small card"): the
+  // card grows from the pill by the pointer (a note's, else the part's) and shrinks back to it; the pill's words become
+  // the card's first line, and the pills step aside while it is open (the host's data-grown)
+  const said = card.querySelector('.xr-said');
+  let from = null;
+  const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function pillBox() {
+    const root = C.getRootNode(), s = box();
+    const p = [...root.querySelectorAll('.bp-hint[data-on], .xr-say')].find((n) => n.getClientRects().length && getComputedStyle(n).display !== 'none');
+    if (p) { const r = p.getBoundingClientRect(); return { x: r.left - s.left, y: r.top - s.top, w: r.width, h: r.height, html: p.classList.contains('bp-hint') ? p.innerHTML : '' }; }
+    return ptNow ? { x: ptNow.x - s.left - 10, y: ptNow.y - s.top - 10, w: 20, h: 20, html: '' } : null;
+  }
+  function grow() {
+    from = pillBox();
+    said.innerHTML = from?.html ?? ''; said.hidden = !from?.html;
+    C.getRootNode().host?.setAttribute('data-grown', '');
+    if (!from || still()) return;
+    const cw = card.offsetWidth || 292, ch = card.offsetHeight || 300;
+    card.animate([{ transform: `translate(${from.x}px, ${from.y}px) scale(${from.w / cw}, ${from.h / ch})`, opacity: 0.85 }, { transform: `translate(${cardAt.x}px, ${cardAt.y}px) scale(1, 1)`, opacity: 1 }],
+      { duration: 340, easing: 'cubic-bezier(.2, .9, .25, 1.04)' });
+    for (const part of [said, hand, body]) part.animate([{ opacity: 0 }, { opacity: 0, offset: 0.4 }, { opacity: 1 }], { duration: 340, easing: 'ease-out' });
+  }
+  function shrink() {
+    C.getRootNode().host?.removeAttribute('data-grown');
+    if (card.hidden) return;
+    const to = from; from = null;
+    if (to && !still()) {
+      const cw = card.offsetWidth || 292, ch = card.offsetHeight || 300;
+      card.animate([{ transform: `translate(${cardAt.x}px, ${cardAt.y}px) scale(1, 1)`, opacity: 1 }, { transform: `translate(${to.x}px, ${to.y}px) scale(${to.w / cw}, ${to.h / ch})`, opacity: 0 }],
+        { duration: 220, easing: 'cubic-bezier(.4, 0, .7, .2)' });
+    }
+    card.hidden = true;
+  }
   let lastCard = '', shown = null, shownKey = null, pinned = null, noting = null, held = null, cardAt = { x: 0, y: 0 }, lastOn = null, waiting = 0;
 
   // ── where a change reaches, and the changes ───────────────
@@ -208,7 +246,7 @@ export function mountXray(o) {
   // ── the drawing and the card ───────────────────────────────
   let zone = null, justDragged = false, warm = 0, pending;
   const draw = (el) => {
-    if (!el) { layer.innerHTML = ''; card.hidden = true; shown = null; zone = null; ready = false; clearTimeout(restT); return; }
+    if (!el) { layer.innerHTML = ''; shrink(); shown = null; zone = null; ready = false; clearTimeout(restT); return; }
     const s = box(), [name, source] = o.name(el);
     const zs = zonesOf(el), inProp = held?.prop ?? zone?.prop;
     const lit = inProp ? zs.filter((q) => q.prop !== inProp && linkedOf(inProp).includes(q.prop)) : [];
@@ -254,8 +292,8 @@ export function mountXray(o) {
     // something deliberate (a click, a part held, changes waiting, a note) shows it at once; a pass over the page waits
     const show = ready || !!pinned || !!held || changes.size > 0;
     if (!show) { clearTimeout(restT); restT = setTimeout(() => { ready = true; restAt = ptNow; if (shown?.isConnected && !o.paused?.()) draw(shown); }, REST); }
-    card.hidden = !!noting || !show;
-    if (first && !card.hidden) { card.removeAttribute('data-enter'); void card.offsetWidth; card.setAttribute('data-enter', ''); }
+    if (!!noting || !show) shrink(); else card.hidden = false;
+    if (first && !card.hidden) { card.removeAttribute('data-enter'); void card.offsetWidth; card.setAttribute('data-enter', ''); grow(); }
     if (first) requestAnimationFrame(() => card.removeAttribute('data-fresh'));
     shown = el; shownKey = o.key(el) ? placeKey(el) : null;
     cursor();
@@ -296,7 +334,7 @@ export function mountXray(o) {
     // shown, and the hand moves on: toward the card it stays (towardCard); anywhere else it goes, and only the drawing follows until the hand rests again
     if (!card.hidden && ready && !pinned && !changes.size && restAt && Math.hypot(pt.x - restAt.x, pt.y - restAt.y) > DRIFT) {
       if (towardCard(pt)) { clearTimeout(waiting); return; }
-      ready = false; restAt = null; card.hidden = true; card.removeAttribute('data-reach');
+      ready = false; restAt = null; shrink(); card.removeAttribute('data-reach');
     }
     if (ourUI(e)) { clearTimeout(waiting); return; }
     const under = o.partAt(e);
@@ -631,7 +669,7 @@ export function mountXray(o) {
   let frame = 0;
   // a scroll: the card steps out of the way and waits for the page to stop again (it stays while it holds something)
   const scrolled = () => {
-    if (shown && ready && !pinned && !held && !changes.size && !noting && !card.matches(':hover')) { ready = false; card.hidden = true; card.removeAttribute('data-reach'); }
+    if (shown && ready && !pinned && !held && !changes.size && !noting && !card.matches(':hover')) { ready = false; shrink(); card.removeAttribute('data-reach'); }
     follow();
   };
   const follow = () => { if (frame || !shown) return; frame = requestAnimationFrame(() => { frame = 0; if (shown?.isConnected) draw(shown); }); };

@@ -520,7 +520,9 @@ class PlumbOverlay extends HTMLElement {
       :host([data-xray]) .bp .heat { opacity: 0 !important; }
       :host([data-xray]) .sel .bm { display: none; }
       /* one pill by the pointer: a note's pill (blueprint-marks) outranks the part's */
-      :host([data-hinting]) .xr-say { display: none; }</style>${TOY_DEFS}`;
+      :host([data-hinting]) .xr-say { display: none; }
+      /* the card grown from the pill: the pill is inside it now */
+      :host([data-grown]) :is(.bp-hint, .xr-say) { opacity: 0 !important; transition: opacity 120ms; }</style>${TOY_DEFS}`;
       this.#root.append(t.content);
     }
     const host = document.createElement('div'); host.className = 'xr-host';
