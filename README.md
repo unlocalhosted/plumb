@@ -79,13 +79,13 @@ Start your dev server as usual. The overlay lives only in development: productio
 | Gesture | What happens |
 | --- | --- |
 | Hold **Alt** | The element under the pointer is outlined, with its component and how many of its values are off your tokens. |
-| **Alt + click** | Shows that element's problems in Blueprint. |
+| **Alt + click** | Opens that element's editor, with its notes in Blueprint's bar. |
 | **Alt + two-finger scroll** | Up to the parent, down to the child. |
 | **Double-click** words | Edit them in place; **Enter** or clicking away writes them to the source string, **Esc** puts them back. **Alt + double-click** reaches words in a button, card or link. |
 
 #### Blueprint: fixing
 
-Press **Alt+B**. A bar says how many problems the page has, with **Fix** and **Clean up**. **Fix** takes them one cause at a time: one class under one rule, every place it is used. The card at the bottom says what is off in words ("27 places have a hard-coded letter spacing"); the choice is made on the element itself, where its options are drawn as what they are, and taking one rewrites every place of that cause in one guarded write.
+Press **Alt+B**. The bar at the bottom says which concern you are looking at and how many notes it holds. Pick one (Design system check, Craft and polish, Accessible and correct, Anti-slop check) and its notes are named on the page; point at an element for its card. The **···** menu holds Clean up, Setup steps, History and Help. **Fix** takes the notes one cause at a time: one class under one rule, every place it is used. The card at the bottom says what is off in words ("27 places have a hard-coded letter spacing"); the choice is made on the element itself, where its options are drawn as what they are, and taking one rewrites every place of that cause in one guarded write.
 
 | Gesture | What happens |
 | --- | --- |
