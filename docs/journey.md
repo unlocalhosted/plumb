@@ -3819,6 +3819,29 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   size's; the reason for each reading isn't written anywhere
   yet (the config and the page are the next slices).
 
+### 35. The onboarding page gets the design site's look (2026-11-19)
+
+- **The itch:** the owner on the page `plumber` opens: "this onboarding sucks". The design pages they made on the site
+  (/design) "are much more lively and inviting and encouraging", so the page should look like them. They kept the five
+  steps and their questions and asked to see one screen first.
+- **What changed:** the page is white, like the site. Each screen opens the way a design page does: its toy, a heavy
+  round title and a lead in large grey words. Choices are soft blocks that turn the step's colour, with a tick, when
+  taken. Notices are butter blocks. Each drawing sits on the grey inset with no outline. "The rule it becomes" is a
+  lilac block with the config line on a white cut-out.
+- **Second round, from the owner's review of Welcome** ("design a good progress stepper component and emphasize what
+  we have scanned and rules part more"): the row of step names became a stepper. Each step is its toy on a plate along
+  one rail, which fills pink up to where you are. Done steps take their own colour and a tick, the one you're on is a
+  raised pink key, and steps to come are pale. Welcome now opens with "What Plumber found": one block per kind with the
+  share of places on your steps (crafting-ui: spacing 85%, colours 75%, text 14%, corners 51%) and how many are typed
+  by hand. "Your rules" is a lilac panel with a count ("1 of 4"). The last screen shows each rule as a block in its
+  step's colour, the file it writes, and "Set it up" as a green block that lists its three effects.
+- **Found on the way:** on the pink key the colours and corners toys, both pink, vanished. They now sit on a white
+  cut-out.
+- **Proof:** screenshots of every step on crafting-ui in `docs/films/onboarding/` (welcome-design-style.png is the
+  first round; welcome-stepper.png, step-*.png and step-colour-night.png are the second).
+- **Open:** the page uses system fonts; the site's Bricolage and Instrument Sans aren't shipped with it (about 100 KB).
+- **Media hooks:** before and after of the Welcome screen; a clip walking the stepper from Welcome to Set it up.
+
 ## Open gaps
 - **The mark was never tried among real neighbours** (a row of browser tabs, an npm page, a README header), only on empty tiles. Nobody outside has been asked whether the round leg reads as an R or leans towards a B.
 - Resizing: a size between your steps always lands on the nearest one; there is no way yet to keep an exact size as

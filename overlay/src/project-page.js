@@ -15,8 +15,8 @@ const nf = new Intl.NumberFormat('en');
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
 const PAGE_CSS = `
-  :host { display: block; min-height: 100vh; background: var(--pl-bg-page); }
-  .top { position: sticky; top: 0; z-index: 3; display: flex; align-items: center; gap: 12px; padding: 12px var(--pl-page-space-1); background: color-mix(in oklab, var(--pl-bg-surface) 88%, transparent); backdrop-filter: blur(12px); box-shadow: 0 1px 0 var(--pl-border-default); }
+  :host { display: block; min-height: 100vh; background: var(--pl-paper); }
+  .top { position: sticky; top: 0; z-index: 3; display: flex; align-items: center; gap: 12px; padding: 12px var(--pl-page-space-1); background: color-mix(in oklab, var(--pl-paper) 90%, transparent); backdrop-filter: blur(12px); box-shadow: 0 1px 0 var(--pl-rule); }
   .top b { font: 600 14px var(--pl-sans); color: var(--pl-text-primary); white-space: nowrap; }
   .top .pl-rainbow { width: 22px; height: 12px; border-radius: 3px; }
   .top .read { font: var(--pl-card-meta); color: var(--pl-text-secondary); }
@@ -46,7 +46,7 @@ export function mountProjectPage(host, data, tokens, io = {}) {
   const button = root.getElementById('scheme');
   const setScheme = (dark) => {
     host.dataset.scheme = dark ? 'dark' : 'light';
-    doc.body.style.background = getComputedStyle(host).getPropertyValue('--pl-desk');
+    doc.body.style.background = getComputedStyle(host).getPropertyValue('--pl-paper');
     button.textContent = dark ? 'Day' : 'Night';
   };
   const asked = new URLSearchParams(doc.defaultView.location.search).get('scheme');

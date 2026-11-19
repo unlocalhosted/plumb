@@ -33,85 +33,188 @@ const SCREENS = [
 ];
 
 const LESSON_CSS = `
-  :host { display: block; color: var(--pl-text-primary); }
-  .lesson { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 20rem); gap: var(--pl-page-space-1); align-items: start; }
+  :host { display: block; color: var(--pl-ink); font-family: var(--pl-sans); }
+  .lesson { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 20rem); gap: 28px 56px; align-items: start; }
   @media (max-width: 960px) { .lesson { grid-template-columns: 1fr; } }
   /* the rules screen shows the rules itself: no second copy beside it */
   .lesson.whole { grid-template-columns: minmax(0, 1fr); }
 
-  /* where you are: a row of toys, the current one lit, the ones to come pale */
-  .trail { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: var(--pl-space-4); margin: 0 0 var(--pl-space-4); padding: 0; list-style: none; }
-  .trail button { all: unset; display: inline-flex; align-items: center; gap: var(--pl-space-3); padding: var(--pl-space-2) var(--pl-space-5) var(--pl-space-2) var(--pl-space-2); border-radius: var(--pl-radius-card);
-    font: var(--pl-card-label); font-family: var(--pl-round); font-size: 13px; color: var(--pl-text-secondary); cursor: pointer; }
-  .trail button .toy { width: var(--pl-space-8); height: var(--pl-space-8); }
-  .trail button[aria-current="step"] { background: var(--pl-bg-surface); color: var(--pl-text-primary); box-shadow: var(--pl-shadow-tag); }
-  .trail button[data-done] .toy { filter: none; }
-  .trail button:disabled { cursor: default; opacity: .45; }
-  .trail button:disabled .toy { filter: grayscale(1); }
-  .trail button:focus-visible { outline: 2px solid var(--pl-instrument); outline-offset: 2px; }
-  .toy svg { display: block; width: 100%; height: 100%; overflow: visible; }
-
-  /* a screen: a face in its hue with its toy, then the five parts on paper */
-  .screen { border-radius: var(--pl-radius-card); background: var(--pl-bg-surface); box-shadow: var(--pl-shadow-card); overflow: hidden; }
-  .face { display: flex; align-items: center; gap: var(--pl-space-6); padding: var(--pl-space-7) var(--pl-space-8); background: var(--hf); color: var(--hi); }
-  .face .plate { display: grid; place-items: center; width: var(--pl-page-space-2); height: var(--pl-page-space-2); flex: none; border-radius: var(--pl-radius-card); background: var(--pl-cut); }
-  .face .plate .toy { width: var(--pl-page-space-1); height: var(--pl-page-space-1); }
-  .face h2 { margin: 0; font: var(--pl-page-title); font-family: var(--pl-round); font-size: 26px; line-height: 30px; }
-  .face p { margin: var(--pl-space-2) 0 0; font: var(--pl-page-body); max-width: 52ch; }
-  .body { display: grid; gap: var(--pl-page-space-1); padding: var(--pl-space-8); }
-  .part h3 { margin: 0 0 var(--pl-space-3); font: var(--pl-card-label); text-transform: uppercase; letter-spacing: var(--pl-tracking-caps); color: var(--pl-text-secondary); }
-  .part > p { margin: 0; max-width: 60ch; font: var(--pl-page-body); }
-  .notice { display: grid; gap: var(--pl-space-3); margin-top: var(--pl-space-6); padding: var(--pl-space-6); border-radius: var(--pl-radius-card); background: var(--pl-butter-soft); color: var(--pl-butter-ink); font: var(--pl-page-small); max-width: 62ch; }
+  /* where you are: a stepper. Each step is its toy on a plate along one rail; the rail fills pink up to the step you're
+     on. Done: the plate in its step's hue with a tick. Here: the plate raised as a pink key. To come: pale, its toy
+     greyed. Every step can be pressed, so each answers the hand (lift on hover, sink on press, a ring on focus) */
+  .stepper { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); margin: 0 0 12px; padding: 0; list-style: none; }
+  .stepper li { position: relative; display: grid; justify-items: center; }
+  .stepper li + li::before, .stepper li + li::after { content: ''; position: absolute; top: 24px; left: calc(-50% + 34px); right: calc(50% + 34px); height: 4px; border-radius: 2px; background: var(--pl-rule); }
+  .stepper li + li::after { background: var(--pl-pink-block); transform-origin: left; transform: scaleX(0); }
+  .stepper li.reached + li.reached::after, .stepper li.reached + li.here::after { transform: scaleX(1); }
+  .stepper li.here.arrived::after { animation: pl-rail 420ms var(--pl-ease-out) both; }
+  @keyframes pl-rail { from { transform: scaleX(0); } }
+  .stepper button { all: unset; display: grid; justify-items: center; gap: 8px; cursor: pointer; border-radius: 16px; padding: 0 6px 4px; }
+  .stepper .plate { position: relative; display: grid; place-items: center; width: 52px; height: 52px; border-radius: 17px; background: var(--pl-paper-2);
+    transition: translate 320ms var(--pl-spring-pop), box-shadow 200ms var(--pl-ease-out), background 200ms var(--pl-ease-out); }
+  .stepper .plate .toy { width: 28px; height: 28px; transition: filter 200ms var(--pl-ease-out), opacity 200ms var(--pl-ease-out); }
+  .stepper .name { font: var(--pl-round-w, 650) 15px/18px var(--pl-round); color: var(--pl-ink-2); }
+  .stepper .sub { font: 500 12.5px/16px var(--pl-sans); color: var(--pl-ink-2); min-height: 16px; }
+  .stepper li:not(.reached):not(.here) .toy { filter: grayscale(.85); opacity: .55; }
+  .stepper button:hover .plate { translate: 0 -2px; box-shadow: 0 3px 0 var(--pl-rule); }
+  .stepper button:hover .toy { filter: none; opacity: 1; }
+  .stepper button:hover .name { color: var(--pl-ink); }
+  .stepper button:active .plate { translate: 0 0; box-shadow: none; }
+  .stepper button:focus-visible { outline: 2px solid var(--pl-pink-block); outline-offset: 2px; }
+  .stepper li.reached .plate { background: var(--hf); }
+  .stepper li.reached .name { color: var(--pl-ink); }
+  .stepper .tick { position: absolute; right: -5px; bottom: -5px; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--pl-done-bg); color: var(--pl-done-text); box-shadow: 0 0 0 3px var(--pl-paper); }
+  .stepper .tick svg { width: 11px; height: 11px; }
+  .stepper li.here .plate { background: var(--pl-pink-block); translate: 0 -3px; box-shadow: 0 4px 0 color-mix(in oklab, var(--pl-pink) 72%, #000); }
+  /* on the pink key the toy sits on a cut-out, so a pink toy (colours, corners) never vanishes into it */
+  .stepper li.here .plate::before { content: ''; position: absolute; inset: 9px; border-radius: 11px; background: var(--pl-cut); }
+  .stepper li.here .plate .toy { position: relative; width: 24px; height: 24px; }
+  .stepper li.here.arrived .plate { animation: pl-here 420ms var(--pl-spring-pop) both; }
+  @keyframes pl-here { from { translate: 0 0; scale: .9; } }
+  .stepper li.here .name { color: var(--pl-ink); font-weight: var(--pl-round-w, 750); }
+  .stepper li.here .sub { color: var(--pl-pink-ink); font-weight: 650; }
+  @media (max-width: 760px) { .stepper .name, .stepper .sub { display: none; } .stepper .plate { width: 40px; height: 40px; } .stepper li + li::before, .stepper li + li::after { top: 18px; left: calc(-50% + 26px); right: calc(50% + 26px); } }
+  @media (prefers-reduced-motion: reduce) { .stepper li.here.arrived::after, .stepper li.here.arrived .plate { animation: none; } .stepper .plate { transition: none; } }
+  /* a screen opens as a page of the design site does: its toy, large, beside a heavy title; a lead in large grey
+     words, the thing to notice in ink. Then sections on the white page, no box around them */
+  .screen { background: none; }
+  .face { display: grid; gap: 14px; padding: 6px 0 0; }
+  .face .head { display: flex; align-items: center; gap: 18px; }
+  .face .plate { display: contents; }
+  .face .plate .toy { width: 56px; height: 56px; flex: none; }
+  .face h2 { margin: 0; font: var(--pl-round-w, 750) 46px/50px var(--pl-round); letter-spacing: -0.02em; color: var(--pl-ink); text-wrap: balance; }
+  .face p { margin: 0; max-width: 62ch; font: 500 18px/28px var(--pl-sans); color: var(--pl-ink-2); }
+  .face p b { color: var(--pl-ink); font-weight: 650; }
+  .body { display: grid; gap: 32px; padding: 32px 0 0; }
+  .part h3 { margin: 0 0 10px; font: var(--pl-round-w, 650) 24px/28px var(--pl-round); letter-spacing: -0.01em; color: var(--pl-ink); }
+  .part > p { margin: 0; max-width: 62ch; font: 500 16.5px/26px var(--pl-sans); color: var(--pl-ink-2); }
+  /* three ideas as numbered tiles on the inset tone, as the Identity page lays out what makes a block */
+  .why { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .why div { padding: 20px 20px 22px; border-radius: 22px; background: var(--pl-paper-2); }
+  .why div { display: grid; grid-template-columns: 1fr auto; }
+  .why div > :not(small, .toy) { grid-column: 1 / -1; }
+  .why small { font: 600 12px/1 var(--pl-mono); color: var(--pl-ink-2); }
+  .why .toy { width: 30px; height: 30px; margin: -6px -4px 0 0; }
+  .face h2 .name { white-space: nowrap; }
+  .why b { display: block; margin: 12px 0 6px; font: var(--pl-round-w, 650) 19px/23px var(--pl-round); color: var(--pl-ink); }
+  .why p { margin: 0; font: 500 15px/22px var(--pl-sans); color: var(--pl-ink-2); }
+  /* what Plumber read: one block per kind in its step's hue, the places on your steps against the places typed by
+     hand, as a number and as one bar */
+  .scan { display: grid; gap: 14px; }
+  .scan > h3 { display: flex; align-items: baseline; gap: 10px; margin: 0; font: var(--pl-round-w, 700) 24px/28px var(--pl-round); color: var(--pl-ink); }
+  .scan > h3 span { font: 500 15px/20px var(--pl-sans); color: var(--pl-ink-2); }
+  .scan ol { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
+  .scan li { display: grid; gap: 10px; padding: 16px 16px 18px; border-radius: 22px; background: var(--hf); color: var(--hi); box-shadow: 0 4px 0 color-mix(in oklab, var(--hi) 22%, transparent); }
+  .scan .top { display: flex; align-items: center; gap: 10px; font: var(--pl-round-w, 700) 16px/20px var(--pl-round); }
+  .scan .top .plate { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px; background: var(--pl-cut); }
+  .scan .top .toy { width: 22px; height: 22px; }
+  .scan .big { font: var(--pl-round-w, 750) 34px/36px var(--pl-round); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .scan .big small { display: block; margin-top: 2px; font: 500 13px/18px var(--pl-sans); letter-spacing: 0; }
+  .scan .bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: color-mix(in oklab, var(--hi) 18%, transparent); }
+  .scan .bar i { background: var(--hi); }
+  .scan .hand { font: 500 13px/18px var(--pl-sans); }
+  .scan .hand b { font-weight: 700; }
+  @media (max-width: 960px) { .scan ol { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 760px) { .why { grid-template-columns: 1fr; } .face h2 { font-size: 34px; line-height: 38px; } }
+  /* what stands out in your code: a butter block with its words in ink, set apart from the grey lead */
+  .notice { display: grid; gap: 8px; margin-top: 14px; padding: 16px 20px; border-radius: 22px; background: var(--pl-butter-face); color: var(--pl-butter-ink); font: 500 15px/22px var(--pl-sans); box-shadow: 0 4px 0 color-mix(in oklab, var(--pl-butter-ink) 16%, transparent); }
   .notice b { font-weight: 700; }
+  .notice code { font: 500 13px/18px var(--pl-mono); }
 
-  /* one choice, shown as what you get */
-  .choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: var(--pl-space-6); }
-  .choice { all: unset; display: grid; gap: var(--pl-space-4); align-content: start; padding: var(--pl-space-6); border-radius: var(--pl-radius-card); background: var(--pl-bg-inset); cursor: pointer;
-    box-shadow: inset 0 0 0 2px transparent; transition: box-shadow var(--pl-dur-feedback) var(--pl-ease-out), background var(--pl-dur-feedback) var(--pl-ease-out); }
-  .choice:hover { background: var(--pl-bg-surface-hover); }
-  .choice[aria-checked="true"] { background: color-mix(in oklab, var(--pl-mint) 12%, var(--pl-bg-surface)); box-shadow: inset 0 0 0 2px var(--pl-mint); }
-  .choice:focus-visible { outline: 2px solid var(--pl-instrument); outline-offset: 2px; }
-  .choice b { font: var(--pl-card-title); font-size: 16px; }
-  .choice b .rec { margin-left: var(--pl-space-3); padding: 2px var(--pl-space-3); border-radius: var(--pl-radius-tag); background: var(--pl-mint); color: var(--pl-mint-on); font: var(--pl-card-label); }
-  .choice span { font: var(--pl-card-body); color: var(--pl-text-secondary); }
-  .steps { display: flex; align-items: flex-end; gap: var(--pl-space-3); min-height: var(--pl-page-space-4); padding-top: var(--pl-space-4); }
-  .steps i { display: block; width: var(--pl-space-6); border-radius: var(--pl-radius-mark) var(--pl-radius-mark) 0 0; background: var(--pl-mint); }
+  /* the drawing sits on the inset tone, like the design site's shelves: no outline, no shadow */
+  #gravity .gv { border: 0; border-radius: 26px; background: var(--pl-paper-2); box-shadow: none; }
+  #gravity .gv-foot { border-top: 0; }
+
+  /* the choice, as soft blocks: pale at rest, lifted on hover, and the one you take turns into the step's colour with a
+     tick in its corner. Each draws what you get */
+  .choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 14px; }
+  .choice { all: unset; position: relative; display: grid; gap: 12px; align-content: start; padding: 20px 20px 22px; border-radius: 22px; background: var(--pl-paper-2); color: var(--pl-ink); cursor: pointer;
+    transition: translate 300ms var(--pl-spring-pop), box-shadow 200ms var(--pl-ease-out), background 200ms var(--pl-ease-out); }
+  .choice:hover { translate: 0 -2px; box-shadow: 0 4px 0 var(--pl-rule); }
+  .choice:active { translate: 0 0; box-shadow: none; }
+  .choice:focus-visible { outline: 2px solid var(--pl-pink-block); outline-offset: 3px; }
+  .choice::after { content: ''; position: absolute; top: 18px; right: 18px; width: 22px; height: 22px; border-radius: 50%; background: var(--pl-paper); }
+  .choice[aria-checked="true"] { background: var(--hf); color: var(--hi); translate: 0 -3px; box-shadow: 0 5px 0 color-mix(in oklab, var(--hi) 28%, transparent); }
+  .choice[aria-checked="true"]::after { background: var(--pl-done-bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 6.3l2.4 2.4 4.6-5' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 12px no-repeat; }
+  .choice b { padding-right: 32px; font: var(--pl-round-w, 700) 19px/24px var(--pl-round); }
+  .choice b .rec { display: inline-block; margin-left: 8px; padding: 3px 8px; border-radius: 8px; background: var(--pl-pink-block); color: var(--pl-pink-block-on); font: 700 12px/14px var(--pl-sans); vertical-align: 3px; }
+  .choice > span { font: 500 14.5px/21px var(--pl-sans); color: var(--pl-ink-2); }
+  .choice[aria-checked="true"] > span { color: inherit; opacity: .85; }
+  .choice code { font: 500 12.5px/18px var(--pl-mono); }
+  @media (prefers-reduced-motion: reduce) { .choice { transition: none; } }
+  .steps { display: flex; align-items: flex-end; gap: 6px; min-height: 64px; padding: 10px 12px; border-radius: 14px; background: var(--pl-cut); }
+  .steps i { display: block; width: 14px; border-radius: 4px 4px 0 0; background: var(--pl-mint); }
   .steps.many i { background: color-mix(in oklab, var(--pl-mint) 55%, var(--pl-butter)); }
   .steps i.twice { background: var(--pl-butter); }
+  .steps .chip { width: 26px; height: 26px; }
 
-  .steps.aa { align-items: baseline; gap: var(--pl-space-4); flex-wrap: wrap; }
+  .steps.aa { align-items: baseline; gap: 10px; flex-wrap: wrap; }
   .steps.aa span { font-family: var(--pl-sans); font-weight: 600; line-height: 1; color: var(--pl-sky); }
   .steps.aa span.twice { color: var(--pl-butter-line); }
-  .steps.arcs { align-items: flex-end; gap: var(--pl-space-4); }
-  .steps.arcs i { width: var(--pl-space-8); height: var(--pl-space-8); background: none; border-top: var(--pl-space-1) solid var(--pl-pink); border-left: var(--pl-space-1) solid var(--pl-pink); border-radius: 0; box-sizing: border-box; }
+  .steps.arcs { align-items: flex-end; gap: 10px; }
+  .steps.arcs i { width: 26px; height: 26px; background: none; border-top: 3px solid var(--pl-pink); border-left: 3px solid var(--pl-pink); border-radius: 0; box-sizing: border-box; }
   .steps.arcs i.twice { border-color: var(--pl-butter-line); }
-  /* colours: the palette as chips by hue, and colours typed by hand beside the palette colour they're closest to */
-  .palette { display: grid; gap: var(--pl-space-3); padding: var(--pl-space-6); border-radius: var(--pl-radius-card); background: var(--pl-bg-inset); }
-  .palette .hue { display: flex; flex-wrap: wrap; gap: var(--pl-space-2); }
-  .chip { width: var(--pl-space-8); height: var(--pl-space-8); border-radius: var(--pl-radius-row); box-shadow: inset 0 0 0 var(--pl-line) color-mix(in oklab, var(--pl-text-primary) 12%, transparent); }
-  .typed { display: grid; gap: var(--pl-space-3); margin-top: var(--pl-space-6); }
-  .typed .t { display: grid; grid-template-columns: var(--pl-space-8) minmax(0, 9rem) var(--pl-space-6) var(--pl-space-8) minmax(0, 1fr); align-items: center; gap: var(--pl-space-4); font: var(--pl-card-body); }
-  .typed .t code { font: var(--pl-card-code); color: var(--pl-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .typed .t span { color: var(--pl-text-secondary); }
+  /* colours: the palette as swatches by hue on the inset tone, and colours typed by hand beside the palette colour
+     they're closest to */
+  .palette { display: grid; gap: 8px; padding: 22px; border-radius: 26px; background: var(--pl-paper-2); }
+  .palette .hue { display: flex; flex-wrap: wrap; gap: 6px; }
+  .palette .later { font: 500 13px/18px var(--pl-sans); color: var(--pl-ink-2); }
+  .chip { width: 34px; height: 34px; border-radius: 11px; box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--pl-ink) 10%, transparent); }
+  .typed { display: grid; gap: 4px; margin-top: 14px; padding: 10px; border-radius: 22px; background: var(--pl-paper-2); }
+  .typed .t { display: grid; grid-template-columns: 34px minmax(0, 11rem) 18px 34px minmax(0, 1fr); align-items: center; gap: 12px; padding: 6px 10px; border-radius: 14px; font: 500 14px/20px var(--pl-sans); }
+  .typed .t:hover { background: var(--pl-paper); }
+  .typed .t code { font: 500 12.5px/18px var(--pl-mono); color: var(--pl-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .typed .t span { color: var(--pl-ink-2); }
 
-  /* the rule it becomes */
-  .rule { display: grid; gap: var(--pl-space-3); padding: var(--pl-space-6); border-radius: var(--pl-radius-card); background: var(--pl-lilac-soft); color: var(--pl-lilac-ink); }
-  .rule p { margin: 0; font: var(--pl-page-small); font-weight: 600; }
-  .rule code { font: var(--pl-card-code); opacity: .85; white-space: pre-wrap; }
-  .nav { display: flex; align-items: center; gap: var(--pl-space-5); }
-  .nav .later { font: var(--pl-card-meta); color: var(--pl-text-secondary); }
-  details.more summary { cursor: pointer; font: var(--pl-card-meta); color: var(--pl-text-secondary); }
-  details.more p { font: var(--pl-card-body); color: var(--pl-text-secondary); }
+  /* the rule it becomes: a lilac block, the same as the rules beside it, the config line on a cut-out */
+  .rule { display: grid; grid-template-columns: 44px minmax(0, 1fr); column-gap: 14px; row-gap: 10px; align-items: start; padding: 18px 20px; border-radius: 22px; background: var(--pl-lilac-face); color: var(--pl-lilac-ink); box-shadow: 0 4px 0 color-mix(in oklab, var(--pl-lilac-ink) 16%, transparent); }
+  .rule > .plate { grid-row: span 2; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; background: var(--pl-cut); }
+  .rule > .plate .toy { width: 28px; height: 28px; }
+  .rule p { grid-column: 2; margin: 0; font: var(--pl-round-w, 650) 17px/24px var(--pl-round); }
+  .rule code { grid-column: 2; padding: 10px 12px; border-radius: 12px; background: var(--pl-cut); color: var(--pl-ink); font: 500 12.5px/19px var(--pl-mono); white-space: pre-wrap; }
+  .nav { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+  .nav .later { font: 500 14px/20px var(--pl-sans); color: var(--pl-ink-2); }
+  details.more { margin-top: 10px; }
+  details.more summary { cursor: pointer; font: 600 13.5px/20px var(--pl-sans); color: var(--pl-ink-2); }
+  details.more summary:hover { color: var(--pl-ink); }
+  details.more p { font: 500 13.5px/20px var(--pl-sans); color: var(--pl-ink-2); }
+
+  /* the last screen: each rule as a big block in its step's colour, the file it writes, then the one press */
+  .final { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin: 0; padding: 0; list-style: none; }
+  .final li { display: grid; grid-template-columns: 44px minmax(0, 1fr); column-gap: 14px; row-gap: 4px; padding: 18px 20px; border-radius: 22px; background: var(--hf); color: var(--hi); box-shadow: 0 4px 0 color-mix(in oklab, var(--hi) 24%, transparent); }
+  .final li .plate { grid-row: span 2; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; background: var(--pl-cut); }
+  .final li .plate .toy { width: 28px; height: 28px; }
+  .final li b { font: var(--pl-round-w, 700) 18px/22px var(--pl-round); }
+  .final li span { font: 500 14.5px/21px var(--pl-sans); }
+  .final li.empty { background: var(--pl-paper-2); color: var(--pl-ink-2); box-shadow: none; }
+  .final li.empty .toy { filter: grayscale(.85); opacity: .55; }
+  .file { margin: 14px 0 0; padding: 18px 20px; border-radius: 22px; background: var(--pl-paper-2); font: 500 13px/20px var(--pl-mono); color: var(--pl-ink); white-space: pre-wrap; overflow-x: auto; }
+  .file small { display: block; margin-bottom: 8px; font: 600 12px/16px var(--pl-sans); color: var(--pl-ink-2); }
+  .go { display: grid; gap: 14px; padding: 24px; border-radius: 26px; background: var(--pl-mint-face); color: var(--pl-mint-ink); box-shadow: 0 5px 0 color-mix(in oklab, var(--pl-mint-ink) 16%, transparent); }
+  .go h3 { margin: 0; font: var(--pl-round-w, 750) 26px/30px var(--pl-round); color: inherit; }
+  .go ol { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; counter-reset: go; }
+  .go ol li { padding: 14px 16px; border-radius: 16px; background: var(--pl-cut); color: var(--pl-ink); font: 500 14px/20px var(--pl-sans); counter-increment: go; }
+  .go ol li::before { content: '0' counter(go); display: block; margin-bottom: 6px; font: 600 12px/1 var(--pl-mono); color: var(--pl-ink-2); }
+  .go .later { color: inherit; }
+  @media (max-width: 760px) { .final, .go ol { grid-template-columns: 1fr; } }
 
   /* your rules, filling in beside the lesson */
-  .rules { position: sticky; top: var(--pl-page-space-2); display: grid; gap: var(--pl-space-5); padding: var(--pl-space-7); border-radius: var(--pl-radius-card); background: var(--pl-bg-inset); }
-  .rules h3 { margin: 0; display: flex; align-items: center; gap: var(--pl-space-4); font: var(--pl-card-title); font-family: var(--pl-round); font-size: 17px; }
-  .rules h3 .toy { width: var(--pl-space-7); height: var(--pl-space-7); }
-  .rules > p { margin: 0; font: var(--pl-card-body); color: var(--pl-text-secondary); }
-  .rules ol { display: grid; gap: var(--pl-space-4); margin: 0; padding: 0; list-style: none; }
-  .rules li { display: grid; gap: var(--pl-space-1); padding: var(--pl-space-4) var(--pl-space-5); border-radius: var(--pl-radius-row); background: var(--pl-bg-surface); font: var(--pl-card-body); }
-  .rules li b { font: var(--pl-card-title); }
-  .rules li.empty { background: none; box-shadow: inset 0 0 0 1px var(--pl-border-default); color: var(--pl-text-secondary); }
+  .rules { position: sticky; top: 72px; display: grid; gap: 14px; padding: 22px; border-radius: 26px; background: var(--pl-lilac-face); color: var(--pl-lilac-ink); box-shadow: 0 5px 0 color-mix(in oklab, var(--pl-lilac-ink) 18%, transparent); }
+  .rules .count { margin-left: auto; padding: 4px 10px; border-radius: 10px; background: var(--pl-cut); font: var(--pl-round-w, 700) 13px/16px var(--pl-round); color: var(--pl-ink); font-variant-numeric: tabular-nums; }
+  .rules h3 { margin: 0; display: flex; align-items: center; gap: 10px; font: var(--pl-round-w, 750) 24px/28px var(--pl-round); }
+  .rules h3 .toy { width: 32px; height: 32px; }
+  .rules > p { margin: 0; font: 500 14px/20px var(--pl-sans); }
+  .rules ol { display: grid; gap: 12px; margin: 4px 0 0; padding: 0; list-style: none; }
+  .rules li { display: grid; grid-template-columns: 34px minmax(0, 1fr); column-gap: 12px; row-gap: 2px; align-items: start; padding: 12px 14px; border-radius: 18px;
+    background: var(--hf); color: var(--hi); box-shadow: 0 3px 0 color-mix(in oklab, var(--hi) 30%, transparent); font: 500 13.5px/19px var(--pl-sans); }
+  .rules li .plate { grid-row: span 3; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px; background: var(--pl-cut); }
+  .rules li .plate .toy { width: 22px; height: 22px; }
+  .rules li b { font: var(--pl-round-w, 700) 15px/20px var(--pl-round); }
+  .rules li code { grid-column: 2; font: var(--pl-card-code); opacity: .8; white-space: pre-wrap; }
+  .rules li.empty { background: color-mix(in oklab, var(--pl-cut) 55%, transparent); color: var(--pl-lilac-ink); box-shadow: none; }
+  .rules li.empty > span:not(.plate) { opacity: .75; }
+  .rules li.empty .plate { background: var(--pl-paper-2); }
+  .rules li.empty .toy { opacity: .45; filter: grayscale(.6); }
   .rules li.fresh { animation: rule-in var(--pl-dur-build) var(--pl-spring-pop) both; }
   @keyframes rule-in { from { opacity: 0; translate: 0 var(--pl-space-2); scale: .97; } }
   .rules li code { font: var(--pl-card-code); color: var(--pl-text-secondary); white-space: pre-wrap; }
@@ -192,8 +295,17 @@ export function mountLesson(host, data, { post } = {}) {
   const ORDER = ['welcome', 'spacing', 'colour', 'text', 'corners', 'rules'];
   const nextOf = (id) => SCREENS.find((s) => s.id === ORDER[ORDER.indexOf(id) + 1]);
 
-  const trail = () => `<ol class="trail" aria-label="The lesson">${SCREENS.map((s) => `<li><button type="button" data-go="${s.id}"${s.id === state.at ? ' aria-current="step"' : ''}${state.decided.has(s.id) ? ' data-done' : ''}><i class="toy">${toyOf(s.toy)}</i>${esc(s.name)}</button></li>`).join('')}</ol>`;
-  const face = (s, title, line) => `<div class="face" style="--hf: var(${HUES[s.hue][0]}); --hi: var(${HUES[s.hue][1]})"><span class="plate"><i class="toy">${toyOf(s.toy)}</i></span><div><h2>${title}</h2>${line ? `<p>${line}</p>` : ''}</div></div>`;
+  const TICK = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 6.3l2.4 2.4 4.6-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  let shownAt = state.at;
+  const trail = () => {
+    const at = ORDER.indexOf(state.at), arrived = ORDER.indexOf(shownAt) < at; shownAt = state.at;
+    return `<ol class="stepper" aria-label="Setting up, step ${at + 1} of ${SCREENS.length}">${SCREENS.map((s, i) => {
+      const here = s.id === state.at, done = state.decided.has(s.id) || (i < at && ['welcome'].includes(s.id));
+      const sub = here ? (s.id === 'welcome' ? 'Start here' : "You're here") : s.id === 'welcome' && i < at ? 'Read' : done ? 'Chosen' : s.id === 'rules' ? 'Set it up' : '';
+      return `<li class="${here ? `here${arrived ? ' arrived' : ''}` : ''}${done || i < at ? ' reached' : ''}" style="--hf: var(${HUES[s.hue][0]})"><button type="button" data-go="${s.id}"${here ? ' aria-current="step"' : ''}><span class="plate"><i class="toy">${toyOf(s.toy)}</i>${done && !here && s.id !== 'welcome' ? `<span class="tick">${TICK}</span>` : ''}</span><span class="name">${esc(s.name)}</span><span class="sub">${sub}</span></button></li>`;
+    }).join('')}</ol>`;
+  };
+  const face = (s, title, line) => `<div class="face"><div class="head"><span class="plate"><i class="toy">${toyOf(s.toy)}</i></span><h2>${title}</h2></div>${line ? `<p>${line}</p>` : ''}</div>`;
   const nav = (id) => { const n = nextOf(id); return `<div class="nav">${button(n.id === 'rules' ? 'Add this rule and finish' : `Add this rule, then ${n.name.toLowerCase()}`, { key: '→', attrs: `data-next="${id}"` })}<span class="later">You can come back and change it.</span></div>`; };
 
   // a size kind with no steps anywhere: nothing in the theme, no Tailwind base, nothing in the reading
@@ -218,20 +330,37 @@ export function mountLesson(host, data, { post } = {}) {
 
   const rules = () => {
     const done = ORDER.filter((id) => !['welcome', 'rules'].includes(id) && state.decided.has(id));
-    return `<aside class="rules" aria-live="polite"><h3><i class="toy">${toyOf('card')}</i>Your rules</h3>
+    return `<aside class="rules" aria-live="polite"><h3><i class="toy">${toyOf('card')}</i>Your rules<span class="count">${done.length} of 4</span></h3>
       <p>Each answer adds a rule. Plumber keeps your code to them from now on: it points out what breaks one, and fixes it with you.</p>
-      <ol>${done.map((id) => { const l = ruleOf(id), name = SCREENS.find((s) => s.id === id).name; return `<li class="${id === state.fresh ? 'fresh' : ''}"><b>${esc(name)}</b>${esc(l.plain)}<code>${esc(l.code)}</code></li>`; }).join('')}
-        ${SCREENS.filter((s) => !['welcome', 'rules'].includes(s.id) && !state.decided.has(s.id)).map((s) => `<li class="empty"><b>${esc(s.name)}</b>Not decided yet.</li>`).join('')}</ol></aside>`;
+      <ol>${done.map((id) => { const l = ruleOf(id), sc = SCREENS.find((x) => x.id === id); return `<li class="${id === state.fresh ? 'fresh' : ''}" style="--hf: var(${HUES[sc.hue][0]}); --hi: var(${HUES[sc.hue][1]})"><span class="plate"><i class="toy">${toyOf(sc.toy)}</i></span><b>${esc(sc.name)}</b><span>${esc(l.plain)}</span><code>${esc(l.code)}</code></li>`; }).join('')}
+        ${SCREENS.filter((x) => !['welcome', 'rules'].includes(x.id) && !state.decided.has(x.id)).map((x) => `<li class="empty"><span class="plate"><i class="toy">${toyOf(x.toy)}</i></span><b>${esc(x.name)}</b><span>Lands here when you choose.</span></li>`).join('')}</ol></aside>`;
+  };
+
+  // what Plumber read, kind by kind: places on your steps, places typed by hand
+  const scan = () => {
+    const sum = (xs, k) => (xs ?? []).reduce((n, x) => n + (x[k] ?? 0), 0);
+    const kinds = [['spacing', data.spacing, 'on your spacing steps'], ['colour', data.colour, 'on your colours'], ['text', data.size, 'on your text sizes'], ['corners', data.radius, 'on your corner sizes']];
+    return `<div class="scan"><h3>What Plumber found<span>in ${nf.format(data.files ?? 0)} files</span></h3><ol>${kinds.map(([id, d, on]) => {
+      const sc = SCREENS.find((x) => x.id === id), ok = sum(d?.steps, 'uses'), hand = sum(d?.strays, 'places'), all = ok + hand;
+      return `<li style="--hf: var(${HUES[sc.hue][0]}); --hi: var(${HUES[sc.hue][1]})"><span class="top"><span class="plate"><i class="toy">${toyOf(sc.toy)}</i></span>${esc(sc.name)}</span>
+        <span class="big">${all ? `${Math.round((ok / all) * 100)}%` : '–'}<small>${all ? `${nf.format(ok)} places ${on}` : 'None found'}</small></span>
+        <span class="bar" aria-hidden="true"><i style="width: ${all ? (ok / all) * 100 : 0}%"></i></span>
+        <span class="hand">${hand ? `<b>${nf.format(hand)}</b> typed by hand` : 'None typed by hand'}</span></li>`;
+    }).join('')}</ol></div>`;
   };
 
   const welcome = () => {
     const s = SCREENS[0];
-    return `<section class="screen">${face(s, `Let's set up how ${esc(data.project ?? 'your app')} looks, on purpose.`, `Plumber read your app (${nf.format(data.files ?? 0)} files). In a few short steps you'll decide its spacing, colours, text and corners.`)}
+    const n = nf.format(data.files ?? 0);
+    return `<section class="screen">${face(s, `Let's make <span class="name">${esc(data.project ?? 'your app')}</span> look like one app.`, `Plumber has read all <b>${n} files</b> and drawn what they do today. Answer four short questions, about spacing, colours, text and corners, and you'll have <b>your rules</b>: the ones your code keeps from now on.`)}
       <div class="body">
-        <div class="part"><h3>What happens</h3><p>Each step shows you what your app does today, drawn, and asks one question. Your answer becomes one of <b>your rules</b>. They fill in on the right as you go.</p></div>
-        <div class="nav">${button('Start with spacing', { key: '→', attrs: 'data-go="spacing"' })}<span class="later">About two minutes. Nothing changes in your files until the last step.</span></div>
-        <div class="part"><h3>Why</h3><p>When every screen picks its own gap, colour and size, an app looks a little off everywhere and nobody can say why. A few rules, chosen once, keep it looking like one app as it grows, whoever writes the code.</p></div>
-        <div class="part"><h3>After</h3><p>Plumber holds your code to your rules. It shows what breaks one, right on your page, and fixes it with you. What's already there is remembered as it is, so you only hear about new problems.</p></div>
+        ${scan()}
+        <div class="nav">${button('Start with spacing', { key: '→', attrs: 'data-go="spacing"' })}<span class="later">About two minutes. Nothing in your files changes until the very end.</span></div>
+        <div class="why">
+          <div><small>01</small><i class="toy">${toyOf('fill')}</i><b>See it</b><p>Each step draws what your app does today, so you're choosing from what's really there.</p></div>
+          <div><small>02</small><i class="toy">${toyOf('tooltip')}</i><b>Choose</b><p>One question per step, with a good answer already picked. Take it, or pick another.</p></div>
+          <div><small>03</small><i class="toy">${toyOf('card')}</i><b>Keep it</b><p>Plumber points out what breaks a rule, right on your page, and fixes it with you. Only new problems count.</p></div>
+        </div>
       </div></section>`;
   };
 
@@ -248,7 +377,7 @@ export function mountLesson(host, data, { post } = {}) {
     const keepVals = m.values.length ? m.values : (data[m.spec.data]?.steps ?? []).map((x) => x.px).filter((v, i, a) => a.indexOf(v) === i).sort((a, b) => a - b);
     // nothing to keep: the choice says so, with the command that drafts steps from the sizes the code uses
     const skipLine = `Your theme has no ${esc(m.spec.gravity.sizes)} yet. To draft them from the sizes your code already uses, run <code>${esc(data.runner ?? 'npx')} plumber propose --family ${m.family} --write</code>, then open this page again.`;
-    return `<section class="screen">${face(s, m.spec.title, m.spec.line)}
+    return `<section class="screen" style="--hf: var(${HUES[s.hue][0]}); --hi: var(${HUES[s.hue][1]})">${face(s, m.spec.title, m.spec.line)}
       <div class="body">
         <div class="part"><h3>Yours, drawn</h3><div id="gravity"></div>${notice.length ? `<div class="notice">${notice.map((n) => `<span>${n}</span>`).join('')}</div>` : ''}</div>
         <div class="part"><h3>Why it matters</h3><p>${m.spec.why}</p></div>
@@ -256,7 +385,7 @@ export function mountLesson(host, data, { post } = {}) {
           ${m.needed ? `<button type="button" class="choice" role="radio" aria-checked="${state.choice[m.family] === 'tidy'}" data-pick="${m.family}:tidy"><b>One list of ${m.one.steps.length}<span class="rec">Suggested</span></b>${preview(m.family, m.one.steps.map((x) => x.px))}<span>Your lists merged into one, with Tailwind's name. The old names keep working, pointing at the new ones.</span></button>` : ''}
           <button type="button" class="choice" role="radio" aria-checked="${state.choice[m.family] === 'keep'}" data-pick="${m.family}:keep"><b>${bare(m) ? 'Skip it for now' : 'Keep what you have'}</b>${bare(m) ? '' : preview(m.family, keepVals, m.twice)}<span>${bare(m) ? skipLine : m.lanes.length > 1 ? `All ${m.lanes.length} lists stay as they are. You can tidy them later.` : `Your ${m.spec.nouns} stay as they are.`}</span></button>
         </div></div>
-        <div class="part"><h3>The rule it becomes</h3><div class="rule"><p>${esc(rule.plain)}</p><code>${esc(rule.code)}</code></div>
+        <div class="part"><h3>The rule it becomes</h3><div class="rule"><span class="plate"><i class="toy">${toyOf('card')}</i></span><p>${esc(rule.plain)}</p><code>${esc(rule.code)}</code></div>
           <details class="more"><summary>Details for designers</summary><p>${m.lanes.map((l) => `${esc(l.name)} in ${esc(l.file)}: ${l.values.join(', ')}px`).join('<br>') || 'No lists of steps; single tokens only.'}${m.one ? `<br>Merged: ${m.one.steps.map((x) => `${esc(x.name)} ${esc(x.value)}`).join(', ')}` : ''}</p></details></div>
         ${nav(s.id)}
       </div></section>`;
@@ -265,7 +394,7 @@ export function mountLesson(host, data, { post } = {}) {
   const colourScreen = () => {
     const s = SCREENS[2], rule = colourRule();
     const chip = (v, title) => `<i class="chip" style="background: ${esc(v)}" title="${esc(title)}"></i>`;
-    return `<section class="screen">${face(s, 'Colours: a small palette, and a name for each job.', 'Your palette is the colours themselves. Each job (text, a background, a border, a button) gets a name that points at one of them.')}
+    return `<section class="screen" style="--hf: var(${HUES[s.hue][0]}); --hi: var(${HUES[s.hue][1]})">${face(s, 'Colours: a small palette, and a name for each job.', 'Your palette is the colours themselves. Each job (text, a background, a border, a button) gets a name that points at one of them.')}
       <div class="body">
         <div class="part"><h3>Yours, drawn</h3><div class="palette">${col.hues.slice(0, 12).map((h) => `<div class="hue">${h.map((p) => chip(p.value, `${p.name}: ${p.value}`)).join('')}</div>`).join('')}${col.hues.length > 12 ? `<span class="later">and ${col.hues.length - 12} more</span>` : ''}</div>
           ${col.typed.length ? `<div class="typed">${col.typed.slice(0, 6).map((t) => { const near = col.palette.find((p) => p.name.slice(2) === t.near) ?? col.roles.find((p) => p.name.slice(2) === t.near); return `<div class="t">${chip(t.css, t.css)}<code>${esc(asWritten(t.written[0]?.text, t.css))}</code><span>→</span>${near ? chip(near.value, near.name) : '<i></i>'}<span>${nf.format(t.places)} ${t.places === 1 ? 'place' : 'places'}${near ? `; your ${esc(near.name)}${t.distance === 0 ? ' exactly' : ' is close'}` : ''}</span></div>`; }).join('')}</div>` : ''}
@@ -275,7 +404,7 @@ export function mountLesson(host, data, { post } = {}) {
           ${col.fixable.length ? `<button type="button" class="choice" role="radio" aria-checked="${state.choice.color === 'point'}" data-pick="color:point"><b>Point the copies at the palette<span class="rec">Suggested</span></b><div class="steps">${col.fixable.slice(0, 8).map((h) => chip(h.value, `${h.name} → ${h.match.name}`)).join('')}</div><span>${col.fixable.length} named ${col.fixable.length === 1 ? 'use stops' : 'uses stop'} copying and ${col.fixable.length === 1 ? 'points' : 'point'} at the palette. Nothing looks different today.</span></button>` : ''}
           <button type="button" class="choice" role="radio" aria-checked="${state.choice.color === 'keep'}" data-pick="color:keep"><b>${col.fixable.length ? 'Leave them' : 'Keep your palette as it is'}</b><span>${col.fixable.length ? 'The copies stay copies.' : 'Your palette and its named uses already point the right way.'}</span></button>
         </div></div>
-        <div class="part"><h3>The rule it becomes</h3><div class="rule"><p>${esc(rule.plain)}</p><code>${esc(rule.code)}</code></div></div>
+        <div class="part"><h3>The rule it becomes</h3><div class="rule"><span class="plate"><i class="toy">${toyOf('card')}</i></span><p>${esc(rule.plain)}</p><code>${esc(rule.code)}</code></div></div>
         ${nav('colour')}
       </div></section>`;
   };
@@ -283,10 +412,16 @@ export function mountLesson(host, data, { post } = {}) {
   const rulesScreen = () => {
     const s = SCREENS[5], done = ORDER.filter((id) => !['welcome', 'rules'].includes(id) && state.decided.has(id));
     const code = `export default {\n  decisions: {\n${done.map((id) => { const r = ruleOf(id); return `    ${r.code}${r.skip ? '' : ','}`; }).join('\n')}\n  },\n};`;
-    return `<section class="screen">${face(s, 'Your rules', 'What you chose, in one place. This becomes plumber.config, the file Plumber reads every time it checks your app.')}
-      <div class="body"><div class="part"><h3>${done.length ? `${done.length} of 4 decided` : 'Nothing decided yet'}</h3>${done.length ? `<div class="rule">${done.map((id) => `<p>${esc(ruleOf(id).plain)}</p>`).join('')}<code>${esc(code)}</code></div>` : '<p>Start with spacing.</p>'}</div>
-        <div class="part"><h3>Set it up</h3><p>One press does three things: tidies your tokens as you chose (old names keep working), writes these rules into plumber.config, and remembers what's already in your code, so from now on you only hear about new problems.</p>
-          <div class="nav">${post && done.length ? button('Set it up', { attrs: 'data-setup' }) : ''}<span class="later" data-said>${!post ? 'Open this page with npx plumber to set it up from here.' : done.length ? 'You can undo the token changes right after.' : ''}</span></div></div></div></section>`;
+    const left = SCREENS.filter((x) => !['welcome', 'rules'].includes(x.id) && !state.decided.has(x.id));
+    return `<section class="screen">${face(s, done.length === 4 ? 'Your rules are ready.' : 'Your rules', `What you chose, in one place. It becomes <b>plumber.config</b>, the file Plumber reads every time it checks your app.`)}
+      <div class="body">
+        <div class="part"><h3>${done.length ? `${done.length} of 4 chosen` : 'Nothing chosen yet'}</h3>
+          <ol class="final">${done.map((id) => { const sc = SCREENS.find((x) => x.id === id); return `<li style="--hf: var(${HUES[sc.hue][0]}); --hi: var(${HUES[sc.hue][1]})"><span class="plate"><i class="toy">${toyOf(sc.toy)}</i></span><b>${esc(sc.name)}</b><span>${esc(ruleOf(id).plain)}</span></li>`; }).join('')}
+            ${left.map((x) => `<li class="empty"><span class="plate"><i class="toy">${toyOf(x.toy)}</i></span><b>${esc(x.name)}</b><span><button type="button" class="tb sm quiet" data-go="${x.id}"><span class="top"><span class="lb">Choose it</span></span></button></span></li>`).join('')}</ol>
+          ${done.length ? `<pre class="file"><small>plumber.config.ts</small>${esc(code)}</pre>` : ''}</div>
+        <div class="go"><h3>Set it up</h3><ol><li>Tidies your tokens the way you chose. Old names keep working.</li><li>Writes these rules into plumber.config.</li><li>Remembers what's already in your code, so you only hear about new problems.</li></ol>
+          <div class="nav">${post && done.length ? button('Set it up', { attrs: 'data-setup' }) : ''}<span class="later" data-said>${!post ? 'Open this page with npx plumber to set it up from here.' : done.length ? 'One press. You can undo the token changes right after.' : 'Choose at least one rule first.'}</span></div></div>
+      </div></section>`;
   };
 
   const draw = () => {
