@@ -51,7 +51,7 @@ written, and `plumber check` then says "Nothing new since your baseline".
 9. **The README's Blueprint is not today's.** It describes the page dimming, an amber heat on every drift and a fix
    panel docked at the bottom with ↑↓, J/K, N, A, L. Alt+B today shows a bar ("118 problems · 2 setup steps ·
    Review · Clean up · Fix · Close") and a card per cause, with the choice on the element.
-10. **A blank page on a large app.** algorecall's page was white for 10 to 15 seconds while it loaded, with nothing
+10. **A blank page on a large app.** *Fixed: the page says "Reading <app>…" ("A large app takes a few seconds.") until it draws, and a failed read says why instead of staying white.* algorecall's page was white for 10 to 15 seconds while it loaded, with nothing
     saying it was working.
 11. **A first headline that looks wrong.** algorecall's first run: "You set text size 16px 7 ways, in 3,049 places.
     The closest in your type scale is sm-minus (12.8px)." 12.8px is not close to 16px. To check.
