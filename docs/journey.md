@@ -3864,6 +3864,17 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   pile bracketed, one line of why, one choice, the rule, one button. The insight only names a pile of close sizes when
   most of it is typed by hand, so a scale's own close steps (8, 10, 12px of spacing) are never called careless.
   Colour now has one meaning each. The piles of real lines moved behind Details.
+- **Sixth round, a few clear levels:** the text step suggested "One list of 18" while its own words said a few clear
+  levels tell the reader what to read first. Now the suggestion keeps only sizes a reader can tell apart: each level
+  at least a major second (1.125×) from the next, the smallest interval type scales are built on (Tim Brown's modular
+  scales; Tailwind's 12, 14, 16 and 18px sit 1.125 to 1.17 apart), with the busiest sizes kept first. On crafting-ui
+  that is 9 levels (11, 14, 16, 19, 22, 28, 33, 40, 56px) instead of 18. The choice says what moves, "12px → 11px,
+  17px → 16px, 18px → 19px, 24px → 22px", and Set it up points each dropped token at its level. Tried on a scratch
+  copy: 10 tokens tidied, rules written, 3,354 problems remembered.
+- **A crash found by trying it:** right after that tidy, the whole-app report failed ("Cannot read properties of
+  undefined"), so Set it up refused the rules and put the tokens back. The cause was in the checker: a token whose
+  value it could not work out crashed the comparison of amounts. Such a token now compares as unknown. Before the fix
+  Set it up failed every time with the new levels; after it, it finished.
 - **Found on the way:** on the pink key the colours and corners toys, both pink, vanished. They now sit on a white
   cut-out.
 - **Proof:** screenshots of every step on crafting-ui in `docs/films/onboarding/` (welcome-design-style.png is the

@@ -61,7 +61,7 @@ written, and `plumber check` then says "Nothing new since your baseline".
 12. `plumber --help` lists about 30 commands with no "start here". *Fixed: it opens with "New here? Run plumber in your app's folder, with nothing after it: it opens a page that sets you up."*
 13. At 1024 × 768 the Welcome screen's button sits at the bottom edge, mostly hidden. *Fixed: it follows "What happens", before "Why" and "After".*
 14. The rules summary shows the four rules twice, in the main panel and in the side panel. *Fixed: the rules screen has no side panel.*
-15. The text step suggests "One list of 19" while saying "a few clear levels tell the reader what to read first".
+15. The text step suggests "One list of 19" while saying "a few clear levels tell the reader what to read first". *Fixed: the suggestion is now a few clear levels, each at least a major second (1.125×) bigger than the next, the busiest sizes kept first; on crafting-ui, 9 levels (11, 14, 16, 19, 22, 28, 33, 40, 56px) instead of 18, and the choice names what moves (12px → 11px, 17px → 16px, 18px → 19px, 24px → 22px).*
 16. Writing a token to 27 places took about 15 seconds, with "Writing it to your code…" and no count. *Fixed: "Writing it to 27 places in your code…".*
 17. A hover label read "backgroundColor: MAT": a variable's name where its colour should be. *Fixed: "backgroundColor: #fff (MAT)"; CSS words (red, auto) stay as written.*
 18. `plumber doctor` before the overlay is wired says "can't tell from vite.config.ts" instead of the step to take. *Fixed: "→ plumber install --overlay shows the line it needs".*

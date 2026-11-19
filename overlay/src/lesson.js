@@ -17,6 +17,7 @@ import { TOY_DEFS, toyOf } from './toys.js';
 import { BUTTON_CSS, button } from './kit.js';
 import { colourModel, decisionsOf, editsOf, lanesOf, systemOf } from './system-review.js';
 import { oklab, toRgb } from './craft-headless.js';
+import { NAMED } from './scale.js';
 
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 const nf = new Intl.NumberFormat('en');
@@ -190,6 +191,27 @@ const SIZES = {
     why: 'Sizes a pixel apart look like the same size set carelessly. A few clear levels tell the reader what to read first, on every screen.',
     gravity: { sizes: 'text sizes', title: 'Where your text sizes land', empty: 'Add text sizes to your theme, and this fills in.' } },
 };
+/**
+ * A few clear levels of text, from the sizes your theme has.
+ * Seeing: a reader tells levels apart only when each is clearly bigger than the next; 12px beside 11px reads as one
+ * size set carelessly. Principle: adjacent levels differ by at least a major second (1.125×), the smallest interval
+ * type scales are built on (modular scales, Tim Brown, "More Meaningful Typography", A List Apart, 2011; Tailwind's
+ * own 12, 14, 16, 18px steps sit 1.125 to 1.17 apart). Signals: how many places use each size, theme and typed by
+ * hand together. Suggestion: the busiest size wins, then the next busiest that is a major second from every level
+ * kept, and so on; each other size goes to its nearest level. Returns the sizes to keep, or nothing when every step
+ * is already a level.
+ */
+function levelsOf(data, steps) {
+  const sizes = [...new Set(steps.map((s) => s.px).filter((v) => v !== null && v > 0))];
+  const use = new Map(sizes.map((v) => [v, 0]));
+  const near = (px) => sizes.reduce((a, v) => (a === null || Math.abs(v - px) < Math.abs(a - px) ? v : a), null);
+  for (const s of data.size?.steps ?? []) { const v = near(s.px); if (v !== null && Math.abs(v - s.px) < 0.5) use.set(v, use.get(v) + s.uses); }
+  for (const s of data.size?.strays ?? []) { const v = near(s.px); if (v !== null && Math.abs(v - s.px) < 0.5) use.set(v, use.get(v) + s.places); }
+  const apart = (a, b) => Math.max(a, b) / Math.min(a, b) >= NAMED['major second'] - 1e-9;
+  const kept = [];
+  for (const v of [...sizes].sort((a, b) => use.get(b) - use.get(a) || a - b)) if (kept.every((k) => apart(k, v))) kept.push(v);
+  return kept.length < sizes.length ? kept.sort((a, b) => a - b) : null;
+}
 function sizeModel(data, family) {
   const spec = SIZES[family], kind = (data.reading ?? []).find((k) => k.family === family);
   const lanes = kind ? lanesOf(kind).filter((l) => l.values.length > 1) : [];
@@ -198,11 +220,13 @@ function sizeModel(data, family) {
   const biggest = [...lanes].sort((a, b) => b.tokens.length - a.tokens.length)[0];
   const tidy = { ...(offered(`keep:${family}`, biggest?.name) ? { [`keep:${family}`]: biggest.name } : {}), ...(offered(`base:${family}`, 'round') ? { [`base:${family}`]: 'round' } : {}),
     ...(offered(`name:${family}`, spec.convention) ? { [`name:${family}`]: spec.convention } : {}), ...(offered(`count:${family}`, 'size') ? { [`count:${family}`]: 'size' } : {}) };
-  const tidied = kind && Object.keys(tidy).length ? systemOf(kind, tidy) : null, one = tidied?.scales.length === 1 ? tidied.scales[0] : null;
+  const merged = kind && Object.keys(tidy).length ? systemOf(kind, tidy) : null;
+  if (family === 'type' && merged?.scales.length === 1) { const keep = levelsOf(data, merged.scales[0].steps); if (keep) tidy['levels:type'] = keep; }
+  const tidied = tidy['levels:type'] ? systemOf(kind, tidy) : merged, one = tidied?.scales.length === 1 ? tidied.scales[0] : null;
   const values = [...new Set(lanes.flatMap((l) => l.values))].sort((a, b) => a - b);
   const twice = values.filter((v) => lanes.filter((l) => l.values.includes(v)).length > 1);
   const byHand = (data[spec.data]?.strays ?? []).reduce((n, s) => n + s.places, 0);
-  return { family, spec, kind, lanes, values, twice, byHand, tidy, one, needed: !!one };
+  return { family, spec, kind, lanes, values, twice, byHand, tidy, one, moved: tidied?.moved ?? [], needed: !!one };
 }
 
 // how a colour was written, unless it is code: `color: ink` names a variable, so the colour it comes to is shown with
@@ -263,12 +287,14 @@ export function mountLesson(host, data, { post } = {}) {
 
   const nav = (id) => { const n = nextOf(id); return `<div class="nav">${button(n.id === 'rules' ? 'Add this rule and finish' : `Add this rule, then ${n.name.toLowerCase()}`, { key: '→', attrs: `data-next="${id}"` })}<span class="later">You can come back and change it.</span></div>`; };
 
+  // the levels a scale holds: its steps with a size (a line height kept beside a text size is not a level)
+  const sized = (one) => one.steps.filter((x) => x.px !== null).length;
   // a size kind with no steps anywhere: nothing in the theme, no Tailwind base, nothing in the reading
   const bare = (m) => !m.lanes.length && !(m.kind?.groups ?? []).length && !(m.family === 'spacing' && data.spacing?.numeric) && !(data[m.spec.data]?.steps ?? []).length;
   // a size kind's rule, in plain words and as the line it writes
   const sizeRule = (m) => {
     const key = m.family === 'type' ? 'type' : m.family;
-    if (state.choice[m.family] === 'tidy' && m.one) { const from = [`css:${m.one.lane.file}#${m.one.stem}*`]; return { plain: `Every ${m.spec.noun} uses one of these ${m.one.steps.length}. Anything else, Plumber points out.`, key, from, code: `${key}: { from: ['${from[0]}'] }` }; }
+    if (state.choice[m.family] === 'tidy' && m.one) { const from = [`css:${m.one.lane.file}#${m.one.stem}*`]; return { plain: m.moved.length ? `Every ${m.spec.noun} is one of your ${sized(m.one)} levels. Anything else, Plumber points out.` : `Every ${m.spec.noun} uses one of these ${m.one.steps.length}. Anything else, Plumber points out.`, key, from, code: `${key}: { from: ['${from[0]}'] }` }; }
     // no steps at all (a plain-CSS app with no spacing tokens): nothing to keep yet, so no rule rather than an empty one,
     // which would check nothing (docs/qa/onboarding-2026-11-19.md, gap 4)
     if (bare(m)) return { plain: `No rule for ${m.spec.nouns} yet: your theme has no ${m.spec.gravity.sizes}. Plumber leaves them alone until it does.`, key, from: [], skip: true, code: `// ${key}: no steps in your theme yet` };
@@ -335,6 +361,12 @@ export function mountLesson(host, data, { post } = {}) {
   const miniOf = (family, vals) => family === 'type' ? vals.map((v) => v < 4 ? v * 16 : v).filter((v, i, a) => a.indexOf(v) === i).sort((a, b) => a - b).filter((_, i, a) => a.length <= 7 || i % Math.ceil(a.length / 7) === 0).slice(0, 7).map((v) => `<span style="font-size: ${Math.min(v, 30)}px">Aa</span>`).join('')
     : family === 'radius' ? vals.slice(0, 6).map((v) => `<i class="c" style="border-top-left-radius: ${Math.min(v, 16)}px"></i>`).join('')
     : vals.slice(0, 12).map((v) => `<i style="height: ${Math.max(3, Math.min(v, 40) * 0.6)}px"></i>`).join('');
+  // what moves when sizes between levels go: each size to its level, the busiest first
+  const movesOf = (m) => {
+    const used = (px) => sizesOf(m).find((x) => Math.abs(x.px - px) < 0.5)?.n ?? 0;
+    const list = [...new Map(m.moved.filter((x) => x.px !== x.toPx).map((x) => [x.px, x])).values()].sort((a, b) => used(b.px) - used(a.px));
+    return `${list.slice(0, 4).map((x) => `${px(x.px)} → ${px(x.toPx)}`).join(', ')}${list.length > 4 ? `, and ${list.length - 4} more` : ''}`;
+  };
   const becomes = (rule) => `<p class="becomes">${toy('card')}<span><b>Your rule:</b> ${esc(rule.plain)}</span></p>`;
 
   const sizeScreen = (m) => {
@@ -352,7 +384,7 @@ export function mountLesson(host, data, { post } = {}) {
       <p class="why">${m.spec.why}</p>
       <h2>${m.spec.ask}</h2>
       <div role="radiogroup" aria-label="${esc(s.name)}">
-        ${m.needed ? choice({ on: state.choice[m.family] === 'tidy', pick: `${m.family}:tidy`, title: `One list of ${m.one.steps.length}`, rec: true, mini: miniOf(m.family, m.one.steps.map((x) => x.px ?? (String(x.value).endsWith('rem') ? parseFloat(x.value) * 16 : parseFloat(x.value))).filter((v) => v > 0)), text: `${m.lanes.length > 1 ? `Your ${m.lanes.length} lists become one` : `Your ${esc(m.spec.gravity.sizes)} become one list`}, with Tailwind’s names. The old names keep working, pointing at the new ones.` }) : ''}
+        ${m.needed ? choice({ on: state.choice[m.family] === 'tidy', pick: `${m.family}:tidy`, title: m.moved.length ? `${sized(m.one)} clear levels` : `One list of ${m.one.steps.length}`, rec: true, mini: miniOf(m.family, m.one.steps.map((x) => x.px ?? (String(x.value).endsWith('rem') ? parseFloat(x.value) * 16 : parseFloat(x.value))).filter((v) => v > 0)), text: m.moved.length ? `${m.lanes.length > 1 ? `Your ${m.lanes.length} lists become one` : 'One list'} of ${sized(m.one)} levels, each clearly bigger than the next. Text set in a size between them moves to the nearest level: ${movesOf(m)}.` : `${m.lanes.length > 1 ? `Your ${m.lanes.length} lists become one` : `Your ${esc(m.spec.gravity.sizes)} become one list`}, with Tailwind’s names. The old names keep working, pointing at the new ones.` }) : ''}
         ${choice({ on: state.choice[m.family] === 'keep', pick: `${m.family}:keep`, title: bare(m) ? 'Skip it for now' : 'Keep what you have', mini: bare(m) ? '' : miniOf(m.family, keepVals),
           text: bare(m) ? `Your theme has no ${esc(m.spec.gravity.sizes)} yet. To draft them from the sizes your code uses, run <code>${esc(data.runner ?? 'npx')} plumber propose --family ${m.family} --write</code>.` : m.lanes.length > 1 ? `Your ${m.lanes.length} lists stay as they are. Plumber points out new ${esc(m.spec.nouns)} typed by hand.` : `Nothing changes. Plumber points out new ${esc(m.spec.nouns)} typed by hand.` })}
       </div>

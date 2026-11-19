@@ -171,6 +171,9 @@ function* familySteps(family: JudgedFamily, declarations: Declaration[], record:
   const refIndex = resolution.decisionIndex(family);
   const decisionRefs = new Set(refIndex.keys());
   const comparable = (value: string, prop: string): string | number | undefined => {
+    // a token whose value could not be worked out (a var() to a name this pass can't resolve) compares as unknown,
+    // never equal to anything; it crashed the whole-app report after a token tidy (2026-11-19)
+    if (typeof value !== 'string') return undefined;
     if (family === 'type') {
       // a whole text style compares by the part this property sets
       const parts = fontParts(value);
@@ -183,6 +186,7 @@ function* familySteps(family: JudgedFamily, declarations: Declaration[], record:
     return value.toLowerCase().replace(/\s+/g, ' ').replace(/\s*([,()])\s*/g, '$1').trim();
   };
   const equal = (a: string, b: string, prop: string): boolean => {
+    if (typeof a !== 'string' || typeof b !== 'string') return false;
     if (family === 'color') { const x = oklab(a), y = oklab(b); return !!x && !!y && colorDistance(x, y) < 1e-5 && Math.abs(x[3]-y[3]) < 1e-5; }
     const x = comparable(a, prop), y = comparable(b, prop);
     return x !== undefined && y !== undefined && (typeof x === 'number' && typeof y === 'number' ? Math.abs((family === 'spacing' ? Math.abs(x) : x)-y) < 1e-6 : x === y);

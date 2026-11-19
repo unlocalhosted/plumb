@@ -259,9 +259,21 @@ export function systemOf(kind, choices) {
     }
   }
   const one = scales.length === 1 ? scales[0] : null;
-  const aliases = one ? dropped.flatMap((d) => d.tokens.map((t) => ({ from: t.name, file: d.file, to: one.steps.find((s) => s.px !== null && s.px === fix(t.px))?.name })).filter((a) => a.to)) : [];
+  // a few clear levels (`levels:<family>`, the sizes to keep): the steps between them go, each one's token pointing at
+  // the nearest level kept, so text set in it moves to that level (lesson.js, levelsOf, says why and which)
+  const levels = Array.isArray(choices[`levels:${kind.family}`]) && one ? new Set(choices[`levels:${kind.family}`]) : null;
+  const moved = [];
+  if (levels) {
+    const keep = one.steps.filter((st) => st.px === null || levels.has(st.px));
+    const nearest = (px) => keep.filter((k) => k.px !== null).reduce((a, k) => (!a || Math.abs(k.px - px) < Math.abs(a.px - px) ? k : a), null);
+    for (const st of one.steps) if (!keep.includes(st)) { const to = nearest(st.px); if (to) moved.push({ from: st.from, file: st.file, px: st.px, to: to.name, toPx: to.px, added: st.added }); }
+    one.steps = keep;
+  }
+  const landing = (px) => { if (px === null) return undefined; const m = moved.find((x) => x.px === px); return m ? m.to : one.steps.find((s) => s.px === px)?.name; };
+  const aliases = one ? [...dropped.flatMap((d) => d.tokens.map((t) => ({ from: t.name, file: d.file, to: landing(fix(t.px)) })).filter((a) => a.to)),
+    ...moved.filter((x) => !x.added).map((x) => ({ from: x.from, file: x.file, to: x.to }))] : [];
   const renames = scales.flatMap((s) => s.steps.filter((st) => !st.added && st.from !== st.name).map((st) => ({ from: st.from, to: st.name })));
-  return { kind, scales, aliases, renames, numbering };
+  return { kind, scales, aliases, renames, numbering, moved };
 }
 
 /** The system as edits to the files that define its tokens. Nothing is renamed or deleted: a token given a new name keeps
