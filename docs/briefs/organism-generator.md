@@ -1,9 +1,9 @@
 # Brief: an organism generator that learns from other people's taste and draws in ours
 
-Status: DRAFT for owner sign-off, 2026-11-20, sixth version. Three reviews the same day shaped the engine (see **What
-the reviews changed**); the owner then set how it should feel: a generator that reads you and attunes to your
-liking, the way a good salesman finds what suits you without being told. Nothing is built, and no code is written
-until it is signed off.
+Status: layers 0–7 (the engine) ready for owner sign-off, 2026-11-20, after four reviews the same day (see **What
+the reviews changed**). How it feels to use and how it learns your taste moved to
+[organism-generator-learning.md](organism-generator-learning.md), parked until layer 3 here has a result. Nothing
+is built, and no code is written until it is signed off.
 It builds on [engine-foundations.md](engine-foundations.md), which plans the layout generator (F7, "the engine is a
 function you can call on a candidate", layer 6). That brief leaves open how candidates are made. This one answers it.
 
@@ -35,18 +35,12 @@ Later the same day, after the first versions read like "a fancy copy paste":
   delighful enough to attune to my liking"
 - "a lot of time its a salesman job to find what would suit the best for me"
 
-Pick one card (an organism) in your app. Plumber generates it several ways, leading with its best guess for you. You
-don't have to explain what you want: it learns from what you do (what you pick, shuffle past, linger on, undo or
-tweak afterwards) and each round comes closer to your liking. Every option is drawn in your own system, says
-briefly why it suits you, and none looks like a stock component library.
+Pick one card (an organism) in your app. Plumber generates it several ways. Every option is drawn in your own
+system, carries its reasons, and none looks like a stock component library. This brief is the engine that makes and
+judges those options. The learning brief covers how they are shown, and how the generator attunes to you from what
+you do rather than from what you say.
 
 ## The idea in one paragraph
-
-A good salesman doesn't wait for you to describe the jacket. They size you up, bring the one they think suits you
-best and two that are different, watch how you react, and the next three are closer. Most people can't say what
-they want, but they know it when they see it. "New" here means new *to you, in this context*: a reference redrawn
-in your look, a blend of two, or one you liked moved a little further the way you seem to be leaning. The engine is
-a generator built like a Dead Cells level, described next; what it has learnt about you decides what it makes.
 
 Dead Cells doesn't make levels out of noise. People design the rooms and a graph of what a level must contain, and
 the generator only arranges the rooms to fill the graph, under rules, from a seed. Here the **rooms are our own
@@ -54,69 +48,11 @@ molecules**: authored in-house, in final form, in our look, each doing one job. 
 **grammar**: what happens *between* the parts of a good organism (their order, grouping, spacing and which one is
 loudest) and its **move**, a deliberate decision that neither the grammar nor a molecule can say. The generator
 matches your card to similar grammars, fills their slots with our molecules, and draws the move in our look. Then
-the judge throws out anything that breaks our rules, and a taste ladder of cards the owner has ranked decides which
-of the rest are good enough to show. Generic structure is kept off the shelf at curation.
+the judge throws out anything that breaks our rules, and a model trained on cards the owner has ranked decides
+which of the rest are good enough to keep. Generic structure is kept off the shelf at curation.
 
-## Using it: a generator that reads you
-
-**1. It leads with a guess.** Pick a card and press Generate. No question first. Its first guess comes from what it
-already knows: your app (the components you built and kept are evidence of your taste), the card's context (what
-the page is for, the cards beside it, how much it holds), and your past sessions.
-
-**2. A rack.** One **lead pick**, its best guess for you, larger and first, with two or three **alternatives**
-that differ from it on purpose and one **wildcard** from a direction you haven't seen. Each option comes from one of
-three places:
-
-| Option | What it is |
-|---|---|
-| A reference, redrawn | a kept specimen built in your look with your content |
-| A blend | one specimen's structure with another's move |
-| A step | something you leaned towards, moved a little further the same way |
-
-**3. A short pitch, salesman style.** One line on the lead pick, shown on hover for the rest: "Price first: your
-page compares three plans, and people scan for the number. Stripe's plan cards do the same." The reference is
-named as the evidence for the choice.
-
-**4. You just react.** You don't need words. Plumber reads **signals**, strongest first:
-
-| Signal | What it learns |
-|---|---|
-| You apply one and keep it | it beat every other option it was shown with |
-| You apply one, then tweak it by hand | it was close; the tweak says which way to go |
-| You apply one, then undo | it was wrong, after looking right |
-| You shuffle | none of this rack suited you; move further away from it |
-| You open one to compare, or come back to it | it is in the running |
-| You linger on one | a weak lean towards it |
-| You skip past one quickly | a weak lean away |
-
-Words still work if you have them ("calmer"), as one more signal.
-
-**5. Each rack comes closer.** The lead pick is what the taste model is surest you'll like. The alternatives test
-what it's least sure about. The wildcard keeps it from boxing you in. Every shuffle and pick sharpens the next
-rack, so a session should take a few rounds.
-
-**6. It tells you what it's noticed.** Sparingly, in one line: "You've passed on every card with a big price;
-showing quieter ones." You can wave it away, and that's a signal too.
-
-**7. It remembers you.** What a session learns is kept as your taste and starts the next one. On a new project it
-starts from your past taste and that project's own components.
-
-**8. References teach the system.** If the option you love needs something your system lacks (a shadow style, a
-role, later a motion), plumber says so and proposes adding it to the system first, with the references that use it
-as the reason. Nothing outside the system is drawn until you accept.
-
-### Learning your taste from signals
-
-- **Your taste is a preference model** over the taste features (restraint, contrast, rhythm, focus, tension) and
-  over specimens, moves and molecules. Every signal is a comparison ("this beat those"), weighted by its strength
-  in the table above.
-- **Choosing a rack is explore and exploit.** The lead pick exploits what the model believes; alternatives explore
-  where it is uncertain, the way a recommender learns a new listener (Thompson sampling or similar: each candidate
-  is scored by a draw from the model's belief, so uncertain ones get shown sometimes).
-- **It starts warm.** Before your first pick, the model is seeded from your app's own components (their taste
-  features), the owner's taste ladder, and the specimens you kept.
-- **It can't drift into bad taste.** Signals only reorder candidates that already passed the rules, the generic
-  check and the taste ladder. It learns which good cards suit you, never whether to show a bad one.
+"New" here means new *to you, in this context*: a reference redrawn in your look, or a blend of two. It doesn't
+mean invented from nothing.
 
 ## Terminology
 
@@ -144,20 +80,12 @@ Use these words in code, docs and the UI, with these meanings only.
 | **Descriptors** | Lead, shape and measured density: values read off each candidate after it is built, used to choose a spread. Nothing sets them. |
 | **Visual weight** | How strongly a slot draws the eye, computed from its styles by a fixed rule (see the specimen format). Ranks and lead strength come from it. |
 | **Content record** | A slot's content as named fields from its job's schema: a price is `amount, period?, was?`; proof is `items[]`. Molecules declare which fields they require. |
-| **Rack** | What one press of Generate or Shuffle shows: a lead pick, two or three alternatives, a wildcard. |
-| **Lead pick** | The option the taste model is surest you'll like, shown first and largest. |
-| **Alternatives** | Options on the rack chosen to test what the model is least sure about. |
-| **Wildcard** | The one option on every rack taken from a direction the person hasn't seen yet, so each rack still shows something new. |
-| **Pitch** | One line with an option: why it suits this card in this context, and which reference backs it. |
-| **Signal** | Something the person does that says what they like: apply, keep, tweak, undo, shuffle, compare, linger, skip, or words. Each is a comparison with a strength. |
-| **Direction** | A way to move a grammar's values (space ratios, lead strength, density band, number of groups, sizes and hues), inferred from signals; a word like "calmer" names one. |
-| **Step** | An option made by moving one the person leaned towards further along the same direction. The structure stays; the values change. |
-| **Session** | One run on one card: the context, every rack, every signal. What it learns is kept as the person's taste. |
-| **Taste model** | The person's preference model over taste features, specimens, moves and molecules, updated by every signal. |
 | **Taste features** | Measurable qualities of a built card that good cards tend to share: restraint, contrast, rhythm, focus, tension (see the taste ladder). |
-| **Taste ladder** | A fixed set of anchor cards the owner has placed on five rungs, from broken to reference-grade. Every variant is placed on it by comparison, and only the top rungs are shown. |
+| **Taste ladder** | A fixed set of anchor cards the owner has placed on five rungs, from broken to reference-grade. Used offline: it validates a kind and trains the feature model. |
+| **Feature model** | A model over the taste features, trained on ladder comparisons, that predicts a candidate's rung. The run-time gate. |
+| **Reasons** | What a candidate can say about itself: facts read off the page, its measured taste features, and its specimen's `kept` line. Nothing else. |
 | **Drift** | How far mapping pushed a variant from its specimen: specimen jobs dropped, and your jobs placed by a default rule instead of a specimen slot. |
-| **Recipe** | Everything that made a variant: seed, specimen, molecules, expression, and the pinned versions (S6). Printed under the variant and replayable. |
+| **Recipe** | Everything that made a variant: seed, specimen (both, for a blend), molecules, expression, and the pinned versions (S6). Printed under the variant and replayable. |
 | **Seed** | A number that picks among fitting expressions and molecules and breaks ties. |
 | **Tell** | A mark of a stock or generated look (elevation on every card, uppercase buttons, a divider under every row). The `tells` pack holds 17 for generated screens; the generator adds stock-library ones. |
 | **Generic pile** | Plain stock-library organisms (MUI, Bootstrap, default shadcn, Chakra), captured as grammar and used at curation to keep generic structures off the shelf. |
@@ -270,32 +198,17 @@ changes before any shelf is built on it.
 7. **Build off screen:** render the chosen molecule components with their content records, in the arrangement the
    grammar gives, with the app's styles (the open problem in engine-foundations §6).
 8. **Judge.** Run `judge(snapshot, packs)` with the house rules, craft rules and tells, plus stress (Break it) on any
-   variant marked in step 4. Then place each survivor on the taste ladder (below); anything under rung 4 is dropped.
-9. **Choose a rack.** Score the survivors with the taste model. The lead pick is the best score; the alternatives
-   are the survivors the model is least sure of, picked to differ in lead, shape, density and molecules; the
-   wildcard is from a direction not yet shown. Write each pitch from the card's context, the specimen and the
-   taste features it scored best on.
-10. **Log the funnel.** Every step's count, why each candidate left, and coverage. An empty rack shows the funnel.
-
-### Steps: moving an option the person liked
-
-A step takes a liked option's grammar and changes its values along a direction: space ratios, lead strength,
-density band, how many groups, how many sizes and hues. It never rearranges the structure; a new structure comes
-from another specimen. Each step is a few candidates at different distances along the direction, sent through the
-same checks, build, judge and ladder as any other candidate, so a step that loses taste never reaches the rack.
+   variant marked in step 4. Then score each survivor with the feature model, or the model judge once it has
+   qualified (see the taste ladder); anything predicted below rung 4 is dropped.
+9. **Rank the pool.** Every survivor gets its predicted rung, its descriptors and its reasons. The pool for a card is
+   made and judged once, in the background, and cached; how it is shown is the learning brief's job.
+10. **Log the funnel.** Every step's count, why each candidate left, and coverage. An empty pool shows the funnel.
 
 ### Sibling moves stay on the picked card
 
 The generator builds one organism and never changes its siblings. So a move about siblings is drawn only with
 expressions that change the picked card itself. If the picked card isn't the chosen one, `single-out` doesn't apply
 and the variant is structure only. Building a whole row of siblings waits until single cards work.
-
-### Feedback
-
-On any variant: *keep* or *drop*, and optionally which part was wrong (the structure, the move's expression, or a
-molecule). Without a reason, a drop lowers the specimen, the expression and the molecules a little each. Weights are
-capped (nothing is more than three times as likely as the average) and decay. The exploratory slot keeps unseen
-specimens visible.
 
 ## The taste ladder
 
@@ -319,23 +232,30 @@ is built from games rather than from a judge's opinion of a player.
 Anchors are rendered in our look where they can be (rungs 3–5), so the comparison is about arrangement and
 decisions, not about which one wears our colours.
 
-**Placing a variant.** It is compared with one anchor from rung 3, then from rung 4, then rung 5, and placed under
-the first anchor it loses to; two anchors per rung, and a split result places it on the lower rung. Only rungs 4
-and 5 are shown, and each variant says where it landed and which anchors it beat.
+**It is calibration, not a gate on every run.** Placing one card takes up to six comparisons, so a pool of 30 would
+be about 180 per run. Instead the ladder is used offline:
 
-**Who compares.** The owner at first, during layers 3 and 8. A model judge (a vision model given the anchors and the
-principles in [PRINCIPLES.md](../PRINCIPLES.md)) takes over only after it agrees with the owner on at least 80% of
-40 held-out pairs. The agreement is rechecked every 50 owner picks; below 80% the judge stops and the owner
-compares again.
+- **To validate a kind.** Before a kind is offered, a sample of its generated pool is placed on the ladder. If too few
+  reach rung 4, the kind isn't ready.
+- **To train the feature model.** Every placement is a set of comparisons; the feature model learns from them to
+  predict a candidate's rung. At run time the feature model (or the model judge, once qualified) is the gate.
+
+**Placing a card.** It is compared with one anchor from rung 3, then from rung 4, then rung 5, and placed under the
+first anchor it loses to; two anchors per rung, and a split result places it on the lower rung.
+
+**Who compares.** The owner first. Before any model is trusted, the owner places the same 20 cards twice, a few
+days apart, to measure how often they agree with themselves; that is the ceiling. A model judge (a vision model given
+the anchors and the principles in [PRINCIPLES.md](../PRINCIPLES.md)) qualifies by agreeing with the owner on at
+least 80% of 40 held-out pairs from adjacent rungs (a 3 against a 4, the hard cases), each shown in both orders, or
+within 5 points of the owner's own ceiling if that is lower. It is rechecked on every 50 new owner placements.
 
 **Reasons, not just a rung.** Each comparison names its deciding principles from a short list (one focal point; the
 eye reads the jobs in order; one rhythm of space; parts line up; nothing competes with the action). The craft rules
 check some of these directly; the rest are the judge's reasons. The rung is the result, and the reasons are the
 explanation shown in the recipe.
 
-**The ladder grows.** Every signal is also a comparison (an applied and kept option beats the rest of its rack), so
-the owner's sessions keep adding evidence. A variant the owner keeps that sits on rung 4 can become a new
-anchor once it has won enough comparisons.
+**Anchors change only by hand.** The owner adds, moves or removes an anchor deliberately. Nothing the owner does
+while using the generator changes the ladder, so learning someone's taste can never move the quality bar.
 
 ### Taste features: the part of taste that can be measured
 
@@ -349,11 +269,14 @@ Taste shows up as relationships that good cards share and stock cards don't. Eac
 | Focus | how many slots compete for rank 1; whether reading order matches job order | one focal point, read in job order |
 | Tension | how many deliberate breaks of the card's own pattern | exactly one (the move), or none |
 
-The features have two uses. They give the pitch its reasons ("one alignment edge, a clear lead"). And together with
-the owner's comparisons, they train a small preference model over the features that predicts which of two cards the
-owner would pick; it ranks candidates before the ladder, so the ladder only checks the best ones. What features
-miss, such as character and surprise, the ladder's comparisons still catch. The feature list grows when the owner
-gives a reason no feature covers.
+The features have two uses. They are part of each candidate's reasons ("one alignment edge, a clear lead"), and
+they are what the feature model is trained on. What they miss, such as character and surprise, the ladder's
+comparisons still catch, and the model judge is there for. The list grows when the owner gives a reason no feature
+covers.
+
+**They may not vary.** Every candidate uses the same molecules and tokens, so restraint and rhythm could come out
+nearly the same across a pool. Layer 7 measures each feature's spread across real pools before any model is built
+on it; a feature that doesn't vary is dropped.
 
 ## The translation table (first rows, plumber's dialect)
 
@@ -386,12 +309,11 @@ gives a reason no feature covers.
 - **S4. Taste is data.** Adding taste means adding specimens, expressions or molecules, not generator code.
 - **S5. One judge.** Candidates are judged by the engine's judge (engine-foundations: "no second engine for the
   generator"). Where the generator's taste and the page's rules disagree, the rules win.
-- **S6. Replay is pinned.** A recipe records the seed, a hash of the shelf, the weights snapshot, the owner's seen
-  history (the exploratory slot reads it), the table version, the molecule set version, the job-labelling model and
+- **S6. Replay is pinned.** A recipe records the seed, a hash of the shelf, the feature model's snapshot, the table version, the molecule set version, the job-labelling model and
   its version, and the cached card grammar.
 - **S7. Cheap checks first.** Grammar check before Translate, dialect check before Build. Builds are the cost.
 - **S8. Coverage is reported.** The funnel says how many specimens overlap the card and how many molecules each job
-  has. Below six specimens or two molecules for any job, the rack says it is thin.
+  has. Below six specimens or two molecules for any job, the pool says it is thin.
 
 ## Heuristics: what makes it fool-proof
 
@@ -415,9 +337,10 @@ gives a reason no feature covers.
 - **F9. A person curates.** A specimen enters only with the owner's keep and one line of why.
 - **F10. The blind mix.** Before a kind is offered: 20 cards, 10 generated and 10 house cards made fresh for the
   test, so nobody recognises them from memory, shuffled. A judge who hasn't seen any of them says which is which. It
-  passes if the judge is right on 12 or fewer (10 is chance; someone who spots 4 of the 10 generated cards gets 14
-  and fails).
-- **F11. The taste ladder gates the rack.** Nothing under rung 4 is shown, wildcards included.
+  passes if the judge is right on 12 or fewer (10 is chance; 14 right means spotting 7 of the 10 generated cards,
+  which fails; pure guessing fails about 9% of the time).
+- **F11. Nothing predicted below rung 4 leaves the pool.** The feature model or a qualified judge gates every run; the
+  ladder validates each kind before it is offered.
 - **F12. Copy nothing.** Specimens hold decisions; sidecars and screenshots stay local for comparison. No markup,
   assets or text from the source. Paid kits are checked for terms first.
 
@@ -443,11 +366,8 @@ One layer at a time, each seen working before the next.
 | 4 | The round trip on the 5, each captured twice | Per-slot diffs within tolerance for at least 4 of 5, and the same ranks from both captures |
 | 5 | Capture from a live page; 20 pricing specimens and 5 generic ones | The 20 and the 5 plotted by grammar distance. If the generic ones sit inside the cloud of kept ones, structure doesn't carry taste and F5 has to change before going on |
 | 6 | Read, find, map, both cheap checks for one crafting-ui card | The funnel up to Build |
-| 7 | Build off screen, judge, stress, spread | 3–6 variants of that card in our look, with the funnel |
-| 8 | The generator: Generate, a rack with a lead pick and pitches, Shuffle, apply | A session on one crafting-ui card that ends in a card the owner keeps, written into the code |
-| 9 | Learning from signals: the taste model, explore and exploit, steps | Over a few sessions, the owner's lead pick is applied and kept more often (counted from the logged signals) |
-| 10 | References teach the system | An option that needs something the system lacks proposes the addition, with its references |
-| Later | Motion and micro-interactions | Captured as which part responds, in what order and how far; drawn with our springs and states. Its own brief |
+| 7 | Build off screen, judge, stress; the feature model; the pool ranked and cached | The pool for that card in our look, ranked, with reasons and the funnel; each taste feature's spread across it |
+| After 7 | How it is shown, and learning your taste | [organism-generator-learning.md](organism-generator-learning.md), parked until layer 3 has a result |
 
 Layer 7 needs the off-screen build (engine-foundations layer 6). Layers 1–6 don't.
 
@@ -463,22 +383,15 @@ Layer 7 needs the off-screen build (engine-foundations layer 6). Layers 1–6 do
   it says so and ranks lower.
 - **Generic is a curation check, drift is the run-time check.** A variant inherits its specimen's structure, so its
   distance to generic is decided when the specimen is kept.
-- **A generator that reads you, not one you have to brief.** The owner: "a lot of time i can't exactly say what i
-  want". So the generator leads with a guess and learns from what the person does; words are optional.
-- **Signals, strongest first.** Applying and keeping says the most, lingering the least. Tweaks after applying are
-  the richest signal, because they show which way to go.
-- **Learning only reorders good options.** Signals choose among candidates that passed every check, so attuning to
-  someone can never lower the quality floor.
-- **New means new to you, in context.** A redrawn reference, a blend or a step all count. Invention isn't required,
+- **New means new to you, in context.** A redrawn reference or a blend both count. Invention isn't required,
   and taste is kept by the same checks and ladder whatever the source.
-- **Steps change values, never structure.** Directions move numbers inside a grammar; a different structure comes
-  from a different specimen. That keeps every option traceable to a kept reference.
-- **The pitch names its references.** The owner asked that references be "conveyed to user" with the reasons; a
-  named reference is the evidence for a choice.
+- **Reasons come from facts only.** Page facts, measured features and the owner's own `kept` line. A model may
+  phrase them but not add claims, so no reason is a rationalisation.
 - **Molecules are the app's real components.** A variant is made of code the app already ships, and content binds
   to them through content records, so a molecule never shows a field the card doesn't have.
-- **Taste is a ladder of comparisons, not a score.** Comparisons against fixed anchors are what people are
-  consistent at, and a model judge is used only while it agrees with the owner.
+- **Taste is a ladder of comparisons, used offline.** Comparisons against fixed anchors are what people are
+  consistent at, but they are too slow for every run, so the ladder calibrates and the feature model gates.
+- **One pool per card, judged once and cached.** Building is the cost; showing and re-showing should be instant.
 - **A control card in layer 3.** It is the cheapest way to learn whether references add anything over our own
   parts and placement rules.
 - **Body size is the unit.** Every card has one, and it doesn't move when an icon is nudged.
@@ -516,18 +429,24 @@ keep it a generator ("a lot of time its a salesman job to find what would suit t
 version drops the conversation, leads with a guess, and learns from signals (apply, keep, tweak, undo, shuffle,
 linger, skip) through a taste model that explores where it is unsure.
 
+**Fourth review**, which found the engine ready and the new half not. The ladder as a gate cost about 180
+comparisons per run; signals both reordered options and grew the ladder; the learning metric passed by itself;
+the model had more parameters than a session has data; pitches would invent reasons. This version keeps the engine
+here (layers 0–7), makes the ladder offline calibration with a feature model as the run-time gate, lets only the
+owner change anchors, builds reasons from facts only, measures the owner's own repeat agreement before qualifying a
+judge, checks that taste features vary, caches one judged pool per card, and fixes the blind-mix arithmetic.
+Everything about showing options and learning from use moved to the learning brief, rewritten against the same
+review.
+
 ## Not known
 
 - Whether a hand-built dialect trip comes out distinct and good (layer 3). The brief stands or falls on it.
 - Whether generic and kept specimens separate in grammar space at all (layer 5). The Stripe example's structure is
   close to a stock pricing card's; if taste lives mostly in what this format doesn't store, the format has to grow.
 - Whether specimens beat the control (layer 3), which decides whether the shelf is worth building.
-- How many rounds it takes before the lead pick feels like it knows you, and whether signals as weak as lingering
-  help or only add noise.
-- Whether the taste features predict the owner's comparisons better than chance. If they don't, the ladder and the
-  owner carry taste alone, and the pitch's reasons get thinner.
-- Whether a model judge can reach 80% agreement with the owner on the ladder. If it can't, the owner stays the judge
-  and the generator is limited by how many comparisons they are willing to make.
+- Whether the taste features vary across a pool (layer 7), and whether they predict the owner's ladder placements
+  better than chance. If not, the gate rests on the model judge, which has to qualify first.
+- The owner's own repeat agreement on the ladder, which caps what any judge can reach.
 - Whether the visual-weight rule gives stable ranks across captures (layer 4).
 - How structure distance should weigh order, nesting, ranks and space. A guess until layer 6 shows rankings.
 - The drift limit and the generic threshold. Both are set from real numbers at layers 5 and 6.

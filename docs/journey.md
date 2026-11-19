@@ -4174,6 +4174,13 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   tweaking by hand afterwards, undoing, shuffling, lingering, skipping. A taste model shows its surest pick first
   and tests what it's unsure of with the alternatives, the way a music recommender learns a new listener. Learning
   only reorders options that already passed every quality check, so it can't drift into bad taste.
+- **A fourth review split the brief in two.** The engine (make, check and judge a pool of options for one card) was
+  ready; the new half was not. Placing every option on the taste ladder would have cost about 180 comparisons per
+  run, the owner's signals were also allowed to move the quality bar, and the test for "it learns" would have
+  passed just because the first option is shown biggest. The engine brief keeps layers 0 to 7, with the ladder as an
+  offline calibration and a model trained on it as the run-time gate. Showing options and learning from use moved to
+  [a parked brief](briefs/organism-generator-learning.md), rewritten with a simple first model, fewer signals with
+  exact meanings, reasons built only from facts, and a test that swaps the model's top pick out of first place.
 
 ## Open gaps
 - **The mark was never tried among real neighbours** (a row of browser tabs, an npm page, a README header), only on empty tiles. Nobody outside has been asked whether the round leg reads as an R or leans towards a B.
