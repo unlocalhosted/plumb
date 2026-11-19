@@ -59,7 +59,9 @@ export const MARKS_CSS = `
   .bp .outlines rect.inner { stroke-width: 1px; }
   .bp .light rect { fill: none; stroke: var(--pl-instrument); stroke-width: 2px; }
   .bp svg.under { pointer-events: none; }
-  .bp .labels { position: absolute; inset: 0; }
+  /* the pins' layer stands above the zones' hit areas as a whole: a pin's own z-index lost to them whenever the layer
+     was its own stacking context (fading in or out), and a hidden concern's zone took the pointer off the pin (U8) */
+  .bp .labels { position: absolute; inset: 0; z-index: 1; }
   /* a picked concern's notes, named at their element's corner: the picked concern's own pink, so the pin and the bar's
      chip read as one; never a target (the zone under it is) */
   .bp .labels .cpin { position: absolute; display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 8px; box-sizing: border-box;
@@ -376,6 +378,23 @@ function inkAt(x, y) {
   return false;
 }
 const covers = (x, y, w, h) => inkOver(x, y, w, h) > 0;
+// the page's own header pinned over the top of the window (fixed or sticky), measured where it is now: what a fix
+// must be brought in below, or it is chosen under the header (U41, 2026-11-20, crafting-ui). A cover taller than a
+// third of the window is not a header, and the overlay's own pieces never count
+export function pinnedTop() {
+  let low = 0;
+  for (const x of [0.12, 0.3, 0.5, 0.7, 0.88].map((f) => Math.round(innerWidth * f))) {
+    // through Blueprint's glass: the first of the page's own elements at the window's top edge, then up its parents
+    const hit = document.elementsFromPoint(x, 2).find((e) => !e.closest('plumb-overlay, [data-plumb-layer]'));
+    for (let e = hit; e && e !== document.body && e !== document.documentElement; e = e.parentElement) {
+      if (!/^(fixed|sticky)$/.test(getComputedStyle(e).position)) continue;
+      const r = e.getBoundingClientRect();
+      if (r.top <= 2 && r.bottom < innerHeight / 3) low = Math.max(low, r.bottom);
+      break;
+    }
+  }
+  return low;
+}
 // how much of the page's own content a box would cover: of 15 points on a grid across it, how many land on words, a
 // control, a picture or a small filled box (the fix's choice row weighs its spots by it, fixpanel #placeOn)
 export function inkOver(x, y, w, h) {
@@ -386,10 +405,10 @@ export function inkOver(x, y, w, h) {
 function pinsOf(entries, view) {
   const byEl = new Map();
   for (const p of entries) { const e = byEl.get(p.item.el); if (e) e.n++; else byEl.set(p.item.el, { id: p.id, r: inkOf(p.item.el, p.er), b: p.er, name: FIX.what(p.mark), n: 1 }); }
-  const placed = [], out = [];
+  const placed = [], out = [], head = pinnedTop();
   for (const { id, r, b, name, n } of [...byEl.values()].sort((a, b) => a.r.top - b.r.top || a.r.left - b.r.left)) {
     const w = Math.round(name.length * 6.1 + (n > 1 ? 22 : 0) + 18), h = 20;
-    if (r.top > view.h || r.top + r.height < 0) continue;
+    if (r.top > view.h || r.top + r.height <= head) continue; // off screen, or wholly under the page's header
     // the spots, nearest first: above the words, above the box, below the box, to the right, to the left, then the
     // same above and below from the right-hand end. The first inside the window that hides nothing (no words, no
     // control, no other pin) wins; with none free, the first inside the window
@@ -397,10 +416,10 @@ function pinsOf(entries, view) {
     const spots = [[r.left, r.top - h - 3], [b.left, b.top - h - 3], [b.left, bottom + 3], [right + 6, mid], [r.left - w - 6, mid],
       [right - w, b.top - h - 3], [right - w, bottom + 3]];
     for (const q of spots) q[0] = Math.max(4, Math.min(view.w - w - 4, q[0]));
-    const inside = ([, y]) => y >= 4 && y + h <= view.h - 4;
+    const inside = ([, y]) => y >= head + 4 && y + h <= view.h - 4; // below the page's own sticky header (U40)
     const clear = ([x, y]) => !placed.some((q) => x < q.x + q.w + 4 && q.x < x + w + 4 && y < q.y + h + 2 && q.y < y + h + 2) && !covers(x, y, w, h);
     const fits = spots.filter(inside);
-    let [x, y] = fits.find(clear) ?? fits[0] ?? [Math.max(4, Math.min(view.w - w - 4, r.left)), Math.max(4, Math.min(view.h - h - 4, r.top + 3))];
+    let [x, y] = fits.find(clear) ?? fits[0] ?? [Math.max(4, Math.min(view.w - w - 4, r.left)), Math.max(head + 4, Math.min(view.h - h - 4, r.top + 3))];
     for (let i = 0; i < 12 && !clear([x, y]) && placed.some((q) => x < q.x + q.w + 4 && q.x < x + w + 4 && y < q.y + h && q.y < y + h); i++) x = Math.min(view.w - w - 4, x + 40);
     placed.push({ x, y, w });
     out.push(`<span class="cpin" data-id="${escPin(id)}" style="left:${Math.round(x)}px;top:${Math.round(y)}px">${escPin(name)}${n > 1 ? `<b>+${n - 1}</b>` : ''}</span>`);

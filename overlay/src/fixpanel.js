@@ -39,7 +39,7 @@ import { FIX, CLEANUP, written } from './words.js'; // every sentence the panel 
 import { docsUrl } from './rule-docs.js'; // where a craft rule is read about
 import { Cleanup, CLEANUP_CSS } from './cleanup.js'; // "Clean up this page": the passes, one at a time
 import { groupsOf, isNote, placeKey } from './blueprint-panel.js';
-import { inkOver } from './blueprint-marks.js'; // what of the page a spot would cover
+import { inkOver, pinnedTop } from './blueprint-marks.js'; // what of the page a spot would cover; the page's pinned header
 import { glide } from './inplace.js'; // the text styles the code is reaching for
 import { stampOf, parseStamp, sameStamp, stampNames } from './stamp.js';
 import { Scope } from './scope.js';
@@ -680,14 +680,16 @@ export class FixPanel {
   // the bar's one count, and what it shows: the picked concern and how many, opening the list of concerns
   #concernPick() {
     const n = this.#concernCounts(), all = [...n.values()].reduce((a, b) => a + b, 0), c = CONCERNS.find((x) => x.id === this.#concern);
-    return `<button class="cpick" aria-haspopup="true" aria-expanded="${this.#menu === 'concern'}"><span class="cname">${esc(c ? c.name : 'All concerns')}</span><b>${c ? n.get(c.id) ?? 0 : all}</b><svg class="chev" viewBox="0 0 10 10" aria-hidden="true"><path d="M2.5 6.2L5 3.8l2.5 2.4"/></svg></button>`;
+    // after an Alt+click only that element is read: the count is its own, and the row says so, never "All"
+    const allName = this.#host.scope?.() ? FIX.bar.thisElement : FIX.bar.all;
+    return `<button class="cpick" aria-haspopup="true" aria-expanded="${this.#menu === 'concern'}"><span class="cname">${esc(c ? c.name : allName)}</span><b>${c ? n.get(c.id) ?? 0 : all}</b><svg class="chev" viewBox="0 0 10 10" aria-hidden="true"><path d="M2.5 6.2L5 3.8l2.5 2.4"/></svg></button>`;
   }
   // the list that opens above its button: toy rows (overlay/demo/concern-menu.html, A), the pick a solid pink block
   #menuHtml() {
     const row = (cls, data, icon, name, end, on = false) => `<button class="mrow ${cls}"${data}${on ? ' aria-pressed="true"' : cls === 'pick' ? ' aria-pressed="false"' : ''}><span class="mi">${icon}</span><span class="nm">${esc(name)}</span>${end}</button>`;
     if (this.#menu === 'concern') {
       const n = this.#concernCounts(), all = [...n.values()].reduce((a, b) => a + b, 0);
-      return `<div class="menu" role="group" aria-label="Show notes about">${row('pick', ' data-c=""', toyOf(ALL_TOY), 'All concerns', `<b>${all}</b>`, !this.#concern)}<i class="sep"></i>`
+      return `<div class="menu" role="group" aria-label="Show notes about">${row('pick', ' data-c=""', toyOf(ALL_TOY), this.#host.scope?.() ? FIX.bar.thisElement : FIX.bar.all, `<b>${all}</b>`, !this.#concern)}<i class="sep"></i>`
         + CONCERNS.filter((c) => n.get(c.id)).map((c) => row('pick', ` data-c="${c.id}"`, toyOf(c.toy), c.name, `<b>${n.get(c.id)}</b>`, this.#concern === c.id)).join('') + '</div>';
     }
     if (this.#menu === 'more') {
@@ -766,28 +768,11 @@ export class FixPanel {
       scope.timeout(() => { if (this.#held === g) this.#reveal(el, covered); }, TIMING.open + 40);
     }
   }
-  // the page's own header pinned over the top of the window (fixed or sticky), measured where it is now: what a fix
-  // must be brought in below, or it is chosen under the header (U41, 2026-11-20, crafting-ui). A cover taller than a
-  // third of the window is not a header, and the overlay's own pieces never count
-  #pinnedTop() {
-    let low = 0;
-    for (const x of [0.12, 0.3, 0.5, 0.7, 0.88].map((f) => Math.round(innerWidth * f))) {
-      // through Blueprint's glass: the first of the page's own elements at the window's top edge, then up its parents
-      const hit = document.elementsFromPoint(x, 2).find((e) => !e.closest('plumb-overlay, [data-plumb-layer]'));
-      for (let e = hit; e && e !== document.body && e !== document.documentElement; e = e.parentElement) {
-        if (!/^(fixed|sticky)$/.test(getComputedStyle(e).position)) continue;
-        const r = e.getBoundingClientRect();
-        if (r.top <= 2 && r.bottom < innerHeight / 3) low = Math.max(low, r.bottom);
-        break;
-      }
-    }
-    return low;
-  }
   #reveal(el, coveredOnly = false) {
     if (!el?.isConnected || !this.#holding) return;
     const panel = this.#el.getBoundingClientRect();
     if (!panel.height) return; // not drawn yet: the later call measures it
-    const r = el.getBoundingClientRect(), top = this.#pinnedTop() + 16, bottom = Math.min(innerHeight, panel.top) - 16;
+    const r = el.getBoundingClientRect(), top = pinnedTop() + 16, bottom = Math.min(innerHeight, panel.top) - 16;
     if (r.height > bottom - top) return; // taller than the room above the panel: it stays where it is
     // pointed at: moved only when the panel hides all of it (any part above the panel is enough to see it), never when
     // it is off screen
@@ -1131,7 +1116,7 @@ export class FixPanel {
     const others = [...this.#choice.getRootNode().querySelectorAll('*')].filter((e) => e !== this.#choice && e !== this.#el && !this.#choice.contains(e) && !this.#el.contains(e)
       && (e.matches('.xr-card, .ec, .ec-strip') || getComputedStyle(e).position === 'fixed') && e.getClientRects().length).map((e) => e.getBoundingClientRect()).filter((b) => b.width > 40 && b.height > 40 && b.width < innerWidth * 0.9);
     // the page's own header pinned over the top counts as taken too (U41)
-    const head = this.#pinnedTop(), taken = [...others, bar, r, ...(head ? [{ left: 0, top: 0, right: innerWidth, bottom: head }] : [])];
+    const head = pinnedTop(), taken = [...others, bar, r, ...(head ? [{ left: 0, top: 0, right: innerWidth, bottom: head }] : [])];
     const clamp = (x, y) => [Math.min(Math.max(gap, x), innerWidth - w - gap), Math.min(Math.max(gap, y), innerHeight - h - gap)];
     const spots = [[r.left, r.bottom + gap], [r.right - w, r.bottom + gap], [r.left, r.top - gap - h], [r.right - w, r.top - gap - h], [r.right + gap, r.top], [r.left - gap - w, r.top]].map(([x, y]) => clamp(x, y));
     // what it would hide: the overlay's pieces and the header by area, the page's words and controls by how many of 15
@@ -1179,7 +1164,7 @@ export class FixPanel {
       void status; void tidy;
       html = (places || notes
         ? `<div class="line bar${notice ? ' has-notice' : ''}">${this.#error ? `<span class="quiet-line err">${esc(this.#error)}</span>` : this.#concernPick()}${notice}<span class="grow"></span>${button(esc(FIX.start), { cls: 'sm start', key: '↵', attrs: 'aria-keyshortcuts="Enter"' })}${end}</div>`
-        : `<div class="line bar${notice ? ' has-notice' : ''}"><span class="quiet-line">${esc(this.#error ?? (!settled ? (this.#host.scope?.() ? FIX.checkingElement : FIX.checking) : this.#progress?.notChecked ? FIX.clearChecked(this.#progress.notChecked) : FIX.clear))}</span>${notice}${end}</div>`);
+        : `<div class="line bar${notice ? ' has-notice' : ''}"><span class="quiet-line">${esc(this.#error ?? (!settled ? (this.#host.scope?.() ? FIX.checkingElement : FIX.checking) : this.#progress?.notChecked ? FIX.clearChecked(this.#progress.notChecked) : this.#host.scope?.() ? FIX.elementClear : FIX.clear))}</span>${notice}${end}</div>`);
     } else {
       const mark = g.members[0].mark, kind = kindOf(mark);
       // a craft finding's name carries an "i": its rule's page, where the why is told in full
