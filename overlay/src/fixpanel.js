@@ -39,6 +39,7 @@ import { FIX, CLEANUP, written } from './words.js'; // every sentence the panel 
 import { docsUrl } from './rule-docs.js'; // where a craft rule is read about
 import { Cleanup, CLEANUP_CSS } from './cleanup.js'; // "Clean up this page": the passes, one at a time
 import { groupsOf, isNote, placeKey } from './blueprint-panel.js';
+import { inkOver } from './blueprint-marks.js'; // what of the page a spot would cover
 import { glide } from './inplace.js'; // the text styles the code is reaching for
 import { stampOf, parseStamp, sameStamp, stampNames } from './stamp.js';
 import { Scope } from './scope.js';
@@ -765,11 +766,28 @@ export class FixPanel {
       scope.timeout(() => { if (this.#held === g) this.#reveal(el, covered); }, TIMING.open + 40);
     }
   }
+  // the page's own header pinned over the top of the window (fixed or sticky), measured where it is now: what a fix
+  // must be brought in below, or it is chosen under the header (U41, 2026-11-20, crafting-ui). A cover taller than a
+  // third of the window is not a header, and the overlay's own pieces never count
+  #pinnedTop() {
+    let low = 0;
+    for (const x of [0.12, 0.3, 0.5, 0.7, 0.88].map((f) => Math.round(innerWidth * f))) {
+      // through Blueprint's glass: the first of the page's own elements at the window's top edge, then up its parents
+      const hit = document.elementsFromPoint(x, 2).find((e) => !e.closest('plumb-overlay, [data-plumb-layer]'));
+      for (let e = hit; e && e !== document.body && e !== document.documentElement; e = e.parentElement) {
+        if (!/^(fixed|sticky)$/.test(getComputedStyle(e).position)) continue;
+        const r = e.getBoundingClientRect();
+        if (r.top <= 2 && r.bottom < innerHeight / 3) low = Math.max(low, r.bottom);
+        break;
+      }
+    }
+    return low;
+  }
   #reveal(el, coveredOnly = false) {
     if (!el?.isConnected || !this.#holding) return;
     const panel = this.#el.getBoundingClientRect();
     if (!panel.height) return; // not drawn yet: the later call measures it
-    const r = el.getBoundingClientRect(), top = 16, bottom = Math.min(innerHeight, panel.top) - 16;
+    const r = el.getBoundingClientRect(), top = this.#pinnedTop() + 16, bottom = Math.min(innerHeight, panel.top) - 16;
     if (r.height > bottom - top) return; // taller than the room above the panel: it stays where it is
     // pointed at: moved only when the panel hides all of it (any part above the panel is enough to see it), never when
     // it is off screen
@@ -1112,11 +1130,15 @@ export class FixPanel {
     // what else the overlay shows (the X-ray card on the element, its caret): the choice keeps clear of it and of the bar
     const others = [...this.#choice.getRootNode().querySelectorAll('*')].filter((e) => e !== this.#choice && e !== this.#el && !this.#choice.contains(e) && !this.#el.contains(e)
       && (e.matches('.xr-card, .ec, .ec-strip') || getComputedStyle(e).position === 'fixed') && e.getClientRects().length).map((e) => e.getBoundingClientRect()).filter((b) => b.width > 40 && b.height > 40 && b.width < innerWidth * 0.9);
-    const taken = [...others, bar, r];
+    // the page's own header pinned over the top counts as taken too (U41)
+    const head = this.#pinnedTop(), taken = [...others, bar, r, ...(head ? [{ left: 0, top: 0, right: innerWidth, bottom: head }] : [])];
     const clamp = (x, y) => [Math.min(Math.max(gap, x), innerWidth - w - gap), Math.min(Math.max(gap, y), innerHeight - h - gap)];
     const spots = [[r.left, r.bottom + gap], [r.right - w, r.bottom + gap], [r.left, r.top - gap - h], [r.right - w, r.top - gap - h], [r.right + gap, r.top], [r.left - gap - w, r.top]].map(([x, y]) => clamp(x, y));
-    const over = ([x, y]) => taken.reduce((sum, b) => sum + Math.max(0, Math.min(b.right, x + w) - Math.max(b.left, x)) * Math.max(0, Math.min(b.bottom, y + h) - Math.max(b.top, y)), 0);
-    const [left, top] = spots.reduce((best, sp) => (over(sp) < over(best) ? sp : best), spots[0]);
+    // what it would hide: the overlay's pieces and the header by area, the page's words and controls by how many of 15
+    // points across the row land on them (the row sat over the heading beside its line, U41)
+    const over = ([x, y]) => taken.reduce((sum, b) => sum + Math.max(0, Math.min(b.right, x + w) - Math.max(b.left, x)) * Math.max(0, Math.min(b.bottom, y + h) - Math.max(b.top, y)), 0)
+      + inkOver(x, y, w, h) * (w * h) / 15;
+    const cost = spots.map(over), [left, top] = spots[cost.indexOf(Math.min(...cost))];
     this.#choice.style.top = `${Math.round(top)}px`; this.#choice.style.left = `${Math.round(left)}px`;
   }
 

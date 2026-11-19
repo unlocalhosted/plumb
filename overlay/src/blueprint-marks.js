@@ -375,7 +375,14 @@ function inkAt(x, y) {
   }
   return false;
 }
-const covers = (x, y, w, h) => { for (const fx of [0.04, 0.3, 0.5, 0.7, 0.96]) for (const fy of [0.15, 0.5, 0.85]) if (inkAt(x + w * fx, y + h * fy)) return true; return false; };
+const covers = (x, y, w, h) => inkOver(x, y, w, h) > 0;
+// how much of the page's own content a box would cover: of 15 points on a grid across it, how many land on words, a
+// control, a picture or a small filled box (the fix's choice row weighs its spots by it, fixpanel #placeOn)
+export function inkOver(x, y, w, h) {
+  let n = 0;
+  for (const fx of [0.04, 0.3, 0.5, 0.7, 0.96]) for (const fy of [0.15, 0.5, 0.85]) if (inkAt(x + w * fx, y + h * fy)) n++;
+  return n;
+}
 function pinsOf(entries, view) {
   const byEl = new Map();
   for (const p of entries) { const e = byEl.get(p.item.el); if (e) e.n++; else byEl.set(p.item.el, { id: p.id, r: inkOf(p.item.el, p.er), b: p.er, name: FIX.what(p.mark), n: 1 }); }
