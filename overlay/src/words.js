@@ -187,7 +187,8 @@ export const CRAFT = {
   }),
   contrast: ({ lc, size, need, large }) => ({
     label: 'Hard to read',
-    line: `Contrast ${lc} at ${px(size)}. ${large ? 'Large' : 'Small'} text needs ${need}.`,
+    // the scale said once: a bare 45 read as "45 of what?" next to the 4.5:1 people know (U48)
+    line: `Contrast is ${lc} on the APCA scale at ${px(size)}. ${large ? 'Large' : 'Small'} text needs ${need}.`,
     reason: 'Measured with APCA, which tracks what people can actually read.',
   }),
   'disabled-contrast': ({ o, lc }) => ({
