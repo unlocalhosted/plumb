@@ -80,12 +80,13 @@ const FIX_CSS_BASE = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   /* one place in hand: the comp's bar (design site: Fix bar) — a card, not glass; one line, a headline and a detail */
   .fx[data-one] { width: max-content; min-width: min(420px, calc(100vw - 32px)); max-width: min(980px, calc(100vw - 32px)); border-radius: 22px; background: var(--pl-paper); -webkit-backdrop-filter: none; backdrop-filter: none;
     box-shadow: var(--pl-shadow-card); }
-  .fx .one { display: flex; align-items: center; gap: 12px; height: 64px; padding: 0 10px 0 12px; white-space: nowrap; animation: pl-pop 260ms var(--pl-spring-pop) both; }
+  .fx .one { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 10px 10px 10px 12px; box-sizing: border-box; white-space: nowrap; animation: pl-pop 260ms var(--pl-spring-pop) both; }
   .fx .one .ic { display: block; width: 36px; height: 36px; flex: none; } .fx .one .ic svg { display: block; width: 100%; height: 100%; overflow: visible; }
-  .fx .one .lines { display: flex; flex-direction: column; gap: 7px; min-width: 0; flex: 1 1 auto; overflow: hidden; }
+  /* the two lines wrap on a narrow window, the bar grows taller: cut off, the part that says what to do was lost (U44) */
+  .fx .one .lines { display: flex; flex-direction: column; gap: 5px; min-width: 0; flex: 1 1 auto; }
   .fx.fx-on .cant { font: 500 12.5px/1.3 var(--pl-sans); color: var(--pl-ink-2); max-width: 260px; white-space: normal; padding: 0 4px; }
-  .fx .one .hl { display: block; white-space: nowrap; font: 650 14.5px/1 var(--pl-sans); color: var(--pl-ink); overflow: hidden; text-overflow: ellipsis; }
-  .fx .one .dt { display: block; white-space: nowrap; font: 500 13px/1 var(--pl-sans); color: var(--pl-ink-2); overflow: hidden; text-overflow: ellipsis; }
+  .fx .one .hl { display: block; white-space: normal; font: 650 14.5px/1.25 var(--pl-sans); color: var(--pl-ink); text-wrap: pretty; }
+  .fx .one .dt { display: block; white-space: normal; font: 500 13px/1.35 var(--pl-sans); color: var(--pl-ink-2); text-wrap: pretty; }
   .fx .one .dt .pl-pill { margin: 0; }
   .fx .one .sep { width: 1px; height: 22px; margin: 0 2px; background: var(--pl-rule); flex: none; }
   .fx .one .onav { display: inline-flex; align-items: center; gap: 2px; font: 500 12px/1 var(--pl-mono); color: var(--pl-ink-2); flex: none; }
