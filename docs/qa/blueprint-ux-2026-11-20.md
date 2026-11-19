@@ -504,3 +504,28 @@ How to read an issue, and what each one needs:
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u40-crafting-craft-pins.jpg`
 - **Status:** open
+
+### U41 · The fix in hand is under the app's sticky header, and its choice row covers the header
+- **Where:** Fix, crafting-ui home page, fix 1 of 10 "2 places: line too heavy".
+- **What I did:** scrolled one screen down, picked Craft and polish, pressed Fix.
+- **What I saw:** the page scrolled so the line in question (the cap-height guide over "The little details") sits
+  at the very top, under crafting-ui's sticky header. The pink corner marks peek out above and below the header.
+  The choice row ("h-[0.5px]", "Use h-[0.5px]", "Keep as is", "Skip") is laid on top of the header, over the
+  CONTENTS tab and the heading.
+- **What I expected:** Fix scrolls the element into view below a sticky header, so I can see the line and the
+  choice next to it.
+- **Why it hurts:** understanding. I'm asked to choose a fix for a thing I can't see.
+- **Severity:** 2
+- **Evidence:** `docs/qa/shots/2026-11-20/u41-crafting-fix-under-header.jpg`
+- **Status:** open
+
+### U42 · The fix for a heavy line is a hard-coded value
+- **Where:** same fix, "2 places: line too heavy. This 1px line is 2 pixels thick on a 2× screen."
+- **What I saw:** the only option is `h-[0.5px]`, "Use h-[0.5px]". The Design system check on the same bar counts
+  hard-coded values like `[0.5px]` as problems.
+- **What I expected:** a token or a named hairline (or the option to add one), so taking a Craft fix doesn't create
+  a Design system note.
+- **Why it hurts:** trust. One concern's fix is another concern's problem.
+- **Severity:** 3
+- **Evidence:** `docs/qa/shots/2026-11-20/u41-crafting-fix-under-header.jpg`
+- **Status:** open
