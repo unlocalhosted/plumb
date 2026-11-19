@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Concern menu · React Plumber</title>
+<style>
+  body { margin: 0; padding: 32px 16px 64px; background: #ecebe7; font: 14px/1.5 system-ui, sans-serif; color: #1c1b19; }
+  header { max-width: 1180px; margin: 0 auto 24px; }
+  header h1 { font-size: 18px; margin: 0 0 4px; } header p { margin: 0; opacity: .7; font-size: 13px; }
+  #board { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 28px; align-items: end; }
+  .opt > h2 { font: 600 13px/1 system-ui; margin: 0 0 10px; } .opt > h2 span { opacity: .55; font-weight: 500; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Concern menu: three ways to draw the list</h1>
+  <p>The list that opens above Blueprint's bar. Same data in each: Anti-slop picked.</p>
+</header>
+<div id="board"></div>
+<script type="module">
+  import tokens from '../src/tokens.css?raw';
+  import { TOY_DEFS, toyOf } from '../src/toys.js';
+
+  const DATA = [
+    { id: 'all', name: 'All concerns', n: 207, toy: 'layer', say: 'Everything plumber found on this page' },
+    { id: 'system', name: 'Design system check', n: 125, toy: 'grid', say: 'Values that are not your tokens' },
+    { id: 'craft', name: 'Craft and polish', n: 21, toy: 'alignment', say: 'On your system, but made carelessly' },
+    { id: 'access', name: 'Accessible and correct', n: 12, toy: 'cursor', say: 'Someone can’t use it, or the markup is wrong' },
+    { id: 'slop', name: 'Anti-slop check', n: 49, toy: 'shadow', say: 'Marks of a generated screen' },
+  ];
+  const PICKED = 'slop';
+  const icon = (t, s = 20) => `<span class="toy" style="width:${s}px;height:${s}px">${toyOf(t)}</span>`;
+  const bar = `<div class="line"><span class="cpick">Anti-slop check <b>49</b><svg viewBox="0 0 10 10"><path d="M2.5 3.8L5 6.2l2.5-2.4"/></svg></span><span class="grow"></span><span class="fix">Fix <kbd>↵</kbd></span><span class="dots">···</span><span class="close">Close <kbd>Esc</kbd></span></div>`;
+
+  const css = `${tokens}
+    .card { width: 100%; max-width: 440px; background: var(--pl-paper); border-radius: 18px; box-shadow: var(--pl-shadow-card); overflow: hidden; font-family: var(--pl-sans); color: var(--pl-text-primary); }
+    .toy { display: inline-block; flex: none; } .toy svg { display: block; width: 100%; height: 100%; overflow: visible; }
+    .line { display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 8px 0 10px; border-top: 1px solid var(--pl-border-default); font-size: 13px; }
+    .cpick { display: inline-flex; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 9px; background: var(--pl-bg-surface-hover); font-weight: 500; }
+    .cpick b { color: var(--pl-text-secondary); font-weight: 600; } .cpick svg { width: 10px; height: 10px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; }
+    .grow { flex: 1; } .fix { background: var(--pl-pink-block); color: var(--pl-pink-block-on); font-weight: 600; border-radius: 10px; padding: 6px 10px; }
+    .dots { opacity: .6; } .close { font-weight: 600; } kbd { font: 500 10px var(--pl-mono, monospace); opacity: .7; }
+
+    /* A · toy rows */
+    .a { padding: 6px; display: flex; flex-direction: column; gap: 2px; }
+    .a .r { display: flex; align-items: center; gap: 11px; height: 40px; padding: 0 10px 0 9px; border-radius: 11px; font: 600 13.5px/1 var(--pl-round); }
+    .a .r span.nm { flex: 1; } .a .r .n { font: 600 12px/1 var(--pl-sans); font-variant-numeric: tabular-nums; padding: 4px 8px; border-radius: 999px; background: var(--pl-bg-inset); color: var(--pl-text-secondary); }
+    .a .r:hover { background: var(--pl-bg-surface-hover); }
+    .a .r.on { background: var(--pl-pink-block); color: var(--pl-pink-block-on); } .a .r.on .n { background: color-mix(in oklab, #fff 26%, transparent); color: inherit; }
+    .a .sep { height: 1px; background: var(--pl-border-default); margin: 4px 8px; }
+
+    /* B · tiles */
+    .b { padding: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .b .t { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 10px; row-gap: 6px; padding: 11px 12px; border-radius: 13px; background: var(--pl-bg-inset); }
+    .b .t .toy { grid-row: 1; } .b .t .n { justify-self: end; font: 700 20px/1 var(--pl-round); font-variant-numeric: tabular-nums; }
+    .b .t .nm { grid-column: 1 / -1; font: 600 12.5px/1.25 var(--pl-round); }
+    .b .t.all { grid-column: 1 / -1; grid-template-columns: auto 1fr auto; grid-template-rows: auto; align-items: center; } .b .t.all .nm { grid-column: 2; }
+    .b .t.on { background: var(--pl-pink-face, var(--pl-pink-soft)); color: var(--pl-pink-ink); }
+
+    /* C · rows that say what they are */
+    .c { padding: 6px; display: flex; flex-direction: column; gap: 2px; }
+    .c .r { display: grid; grid-template-columns: auto 1fr auto; grid-template-rows: auto auto; column-gap: 12px; align-items: center; padding: 8px 12px 8px 10px; border-radius: 12px; }
+    .c .r .toy { grid-row: 1 / 3; } .c .r .nm { font: 600 13.5px/18px var(--pl-round); } .c .r .say { grid-column: 2; font: 400 12px/16px var(--pl-sans); color: var(--pl-text-secondary); }
+    .c .r .n { grid-row: 1 / 3; grid-column: 3; font: 700 17px/1 var(--pl-round); font-variant-numeric: tabular-nums; }
+    .c .r:hover { background: var(--pl-bg-surface-hover); }
+    .c .r.on { background: var(--pl-pink-soft); color: var(--pl-pink-ink); box-shadow: inset 3px 0 0 var(--pl-pink); } .c .r.on .say { color: inherit; opacity: .8; }
+  `;
+  const A = `<div class="a">${DATA.map((d, i) => `${i === 1 ? '<div class="sep"></div>' : ''}<div class="r${d.id === PICKED ? ' on' : ''}">${icon(d.toy)}<span class="nm">${d.name}</span><span class="n">${d.n}</span></div>`).join('')}</div>`;
+  const B = `<div class="b">${DATA.map((d) => `<div class="t${d.id === 'all' ? ' all' : ''}${d.id === PICKED ? ' on' : ''}">${icon(d.toy, 24)}<span class="n">${d.n}</span><span class="nm">${d.name}</span></div>`).join('')}</div>`;
+  const C = `<div class="c">${DATA.map((d) => `<div class="r${d.id === PICKED ? ' on' : ''}">${icon(d.toy, 26)}<span class="nm">${d.name}</span><span class="say">${d.say}</span><span class="n">${d.n}</span></div>`).join('')}</div>`;
+
+  const board = document.getElementById('board');
+  for (const [key, title, sub, body] of [['A', 'A · Toy rows', 'one line each, the pick a solid pink block', A], ['B', 'B · Tiles', 'a small grid, the count large', B], ['C', 'C · Rows that say what they are', 'a line of meaning under each name', C]]) {
+    const opt = document.createElement('section'); opt.className = 'opt';
+    opt.innerHTML = `<h2>${title} <span>${sub}</span></h2>`;
+    const host = document.createElement('div'); opt.append(host); board.append(opt);
+    const root = host.attachShadow({ mode: 'open' });
+    root.innerHTML = `<style>${css}</style>${TOY_DEFS}<div class="card">${body}${bar}</div>`;
+  }
+</script>
+</body>
+</html>
