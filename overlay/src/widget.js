@@ -427,7 +427,8 @@ class PlumbOverlay extends HTMLElement {
     // One voice after a reload. A sentence that is History's to say (a step's undo) is said by the panel only when
     // the reload cut the server's answer off before History heard it; when History has it, the panel stays quiet
     if (saved.fix && saved.blueprint && !(saved.history && this.#history?.resumed)) this.#blueprint?.resumed?.(saved.fix, saved.undo ?? [], saved.place ?? null, saved.group ?? null);
-    else if (saved.fix && (saved.undo?.length || saved.group)) this.#history?.wrote({ undo: saved.undo ?? [], trace: { group: saved.group ?? null } }, saved.fix);
+    // said either way; with nothing to undo (an undo itself) it is said with no Undo button (U52)
+    else if (saved.fix && (saved.undo?.length || saved.group || !saved.pending)) this.#history?.wrote({ undo: saved.undo ?? [], trace: { group: saved.group ?? null } }, saved.fix);
     // the old reading card is retired: a write never comes back as a card pinned to its element
   }
 

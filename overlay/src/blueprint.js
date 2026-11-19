@@ -105,7 +105,9 @@ export class Blueprint {
       applyAll: (tokens, keeps, total, swaps, said, at) => this.#applyAll(tokens, keeps, total, swaps, said, at),
       // an undo may reload the page as its write did: Blueprint comes back after it, saying it was undone
       // (a request cut off by the reload it caused is not a refusal: what was remembered stays for the page that comes back)
-      undo: async (handle) => { this.#host.remember?.(FIX.undone); try { await post('undo', { id: handle.id }); } catch (error) { if (answeredNo(error)) this.#host.forgetResume?.(); throw error; } this.invalidate({ file: handle.file }); },
+      // an undo leaves nothing to undo: remembered with no handles (left to be found after a reload, it found the undo's
+      // own write and offered Undo again on 'Undone', U52)
+      undo: async (handle) => { this.#host.remember?.(FIX.undone, []); try { await post('undo', { id: handle.id }); } catch (error) { if (answeredNo(error)) this.#host.forgetResume?.(); throw error; } this.invalidate({ file: handle.file }); },
       tokens: () => spec.value?.tokens ?? null,
       fromCode: (mark, places) => this.#fromCode(mark, places),
       applyStyles: (write, said, meta) => this.#applyStyles(write, said, meta),
@@ -118,7 +120,7 @@ export class Blueprint {
       // a step's undo is History's to say (its toast carries the Undo). The sentence is still remembered for the page
       // that comes back, marked as History's: the panel says it only if the reload came before History heard the
       // answer (an undo across two files reloads at the first), and stays quiet when History has it
-      undoGroup: async (group) => { this.#host.remember?.(FIX.undone, undefined, null, null, { history: true }); try { return await this.#undoGroup(group); } catch (error) { if (answeredNo(error)) this.#host.forgetResume?.(); throw error; } },
+      undoGroup: async (group) => { this.#host.remember?.(FIX.undone, [], null, null, { history: true }); try { return await this.#undoGroup(group); } catch (error) { if (answeredNo(error)) this.#host.forgetResume?.(); throw error; } },
       unwant: () => { this.#want = null; },
       climb: (el) => this.climbTo(el),
       // why an element can't be placed in the source, as the panel says it
