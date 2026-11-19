@@ -239,3 +239,58 @@ How to read an issue, and what each one needs:
   `docs/qa/shots/2026-11-20/u18-counts-197.png`; `fixtures/.tells-app/src` files were last written 04:29, before
   the walk.
 - **Status:** open
+
+### U19 · The Blueprint bar covers the bottom of the setup panel
+- **Where:** ··· → Setup steps, 1280×800.
+- **What I saw:** the panel runs from 178px to 754px down the page; the bar starts at 730px. The footer line "5
+  selected · run them in your terminal, or copy them for your agent" is cut through by the bar, and "Copy for agent"
+  sits right against it.
+- **What I expected:** the panel ends above the bar.
+- **Why it hurts:** understanding. The line that says what the ticks are for is the one hidden.
+- **Severity:** 3
+- **Evidence:** `docs/qa/shots/2026-11-20/u19-setup-panel.jpg`
+- **Status:** open
+
+### U20 · Two setup steps are the same command
+- **Where:** Setup steps, "Choose your rules" and "Start from today's problems".
+- **What I saw:** both say to run `npx plumber init`, each with its own Copy button, and the header counts them as two
+  of "5 setup steps left".
+- **What I expected:** one step ("Run plumber init: it asks about your rules, then records today's problems"), or
+  the second step to say it's done by the first.
+- **Why it hurts:** understanding and DX. I run init twice, or wonder what the second one does differently.
+- **Severity:** 3
+- **Evidence:** `docs/qa/shots/2026-11-20/u19-setup-panel.jpg`; panel text read from the page.
+- **Status:** open
+
+### U21 · Setup steps point at package.json line 1 for things that aren't in package.json
+- **Where:** Setup steps, "Turn on React Fast Refresh", "Plugin order needs a check", "Check that saving updates the
+  page".
+- **What I saw:** each names `package.json:1` as the place. Fast Refresh is added in the Vite config (the step itself
+  says "right after plumb()", which is in the config, not package.json). The last one reads "package.json:1
+  server.watch.usePolling: false; environment: native", which is a setting dump, not a place.
+- **What I expected:** the file where I make the change (the Vite config), or no place at all when there is none.
+- **Why it hurts:** DX. I open package.json and find nothing to change.
+- **Severity:** 3
+- **Evidence:** `docs/qa/shots/2026-11-20/u19-setup-panel.jpg`; panel text read from the page.
+- **Status:** open
+
+### U22 · "Plugin order needs a check" gives me nothing to do
+- **Where:** Setup steps, under NOT CONFIRMED YET.
+- **What I saw:** "Plugin order needs a check. Places in your code may point at transformed code instead of what you
+  wrote." No command, no Copy, no tick box, no hint how to check it.
+- **What I expected:** what to check and how ("plumb() must come before react() in your Vite plugins; run plumber
+  doctor to confirm"), or leave it out until plumber can tell.
+- **Why it hurts:** acting. A worry with no way to act on it.
+- **Severity:** 3
+- **Evidence:** panel text read from the page (see U19 shot).
+- **Status:** open
+
+### U23 · The C key on "Clean up page" is squashed
+- **Where:** ··· list.
+- **What I saw:** the key cap after "Clean up page" is 6px wide, a sliver of a "C" at the menu's right edge, while
+  the "5" badge on Setup steps above it is full size.
+- **What I expected:** the same key cap the bar uses for Esc.
+- **Why it hurts:** understanding (the shortcut can't be read).
+- **Severity:** 4
+- **Evidence:** `docs/qa/shots/2026-11-20/u24-more-menu.png`; the `kbd` in the Clean up row measures 6px wide.
+- **Status:** open
