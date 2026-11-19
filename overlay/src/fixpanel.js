@@ -93,6 +93,10 @@ const FIX_CSS_BASE = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   .fx .one .onav { display: inline-flex; align-items: center; gap: 2px; font: 500 12px/1 var(--pl-mono); color: var(--pl-ink-2); flex: none; }
   .fx .one .onav button { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; font-size: 16px; color: var(--pl-ink-2); } /* big enough to hit (U46) */
   .fx .one .onav button:hover { background: var(--pl-paper-2); }
+  /* Space held: the page takes the clicks; the bar says so and the marks step back (U53) */
+  .fx .using { display: none; font: 600 12px/1 var(--pl-sans); color: var(--pl-text-secondary); }
+  :host([data-bp-pass]) .fx .using { display: inline; }
+  :host([data-bp-pass]) .bp > :is(svg, .labels) { opacity: .2; transition: opacity 120ms var(--pl-ease-out, ease-out); }
   .fx .one .onav button:disabled { opacity: .35; cursor: default; background: none; } /* pale is for what is not there */
   .fx .one .tb { flex: none; }
   .fx .one .passes { display: inline-flex; align-items: center; gap: 6px; padding: 0 4px; flex: none; }
@@ -574,7 +578,7 @@ export class FixPanel {
       else if (b.classList.contains('cpick')) { this.#menu = this.#menu === 'concern' ? null : 'concern'; this.#html = ''; this.render(); }
       else if (b.classList.contains('pick') && 'c' in b.dataset) { this.#concern = b.dataset.c || null; this.#menu = null; this.#host.spotlight(this.#concernLit()); this.#html = ''; this.render(); }
       else if (b.classList.contains('more')) { this.#menu = this.#menu === 'more' ? null : 'more'; this.#html = ''; this.render(); }
-      else if (b.classList.contains('tool')) { this.#menu = null; this.#html = ''; this.render(); this.#host.tool?.(b.dataset.tool); }
+      else if (b.classList.contains('tool')) { this.#menu = null; this.#html = ''; this.render(); this.#host.tool?.(b.dataset.tool); if (b.dataset.tool === 'pick') this.notice(FIX.bar.picking); }
       else if (b.classList.contains('bar-close')) this.#host.tool?.('bp-toggle');
       else if (b.classList.contains('setup')) { this.#menu = null; this.#html = ''; this.render(); this.#host.openSetup?.(); }
       else if (b.classList.contains('opt') || b.classList.contains('page')) return; // the control's own (bindControl)
@@ -1178,7 +1182,7 @@ export class FixPanel {
       // the line's count is the concern picker: what it shows and how many (a problem's places and a note's elements)
       void status; void tidy;
       html = (places || notes
-        ? `<div class="line bar${notice ? ' has-notice' : ''}">${this.#error ? `<span class="quiet-line err">${esc(this.#error)}</span>` : this.#concernPick()}${notice}<span class="grow"></span>${button(esc(FIX.start), { cls: 'sm start', key: '↵', attrs: 'aria-keyshortcuts="Enter"' })}${end}</div>`
+        ? `<div class="line bar${notice ? ' has-notice' : ''}">${this.#error ? `<span class="quiet-line err">${esc(this.#error)}</span>` : this.#concernPick()}${notice}<span class="using" role="status">${esc(FIX.bar.using)}</span><span class="grow"></span>${button(esc(FIX.start), { cls: 'sm start', key: '↵', attrs: 'aria-keyshortcuts="Enter"' })}${end}</div>`
         : `<div class="line bar${notice ? ' has-notice' : ''}"><span class="quiet-line">${esc(this.#error ?? (!settled ? (this.#host.scope?.() ? FIX.checkingElement : FIX.checking) : this.#progress?.notChecked ? FIX.clearChecked(this.#progress.notChecked) : this.#host.scope?.() ? FIX.elementClear : FIX.clear))}</span>${notice}${end}</div>`);
     } else {
       const mark = g.members[0].mark, kind = kindOf(mark);

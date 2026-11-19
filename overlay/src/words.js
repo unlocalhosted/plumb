@@ -505,7 +505,8 @@ export const FIX = {
   problems: (n) => count(n, 'problem', 'problems'),
   // the Blueprint bar (docs/design/one-bar.md)
   // all: the picker's first row; thisElement: the same row after an Alt+click, when only that element is read (U31, U50)
-  bar: { all: 'All concerns', thisElement: 'This element', more: 'More', less: 'Fewer tools', close: 'Close', setup: (n) => count(n, 'setup step', 'setup steps'), setupOptional: 'Setup steps (optional)', review: 'Review',
+  // using: while Space is held, the page takes the clicks (U53); picking: Inspect an element has started (U51)
+  bar: { all: 'All concerns', thisElement: 'This element', using: 'Using the page', picking: 'Click an element to inspect it. Esc stops.', more: 'More', less: 'Fewer tools', close: 'Close', setup: (n) => count(n, 'setup step', 'setup steps'), setupOptional: 'Setup steps (optional)', review: 'Review',
     tools: { history: 'History', help: 'Help', pick: 'Inspect an element' } },
   fixes: (n) => count(n, 'fix', 'fixes'),
   notes: (n) => count(n, 'note', 'notes'),
