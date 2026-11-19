@@ -121,7 +121,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** intent. I aim at the note and get a different element.
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u08-pin-points-through.jpg`
-- **Status:** fixed 9986555c
+- **Status:** fixed 9986555c · reopened (tester, 04:58): with Craft and polish picked, resting on either pin ("Padding looks bigger than it is", "Only left-over space between") for two seconds opens nothing at all. The pins now take the pointer, but a Design system note shape for the hero section ("py-24. This works out to 6rem.") lies on top of them: in the overlay, elementFromPoint at both pins returns that `path.hit`. Same cause as U7's first report: notes of a hidden concern still catch the pointer. `docs/qa/shots/2026-11-20/u08-reopened.jpg`
 
 ### U9 · The X-ray card covers the Blueprint bar
 - **Where:** Blueprint, X-ray card on an element in the right half of the page (the "Get started" button).
