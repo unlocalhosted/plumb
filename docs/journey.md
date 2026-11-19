@@ -4160,6 +4160,13 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   reactions (more like this, not this, shuffle, or words like "calmer"); and narrowing until the owner picks one.
   Taste gets measurable features (restraint, contrast, rhythm, focus, tension) and a preference model trained on
   the owner's picks. References may propose additions to the design system. Motion waits for its own brief.
+- **"No man keep it generator."** The fitting room still made the owner explain themselves: "a lot of time i can't
+  exactly say what i want", and "a lot of time its a salesman job to find what would suit the best for me". The
+  sixth version keeps the title and the generator and drops the conversation. It leads with its best guess, built
+  from the app's own components and past sessions, and learns from what the owner does: applying and keeping,
+  tweaking by hand afterwards, undoing, shuffling, lingering, skipping. A taste model shows its surest pick first
+  and tests what it's unsure of with the alternatives, the way a music recommender learns a new listener. Learning
+  only reorders options that already passed every quality check, so it can't drift into bad taste.
 
 ## Open gaps
 - **The mark was never tried among real neighbours** (a row of browser tabs, an npm page, a README header), only on empty tiles. Nobody outside has been asked whether the round leg reads as an R or leans towards a B.
