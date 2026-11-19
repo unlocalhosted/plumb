@@ -257,3 +257,17 @@ All free under the Unsplash License, hotlinked from images.unsplash.com as Unspl
 - Why: the owner said a model endpoint was already on vm-agent, to use for the tells that need reading.
 - What it changed: the subtitle check in the tells pack scores heading and subtitle pairs with `/embed`
   ([journey](journey.md#subtitles-that-repeat-the-heading-a-model-on-vm-agent-judges-them-2026-11-19)).
+
+## 2026-11-20 · Dead Cells, procedural levels from authored rooms (shared by the owner)
+- What: the game Dead Cells (Motion Twin), named by the owner in words; its levels are hand-made rooms arranged by a
+  generator to fill a hand-made graph of what a level must hold.
+- Why: "like how in games they create procedural stages like dead cells", for a generator that shows one card many
+  ways with a reason behind each.
+- What it changed: the organism generator brief is built on the same split: authored specimens, a job graph, and a
+  generator that only arranges them under rules from a seed
+  ([brief](briefs/organism-generator.md), [journey](journey.md#36-an-organism-generator-that-borrows-taste-and-draws-in-ours-2026-11-20-a-brief)).
+
+## 2026-11-20 · Picbreeder, choosing to steer generation (found by us)
+- What: Picbreeder (Secretan, Stanley and others), where people breed images by picking the ones they like.
+- Why: a model for how the owner's keep and never picks should steer the generator over time.
+- What it changed: the keep and never weights in the organism generator brief. Nothing built.

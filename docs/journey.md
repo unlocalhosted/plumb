@@ -4075,6 +4075,24 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **Open:** the page uses system fonts; the site's Bricolage and Instrument Sans aren't shipped with it (about 100 KB).
 - **Media hooks:** before and after of the Welcome screen; a clip walking the stepper from Welcome to Set it up.
 
+### 36. An organism generator that borrows taste and draws in ours (2026-11-20, a brief)
+- **The itch:** the owner wants to pick one card and see it built several ways, "with certain way of thinking behind
+  it", like the procedural levels of Dead Cells, and fed by "tasteful" components from many libraries, without it
+  ending up "like something from material ui".
+- **How we found it:** a conversation, after the foundations brief had planned a layout generator but left open how
+  its candidates are made.
+- **The system behind it:** generating from nothing tends towards the average, which is the stock look. Copying
+  references brings their surface (shadows, outlines, blue buttons) in with their structure.
+- **What we chose and why:** arrange authored taste instead of generating it. References are captured as grammar
+  (jobs, order, hierarchy, rhythm, one named move), with every value relative, so no look is stored. A written
+  translation table turns each decision into the toy language; a decision with no row is dropped. The engine's own
+  judge, the tells, and a distance test against a pile of stock-library renders throw out anything generic. A round
+  trip (rebuild a reference from its grammar) proves the encoding keeps the taste before anything else is built.
+- **The fix and the proof:** none yet. The brief is [organism-generator.md](briefs/organism-generator.md), a draft
+  for sign-off; layer 2 (the round trip on five pricing cards) is its first real test.
+- **Media hooks:** a reference card beside its round-trip rebuild; a grid of six variants with their recipes; the
+  same variant before and after translation (stock look, then toys).
+
 ## Open gaps
 - **The mark was never tried among real neighbours** (a row of browser tabs, an npm page, a README header), only on empty tiles. Nobody outside has been asked whether the round leg reads as an R or leans towards a B.
 - Resizing: a size between your steps always lands on the nearest one; there is no way yet to keep an exact size as
