@@ -2649,6 +2649,10 @@ field is empty). The table of five writes, before and after. The Next table: eig
   pill, the pick a solid pink block. ··· is drawn the same way.
 - **Media hooks:** `bench/tells/shots/9-concern-menu-options.jpg`, `bench/tells/shots/10-concern-list.jpg`,
   `bench/tells/shots/11-more-list.png`.
+- **The right-hand list too:** "lets pick up the right side dropdown as well". ··· still drew History, Help and
+  Inspect with the grey line icons the owner had rejected ("icons are toys"). They are toys now: History the round
+  progress toy, Help the tooltip toy, Inspect the search lens (the pointer stays Accessible's, so no toy means two
+  things). `bench/tells/shots/12-more-list-toys.jpg`.
 - **Media hooks:** `bench/tells/shots/5-concerns-bar.jpg`.
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.

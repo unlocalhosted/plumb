@@ -66,6 +66,8 @@ const BAR_ICON = {
   x: '<svg class="x" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg>',
 };
 
+const TOOL_TOY = { history: 'progress', help: 'tooltip', pick: 'search' };
+
 const FIX_CSS_BASE = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   /* the old pieces this panel replaces stay out of sight */
   .bpp, .cg, .sel { display: none !important; }
@@ -671,7 +673,9 @@ export class FixPanel {
       return `<div class="menu" role="group" aria-label="${esc(B.more)}">`
         + (left ? row('setup', '', toyOf('checkbox'), B.setupOptional, `<b>${left}</b>`) + '<i class="sep"></i>' : '')
         + row('cleanup', '', toyOf('icon'), `${CLEANUP.bar} ${CLEANUP.barLong}`, '<kbd>C</kbd>')
-        + Object.entries(B.tools).map(([t, label]) => row('tool', ` data-tool="${t}"`, `<span class="gl">${BAR_ICON[t]}</span>`, label, '')).join('')
+        // the dock's tools as toys too (grey line icons were rejected: icons are toys): history goes round, help is a word
+        // about the thing under it, inspecting is a lens (the pointer is Accessible's)
+        + Object.entries(B.tools).map(([t, label]) => row('tool', ` data-tool="${t}"`, toyOf(TOOL_TOY[t] ?? 'icon'), label, '')).join('')
         + '</div>';
     }
     return '';
