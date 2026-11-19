@@ -121,7 +121,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** intent. I aim at the note and get a different element.
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u08-pin-points-through.jpg`
-- **Status:** fixed 9986555c · reopened (tester, 04:58): with Craft and polish picked, resting on either pin ("Padding looks bigger than it is", "Only left-over space between") for two seconds opens nothing at all. The pins now take the pointer, but a Design system note shape for the hero section ("py-24. This works out to 6rem.") lies on top of them: in the overlay, elementFromPoint at both pins returns that `path.hit`. Same cause as U7's first report: notes of a hidden concern still catch the pointer. `docs/qa/shots/2026-11-20/u08-reopened.jpg`
+- **Status:** fixed 9986555c · reopened (tester, 04:58): with Craft and polish picked, resting on either pin ("Padding looks bigger than it is", "Only left-over space between") for two seconds opens nothing at all. The pins now take the pointer, but a Design system note shape for the hero section ("py-24. This works out to 6rem.") lies on top of them: in the overlay, elementFromPoint at both pins returns that `path.hit`. Same cause as U7's first report: notes of a hidden concern still catch the pointer. `docs/qa/shots/2026-11-20/u08-reopened.jpg` · fixed again 5068ff8a: the pins' layer now stands above the zones as a whole (it lost to them while it was its own stacking context); resting on either pin opens its element's card with its note. · verified (tester, 05:36): with Craft and polish picked, resting on "Padding looks bigger than it is" opens the button's card with that note, and "Only left-over space between" opens the header's card with its note. `docs/qa/shots/2026-11-20/u08-verified.jpg`
 
 ### U9 · The X-ray card covers the Blueprint bar
 - **Where:** Blueprint, X-ray card on an element in the right half of the page (the "Get started" button).
@@ -309,7 +309,7 @@ How to read an issue, and what each one needs:
   terminal, and the panel doesn't help me get there.
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u24-cleanup-full.jpg`, `docs/qa/shots/2026-11-20/u24-cleanup-census.png`
-- **Status:** open
+- **Status:** partly fixed 0117b87a: the command's Copy button was there but laid out past the panel's edge (U25); it shows now. Still open: where to run the command (which folder), and whether the passes that don't need the whole site should open before the census
 
 ### U25 · Clean up's words and step names are cut off on the right
 - **Where:** Clean up panel.
@@ -322,7 +322,7 @@ How to read an issue, and what each one needs:
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u24-cleanup-census.png`; in the overlay, `.cu` is 520px wide and its
   `.body` 718px.
-- **Status:** fixing
+- **Status:** fixed 0117b87a
 
 ### U26 · While Clean up is open the Blueprint bar is gone, and the only visible button is Try again
 - **Where:** Clean up panel.
@@ -332,7 +332,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** acting. A person who doesn't think of Escape is stuck in front of a panel that does nothing.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u24-cleanup-full.jpg`
-- **Status:** open
+- **Status:** fixed 0117b87a (same cause as U25: Close was laid out past the panel's right edge; it shows now with its Esc key)
 
 ### U27 · History opens underneath the Blueprint bar
 - **Where:** ··· → History.
@@ -393,7 +393,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** trust. One of the two numbers is wrong, and I can't tell which.
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u31-alt-click.jpg`
-- **Status:** open
+- **Status:** fixed 5068ff8a: after an Alt+click the bar says "Nothing to fix on this element." (the words are in b882ad19, swept into another session's commit) · verified (tester, 05:37): Alt+click on the paragraph now says "Nothing to fix on this element." `docs/qa/shots/2026-11-20/u31-verified.jpg`
 
 ### U32 · Alt+click doesn't do what Help says it does
 - **Where:** Alt+click outside Blueprint; ··· → Help.
@@ -492,7 +492,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding. The list says there are 10 problems and the page shows none.
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u39-crafting-ds-no-pins.jpg`
-- **Status:** open
+- **Status:** fixed d3928478: every picked concern gets pins (they were craft only); on crafting-ui the one design-system note in view is named "Spacing not in your theme"
 
 ### U40 · Three identical "Line too heavy" pins in a row, with no way to tell which line
 - **Where:** Blueprint, Craft and polish, crafting-ui home page after scrolling one screen.
@@ -503,7 +503,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u40-crafting-craft-pins.jpg`
-- **Status:** open
+- **Status:** partly fixed 5068ff8a: pins keep below a sticky header. Still open: identical pins in a row (three "Line too heavy", five "Only left-over space between") with no way to tell them apart · the rest fixed d3928478: one pin per kind of note on screen, with how many (×3), at the topmost of its elements
 
 ### U41 · The fix in hand is under the app's sticky header, and its choice row covers the header
 - **Where:** Fix, crafting-ui home page, fix 1 of 10 "2 places: line too heavy".
@@ -517,7 +517,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding. I'm asked to choose a fix for a thing I can't see.
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u41-crafting-fix-under-header.jpg`
-- **Status:** fixed 3d132589 (the element comes in below the sticky header; the choice row weighs what it would hide and now sits beside the line, clear of the header and the heading)
+- **Status:** fixed 3d132589 (the element comes in below the sticky header; the choice row weighs what it would hide and now sits beside the line, clear of the header and the heading) · verified (tester, 05:40): on crafting-ui, fix 1 of 11 brings the cap-height line in below the sticky header, with the corner marks and the choice row beside it, clear of the header. `docs/qa/shots/2026-11-20/u41-verified.jpg`
 
 ### U42 · The fix for a heavy line is a hard-coded value
 - **Where:** same fix, "2 places: line too heavy. This 1px line is 2 pixels thick on a 2× screen."
@@ -622,7 +622,7 @@ How to read an issue, and what each one needs:
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u50-scoped-all-concerns-7.jpg`,
   `docs/qa/shots/2026-11-20/u50-hover-2-problems.jpg`, `docs/qa/shots/2026-11-20/u50-editor-7-bar-11.jpg`
-- **Status:** open
+- **Status:** partly fixed 5068ff8a: after an Alt+click the picker's first row says "This element", not "All concerns". Still open: the hover label, the editor and the bar count one element three ways (own notes, notes inside it, places), and there is no way back to the whole page but Esc then Alt+B · partly (tester, 05:38): the list now says "This element 11" (Design system 7, Craft 1, Anti-slop 3), so the label is right. Two parts remain: (1) Inspect's hover label on the same "Active users" card still says "Card div 2 problems"; (2) after picking the card, the bar opens on "Craft and polish 1" rather than the element's 11, so the bar's number is the smallest of the three. `docs/qa/shots/2026-11-20/u50-this-element-11.jpg`, `docs/qa/shots/2026-11-20/u50-hover-still-2.png`
 
 ### U51 · "Inspect an element" gives no sign that anything started
 - **Where:** ··· → Inspect an element.
@@ -673,4 +673,14 @@ How to read an issue, and what each one needs:
   its buttons will do to my code.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u27-verified-u54-history.jpg`
+- **Status:** open
+
+### U55 · A selected card's outline and grips are drawn over the concern list
+- **Where:** element editor with the "Active users" card selected, then the concern list opened from the bar.
+- **What I saw:** the card's blue selection outline and its white grips run across the open list, through the
+  "Design system check" and "Craft and polish" rows. The list is below the selection, not above it.
+- **What I expected:** the open list above everything on the page, the selection included.
+- **Why it hurts:** understanding. Lines cross the words I'm trying to read and pick from.
+- **Severity:** 3
+- **Evidence:** `docs/qa/shots/2026-11-20/u50-this-element-11.jpg`
 - **Status:** open
