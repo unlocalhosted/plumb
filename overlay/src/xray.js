@@ -199,18 +199,19 @@ export function xray(el, { tokenOf, origin = { left: 0, top: 0 }, room, source, 
   const above = r.top - m[0] - 12, beside = r.right + m[1] + 12;
   const tick = `stroke="${BLOCK.size}" stroke-width="1.25"`;
   draw += `<path d="M${r1(r.left)} ${r1(above)}H${r1(r.right)}M${r1(r.left)} ${r1(above - 4)}v8M${r1(r.right)} ${r1(above - 4)}v8M${r1(beside)} ${r1(r.top)}V${r1(r.bottom)}M${r1(beside - 4)} ${r1(r.top)}h8M${r1(beside - 4)} ${r1(r.bottom)}h8" ${tick} fill="none"/>`;
-  // the part in hand: drawn stronger, with one pill that says it and the key that changes it
+  // the part in hand: drawn stronger, with one pill that says it and the key that changes it. The words themselves are
+  // outlined, never filled: a tint laid over them made a button's label hard to read (U11)
   let said = '';
   if (zone) {
     const zj = judge(zone.family, zone.n), zx = zone.x - origin.left, zy = zone.y - origin.top, hue = BLOCK[blockOf(zone)];
-    draw += `<rect class="xr-zone" x="${r1(zx)}" y="${r1(zy)}" width="${r1(zone.w)}" height="${r1(zone.h)}" rx="${zone.family === 'radius' ? 4 : 2}" fill="${tintOf(hue, 24)}" stroke="${zj.off ? 'var(--pl-off)' : hue}" stroke-width="2"${zj.zero || zj.off ? ' stroke-dasharray="4 3"' : ''}/>`;
+    draw += `<rect class="xr-zone" x="${r1(zx)}" y="${r1(zy)}" width="${r1(zone.w)}" height="${r1(zone.h)}" rx="${zone.family === 'radius' ? 4 : 2}" fill="${blockOf(zone) === 'type' ? 'none' : tintOf(hue, 24)}" stroke="${zj.off ? 'var(--pl-off)' : hue}" stroke-width="2"${zj.zero || zj.off ? ' stroke-dasharray="4 3"' : ''}/>`;
     // the pill sits outside the element, beside the part: under it for a bottom or inside part, above for a top one
     const up = zone.side === 'top' || zone.prop === 'width';
     const py = up ? Math.min(zy, r.top - m[0] - 12) - 32 : Math.max(zy + zone.h, r.bottom + m[2]) + 8;
     said = `<span class="xr-say" style="left:${r1(zx + zone.w / 2)}px;top:${r1(py)}px"><b>${esc(zone.said)}</b> ${zone.family === 'radius' && zone.n > 500 ? '' : zj.n}${zj.t ? ` <i class="on">${esc(zj.t)}</i>` : zj.off ? ' <i class="off">off scale</i>' : ''}</span>`;
   }
   // parts in hand while a picker has them: drawn strong, no pill (the picker says it)
-  for (const lz of lit) { const lj = judge(lz.family, lz.n), hue = BLOCK[blockOf(lz)]; draw += `<rect class="xr-zone" x="${r1(lz.x - origin.left)}" y="${r1(lz.y - origin.top)}" width="${r1(lz.w)}" height="${r1(lz.h)}" rx="2" fill="${tintOf(hue, 24)}" stroke="${lj.off ? 'var(--pl-off)' : hue}" stroke-width="2"${lj.off ? ' stroke-dasharray="4 3"' : ''}/>`; }
+  for (const lz of lit) { const lj = judge(lz.family, lz.n), hue = BLOCK[blockOf(lz)]; draw += `<rect class="xr-zone" x="${r1(lz.x - origin.left)}" y="${r1(lz.y - origin.top)}" width="${r1(lz.w)}" height="${r1(lz.h)}" rx="2" fill="${blockOf(lz) === 'type' ? 'none' : tintOf(hue, 24)}" stroke="${lj.off ? 'var(--pl-off)' : hue}" stroke-width="2"${lj.off ? ' stroke-dasharray="4 3"' : ''}/>`; }
   const wSz = sizing(el, cs, 'w'), hSz = sizing(el, cs, 'h');
   // the rulers' numbers carry their verdict too: deep coral off your sizes, deep mint on one (with its name)
   const sz = (n) => { const v = judge('size', n); return v.off ? 'background:var(--pl-coral-ink)' : v.on ? 'background:var(--pl-mint-ink)' : ''; };
