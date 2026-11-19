@@ -26,7 +26,7 @@ test('no terminal: the 3 causes of a project that is not set up, then one way fo
   const { script, opened } = await opener(t);
   const first = run(['--root', root]);
   assert.equal(first.code, 0, first.stderr);
-  assertPlain(first.stdout, { next: 'Next: run npx plumber in a terminal to see this in your browser, or npx plumber --yes to set it up here.' });
+  assertPlain(first.stdout, { next: 'Next: run npx plumber init and answer a few questions, or npx plumber --yes to set it up here.' });
   // white is one cause, written 3 ways in 6 places, 2 of which render nothing, and the theme already names it
   assert.match(first.stdout, /^ {2}You wrote white 3 ways, in 6 places\. Your theme calls it on-accent\. 2 render nothing\.$/m);
   assert.match(first.stdout, /^ {2}You set text size 15px 2 ways, in 2 places\. The closest in your type scale is body \(16px\)\.$/m);
@@ -34,6 +34,8 @@ test('no terminal: the 3 causes of a project that is not set up, then one way fo
   // CI on a terminal and --no-open on a terminal say the same thing
   const same = (extra, args = []) => { const result = run(['--root', root, ...args], { PLUMBER_TERMINAL: '1', PLUMBER_OPENER: script, ...extra }); assert.equal(result.stdout.replace(/in \d+\.\ds/, ''), first.stdout.replace(/in \d+\.\ds/, '')); };
   same({ CI: 'true' });
+  // with the onboarding page held back (src/flags.ts), a terminal gets the same plain version and no page
+  same({});
   same({}, ['--no-open']);
   assert.equal(await opened(300), null);
 });

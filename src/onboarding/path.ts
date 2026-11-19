@@ -86,7 +86,7 @@ export function plainVersion(report: Report, setUp: boolean): string {
     if (setUp) lines.push(fresh ? `  ${count(fresh, 'new problem')} since you set up. ${open === 1 ? '1 cause is' : `${open} causes are`} open, the biggest:` : `  Nothing new since you set up. ${open === 1 ? '1 cause is' : `${open} causes are`} still open${open === 1 ? ':' : ', the biggest:'}`);
     for (const cause of causes) lines.push(wrap('  ' + sayCause(cause, report)));
   }
-  lines.push('', setUp ? 'Next: press Alt+B on your page to fix it there.' : onboardingPage() ? `Next: run ${runnerOf(report.root)} plumber in a terminal to see this in your browser, or ${runnerOf(report.root)} plumber --yes to set it up here.` : `Next: run ${runnerOf(report.root)} plumber init to choose your rules, or ${runnerOf(report.root)} plumber --yes to set it up here.`);
+  lines.push('', setUp ? 'Next: press Alt+B on your page to fix it there.' : onboardingPage() ? `Next: run ${runnerOf(report.root)} plumber in a terminal to see this in your browser, or ${runnerOf(report.root)} plumber --yes to set it up here.` : `Next: run ${runnerOf(report.root)} plumber init and answer a few questions, or ${runnerOf(report.root)} plumber --yes to set it up here.`);
   return lines.join('\n') + '\n';
 }
 

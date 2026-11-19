@@ -8,6 +8,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { opener, repo, run, start } from './helpers/bare-cli.mjs';
 
+// the page is held back from the release behind a switch (src/flags.ts); these tests are about the page
+process.env.PLUMBER_ONBOARDING = '1';
+
 async function scratch(t) {
   // under the OS temp folder, so no repository above it can change what Git says
   const root = await mkdtemp(join(tmpdir(), 'plumber-gate-'));

@@ -8,6 +8,9 @@ import { join } from 'node:path';
 import { project, check } from './helpers/causes-project.mjs';
 import { cli, env, opener, repo, run, start, strip } from './helpers/bare-cli.mjs';
 
+// the page is held back from the release behind a switch (src/flags.ts); these tests are about the page
+process.env.PLUMBER_ONBOARDING = '1';
+
 const terminal = (script) => ({ PLUMBER_TERMINAL: '1', PLUMBER_OPENER: script });
 
 test('bare plumber on a terminal prints the short report, opens the page, serves it and its numbers, and says nothing changed', { timeout: 120000 }, async (t) => {
@@ -35,8 +38,8 @@ test('bare plumber on a terminal prints the short report, opens the page, serves
     // real import lines only, not a usage example in a comment
     for (const [, dep] of (await res.text()).matchAll(/^(?:import|export)\b[^;]*?from '\.\/([\w-]+\.js)'/gm)) queue.push(dep);
   }
-  // the page is the lesson (overlay/src/lesson.js): its screens draw with Gravity and the review's model
-  assert.ok(seen.has('lesson.js') && seen.has('system-review.js') && seen.has('gravity.js') && seen.has('motion.js'), [...seen].join(', '));
+  // the page is the lesson (overlay/src/lesson.js): its screens build on the review's model and the named type ratios
+  assert.ok(seen.has('lesson.js') && seen.has('system-review.js') && seen.has('scale.js'), [...seen].join(', '));
   const done = await running.stop();
   assert.equal(done.code, 0, done.stderr);
   assert.match(done.stdout, /Press Ctrl\+C here when you're done\.\n\nNo changes made\.\n$/);
