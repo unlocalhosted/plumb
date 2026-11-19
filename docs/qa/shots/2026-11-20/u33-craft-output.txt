@@ -1,0 +1,429 @@
+React Plumber craft: 1 route, 108 elements read, 70 findings
+
+src/App.jsx:3:21  a11y/svg-name
+  This icon sits beside words and is not hidden from screen readers.
+  It is announced as a nameless graphic before the words that already say it.
+  Law: Modern Web Guidance: accessibility, 6. Inline SVGs, WCAG 1.1.1 Non-text Content, WCAG 4.1.2 Name, Role, Value
+  → Add aria-hidden="true": the words beside it already say it.
+
+src/App.jsx:4:32  craft/card-optical-padding
+  The first letters sit 22px from the top edge, 16px from the side.
+  The first line carries space above its capitals, so equal padding looks bigger on top.
+  Read more: https://plumber.unlocalhosted.dev/docs/rules#craft-card-optical-padding
+  → Take about 6px off the top padding, or trim the first line's box.
+
+src/App.jsx:5:37  a11y/heading-skip
+  An h3 follows an h1.
+  People who move by headings hear a level missing and look for what they skipped.
+  Law: Modern Web Guidance: accessibility, 1. Headings
+  → Make it an h2, and style it as you like.
+
+src/App.jsx:5:37  tells/emoji
+  💰 decorates these words.
+  It says nothing the words do not, and it changes look on every system.
+  Law: unslop-ui U11 Decorative emojis and icons
+  → Delete the emoji. Keep an icon only where it is the control itself.
+
+src/App.jsx:6:43  tells/narrating
+  "This card shows" describes what is on the screen.
+  People can see it. Keep the words they need to act.
+  Law: unslop-ui U4 Botsplaining
+  → Delete it. Keep words that say what to do or what happened.
+
+src/App.jsx:7:33  tells/flavour-badge
+  "Live" is set as a badge.
+  A badge should mean something the app tracks, like a stream that is live. Added for flavour, it teaches people to ignore badges.
+  Law: unslop-ui U9 Badges and pills without real state
+  → Delete the badge, unless the app knows this is true for this item. Then show it only when it is.
+
+src/App.jsx:12:7  craft/declared-gap
+  These parts are 963px apart only because that much space is left over. A longer title closes it.
+  The distance between neighbours is a decision. Left to whatever space remains, it closes to nothing.
+  Read more: https://plumber.unlocalhosted.dev/docs/rules#craft-declared-gap
+  → Add `gap-s2`: keeps a set distance between the parts, whatever is left over.
+
+src/App.jsx:14:9  tells/status-dot
+  A small dot pulses next to these words.
+  A dot says "this is live". If nothing real drives it, it claims something untrue.
+  Law: unslop-ui U10 Status dots
+  → Delete the dot, unless a real status drives it. Then give it a name, like aria-label="Connected".
+
+src/App.jsx:16:11  tells/status-chain
+  3 facts are strung together with dots or bars.
+  Nobody reads a chain. Keep the one fact people act on and put the rest where it is needed.
+  Law: unslop-ui U6 Status strings
+  → Keep the one fact people act on. Move the others to where they matter, or drop them.
+
+src/App.jsx:20:9  tells/eyebrow
+  "Introducing Ledger" sits in small capitals above the heading.
+  The heading already says what this part is. The label only repeats it, louder.
+  Law: unslop-ui U1 Eyebrow labels
+  → Delete the label. If the heading needs it to make sense, rewrite the heading.
+
+src/App.jsx:22:9  tells/em-dash
+  An em dash in these words.
+  Generated copy leans on the dash. A full stop or a comma reads as written by a person.
+  Law: pstack unslop 13 Em dashes
+  → End the sentence there, or use a comma.
+
+src/App.jsx:22:9  tells/stock-words
+  "seamlessly" is a stock word.
+  It could sit on any product's page. Say what this one does.
+  Law: pstack unslop 7 AI vocabulary
+  → Say what it does in plain words, or cut the word.
+
+src/App.jsx:23:9  craft/trim-leading
+  12px of padding looks like 18.7px. The line adds its own space.
+  A text box carries invisible space above and below the letters.
+  Read more: https://plumber.unlocalhosted.dev/docs/rules#craft-trim-leading
+  → Add `[text-box:trim-both_cap_alphabetic]`: the padding measured from the letters.
+
+src/App.jsx:23:9  tells/emoji
+  🚀 decorates these words.
+  It says nothing the words do not, and it changes look on every system.
+  Law: unslop-ui U11 Decorative emojis and icons
+  → Delete the emoji. Keep an icon only where it is the control itself.
+
+src/App.jsx:24:9  tells/narrating
+  "Click the button above" describes what is on the screen.
+  People can see it. Keep the words they need to act.
+  Law: unslop-ui U4 Botsplaining
+  → Delete it. Keep words that say what to do or what happened.
+
+src/App.jsx:28:11  tells/numbering
+  "01 //" numbers something that has no order.
+  Numbers tell people to go in sequence. If the parts can be read in any order, they are noise.
+  Law: unslop-ui U2 Decorative numbering
+  → Delete the number, unless people really follow these in order. Then use a numbered list.
+
+src/App.jsx:29:11  tells/eyebrow
+  "Feature" sits in small capitals above the heading.
+  The heading already says what this part is. The label only repeats it, louder.
+  Law: unslop-ui U1 Eyebrow labels
+  → Delete the label. If the heading needs it to make sense, rewrite the heading.
+
+src/App.jsx:30:11  a11y/heading-skip
+  An h3 follows an h1.
+  People who move by headings hear a level missing and look for what they skipped.
+  Law: Modern Web Guidance: accessibility, 1. Headings
+  → Make it an h2, and style it as you like.
+
+src/App.jsx:30:46  tells/flavour-badge
+  "NEW" is set as a badge.
+  A badge should mean something the app tracks, like a stream that is live. Added for flavour, it teaches people to ignore badges.
+  Law: unslop-ui U9 Badges and pills without real state
+  → Delete the badge, unless the app knows this is true for this item. Then show it only when it is.
+
+src/App.jsx:34:11  tells/numbering
+  "02 //" numbers something that has no order.
+  Numbers tell people to go in sequence. If the parts can be read in any order, they are noise.
+  Law: unslop-ui U2 Decorative numbering
+  → Delete the number, unless people really follow these in order. Then use a numbered list.
+
+src/App.jsx:35:11  tells/eyebrow
+  "Feature" sits in small capitals above the heading.
+  The heading already says what this part is. The label only repeats it, louder.
+  Law: unslop-ui U1 Eyebrow labels
+  → Delete the label. If the heading needs it to make sense, rewrite the heading.
+
+src/App.jsx:36:11  tells/emoji
+  ✨ decorates these words.
+  It says nothing the words do not, and it changes look on every system.
+  Law: unslop-ui U11 Decorative emojis and icons
+  → Delete the emoji. Keep an icon only where it is the control itself.
+
+src/App.jsx:36:49  tells/flavour-badge
+  "AI" is set as a badge.
+  A badge should mean something the app tracks, like a stream that is live. Added for flavour, it teaches people to ignore badges.
+  Law: unslop-ui U9 Badges and pills without real state
+  → Delete the badge, unless the app knows this is true for this item. Then show it only when it is.
+
+src/App.jsx:37:11  tells/em-dash
+  An em dash in these words.
+  Generated copy leans on the dash. A full stop or a comma reads as written by a person.
+  Law: pstack unslop 13 Em dashes
+  → End the sentence there, or use a comma.
+
+src/App.jsx:37:11  tells/stock-words
+  "leverage" is a stock word.
+  It could sit on any product's page. Say what this one does.
+  Law: pstack unslop 7 AI vocabulary
+  → Say what it does in plain words, or cut the word.
+
+src/App.jsx:40:11  tells/numbering
+  "03 //" numbers something that has no order.
+  Numbers tell people to go in sequence. If the parts can be read in any order, they are noise.
+  Law: unslop-ui U2 Decorative numbering
+  → Delete the number, unless people really follow these in order. Then use a numbered list.
+
+src/App.jsx:41:11  tells/eyebrow
+  "Feature" sits in small capitals above the heading.
+  The heading already says what this part is. The label only repeats it, louder.
+  Law: unslop-ui U1 Eyebrow labels
+  → Delete the label. If the heading needs it to make sense, rewrite the heading.
+
+src/App.jsx:53:7  tells/eyebrow
+  "Polar expeditions" sits in small capitals above the heading.
+  The heading already says what this part is. The label only repeats it, louder.
+  Law: unslop-ui U1 Eyebrow labels
+  → Delete the label. If the heading needs it to make sense, rewrite the heading.
+
+src/App.jsx:54:9  tells/status-dot
+  A small coloured dot sits next to these words.
+  A dot says "this is live". If nothing real drives it, it claims something untrue.
+  Law: unslop-ui U10 Status dots
+  → Delete the dot, unless a real status drives it. Then give it a name, like aria-label="Connected".
+
+src/App.jsx:57:7  a11y/heading-h1-many
+  This page has 4 main headings.
+  The h1 is how someone learns what the page is; with several, none of them says it.
+  Law: Modern Web Guidance: accessibility, 1. Headings
+  → Keep one h1 for the page; make this an h2.
+
+src/App.jsx:57:7  craft/weight-levels
+  Weight 600 appears here, but the page mostly uses 400, 500, 700. Use one of those.
+  Two or three weights make a clear hierarchy; every extra level weakens the others.
+  Law: Law of similarity
+  Read more: https://plumber.unlocalhosted.dev/docs/rules#craft-weight-levels
+  → Your theme has no weight step for this. Add one, then use it here.
+
+src/App.jsx:62:15  tells/icon-tile
+  An icon sits in a tinted square above the words.
+  The tile repeats on every item and tells them apart by colour alone. The names already do that.
+  Law: unslop-ui U11 Decorative emojis and icons
+  → Delete the tile and its icon. If the icon says something the name does not, keep it plain beside the name.
+
+src/App.jsx:76:9  tells/eyebrow
+  "Overview" sits in small capitals above the heading.
+  The heading already says what this part is. The label only repeats it, louder.
+  Law: unslop-ui U1 Eyebrow labels
+  → Delete the label. If the heading needs it to make sense, rewrite the heading.
+
+src/App.jsx:77:9  a11y/heading-h1-many
+  This page has 4 main headings.
+  The h1 is how someone learns what the page is; with several, none of them says it.
+  Law: Modern Web Guidance: accessibility, 1. Headings
+  → Keep one h1 for the page; make this an h2.
+
+src/App.jsx:77:9  craft/weight-levels
+  Weight 600 appears here, but the page mostly uses 400, 500, 700. Use one of those.
+  Two or three weights make a clear hierarchy; every extra level weakens the others.
+  Law: Law of similarity
+  Read more: https://plumber.unlocalhosted.dev/docs/rules#craft-weight-levels
+  → Your theme has no weight step for this. Add one, then use it here.
+
+src/App.jsx:81:78  craft/contrast
+  Contrast 52 at 16px. Small text needs 60.
+  Measured with APCA, which tracks what people can actually read.
+  Read more: https://plumber.unlocalhosted.dev/docs/rules#craft-contrast
+  → Darken the text, or make it bigger or bolder.
+
+src/App.jsx:82:75  tells/status-dot
+  A small dot pulses next to these words.
+  A dot says "this is live". If nothing real drives it, it claims something untrue.
+  Law: unslop-ui U10 Status dots
+  → Delete the dot, unless a real status drives it. Then give it a name, like aria-label="Connected".
+
+src/App.jsx:83:67  tells/status-chain
+  3 facts are strung together with dots or bars.
+  Nobody reads a chain. Keep the one fact people act on and put the rest where it is needed.
+  Law: unslop-ui U6 Status strings
+  → Keep the one fact people act on. Move the others to where they matter, or drop them.
+
+src/App.jsx:85:7  craft/card-optical-padding
+  The first letters sit 23px from the top edge, 16px from the side.
+  The first line carries space above its capitals, so equal padding looks bigger on top.
+  Read more: https://plumber.unlocalhosted.dev/docs/rules#craft-card-optical-padding
+  → Take about 7px off the top padding, or trim the first line's box.
+
+src/App.jsx:85:7  html/figure-caption
+  This figure has no caption.
+  A figure is for something with a caption. Without one it is a plain image.
+  Law: Modern Web Guidance: html, 2. Content Grouping and Attribution
+  → Add a <figcaption>, or drop the <figure> around the image.
+
+src/App.jsx:86:9  tells/chart-type-title
+  The title says it is a bar chart.
+  People can see it is a chart. The title should say what it measures.
+  Law: unslop-ui U12 Chart titles that name the chart type
+  → Name what it measures, like "Monthly revenue".
+
+src/App.jsx:87:9  tells/reading-instructions
+  "Each bar represents" tells people how to read what they can see.
+  If it needs instructions, change the thing. If it does not, cut them.
+  Law: unslop-ui U13 Reading instructions
+  → Delete it.
+
+src/App.jsx:99:9  craft/contrast
+  Contrast 45 at 12px. Small text needs 60.
+  Measured with APCA, which tracks what people can actually read.
+  Read more: https://plumber.unlocalhosted.dev/docs/rules#craft-contrast
+  → Darken the text, or make it bigger or bolder.
+
+src/App.jsx:99:9  tells/eyebrow
+  "Deployments" sits in small capitals above the heading.
+  The heading already says what this part is. The label only repeats it, louder.
+  Law: unslop-ui U1 Eyebrow labels
+  → Delete the label. If the heading needs it to make sense, rewrite the heading.
+
+src/App.jsx:100:9  craft/weight-levels
+  Weight 600 appears here, but the page mostly uses 400, 500, 700. Use one of those.
+  Two or three weights make a clear hierarchy; every extra level weakens the others.
+  Law: Law of similarity
+  Read more: https://plumber.unlocalhosted.dev/docs/rules#craft-weight-levels
+  → Your theme has no weight step for this. Add one, then use it here.
+
+src/App.jsx:100:65  craft/weight-levels
+  Weight 600 appears here, but the page mostly uses 400, 500, 700. Use one of those.
+  Two or three weights make a clear hierarchy; every extra level weakens the others.
+  Law: Law of similarity
+  Read more: https://plumber.unlocalhosted.dev/docs/rules#craft-weight-levels
+  → Use weight 500, one the page already uses.
+
+src/App.jsx:100:9  tells/emoji
+  🚀 decorates these words.
+  It says nothing the words do not, and it changes look on every system.
+  Law: unslop-ui U11 Decorative emojis and icons
+  → Delete the emoji. Keep an icon only where it is the control itself.
+
+src/App.jsx:100:65  tells/flavour-badge
+  "NEW" is set as a badge.
+  A badge should mean something the app tracks, like a stream that is live. Added for flavour, it teaches people to ignore badges.
+  Law: unslop-ui U9 Badges and pills without real state
+  → Delete the badge, unless the app knows this is true for this item. Then show it only when it is.
+
+src/App.jsx:101:9  tells/narrating
+  "This section lists" describes what is on the screen.
+  People can see it. Keep the words they need to act.
+  Law: unslop-ui U4 Botsplaining
+  → Delete it. Keep words that say what to do or what happened.
+
+src/App.jsx:103:42  a11y/label-on-generic
+  This <span> has a label and no role.
+  A plain box has no name to give: most screen readers never read the label.
+  Law: Modern Web Guidance: accessibility, 3. Naming mechanisms, WCAG 1.3.1 Info and Relationships
+  → Give it the role it plays (group, region, img), or move the label to the control it is for.
+
+src/App.jsx:110:9  craft/baseline-align
+  Two sizes, centred, so their baselines are 2px apart. Align them.
+  Tops and centres of different sizes don’t line up to the eye; baselines do.
+  Read more: https://plumber.unlocalhosted.dev/docs/rules#craft-baseline-align
+  → Change `items-center` to `items-baseline`: one baseline for both sizes.
+
+src/App.jsx:110:9  tells/status-dot
+  A small dot pulses next to these words.
+  A dot says "this is live". If nothing real drives it, it claims something untrue.
+  Law: unslop-ui U10 Status dots
+  → Delete the dot, unless a real status drives it. Then give it a name, like aria-label="Connected".
+
+src/App.jsx:124:7  tells/hue-gradient
+  This surface fades from one hue to another.
+  A two-hue gradient is the first thing generated pages reach for. A solid colour holds the brand better.
+  Law: unslop-ui U17 Gradients and glows
+  → Use one solid colour, or a gradient within one hue.
+
+src/App.jsx:125:9  craft/weight-levels
+  Weight 900 appears here, but the page mostly uses 400, 500, 700. Use one of those.
+  Two or three weights make a clear hierarchy; every extra level weakens the others.
+  Law: Law of similarity
+  Read more: https://plumber.unlocalhosted.dev/docs/rules#craft-weight-levels
+  → Your theme has no weight step for this. Add one, then use it here.
+
+src/App.jsx:125:9  tells/heavy-weight
+  Set at weight 900.
+  Size and colour carry the order better. Weights of 800 and 900 shout.
+  Law: unslop-ui U19 Extra-heavy weights
+  → Use 600, and let size and colour carry the order.
+
+src/App.jsx:126:9  tells/hue-gradient
+  These words are filled with a gradient from one hue to another.
+  A two-hue gradient is the first thing generated pages reach for. A solid colour holds the brand better.
+  Law: unslop-ui U17 Gradients and glows
+  → Fill the words with one solid colour.
+
+src/App.jsx:127:9  craft/layered-shadow
+  One 30px blur looks like a smudge. Stack a few smaller ones.
+  Real shadows have a sharp part and a soft part.
+  Read more: https://plumber.unlocalhosted.dev/docs/rules#craft-layered-shadow
+  → Change `shadow-[0_0_30px_rgba(168,85,247,0.6)]` to `shadow-[0_1px_4px_rgb(168_85_247_/_0.18),0_2px_8px_rgb(168_85_247_/_0.16),0_4px_15px_rgb(168_85_247_/_0.12),0_8px_30px_rgb(168_85_247_/_0.04)]`: layered like real light.
+
+src/App.jsx:127:9  craft/trim-leading
+  8px of padding looks like 14.7px. The line adds its own space.
+  A text box carries invisible space above and below the letters.
+  Read more: https://plumber.unlocalhosted.dev/docs/rules#craft-trim-leading
+  → Add `[text-box:trim-both_cap_alphabetic]`: the padding measured from the letters.
+
+src/App.jsx:127:9  tells/glow
+  A 30px coloured glow surrounds this.
+  A glow lifts it with no light to explain it. A soft neutral shadow or a border does the job.
+  Law: unslop-ui U17 Gradients and glows
+  → Use a soft neutral shadow, like 0 1px 2px rgb(0 0 0 / 0.05), or a hairline border.
+
+src/App.jsx:130:9  craft/card-optical-padding
+  The first letters sit 31px from the top edge, 24px from the side.
+  The first line carries space above its capitals, so equal padding looks bigger on top.
+  Read more: https://plumber.unlocalhosted.dev/docs/rules#craft-card-optical-padding
+  → Take about 7px off the top padding, or trim the first line's box.
+
+src/App.jsx:130:9  tells/hover-grow
+  This grows to 1.05× when the pointer is over it.
+  A card that jumps at the pointer feels busy. A colour or shadow change is enough to say it can be clicked.
+  Law: unslop-ui U20 Decorative motion
+  → Drop the grow. Change the border, shadow or background on hover instead.
+
+src/App.jsx:130:9  tells/transition-all
+  Every property here animates when it changes.
+  Size and layout changes slide when they should snap, and the browser does extra work. Name the properties that should move.
+  Law: unslop-ui U20 Decorative motion
+  → Name the properties that should move, like transition-property: color, background-color.
+
+src/App.jsx:131:11  craft/weight-levels
+  Weight 600 appears here, but the page mostly uses 400, 500, 700. Use one of those.
+  Two or three weights make a clear hierarchy; every extra level weakens the others.
+  Law: Law of similarity
+  Read more: https://plumber.unlocalhosted.dev/docs/rules#craft-weight-levels
+  → Your theme has no weight step for this. Add one, then use it here.
+
+src/App.jsx:133:85  craft/weight-levels
+  Weight 600 appears here, but the page mostly uses 400, 500, 700. Use one of those.
+  Two or three weights make a clear hierarchy; every extra level weakens the others.
+  Law: Law of similarity
+  Read more: https://plumber.unlocalhosted.dev/docs/rules#craft-weight-levels
+  → Your theme has no weight step for this. Add one, then use it here.
+
+src/App.jsx:145:29  craft/card-optical-padding
+  The first letters sit 23px from the top edge, 16px from the side.
+  The first line carries space above its capitals, so equal padding looks bigger on top.
+  Read more: https://plumber.unlocalhosted.dev/docs/rules#craft-card-optical-padding
+  → Take about 7px off the top padding, or trim the first line's box.
+
+src/App.jsx:154:5  a11y/main-many
+  This page has 2 main regions.
+  "Skip to main content" has one place to go.
+  Law: Modern Web Guidance: accessibility, 1. Landmarks, WCAG 1.3.1 Info and Relationships
+  → Keep one main; make this a section or a div.
+
+src/App.jsx:155:7  craft/declared-gap
+  These parts are 1050px apart only because that much space is left over. A longer title closes it.
+  The distance between neighbours is a decision. Left to whatever space remains, it closes to nothing.
+  Read more: https://plumber.unlocalhosted.dev/docs/rules#craft-declared-gap
+  → Add `gap-s6`: keeps a set distance between the parts, whatever is left over.
+
+src/App.jsx:156:9  a11y/heading-h1-many
+  This page has 4 main headings.
+  The h1 is how someone learns what the page is; with several, none of them says it.
+  Law: Modern Web Guidance: accessibility, 1. Headings
+  → Keep one h1 for the page; make this an h2.
+
+src/App.jsx:156:9  craft/weight-levels
+  Weight 600 appears here, but the page mostly uses 400, 500, 700. Use one of those.
+  Two or three weights make a clear hierarchy; every extra level weakens the others.
+  Law: Law of similarity
+  Read more: https://plumber.unlocalhosted.dev/docs/rules#craft-weight-levels
+  → Your theme has no weight step for this. Add one, then use it here.
+
+src/App.jsx:157:9  craft/trim-leading
+  4px of padding looks like 10.7px. The line adds its own space.
+  A text box carries invisible space above and below the letters.
+  Read more: https://plumber.unlocalhosted.dev/docs/rules#craft-trim-leading
+  → Add `[text-box:trim-both_cap_alphabetic]`: the padding measured from the letters.

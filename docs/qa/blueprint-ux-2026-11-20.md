@@ -131,7 +131,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** acting. The way out (Close) and the main action (Fix) are hidden while a card is open.
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u06-button-shows-heading-note.jpg`
-- **Status:** fixing
+- **Status:** fixed fa900ba3
 
 ### U10 · The padding and margin numbers in the card read as pairs of random numbers
 - **Where:** X-ray card, the box drawing (Margin, Padding).
@@ -165,7 +165,7 @@ How to read an issue, and what each one needs:
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u12-card-before-reach.jpg` (before),
   `docs/qa/shots/2026-11-20/u12-card-after-click.jpg` (after the click)
-- **Status:** open
+- **Status:** fixed fa900ba3 (same cause as U9: the card was placed at a guessed height, then grew)
 
 ### U13 · One Escape closes the agent note and all of Blueprint
 - **Where:** Blueprint, "Note for your agent" box (from Ask your agent).
@@ -404,4 +404,79 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** intent. I expect to read problems and get a panel that can write to my code with Enter.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u31-alt-click.jpg`, `docs/qa/shots/2026-11-20/u28-help.jpg`
+- **Status:** open
+
+### U33 · Every "Read more" link in the CLI goes to a site that doesn't exist
+- **Where:** `plumber craft` text output.
+- **What I did:** ran `node dist/cli.js craft --url http://127.0.0.1:4340/ --no-probe --no-pairs --root
+  fixtures/.tells-app` and followed a "Read more" link.
+- **What I saw:** findings end with "Read more: https://plumber.unlocalhosted.dev/docs/rules#craft-…". The host
+  doesn't resolve: `curl https://plumber.unlocalhosted.dev/docs/rules` exits 6 (could not resolve host), and
+  `dig +short plumber.unlocalhosted.dev` and `dig +short unlocalhosted.dev` print nothing. The same machine reaches
+  npmjs.com.
+- **What I expected:** a link that opens, or no link until the page exists.
+- **Why it hurts:** DX and trust. The first link a developer clicks is dead.
+- **Severity:** 2
+- **Evidence:** `docs/qa/shots/2026-11-20/u33-craft-output.txt` (the run's text output); the curl and dig results
+  above.
+- **Status:** open
+
+### U34 · The weight note tells me to use an existing weight, then to add a new one
+- **Where:** `plumber craft`, rule craft/weight-levels (8 findings on this page).
+- **What I saw:** "Weight 600 appears here, but the page mostly uses 400, 500, 700. Use one of those." followed by
+  the action "→ Your theme has no weight step for this. Add one, then use it here."
+- **What I expected:** one direction: pick 500 or 700 (and say which), or add a step, not both.
+- **Why it hurts:** acting. The two lines contradict each other, so the developer has to make the call the tool was
+  asked to make.
+- **Severity:** 3
+- **Evidence:** `docs/qa/shots/2026-11-20/u33-craft-output.txt`, the finding at `src/App.jsx:156:9`.
+- **Status:** open
+
+### U35 · The page and the CLI count the same page differently
+- **Where:** Blueprint on the Ledger screen vs `plumber craft` on the same URL.
+- **What I saw:** the CLI: "1 route, 108 elements read, 70 findings". Blueprint: 197 notes (Craft 18, Accessible 12,
+  Anti-slop 42, Design system 125). Without design system that is 72, not 70, and the CLI never says it leaves the
+  design system out.
+- **What I expected:** the CLI's first line to say what it counted ("70 craft, accessibility and anti-slop
+  findings; design system: run plumber check"), and the two tools to agree on the rest.
+- **Why it hurts:** trust and DX. A developer who checks one against the other finds two numbers and no reason.
+- **Severity:** 3
+- **Evidence:** `docs/qa/shots/2026-11-20/u33-craft-output.txt` (first line), `docs/qa/shots/2026-11-20/u18-counts-197.png`.
+- **Status:** open
+
+### U36 · The JSON output says everything twice
+- **Where:** `plumber craft --json`.
+- **What I saw:** each finding carries `because` and `why` with the same text, and `action` and `fix` with the same
+  text. The 70 findings also appear twice, at the top level and under `routes[0].findings`. The file is 261 KB for
+  one page.
+- **What I expected:** one field per meaning, findings listed once (or the route list pointing at them by key).
+- **Why it hurts:** DX. A developer writing a script against it has to guess which field is the real one.
+- **Severity:** 4
+- **Evidence:** `node dist/cli.js craft --url http://127.0.0.1:4340/ --json --no-probe --no-pairs --root
+  fixtures/.tells-app` → keys `schemaVersion, tool, root, spec, routes, findings`; first finding has
+  `"because"` = `"why"` and `"action"` = `"fix"`.
+- **Status:** open
+
+### U37 · The README describes a Blueprint bar that has changed
+- **Where:** README, "Blueprint: fixing" and "Inspect".
+- **What I saw:** "A bar says how many problems the page has, with **Fix** and **Clean up**." Clean up is now under
+  ···, and the bar leads with the concern picker, which the README doesn't mention. "Alt + click · Shows that
+  element's problems in Blueprint" doesn't match what Alt+click does (U32). The GIF's description talks about "heat"
+  and a "fix panel" with "Take and Apply", which the bar no longer has.
+- **What I expected:** the README to match the bar a new user will see.
+- **Why it hurts:** DX. The first thing a developer reads doesn't match the first thing they see.
+- **Severity:** 3
+- **Evidence:** `README.md` lines 21, 82, 88.
+- **Status:** open
+
+### U38 · On the dev server, /__plumb/system is raw JSON, and nothing in the overlay leads to the project page
+- **Where:** `http://127.0.0.1:4340/__plumb/system`, and the overlay's ··· list.
+- **What I saw:** the address prints a wall of JSON (steps, strays, places). The project page (how Plumber read my
+  design system) is only served by running `npx plumber` in a terminal; the overlay has no link to it.
+- **What I expected:** a way from the overlay to the project page, or the dev server serving the page itself at a
+  readable address.
+- **Why it hurts:** acting and DX. From the app I can't reach the page that explains my own tokens.
+- **Severity:** 3
+- **Evidence:** `docs/qa/shots/2026-11-20/u38-system-json.jpg`; `overlay/src/project-page.js` header says "The CLI
+  serves it".
 - **Status:** open
