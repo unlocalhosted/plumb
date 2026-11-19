@@ -93,6 +93,7 @@ const FIX_CSS_BASE = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   .fx .one .onav { display: inline-flex; align-items: center; gap: 2px; font: 500 12px/1 var(--pl-mono); color: var(--pl-ink-2); flex: none; }
   .fx .one .onav button { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; font-size: 16px; color: var(--pl-ink-2); } /* big enough to hit (U46) */
   .fx .one .onav button:hover { background: var(--pl-paper-2); }
+  .fx .one .onav button:disabled { opacity: .35; cursor: default; background: none; } /* pale is for what is not there */
   .fx .one .tb { flex: none; }
   .fx .one .passes { display: inline-flex; align-items: center; gap: 6px; padding: 0 4px; flex: none; }
   .fx .one .ps { position: relative; display: block; width: 22px; height: 22px; transition: opacity 240ms var(--pl-ease-out), scale 320ms var(--pl-spring-pop), filter 240ms var(--pl-ease-out); }
@@ -823,6 +824,8 @@ export class FixPanel {
   }
   skip(by) {
     if (!this.#holding) return;
+    // back from the first fix stays on it: it wrapped to the last note at the foot of the page (U47)
+    if (by < 0 && this.#at <= 0) return;
     const g = this.#cause();
     if (g) this.#unpreviewToken(g);
     this.#host.release();
@@ -1172,7 +1175,7 @@ export class FixPanel {
       // a craft finding's name carries an "i": its rule's page, where the why is told in full
       const docs = docsUrl(mark.rule), what = FIX.what(mark);
       const info = docs ? `<a class="info" href="${esc(docs)}" target="_blank" rel="noopener" title="${esc(FIX.why)} · I" aria-keyshortcuts="I" aria-label="${esc(FIX.whyLabel(what))}"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.25"/><path d="M8 7.25v4"/><circle class="tittle" cx="8" cy="4.9" r=".9"/></svg></a>` : '';
-      const head = `<div class="cause"><i class="dot"></i><span class="cls">${esc(nameOf(g))}</span><span class="nav"><button class="prev" aria-label="Previous fix">‹</button>${esc(FIX.position(g, live, noteOf))}<button class="next" aria-label="Next fix">›</button></span><span class="what">${[what, ...FIX.places(placesOf(g), drawnOf(g, this.#host.scope?.()).here, !!this.#host.scope?.()).split(' · ')].map((part, i) => `<span>${esc(part)}${i ? '' : info}</span>`).join(' · ')}</span></div>`;
+      const head = `<div class="cause"><i class="dot"></i><span class="cls">${esc(nameOf(g))}</span><span class="nav"><button class="prev" aria-label="Previous fix"${this.#at > 0 ? '' : ' disabled'}>‹</button>${esc(FIX.position(g, live, noteOf))}<button class="next" aria-label="Next fix">›</button></span><span class="what">${[what, ...FIX.places(placesOf(g), drawnOf(g, this.#host.scope?.()).here, !!this.#host.scope?.()).split(' · ')].map((part, i) => `<span>${esc(part)}${i ? '' : info}</span>`).join(' · ')}</span></div>`;
       const file = (f) => esc(String(f ?? '').split('/').slice(-2).join('/'));
       const adds = (name, value, f) => `<div class="hint"><code>${esc(name)}: ${esc(value)}</code> in <code>${file(f)}</code></div>`;
       let middle = '', canTake = false;
@@ -1239,7 +1242,7 @@ export class FixPanel {
         : `${now != null && now !== '' ? `<span class="pl-pill" data-hue="coral">${esc(String(now))}</span> ` : ''}${esc(framework ? (same ? FIX.frameworkSame(nowPx, same.cls ?? same.label) : nowPx && isClass && tokens.length && prop ? FIX.frameworkOff(nowPx, prop, listOf(tokens.filter((t) => t !== nowPx))) : tokens.length && prop ? `isn’t one of your ${prop} tokens: ${listOf(tokens)}.` : `comes from Tailwind’s defaults. ${FIX.frameworkWhy}`) : tokens.length && prop ? `isn’t one of your ${prop} tokens: ${listOf(tokens)}.` : prop ? `isn’t one of your ${prop} tokens.`
           // no property word: say the value against your steps, never the headline again
           : /by-value|matches/.test(mark.rule ?? '') ? 'is hard-coded. Your theme has a token with this value.' : tokens.length ? `isn’t one of your steps: ${listOf(tokens)}.` : 'isn’t in your theme.')}`;
-      const nav = `<span class="onav"><button class="prev" aria-label="Previous fix">‹</button><span>${esc(FIX.position(g, live, noteOf))}</span><button class="next" aria-label="Next fix">›</button></span>`;
+      const nav = `<span class="onav"><button class="prev" aria-label="Previous fix"${this.#at > 0 ? '' : ' disabled'}>‹</button><span>${esc(FIX.position(g, live, noteOf))}</span><button class="next" aria-label="Next fix">›</button></span>`;
       html = `<div class="one"${slide ? '' : ' style="animation:none"'}><i class="ic big">${toyFor(mark, kindNow)}</i><span class="lines"><span class="hl">${esc(sayLine)}${info}</span><span class="dt">${moreLine}</span></span>`
         + `<span class="sep"></span>${nav}${button(CLEANUP.bar, { cls: 'sm quiet cleanup', attrs: 'aria-keyshortcuts="c"', icon: toyOf('icon') })}</div>`;
       // the soft buttons replace the old ones in the choice: Use (pink, ↵), Keep and Skip (quiet)
