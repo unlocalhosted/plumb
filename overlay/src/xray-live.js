@@ -175,7 +175,8 @@ export function mountXray(o) {
     const n = el && o.noteOf?.(el);
     if (!n?.name) return '';
     const { name, advice, rule } = n;
-    const words = [...el.childNodes].some((n) => n.nodeType === 3 && n.data.trim());
+    // Edit the words leads only a note about the words (an em dash, a stock word); a padding note is your agent's (U30)
+    const words = n.words && [...el.childNodes].some((t) => t.nodeType === 3 && t.data.trim());
     const b = (act, label, main) => `<button type="button" class="na${main ? ' main' : ''}" data-act="${act}">${label}</button>`;
     return `<div class="nt" data-rule="${esc(rule)}"><b>${esc(name)}</b><span>${esc(advice)}</span></div><div class="nas">`
       + (words && o.editWords ? b('edit', 'Edit the words', true) + b('agent', 'Ask your agent') : b('agent', 'Ask your agent', true))
