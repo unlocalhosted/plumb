@@ -136,6 +136,17 @@ function Surface() {
   );
 }
 
+// heading and subtitle pairs the meaning test never saw: three say it again (R), three add a fact (F)
+function Settings() {
+  const rows = [['Appearance', 'Customize how the app looks.'], ['Language', 'Choose your preferred language.'], ['Email', 'Manage your email settings.'],
+    ['Sessions', 'Signed in on 2 devices.'], ['Data retention', 'Deleted items stay in the trash until an admin empties it.'], ['Danger zone', 'Deleting the workspace removes it for everyone.']];
+  return (
+    <section id="settings" className="grid grid-cols-3 gap-4 p-8">
+      {rows.map(([h, s]) => <div key={h} className="rounded-lg border p-4"><h3 className="font-medium">{h}</h3><p className="text-sm text-slate-500">{s}</p></div>)}
+    </section>
+  );
+}
+
 // unslop-ui's clean screen: nothing here should be said
 function Members() {
   const members = [{ id: '1', name: 'Ada', role: 'Admin', isOwner: true, lastSeen: null }, { id: '2', name: 'Lin', role: 'Editor', isOwner: false, lastSeen: 'Today' }];
@@ -158,5 +169,5 @@ function Members() {
 }
 
 export function App() {
-  return (<><Landing /><Hero /><Dashboard /><Deploys /><Surface /><Members /></>);
+  return (<><Landing /><Hero /><Dashboard /><Deploys /><Surface /><Settings /><Members /></>);
 }

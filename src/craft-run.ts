@@ -7,6 +7,7 @@ import type { Grey } from './craft-judge.js';
 import { takeProbes } from './craft-probe.js';
 import { docsUrl } from '../overlay/src/rule-docs.js';
 import { BOUND_RULES, boundInSource } from '../overlay/src/pack-tells.js';
+import { judgeMeaning } from './meaning.js';
 import { readFileSync } from 'node:fs';
 import { makeFinding } from './messages.js';
 import { tool } from './report.js';
@@ -220,6 +221,8 @@ export async function craftRun(options: CraftRunOptions): Promise<CraftPage[]> {
             result.findings.push({ ...record, title: record.title + when(record) });
           }
         }
+        // what depends on meaning is asked of the model once the page's own findings are in (meaning.ts)
+        result.findings = await judgeMeaning(result.findings);
         pages.push({ ...result, route, url });
       } finally { await page.close(); }
     }

@@ -248,3 +248,12 @@ All free under the Unsplash License, hotlinked from images.unsplash.com as Unspl
 - What it changed: plumber's `tells` pack, 17 rules read off the drawn page, with its real-state test applied to the
   source line ([journey](journey.md#tells-marks-of-a-generated-screen-read-off-the-page-2026-11-19)). Its example
   screens became `bench/tells/App.jsx`. Nothing of its text was copied.
+
+## 2026-11-19 · local-evidence, the owner's model service on vm-agent (pointed at by the owner)
+- What: a FastAPI server in web-absorb (`~/projects/web-absorb/infra/local-evidence/app.py` on vm-agent, version
+  1.2.0), on the private docker network at port 8080. `/embed` returns all-MiniLM-L6-v2 vectors (384 numbers, unit
+  length) for up to 32 texts. `/evidence` tags text with GLiNER2 small (fastino/gliner2.5-small-v1) against a fixed
+  list of page labels (navigation, advertisement, signup and others).
+- Why: the owner said a model endpoint was already on vm-agent, to use for the tells that need reading.
+- What it changed: the subtitle check in the tells pack scores heading and subtitle pairs with `/embed`
+  ([journey](journey.md#subtitles-that-repeat-the-heading-a-model-on-vm-agent-judges-them-2026-11-19)).

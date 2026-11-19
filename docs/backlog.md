@@ -63,11 +63,14 @@ reserved.)
 
 ## Doesn't do yet
 
-- **Tells that need reading (2026-11-19).** The `tells` pack leaves out five of unslop-ui's rules: a subtitle that
-  repeats its heading, a label said twice (label, placeholder, helper text), a number said twice (a KPI and the
-  sentence under it), slogans, and most narrating captions. The plan: page structure finds the pair, a small embedding
-  model scores how much the two say the same thing, and a threshold is set on unslop-ui's fixtures. An icon that says
-  nothing its name does not needs a model that embeds images and text together. Nothing is built yet.
+- **Tells that need reading, the rest (2026-11-19).** The subtitle check is built (journey: "Subtitles that repeat the
+  heading"). Still open: a label said twice (label, placeholder, helper text), a number said twice (a KPI and
+  the sentence under it), slogans, most narrating captions, and an icon that says nothing its name does not (needs a
+  model that embeds images and text together). The subtitle check misses generic lines that share no words with the
+  heading ("Customize how the app looks" under "Appearance"), and a blurb under each item of a menu is not looked at.
+- **The overlay does not ask the model (2026-11-19).** Only the command-line run asks the embedding service, so the
+  subtitle check is silent in the app. The service lives on vm-agent's private docker network and is reached through
+  an SSH tunnel; nothing starts that tunnel for you.
 - **A badge drawn by a component (2026-11-19).** The real-state test reads the line a finding points at. A badge
   made by a component (`{deploy.isLive && <Badge>Live</Badge>}`) points inside the component, where there is no
   condition, so a badge bound to data is still flagged. The test runs in the CLI only; the overlay does not apply it

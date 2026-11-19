@@ -329,6 +329,12 @@ Engine note: an element with a looping animation is never judged, so a pulsing d
 Run (2026-11-19): unslop-ui's example screens (`bench/tells/run.mjs`), 17 of 17 rules fire, 40 findings, its clean
 screen silent. crafting-ui: none. Plumber's site: four, all debatable (three inside mock screens of other apps).
 
+Added the same day: subtitle-echo (U3), the first rule that asks a model. The page finds a heading and the line under
+it; the CLI asks an all-MiniLM-L6-v2 service (`PLUMBER_MEANING_URL`, src/meaning.ts) and keeps the finding only when
+the line is close to the heading (0.45), or loosely close (0.2) and close to stock copy (0.4). A line with a number, a
+date, a price or a code is never asked. No service, no finding. Labelled pairs and the check: `bench/tells/calibrate.mjs`
+(23 of 24 on the pairs that set the cuts, 24 of 24 held out).
+
 ## 5. Order, and why not the signed-off one
 
 The foundations put packs at layer 5, after the snapshot (3) and pure rules in a worker (4), so that a new page pack

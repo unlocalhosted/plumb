@@ -2513,6 +2513,36 @@ field is empty). The table of five writes, before and after. The Next table: eig
   were fixed on the way: dots in the "found / fixed" chips (now kept by the real-state test) and the temperature bar
   in the weather mock (a long thin gradient carries a value).
 - **Media hooks:** the sloppy screens with plumber's marks on them, then the clean screen with none.
+## Subtitles that repeat the heading: a model on vm-agent judges them (2026-11-19)
+- **The itch:** five of unslop-ui's rules need reading, not patterns. The owner pointed at a model service already
+  running on vm-agent and said to go ahead with the first one: a subtitle that only repeats its heading.
+- **How we found it:** the service is local-evidence (part of web-absorb), a small Python server on vm-agent's private
+  docker network. It serves two models: GLiNER2 small, which tags text with a fixed list of web-page labels, and
+  all-MiniLM-L6-v2, which turns up to 32 texts into 384-number vectors at `/embed`. The embedding model is the one
+  that fits. It is reached from the laptop through an SSH tunnel.
+- **What we tried, what we chose and why:** similarity between heading and subtitle alone caught 9 of 12 repeats with
+  no false hits on 24 hand-labelled pairs. The three it missed were generic rather than repeated ("Connect your
+  favorite tools and apps"). Two more signals fixed most of that. A subtitle with a specific in it (a number, a date, a
+  price, a code in capitals) adds a fact and is never flagged. A subtitle loosely close to its heading and close to
+  stock product copy is flagged. The stock lines were written separately, not taken from the test pairs. Cuts: 0.45
+  similarity, or 0.2 with 0.4 to stock copy.
+- **The proof:** 11 of 12 repeats and 12 of 12 facts right on the pairs that set the cuts; 12 of 12 and 12 of 12 on
+  24 more written and labelled before they were scored (`bench/tells/calibrate.mjs`). I wrote both sets, so they are
+  not an independent test. On the sloppy screens, the model adds seven notes, all right, and passes over the three
+  settings rows that add a fact. Misses: "A real-time overview of your key business metrics, all in one place" under
+  "Dashboard", and "Customize how the app looks" under "Appearance". On real apps there was little to judge: plumber's
+  site has no heading-and-subtitle pairs in this shape, and crafting-ui has one, which the model correctly keeps.
+- **How it runs:** the page finds the pair; the command-line run asks the model (`PLUMBER_MEANING_URL`) after the
+  page is read. With no service set, or one that cannot be reached, the rule says nothing. The overlay in the app does
+  not ask yet.
+- **Two bugs on the way:** plumber writes its reading cache into `.plumber/` inside the app, and Tailwind's Vite
+  plugin reloaded the page for each write, three times in one read. Plumber's own plugin already ignored those files,
+  but Tailwind's runs first. The plugin now tells Vite's watcher to skip `.plumber/`, so no plugin sees them. That
+  matters beyond tests: any Tailwind app without `.plumber/` in its `.gitignore` would reload while plumber reads it.
+  The second bug was mine: I git-ignored the test app's folder, and plumber finds an app's files through git, so it
+  read the page as having no source at all. The test app is now deleted after each run instead.
+- **Media hooks:** the settings screen with "Language" and "Email" marked and "Sessions", "Data retention" and
+  "Danger zone" left alone.
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
 - Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".
@@ -3960,6 +3990,8 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- Plumber flags a subtitle that only repeats its heading ("Billing" over "Manage your billing and subscription") and leaves one that adds a fact alone, by asking a small language model on vm-agent; with no model set up it stays silent ([entry](#subtitles-that-repeat-the-heading-a-model-on-vm-agent-judges-them-2026-11-19)).
+- Plumber no longer makes a Tailwind app reload while it writes its own cache ([entry](#subtitles-that-repeat-the-heading-a-model-on-vm-agent-judges-them-2026-11-19)).
 - Plumber now points out the marks of a generated screen on your page: labels in capitals over every heading, "01 02 03" with no order, NEW badges and pulsing dots that track nothing, emoji, icons in tinted squares, glows and two-hue gradients, cards that grow on hover, stock words. A badge or dot that only shows under a condition in your code is left alone ([entry](#tells-marks-of-a-generated-screen-read-off-the-page-2026-11-19)).
 - Plumber builds the whole-app list of findings in the background after start-up and after each edit, so asking for it no longer waits 18 s on a 3,600-file app, and pages keep answering in about 30 ms while it builds ([entry](#the-whole-app-report-builds-itself-in-the-background-2026-11-18)).
 - In Break it, press F on a note and plumber shows its fix on your live page under the same stress, then checks the page again and says what the fix itself breaks; on crafting-ui a long topic wraps inside its sentence, a one-step rail leaves itself out, and 11px labels grow in rem ([entry](#break-it-broken-then-fixed-on-the-page-2026-11-17)). On its own branch.

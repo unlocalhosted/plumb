@@ -202,6 +202,24 @@ export const narrating = rule('narrating', 'sentence', TEXT, function (el, facts
   return found(this, el, { phrase: m[0] }, { value: quote(ownText(el)), confidence: 0.8, advice: 'Delete it. Keep words that say what to do or what happened.' });
 });
 
+// U3: the line right under a heading. Whether it says anything the heading does not is a question of meaning, so
+// the page only finds the pair; the CLI asks a model (pack-tells.js, MEANING_RULES) and says nothing without one.
+export const subtitleEcho = rule('subtitle-echo', 'subtitle', 'h1,h2,h3,h4', function (el, facts) {
+  const heading = trimmed(el.textContent);
+  if (!heading || heading.length > 80 || el.closest(`${CODE}, ${CONTROL}, nav, table`)) return;
+  let next = el.nextElementSibling;
+  while (next && !drawn(next, facts)) next = next.nextElementSibling;
+  if (!next || !next.matches('p, div, span, small') || next.querySelector('a, button, input, select, textarea, h1, h2, h3, h4, h5, h6, img, svg')) return;
+  const line = trimmed(next.textContent);
+  if (!line || wordsIn(line) < 3 || wordsIn(line) > 25 || px(facts.style(next).fontSize) > px(facts.style(el).fontSize)) return;
+  if (!shown(el, facts) || !shown(next, facts)) return;
+  const out = found(this, next, { heading: quote(heading, 30), meaning: { heading, line } }, { value: quote(line, 60), confidence: 0.8, advice: 'Delete the line, or replace it with a fact the heading does not give.' });
+  // named by its words, not its tag: rows drawn from one line of a list are told apart, so each pair is asked on its
+  // own (the read keeps one finding per rule, text and place, craft-run.js)
+  out[0].text = quote(line, 60);
+  return out;
+});
+
 // pstack unslop 13: an em dash in the page's own words. A lone dash standing for an empty value is a table's way of
 // saying "none".
 export const emDash = rule('em-dash', 'punctuation', TEXT, function (el, facts) {
@@ -319,5 +337,5 @@ export const heavyWeight = rule('heavy-weight', 'font-weight', 'h1,h2,h3,h4,h5,h
   return found(this, el, { weight }, { value: `font-weight: ${weight}`, confidence: 0.8, advice: 'Use 600, and let size and colour carry the order.' });
 });
 
-export const TELLS_RULES = [eyebrow, numbering, statusChain, flavourBadge, statusDot, emoji, iconTile, chartTypeTitle, readingInstructions, narrating, emDash, stockWords,
+export const TELLS_RULES = [eyebrow, numbering, statusChain, flavourBadge, statusDot, emoji, iconTile, chartTypeTitle, readingInstructions, narrating, subtitleEcho, emDash, stockWords,
   hueGradient, glow, transitionAll, hoverGrow, heavyWeight];

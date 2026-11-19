@@ -31,6 +31,7 @@ const TABLE = {
   'chart-type-title': [U(12, 'Chart titles that name the chart type'), {}, ({ kind }) => ({ label: 'Title names the chart', line: `The title says it is a ${kind}.`, reason: 'People can see it is a chart. The title should say what it measures.' })],
   'reading-instructions': [U(13, 'Reading instructions'), {}, ({ phrase }) => ({ label: 'Explains how to read', line: `"${phrase}" tells people how to read what they can see.`, reason: 'If it needs instructions, change the thing. If it does not, cut them.' })],
   narrating: [U(4, 'Botsplaining'), ADVISORY, ({ phrase }) => ({ label: 'Narrates the screen', line: `"${phrase}" describes what is on the screen.`, reason: 'People can see it. Keep the words they need to act.' })],
+  'subtitle-echo': [U(3, 'Subtitle reflex'), ADVISORY, ({ heading }) => ({ label: 'Subtitle says it again', line: `The line under "${heading}" says what the heading already says.`, reason: 'A second line that adds no fact is read for nothing. Keep it only if it says something the heading does not.' })],
   'em-dash': [UNSLOP(13, 'Em dashes'), ADVISORY, ({ count }) => ({ label: 'Em dash in copy', line: count > 1 ? `${count} em dashes in these words.` : 'An em dash in these words.', reason: 'Generated copy leans on the dash. A full stop or a comma reads as written by a person.' })],
   'stock-words': [UNSLOP(7, 'AI vocabulary'), ADVISORY, ({ word }) => ({ label: 'Stock word', line: `"${word}" is a stock word.`, reason: 'It could sit on any product\'s page. Say what this one does.' })],
   'hue-gradient': [U(17, 'Gradients and glows'), ADVISORY, ({ text }) => ({ label: text ? 'Rainbow text' : 'Gradient across hues', line: text ? 'These words are filled with a gradient from one hue to another.' : 'This surface fades from one hue to another.', reason: 'A two-hue gradient is the first thing generated pages reach for. A solid colour holds the brand better.' })],
@@ -44,7 +45,7 @@ export const TELLS = {
   id: 'tells',
   title: 'Tells',
   ground: 'unslop-ui (MIT): the marks of a generated screen that the drawn page shows',
-  source: { package: 'unslop-ui', version: 'main 2026-11-19', guide: 'U1, U2, U4, U6, U9–U13, U17, U19, U20; pstack unslop 7, 13' },
+  source: { package: 'unslop-ui', version: 'main 2026-11-19', guide: 'U1–U4, U6, U9–U13, U17, U19, U20; pstack unslop 7, 13' },
   runs: 'page',
   guides: Object.fromEntries(Object.entries(TABLE).map(([short, [law]]) => [short, law.id])),
   spec: { access: Object.fromEntries(Object.entries(TABLE).map(([short, [, entry]]) => [short, entry])) },
@@ -75,3 +76,15 @@ export function boundInSource(text, line, column = 1) {
   }
   return false;
 }
+
+// The meaning test, for subtitle-echo (U3): whether the line under a heading says anything the heading does not. The
+// page finds the pair; a sentence-embedding model (all-MiniLM-L6-v2, unit vectors, so similarity is a dot product)
+// scores it, asked by the CLI (src/meaning.ts). A line with a specific in it (a number, a date, a price, a code in
+// capitals) adds a fact and is kept without asking. Otherwise it is said when it is close to the heading, or loosely
+// close and close to stock product copy. Set on 24 hand-labelled pairs and checked on 24 held out
+// (docs/briefs/rule-packs.md §4h): 23 of 24 and 24 of 24, no false hits.
+export const MEANING_RULES = new Set(['tells/subtitle-echo']);
+export const MEANING_CUTS = { echo: 0.45, near: 0.2, stock: 0.4 };
+export const STOCK_LINES = ['Everything you need to stay organized.', 'Powerful tools to help you grow.', 'Track and manage your work with ease.', 'Stay connected with your team.', 'Simple, fast, and secure.', 'Get started in minutes.', 'Take control of your workflow.', 'Insights that help you make better decisions.', 'Collaborate with anyone, anywhere.', 'Keep everything in sync.', 'Your all-in-one workspace.', 'Built for teams of every size.', "Discover what's possible.", 'Make the most of your time.', 'Find what you need, fast.', 'The smarter way to work.'];
+const MONTH = /\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b/i;
+export const hasSpecific = (line) => /\d|[$€£%]/.test(line) || MONTH.test(line) || /\b[A-Z]{2,}\b/.test(line.replace(/^\S+/, ''));

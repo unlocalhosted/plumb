@@ -135,6 +135,10 @@ export function plumb({ demo, ...options }: PlumbViteOptions = {}): Plugin {
   };
   return {
     ...(stamp ? stamping : { name: 'plumb', ...(demo ? {} : { apply: 'serve' as const }) }),
+    // React Plumber's own files (.plumber/cache: the kept readings, the change log) are not the app's. hotUpdate below
+    // keeps them from reloading the page, but a plugin that runs first never asks it: Tailwind's reloads the page for
+    // any file it scans that is not a module, and wrote three reloads into one plumber read. Unwatched, nobody sees them.
+    config() { return { server: { watch: { ignored: ['**/.plumber/**'] } } }; },
     configResolved(config) {
       root = config.root; production = config.command === 'build';
       if (stamp && typeof stamping.configResolved === 'function') stamping.configResolved.call(this, config);
