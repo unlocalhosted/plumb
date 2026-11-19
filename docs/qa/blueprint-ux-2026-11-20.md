@@ -541,3 +541,14 @@ How to read an issue, and what each one needs:
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u43-site-hero.jpg`
 - **Status:** open
+
+### U44 · At 700px wide the Fix bar cuts off both its lines
+- **Where:** Fix, fix 1 of 49, window 700px wide.
+- **What I saw:** "11 places use text-sm, Tailwind's default font si…" and "`text-sm` is 14px, the same as your text-body.
+  Use yo…". The part that says what to do is the part cut off. The bar is 760px of screen with room to grow
+  taller.
+- **What I expected:** the two lines wrap; the bar can be taller on a narrow window.
+- **Why it hurts:** understanding. The new, clearer words (from the U15 change) can't be read on a narrow window.
+- **Severity:** 2
+- **Evidence:** `docs/qa/shots/2026-11-20/u44-fix-bar-700.jpg`
+- **Status:** open
