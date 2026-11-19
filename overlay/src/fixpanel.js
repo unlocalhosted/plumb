@@ -151,7 +151,9 @@ const FIX_CSS_BASE = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   .fx .bar .more { position: relative; }
   .fx .bar .more.has-dot::after { content: ''; position: absolute; top: 6px; right: 6px; width: 6px; height: 6px; border-radius: 50%; background: var(--pl-butter); box-shadow: 0 0 0 1.5px var(--pl-bg-surface); }
   /* the bar's lists: a small card above the button that opens them, as wide as its rows (toy rows) */
-  .fx-pop { position: fixed; z-index: 3; width: max-content; min-width: 232px; max-width: calc(100vw - 16px); box-sizing: border-box; padding: 6px; pointer-events: auto;
+  /* an open list is what you're using: above the X-ray's drawing of the element too (its outline and grips ran across
+     the rows, U55; .xr-host is 2147483000 in widget.js) */
+  .fx-pop { position: fixed; z-index: 2147483001; width: max-content; min-width: 232px; max-width: calc(100vw - 16px); box-sizing: border-box; padding: 6px; pointer-events: auto;
     background: var(--pl-paper); border-radius: 16px; box-shadow: var(--pl-shadow-card); color: var(--pl-text-primary); animation: pl-pop-in 160ms var(--pl-ease-out, ease-out) both; transform-origin: bottom left; }
   .fx-pop[hidden] { display: none; }
   @keyframes pl-pop-in { from { opacity: 0; translate: 0 4px; scale: .98; } }
