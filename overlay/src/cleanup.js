@@ -58,13 +58,16 @@ const keep = (v) => { try { v ? sessionStorage.setItem(KEPT, JSON.stringify({ ..
 const kept = () => { try { const v = JSON.parse(sessionStorage.getItem(KEPT) ?? 'null'); return v && Date.now() - v.at < FRESH && v.path === location.pathname ? v : null; } catch { return null; } };
 
 export const CLEANUP_CSS = `
-  .cu { display: grid; }
+  /* one column, the panel's width: a long unbroken line (a command) laid the body out 718px wide in a 520px panel (U25) */
+  .cu { display: grid; grid-template-columns: minmax(0, 1fr); }
   .cu .steps { display: flex; gap: 2px; padding: 10px 10px 0; }
   .cu .pass { flex: 1; display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 8px; font: 600 11px/14px var(--pl-sans, system-ui); color: var(--pl-text-disabled); min-width: 0; }
   .cu .pass i { flex: none; width: 14px; height: 14px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px currentColor; display: grid; place-items: center; font: 700 9px/1 var(--pl-sans, system-ui); font-style: normal; }
   .cu .pass span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .cu .pass .n { margin-left: auto; font-weight: 500; }
   .cu .pass.now { color: var(--pl-text-primary); background: var(--pl-bg-inset); }
+  /* nine passes don't fit by name: the one you're on is named, the others are their mark, named on hover (U25) */
+  .cu .pass:not(.now) { flex: none; }
   .cu .pass.now i { box-shadow: inset 0 0 0 1.5px var(--pl-icon-primary); background: radial-gradient(circle, var(--pl-icon-primary) 0 3px, transparent 3.5px); }
   .cu .pass.done { color: var(--pl-state-written-text); } .cu .pass.done i { background: var(--pl-done-bg); box-shadow: none; color: var(--pl-done-text); }
   .cu .pass.skipped span { text-decoration: line-through; }
@@ -323,7 +326,8 @@ export class Cleanup {
     const steps = PASSES.map((k, i) => {
       const st = this.#done.get(k), now = i === this.#pass && !st;
       const n = k === 'text' ? this.#page?.moves ?? null : this.#swaps[k]?.page?.places ?? null;
-      return `<span class="pass ${st ?? (now ? 'now' : '')}"><i>${st === 'done' ? '✓' : ''}</i><span>${esc(W.pass[k])}</span>${n != null ? `<span class="n">${n}</span>` : ''}</span>`;
+      if (!now) return `<span class="pass ${st ?? ''}" title="${esc(W.pass[k])}${st === 'done' ? ' · done' : ''}" aria-label="${esc(W.pass[k])}${st === 'done' ? ', done' : ''}"><i>${st === 'done' ? '✓' : ''}</i></span>`;
+      return `<span class="pass now"><i></i><span>${esc(W.pass[k])}</span>${n != null ? `<span class="n">${n}</span>` : ''}</span>`;
     }).join('');
     const saved = this.#saved ? `<div class="saved" role="status"><b>${esc(W.pass[PASSES[this.#saved.pass ?? 0]])}</b>${esc(this.#savedLine(this.#saved))}<button type="button" class="cu-btn quiet" data-cu="undo">${esc(W.undo)}</button></div>` : '';
     return `<div class="cu">${`<div class="steps" aria-label="${esc(W.passes)}">${steps}</div>`}${saved}${this.#bodyHtml()}</div>`;
