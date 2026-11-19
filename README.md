@@ -48,12 +48,12 @@ It compiles classes, stylesheets, `@apply` and inline styles with the project's 
 
 ```sh
 npm install -D @unlocalhosted/react-plumber    # or: pnpm add -D, yarn add -D, bun add -d
-npx plumber                                     # or: pnpm exec plumber, yarn plumber, bunx plumber
+npx plumber init                                # or: pnpm exec plumber init, yarn plumber init, bunx plumber init
 ```
 
-`plumber` reads your app and opens a page about it in your browser. Four short steps (spacing, colours, text, corners) show what your code does today, drawn, and ask one question each. Your answers become your rules, in `plumber.config.ts`. **Set it up** writes them, tidies your tokens the way you chose (old names keep working, and one Undo puts them back), and records the problems already in your code, so from then on you only hear about new ones. Nothing in your files changes before that last press.
+`plumber init` reads your app and asks about it in the terminal, one question at a time: your spacing, colours, text and corners. Your answers become your rules, in `plumber.config.ts`. It also records the problems already in your code, so from then on you only hear about new ones. `--yes` takes every suggested answer.
 
-On a large app the first read takes a while (under a minute for 3,600 files); the page says so while it reads. Every command Plumber prints is written the way your project runs it (`pnpm exec plumber init` in a pnpm project), so you can copy it as it is.
+On a large app the first read takes a while (under a minute for 3,600 files). Every command Plumber prints is written the way your project runs it (`pnpm exec plumber init` in a pnpm project), so you can copy it as it is.
 
 ### 2. Put it on your page
 
@@ -112,7 +112,7 @@ The page and these commands share one config and one record of today's problems;
 npx plumber check           # the report; once set up, only new problems fail
 npx plumber state           # where the project starts: bare, half a system, a system
 npx plumber propose         # tokens drafted from the values the code already uses
-npx plumber init            # the page's questions, asked in the terminal
+npx plumber init            # choose your rules (step 1 above)
 npx plumber doctor          # what is set up, and the one command for what isn't
 npx plumber install --ci    # add the GitHub Action
 ```

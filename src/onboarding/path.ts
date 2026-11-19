@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import { onboardingPage } from '../flags.js';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { performance } from 'node:perf_hooks';
@@ -85,7 +86,7 @@ export function plainVersion(report: Report, setUp: boolean): string {
     if (setUp) lines.push(fresh ? `  ${count(fresh, 'new problem')} since you set up. ${open === 1 ? '1 cause is' : `${open} causes are`} open, the biggest:` : `  Nothing new since you set up. ${open === 1 ? '1 cause is' : `${open} causes are`} still open${open === 1 ? ':' : ', the biggest:'}`);
     for (const cause of causes) lines.push(wrap('  ' + sayCause(cause, report)));
   }
-  lines.push('', setUp ? 'Next: press Alt+B on your page to fix it there.' : `Next: run ${runnerOf(report.root)} plumber in a terminal to see this in your browser, or ${runnerOf(report.root)} plumber --yes to set it up here.`);
+  lines.push('', setUp ? 'Next: press Alt+B on your page to fix it there.' : onboardingPage() ? `Next: run ${runnerOf(report.root)} plumber in a terminal to see this in your browser, or ${runnerOf(report.root)} plumber --yes to set it up here.` : `Next: run ${runnerOf(report.root)} plumber init to choose your rules, or ${runnerOf(report.root)} plumber --yes to set it up here.`);
   return lines.join('\n') + '\n';
 }
 
@@ -119,7 +120,7 @@ const isSetUp = (gaps: { devConfig: boolean; config: boolean; state: boolean }) 
  * Serve the page and open it; with no browser to open, say the same thing in the terminal.
  */
 export async function runBare(context: PathContext): Promise<void> {
-  const page = !context.yes && onTerminal(context.noOpen);
+  const page = !context.yes && onboardingPage() && onTerminal(context.noOpen);
   // the page and --yes set up, which writes into the dev config; the plain version only reads
   const ready = await projectGates(context.root, context.config, page || context.yes === true);
   await context.prepare();

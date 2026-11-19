@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { onboardingPage } from './flags.js';
 import { printWith, runnable, runnerOf } from './runner.js';
 import { migrationNotice, statePath } from './paths.js';
 import { CheckCache } from './check-cache.js';
@@ -39,12 +40,12 @@ import { profileProgress } from './profile.js';
 
 const help = `React Plumber ${tool.version}: design decisions, habits and ledger
 
-New here? Run plumber in your app's folder, with nothing after it: it opens a page that sets you up.
+${onboardingPage() ? "New here? Run plumber in your app's folder, with nothing after it: it opens a page that sets you up." : "New here? Run plumber init in your app's folder: it asks about your spacing, colours, text and corners, and your answers become your rules."}
 
 Usage: plumber [check] [--json] [--verbose] [--root <dir>] [--config <path>]
        plumber presets [--json] [--root <dir>] [--config <path>]
        plumber serve [--port <number> | --stdio] [--overlay --origin <url> [--served-root <dir>]] [--root <dir>] [--config <path>]
-       plumber [--yes] [--no-open]       open a page about your project; --yes sets it up here instead
+       ${onboardingPage() ? 'plumber [--yes] [--no-open]       open a page about your project; --yes sets it up here instead' : 'plumber [--yes]                   your project in a few lines; --yes sets it up here'}
        plumber check --watch [--json|--agent] [--root <dir>]
        plumber state [--json] [--root <dir>] [--config <path>]
        plumber propose [--family <name>] [--write] [--decline <scale>=<value>] [--json] [--root <dir>] [--config <path>]
