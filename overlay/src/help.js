@@ -19,7 +19,7 @@ export const HELP_ICON = '<svg viewBox="0 0 12 12" aria-hidden="true"><circle cx
 const KEYS = [
   ['Inspect', [
     ['Alt', 'Hold to inspect what’s under the pointer'],
-    ['Alt + click', 'Show its problems in Blueprint'],
+    ['Alt + click', 'Open its editor, with its notes in the bar'], // what it does (U32): the editor card and Blueprint's bar on that element
     ['Alt + two-finger scroll', 'Up to the parent, down to the child'],
   ]],
   ['Edit text', [
