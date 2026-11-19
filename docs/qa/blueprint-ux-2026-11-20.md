@@ -333,3 +333,40 @@ How to read an issue, and what each one needs:
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u24-cleanup-full.jpg`
 - **Status:** open
+
+### U27 · History opens underneath the Blueprint bar
+- **Where:** ··· → History.
+- **What I saw:** History is a dark strip along the bottom, 504px to 1264px across, the same height as the bar,
+  which covers its left two thirds. All I can see is "Undo change ⌫", "Undo step ⇧⌫" (both grey) and an ×. The
+  strip's own words, "Edited outside · Now · A change edited outside React Plumber since. Undo it in your editor.",
+  are behind the bar; I only read them in a tooltip that came up on its own.
+- **What I expected:** History above the bar, or in place of it, with its words in view.
+- **Why it hurts:** understanding and acting. I can't see what History holds, and the two buttons I can see are
+  disabled with no reason in view.
+- **Severity:** 2
+- **Evidence:** `docs/qa/shots/2026-11-20/u27-history-under-bar.jpg`
+- **Status:** open
+
+### U28 · History's one entry doesn't read as a sentence
+- **Where:** History strip, the only entry.
+- **What I saw:** "Edited outside · Now · A change edited outside React Plumber since. Undo it in your editor." I
+  hadn't changed anything in this walk; the test copy's files were last written about 20 minutes before, yet the
+  entry says "Now".
+- **What I expected:** "A file changed outside Plumber after this change (App.jsx, 04:29). Undo it in your
+  editor." with the real time.
+- **Why it hurts:** understanding and trust ("Now" for something old).
+- **Severity:** 3
+- **Evidence:** strip text read from the page; `fixtures/.tells-app/src/*.jsx` modified at 04:29, History opened
+  about 04:51.
+- **Status:** open
+
+### U29 · Help: the last shortcut is under the bar, and one row's keys run into its words
+- **Where:** ··· → Help (Keyboard shortcuts).
+- **What I saw:** the panel ends at 754px and the bar starts at 730px, so the last row, "Space · Hold to use the
+  page", has its key hidden behind Close. "Alt + two-finger scroll" runs into its own description "Up to the parent,
+  down to the child". Same cause as U19: panels from ··· are sized as if the bar weren't there.
+- **What I expected:** every row readable, the panel above the bar.
+- **Why it hurts:** understanding.
+- **Severity:** 3
+- **Evidence:** `docs/qa/shots/2026-11-20/u28-help.jpg`
+- **Status:** open
