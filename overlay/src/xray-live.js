@@ -383,6 +383,22 @@ export function mountXray(o) {
     const k = [{ x: l, y: t }, { x: r, y: t }, { x: r, y: b }, { x: l, y: b }];
     return k.some((q, i) => inTri(pt, restAt, q, k[(i + 1) % 4]));
   };
+  // Where the hand is going (owner, 2026-11-20: "if i am moving towards the card … keep the warmup … if i am going away
+  // then understand i might be trying to land somewhere else"): the last few moves, smoothed, against the way to the
+  // card's middle. Toward it (or inside the shape that joins the rest point to the card): the card keeps its element as
+  // long as the trip takes. Away from it: the element under the hand takes over after a short pause (AWAY), enough that
+  // a pass straight through one element on the way to another doesn't stop on it.
+  const AWAY = 120;
+  let vel = { x: 0, y: 0 }, prevPt = null;
+  const heading = (pt) => {
+    if (prevPt) vel = { x: vel.x * 0.6 + (pt.x - prevPt.x) * 0.4, y: vel.y * 0.6 + (pt.y - prevPt.y) * 0.4 };
+    prevPt = pt;
+    if (restAt && towardCard(pt)) return 'toward';
+    const c = card.getBoundingClientRect(), to = { x: (c.left + c.right) / 2 - pt.x, y: (c.top + c.bottom) / 2 - pt.y };
+    const sp = Math.hypot(vel.x, vel.y), d = Math.hypot(to.x, to.y);
+    if (sp < 0.5 || !d) return 'still';
+    return (vel.x * to.x + vel.y * to.y) / (sp * d) > 0.5 ? 'toward' : 'away';
+  };
   const track = (e) => {
     // something else is in hand (a card open in blueprint): the X-ray steps aside first, and takes no pointer
     if (o.paused?.()) { card.removeAttribute('data-reach'); if (shown && !changes.size) draw(null); return; }
@@ -396,14 +412,16 @@ export function mountXray(o) {
     // another element moves the card there; a rest on empty page puts it away. This replaces 2026-11-13's "disappear
     // as I start moving", which is what made the card unreachable.
     if (!card.hidden && ready && !pinned && !changes.size && !ourUI(e)) {
-      const there = o.partAt(e), handle = zoneAt(zonesOf(shown).filter((q) => q.outside), pt.x, pt.y);
+      const there = o.partAt(e), handle = zoneAt(zonesOf(shown).filter((q) => q.outside), pt.x, pt.y), going = heading(pt);
       if (there !== shown && !handle) {
         clearTimeout(waiting);
+        // toward the card: hold (a full second, renewed by every move toward it, so a hand that stops short on another
+        // element still gets there); still: the usual rest; away: a short pause, then the next element
         waiting = setTimeout(() => {
           if (card.hasAttribute('data-reach') || card.matches(':hover')) return;
           if (!there) { ready = false; restAt = null; draw(null); return; }
           restAt = ptNow; lastOn = ptNow; zone = zoneAt(zonesOf(there), ptNow.x, ptNow.y); draw(there); if (zone) hold(there, zone.prop);
-        }, REST);
+        }, going === 'away' ? AWAY : going === 'toward' ? REST * 2 : REST);
         return;
       }
       if (!handle) clearTimeout(waiting);

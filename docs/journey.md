@@ -2715,6 +2715,13 @@ field is empty). The table of five writes, before and after. The Next table: eig
   none of them and hid the card 0 times, and the pointer reached the card; a rest on "Card controls" then moved the
   card there (App.jsx:43). `bench/tells/shots/16-reached-card.jpg`. My first attempts to test this were noise: my
   automated pointer and the owner's mouse were driving the same pane at once.
+- **Warm-up and intent together:** "if i am moving towards the card maybe keep the warmup … but if i am going away
+  then understand i might be trying to land somewhere else". The wait now depends on where the hand is going: the
+  last few moves, smoothed, against the way to the card's middle (or inside the shape joining the rest point to the
+  card). Toward it: the card keeps its element for a full second, renewed by every move toward it. Away from it: the
+  element under the hand takes over after 120 ms. Measured with a real pointer: a sweep to the card switched to
+  nothing; a move away switched once, straight to the line under the hand (App.jsx:22), and stayed. An earlier run
+  that seemed to jump back to the old element was the owner's mouse moving in the same pane while I tested.
 - **Media hooks:** `bench/tells/shots/5-concerns-bar.jpg`.
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
