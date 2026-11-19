@@ -4097,6 +4097,13 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   for sign-off; layer 2 (the round trip on five pricing cards) is its first real test.
 - **Media hooks:** a reference card beside its round-trip rebuild; a grid of six variants with their recipes; the
   same variant before and after translation (stock look, then toys).
+- **A review the same day:** an outside read found that several checks didn't test what they claimed. Translation
+  mapped every "recommended" to one house answer, so twenty references would come out alike; the round trip needed
+  values that capture throws away; a screenshot embedding would call anything in our look "ours". The second version
+  makes the move a typed decision with several house expressions, keeps original values in a sidecar for the round
+  trip only, compares structure instead of screenshots, stores ratios instead of steps, and adds a layer that builds
+  five references in our look by hand before any generator exists. If those five aren't distinct and good, the idea
+  fails in a day instead of at layer 6.
 
 ## Open gaps
 - **The mark was never tried among real neighbours** (a row of browser tabs, an npm page, a README header), only on empty tiles. Nobody outside has been asked whether the round leg reads as an R or leans towards a B.
