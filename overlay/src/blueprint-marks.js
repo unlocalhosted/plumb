@@ -60,6 +60,11 @@ export const MARKS_CSS = `
     box-shadow: 0 0 0 1px color-mix(in oklab, var(--pl-pink) 35%, transparent), 0 1px 2px rgb(0 0 0 / .12); pointer-events: none;
     animation: pl-pin-in 160ms var(--pl-ease-out, ease-out) both; }
   .bp .labels .cpin b { font-weight: 600; opacity: .7; }
+  /* the element a fix is about: the colour of what is current, a soft glow, one pulse as it arrives */
+  .bp .labels .ring { position: absolute; box-sizing: border-box; pointer-events: none; border: 2px solid var(--pl-pink);
+    box-shadow: 0 0 0 4px color-mix(in oklab, var(--pl-pink) 18%, transparent); animation: pl-ring-in 520ms var(--pl-ease-out, ease-out) both; }
+  @keyframes pl-ring-in { 0% { opacity: 0; scale: 1.04; } 45% { opacity: 1; scale: .995; box-shadow: 0 0 0 9px color-mix(in oklab, var(--pl-pink) 22%, transparent); } 100% { scale: 1; } }
+  @media (prefers-reduced-motion: reduce) { .bp .labels .ring { animation: none; } }
   @keyframes pl-pin-in { from { opacity: 0; translate: 0 3px; } }
   @media (prefers-reduced-motion: reduce) { .bp .labels .cpin { animation: none; } }
   .bp svg[role="group"] { pointer-events: none; }
@@ -320,6 +325,11 @@ function heatMarkup(zone, level) {
 // The pins for a picked concern's notes: one per element, its first note's name and how many more, at the element's
 // top-left corner (above it when there is room), moved right past any pin already placed
 const escPin = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+// The ring round the element a fix is about: 4px outside it, its corners rounded as the element's are (plus the gap)
+function ringOf(el) {
+  const r = el.getBoundingClientRect(), rad = parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0, g = 4;
+  return `<span class="ring" style="left:${Math.round(r.left - g)}px;top:${Math.round(r.top - g)}px;width:${Math.round(r.width + 2 * g)}px;height:${Math.round(r.height + 2 * g)}px;border-radius:${Math.round(rad + g)}px"></span>`;
+}
 // where an element's words start (a full-width line of centred words puts its box's corner far from them): its first
 // line of text, else its box
 function inkOf(el, r) {
@@ -652,7 +662,10 @@ export class MarkLayer {
   }
   // the finding in hand proves itself (proof.js): Blueprint's walk hands over its element and mark when it puts a fix in
   // hand, so the drawing never has to match the walk's numbering to the layer's
-  prove(el, mark) { this.#held = el && mark?.craft?.proof ? { el, proof: mark.craft.proof } : null; this.#redraw(); }
+  // the element the fix in hand is about: ringed on the page (owner, 2026-11-20: "i dont know which element i am really
+  // working on")
+  #inHand = null;
+  prove(el, mark) { this.#inHand = el ?? null; this.#held = el && mark?.craft?.proof ? { el, proof: mark.craft.proof } : null; this.#redraw(); }
   #drawProof() {
     const markup = this.#held ? proofSvg(this.#held.el, this.#held.proof) : '';
     if (markup !== this.#proofFor) { this.#proof.innerHTML = markup; this.#proofFor = markup; }
@@ -793,7 +806,10 @@ export class MarkLayer {
     // registration draws no dim, outlines or spotlight boxes: the heat says it all. A picked concern (lit, no fix in
     // hand) names its notes: one pin per element at its corner, nudged along so no two cover each other
     if (this.#outlineMarkup) (this.#outlines.innerHTML = ''), (this.#outlineMarkup = '');
-    const pins = lit.size && !this.#lead ? pinsOf(plan.filter((p) => p.zone && lit.has(p.id) && p.mark.family === 'craft'), view) : '';
+    // a fix in hand: its element alone is marked, a pink ring a little outside it that follows its corners; the pins step
+    // aside so the ring is the one mark on the page
+    const held = this.#inHand?.isConnected ? this.#inHand : null;
+    const pins = held ? ringOf(held) : lit.size && !this.#lead ? pinsOf(plan.filter((p) => p.zone && lit.has(p.id) && p.mark.family === 'craft'), view) : '';
     if (pins !== this.#labelMarkup) (this.#labels.innerHTML = pins), (this.#labelMarkup = pins);
     if (this.#lightMarkup) (this.#light.innerHTML = ''), (this.#lightMarkup = '');
     if (this.#dimPath) (this.#dim.style.removeProperty('clip-path'), (this.#dimPath = ''));

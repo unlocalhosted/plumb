@@ -2722,6 +2722,22 @@ field is empty). The table of five writes, before and after. The Next table: eig
   element under the hand takes over after 120 ms. Measured with a real pointer: a sweep to the card switched to
   nothing; a move away switched once, straight to the line under the hand (App.jsx:22), and stayed. An earlier run
   that seemed to jump back to the old element was the owner's mouse moving in the same pane while I tested.
+
+### Fixing one thing at a time
+
+- **The itch:** "when i click on fix i dont think showing the x-ray mode and like hovering enabling card should be the
+  way", and "when i click fix and this above suggestion card appear i dont know which element i am really working
+  on, we need some sort of tasteful approach".
+- **The system behind it:** Fix put a cause in the bar and its choice row beside the element, but X-ray kept
+  following the hand and opening cards, the concern pins stayed up, and the element itself carried no mark: three
+  things spoke at once and none of them said "this one".
+- **The fix:** a fix in hand is the one job. X-ray steps aside while it is in the bar (as it already did for an
+  open card or an edit), the pins step aside, and the element the fix is about wears a pink ring, the colour of
+  what is current: 4px outside it, its corners following the element's, one soft pulse as it arrives.
+- **The proof:** Enter on the test screens put "11 places use Tailwind's default font size" in hand: the ring sat
+  round "Click the button above…" with the choice row under it, no pins, and a rest elsewhere opened no X-ray card.
+  `bench/tells/shots/17-fix-ring.jpg`.
+- **Not checked:** whether the ring's pulse replays on scroll (the ring is drawn again each frame its place moves).
 - **Media hooks:** `bench/tells/shots/5-concerns-bar.jpg`.
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.

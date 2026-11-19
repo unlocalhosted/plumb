@@ -549,7 +549,7 @@ class PlumbOverlay extends HTMLElement {
       editWords: (el) => { const node = [...el.childNodes].find((n) => n.nodeType === 3 && n.data.trim()); if (node) this.#blueprint?.through(() => this.#text.start(node, node.data.length)) ?? this.#text.start(node, node.data.length); },
       keepNote: (el, rule) => this.#blueprint?.keepNote(el, rule),
       // a card open in blueprint (an Alt+click, an element read alone, words being edited) is what's in hand: the X-ray steps aside
-      paused: () => !!(self.#blueprint?.scope || self.#blueprint?.cardOpen || self.#pinned || self.#text?.editing),
+      paused: () => !!(self.#blueprint?.scope || self.#blueprint?.cardOpen || self.#blueprint?.fixing || self.#pinned || self.#text?.editing),
       // the card's room is the page above Plumber's own bar: it never sits on the fix panel or the dock (a card placed
       // over the panel took the click meant for its Undo)
       // The bar can change after the card is placed (the fix panel is rebuilt when a write lands, and comes back taller):

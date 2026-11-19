@@ -658,6 +658,8 @@ export class Blueprint {
   // a card (an element's, or words') is open: it owns the screen (not `editing`: that is the glass's hole for words
   // edited in place, a method above)
   get cardOpen() { return !!this.#fix.editing; }
+  // a fix in hand (Fix pressed, a cause in the bar): the one job now; the X-ray steps aside until it is put down
+  get fixing() { return !!this.#fix.holding; }
   // the element being read (an Alt+click), or null for the whole page
   get scope() { return this.#scope; }
   // from one element to the whole page (Alt+B while one element is read)
