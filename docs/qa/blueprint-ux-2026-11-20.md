@@ -98,7 +98,7 @@ How to read an issue, and what each one needs:
   meant for a heading; the agent would be told to make a link an h2.
 - **Severity:** 1
 - **Evidence:** `docs/qa/shots/2026-11-20/u06-button-shows-heading-note.jpg`
-- **Status:** fixing
+- **Status:** fixed d0794c0c
 
 ### U7 · With one concern picked, pointing at a pinned element shows no note
 - **Where:** Blueprint, Craft and polish, the "Get started" button with its pin "Padding looks bigger than it is".
@@ -110,7 +110,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** acting. The pins tell me there is a problem, but I can't open it from the element.
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u07-craft-button-no-note.jpg`
-- **Status:** open
+- **Status:** fixed d0794c0c (same cause as U6)
 
 ### U8 · Pins can't be pointed at; the pointer goes through to whatever is under them
 - **Where:** Blueprint, Craft and polish, the "Heading lines uneven" pin on card 2.
@@ -121,7 +121,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** intent. I aim at the note and get a different element.
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u08-pin-points-through.jpg`
-- **Status:** open
+- **Status:** fixing
 
 ### U9 · The X-ray card covers the Blueprint bar
 - **Where:** Blueprint, X-ray card on an element in the right half of the page (the "Get started" button).
@@ -293,4 +293,43 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding (the shortcut can't be read).
 - **Severity:** 4
 - **Evidence:** `docs/qa/shots/2026-11-20/u24-more-menu.png`; the `kbd` in the Clean up row measures 6px wide.
+- **Status:** open
+
+### U24 · Clean up stops at a command with no way to run or copy it, and every other step is locked
+- **Where:** ··· → Clean up page (or the C key), on the Ledger screen with no site read yet.
+- **What I did:** opened Clean up, pressed Try again, then clicked the Colour step.
+- **What I saw:** "Plumber hasn't read your whole site yet. Text styles are worked out from every page, so each page
+  ends up the same. Run this one again." and the command `plumber census --url http://127.0.0.1:4340/`. There is no
+  Copy button and nothing says where to run it (which folder). Try again shows the same panel. Spacing, Colour,
+  Icons, Corners, Contrast and the last step are greyed and don't answer a click, so Clean up does nothing on a
+  first visit.
+- **What I expected:** a Copy button and the folder to run it in, or Clean up runs the read itself. The steps that
+  don't need the whole site (colour, corners on this page) should still open.
+- **Why it hurts:** acting. The headline feature in the ··· list is a dead end until I leave the page for the
+  terminal, and the panel doesn't help me get there.
+- **Severity:** 2
+- **Evidence:** `docs/qa/shots/2026-11-20/u24-cleanup-full.jpg`, `docs/qa/shots/2026-11-20/u24-cleanup-census.png`
+- **Status:** open
+
+### U25 · Clean up's words and step names are cut off on the right
+- **Where:** Clean up panel.
+- **What I saw:** the panel is 520px wide but its body is laid out 718px wide, so the text runs under the right
+  edge: "Run this one again" shows as "Run this on… again". The step names along the top are cut to "Spac…",
+  "Corn…", "Cont…" and the last one to "Sh".
+- **What I expected:** the words wrap inside the panel, and the step names fit or turn into icons with names on
+  hover.
+- **Why it hurts:** understanding.
+- **Severity:** 2
+- **Evidence:** `docs/qa/shots/2026-11-20/u24-cleanup-census.png`; in the overlay, `.cu` is 520px wide and its
+  `.body` 718px.
+- **Status:** open
+
+### U26 · While Clean up is open the Blueprint bar is gone, and the only visible button is Try again
+- **Where:** Clean up panel.
+- **What I saw:** the bar (with Close) disappears. The panel has no close or back button. Escape does take me back
+  to the bar, but nothing on screen says so.
+- **What I expected:** a visible way back (a Back or Done button, or the Esc key cap the other panels show).
+- **Why it hurts:** acting. A person who doesn't think of Escape is stuck in front of a panel that does nothing.
+- **Severity:** 3
+- **Evidence:** `docs/qa/shots/2026-11-20/u24-cleanup-full.jpg`
 - **Status:** open
