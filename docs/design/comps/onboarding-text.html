@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Onboarding comp: Text</title>
+<link rel="stylesheet" href="/overlay/src/tokens.css">
+<!--
+  A still of one onboarding step (Text), composed as one page before any code changes (owner, 2026-11-19: "no layout,
+  boxes thrown together, no insight, no one way to read it"). Real numbers from crafting-ui.
+
+  The system it follows:
+  - One reading path, top to bottom: what it is → the one thing to notice (the insight) → your text, drawn, with that
+    thing pointed at → why it matters, one line → one choice → the rule it becomes → one button.
+  - One focal point per screen: the drawing. Everything else is words on white.
+  - Colour has one meaning each: the step's hue (sky) marks this step (its toy, the answer you picked); butter marks
+    what is typed by hand; pink is the one action. No other fills. Grey inset holds the drawing only.
+  - Type: the page title, one sentence of insight at reading size, body in grey. Numbers only where they are the point.
+  - File names and token names sit behind Details (docs/design/onboarding.md, "Words").
+-->
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--pl-paper); color: var(--pl-ink); font: 500 16px/24px var(--pl-sans); }
+  .top { display: flex; align-items: center; gap: 12px; padding: 14px 32px; box-shadow: 0 1px 0 var(--pl-rule); font: 600 14px var(--pl-sans); }
+  .top .tag { padding: 2px 8px; border-radius: 7px; background: var(--pl-lilac-soft); color: var(--pl-lilac-ink); font-weight: 650; }
+  .top small { color: var(--pl-ink-2); font-weight: 500; }
+
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 36px 32px 96px; }
+
+  /* where you are: quiet. Done steps are their toys, the current one is named, the rest are dots */
+  .where { display: flex; align-items: center; gap: 10px; margin-bottom: 56px; font: 600 14px/1 var(--pl-sans); color: var(--pl-ink-2); }
+  .where .t { width: 22px; height: 22px; }
+  .where .dash { width: 18px; height: 2px; border-radius: 1px; background: var(--pl-rule); }
+  .where .dash.on { background: var(--pl-ink-2); }
+  .where b { color: var(--pl-ink); }
+  .where .of { margin-left: 6px; font-weight: 500; }
+
+  .cols { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 72px; align-items: start; }
+
+  /* 1. what it is */
+  .eyebrow { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; font: 650 14px/1 var(--pl-sans); color: var(--pl-sky-ink); }
+  .eyebrow .t { width: 28px; height: 28px; }
+  h1 { margin: 0; font: var(--pl-round-w, 750) 44px/48px var(--pl-round); letter-spacing: -0.02em; text-wrap: balance; }
+  .lead { margin: 14px 0 0; max-width: 58ch; font: 500 18px/28px var(--pl-sans); color: var(--pl-ink-2); }
+
+  /* 2. the one thing to notice, then the drawing that shows it */
+  .insight { margin: 48px 0 18px; max-width: 34ch; font: var(--pl-round-w, 700) 26px/33px var(--pl-round); letter-spacing: -0.01em; }
+  .insight em { font-style: normal; background: linear-gradient(transparent 62%, var(--pl-butter-face) 62%); }
+
+  .shelf { position: relative; padding: 28px 28px 22px; border-radius: 24px; background: var(--pl-paper-2); }
+  .ramp { position: relative; display: flex; align-items: flex-end; gap: 0; height: 100px; }
+  .size { flex: 1 1 0; display: grid; justify-items: center; align-content: end; gap: 8px; min-width: 0; }
+  .size .aa { line-height: 1; font-weight: 600; color: var(--pl-ink); }
+  .size .px { font: 600 11px/1 var(--pl-sans); color: var(--pl-ink-2); font-variant-numeric: tabular-nums; }
+  .size .use { width: 6px; border-radius: 3px; background: var(--pl-ink-2); opacity: .35; }
+  .size.in .aa { color: var(--pl-butter-ink); }
+  .size.in .use { background: var(--pl-butter); opacity: 1; }
+  /* the thing pointed at: a bracket under the cluster, with its words */
+  .point { position: relative; margin-top: 14px; height: 54px; }
+  .point .br { position: absolute; top: 0; height: 12px; border: 2px solid var(--pl-butter); border-top: 0; border-radius: 0 0 8px 8px; }
+  .point .say { position: absolute; top: 20px; font: 650 14px/20px var(--pl-sans); color: var(--pl-butter-ink); white-space: nowrap; }
+  .key { display: flex; gap: 20px; margin-top: 4px; font: 500 13px/18px var(--pl-sans); color: var(--pl-ink-2); }
+  .key span { display: inline-flex; align-items: center; gap: 7px; }
+  .key i { width: 6px; height: 14px; border-radius: 3px; }
+  .why { margin: 18px 0 0; max-width: 60ch; font: 500 16px/25px var(--pl-sans); color: var(--pl-ink-2); }
+
+  /* 4. one choice: two rows, the picked one lit in the step's hue, its rule under it */
+  h2 { margin: 56px 0 14px; font: var(--pl-round-w, 700) 22px/28px var(--pl-round); }
+  .choice { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; column-gap: 14px; row-gap: 4px; align-items: center; padding: 18px 20px; border-radius: 18px; }
+  .choice + .choice { margin-top: 6px; }
+  .choice .dot { width: 20px; height: 20px; border-radius: 50%; box-shadow: inset 0 0 0 2px var(--pl-rule); }
+  .choice b { font: var(--pl-round-w, 700) 17px/22px var(--pl-round); }
+  .choice b small { margin-left: 8px; font: 650 12px/1 var(--pl-sans); color: var(--pl-sky-ink); }
+  .choice p { grid-column: 2 / -1; margin: 0; font: 500 14.5px/21px var(--pl-sans); color: var(--pl-ink-2); }
+  .choice .mini { display: flex; align-items: baseline; gap: 6px; color: var(--pl-ink); font-weight: 600; }
+  .choice.on { background: var(--pl-sky-face); }
+  .choice.on .dot { box-shadow: inset 0 0 0 6px var(--pl-sky-ink); }
+  .choice.on p { color: var(--pl-sky-ink); }
+  .becomes { display: flex; gap: 12px; align-items: flex-start; margin: 14px 0 0; padding: 14px 18px; border-radius: 16px; background: var(--pl-paper-2); font: 600 15px/22px var(--pl-sans); }
+  .becomes .t { flex: none; width: 22px; height: 22px; }
+  .becomes span { color: var(--pl-ink-2); font-weight: 500; }
+
+  .go { display: flex; align-items: center; gap: 16px; margin-top: 32px; }
+  .btn { padding: 13px 20px; border-radius: 14px; background: var(--pl-pink-block); color: var(--pl-pink-block-on); font: var(--pl-round-w, 700) 16px/1 var(--pl-round); box-shadow: 0 4px 0 color-mix(in oklab, var(--pl-pink) 70%, #000); }
+  .go small { font: 500 14px/20px var(--pl-sans); color: var(--pl-ink-2); }
+  details { margin-top: 14px; font: 600 13.5px/20px var(--pl-sans); color: var(--pl-ink-2); }
+
+  /* your rules: a quiet list beside, filling in */
+  .rules { position: sticky; top: 32px; padding-top: 6px; }
+  .rules h3 { margin: 0 0 4px; font: var(--pl-round-w, 700) 17px/22px var(--pl-round); }
+  .rules > p { margin: 0 0 18px; font: 500 13.5px/20px var(--pl-sans); color: var(--pl-ink-2); }
+  .rules ol { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; }
+  .rules li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 2px 12px; font: 500 13.5px/19px var(--pl-sans); color: var(--pl-ink-2); }
+  .rules li .t { grid-row: span 2; width: 22px; height: 22px; }
+  .rules li b { font: 650 14px/19px var(--pl-sans); color: var(--pl-ink); }
+  .rules li.todo { opacity: .5; }
+  .rules li.todo .t { filter: grayscale(1); }
+  .t svg, .t { display: inline-block; }
+  .t svg { width: 100%; height: 100%; }
+</style>
+</head>
+<body class="pl-light pl-scheme">
+<div id="defs"></div>
+<header class="top"><span>React Plumber</span><span class="tag">crafting-ui</span><small>651 files read</small></header>
+<main class="wrap" id="page"></main>
+<script type="module">
+import { TOY_DEFS, toyOf } from '/overlay/src/toys.js';
+document.getElementById('defs').innerHTML = TOY_DEFS;
+const t = (n) => `<i class="t">${toyOf(n)}</i>`;
+
+// crafting-ui, 2026-11-19: places per text size, from your theme and typed by hand (sizes used in 5 places or more)
+const sizes = [[9,0,5],[9.5,0,5],[10,0,30],[10.5,0,19],[11,8,132],[12,14,102],[13,0,101],[14,22,27],[15,0,79],[16,31,55],[17,1,48],[18,9,15],[19,10,17],[20,0,17],[21,0,9],[22,7,13],[24,4,8],[28,4,2]];
+const most = Math.max(...sizes.map(([, a, b]) => a + b));
+const ramp = sizes.map(([px, theme, hand]) => `<div class="size${px >= 10 && px <= 13 ? ' in' : ''}" data-px="${px}"><span class="aa" style="font-size:${Math.min(px, 40) * 1.15}px">Aa</span><span class="use" style="height:${4 + ((theme + hand) / most) * 40}px"></span><span class="px">${px}</span></div>`).join('');
+
+document.getElementById('page').innerHTML = `
+  <nav class="where">${t('padding')}<span class="dash on"></span>${t('fill')}<span class="dash on"></span>${t('type')}<b>Text</b><span class="dash"></span><span class="dash"></span>${t('corner')}<span class="dash"></span>${t('card')}<span class="of">Step 3 of 4</span></nav>
+  <div class="cols"><div>
+    <div class="eyebrow">${t('type')}Text sizes</div>
+    <h1>Text sizes are your app’s voice levels.</h1>
+    <p class="lead">A title, a paragraph, a label, small print. Each level should be clearly bigger or smaller than the next, so a reader knows what to read first.</p>
+
+    <p class="insight">Half of crafting-ui’s text is set in <em>seven sizes between 10 and 13px</em>, each barely different from the next.</p>
+    <div class="shelf">
+      <div class="ramp">${ramp}</div>
+      <div class="point"><span class="br" id="br"></span><span class="say" id="say">Seven sizes, 411 places. To a reader they look like one size, set carelessly.</span></div>
+      <div class="key"><span>Each size drawn at its size. The mark under it grows with the places that use it.</span></div>
+    </div>
+    <p class="why">Your theme already has a list of sizes. Most text doesn’t use it, so every screen picks its own small size and the app reads slightly off everywhere.</p>
+
+    <h2>What should your text sizes be?</h2>
+    <div class="choice on"><span class="dot"></span><b>A few clear levels<small>Suggested</small></b><span class="mini"><span style="font-size:12px">Aa</span><span style="font-size:14px">Aa</span><span style="font-size:16px">Aa</span><span style="font-size:19px">Aa</span><span style="font-size:24px">Aa</span><span style="font-size:32px">Aa</span></span>
+      <p>Your four lists become one. The 10–13px pile becomes two sizes, 12 and 14, and each size typed by hand snaps to the nearest level.</p></div>
+    <div class="choice"><span class="dot"></span><b>Keep what you have</b><span class="mini" style="color: var(--pl-ink-2)">51 sizes</span>
+      <p>Nothing changes. Plumber only points out new sizes typed by hand.</p></div>
+    <p class="becomes">${t('card')}<span><b style="color: var(--pl-ink)">Your rule:</b> every text size is one of your 6 levels. Anything else, Plumber points out.</span></p>
+    <details><summary>Details for designers</summary></details>
+
+    <div class="go"><span class="btn">Add this rule, then corners →</span><small>You can come back and change it.</small></div>
+  </div>
+  <aside class="rules"><h3>Your rules</h3><p>Plumber holds your code to these from now on.</p><ol>
+    <li>${t('padding')}<b>Spacing</b>Gaps and paddings use your spacing steps.</li>
+    <li>${t('fill')}<b>Colours</b>Colours come from your palette.</li>
+    <li class="todo">${t('type')}<b>Text</b>Choose on this page.</li>
+    <li class="todo">${t('corner')}<b>Corners</b>Next.</li></ol></aside></div>`;
+
+// the bracket spans the 10 to 13px sizes, measured from the drawn ramp
+requestAnimationFrame(() => {
+  const ramp = document.querySelector('.ramp').getBoundingClientRect();
+  const a = document.querySelector('[data-px="10"]').getBoundingClientRect(), b = document.querySelector('[data-px="13"]').getBoundingClientRect();
+  const br = document.getElementById('br'), say = document.getElementById('say');
+  br.style.left = `${a.left - ramp.left + 4}px`; br.style.width = `${b.right - a.left - 8}px`; say.style.left = `${a.left - ramp.left}px`;
+});
+</script>
+</body>
+</html>
