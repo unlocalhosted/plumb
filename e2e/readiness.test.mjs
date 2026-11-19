@@ -411,7 +411,7 @@ test('derived causes stay in route JSON; doctor counts causes and excludes unava
     assert.equal(requirement.derived, true);
     assert.equal(requirement.status, 'missing');
     assert.equal(requirement.cause, 'locate.order');
-    assert.equal(requirement.fix.command, 'plumber fix locate.order');
+    assert.equal(requirement.fix.command, 'npx plumber fix locate.order');
   }
   assert.equal(ready.schemaVersion, 1);
   assert.equal(ready.capabilities.find(item => item.id === 'system').available, false);
@@ -513,7 +513,7 @@ test('no baseline, no tokens, executable config, unobserved host are named witho
   const ready = await report();
   assert.equal(item(ready, 'read.styles').status, 'ok');
   assert.equal(item(ready, 'remember.baseline').status, 'missing');
-  assert.equal(item(ready, 'remember.baseline').fix.command, 'plumber baseline');
+  assert.equal(item(ready, 'remember.baseline').fix.command, 'npx plumber baseline');
   assert.equal(item(ready, 'fast.config').status, 'missing');
   assert.equal(item(ready, 'locate.host').status, 'unknown');
   for (const family of ['spacing', 'color', 'radius', 'type', 'motion', 'elevation', 'z']) assert.equal(item(ready, `read.tokens.${family}`).status, 'missing', family);
@@ -546,9 +546,9 @@ test('one missing token family degrades Read; the CLI cannot see runtime; plumbe
   assert.equal(ready.capabilities.find(item => item.id === 'read').status, 'degraded');
   // the step's command does what the step says: run it, and the theme has z-index steps
   const z = item(ready, 'read.tokens.z');
-  assert.deepEqual([z.status, z.fix.command], ['missing', 'plumber propose --family z --write']);
+  assert.deepEqual([z.status, z.fix.command], ['missing', 'npx plumber propose --family z --write']);
   assert.match(z.fix.instruction, /^Build layer order \(z-index\) steps from the values your code already uses and write them into your theme/);
-  run(root, z.fix.command.split(' ').slice(1));
+  run(root, z.fix.command.replace(/^.*?\bplumber /, '').split(' '));
   assert.match(await readFile(join(root, 'src/styles.css'), 'utf8'), /--z-\w+: \d+;/);
   assert.equal(item(await report(), 'read.tokens.z').status, 'ok');
 });

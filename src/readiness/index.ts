@@ -25,6 +25,7 @@ import { addSourceGlobs, hostConfig, installedRefresh } from './config.js';
 import { table, wrap } from '../cli-table.js';
 import { count } from '../messages.js';
 import { readState, describeState } from '../onboarding/state.js';
+import { runnable, runnerOf } from '../runner.js';
 
 export type Capability = 'read' | 'remember' | 'fast' | 'locate' | 'preview' | 'write' | 'blueprint' | 'system';
 export type Status = 'ok' | 'missing' | 'unknown';
@@ -261,6 +262,9 @@ export async function readiness(options: ReadinessOptions): Promise<ReadinessRep
     'The system panel can’t say where this project starts.', step('Run plumber doctor to see what stops the project being read.', 'plumber doctor'));
   // Only a live host can show these; from the CLI they read `unknown` (verify in dev), never degraded.
   const runtimeOnly = new Set(['locate.react-dev', 'write.watcher']);
+  // each step's command as this project runs it (`pnpm exec plumber init`): the setup panel's Copy gives it to a shell
+  const runner = runnerOf(root);
+  for (const item of requirements) if (item.fix?.kind === 'step') item.fix = { ...item.fix, command: runnable(item.fix.command, runner) };
   return { schemaVersion: 1, ...(stamping === undefined ? {} : { stamping }), project: publicFacts(facts), capabilities: (Object.keys(labels) as Capability[]).map(id => {
     const checks = requirements.filter(item => item.capability === id), missing = checks.some(item => item.status === 'missing'), unknown = checks.filter(item => item.status === 'unknown');
     // A system plumb skips (read.styling.*, read.library.*) or a token family it lacks degrades Read; it does not turn it off: the rest is judged.

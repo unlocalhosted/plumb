@@ -30,8 +30,8 @@ test('before setup: reads your code, but Plumber is not on your page: one cross 
   assert.equal(lines.length, 4, result.stdout);
   assert.equal(lines[0], 'Plumber');
   assert.match(lines[1], /^ {2}✓ Reads your code {7}Vite \d+, React \d+, Tailwind 4$/);
-  assert.equal(lines[2], "  ✗ Shows on your page    Plumber isn't in vite.config.ts → plumber install --overlay --write");
-  assert.equal(lines[3], '  – Guards new code       not set up → plumber install --ci');
+  assert.equal(lines[2], "  ✗ Shows on your page    Plumber isn't in vite.config.ts → npx plumber install --overlay --write");
+  assert.equal(lines[3], '  – Guards new code       not set up → npx plumber install --ci');
   // none of the tool's own words
   assert.doesNotMatch(result.stdout, /\b(capabilit\w+|requirement|locate\.|read\.|ledger|baseline|token)/i);
 });
@@ -45,7 +45,7 @@ test('after npx plumber --yes the second line is a tick and doctor exits 0; the 
   assert.equal(lines.length, 4);
   assert.match(lines[1], /^ {2}✓ Reads your code/);
   assert.equal(lines[2], '  ✓ Shows on your page    Plumber is in vite.config.ts');
-  assert.equal(lines[3], '  – Guards new code       not set up → plumber install --ci');
+  assert.equal(lines[3], '  – Guards new code       not set up → npx plumber install --ci');
   // a dash on the optional line never fails doctor; once CI is set up it is a tick
   const ci = run(['install', '--ci', '--root', root]);
   assert.equal(ci.code, 0, ci.stderr + ci.stdout);

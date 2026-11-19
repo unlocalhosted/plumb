@@ -5,6 +5,7 @@ import { manifestAt, projectFacts } from '../project-facts/index.js';
 import { readiness } from '../readiness/index.js';
 import type { ReadinessReport } from '../readiness/index.js';
 import { count } from '../messages.js';
+import { runnerOf } from '../runner.js';
 
 /**
  * Gates: a step checks only what it needs. When it can go on it says nothing; when it can't, it says what's wrong in
@@ -25,7 +26,7 @@ export async function chooseProject(argument: string | undefined): Promise<{ roo
     // a declared workspace with no React app under it: the evidence-bearing notice, never "0 apps"
     if (!project.apps.length) { await cliProject(argument); throw noReact(); }
     const names = project.apps.map(app => app.path);
-    throw new UsageError(`Found ${count(names.length, 'app')}: ${names.join(', ')}.\n  → Run npx plumber --root ${shellPath(names[0]!)}${names.length > 1 ? ' (or the one you mean)' : ''}.`);
+    throw new UsageError(`Found ${count(names.length, 'app')}: ${names.join(', ')}.\n  → Run ${runnerOf(start)} plumber --root ${shellPath(names[0]!)}${names.length > 1 ? ' (or the one you mean)' : ''}.`);
   }
   return project;
 }

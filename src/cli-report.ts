@@ -7,6 +7,7 @@ import { findingContext, findingLines, renderFindingLines } from './cli-findings
 import { shorten, table, terminalWidth, visibleWidth, wrap } from './cli-table.js';
 import type { Finding, Report, Site } from './report.js';
 import { formatDeadSummary } from './rules/dead.js';
+import { runnable, runnerOf } from './runner.js';
 
 export interface DetailFilters {
   all?: boolean;
@@ -75,12 +76,16 @@ function header(report: Report, state?: string): string {
 }
 
 function fixTable(rows: string[][]): string[] {
-  const reasonWidth = Math.max(1, Math.floor((terminalWidth() - 2 - 4 - 32) / 2));
+  // the command is whole, whatever runner it starts with (`pnpm exec plumber check --rule ownership`): the other columns
+  // give way, so it can be copied
+  const commandWidth = Math.max(32, ...rows.map(row => visibleWidth(row[2]!)));
+  // reasons show when they fit beside a first column of 18 (it shortens its words with …)
+  const reasonWidth = Math.max(1, terminalWidth() - 2 - 4 - commandWidth - 18);
   const showReason = rows.every(row => visibleWidth(row[1]!) <= reasonWidth);
   return table(rows.map(row => [
     { text: row[0]!, ink: row[0]!.startsWith('✗') ? 'red' as const : 'amber' as const },
     ...(showReason ? [row[1]!] : []), row[2]!,
-  ]), showReason ? [{ weight: 1 }, { weight: 1 }, { width: 32 }] : [{ weight: 1 }, { width: 32 }]);
+  ]), showReason ? [{ weight: 1 }, { weight: 1 }, { width: commandWidth }] : [{ weight: 1 }, { width: commandWidth }]);
 }
 
 /** `state` is the one-sentence state of the project (src/onboarding/state.ts), printed under the header. */
@@ -137,10 +142,11 @@ export function formatCheck(report: Report, filters: DetailFilters = {}, verbose
     const most = families.reduce((best, family) => report.coverage[family].findings > report.coverage[best].findings ? family : best, families[0]);
     fix.push([`· ${count(off.length, 'value')} off your tokens`, `most in ${most}`, 'plumber check --rule provenance']);
     const top = [...sites].sort((a, b) => b[1].size - a[1].size || a[0].localeCompare(b[0])).slice(0, 4);
-    if (fix.length) lines.push('', 'Fix first', ...fixTable(fix));
+    // each command as this project runs it, before the table measures its columns (the line still fits 80)
+    if (fix.length) lines.push('', 'Fix first', ...fixTable(fix.map(([what, why, command]) => [what!, why!, runnable(command!, runnerOf(report.root))])));
     lines.push(...table([[top.map(([text, sites]) => `${shorten(text, 32)} ×${number(sites.size)}`).join(' · ')]], [{ weight: 1, ink: 'dim' }], { indent: 4 }));
   }
-  if (!off.length && fix.length) lines.push('', 'Fix first', ...fixTable(fix));
+  if (!off.length && fix.length) lines.push('', 'Fix first', ...fixTable(fix.map(([what, why, command]) => [what!, why!, runnable(command!, runnerOf(report.root))])));
   if (!report.ledger?.exists) {
     lines.push('', 'This is your first run, so all of this counts as new.',
       report.config.path ? '  plumber baseline      record today\'s drift as debt; from then on only new drift fails'

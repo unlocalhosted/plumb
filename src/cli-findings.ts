@@ -7,6 +7,7 @@ import { useFor } from './rules/provenance.js';
 import { atSite } from './surfaces/sites.js';
 import { logicalProperty } from './habits/index.js';
 import { tokens } from './rules/families.js';
+import { printed } from './runner.js';
 
 const SOURCE_PACKS = new Set(PACK_DATA.filter(pack => pack.runs === 'source').map(pack => pack.id));
 export interface FindingLine { subject: string; findings: Finding[]; sites: Site[]; /** The library state the declaration applies in: `checked`, `not checked`, `open, checked`; empty when none. */ state?: string }
@@ -233,7 +234,7 @@ export function findingContext(findings: Finding[], path: (file: string) => stri
   const first = actionable.find(finding => finding.sites.some(site => (!site.ledger || site.ledger.status === 'new') && site.inScope !== false)) ?? actionable[0];
   if (accept && first) {
     const site = first.sites.find(site => (!site.ledger || site.ledger.status === 'new') && site.inScope !== false) ?? first.sites[0]!;
-    const command = `plumber accept --rule ${first.rule} --site ${JSON.stringify(`${path(site.file)}:${site.line}`)} --why "…"`;
+    const command = printed(`plumber accept --rule ${first.rule} --site ${JSON.stringify(`${path(site.file)}:${site.line}`)} --why "…"`);
     // Shell continuations keep the example copyable at narrow terminal widths.
     const parts = command.match(/(?:"[^"]*"|\S)+/g) ?? [];
     let line = 'Intended?  ';

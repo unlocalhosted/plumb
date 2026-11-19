@@ -42,7 +42,7 @@ written, and `plumber check` then says "Nothing new since your baseline".
    three different swatches. `color: var(--fg)` (23 places) is listed as typed by hand, though it is the token.
 6. **Every command reads the whole app again.** algorecall, vm-agent: `plumber` 61s, `state` 41s, `propose` 64s,
    `check` 50s, `doctor` 16s. The README's first block, run in order, is about 4.5 minutes of waiting.
-7. **Commands that don't run as printed.** "Next: plumber init", `plumber install --ci`, and the setup panel's Copy
+7. **Commands that don't run as printed.** *Fixed: every command printed for a person carries the project's runner, from its lockfile (`pnpm exec plumber init`, `npx plumber check --broken`), in the CLI's text, the setup panel's steps and Copy, and the plain first run; JSON keeps `plumber …`.* "Next: plumber init", `plumber install --ci`, and the setup panel's Copy
    buttons give `plumber …`, which a shell without a global install can't find. The plain first run says "run npx
    plumber" to a pnpm user. The README shows npm only.
 8. **Two setup paths that disagree.** The README and the setup panel say `plumber init`, the panel calling the config

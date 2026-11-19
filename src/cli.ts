@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { printWith, runnable, runnerOf } from './runner.js';
 import { migrationNotice, statePath } from './paths.js';
 import { CheckCache } from './check-cache.js';
 import { count } from './messages.js';
@@ -179,6 +180,13 @@ async function main(): Promise<void> {
     root: project.root,
     ...(args.values.config === undefined ? {} : { config: args.values.config }),
   };
+  // Words for a person: every command printed is one this project can run as printed (`pnpm exec plumber init`), not
+  // `plumber init`, which only a global install runs. JSON, SARIF, agent output and the server keep their own text.
+  if (!args.values.json && !args.values.sarif && !args.values.agent && args.values.format === undefined && command !== 'serve' && !args.values.stdio) {
+    const runner = runnerOf(options.root), write = process.stdout.write.bind(process.stdout) as (chunk: unknown, ...rest: unknown[]) => boolean;
+    printWith(runner);
+    process.stdout.write = ((chunk: unknown, ...rest: unknown[]) => write(typeof chunk === 'string' ? runnable(chunk, runner) : chunk, ...rest)) as typeof process.stdout.write;
+  }
   let prepared = false;
   const prepare = async () => {
     if (prepared || command === 'doctor') return;

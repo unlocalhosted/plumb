@@ -4,6 +4,7 @@ import { basename, relative, resolve } from 'node:path';
 import { UsageError } from './errors.js';
 import { projectFacts, manifestAt, supportNotice, supportRefusal, supportSummary } from './project-facts/index.js';
 import type { App } from './project-facts/index.js';
+import { runnerOf } from './runner.js';
 
 /** A shell argument, including workspace names containing spaces. */
 export const shellPath = (path: string) => /^[\w./@-]+$/.test(path) ? path : "'" + path.replaceAll("'", "'\\''") + "'";
@@ -33,7 +34,7 @@ export async function cliProject(argument?: string, allowWorkspace = false): Pro
   const override = argument !== undefined && manifestAt(start) !== undefined;
   const facts = await projectFacts(start, override ? { root: start } : {});
   const root = facts.root.value;
-  if (root === null) throw new UsageError('No project here. React Plumber reads a React app: a folder with package.json.\n  → cd into your app, or: npx plumber --root path/to/app');
+  if (root === null) throw new UsageError(`No project here. React Plumber reads a React app: a folder with package.json.\n  → cd into your app, or: ${runnerOf(process.cwd())} plumber --root path/to/app`);
   const { workspace, apps, notice } = await workspaceApps(root);
   if (workspace && !override) {
     if (allowWorkspace) return { root, notice, apps };
@@ -43,7 +44,7 @@ export async function cliProject(argument?: string, allowWorkspace = false): Pro
       throw new UsageError(`Workspace (${declared.tool}${declared.patterns.length ? `, ${declared.patterns.join(', ')}` : ''}) with no React app under ${declared.patterns.length ? 'those patterns' : 'it'}: ${where.file}:${where.line}, ${where.text}.\n  → run in an app: npx plumber --root path/to/app`);
     }
     throw new UsageError(`This is a workspace with ${apps.length} ${apps.length === 1 ? 'app' : 'apps'}. Pick one:\n` +
-      table(apps.map(app => [{ text: `npx plumber --root ${shellPath(app.path)}`, path: true }, `${app.kind} · ${app.tailwind ? `Tailwind ${app.tailwind}` : 'no Tailwind'}`]), [{ weight: 2 }, { weight: 1, ink: 'dim' }], { stream: process.stderr }).join('\n'));
+      table(apps.map(app => [{ text: `${runnerOf(process.cwd())} plumber --root ${shellPath(app.path)}`, path: true }, `${app.kind} · ${app.tailwind ? `Tailwind ${app.tailwind}` : 'no Tailwind'}`]), [{ weight: 2 }, { weight: 1, ink: 'dim' }], { stream: process.stderr }).join('\n'));
   }
   return { root, notice: notice + (root === start ? '' : `Using the project at ${relative(start, root)} (${basename(root)}, package.json).\n`), ...(workspace ? { apps } : {}) };
 }

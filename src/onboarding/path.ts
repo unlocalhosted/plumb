@@ -17,6 +17,7 @@ import { ledgerCommand } from '../ledger/commands.js';
 import { packageManager } from '../setup-messages.js';
 import type { ReadinessReport } from '../readiness/index.js';
 import { wrap } from '../cli-table.js';
+import { runnerOf } from '../runner.js';
 
 /**
  * The path a newcomer takes: `npx plumber`, nothing else. On a terminal it reads the code, serves a page about the
@@ -84,7 +85,7 @@ export function plainVersion(report: Report, setUp: boolean): string {
     if (setUp) lines.push(fresh ? `  ${count(fresh, 'new problem')} since you set up. ${open === 1 ? '1 cause is' : `${open} causes are`} open, the biggest:` : `  Nothing new since you set up. ${open === 1 ? '1 cause is' : `${open} causes are`} still open${open === 1 ? ':' : ', the biggest:'}`);
     for (const cause of causes) lines.push(wrap('  ' + sayCause(cause, report)));
   }
-  lines.push('', setUp ? 'Next: press Alt+B on your page to fix it there.' : 'Next: run npx plumber in a terminal to see this in your browser, or npx plumber --yes to set it up here.');
+  lines.push('', setUp ? 'Next: press Alt+B on your page to fix it there.' : `Next: run ${runnerOf(report.root)} plumber in a terminal to see this in your browser, or ${runnerOf(report.root)} plumber --yes to set it up here.`);
   return lines.join('\n') + '\n';
 }
 

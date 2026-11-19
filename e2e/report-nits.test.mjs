@@ -38,8 +38,8 @@ test('Fix first reasons stay whole in pipes and PTYs; narrow tables omit reasons
   for (const tty of [false, true]) {
     const rows = run(root, [], 80, tty).split('Fix first\n')[1].split('\n\n')[0].split('\n').filter(line => line.includes('plumber check'));
     assert.equal(rows.length, 2);
-    assert.match(rows[0], /tokens missing\s+plumber check --rule config$/);
-    assert.match(rows[1], /most in spacing\s+plumber check --rule provenance$/);
+    assert.match(rows[0], /tokens missing\s+npx plumber check --rule config$/);
+    assert.match(rows[1], /most in spacing\s+npx plumber check --rule provenance$/);
     assert.ok(rows.every(row => !row.trim().split(/ {2,}/)[1].includes('…')), rows.join('\n'));
   }
   const narrow = run(root, [], 60, true).split('Fix first\n')[1].split('\n\n')[0];
