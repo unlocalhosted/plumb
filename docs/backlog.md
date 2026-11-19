@@ -84,6 +84,9 @@ reserved.)
 - **Answers that depend on whether the whole-app report exists yet (2026-11-18).** Since start-up stopped judging,
   edits made before the report was built were refused ("Apply requires a tracked project source file": the editable
   files were filled only by the whole-app index; fixed).
+- **Onboarding, tried from scratch on crafting-ui and algorecall (2026-11-19).** 19 gaps in docs/qa/onboarding-2026-11-19.md:
+  3 blockers (the spacing step doesn't see Tailwind's spacing steps; "Set it up" fails after half of it is written;
+  a text shadow written as a text size), 8 major, 8 minor. Being fixed in that order.
 - **class-site, recipes and reading-cache, fixed (2026-11-19).** Correction: class-site and recipes were among the 36
   old failures, and the note that all 36 passed was wrong for them; they failed on every commit tried. Two were tests
   left behind by deliberate changes of 2026-11-15 (a plain string in a sum is where a class is written; a local
