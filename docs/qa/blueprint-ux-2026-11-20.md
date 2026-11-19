@@ -74,7 +74,7 @@ How to read an issue, and what each one needs:
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u03-concern-list.jpg`; the notes' words come from the labels on the
   page's note shapes inside the overlay.
-- **Status:** open
+- **Status:** partly fixed 20b7a36e (each design-system note now says what is wrong: "isn't one of your tokens", "won't change when your theme does"). needs owner: what the concern count counts. Today it counts places (Design system 125) while Fix steps through fixes ("1 of 49"); a code comment records places as a deliberate choice. Options: (a) count fixes, so the picker's number is the list you work through and matches "1 of 49"; costs: a page with one fix at 60 places reads as "1", and the number drops a lot from what you have seen. (b) keep places but show both ("125 places · 31 fixes"); costs: two numbers in a small control. (c) keep as is and fold every Tailwind default into one page note ("this page uses Tailwind's default type scale"); costs: a new kind of note, and those places leave the fix list. I'd pick (a). · tester (05:01): the new words are in (e.g. "mt-8. This works out to 2rem, which isn't one of your tokens."); the count is still 197 with 125 design-system notes, so the rest waits on the owner.
 
 ### U5 · The Blueprint bar covers the page's main heading
 - **Where:** Blueprint bar at rest, 1280×800.
@@ -201,7 +201,7 @@ How to read an issue, and what each one needs:
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u15-fix-first.jpg`; in the page the line has class
   `mt-2 text-sm text-slate-500`, font size 14px, and `--text-body` is 14px.
-- **Status:** fixed 3ba15fd8
+- **Status:** fixed 3ba15fd8 · verified (tester, 05:02): fix 1 reads "11 places use text-sm, Tailwind's default font size · text-sm is 14px, the same as your text-body. Use your name for it, so it changes when your theme does."
 
 ### U16 · Two fixes in a row have the same title with different counts
 - **Where:** Fix, fixes 1 and 2 of 50.
@@ -212,7 +212,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding. After Skip it looks like the same fix came back with a different number.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u15-fix-first.jpg`, `docs/qa/shots/2026-11-20/u16-fix-second.jpg`
-- **Status:** fixed 3ba15fd8 (same change as U15: the headline names the class)
+- **Status:** fixed 3ba15fd8 (same change as U15: the headline names the class) · verified (tester, 05:03): fix 2 reads "19 places use text-xs, Tailwind's default font size"; the two titles differ.
 
 ### U17 · Escape in the "Why keep it?" box leaves Fix altogether
 - **Where:** Fix, Keep as is on fix 2.
@@ -249,7 +249,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding. The line that says what the ticks are for is the one hidden.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u19-setup-panel.jpg`
-- **Status:** open
+- **Status:** fixed 19a65b6d (same cause as U27: panels placed for the dock, not the bar)
 
 ### U20 · Two setup steps are the same command
 - **Where:** Setup steps, "Choose your rules" and "Start from today's problems".
@@ -345,7 +345,7 @@ How to read an issue, and what each one needs:
   disabled with no reason in view.
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u27-history-under-bar.jpg`
-- **Status:** open
+- **Status:** fixed 19a65b6d
 
 ### U28 · History's one entry doesn't read as a sentence
 - **Where:** History strip, the only entry.
@@ -369,7 +369,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u28-help.jpg`
-- **Status:** open
+- **Status:** fixed 19a65b6d (the panel above the bar) and 5e3aae8e (the long key wraps)
 
 ### U30 · "Edit the words" is the main button on notes that aren't about words
 - **Where:** X-ray card, pink note "Padding looks bigger than it is" on the "Get started" button.
@@ -419,7 +419,7 @@ How to read an issue, and what each one needs:
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u33-craft-output.txt` (the run's text output); the curl and dig results
   above.
-- **Status:** open
+- **Status:** fixed 74694792 (no link until the docs site has an address; PLUMBER_DOCS_ORIGIN sets one)
 
 ### U34 · The weight note tells me to use an existing weight, then to add a new one
 - **Where:** `plumber craft`, rule craft/weight-levels (8 findings on this page).
@@ -517,7 +517,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding. I'm asked to choose a fix for a thing I can't see.
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u41-crafting-fix-under-header.jpg`
-- **Status:** open
+- **Status:** fixing
 
 ### U42 · The fix for a heavy line is a hard-coded value
 - **Where:** same fix, "2 places: line too heavy. This 1px line is 2 pixels thick on a 2× screen."
@@ -551,7 +551,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding. The new, clearer words (from the U15 change) can't be read on a narrow window.
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u44-fix-bar-700.jpg`
-- **Status:** open
+- **Status:** fixed b784f053
 
 ### U45 · In the card, the blue highlight in the "text size" row sits under the label, not the value
 - **Where:** X-ray card, top row ("text size base 16px"), on the "Get started" button, after the card fixes.
@@ -562,4 +562,101 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding. It reads as if the label were the control.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u45-text-size-row.png`; compare `docs/qa/shots/2026-11-20/u06-button-shows-heading-note.jpg`.
+- **Status:** fixed f4a811da · verified (tester, 05:01): the blue highlight wraps "base 16px ⌄" again.
+
+### U46 · The ‹ › arrows in the Fix bar are too small to hit
+- **Where:** Fix bar, the arrows either side of "1 of 49".
+- **What I did:** clicked just right of "1 of 49" to go to the next fix.
+- **What I saw:** nothing happened. The arrows are 22 × 22px, set close to the count, and my click landed on the
+  gap between them. The second try, aimed at the arrow's centre, worked.
+- **What I expected:** arrows at least 32px across, or the whole "‹ 1 of 49 ›" group as two halves I can't miss.
+- **Why it hurts:** acting. The main way to move between fixes by mouse takes aim.
+- **Severity:** 3
+- **Evidence:** `docs/qa/shots/2026-11-20/u46-fix-arrows.jpg`; in the overlay the buttons "Previous fix" and
+  "Next fix" measure 22 × 22px.
+- **Status:** open
+
+### U47 · ← on the first fix jumps to "Note 31 of 31" at the bottom of the page
+- **Where:** Fix, fix 1 of 49, pressing ←.
+- **What I saw:** the bar changed to "1 paragraph: hard to read · Note 31 of 31" and the page scrolled down to the
+  Deployments section. The counter changed from fixes to notes without saying so. 49 fixes and 31 notes make 80,
+  while the bar said 197 before I pressed Fix.
+- **What I expected:** ← on the first fix stays (or says "this is the first"), and one counter that matches the bar.
+  If notes come after fixes, a line where the list moves from one to the other ("Fixes done; 31 notes to read").
+- **Why it hurts:** understanding. I lose my place and can't tell how much is left.
+- **Severity:** 3
+- **Evidence:** `docs/qa/shots/2026-11-20/u47-note-31-of-31.jpg`
+- **Status:** open
+
+### U48 · "Contrast 45 at 12px. Small text needs 60." gives a number with no scale
+- **Where:** Fix, Note 31 of 31, "1 paragraph: hard to read".
+- **What I saw:** "Contrast 45 at 12px. Small text needs 60." The choice row says "Darken the text, or make it
+  bigger or bolder." 45 of what? Most people know contrast as a ratio like 4.5:1.
+- **What I expected:** the scale named once ("45 on the APCA scale; small text needs 60"), or the ratio people
+  know.
+- **Why it hurts:** understanding.
+- **Severity:** 3
+- **Evidence:** `docs/qa/shots/2026-11-20/u47-note-31-of-31.jpg`
+- **Status:** open
+
+### U49 · Closing Blueprint leaves the page where Fix scrolled it
+- **Where:** Fix, then Escape twice to leave Fix and Blueprint.
+- **What I saw:** I opened Blueprint at the top of the page; Fix scrolled down to the Deployments section. After
+  closing, the page stayed down there. The README says "Esc also leaves, and the page is put back exactly."
+- **What I expected:** the page back where I was when I opened Blueprint.
+- **Why it hurts:** intent. I was reading the top of my page and closing a tool moved me.
+- **Severity:** 3
+- **Evidence:** `docs/qa/shots/2026-11-20/u49-scroll-after-close.jpg`; README line 92.
+- **Status:** open
+
+### U50 · After Alt+click, "All concerns" means only that element, and one card gets three counts
+- **Where:** outside Blueprint, Alt+click on a card, then ··· → Inspect an element on the "Active users" card.
+- **What I saw:** after Alt+click on the Churn card and closing its editor, the bar still read "All concerns 7"
+  (Design system 4, Craft 1, Anti-slop 2): the counts for that one card, under a label that says "All". Then for
+  the "Active users" card: the hover label said "Card div 2 problems", the editor said "7 problems here", and the
+  bar said "All concerns 11".
+- **What I expected:** one count per element everywhere, and a bar that says it is showing one element ("This
+  card · 7") with a way back to the whole page.
+- **Why it hurts:** trust. Three numbers for one card, and a page-wide label on an element's count. Same family as
+  U31.
+- **Severity:** 2
+- **Evidence:** `docs/qa/shots/2026-11-20/u50-scoped-all-concerns-7.jpg`,
+  `docs/qa/shots/2026-11-20/u50-hover-2-problems.jpg`, `docs/qa/shots/2026-11-20/u50-editor-7-bar-11.jpg`
+- **Status:** open
+
+### U51 · "Inspect an element" gives no sign that anything started
+- **Where:** ··· → Inspect an element.
+- **What I saw:** the list closed and the page looked exactly as before. Only when I moved over a card did an
+  outline appear. Nothing said "pick an element" or how to stop.
+- **What I expected:** a line in the bar ("Click an element to inspect it · Esc to stop") and a different pointer.
+- **Why it hurts:** understanding. I can't tell whether my click on the menu did anything.
+- **Severity:** 3
+- **Evidence:** `docs/qa/shots/2026-11-20/u51-inspect-no-sign.jpg`
+- **Status:** open
+
+### U52 · After Undo, the message offers "Undo" again
+- **Where:** element editor, after resizing the Churn card by its right edge (it wrote `w-xs` to 3 places) and
+  pressing Undo.
+- **What I saw:** a dark message "Undone. Your code is back as it was." with a button "Undo". Pressing it would
+  presumably put `w-xs` back, which is a redo. The resize itself worked: snapped to w-xs (320px), wrote one line,
+  said "3 places, one line of code", and Undo restored the file (the change log shows the write and its undo).
+- **What I expected:** "Redo" on that button, or no button.
+- **Why it hurts:** intent. "Undo" on an undone change reads as "undo more", not "put it back".
+- **Severity:** 3
+- **Evidence:** `docs/qa/shots/2026-11-20/u52-resize-written.jpg` (after the write),
+  `docs/qa/shots/2026-11-20/u52-undone-undo.jpg` (after Undo).
+- **Status:** open
+
+### U53 · Holding Space shows nothing, so nobody finds it
+- **Where:** Blueprint at rest, holding Space.
+- **What I saw:** while Space is held the note shapes let the pointer through (a click reaches the page's link), but
+  the screen doesn't change at all: same bar, same pins, no word. The only place it is mentioned is Help.
+- **What I expected:** a sign while held (the bar says "Using the page"), and a hint at rest that the page is
+  covered ("Hold Space to use the page").
+- **Why it hurts:** understanding. People who try to click their page in Blueprint hit the notes and don't know the
+  way through. (I held Space by sending the key events from the page, since the browser pane can't hold a key; a
+  real hold may differ.)
+- **Severity:** 3
+- **Evidence:** `docs/qa/shots/2026-11-20/u53-space-held.jpg` (taken while held); in the overlay the host gets
+  `data-bp-pass` and `path.hit` turns `pointer-events: none`.
 - **Status:** open
