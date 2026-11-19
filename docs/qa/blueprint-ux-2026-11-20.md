@@ -131,7 +131,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** acting. The way out (Close) and the main action (Fix) are hidden while a card is open.
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u06-button-shows-heading-note.jpg`
-- **Status:** open
+- **Status:** fixing
 
 ### U10 · The padding and margin numbers in the card read as pairs of random numbers
 - **Where:** X-ray card, the box drawing (Margin, Padding).
@@ -178,7 +178,7 @@ How to read an issue, and what each one needs:
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u13-agent-note.jpg` (the box with its Esc key); after one Escape the bar
   is gone.
-- **Status:** fixing
+- **Status:** fixed 5fad8eb4
 
 ### U14 · The agent note cuts off the line number
 - **Where:** "Note for your agent" box.
@@ -224,7 +224,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** intent. Cancel did more than cancel; to get back to fix 2 I have to start Fix again.
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u17-keep-reason.jpg`
-- **Status:** open
+- **Status:** fixed 5fad8eb4
 
 ### U18 · The note counts change when I haven't changed anything
 - **Where:** Blueprint bar and the concern list, Ledger screen.
@@ -381,4 +381,27 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** intent. The loudest button leads me away from the problem.
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u30-padding-note-edit-words.jpg`
+- **Status:** open
+
+### U31 · Alt+click says "Nothing to fix on this page" on a page with about 200 notes
+- **Where:** outside Blueprint, Alt+click on the paragraph under "Card controls".
+- **What I did:** closed Blueprint, Alt+clicked the paragraph "This section explains how card controls work".
+- **What I saw:** an editor card for the paragraph (Type, Case, Colour, Write ↵) and, at the bottom, a bar that says
+  "Nothing to fix on this page." with Close. A minute earlier Blueprint counted 197 notes on this same page.
+- **What I expected:** if the bar is about the paragraph, "Nothing to fix here"; if it's about the page, the real
+  count.
+- **Why it hurts:** trust. One of the two numbers is wrong, and I can't tell which.
+- **Severity:** 2
+- **Evidence:** `docs/qa/shots/2026-11-20/u31-alt-click.jpg`
+- **Status:** open
+
+### U32 · Alt+click doesn't do what Help says it does
+- **Where:** Alt+click outside Blueprint; ··· → Help.
+- **What I saw:** Help lists "Alt + click · Show its problems in Blueprint". Alt+click opened a style editor for the
+  element (font size, line height, case, colour, a Write button) and no problems.
+- **What I expected:** Help and the product to agree: either Alt+click shows the element's notes, or Help says
+  "Alt + click · Edit its type and colour".
+- **Why it hurts:** intent. I expect to read problems and get a panel that can write to my code with Enter.
+- **Severity:** 3
+- **Evidence:** `docs/qa/shots/2026-11-20/u31-alt-click.jpg`, `docs/qa/shots/2026-11-20/u28-help.jpg`
 - **Status:** open
