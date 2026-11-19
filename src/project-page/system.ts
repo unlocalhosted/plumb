@@ -29,8 +29,9 @@ export interface SystemData {
   size: { steps: Step[]; strays: Stray[] };
   radius: { steps: Step[]; strays: Stray[] };
   /** the spacing steps and the gaps and paddings typed by hand, for the lesson's spacing screen; `numeric`: the theme uses
-   * Tailwind's spacing steps (`p-4` is 4 × `--spacing`), with the base and the file that sets it */
-  spacing: { steps: Step[]; strays: Stray[]; numeric?: { px: number; file: string } };
+   * Tailwind's spacing steps (`p-4` is 4 × `--spacing`), with the base and the project's file that sets it (none when
+   * the base is Tailwind's own: a rule then names it in the theme, never in node_modules) */
+  spacing: { steps: Step[]; strays: Stray[]; numeric?: { px: number; file: string | null } };
   weight: { used: { weight: number; places: number; written: Written[] }[] };
   colour: { steps: ColourStep[]; strays: ColourStray[] };
   dead: { class: string; places: number; meant: string[] }[];
@@ -263,7 +264,7 @@ export function systemOf(report: Report): SystemData {
     size: scale('type', new Set(['font-size', 'font']), 6),
     radius: scale('radius', new Set(['border-radius'])),
     spacing: { ...scale('spacing', new Set(['padding', 'padding-top', 'padding-right', 'padding-bottom', 'padding-left', 'padding-inline', 'padding-block', 'margin', 'margin-top', 'margin-right', 'margin-bottom', 'margin-left', 'margin-inline', 'margin-block', 'gap', 'row-gap', 'column-gap']), 1),
-      ...(numeric && base ? { numeric: { px: base, file: relative(report.root, numeric.source.file).replaceAll('\\', '/') } } : {}) },
+      ...(numeric && base ? { numeric: { px: base, file: report.numericSpacing!.own ? relative(report.root, numeric.source.file).replaceAll('\\', '/') : null } } : {}) },
     weight: weights(),
     colour: colours(),
     dead: dead(),

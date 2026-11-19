@@ -84,6 +84,9 @@ reserved.)
 - **Answers that depend on whether the whole-app report exists yet (2026-11-18).** Since start-up stopped judging,
   edits made before the report was built were refused ("Apply requires a tracked project source file": the editable
   files were filled only by the whole-app index; fixed).
+- **recipes B7 fails only under the suite runner on vm-agent (2026-11-19).** Its undo answers 500 when run by
+  scripts/test.mjs (twice, alone); the same file passes all 16 under node --test on vm-agent and on the laptop. Something
+  the runner sets in the environment, not looked into yet.
 - **Onboarding, tried from scratch on crafting-ui and algorecall (2026-11-19).** 19 gaps in docs/qa/onboarding-2026-11-19.md:
   3 blockers (the spacing step doesn't see Tailwind's spacing steps; "Set it up" fails after half of it is written;
   a text shadow written as a text size), 8 major, 8 minor. Being fixed in that order.

@@ -117,8 +117,8 @@ test('ledger default shows only new sites, caps groups, and keeps debt available
   const report = JSON.parse(run(root, ['--json']).stdout);
   const output = run(root).stdout;
   assert.equal(titles(output).length, 20);
-  assert.match(output, /\+7 more: plumber check --new/);
-  assert.match(output, /Known debt: [\d,]+ places?, unchanged \(plumber check --debt\)/);
+  assert.match(output, /\+7 more: npx plumber check --new/);
+  assert.match(output, /Known debt: [\d,]+ places?, unchanged \(npx plumber check --debt\)/);
   assert.doesNotMatch(output, /src\/pages\/Page1.tsx:/);
   assert.doesNotMatch(output, /computed at runtime|never used in your source|provenance\/opaque-inline/);
   assert.match(run(root, ['--rule', 'provenance/opaque-inline']).stdout, /computed at runtime/);

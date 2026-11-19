@@ -25,7 +25,7 @@ import { addSourceGlobs, hostConfig, installedRefresh } from './config.js';
 import { table, wrap } from '../cli-table.js';
 import { count } from '../messages.js';
 import { readState, describeState } from '../onboarding/state.js';
-import { runnable, runnerOf } from '../runner.js';
+import { printed, runnable, runnerOf } from '../runner.js';
 
 export type Capability = 'read' | 'remember' | 'fast' | 'locate' | 'preview' | 'write' | 'blueprint' | 'system';
 export type Status = 'ok' | 'missing' | 'unknown';
@@ -326,8 +326,9 @@ export function formatReadiness(report: ReadinessReport): string {
     output += wrap(`     ${item.evidence.map(evidence => `${evidence.file}:${evidence.line} ${evidence.text}`).join(' · ')}`) + '\n';
     if (item.status !== 'ok') {
       output += wrap(`     ${item.loses}`) + '\n';
-      if (item.fix?.kind === 'step') output += wrap(`     ${item.fix.instruction}`) + '\n';
-      if (item.fix) output += wrap(`     ${item.fix.kind === 'diff' ? `plumber fix ${item.id}` : item.fix.command}`) + '\n';
+      // the runner goes in before wrapping, so a line still fits its width
+      if (item.fix?.kind === 'step') output += wrap(printed(`     ${item.fix.instruction}`)) + '\n';
+      if (item.fix) output += wrap(printed(`     ${item.fix.kind === 'diff' ? `plumber fix ${item.id}` : item.fix.command}`)) + '\n';
     }
   }
   return output;

@@ -184,7 +184,7 @@ export function mountLesson(host, data, { post } = {}) {
     if (state.choice[m.family] === 'tidy' && m.one) { const from = [`css:${m.one.lane.file}#${m.one.stem}*`]; return { plain: `Every ${m.spec.noun} uses one of these ${m.one.steps.length}. Anything else, Plumber points out.`, key, from, code: `${key}: { from: ['${from[0]}'] }` }; }
     // no list of its own, on Tailwind's spacing steps: the rule names the base, as plumber init does
     const numeric = m.family === 'spacing' && !m.lanes.length ? data.spacing?.numeric : null;
-    if (numeric) { const from = [`css:${numeric.file}#--spacing`];
+    if (numeric) { const from = [numeric.file ? `css:${numeric.file}#--spacing` : 'theme:--spacing'];
       return { plain: `Gaps and paddings use Tailwind's spacing steps, each a multiple of ${nf.format(numeric.px)}px (p-1, p-2, p-4…). Anything else, Plumber points out.`, key, from, code: `${key}: { from: ['${from[0]}'] }` }; }
     const from = m.lanes.length ? m.lanes.map((l) => `css:${l.file}#${l.name}`) : [...new Set((m.kind?.groups ?? []).map((g) => `css:${g.file}`))];
     return { plain: `${m.spec.nouns[0].toUpperCase()}${m.spec.nouns.slice(1)} use the ones you already have. Anything else, Plumber points out.`, key, from, code: `${key}: { from: [${from.map((f) => `'${f}'`).join(', ')}] }` };
