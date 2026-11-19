@@ -219,6 +219,14 @@ screen writes the rules and remembers today's state, so only new problems are fl
 **Screens, in order.** Welcome (what's about to happen, 30 seconds) → Spacing → Colours → Text → Corners → Your
 rules (the summary, "Set it up", Undo). A row of toys at the top says where you are; one screen shows at a time.
 
+**Composed as one page (2026-11-19).** The owner on the built screens: "no layout, just boxes thrown together, no
+insight and no one way to read it". Each screen now follows the comp in docs/design/comps/onboarding-text.html: one
+reading path (what it is, the one thing to notice in a sentence, yours drawn with that thing bracketed, why in one
+line, one choice, the rule it becomes, one button), one focal point (the drawing, on the only grey shelf), and one
+meaning per colour (the step's hue for this step and your answer, butter for the problem, pink for the action).
+Gravity is retired from the lesson: the owner found its dots hard to read. Sizes are drawn at their size instead (Aa
+for text, a gap for spacing, a corner for corners).
+
 **Every screen, the same five parts:**
 1. **What it is**, one sentence, no jargon: "Spacing is the room between things."
 2. **Yours, drawn**: Gravity for sizes (each place your code types one by hand, a dot beside the step it's closest

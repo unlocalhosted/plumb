@@ -3853,6 +3853,17 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **A bug the piles exposed:** `gap-1` (160 places on crafting-ui) showed as typed by hand. Tailwind writes step 1 as
   `var(--spacing)` with no `* 1`, and the page only read the multiplied form. Fixed: crafting-ui's spacing is 94% on
   its steps (1,649 places), not 85%, and 100 places are typed by hand, not 258.
+- **Fifth round, "random shit thrown together":** the owner's verdict on round four. Every comment had added a block:
+  tiles, piles, notices, choices and a rules panel, seven loud fills on one screen, with colour meaning four things and
+  nothing to say where to start. The system behind it was mine: I fixed each comment locally and never composed the
+  page, and I skipped our own onboarding doc (names behind Details). Asked what was wrong, the owner named no
+  hierarchy, too much colour, too much stuff, and "no insight and one way to understand and read". So one step (Text)
+  was drawn first as a still from real numbers (docs/design/comps/onboarding-text.png), approved, then built for every
+  screen. Each step now reads top to bottom: what it is, one sentence of insight ("Half of crafting-ui's text is set
+  in 6 sizes between 12px and 16px, each barely different from the next"), the sizes drawn at their size with that
+  pile bracketed, one line of why, one choice, the rule, one button. The insight only names a pile of close sizes when
+  most of it is typed by hand, so a scale's own close steps (8, 10, 12px of spacing) are never called careless.
+  Colour now has one meaning each. The piles of real lines moved behind Details.
 - **Found on the way:** on the pink key the colours and corners toys, both pink, vanished. They now sit on a white
   cut-out.
 - **Proof:** screenshots of every step on crafting-ui in `docs/films/onboarding/` (welcome-design-style.png is the
