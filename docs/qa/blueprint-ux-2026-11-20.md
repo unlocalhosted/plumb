@@ -201,7 +201,7 @@ How to read an issue, and what each one needs:
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u15-fix-first.jpg`; in the page the line has class
   `mt-2 text-sm text-slate-500`, font size 14px, and `--text-body` is 14px.
-- **Status:** open
+- **Status:** fixing
 
 ### U16 · Two fixes in a row have the same title with different counts
 - **Where:** Fix, fixes 1 and 2 of 50.
@@ -381,7 +381,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** intent. The loudest button leads me away from the problem.
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u30-padding-note-edit-words.jpg`
-- **Status:** open
+- **Status:** fixed 3290204d (the main action; the padding note still doesn't say what to change, which is the check's own wording)
 
 ### U31 · Alt+click says "Nothing to fix on this page" on a page with about 200 notes
 - **Where:** outside Blueprint, Alt+click on the paragraph under "Card controls".
@@ -528,4 +528,16 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** trust. One concern's fix is another concern's problem.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u41-crafting-fix-under-header.jpg`
+- **Status:** open
+
+### U43 · The site's first sentence has two grammar slips
+- **Where:** the plumber site's home page (localhost:4330), under "A design engineer on every screen."
+- **What I saw:** "Plumber acts as your own design engineer, it finds whenever your frontend drift away from your
+  actual system and writes the fix into your JSX." Two sentences joined by a comma, and "frontend drift" where it
+  should be "drifts".
+- **What I expected:** "Plumber acts as your own design engineer. It finds where your frontend drifts from your
+  system and writes the fix into your JSX."
+- **Why it hurts:** trust. A tool that judges craft has a slip in its first line.
+- **Severity:** 3
+- **Evidence:** `docs/qa/shots/2026-11-20/u43-site-hero.jpg`
 - **Status:** open
