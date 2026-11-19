@@ -224,7 +224,9 @@ export function xray(el, { tokenOf, origin = { left: 0, top: 0 }, room, source, 
   // ── the card ──
   const tok = (v) => (v.zero ? '' : v.on ? `<span class="xr-tok on">${esc(v.t)}</span>` : v.off ? '<span class="xr-tok off">off scale</span>' : '');
   // every number is a control: data-prop names the property it changes (drag it, scroll on it, click it for a list)
-  const side = (v, x, y, prop) => `<span class="v ch${v.zero ? ' zero' : ''}" data-prop="${prop}" style="--c:${v.c};left:${x};top:${y}">${v.n}${v.t ? `<i>${esc(v.t)}</i>` : ''}</span>`;
+  // one number per side, its px; the token's name on hover. Two numbers side by side ("96 24", px then a Tailwind step
+  // named by a number) read as a pair of random numbers (U10); the side's colour already says on your tokens or off
+  const side = (v, x, y, prop) => `<span class="v ch${v.zero ? ' zero' : ''}" data-prop="${prop}" style="--c:${v.c};left:${x};top:${y}"${v.t ? ` title="${esc(`${v.n}px · ${v.t}`)}"` : ''}>${v.n}</span>`;
   const chip = (prop, v, txt = v.n) => `<span class="ch n" data-prop="${prop}">${txt}</span>`;
   const pc = pj.some((v) => v.off) ? 'var(--pl-off)' : tokenOf ? 'var(--pl-on)' : 'var(--pl-instrument)';
   const box = `<div class="xr-box">
