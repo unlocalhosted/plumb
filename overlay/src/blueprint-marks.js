@@ -466,6 +466,7 @@ export class MarkLayer {
     const host = this.#hint.getRootNode()?.host;
     if (!node || (held && !this.#lit.includes(id))) { this.#hint.removeAttribute('data-on'); host?.removeAttribute('data-hinting'); return; }
     host?.setAttribute('data-hinting', '');
+    this.#hint.dataset.rule = node.mark.rule ?? '';
     const n = [...this.#nodes.values()].filter((x) => causeOf(x.mark) === cause).length;
     this.#hint.innerHTML = pillOf(node.mark, n);
     this.#placeHint();

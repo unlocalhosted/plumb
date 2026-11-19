@@ -516,6 +516,11 @@ export class Blueprint {
   }
   // A pin, a label or a panel row chose a problem: its element is selected with that problem current, and the other
   // places of its cause go with it (a fix taken there is taken at every place that offers the same one).
+  // Keep as is, from the X-ray card's note: its cause goes in hand, and the bar asks why (fixpanel keep)
+  keepNote(el, rule) {
+    const mark = this.#itemOf(el)?.marks.find((m) => m.rule === rule);
+    if (mark && this.#fix.holdMark(el, mark)) this.#fix.keep();
+  }
   choose(el, mark, group) {
     if (this.#fix.holdMark(el, mark)) return;
     this.#selection.select(el, this.#itemOf(el), { key: mark?.key, rule: mark?.rule, group: (group ?? []).filter((g) => g.el !== el).map((g) => ({ el: g.el, item: this.#itemOf(g.el), key: g.mark?.key })) });

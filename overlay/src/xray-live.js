@@ -47,8 +47,17 @@ export const XRAY_LIVE_CSS = `
   .xr-card { opacity: 1; transition: transform 420ms var(--pl-spring), opacity 200ms var(--pl-ease-out); z-index: 6; transform-origin: 0 0; }
   /* the pill's words, carried in as the card's first line */
   .xr-said[hidden] { display: none; }
-  .xr-said { padding: 2px 4px 10px; margin-bottom: 8px; border-bottom: 1px solid var(--pl-border-default); font: 400 13px/1.4 var(--pl-sans); }
-  .xr-said .say { display: block; } .xr-said .nm { display: block; font-weight: 650; margin-bottom: 2px; }
+  /* the note, on the pink face the page's pins wear: a problem with something to do, not one more line of facts */
+  .xr-said { margin: -4px -4px 12px; padding: 12px 12px 10px; border-radius: 13px; background: var(--pl-pink-face); color: var(--pl-pink-ink); font: 400 13px/1.4 var(--pl-sans); }
+  .pl-dark .xr-said, .xr-said:where(.pl-dark *) { color: #fff; }
+  .xr-said .nt b { display: block; font: 650 14px/1.3 var(--pl-round, var(--pl-sans)); margin-bottom: 3px; }
+  .xr-said .nas { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .xr-said .na { all: unset; cursor: pointer; padding: 6px 10px; border-radius: 9px; font: 600 12px/1 var(--pl-sans); color: inherit; background: color-mix(in oklab, currentColor 10%, transparent); }
+  /* the main action, cut out of the face: white in both schemes (a pink block vanishes on the night face), ink letters */
+  .xr-said .na.main { background: var(--pl-cut); color: var(--pl-ink); }
+  @media (hover: hover) and (pointer: fine) { .xr-said .na:hover { background: color-mix(in oklab, currentColor 16%, transparent); } .xr-said .na.main:hover { background: color-mix(in oklab, var(--pl-cut) 88%, var(--pl-pink)); } }
+  .xr-said .na:focus-visible { box-shadow: 0 0 0 2px var(--pl-border-focus); }
+  .xr-said .na:active { translate: 0 1px; }
   .xr-many { display: inline-flex; align-items: center; height: 18px; padding: 0 6px; margin-left: 4px; border-radius: 99px; vertical-align: 2px; background: var(--pl-sky-soft); color: var(--pl-sky-ink); font: 600 11px/1 var(--pl-sans); letter-spacing: 0; }
   .xr-many[data-scope="all"] { background: var(--pl-pink-soft); color: var(--pl-pink-ink); } .xr-many[data-scope="one"] { background: var(--pl-bg-inset); color: var(--xr-label); }
   /* the value in hand, beside the pointer: its number and its token, while you drag or scroll */
@@ -157,9 +166,55 @@ export function mountXray(o) {
     if (p) { const r = p.getBoundingClientRect(); return { x: r.left - s.left, y: r.top - s.top, w: r.width, h: r.height, html: p.classList.contains('bp-hint') ? p.innerHTML : '' }; }
     return ptNow ? { x: ptNow.x - s.left - 10, y: ptNow.y - s.top - 10, w: 20, h: 20, html: '' } : null;
   }
-  function grow() {
+  // The note at the head of the card (owner, 2026-11-20: "dont we show any suggestion … what could be the actionable
+  // step"): on the pink face the pins wear, its name, what to do, and what you can do from here. Words are edited in
+  // place; anything else goes to your agent; either way it can be kept as it is.
+  function noteHtml(el) {
+    const h = C.getRootNode().querySelector('.bp-hint[data-on]');
+    if (!h || !el) return '';
+    const name = h.querySelector('.nm')?.textContent ?? '', advice = (h.querySelector('.say')?.textContent ?? '').slice(name.length).trim();
+    if (!name) return '';
+    const words = [...el.childNodes].some((n) => n.nodeType === 3 && n.data.trim());
+    const b = (act, label, main) => `<button type="button" class="na${main ? ' main' : ''}" data-act="${act}">${label}</button>`;
+    return `<div class="nt" data-rule="${esc(h.dataset.rule ?? '')}"><b>${esc(name)}</b><span>${esc(advice)}</span></div><div class="nas">`
+      + (words && o.editWords ? b('edit', 'Edit the words', true) + b('agent', 'Ask your agent') : b('agent', 'Ask your agent', true))
+      + (o.keepNote ? b('keep', 'Keep as is') : '') + '</div>';
+  }
+  // The note belongs to the element the card is on. The page's pill goes away as the hand leaves the element for the card;
+  // that must not empty the card: a card that lost its note got shorter, was placed again (above, then below), and put
+  // the hand back on the element, whose pill came back: it flickered without end (owner, 2026-11-20). So the note changes
+  // only when the card moves to another element, or fills in once for this one.
+  let saidEl = null;
+  function syncSaid(el) {
+    watchHint();
+    const html = noteHtml(el);
+    if (el === saidEl && (!html || said.dataset.for)) return;
+    if (said.dataset.for !== html) { said.innerHTML = html; said.dataset.for = html; }
+    said.hidden = !html; saidEl = el;
+  }
+  // the page's pill can come up a moment after the card (it answers its own pointer events): watched, the card's note
+  // follows it whenever it changes
+  let hintSeen = null;
+  function watchHint() {
+    const h = C.getRootNode().querySelector('.bp-hint');
+    if (!h || h === hintSeen) return;
+    hintSeen = h;
+    const mo = new MutationObserver(() => { if (!card.hidden && shown) syncSaid(shown); });
+    mo.observe(h, { attributes: true, childList: true, subtree: true, characterData: true });
+    off.push(() => mo.disconnect());
+  }
+  said.addEventListener('click', (e) => {
+    const act = e.target.closest?.('.na')?.dataset.act, el = shown;
+    if (!act || !el) return;
+    e.stopPropagation();
+    const name = said.querySelector('.nt b')?.textContent ?? '', advice = said.querySelector('.nt span')?.textContent ?? '', rule = said.querySelector('.nt')?.dataset.rule ?? '';
+    if (act === 'edit') { shrink(); o.editWords?.(el); }
+    else if (act === 'agent') startNote(`${name}: ${advice}`);
+    else if (act === 'keep') { shrink(); o.keepNote?.(el, rule); }
+  });
+  function grow(el) {
     from = pillBox();
-    said.innerHTML = from?.html ?? ''; said.hidden = !from?.html;
+    syncSaid(el);
     C.getRootNode().host?.setAttribute('data-grown', '');
     if (!from || still()) return;
     const cw = card.offsetWidth || 292, ch = card.offsetHeight || 300;
@@ -293,13 +348,13 @@ export function mountXray(o) {
     const show = ready || !!pinned || !!held || changes.size > 0;
     if (!show) { clearTimeout(restT); restT = setTimeout(() => { ready = true; restAt = ptNow; if (shown?.isConnected && !o.paused?.()) draw(shown); }, REST); }
     if (!!noting || !show) shrink(); else card.hidden = false;
-    if (first && !card.hidden) { card.removeAttribute('data-enter'); void card.offsetWidth; card.setAttribute('data-enter', ''); grow(); }
+    if (first && !card.hidden) { card.removeAttribute('data-enter'); void card.offsetWidth; card.setAttribute('data-enter', ''); grow(el); }
     if (first) requestAnimationFrame(() => card.removeAttribute('data-fresh'));
     shown = el; shownKey = o.key(el) ? placeKey(el) : null;
     // the card's first line is the note of the element it is on now, never the one it grew on: the card follows the hand
     // from element to element without closing, and kept the first one's note ("Badge for flavour" on a label that has
     // none). Read once the page's pill has caught up with the pointer (same move, after this draw)
-    requestAnimationFrame(() => { if (shown !== el || card.hidden) return; const h = C.getRootNode().querySelector('.bp-hint[data-on]'), html = h ? h.innerHTML : ''; if (said.innerHTML !== html) said.innerHTML = html; said.hidden = !html; });
+    requestAnimationFrame(() => { if (shown !== el || card.hidden) return; syncSaid(el); });
     cursor();
   };
 
@@ -335,14 +390,28 @@ export function mountXray(o) {
     if (!card.hidden) { const c = card.getBoundingClientRect(), on = e.clientX >= c.left - 4 && e.clientX <= c.right + 4 && e.clientY >= c.top - 4 && e.clientY <= c.bottom + 4; card.toggleAttribute('data-reach', on); if (on) { clearTimeout(waiting); return; } }
     if (held || noting) return;
     const pt = { x: e.clientX, y: e.clientY }; ptNow = pt;
-    // shown, and the hand moves on: toward the card it stays (towardCard); anywhere else it goes, and only the drawing follows until the hand rests again
-    if (!card.hidden && ready && !pinned && !changes.size && restAt && Math.hypot(pt.x - restAt.x, pt.y - restAt.y) > DRIFT) {
-      if (towardCard(pt)) { clearTimeout(waiting); return; }
-      ready = false; restAt = null; shrink(); card.removeAttribute('data-reach');
+    // Shown, and the hand moves on: the card and its drawing stay with their element until the hand rests on another
+    // one (owner, 2026-11-20: going for the card or a ruler's handle crossed other elements, the X-ray jumped to each, and
+    // each placed its card elsewhere, so the card flickered and nothing outside the element could be reached). A rest on
+    // another element moves the card there; a rest on empty page puts it away. This replaces 2026-11-13's "disappear
+    // as I start moving", which is what made the card unreachable.
+    if (!card.hidden && ready && !pinned && !changes.size && !ourUI(e)) {
+      const there = o.partAt(e), handle = zoneAt(zonesOf(shown).filter((q) => q.outside), pt.x, pt.y);
+      if (there !== shown && !handle) {
+        clearTimeout(waiting);
+        waiting = setTimeout(() => {
+          if (card.hasAttribute('data-reach') || card.matches(':hover')) return;
+          if (!there) { ready = false; restAt = null; draw(null); return; }
+          restAt = ptNow; lastOn = ptNow; zone = zoneAt(zonesOf(there), ptNow.x, ptNow.y); draw(there); if (zone) hold(there, zone.prop);
+        }, REST);
+        return;
+      }
+      if (!handle) clearTimeout(waiting);
     }
     if (ourUI(e)) { clearTimeout(waiting); return; }
     const under = o.partAt(e);
-    const outside = shown && !pinned && (!under || under.contains(shown)) ? zoneAt(zonesOf(shown).filter((q) => q.outside), pt.x, pt.y) : null;
+    // a ruler's handle, a margin band: the shown element's own, whatever element lies under it on the page
+    const outside = shown && !pinned ? zoneAt(zonesOf(shown).filter((q) => q.outside), pt.x, pt.y) : null;
     const el = pinned ?? (outside ? shown : under);
     if (el && el === shown) {
       lastOn = pt; clearTimeout(waiting);
@@ -631,7 +700,7 @@ export function mountXray(o) {
   });
 
   // ── ↵: a note for your agent ───────────────────────────────
-  const startNote = () => {
+  const startNote = (prefill = '') => {
     const el = shown; if (!el) return;
     pinned = el;
     const [name, source] = o.name(el);
@@ -643,7 +712,11 @@ export function mountXray(o) {
     note.style.left = `${cardAt.x}px`; note.style.top = `${cardAt.y}px`;
     C.append(note); card.hidden = true;
     const ta = note.querySelector('textarea');
-    const close = () => { note.remove(); noting = null; draw(el); };
+    // asked from a note: what is wrong and what to do, already said; the cursor at the end to add to it
+    if (prefill) { ta.value = prefill; queueMicrotask(() => { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }); }
+    // while the note is open it is the one thing by the pointer: the page's pill steps aside (the host's data-noting)
+    C.getRootNode().host?.setAttribute('data-noting', '');
+    const close = () => { note.remove(); noting = null; C.getRootNode().host?.removeAttribute('data-noting'); draw(el); };
     noting = { close };
     draw(el);
     ta.addEventListener('keydown', async (e) => {

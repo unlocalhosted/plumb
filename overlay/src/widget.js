@@ -522,7 +522,7 @@ class PlumbOverlay extends HTMLElement {
       /* one pill by the pointer: a note's pill (blueprint-marks) outranks the part's */
       :host([data-hinting]) .xr-say { display: none; }
       /* the card grown from the pill: the pill is inside it now */
-      :host([data-grown]) :is(.bp-hint, .xr-say) { opacity: 0 !important; transition: opacity 120ms; }</style>${TOY_DEFS}`;
+      :host([data-grown]) :is(.bp-hint, .xr-say), :host([data-noting]) :is(.bp-hint, .xr-say) { opacity: 0 !important; transition: opacity 120ms; }</style>${TOY_DEFS}`;
       this.#root.append(t.content);
     }
     const host = document.createElement('div'); host.className = 'xr-host';
@@ -545,6 +545,9 @@ class PlumbOverlay extends HTMLElement {
     this.#xray = mountXray({
       container: host, events: window, root: this.#root, contextStop: document.body, watch: document.body,
       clicks: false, keys: false, dropPreviewOnWrite: true, cursorOn: document.documentElement,
+      // a note's actions in the card: its words edited in place (text-edit.js), or kept as they are (the bar asks why)
+      editWords: (el) => { const node = [...el.childNodes].find((n) => n.nodeType === 3 && n.data.trim()); if (node) this.#blueprint?.through(() => this.#text.start(node, node.data.length)) ?? this.#text.start(node, node.data.length); },
+      keepNote: (el, rule) => this.#blueprint?.keepNote(el, rule),
       // a card open in blueprint (an Alt+click, an element read alone, words being edited) is what's in hand: the X-ray steps aside
       paused: () => !!(self.#blueprint?.scope || self.#blueprint?.cardOpen || self.#pinned || self.#text?.editing),
       // the card's room is the page above Plumber's own bar: it never sits on the fix panel or the dock (a card placed

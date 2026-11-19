@@ -2680,6 +2680,41 @@ field is empty). The table of five writes, before and after. The Next table: eig
   element has none.
 - **Not yet:** a click doesn't pin the card open; a card that grew from the pointer shrinks back to where the pointer
   was then, not where it is now.
+
+### A note you can act on
+
+- **The itch:** "for these issues dont we show any suggestion? like what could be the actionable step … also the
+  black color feels like its just info". The card showed the note's name and advice in the same dark as the facts
+  under it, with nothing to press.
+- **What we chose (with the owner):** the note sits on the pink face the pins wear, at the head of the card, with
+  what you can do from there: **Edit the words** (plumber's in-place editor on that line, for notes about text),
+  **Ask your agent** (the agent note, already saying what is wrong and what to do, ⌘↵ copies it with the file and
+  line) and **Keep as is** (the note's cause in the bar, asking why, as Keep it does). Rewrite with a model is for
+  later. The main action is cut out of the face (white, or a dark hole at night), since a pink button vanished on
+  the night face.
+- **The proof:** on "Click the button above…": Edit the words made the line editable with the cursor at its end
+  ("App.jsx:24 ↵ apply · Esc cancel"); Ask your agent opened with "Narrates the screen: Delete it. Keep words that
+  say what to do or what happened." and its place; Keep as is put the cause in the bar and asked why.
+  `bench/tells/shots/15-note-actions.jpg`.
+
+### The card you can reach
+
+- **The itch:** "when i try to move towards it and reach a certain edge it starts infinitely rendering like appear
+  disappear … 100s of time"; "what are these 2 oval shaped things around the card i can't reach there as i move
+  towards them the another element x-ray takes over"; "there should start a warmup period for any other element".
+- **The system behind it:** two loops. Mine first: the card's note was read from the page's pill, which goes away as
+  the hand leaves the element for the card, so the card lost its note, got 130px shorter, was placed again (above,
+  then below) and put the hand back on the element. And X-ray's own: it switched to whatever element the hand
+  crossed, at once, and each element placed its card somewhere else, so neither the card nor the rulers' handles
+  (the two ovals: width and height, Shift-drag to change) could be reached across other elements.
+- **The fix:** the note stays with the card while it is on one element. Once a card is open, other elements warm up:
+  the X-ray stays with its element while the hand moves, and only a half-second rest on another element moves the
+  card there (a rest on empty page puts it away). A ruler's handle always belongs to the shown element. This
+  replaces 2026-11-13's "disappear as I start moving", which is what made the card unreachable.
+- **The proof:** with a real pointer, a sweep in 8 steps from the line to its card across other elements switched to
+  none of them and hid the card 0 times, and the pointer reached the card; a rest on "Card controls" then moved the
+  card there (App.jsx:43). `bench/tells/shots/16-reached-card.jpg`. My first attempts to test this were noise: my
+  automated pointer and the owner's mouse were driving the same pane at once.
 - **Media hooks:** `bench/tells/shots/5-concerns-bar.jpg`.
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
