@@ -28,7 +28,7 @@ npm install -D @unlocalhosted/react-plumber
 
 Design systems drift one `p-[13px]` at a time. Linters see strings; React Plumber sees the page. It compiles your classes with your own Tailwind, measures the rendered result against your tokens, and checks the craft a good designer would: button sides, nested corners, faded text, line length, tap targets.
 
-- **On the page.** Press **Alt+B**: heat glows only where the page is off. One panel holds one cause at a time, with its options drawn as what they are. Try them live, take one, and apply: one guarded write to the source.
+- **On the page.** Press **Alt+B**: Plumber counts what is off on the page and takes it one cause at a time. You choose on the element itself, with its options drawn as what they are, try them live, and take one: one guarded write fixes every place of that cause.
 - **In the source.** Every fix is the exact class edit in the exact JSX that made the element, checked against the file's hash so it never writes over your work.
 - **In CI.** `plumber check` fails only on new drift; a ledger keeps accepted debt and reasoned exceptions. `plumber craft` reads your routes headlessly and emits text, JSON or SARIF.
 - **Yours to tune.** One spec sets what "good" means: presets (strict, balanced, relaxed), per-rule values, and how new tokens are named.
@@ -44,28 +44,24 @@ It compiles classes, stylesheets, `@apply` and inline styles with the project's 
 
 ## Quick start
 
-### 1. Find the drift
+### 1. Choose your rules
 
 ```sh
-npm install -D @unlocalhosted/react-plumber
-npx plumber                 # open a page about your project in the browser (npx plumber check prints the report)
-npx plumber state           # where the project starts: bare, half a system, a system
-npx plumber propose         # tokens drafted from the values the code already uses
-npx plumber init            # ask, write the theme, write plumber.config.ts, baseline today's findings
-npx plumber check           # green: only new drift fails from here
-npx plumber install --ci    # add the GitHub Action
+npm install -D @unlocalhosted/react-plumber    # or: pnpm add -D, yarn add -D, bun add -d
+npx plumber                                     # or: pnpm exec plumber, yarn plumber, bunx plumber
 ```
 
-`state` names the starting point from evidence. `propose` harvests the spacing, colour, radius and type values in use, clusters them into a scale, names the steps and shows what each would take over; `propose --write` puts them in your theme, in the shape your theme already has (`@theme`, shadcn's `@theme inline`, or `:root`), and imports a new file from your stylesheet. `init` asks the same questions one at a time (`--yes` takes every default, `--family spacing=keep` answers one), infers the token sources, turns on four habits, lists the rest with their counts, and records the baseline. `plumber doctor` checks Node, Tailwind, the CSS entry, config, ledger and cache, with a fix on each line; `plumber fix <id>` applies one of its diffs after you confirm it.
+`plumber` reads your app and opens a page about it in your browser. Four short steps (spacing, colours, text, corners) show what your code does today, drawn, and ask one question each. Your answers become your rules, in `plumber.config.ts`. **Set it up** writes them, tidies your tokens the way you chose (old names keep working, and one Undo puts them back), and records the problems already in your code, so from then on you only hear about new ones. Nothing in your files changes before that last press.
 
-### 2. Fix it from the page
+On a large app the first read takes a while (under a minute for 3,600 files); the page says so while it reads. Every command Plumber prints is written the way your project runs it (`pnpm exec plumber init` in a pnpm project), so you can copy it as it is.
+
+### 2. Put it on your page
 
 ```sh
-npx plumber install --overlay           # print the wiring for Vite or Next.js
-npx plumber install --overlay --write   # make the change, and show the diff
+npx plumber install --overlay --write   # wire it into Vite or Next.js, and show the diff
 ```
 
-For Vite, the overlay is one plugin, listed **before** `react()`:
+For Vite that is one plugin, listed **before** `react()`:
 
 ```ts
 import { plumb } from '@unlocalhosted/react-plumber/vite'
@@ -76,39 +72,52 @@ export default { plugins: [plumb(), react()] }
 
 Keep `react()` (or `@vitejs/plugin-react-swc`): it is what lets a fix land without reloading the page. See [Writes, hot reload and the network](#writes-hot-reload-and-the-network).
 
-Start your dev server as usual. The overlay lives only in development: production builds carry no script, no stamps and no server routes.
+Start your dev server as usual. The overlay lives only in development: production builds carry no script, no stamps and no server routes. A small bar sits in the corner of your page and says what Plumber is doing ("Reading your whole app…" while it reads a large app the first time). If setup is missing, a note there names the steps left and opens them.
 
-#### Reading
+#### Inspect
 
 | Gesture | What happens |
 | --- | --- |
-| Hold **Alt** | The element under the pointer is outlined, with its component and how many values are off the scale. |
-| **Alt + click** | Pins a reading: the exact JSX that made the element, each off-scale value with the tokens that fit, and the craft problems on it. |
+| Hold **Alt** | The element under the pointer is outlined, with its component and how many of its values are off your tokens. |
+| **Alt + click** | Shows that element's problems in Blueprint. |
 | **Alt + two-finger scroll** | Up to the parent, down to the child. |
 | **Double-click** words | Edit them in place; **Enter** or clicking away writes them to the source string, **Esc** puts them back. **Alt + double-click** reaches words in a button, card or link. |
 
 #### Blueprint: fixing
 
-Press **Alt+B**. The page dims and heat shows where it is off: an amber break on the geometry of every drift, with the nearest token ghosted beside it, and the craft problems the page has, measured on the page. The **fix panel**, docked at the bottom, is the one place you act. Its unit is a cause: one class under one rule, every place it is used. One decision, and every place moves.
+Press **Alt+B**. A bar says how many problems the page has, with **Fix** and **Clean up**. **Fix** takes them one cause at a time: one class under one rule, every place it is used. The card at the bottom says what is off in words ("27 places have a hard-coded letter spacing"); the choice is made on the element itself, where its options are drawn as what they are, and taking one rewrites every place of that cause in one guarded write.
 
 | Gesture | What happens |
 | --- | --- |
-| **Alt+B** | Blueprint on or off. **Esc** also leaves, and the page is put back exactly. |
-| **Click** anything, or **Enter** | Puts the first cause in hand: the class, what is off in words, its places, and its options drawn as what they are (padding as green hatch, margin as orange dots, gap as purple stripes, type as "Ag", colour as a swatch). The value it has now is struck through. |
-| **↑ ↓**, or point at an option | Tries it: every place of the cause glides to it on the live page, and its heat shrinks with it. |
-| **Enter** | Takes the option. **→** or **Tab** skips the cause, **←** goes back. |
-| **J K** | Moves between causes; **N** walks the places of one. |
-| **A** | Applies everything taken: one guarded write per file, undoable from the dock. |
-| Hold **Space** | Use the page underneath (scroll, open a menu) without leaving blueprint. |
-| **L** | Every drift in view as a list. |
+| **Alt + B** | Blueprint on or off. **Esc** also leaves, and the page is put back exactly. |
+| **Enter** | Start, then fix the cause in hand in your code. |
+| **← →** | Previous or next fix. |
+| **↑ ↓** | Try another option on the live page. |
+| **K** | Keep it as it is. |
+| Hold **Space** | Use the page underneath (scroll, open a menu) without leaving Blueprint. |
 
-When the theme has no step that would settle a rule, the option is a new token, named and valued from the craft spec (`--tracking-caps: 0.06em`); taking it adds the token to your theme file and swaps the class in the same breath. When nothing can be written as classes, the panel says so and offers Skip.
+When your theme has no token that fits, the option is a new one, named and valued from the craft spec; taking it adds the token to your theme file and uses it in every place of the cause, with Undo. **Clean up** runs the passes (text, spacing, colour, icons) over the whole page at once.
 
 Every write is checked against the file on disk: the file's hash, that it still parses, that the class is still there as written. A stale file is refused with "This file changed after we checked it", never overwritten. Writes land in place, so the dev server's hot reload picks them up, and each one returns an undo handle.
 
 Stamping is not optional: `plumb()` goes before the plugin that compiles JSX (`react()`) in `plugins`, and the dev server stops with that line to move when it does not. If your app hydrates HTML that was prerendered outside the dev server (a build script that bakes pages into `index.html`), that HTML has no stamps: React reports a hydration mismatch in development and renders the page again, so in development serve the page from the dev server. When a page renders without stamps, the setup panel says "Source stamping isn’t running" with the fix, and clicking your own elements finds nothing rather than a guess.
 
 React Plumber writes only to a position it has proven. In development, `plumb()` and `withPlumb()` stamp each DOM tag in your JSX with its file, line and column, in the served code only; your files are untouched and production builds carry nothing. React Plumber then confirms the position against the file on disk before it edits. When it can't prove a position, it says why instead of guessing.
+
+### In the terminal instead
+
+The page and these commands share one config and one record of today's problems; use whichever suits you.
+
+```sh
+npx plumber check           # the report; once set up, only new problems fail
+npx plumber state           # where the project starts: bare, half a system, a system
+npx plumber propose         # tokens drafted from the values the code already uses
+npx plumber init            # the page's questions, asked in the terminal
+npx plumber doctor          # what is set up, and the one command for what isn't
+npx plumber install --ci    # add the GitHub Action
+```
+
+`state` names the starting point from evidence. `propose` harvests the spacing, colour, radius and type values in use, clusters them into a scale, names the steps and shows what each would take over; `propose --write` puts them in your theme, in the shape your theme already has (`@theme`, shadcn's `@theme inline`, or `:root`), and imports a new file from your stylesheet. `init` asks one question at a time (`--yes` takes every default, `--family spacing=keep` answers one), infers the token sources, turns on four habits and records the baseline. `doctor` checks Node, Tailwind, the CSS entry, config, ledger and cache, with a fix on each line; `plumber fix <id>` applies one of its diffs after you confirm it. Each command reads your app again; once a config exists, `check` reuses the last result when nothing changed.
 
 ### 3. Craft in CI
 

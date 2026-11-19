@@ -40,7 +40,7 @@ written, and `plumber check` then says "Nothing new since your baseline".
 5. **The colour step's palette looks wrong.** *Palette fixed: colours kept outside the theme that named uses point at count (crafting-ui: 28, not 3). Left: chips group by name, so `--accent` and `--draw` sit one to a row; rows read "color: ink" where the code writes a variable named ink; `color: var(--fg)` still counts as typed by hand.* crafting-ui shows "3 colours in your palette" (white, near-black,
    black) though its theme has an accent, a drawing blue and status colours. Rows read "color: ink" three times with
    three different swatches. `color: var(--fg)` (23 places) is listed as typed by hand, though it is the token.
-6. **Every command reads the whole app again.** algorecall, vm-agent: `plumber` 61s, `state` 41s, `propose` 64s,
+6. **Every command reads the whole app again.** *Answered by the path: the README's quick start is now two commands (`plumber`, then `install --overlay --write`), with the others under "In the terminal instead"; once a config exists, `check` reuses the last result. The commands still don't share a read with each other.* algorecall, vm-agent: `plumber` 61s, `state` 41s, `propose` 64s,
    `check` 50s, `doctor` 16s. The README's first block, run in order, is about 4.5 minutes of waiting.
 7. **Commands that don't run as printed.** *Fixed: every command printed for a person carries the project's runner, from its lockfile (`pnpm exec plumber init`, `npx plumber check --broken`), in the CLI's text, the setup panel's steps and Copy, and the plain first run; JSON keeps `plumber …`.* "Next: plumber init", `plumber install --ci`, and the setup panel's Copy
    buttons give `plumber …`, which a shell without a global install can't find. The plain first run says "run npx
@@ -48,7 +48,7 @@ written, and `plumber check` then says "Nothing new since your baseline".
 8. **Two setup paths that disagree.** *Fixed: with no config, the setup panel's first step is "Choose your rules" and both steps send you to `plumber` (the page), with `plumber init` named as the same questions in the terminal.* The README and the setup panel say `plumber init`, the panel calling the config
    "Make checks faster" with "Export plain data from plumber.config.ts: no imports, calls or functions"; the page
    says "Set it up" and calls the config "your rules". Nothing says which to use or how they relate.
-9. **The README's Blueprint is not today's.** It describes the page dimming, an amber heat on every drift and a fix
+9. **The README's Blueprint is not today's.** *Fixed: the README's Inspect and Blueprint sections follow the overlay's own shortcut list, and "Why" says what Alt+B does now. Left: the GIF at the top still shows the old Blueprint.* It describes the page dimming, an amber heat on every drift and a fix
    panel docked at the bottom with ↑↓, J/K, N, A, L. Alt+B today shows a bar ("118 problems · 2 setup steps ·
    Review · Clean up · Fix · Close") and a card per cause, with the choice on the element.
 10. **A blank page on a large app.** *Fixed: the page says "Reading <app>…" ("A large app takes a few seconds.") until it draws, and a failed read says why instead of staying white.* algorecall's page was white for 10 to 15 seconds while it loaded, with nothing
