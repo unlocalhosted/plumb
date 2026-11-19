@@ -335,7 +335,16 @@ export function mountXray(o) {
     const ctx = contextOf(el, o.contextStop ?? watch), Cr = ctx?.getBoundingClientRect();
     const context = Cr && { left: Cr.left - s.left, top: Cr.top - s.top, right: Cr.right - s.left, bottom: Cr.bottom - s.top };
     const room = o.room?.(s) ?? { left: 12, top: 12, right: s.width - 12, bottom: s.height - 12 };
-    const at = placeCard(around, { w: card.offsetWidth || 292, h: card.offsetHeight || 420 }, room, 16, context);
+    // the note goes in before the card is measured: put in after, it made the card about 90px taller where it stood,
+    // over the bar (U9), and the next placing moved it from under the hand (U12)
+    if (el !== saidEl) syncSaid(el);
+    // measured as it will show: a card still hidden measures 0, and the 420 guessed for it was ~140px short of a card
+    // with a note, so it ran over the bar (U9)
+    const wasHidden = card.hidden;
+    if (wasHidden) { card.style.visibility = 'hidden'; card.hidden = false; }
+    const size = { w: card.offsetWidth || 292, h: card.offsetHeight || 420 };
+    if (wasHidden) { card.hidden = true; card.style.visibility = ''; }
+    const at = placeCard(around, size, room, 16, context);
     card.style.transform = `translate(${at.x}px, ${at.y}px)`; cardAt = at;
     card.dataset.side = at.side;
     if (!card.querySelector('.beak')) card.insertAdjacentHTML('afterbegin', '<i class="beak" aria-hidden="true"></i>');
@@ -355,7 +364,11 @@ export function mountXray(o) {
     // the card's first line is the note of the element it is on now, never the one it grew on: the card follows the hand
     // from element to element without closing, and kept the first one's note ("Badge for flavour" on a label that has
     // none). Read once the page's pill has caught up with the pointer (same move, after this draw)
-    requestAnimationFrame(() => { if (shown !== el || card.hidden) return; syncSaid(el); });
+    requestAnimationFrame(() => {
+      if (shown !== el || card.hidden) return;
+      const h0 = card.offsetHeight; syncSaid(el);
+      if (card.offsetHeight !== h0) draw(el); // a note that changed size: placed again, once (the same note keeps)
+    });
     cursor();
   };
 
