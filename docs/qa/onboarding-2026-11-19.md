@@ -45,7 +45,7 @@ written, and `plumber check` then says "Nothing new since your baseline".
 7. **Commands that don't run as printed.** *Fixed: every command printed for a person carries the project's runner, from its lockfile (`pnpm exec plumber init`, `npx plumber check --broken`), in the CLI's text, the setup panel's steps and Copy, and the plain first run; JSON keeps `plumber …`.* "Next: plumber init", `plumber install --ci`, and the setup panel's Copy
    buttons give `plumber …`, which a shell without a global install can't find. The plain first run says "run npx
    plumber" to a pnpm user. The README shows npm only.
-8. **Two setup paths that disagree.** The README and the setup panel say `plumber init`, the panel calling the config
+8. **Two setup paths that disagree.** *Fixed: with no config, the setup panel's first step is "Choose your rules" and both steps send you to `plumber` (the page), with `plumber init` named as the same questions in the terminal.* The README and the setup panel say `plumber init`, the panel calling the config
    "Make checks faster" with "Export plain data from plumber.config.ts: no imports, calls or functions"; the page
    says "Set it up" and calls the config "your rules". Nothing says which to use or how they relate.
 9. **The README's Blueprint is not today's.** It describes the page dimming, an amber heat on every drift and a fix

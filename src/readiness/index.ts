@@ -158,13 +158,16 @@ export async function readiness(options: ReadinessOptions): Promise<ReadinessRep
   add('remember.baseline', 'remember', baseline, ledgerText, [{ file: relative(root, statePath(root, 'ledger.jsonl')), line: 1, text: baseline === 'ok' ? 'The record of today’s problems' : 'No record of today’s problems yet' }],
     'Every problem counts as new, so CI fails on all of them. Record today’s once you’ve looked them over, and only new ones fail.',
     baseline === 'unknown' ? step(`Fix ${relative(root, statePath(root, 'ledger.jsonl'))}, then run plumber doctor.`, 'plumber doctor') : config ? step('Look over today’s problems, then record them.', 'plumber baseline')
-      // with no config, init records them along with the config: one first step, the same everywhere
-      : step('Look over today’s problems, then set up and record them.', 'plumber init'));
+      // with no config, the page plumber opens records them along with the rules: one first step, the same everywhere
+      : step('Run this, answer four questions on the page it opens, and press Set it up: it records them with your rules. (plumber init asks the same in the terminal.)', 'plumber'));
   const plain = config ? await dataConfig(config) : undefined;
   let eligible = false, cacheUnknown = false;
   try { eligible = plain ? !!await CheckCache.create({ root, ...(config ? { config } : {}) }) : false; } catch { cacheUnknown = true; }
-  add('fast.config', 'fast', configError || cacheUnknown ? 'unknown' : eligible ? 'ok' : 'missing', eligible ? 'Checks reuse the last result' : 'Make checks faster', configEvidence,
-    'Without a config file, every check starts from scratch.', step(plain ? 'Take executable presets and CSS plugins out of the config, or accept the slower checks.' : `Export plain data from ${configFile}: no imports, calls or functions.`, config ? 'plumber doctor' : 'plumber init'));
+  // no config at all: the first step is choosing your rules, on the page plumber opens (the onboarding), not a speed-up
+  add('fast.config', 'fast', configError || cacheUnknown ? 'unknown' : eligible ? 'ok' : 'missing', eligible ? 'Checks reuse the last result' : config ? 'Make checks faster' : 'Choose your rules', configEvidence,
+    config ? 'Without a config file, every check starts from scratch.' : 'Without them, Plumber can’t tell a choice from a slip, and every check reads your app from scratch.',
+    config ? step(plain ? 'Take executable presets and CSS plugins out of the config, or accept the slower checks.' : `Export plain data from ${configFile}: no imports, calls or functions.`, 'plumber doctor')
+      : step('Run this, answer four questions on the page it opens, and press Set it up. (plumber init asks the same in the terminal.)', 'plumber'));
 
   let host: Awaited<ReturnType<typeof hostConfig>>;
   try { host = await hostConfig(root, facts.host.value); } catch { /* An unreadable host config is unknown. */ }

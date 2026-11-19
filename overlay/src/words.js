@@ -824,7 +824,9 @@ export const SETUP = {
     const tokens = /^read\.tokens\.(\w+)$/.exec(q.id)?.[1];
     if (tokens) return { title: `Add ${FAMILY_WORDS[tokens] ?? tokens} to your theme`, loses: `Without them, ${FAMILY_WORDS[tokens] ?? tokens} can’t be checked against your theme.` };
     return {
-      'fast.config': { title: 'Make checks faster', loses: 'Without a config file, every check starts from scratch.' },
+      // no config at all: the first step is choosing the rules (the page plumber opens), not a speed-up
+      'fast.config': q.evidence?.[0]?.text === 'No React Plumber config' ? { title: 'Choose your rules', loses: 'Without them, Plumber can’t tell a choice from a slip, and every check reads your app from scratch.' }
+        : { title: 'Make checks faster', loses: 'Without a config file, every check starts from scratch.' },
       'remember.baseline': { title: 'Start from today’s problems', loses: 'Every problem counts as new, so CI fails on all of them. Record today’s once you’ve looked them over, and only new ones fail.' },
       'write.watcher': { title: 'Check that saving updates the page', loses: 'Save any file once. If the page doesn’t update, applied changes won’t show until you reload.' },
       'write.refresh': { title: 'Turn on React Fast Refresh', loses: 'Without it, every fix reloads the whole page and what you were doing on it is lost. With it, a fix lands in place.' },
