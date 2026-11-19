@@ -2653,6 +2653,20 @@ field is empty). The table of five writes, before and after. The Next table: eig
   Inspect with the grey line icons the owner had rejected ("icons are toys"). They are toys now: History the round
   progress toy, Help the tooltip toy, Inspect the search lens (the pointer stays Accessible's, so no toy means two
   things). `bench/tells/shots/12-more-list-toys.jpg`.
+
+### One thing under the pointer
+
+- **The itch:** a screenshot from the owner with three boxes on one element: X-ray's card, X-ray's part pill ("Text
+  size 16 base") and the note's advice ("Say what it does in plain words, or cut the word"). "this is a failure of
+  design … turn the small 2 merge into 1 and then when i stay for sometime … the small card itself to expand and
+  shrink into small card".
+- **The system behind it:** each box decides on its own when to show (X-ray's card, X-ray's part pill, Blueprint's
+  pill for a mark); nothing owns "the one thing under the pointer".
+- **What we chose:** one pill that grows into the card in place after a rest of about half a second, shrinks back
+  when the pointer leaves, and stays open on a click. The pill says the note first when the element has one; the
+  part's values wait for the card. Built in layers.
+- **Layer 1, the pills merged:** a note's pill now names the note before its advice ("Stock word" / "Say what it
+  does…"), and while it is up X-ray's part pill steps aside. `bench/tells/shots/13-one-pill.jpg`.
 - **Media hooks:** `bench/tells/shots/5-concerns-bar.jpg`.
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.

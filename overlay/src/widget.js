@@ -518,7 +518,9 @@ class PlumbOverlay extends HTMLElement {
       /* the X-ray in place of the heat: blueprint's marks keep their places (a click still picks), drawn no more; the
          selection's old box drawing gives way to the X-ray's */
       :host([data-xray]) .bp .heat { opacity: 0 !important; }
-      :host([data-xray]) .sel .bm { display: none; }</style>${TOY_DEFS}`;
+      :host([data-xray]) .sel .bm { display: none; }
+      /* one pill by the pointer: a note's pill (blueprint-marks) outranks the part's */
+      :host([data-hinting]) .xr-say { display: none; }</style>${TOY_DEFS}`;
       this.#root.append(t.content);
     }
     const host = document.createElement('div'); host.className = 'xr-host';

@@ -89,6 +89,7 @@ export const MARKS_CSS = `
   .bp .bp-hint.pill .from { color: var(--pl-pink); font-weight: 600; } .bp .bp-hint.pill .to { color: var(--pl-sky); font-weight: 600; }
   .bp .bp-hint.pill .arr, .bp .bp-hint.pill .n { opacity: .6; } .bp .bp-hint.pill .say { font: 500 12px/1.3 var(--pl-sans); white-space: normal; max-width: 300px; }
   .bp .bp-hint.pill:has(.say) { height: auto; padding: 6px 10px; }
+  .bp .bp-hint.pill .say .nm { display: block; font-weight: 650; margin-bottom: 2px; }
   .bp .hit { pointer-events: auto; cursor: pointer; fill: transparent; outline: none; }
   /* Alt held: the pointer reaches the page through the drawings (an Alt+click or Alt+scroll is aimed at the element) */
   :host([data-armed]) .bp, :host([data-armed]) .bp * { pointer-events: none !important; }
@@ -298,7 +299,8 @@ function pillOf(mark, n) {
   const s = mark.craft?.suggest;
   const line = (inner) => `<span class="line">${inner}</span>`;
   if (s?.kind === 'class') return line(`<b class="from">${esc(s.from || mark.text || '')}</b> <span class="arr">→</span> <b class="to">${esc(s.to)}</b>${n > 1 ? ` <span class="n">×${n}</span>` : ''}`);
-  if (s?.kind === 'advice' || mark.family === 'craft') return `<span class="say">${esc(String(s?.text ?? mark.title ?? '').replace(/`/g, ''))}</span>`;
+  // a note: its name first (what it is), then what to do; the part's own values wait for the card
+  if (s?.kind === 'advice' || mark.family === 'craft') return `<span class="say"><b class="nm">${esc(FIX.what(mark))}</b> ${esc(String(s?.text ?? mark.title ?? '').replace(/`/g, ''))}</span>`;
   const c = (mark.choices ?? [])[0];
   return line(`<b class="from">${esc(writtenAs(mark) ?? labelOf(mark))}</b> ${c ? `<span class="arr">→</span> <b class="to">${esc(c.label ?? c.name ?? '')}</b>` : '<span class="say">no token is close</span>'}${n > 1 ? ` <span class="n">×${n}</span>` : ''}`);
 }
@@ -460,7 +462,10 @@ export class MarkLayer {
     // switch), never relights its cause or says its pill over the fix being worked on
     const held = this.#lit.length > 0, cause = node && !held ? causeOf(node.mark) : null;
     if (cause !== this.#cause) { this.#cause = cause; this.#redraw(); }
-    if (!node || (held && !this.#lit.includes(id))) { this.#hint.removeAttribute('data-on'); return; }
+    // one pill by the pointer: while this one is up, X-ray's part pill steps aside (the host's data-hinting)
+    const host = this.#hint.getRootNode()?.host;
+    if (!node || (held && !this.#lit.includes(id))) { this.#hint.removeAttribute('data-on'); host?.removeAttribute('data-hinting'); return; }
+    host?.setAttribute('data-hinting', '');
     const n = [...this.#nodes.values()].filter((x) => causeOf(x.mark) === cause).length;
     this.#hint.innerHTML = pillOf(node.mark, n);
     this.#placeHint();
