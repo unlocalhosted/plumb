@@ -33,7 +33,7 @@ How to read an issue, and what each one needs:
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u02-craft-pins.jpg`; in the page, `h3` "Smart sync NEW" has height 28,
   line-height 28px.
-- **Status:** fixed 159aedb7
+- **Status:** fixed 159aedb7 · verified (tester, 04:55): no pins on the badge headings; "Card controls" none either.
 
 ### U2 · Pins sit on top of the words they are about
 - **Where:** Blueprint, pinned notes (Craft and polish).
@@ -48,7 +48,7 @@ How to read an issue, and what each one needs:
   and looks like part of the problem.
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u02-craft-pins.jpg`
-- **Status:** fixed 7856b3c4
+- **Status:** fixed 7856b3c4 · verified (tester, 04:55): pins sit above their element, FEATURE labels show, the top pin is no longer clipped. `docs/qa/shots/2026-11-20/u02-verified.jpg`
 
 ### U3 · "Only left-over space between" doesn't say between what
 - **Where:** Blueprint, Craft and polish, the pin at the top left of the Ledger screen.
@@ -98,7 +98,7 @@ How to read an issue, and what each one needs:
   meant for a heading; the agent would be told to make a link an h2.
 - **Severity:** 1
 - **Evidence:** `docs/qa/shots/2026-11-20/u06-button-shows-heading-note.jpg`
-- **Status:** fixed d0794c0c
+- **Status:** fixed d0794c0c · verified (tester, 04:56): heading then button gives "Emoji as decoration" on the heading, then the button's own "Padding looks bigger than it is".
 
 ### U7 · With one concern picked, pointing at a pinned element shows no note
 - **Where:** Blueprint, Craft and polish, the "Get started" button with its pin "Padding looks bigger than it is".
@@ -110,7 +110,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** acting. The pins tell me there is a problem, but I can't open it from the element.
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u07-craft-button-no-note.jpg`
-- **Status:** fixed d0794c0c (same cause as U6)
+- **Status:** fixed d0794c0c (same cause as U6) · verified (tester, 04:56): with Craft and polish picked, the button's card shows its Craft note.
 
 ### U8 · Pins can't be pointed at; the pointer goes through to whatever is under them
 - **Where:** Blueprint, Craft and polish, the "Heading lines uneven" pin on card 2.
@@ -121,7 +121,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** intent. I aim at the note and get a different element.
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u08-pin-points-through.jpg`
-- **Status:** fixing
+- **Status:** fixed 9986555c
 
 ### U9 · The X-ray card covers the Blueprint bar
 - **Where:** Blueprint, X-ray card on an element in the right half of the page (the "Get started" button).
@@ -178,7 +178,7 @@ How to read an issue, and what each one needs:
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u13-agent-note.jpg` (the box with its Esc key); after one Escape the bar
   is gone.
-- **Status:** open
+- **Status:** fixing
 
 ### U14 · The agent note cuts off the line number
 - **Where:** "Note for your agent" box.
@@ -369,4 +369,16 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u28-help.jpg`
+- **Status:** open
+
+### U30 · "Edit the words" is the main button on notes that aren't about words
+- **Where:** X-ray card, pink note "Padding looks bigger than it is" on the "Get started" button.
+- **What I saw:** the note says "12px of padding looks like 18.7px. The line adds its own space." The dark, main
+  button under it is "Edit the words". The padding problem has nothing to do with the words; editing them won't fix
+  it. The same note doesn't say what to change (lower the padding? tighten the line height?).
+- **What I expected:** the main action matches the note: for a spacing note, "Ask your agent" or a fix I can take;
+  "Edit the words" only for notes about the words (an em dash, a stock word, an emoji).
+- **Why it hurts:** intent. The loudest button leads me away from the problem.
+- **Severity:** 2
+- **Evidence:** `docs/qa/shots/2026-11-20/u30-padding-note-edit-words.jpg`
 - **Status:** open
