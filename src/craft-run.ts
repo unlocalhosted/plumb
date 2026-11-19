@@ -6,6 +6,8 @@ import { hasAnswers, judge } from './craft-judge.js';
 import type { Grey } from './craft-judge.js';
 import { takeProbes } from './craft-probe.js';
 import { docsUrl } from '../overlay/src/rule-docs.js';
+import { BOUND_RULES, boundInSource } from '../overlay/src/pack-tells.js';
+import { readFileSync } from 'node:fs';
 import { makeFinding } from './messages.js';
 import { tool } from './report.js';
 import type { Declaration, Finding, Report, Site } from './report.js';
@@ -225,12 +227,17 @@ export async function craftRun(options: CraftRunOptions): Promise<CraftPage[]> {
   } finally { await browser.close(); }
 }
 
+const sources = new Map<string, string>();
+const sourceOf = (file: string): string => { let t = sources.get(file); if (t === undefined) { try { t = readFileSync(file, 'utf8'); } catch { t = ''; } sources.set(file, t); } return t; };
+
 /** The page's records in the CLI's Finding shape: one per rule and source site, ready for SARIF. */
 export function craftFindings(pages: CraftPage[], root: string): Finding[] {
   const found = new Map<string, Finding>();
   for (const page of pages) for (const record of page.findings) {
     if (!record.file) continue; // an element Plumb cannot place has no line to name
     const file = resolve(root, record.file);
+    // a badge or a dot that renders only under a condition shows real state: the tells pack keeps it (pack-tells.js)
+    if (BOUND_RULES.has(record.rule) && boundInSource(sourceOf(file), record.line ?? 1, record.column ?? 1)) continue;
     const site: Site = { file, line: record.line ?? 1, column: record.column ?? 1, text: record.text };
     const key = `${record.rule}:${relative(root, file)}:${site.line}:${site.column}:${record.text}`;
     const hit = found.get(key);

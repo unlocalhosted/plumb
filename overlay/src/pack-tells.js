@@ -1,0 +1,77 @@
+/* ─────────────────────────────────────────────────────────
+ * PACK · TELLS · React Plumber overlay
+ *
+ * The marks that make a screen read as generated: a label in capitals over every heading, "01 02 03" on cards that
+ * have no order, a badge that says NEW whatever is new, an icon in a tinted square above each feature, a glow, a
+ * gradient from one hue to another. Each is read off the drawn page, so it is found however the page was written
+ * (a utility class, a stylesheet, CSS-in-JS).
+ *
+ * Where they come from: unslop-ui by Felipe Basurto (MIT, github.com/felipebasurto/unslop-ui), rules U1 to U20, and
+ * the pstack unslop writing rules it carries (Lauren Tan, MIT). That skill counts these with patterns over source
+ * text and leaves the rest to an agent's reading; here only the ones the drawn page settles are taken. Left out:
+ * subtitles that repeat the heading, captions that narrate, slogans, a label said twice and a number said twice
+ * (U3, U4 in part, U5, U7, U8, U14: they need reading); chart clutter and legends (U15, U16: most charts are a canvas);
+ * off-scale spacing (U18: craft's rhythm and declared-gap judge it against the page's own steps). Nothing of the
+ * skill's text is copied.
+ * ───────────────────────────────────────────────────────── */
+
+const U = (n, name) => ({ id: `unslop-ui-u${n}`, name: `unslop-ui U${n} ${name}` });
+const UNSLOP = (n, name) => ({ id: `pstack-unslop-${n}`, name: `pstack unslop ${n} ${name}` });
+const ADVISORY = { tier: 'advisory' };
+
+// rule short name → [the rule it comes from, its spec entry, its words]
+const TABLE = {
+  eyebrow: [U(1, 'Eyebrow labels'), {}, ({ text }) => ({ label: 'Label over a heading', line: `"${text}" sits in small capitals above the heading.`, reason: 'The heading already says what this part is. The label only repeats it, louder.' })],
+  numbering: [U(2, 'Decorative numbering'), ADVISORY, ({ text }) => ({ label: 'Numbers with no order', line: `"${text}" numbers something that has no order.`, reason: 'Numbers tell people to go in sequence. If the parts can be read in any order, they are noise.' })],
+  'status-chain': [U(6, 'Status strings'), ADVISORY, ({ count }) => ({ label: 'Facts in a chain', line: `${count} facts are strung together with dots or bars.`, reason: 'Nobody reads a chain. Keep the one fact people act on and put the rest where it is needed.' })],
+  'flavour-badge': [U(9, 'Badges and pills without real state'), ADVISORY, ({ text }) => ({ label: 'Badge for flavour', line: `"${text}" is set as a badge.`, reason: 'A badge should mean something the app tracks, like a stream that is live. Added for flavour, it teaches people to ignore badges.' })],
+  'status-dot': [U(10, 'Status dots'), ADVISORY, ({ moving }) => ({ label: moving ? 'Pulsing dot' : 'Coloured dot', line: moving ? 'A small dot pulses next to these words.' : 'A small coloured dot sits next to these words.', reason: 'A dot says "this is live". If nothing real drives it, it claims something untrue.' })],
+  emoji: [U(11, 'Decorative emojis and icons'), {}, ({ emoji }) => ({ label: 'Emoji as decoration', line: `${emoji} decorates these words.`, reason: 'It says nothing the words do not, and it changes look on every system.' })],
+  'icon-tile': [U(11, 'Decorative emojis and icons'), {}, () => ({ label: 'Icon in a tinted square', line: 'An icon sits in a tinted square above the words.', reason: 'The tile repeats on every item and tells them apart by colour alone. The names already do that.' })],
+  'chart-type-title': [U(12, 'Chart titles that name the chart type'), {}, ({ kind }) => ({ label: 'Title names the chart', line: `The title says it is a ${kind}.`, reason: 'People can see it is a chart. The title should say what it measures.' })],
+  'reading-instructions': [U(13, 'Reading instructions'), {}, ({ phrase }) => ({ label: 'Explains how to read', line: `"${phrase}" tells people how to read what they can see.`, reason: 'If it needs instructions, change the thing. If it does not, cut them.' })],
+  narrating: [U(4, 'Botsplaining'), ADVISORY, ({ phrase }) => ({ label: 'Narrates the screen', line: `"${phrase}" describes what is on the screen.`, reason: 'People can see it. Keep the words they need to act.' })],
+  'em-dash': [UNSLOP(13, 'Em dashes'), ADVISORY, ({ count }) => ({ label: 'Em dash in copy', line: count > 1 ? `${count} em dashes in these words.` : 'An em dash in these words.', reason: 'Generated copy leans on the dash. A full stop or a comma reads as written by a person.' })],
+  'stock-words': [UNSLOP(7, 'AI vocabulary'), ADVISORY, ({ word }) => ({ label: 'Stock word', line: `"${word}" is a stock word.`, reason: 'It could sit on any product\'s page. Say what this one does.' })],
+  'hue-gradient': [U(17, 'Gradients and glows'), ADVISORY, ({ text }) => ({ label: text ? 'Rainbow text' : 'Gradient across hues', line: text ? 'These words are filled with a gradient from one hue to another.' : 'This surface fades from one hue to another.', reason: 'A two-hue gradient is the first thing generated pages reach for. A solid colour holds the brand better.' })],
+  glow: [U(17, 'Gradients and glows'), ADVISORY, ({ px }) => ({ label: 'Coloured glow', line: `A ${px}px coloured glow surrounds this.`, reason: 'A glow lifts it with no light to explain it. A soft neutral shadow or a border does the job.' })],
+  'transition-all': [U(20, 'Decorative motion'), ADVISORY, () => ({ label: 'Animates everything', line: 'Every property here animates when it changes.', reason: 'Size and layout changes slide when they should snap, and the browser does extra work. Name the properties that should move.' })],
+  'hover-grow': [U(20, 'Decorative motion'), ADVISORY, ({ scale }) => ({ label: 'Card grows on hover', line: `This grows to ${scale}× when the pointer is over it.`, reason: 'A card that jumps at the pointer feels busy. A colour or shadow change is enough to say it can be clicked.' })],
+  'heavy-weight': [U(19, 'Extra-heavy weights'), ADVISORY, ({ weight }) => ({ label: 'Extra-heavy weight', line: `Set at weight ${weight}.`, reason: 'Size and colour carry the order better. Weights of 800 and 900 shout.' })],
+};
+
+export const TELLS = {
+  id: 'tells',
+  title: 'Tells',
+  ground: 'unslop-ui (MIT): the marks of a generated screen that the drawn page shows',
+  source: { package: 'unslop-ui', version: 'main 2026-11-19', guide: 'U1, U2, U4, U6, U9–U13, U17, U19, U20; pstack unslop 7, 13' },
+  runs: 'page',
+  guides: Object.fromEntries(Object.entries(TABLE).map(([short, [law]]) => [short, law.id])),
+  spec: { access: Object.fromEntries(Object.entries(TABLE).map(([short, [, entry]]) => [short, entry])) },
+  words: Object.fromEntries(Object.entries(TABLE).map(([short, [, , words]]) => [short, words])),
+  laws: Object.fromEntries(Object.entries(TABLE).map(([short, [law]]) => [short, [law]])),
+};
+
+// The real-state test (unslop-ui's, for U9 and U10): a badge or a dot that renders only under a condition
+// (`{isLive && <Badge>…}`, `{n > 0 ? <i/> : null}`) is bound to something the app tracks, and is kept. The page cannot
+// see that; the source can. Asked of the JSX at the finding's line and column: the nearest `{` that opens around it,
+// read up to the element.
+export const BOUND_RULES = new Set(['tells/flavour-badge', 'tells/status-dot']);
+export function boundInSource(text, line, column = 1) {
+  let at = 0;
+  for (let l = 1; l < line && at !== -1; l++) at = text.indexOf('\n', at) + 1;
+  if (at <= 0 && line > 1) return false;
+  at += Math.max(0, column - 1);
+  // walk back to the `{` that is still open here, skipping matched pairs; a JSX element ends the search when it is
+  // the parent of the one asked about (a `>` closing an opening tag is fine: the condition sits before it)
+  let depth = 0;
+  for (let i = at - 1, stop = Math.max(0, at - 600); i >= stop; i--) {
+    const c = text[i];
+    if (c === '}') depth++;
+    else if (c === '{') {
+      if (depth === 0) return /&&|\?(?!\.)|\|\|/.test(text.slice(i + 1, at));
+      depth--;
+    }
+  }
+  return false;
+}

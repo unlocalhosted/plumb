@@ -237,3 +237,14 @@ All free under the Unsplash License, hotlinked from images.unsplash.com as Unspl
 - **What:** https://github.com/oaustegard/claude-skills/releases/tag/declauding-v0.13.0, by oaustegard. It lists the constructions that mark prose as model-written (staged reveals, verdict headers, aphoristic closers, "it's not X, it's Y", forced triads, noun stacks) and rewrites them as plain prose. It comes with a linter and a diff that checks no claim was lost.
 - **Why the owner shared it:** after the film words read like a robot ("fills 78.5% of its box"): "fucking use this for anytime you are asked to write".
 - **What it changed:** it is installed globally (~/.claude/skills/declauding, without its stop hook, which needs subagents), and ~/.claude/CLAUDE.md now says every written piece goes through it, film scripts and on-screen words included.
+
+## 2026-11-19 · unslop-ui, rules for the marks of a generated interface (shared by the owner)
+- What: [felipebasurto/unslop-ui](https://github.com/felipebasurto/unslop-ui) (MIT, by Felipe Basurto, read at main
+  on 2026-11-19): an agent skill with 20 rules (U1 to U20) for cutting generated-looking copy and decoration, a
+  regex counter over source files, and eval fixtures with expected answers. It carries the pstack unslop writing rules
+  (Lauren Tan, MIT).
+- Why: the owner asked whether its checks could move into plumber deterministically, and whether a model could take
+  the cases that need reading.
+- What it changed: plumber's `tells` pack, 17 rules read off the drawn page, with its real-state test applied to the
+  source line ([journey](journey.md#tells-marks-of-a-generated-screen-read-off-the-page-2026-11-19)). Its example
+  screens became `bench/tells/App.jsx`. Nothing of its text was copied.

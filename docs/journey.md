@@ -2483,6 +2483,36 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **Media hooks:** a chart of the worker's longest busy stretch: 10 s, then 1.2 to 1.6 s, then 0.29 s, with page
   answer times on top.
 
+## Tells: marks of a generated screen read off the page (2026-11-19)
+- **The itch:** the owner shared unslop-ui and asked whether its checks could move into plumber deterministically,
+  and where a small model could help with the rest.
+- **How we found it:** unslop-ui is an agent skill with 20 rules (U1 to U20) and a regex counter over source files.
+  Read side by side with plumber's packs, 16 of its checks could be settled from the drawn page. Five need reading
+  (a subtitle that repeats its heading, a label said twice, a number said twice, slogans, captions that narrate).
+- **The system behind it:** the counter reads class strings, so it misses the same tell written as plain CSS or
+  CSS-in-JS, and it cannot apply its own "real state" test (a badge or dot that renders from a condition stays).
+  Plumber sees the computed style, so it finds the tell however it was written, and it has the source line, so it
+  can apply that test.
+- **What we chose and why:** a new pack, `tells`, with 17 rules: eyebrow labels, decorative numbering, chains of
+  facts joined by dots, flavour badges, status dots, emoji, icons in tinted tiles, chart titles that name the chart
+  type, reading instructions, captions that narrate the screen, em dashes, stock words, gradients across hues, coloured
+  glows, `transition: all`, cards that grow on hover, weights of 800 and 900. The ones that cannot know the author's
+  intent (a badge, a dot, numbering, a chain of facts, the words) are advisory: shown, never failing a run. Left
+  out: chart scaffolding and legends (most charts are a canvas) and off-scale spacing (craft's rhythm rules already
+  judge it against the page's own steps).
+- **Dead ends:** first run showed only four rules. Plumber hides anything under 0.8 confidence, and the doubtful rules
+  were set lower; doubt belongs in the advisory tier, and confidence only says how sure the pattern is. A pulsing dot
+  was never judged, because the engine leaves anything that loops alone; it is now said on the element that holds it.
+  A Tailwind 4 `hover:scale-105` sits three levels deep in nested CSS, so the hover reader carries the parent selector
+  down.
+- **The fix and the proof:** on unslop-ui's own example screens (in `bench/tells/App.jsx`), every one of the 17 rules
+  fires (40 findings), and its "clean" screen, with table headers in capitals, an "Owner" badge bound to data and a
+  lone "—", gets none. The real-state test works on the source: a dot inside `{found > 0 && <span>…}` is kept.
+  crafting-ui gets no tells. Plumber's own site gets four, all debatable: a recording dot, a "Business" label and an
+  ingredient line inside mock screens of other apps, and the install requirements line. Two false hits on the site
+  were fixed on the way: dots in the "found / fixed" chips (now kept by the real-state test) and the temperature bar
+  in the weather mock (a long thin gradient carries a value).
+- **Media hooks:** the sloppy screens with plumber's marks on them, then the clean screen with none.
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
 - Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".
@@ -3930,6 +3960,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- Plumber now points out the marks of a generated screen on your page: labels in capitals over every heading, "01 02 03" with no order, NEW badges and pulsing dots that track nothing, emoji, icons in tinted squares, glows and two-hue gradients, cards that grow on hover, stock words. A badge or dot that only shows under a condition in your code is left alone ([entry](#tells-marks-of-a-generated-screen-read-off-the-page-2026-11-19)).
 - Plumber builds the whole-app list of findings in the background after start-up and after each edit, so asking for it no longer waits 18 s on a 3,600-file app, and pages keep answering in about 30 ms while it builds ([entry](#the-whole-app-report-builds-itself-in-the-background-2026-11-18)).
 - In Break it, press F on a note and plumber shows its fix on your live page under the same stress, then checks the page again and says what the fix itself breaks; on crafting-ui a long topic wraps inside its sentence, a one-step rail leaves itself out, and 11px labels grow in rem ([entry](#break-it-broken-then-fixed-on-the-page-2026-11-17)). On its own branch.
 

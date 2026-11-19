@@ -19,6 +19,8 @@ import { HTML } from './pack-html.js';
 import { HTML_RULES } from './html-rules.js';
 import { EXPERIENCE } from './pack-experience.js';
 import { EXPERIENCE_RULES } from './experience-rules.js';
+import { TELLS } from './pack-tells.js';
+import { TELLS_RULES } from './tells-rules.js';
 
 export const PACKS = [
   { id: 'craft', title: 'Craft', ground: 'the craft rules (docs/craft/rules.md)', runs: 'page', rules: RULES },
@@ -27,6 +29,7 @@ export const PACKS = [
   { ...COMPONENTS, rules: COMPONENTS_RULES },
   { ...HTML, rules: HTML_RULES },
   { ...EXPERIENCE, rules: EXPERIENCE_RULES },
+  { ...TELLS, rules: TELLS_RULES },
 ];
 
 // which pack a rule belongs to, by its id: craft/… and habits/… are craft's, the rest name their pack

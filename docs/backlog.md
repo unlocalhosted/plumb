@@ -63,6 +63,15 @@ reserved.)
 
 ## Doesn't do yet
 
+- **Tells that need reading (2026-11-19).** The `tells` pack leaves out five of unslop-ui's rules: a subtitle that
+  repeats its heading, a label said twice (label, placeholder, helper text), a number said twice (a KPI and the
+  sentence under it), slogans, and most narrating captions. The plan: page structure finds the pair, a small embedding
+  model scores how much the two say the same thing, and a threshold is set on unslop-ui's fixtures. An icon that says
+  nothing its name does not needs a model that embeds images and text together. Nothing is built yet.
+- **A badge drawn by a component (2026-11-19).** The real-state test reads the line a finding points at. A badge
+  made by a component (`{deploy.isLive && <Badge>Live</Badge>}`) points inside the component, where there is no
+  condition, so a badge bound to data is still flagged. The test runs in the CLI only; the overlay does not apply it
+  yet.
 - **The old failing tests, sorted (2026-11-18).** The 36 files that failed before 2026-11-17 all pass on main now; most
   were time-outs on a busy machine. A full run on vm-agent (214 files, 24.6 min, by mistake: the file list was lost on
   the way over SSH) failed 7 tests in 6 files. Sorted: `kept-check` was ours (the kept reading table was skipped while

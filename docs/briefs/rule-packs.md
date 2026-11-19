@@ -308,6 +308,27 @@ Engine change with this batch: a looping animation keeps only its own element an
 
 Run (2026-11-14): tests, 15 of 17 at their line plus spinner-silent. crafting-ui: state-in-label ×89, button-name-reused ("Replay" ×89), caps-long, link-target-renamed ×1. glyphschool: font-display. glyphwrite: skip-link. Three false hits fixed. Five page packs, 145 rules, 10,827 elements: 56 ms by kind.
 
+## 4h. The batch of 2026-11-19: the marks of a generated screen
+
+The owner shared unslop-ui (references.md) and asked what could move into plumber deterministically. Pack `tells`,
+files `overlay/src/pack-tells.js` and `overlay/src/tells-rules.js`; each rule's law names the unslop-ui rule (U1 to U20)
+or the pstack unslop rule it comes from.
+
+| What it reads | Rules |
+|---|---|
+| Computed text style and the next heading | eyebrow (U1), heavy-weight (U19) |
+| An element's own words | numbering (U2), status-chain (U6), emoji (U11), chart-type-title (U12), reading-instructions (U13), narrating (U4, phrases only), em-dash, stock-words (pstack 13, 7) |
+| A small laid-out box and its fill | flavour-badge (U9), status-dot (U10), icon-tile (U11) |
+| Computed backgrounds, shadows and transitions | hue-gradient, glow (U17), transition-all (U20) |
+| The page's own hover rules, nested ones included | hover-grow (U20) |
+
+Advisory (shown, never failing a run): everything the page cannot know the intent of. Kept by the real-state test in
+the CLI (`boundInSource`, craft-run.ts): a badge or dot whose JSX sits inside a `&&`, `?:` or `||`.
+Engine note: an element with a looping animation is never judged, so a pulsing dot is said on the element holding it.
+
+Run (2026-11-19): unslop-ui's example screens (`bench/tells/run.mjs`), 17 of 17 rules fire, 40 findings, its clean
+screen silent. crafting-ui: none. Plumber's site: four, all debatable (three inside mock screens of other apps).
+
 ## 5. Order, and why not the signed-off one
 
 The foundations put packs at layer 5, after the snapshot (3) and pure rules in a worker (4), so that a new page pack

@@ -38,3 +38,5 @@ dist/
 
 # film drafts: one cheap run each, for the story and camera reviews; never published
 docs/films/*-draft/
+/bench/tells/app/
+/bench/tells/report.json
