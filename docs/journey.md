@@ -2398,6 +2398,28 @@ field is empty). The table of five writes, before and after. The Next table: eig
   lost sites judged alone, an older gap in the per-file path; the seven files like it read the full report.
 
 
+### Onboarding, tried from scratch on two real apps (2026-11-19)
+
+- **The itch:** the owner, before release: "do a dx and ux test for the onboarding on how user starts using plumber
+  i want to fill all the gap", then "use a real project like algorecall and craftingui to test it from scratch".
+- **How we found it:** plumber packed as npm would publish it, added to clean clones of crafting-ui (pnpm, 651 files)
+  and algorecall (npm, 3,658 files) that didn't have it, the README followed word for word, every screen of the page
+  `plumber` opens walked through. 20 gaps in docs/qa/onboarding-2026-11-19.md.
+- **The system behind it:** the onboarding page and the CLI grew separately. The page read spacing only from named
+  tokens, so Tailwind's own steps (most apps' spacing) looked typed by hand: algorecall's page said 56 places on the
+  scale where the CLI said 98%. Its empty rule was then refused after the tokens were already tidied. Commands were
+  printed for a global install nobody has. The README still described a Blueprint the overlay no longer has.
+- **What we chose:** fixes at the source, not the screen: the page reads Tailwind's steps; "Set it up" checks before
+  it writes and puts tokens back if the rules can't be saved; every printed command carries the project's runner
+  from its lockfile; one way in (the page), with `init` as the same questions in the terminal; the README's quick start
+  is that path.
+- **The fix and the proof:** on the clean crafting-ui copy the spacing step reads 1,491 places on the scale and 258
+  by hand (0 and 1,749 before) and "Set it up" finishes; on algorecall's 37,219 and 238 (56 and 37,401). The CLI tier
+  on vm-agent: 645 of 648 passing, the rest fixed or logged. Left for design review: a scale to propose when an app has
+  none, the colour step's grouping, the Welcome button at the fold, the rules shown twice, write progress, the GIF.
+- **Media hooks:** before/after of the spacing step on algorecall (red columns, then Tailwind's steps); the "Set it
+  up" refusal, then "Done. Your rules are in plumber.config".
+
 ### The whole-app report builds itself in the background (2026-11-18)
 
 - **The itch:** the owner asked what should move to the background and what should wait to be asked. Pages were
