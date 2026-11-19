@@ -34,7 +34,7 @@ written, and `plumber check` then says "Nothing new since your baseline".
 
 ## Major
 
-4. **Spacing with no scale offers one choice, "Keep what you have".** Its rule checks nothing. `plumber propose`
+4. **Spacing with no scale offers one choice, "Keep what you have".** *Fixed: with no steps anywhere (a plain-CSS app; every Tailwind 4 app has `--spacing`), the choice is "Skip it for now", it names the command that drafts steps from the sizes in use (`npx plumber propose --family spacing --write`, with the project's runner), and no rule is written for it. Checked on a plain-CSS app with no size tokens: Set it up wrote only the colour rule.* Its rule checks nothing. `plumber propose`
    already drafts a scale from the values in use; the page doesn't offer it. (Once gap 1 is fixed, crafting-ui has a
    scale; an app with none still meets this.)
 5. **The colour step's palette looks wrong.** *Palette fixed: colours kept outside the theme that named uses point at count (crafting-ui: 28, not 3). Chips now group by the colour itself (greys, then each hue). Left: rows read "color: ink" where the code writes a variable named ink; `color: var(--fg)` still counts as typed by hand.* crafting-ui shows "3 colours in your palette" (white, near-black,

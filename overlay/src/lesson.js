@@ -188,10 +188,15 @@ export function mountLesson(host, data, { post } = {}) {
   const face = (s, title, line) => `<div class="face" style="--hf: var(${HUES[s.hue][0]}); --hi: var(${HUES[s.hue][1]})"><span class="plate"><i class="toy">${toyOf(s.toy)}</i></span><div><h2>${title}</h2>${line ? `<p>${line}</p>` : ''}</div></div>`;
   const nav = (id) => { const n = nextOf(id); return `<div class="nav">${button(n.id === 'rules' ? 'Add this rule and finish' : `Add this rule, then ${n.name.toLowerCase()}`, { key: '→', attrs: `data-next="${id}"` })}<span class="later">You can come back and change it.</span></div>`; };
 
+  // a size kind with no steps anywhere: nothing in the theme, no Tailwind base, nothing in the reading
+  const bare = (m) => !m.lanes.length && !(m.kind?.groups ?? []).length && !(m.family === 'spacing' && data.spacing?.numeric) && !(data[m.spec.data]?.steps ?? []).length;
   // a size kind's rule, in plain words and as the line it writes
   const sizeRule = (m) => {
     const key = m.family === 'type' ? 'type' : m.family;
     if (state.choice[m.family] === 'tidy' && m.one) { const from = [`css:${m.one.lane.file}#${m.one.stem}*`]; return { plain: `Every ${m.spec.noun} uses one of these ${m.one.steps.length}. Anything else, Plumber points out.`, key, from, code: `${key}: { from: ['${from[0]}'] }` }; }
+    // no steps at all (a plain-CSS app with no spacing tokens): nothing to keep yet, so no rule rather than an empty one,
+    // which would check nothing (docs/qa/onboarding-2026-11-19.md, gap 4)
+    if (bare(m)) return { plain: `No rule for ${m.spec.nouns} yet: your theme has no ${m.spec.gravity.sizes}. Plumber leaves them alone until it does.`, key, from: [], skip: true, code: `// ${key}: no steps in your theme yet` };
     // no list of its own, on Tailwind's spacing steps: the rule names the base, as plumber init does
     const numeric = m.family === 'spacing' && !m.lanes.length ? data.spacing?.numeric : null;
     if (numeric) { const from = [numeric.file ? `css:${numeric.file}#--spacing` : 'theme:--spacing'];
@@ -199,7 +204,7 @@ export function mountLesson(host, data, { post } = {}) {
     const from = m.lanes.length ? m.lanes.map((l) => `css:${l.file}#${l.name}`) : [...new Set((m.kind?.groups ?? []).map((g) => `css:${g.file}`))];
     return { plain: `${m.spec.nouns[0].toUpperCase()}${m.spec.nouns.slice(1)} use the ones you already have. Anything else, Plumber points out.`, key, from, code: `${key}: { from: [${from.map((f) => `'${f}'`).join(', ')}] }` };
   };
-  const colourRule = () => ({ plain: `Colours come from your palette of ${col.palette.length} and the ${col.roles.length} named uses built on it${state.choice.color === 'point' && col.fixable.length ? `, with ${col.fixable.length} copies pointed back at it` : ''}. A colour typed by hand, Plumber points out.`,
+  const colourRule = () => ({ plain: `Colours come from your palette of ${col.palette.length} and the ${col.roles.length} named ${col.roles.length === 1 ? 'use' : 'uses'} built on it${state.choice.color === 'point' && col.fixable.length ? `, with ${col.fixable.length} copies pointed back at it` : ''}. A colour typed by hand, Plumber points out.`,
     key: 'color', from: col.files.map((f) => `css:${f}`), code: `color: { from: [${col.files.map((f) => `'css:${f}'`).join(', ')}] }` });
   const ruleOf = (id) => id === 'colour' ? colourRule() : sizeRule(sizes[Object.keys(screenOf).find((f) => screenOf[f] === id)]);
 
@@ -233,13 +238,15 @@ export function mountLesson(host, data, { post } = {}) {
     if (m.lanes.length > 1) notice.push(`<b>You have ${m.lanes.length} separate lists of ${m.spec.nouns}, and they repeat each other.</b> ${m.twice.length ? `${m.twice.join(', ')} each appear in more than one list under different names (yellow below).` : ''}`);
     if (m.byHand) notice.push(`<b>${nf.format(m.byHand)} ${m.byHand === 1 ? 'place types a' : 'places type a'} ${m.spec.noun} by hand</b> instead of using one of them: the dots above.`);
     const keepVals = m.values.length ? m.values : (data[m.spec.data]?.steps ?? []).map((x) => x.px).filter((v, i, a) => a.indexOf(v) === i).sort((a, b) => a - b);
+    // nothing to keep: the choice says so, with the command that drafts steps from the sizes the code uses
+    const skipLine = `Your theme has no ${esc(m.spec.gravity.sizes)} yet. To draft them from the sizes your code already uses, run <code>${esc(data.runner ?? 'npx')} plumber propose --family ${m.family} --write</code>, then open this page again.`;
     return `<section class="screen">${face(s, m.spec.title, m.spec.line)}
       <div class="body">
         <div class="part"><h3>Yours, drawn</h3><div id="gravity"></div>${notice.length ? `<div class="notice">${notice.map((n) => `<span>${n}</span>`).join('')}</div>` : ''}</div>
         <div class="part"><h3>Why it matters</h3><p>${m.spec.why}</p></div>
         <div class="part"><h3>Your choice</h3><div class="choices" role="radiogroup" aria-label="${esc(s.name)}">
           ${m.needed ? `<button type="button" class="choice" role="radio" aria-checked="${state.choice[m.family] === 'tidy'}" data-pick="${m.family}:tidy"><b>One list of ${m.one.steps.length}<span class="rec">Suggested</span></b>${preview(m.family, m.one.steps.map((x) => x.px))}<span>Your lists merged into one, with Tailwind's name. The old names keep working, pointing at the new ones.</span></button>` : ''}
-          <button type="button" class="choice" role="radio" aria-checked="${state.choice[m.family] === 'keep'}" data-pick="${m.family}:keep"><b>Keep what you have</b>${preview(m.family, keepVals, m.twice)}<span>${m.lanes.length > 1 ? `All ${m.lanes.length} lists stay as they are. You can tidy them later.` : `Your ${m.spec.nouns} stay as they are.`}</span></button>
+          <button type="button" class="choice" role="radio" aria-checked="${state.choice[m.family] === 'keep'}" data-pick="${m.family}:keep"><b>${bare(m) ? 'Skip it for now' : 'Keep what you have'}</b>${bare(m) ? '' : preview(m.family, keepVals, m.twice)}<span>${bare(m) ? skipLine : m.lanes.length > 1 ? `All ${m.lanes.length} lists stay as they are. You can tidy them later.` : `Your ${m.spec.nouns} stay as they are.`}</span></button>
         </div></div>
         <div class="part"><h3>The rule it becomes</h3><div class="rule"><p>${esc(rule.plain)}</p><code>${esc(rule.code)}</code></div>
           <details class="more"><summary>Details for designers</summary><p>${m.lanes.map((l) => `${esc(l.name)} in ${esc(l.file)}: ${l.values.join(', ')}px`).join('<br>') || 'No lists of steps; single tokens only.'}${m.one ? `<br>Merged: ${m.one.steps.map((x) => `${esc(x.name)} ${esc(x.value)}`).join(', ')}` : ''}</p></details></div>
@@ -254,7 +261,7 @@ export function mountLesson(host, data, { post } = {}) {
       <div class="body">
         <div class="part"><h3>Yours, drawn</h3><div class="palette">${col.hues.slice(0, 12).map((h) => `<div class="hue">${h.map((p) => chip(p.value, `${p.name}: ${p.value}`)).join('')}</div>`).join('')}${col.hues.length > 12 ? `<span class="later">and ${col.hues.length - 12} more</span>` : ''}</div>
           ${col.typed.length ? `<div class="typed">${col.typed.slice(0, 6).map((t) => { const near = col.palette.find((p) => p.name.slice(2) === t.near) ?? col.roles.find((p) => p.name.slice(2) === t.near); return `<div class="t">${chip(t.css, t.css)}<code>${esc(t.written[0]?.text ?? t.css)}</code><span>→</span>${near ? chip(near.value, near.name) : '<i></i>'}<span>${nf.format(t.places)} ${t.places === 1 ? 'place' : 'places'}${near ? `; your ${esc(near.name)}${t.distance === 0 ? ' exactly' : ' is close'}` : ''}</span></div>`; }).join('')}</div>` : ''}
-          <div class="notice"><span><b>${col.palette.length} colours in your palette, ${col.roles.length} named uses built on them.</b>${col.byHand ? ` ${nf.format(col.byHand)} ${col.byHand === 1 ? 'place types' : 'places type'} a colour by hand instead; the most common are above, each beside the palette colour it's closest to.` : ''}</span>${col.fixable.length ? `<span><b>${col.fixable.length} named ${col.fixable.length === 1 ? 'use copies' : 'uses copy'} a palette colour</b> instead of pointing at it, so ${col.fixable.length === 1 ? 'it won’t follow' : 'they won’t follow'} if the palette changes.</span>` : ''}</div></div>
+          <div class="notice"><span><b>${col.palette.length} ${col.palette.length === 1 ? 'colour' : 'colours'} in your palette, ${col.roles.length} named ${col.roles.length === 1 ? 'use' : 'uses'} built on ${col.palette.length === 1 ? 'it' : 'them'}.</b>${col.byHand ? ` ${nf.format(col.byHand)} ${col.byHand === 1 ? 'place types' : 'places type'} a colour by hand instead; the most common are above, each beside the palette colour it's closest to.` : ''}</span>${col.fixable.length ? `<span><b>${col.fixable.length} named ${col.fixable.length === 1 ? 'use copies' : 'uses copy'} a palette colour</b> instead of pointing at it, so ${col.fixable.length === 1 ? 'it won’t follow' : 'they won’t follow'} if the palette changes.</span>` : ''}</div></div>
         <div class="part"><h3>Why it matters</h3><p>Ten slightly different greys make an app look tired, and changing your brand colour means finding every copy. Named uses that point at one palette change everywhere at once, and let dark mode swap the palette underneath.</p></div>
         <div class="part"><h3>Your choice</h3><div class="choices" role="radiogroup" aria-label="Colours">
           ${col.fixable.length ? `<button type="button" class="choice" role="radio" aria-checked="${state.choice.color === 'point'}" data-pick="color:point"><b>Point the copies at the palette<span class="rec">Suggested</span></b><div class="steps">${col.fixable.slice(0, 8).map((h) => chip(h.value, `${h.name} → ${h.match.name}`)).join('')}</div><span>${col.fixable.length} named ${col.fixable.length === 1 ? 'use stops' : 'uses stop'} copying and ${col.fixable.length === 1 ? 'points' : 'point'} at the palette. Nothing looks different today.</span></button>` : ''}
@@ -267,7 +274,7 @@ export function mountLesson(host, data, { post } = {}) {
 
   const rulesScreen = () => {
     const s = SCREENS[5], done = ORDER.filter((id) => !['welcome', 'rules'].includes(id) && state.decided.has(id));
-    const code = `export default {\n  decisions: {\n${done.map((id) => `    ${ruleOf(id).code},`).join('\n')}\n  },\n};`;
+    const code = `export default {\n  decisions: {\n${done.map((id) => { const r = ruleOf(id); return `    ${r.code}${r.skip ? '' : ','}`; }).join('\n')}\n  },\n};`;
     return `<section class="screen">${face(s, 'Your rules', 'What you chose, in one place. This becomes plumber.config, the file Plumber reads every time it checks your app.')}
       <div class="body"><div class="part"><h3>${done.length ? `${done.length} of 4 decided` : 'Nothing decided yet'}</h3>${done.length ? `<div class="rule">${done.map((id) => `<p>${esc(ruleOf(id).plain)}</p>`).join('')}<code>${esc(code)}</code></div>` : '<p>Start with spacing.</p>'}</div>
         <div class="part"><h3>Set it up</h3><p>One press does three things: tidies your tokens as you chose (old names keep working), writes these rules into plumber.config, and remembers what's already in your code, so from now on you only hear about new problems.</p>
@@ -304,7 +311,7 @@ export function mountLesson(host, data, { post } = {}) {
     try {
       // every rule names where its steps live before anything is written: an empty one checks nothing, and the config
       // would be refused after the tokens were already tidied
-      const decisions = Object.fromEntries(ORDER.filter((id) => !['welcome', 'rules'].includes(id) && state.decided.has(id)).map((id) => { const r = ruleOf(id); return [r.key, { from: r.from }]; }));
+      const decisions = Object.fromEntries(ORDER.filter((id) => !['welcome', 'rules'].includes(id) && state.decided.has(id)).map((id) => ruleOf(id)).filter((r) => !r.skip).map((r) => [r.key, { from: r.from }]));
       const empty = Object.entries(decisions).filter(([, d]) => !d.from.length).map(([key]) => ({ spacing: 'spacing', color: 'colours', type: 'text', radius: 'corners' })[key] ?? key);
       if (empty.length) throw new Error(`Your theme has no ${empty.join(' or ')} to keep yet, so that rule would check nothing. Go back to ${empty[0]} and pick another answer.`);
       const edits = editsOf(chosenSystems());

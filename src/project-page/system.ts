@@ -8,6 +8,7 @@ import type { Report } from '../report.js';
 import { causesOf } from '../causes.js';
 import type { Cause } from '../causes.js';
 import { sayCause } from '../say-cause.js';
+import { runnerOf } from '../runner.js';
 
 /**
  * The data the project page draws: for each scale (text size, weight, radius, colour) the theme's steps with how many
@@ -24,6 +25,7 @@ export interface Stray { px: number; places: number; scaled: number; near: strin
 export interface ColourStep { name: string; css: string; uses: number }
 export interface ColourStray { css: string; places: number; near: string | null; distance: number | null; alpha: string | null; written: Written[] }
 export interface SystemData {
+  runner?: string;
   project: string;
   files: number;
   size: { steps: Step[]; strays: Stray[] };
@@ -260,6 +262,8 @@ export function systemOf(report: Report): SystemData {
   const causes = report.causes ?? causesOf(report);
   return {
     project: projectName(report.root),
+    // how this project runs a command, for a step the page names (`pnpm exec plumber propose …`)
+    runner: runnerOf(report.root),
     files: typeof files === 'number' ? files : Object.values(files).reduce((sum, n) => sum + n, 0),
     size: scale('type', new Set(['font-size', 'font']), 6),
     radius: scale('radius', new Set(['border-radius'])),
