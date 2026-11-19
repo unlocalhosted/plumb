@@ -283,7 +283,7 @@ test('F1-01: an element that spreads its props in is written where its usage pas
   const alone = await o.site('<a href={to} {...props}', '');
   assert.deepEqual(alone.classes.map(c => [c.class, c.sites[0]?.kind, c.sites[0]?.element.tag]), [['flex', 'usage', 'Row'], ['gap-2', 'usage', 'Row'], ['p-3', 'usage', 'Row']]);
   assert.equal(alone.add, null);
-  assert.ok(alone.addRefused);
+  assert.equal(alone.addRefused, `Its classes are written where it's used, at the <Row> on line ${usage.line}, so a new class would only reach that use. Change a class that's there, or add it at that <Row>.`);
   // the writer changes it at the usage, only there
   const s = c['p-3'].sites[0];
   const r = await o.post('swaps', { file: 'src/App.tsx', hash: body.hashes['src/App.tsx'], edits: [{ line: s.element.line, column: s.element.column, from: 'p-3', to: 'p-s4', at: { line: s.string.line, column: s.string.column } }] });

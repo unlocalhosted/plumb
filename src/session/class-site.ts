@@ -206,6 +206,18 @@ function resolve(input: ClassSiteInput, usageProps = false): Resolved {
   return { own, sources, ownAttribute, strings, unfollowed };
 }
 
+/** When every string is written where the component is used (a usage found in its file), the refusal names those uses:
+ * "under a condition" read wrong for a class that simply comes from where the element is used. */
+function addAtUsages(strings: Found[]): string | undefined {
+  const uses = strings.map(f => { const branch = f.string.branch, outer = branch?.within?.[0] ?? branch; return outer && /^drawn by the <(.+)> at line (\d+)$/.exec(outer.condition); });
+  if (!uses.length || uses.some(use => !use)) return undefined;
+  const tags = [...new Set(uses.map(use => use![1]))], lines = [...new Set(uses.map(use => Number(use![2])))].sort((a, b) => a - b);
+  const tag = tags.length === 1 ? `<${tags[0]}>` : 'usage';
+  if (lines.length === 1) return `Its classes are written where it's used, at the ${tag} on line ${lines[0]}, so a new class would only reach that use. Change a class that's there, or add it at that ${tag}.`;
+  const list = `${lines.slice(0, -1).join(', ')} and ${lines.at(-1)}`;
+  return `Its classes are written where it's used, at the ${tag}s on lines ${list}, so a new class would only reach one of them. Change a class that's there, or add it at each use.`;
+}
+
 export function classSites(input: ClassSiteInput): ClassSiteAnswer {
   const { own, sources, ownAttribute, strings, unfollowed } = resolve(input);
   const tokens = strings.flatMap(f => [...f.holder.src.text.slice(f.string.start, f.string.end).matchAll(/\S+/g)].map(m => ({ token: m[0], offset: f.string.start + m.index, f })));
@@ -236,7 +248,7 @@ export function classSites(input: ClassSiteInput): ClassSiteAnswer {
       // lands on every use of the component (e2e/class-site B2)
       ...(h.level === 0 && (unfollowed.length || strings.some(f => f.holder.level > 0)) ? { shared: true as const } : {}) };
   } else if (always.length) answer.addRefused = sharedVariable(always[0]!.holder.variable!, always[0]!.holder.readers!);
-  else if (strings.length) answer.addRefused = ADD_UNDER_CONDITION;
+  else if (strings.length) answer.addRefused = addAtUsages(strings) ?? ADD_UNDER_CONDITION;
   else if (!ownAttribute && !sources.spread && !isComponentTag(sources.tag)) answer.add = { file: own.ref.file, kind: 'own', prop: 'className', element: own.ref };
   else answer.addRefused = sources.spread && !ownAttribute ? 'This element spreads props, which may carry className; add the class by hand.'
     : isComponentTag(sources.tag) && !ownAttribute ? `<${sources.tag}> is a component; add the class inside it, by hand.` : `Its classes are ${BUILT}${why}.`;

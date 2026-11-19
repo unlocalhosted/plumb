@@ -90,8 +90,8 @@ reserved.)
   component's usages are found without the overlay's chain). One was a bug from the same change: an add into a
   component's own string stopped saying it lands on every use once the usages were found, so a recipe wrote into the
   component (class-site B2, recipes N6). reading-cache checks the per-file path and now builds the whole-app report
-  only when asked (`PLUMB_BACKGROUND=0`). Left: with the usage found, the add refusal says "Every class here is under
-  a condition", which reads wrong for a class that comes from a usage.
+  only when asked (`PLUMB_BACKGROUND=0`). The add refusal for a class that comes from a usage now names the use
+  ("written where it's used, at the <Row> on line 21") instead of "Every class here is under a condition".
 - **Component root ranges depend on build order (2026-11-17).** A component's root class ranges reach the session's
   cache only from a build that keeps the component in its graph; a component first found while building another file
   is missing them in every later graph. Which ones depends on file order. Recording them at discovery changed 77
