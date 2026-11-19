@@ -4152,6 +4152,14 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   model judge may take over the comparisons only while it agrees with the owner on at least 80% of held-out pairs.
   The third review also added a control card to the hand-built layer, made only from our parts and placement
   rules: if the reference-driven cards can't beat it, collecting references isn't worth building.
+- **"Isn't this just a fancy copy paste?"** The owner was right: the design only redrew references. Their answer
+  changed what it is for: "i want the experience to feel like going to a clothes shop, i tell them i want this and
+  that, they show me something then i am like something like that and then we talk and eventually arrive at
+  something which i love". The fifth version puts a fitting room in front of the engine: a rack of three or four
+  options plus a wildcard, each with a pitch that says why it suits this card and names the references behind it;
+  reactions (more like this, not this, shuffle, or words like "calmer"); and narrowing until the owner picks one.
+  Taste gets measurable features (restraint, contrast, rhythm, focus, tension) and a preference model trained on
+  the owner's picks. References may propose additions to the design system. Motion waits for its own brief.
 
 ## Open gaps
 - **The mark was never tried among real neighbours** (a row of browser tabs, an npm page, a README header), only on empty tiles. Nobody outside has been asked whether the round leg reads as an R or leans towards a B.

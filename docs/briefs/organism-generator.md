@@ -1,7 +1,8 @@
-# Brief: an organism generator that learns from other people's taste and draws in ours
+# Brief: a fitting room for components, with a generator behind it
 
-Status: DRAFT for owner sign-off, 2026-11-20, fourth version after three reviews the same day (see **What the reviews
-changed**). Nothing is built, and no code is written until it is signed off.
+Status: DRAFT for owner sign-off, 2026-11-20, fifth version. Three reviews the same day shaped the engine (see **What
+the reviews changed**); the owner then reframed what it is for: a conversation that ends in a card you love, not a
+grid of variants. Nothing is built, and no code is written until it is signed off.
 It builds on [engine-foundations.md](engine-foundations.md), which plans the layout generator (F7, "the engine is a
 function you can call on a candidate", layer 6). That brief leaves open how candidates are made. This one answers it.
 
@@ -18,10 +19,30 @@ The owner, 2026-11-20:
 - "make sure the taste is captured and it belongs to our design system and doesn't generate like something from
   material ui"
 
-Pick one card (an organism) in your app. Plumber shows it built several different ways. Each variant is drawn with
-your own system, each says why it is built the way it is, and none of them looks like a stock component library.
+Later the same day, after the first versions read like "a fancy copy paste":
+
+- "new could be a reference, it could be something tasteful for me new doesn't mean invent everytime it just mean
+  given in the context if i find hey this just doesn't click for me i could find something else"
+- "i would sit beside an ux designer and i would say i dont like this and click on shuffle button and he would show
+  me something good"
+- "i want the experience to feel like going to a clothes shop, i tell them i want this and that, they show me
+  something then i am like something like that and then we talk and eventually arrive at something which i love"
+- "the more the merrier but i want the references which we make use of to be conveyed to user hey lets do this
+  because for all the reasons given our context this seems to be the most suitable choice"
+- "motion and micro-interaction can come later"
+
+Pick one card (an organism) in your app. Plumber acts like a good designer or a good shop assistant beside you. It
+shows a few options, each with a reason that fits your context. You say what you like and don't, in words or with a
+button, and it brings closer options, until you have one you love. Every option is drawn in your own system, and
+none looks like a stock component library.
 
 ## The idea in one paragraph
+
+A good shop assistant doesn't invent a new jacket for you. They know the stock well, read what you're after, bring
+three that fit, say why each one suits you, and use your reaction to pick the next three. "New" here means new
+*to you, in this context*: a reference redrawn in your look, a blend of two, or one you liked nudged in the direction
+you asked for. The engine behind the shop is a generator built like a Dead Cells level, described next; the
+conversation decides what it is asked for.
 
 Dead Cells doesn't make levels out of noise. People design the rooms and a graph of what a level must contain, and
 the generator only arranges the rooms to fill the graph, under rules, from a seed. Here the **rooms are our own
@@ -30,8 +51,52 @@ molecules**: authored in-house, in final form, in our look, each doing one job. 
 loudest) and its **move**, a deliberate decision that neither the grammar nor a molecule can say. The generator
 matches your card to similar grammars, fills their slots with our molecules, and draws the move in our look. Then
 the judge throws out anything that breaks our rules, and a taste ladder of cards the owner has ranked decides which
-of the rest are good enough to show. Generic structure is kept off the shelf at curation. What you
-see is a small grid of variants, each labelled with its recipe.
+of the rest are good enough to show. Generic structure is kept off the shelf at curation.
+
+## The fitting room
+
+**1. You say what you want.** You pick a card on your page and, if you like, say something: "calmer", "make the
+price the hero", "this feels cheap". Plumber reads the context itself: what the page is for, the card's siblings,
+how much content it holds, your system, and which jobs the card does.
+
+**2. It brings a rack.** Three or four options, chosen to differ from each other, plus one **wildcard** from a
+direction you haven't seen. Each option comes from one of three places:
+
+| Option | What it is |
+|---|---|
+| A reference, redrawn | a kept specimen built in your look with your content |
+| A blend | one specimen's structure with another's move |
+| A step | something you liked, moved along a direction you asked for ("same, but airier") |
+
+**3. Each option has a pitch.** A sentence or two a designer would say beside you, built from the context, the
+reference and the taste reasons: "Price first. Your page compares three plans, so people scan for the number;
+Stripe's and Linear's plan cards lead with it too. It keeps one alignment edge and lets the list sit quiet." The reference is named as
+the evidence for the choice.
+
+**4. You react.** On each option: *more like this*, *not this*, *shuffle* (a fresh rack, keeping what you told it),
+or words. Words become **directions**:
+
+| You say | It moves |
+|---|---|
+| calmer, cleaner | fewer sizes and hues, more space, flatter lead, fewer groups |
+| more premium | more space, stronger lead, fewer words in view, one hue |
+| punchier | stronger lead, tighter groups, the action louder |
+| denser, more in view | compact density, smaller lead, list in two columns where it fits |
+| this feels cheap | asks what part: the spacing, the type, the action. Then it moves that |
+
+A direction it can't map is said back to you plainly ("I don't know what *crisper* means for this card yet: the
+edges, the type or the spacing?"), never guessed silently.
+
+**5. It narrows.** The next rack stays near what you liked, moves away from what you didn't, and always keeps one
+wildcard so you aren't boxed in. It remembers the whole session, so "the second one from before, but with this
+price" works.
+
+**6. You arrive.** You pick one. Plumber writes it into your code through the same path its fixes use, and keeps
+the session's likes and dislikes as your taste for next time.
+
+**7. References teach the system.** If the option you love needs something your system lacks (a shadow style, a
+role, later a motion), plumber says so and proposes adding it to the system first, with the references that use it
+as the reason. Nothing outside the system is drawn until you accept.
 
 ## Terminology
 
@@ -59,6 +124,14 @@ Use these words in code, docs and the UI, with these meanings only.
 | **Descriptors** | Lead, shape and measured density: values read off each candidate after it is built, used to choose a spread. Nothing sets them. |
 | **Visual weight** | How strongly a slot draws the eye, computed from its styles by a fixed rule (see the specimen format). Ranks and lead strength come from it. |
 | **Content record** | A slot's content as named fields from its job's schema: a price is `amount, period?, was?`; proof is `items[]`. Molecules declare which fields they require. |
+| **Rack** | The three or four options shown at once in the fitting room, plus one wildcard. |
+| **Wildcard** | The one option on every rack taken from a direction the person hasn't seen yet, so each rack still shows something new. |
+| **Pitch** | The sentence or two shown with an option: why it suits this card in this context, which references back it, which taste reasons it scores on. |
+| **Reaction** | What the person does with an option: *more like this*, *not this*, *shuffle*, or words. |
+| **Direction** | A named way to move a grammar, from words ("calmer", "more premium") to changes in its values: space ratios, lead strength, density band, number of groups, number of sizes and hues. |
+| **Step** | An option made by moving one the person liked along a direction. The structure stays; the values change. |
+| **Session** | One fitting-room conversation: the card, the context, every rack, every reaction. Kept as the person's taste when they arrive. |
+| **Taste features** | Measurable qualities of a built card that good cards tend to share: restraint, contrast, rhythm, focus, tension (see the taste ladder). |
 | **Taste ladder** | A fixed set of anchor cards the owner has placed on five rungs, from broken to reference-grade. Every variant is placed on it by comparison, and only the top rungs are shown. |
 | **Drift** | How far mapping pushed a variant from its specimen: specimen jobs dropped, and your jobs placed by a default rule instead of a specimen slot. |
 | **Recipe** | Everything that made a variant: seed, specimen, molecules, expression, and the pinned versions (S6). Printed under the variant and replayable. |
@@ -175,11 +248,18 @@ changes before any shelf is built on it.
    grammar gives, with the app's styles (the open problem in engine-foundations §6).
 8. **Judge.** Run `judge(snapshot, packs)` with the house rules, craft rules and tells, plus stress (Break it) on any
    variant marked in step 4. Then place each survivor on the taste ladder (below); anything under rung 4 is dropped.
-9. **Choose a spread.** Read the descriptors off the survivors. Pick three to six that differ most in lead, shape,
-   density and molecules, and keep one slot for a specimen the owner has seen least. Show each with its recipe in
-   plain words: "Price first, split. Structure from Stripe's pricing card. This plan stands out as the one solid
-   card."
-10. **Log the funnel.** Every step's count, why each candidate left, and coverage. An empty grid shows the funnel.
+9. **Choose a rack.** Read the descriptors off the survivors. In the first rack, pick three or four that differ most
+   in lead, shape, density and molecules. In later racks, pick the survivors nearest what the person liked and
+   furthest from what they didn't. Add one wildcard. Write each pitch from the card's context, the specimen, and
+   the taste features it scored best on.
+10. **Log the funnel.** Every step's count, why each candidate left, and coverage. An empty rack shows the funnel.
+
+### Steps: moving an option the person liked
+
+A step takes a liked option's grammar and changes its values along a direction: space ratios, lead strength,
+density band, how many groups, how many sizes and hues. It never rearranges the structure; a new structure comes
+from another specimen. Each step is a few candidates at different distances along the direction, sent through the
+same checks, build, judge and ladder as any other candidate, so a step that loses taste never reaches the rack.
 
 ### Sibling moves stay on the picked card
 
@@ -230,8 +310,27 @@ eye reads the jobs in order; one rhythm of space; parts line up; nothing compete
 check some of these directly; the rest are the judge's reasons. The rung is the result, and the reasons are the
 explanation shown in the recipe.
 
-**The ladder grows.** Every keep and drop in the grid is also a comparison, so the owner's picks keep adding
-evidence. A variant the owner keeps that sits on rung 4 can become a new anchor once it has won enough comparisons.
+**The ladder grows.** Every reaction in the fitting room is also a comparison ("more like this" beats the rest of its
+rack), so the owner's sessions keep adding evidence. A variant the owner keeps that sits on rung 4 can become a new
+anchor once it has won enough comparisons.
+
+### Taste features: the part of taste that can be measured
+
+Taste shows up as relationships that good cards share and stock cards don't. Each built card is measured on:
+
+| Feature | What is measured | What good cards tend to do |
+|---|---|---|
+| Restraint | distinct sizes, weights, hues and alignment edges | use few of each |
+| Contrast | lead strength; the gap between the loudest and quietest slots | have a clear lead; stock cards are flat |
+| Rhythm | how many distinct space ratios; whether they follow one scale | use two or three, on one scale |
+| Focus | how many slots compete for rank 1; whether reading order matches job order | one focal point, read in job order |
+| Tension | how many deliberate breaks of the card's own pattern | exactly one (the move), or none |
+
+The features have two uses. They give the pitch its reasons ("one alignment edge, a clear lead"). And together with
+the owner's comparisons, they train a small preference model over the features that predicts which of two cards the
+owner would pick; it ranks candidates before the ladder, so the ladder only checks the best ones. What features
+miss, such as character and surprise, the ladder's comparisons still catch. The feature list grows when the owner
+gives a reason no feature covers.
 
 ## The translation table (first rows, plumber's dialect)
 
@@ -269,7 +368,7 @@ evidence. A variant the owner keeps that sits on rung 4 can become a new anchor 
   its version, and the cached card grammar.
 - **S7. Cheap checks first.** Grammar check before Translate, dialect check before Build. Builds are the cost.
 - **S8. Coverage is reported.** The funnel says how many specimens overlap the card and how many molecules each job
-  has. Below six specimens or two molecules for any job, the grid says it is thin.
+  has. Below six specimens or two molecules for any job, the rack says it is thin.
 
 ## Heuristics: what makes it fool-proof
 
@@ -295,7 +394,7 @@ evidence. A variant the owner keeps that sits on rung 4 can become a new anchor 
   test, so nobody recognises them from memory, shuffled. A judge who hasn't seen any of them says which is which. It
   passes if the judge is right on 12 or fewer (10 is chance; someone who spots 4 of the 10 generated cards gets 14
   and fails).
-- **F11. The taste ladder gates the grid.** Nothing under rung 4 is shown.
+- **F11. The taste ladder gates the rack.** Nothing under rung 4 is shown, wildcards included.
 - **F12. Copy nothing.** Specimens hold decisions; sidecars and screenshots stay local for comparison. No markup,
   assets or text from the source. Paid kits are checked for terms first.
 
@@ -322,7 +421,10 @@ One layer at a time, each seen working before the next.
 | 5 | Capture from a live page; 20 pricing specimens and 5 generic ones | The 20 and the 5 plotted by grammar distance. If the generic ones sit inside the cloud of kept ones, structure doesn't carry taste and F5 has to change before going on |
 | 6 | Read, find, map, both cheap checks for one crafting-ui card | The funnel up to Build |
 | 7 | Build off screen, judge, stress, spread | 3–6 variants of that card in our look, with the funnel |
-| 8 | The grid with recipes, keep and drop | The owner picks from it |
+| 8 | The fitting room: a rack with pitches, reactions, shuffle, and the next rack | A session on one crafting-ui card that ends in a card the owner loves, written into the code |
+| 9 | Directions from words, and steps | "Calmer" and "more premium" each produce a rack the owner agrees moved that way |
+| 10 | References teach the system | An option that needs something the system lacks proposes the addition, with its references |
+| Later | Motion and micro-interactions | Captured as which part responds, in what order and how far; drawn with our springs and states. Its own brief |
 
 Layer 7 needs the off-screen build (engine-foundations layer 6). Layers 1–6 don't.
 
@@ -338,6 +440,14 @@ Layer 7 needs the off-screen build (engine-foundations layer 6). Layers 1–6 do
   it says so and ranks lower.
 - **Generic is a curation check, drift is the run-time check.** A variant inherits its specimen's structure, so its
   distance to generic is decided when the specimen is kept.
+- **A fitting room, not a grid.** The owner's words: "something like that and then we talk and eventually arrive at
+  something which i love". A grid makes you review; a rack with pitches and reactions makes you choose and steer.
+- **New means new to you, in context.** A redrawn reference, a blend or a step all count. Invention isn't required,
+  and taste is kept by the same checks and ladder whatever the source.
+- **Steps change values, never structure.** Directions move numbers inside a grammar; a different structure comes
+  from a different specimen. That keeps every option traceable to a kept reference.
+- **The pitch names its references.** The owner asked that references be "conveyed to user" with the reasons; a
+  named reference is the evidence for a choice.
 - **Molecules are the app's real components.** A variant is made of code the app already ships, and content binds
   to them through content records, so a molecule never shows a field the card doesn't have.
 - **Taste is a ladder of comparisons, not a score.** Comparisons against fixed anchors are what people are
@@ -370,12 +480,22 @@ measured density, adds a colour field, and shows the house sentence for the exam
 same day ("how are we making sure that there is a certain level of taste scale against which we compare our
 generations") added the taste ladder.
 
+**The owner's reframe**, the same day. The first versions read like "a fancy copy paste". The owner said the goal
+is a conversation like a clothes shop: options with reasons, reactions, and narrowing until they love one. This
+version adds the fitting room (racks, pitches, reactions, directions from words, steps, the wildcard, sessions),
+taste features that can be measured and a preference model trained on the owner's comparisons, references that
+propose additions to the system, and puts motion and micro-interactions in a later brief.
+
 ## Not known
 
 - Whether a hand-built dialect trip comes out distinct and good (layer 3). The brief stands or falls on it.
 - Whether generic and kept specimens separate in grammar space at all (layer 5). The Stripe example's structure is
   close to a stock pricing card's; if taste lives mostly in what this format doesn't store, the format has to grow.
 - Whether specimens beat the control (layer 3), which decides whether the shelf is worth building.
+- Whether the words people use map onto a small set of directions, and how many sessions it takes before the
+  narrowing feels like a designer listening rather than a filter.
+- Whether the taste features predict the owner's comparisons better than chance. If they don't, the ladder and the
+  owner carry taste alone, and the pitch's reasons get thinner.
 - Whether a model judge can reach 80% agreement with the owner on the ladder. If it can't, the owner stays the judge
   and the generator is limited by how many comparisons they are willing to make.
 - Whether the visual-weight rule gives stable ranks across captures (layer 4).
