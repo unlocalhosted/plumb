@@ -1,6 +1,6 @@
 # Brief: an organism generator that learns from other people's taste and draws in ours
 
-Status: DRAFT for owner sign-off, 2026-11-20, second version after a review the same day (see **What the review
+Status: DRAFT for owner sign-off, 2026-11-20, third version after two reviews the same day (see **What the reviews
 changed**). Nothing is built, and no code is written until it is signed off.
 It builds on [engine-foundations.md](engine-foundations.md), which plans the layout generator (F7, "the engine is a
 function you can call on a candidate", layer 6). That brief leaves open how candidates are made. This one answers it.
@@ -25,12 +25,12 @@ your own system, each says why it is built the way it is, and none of them looks
 
 Dead Cells doesn't make levels out of noise. People design the rooms and a graph of what a level must contain, and
 the generator only arranges the rooms to fill the graph, under rules, from a seed. Here the **rooms are our own
-molecules**: authored in-house, in final form, in our look. What we learn from other products is **grammar**: how a
-good organism is organised (which job leads, how parts group, size and space ratios) and its **move**, the one
-deliberate decision that makes it good, stored as a named decision with several ways our system can say it. The
-generator matches your card to similar grammars, fills their slots with our molecules, and expresses each move in
-our dialect. Then the judge throws out anything that breaks our rules or is generic in its structure. What you see is a
-small grid of variants, each labelled with its recipe.
+molecules**: authored in-house, in final form, in our look, each doing one job. What we learn from other products is
+**grammar**: what happens *between* the parts of a good organism (their order, grouping, spacing and which one is
+loudest) and its **move**, a deliberate decision that neither the grammar nor a molecule can say. The generator
+matches your card to similar grammars, fills their slots with our molecules, and draws the move in our look. Then
+the judge throws out anything that breaks our rules. Generic structure is kept off the shelf at curation. What you
+see is a small grid of variants, each labelled with its recipe.
 
 ## Terminology
 
@@ -38,30 +38,31 @@ Use these words in code, docs and the UI, with these meanings only.
 
 | Word | What it means |
 |---|---|
-| **Organism** | A finished component made of smaller parts, with one purpose: a pricing card, a settings row, an empty state. The unit the generator works on. |
-| **Siblings** | Other instances of the same organism shown beside it (the three plans in a pricing row). Some moves are about siblings; see *scope*. |
+| **Organism** | A finished component made of smaller parts, with one purpose: a pricing card, a settings row, an empty state. The unit the generator builds. It never changes anything outside the organism. |
+| **Siblings** | Other instances of the same organism beside it (the three plans in a pricing row). The generator reads whether they exist; it never changes them. |
 | **Job** | One thing the organism has to do for the person: say what it is (*identity*), say what it costs (*price*), make the case (*proof*), get the click (*action*). Jobs come from a fixed list (below). |
-| **Job tree** | An organism's jobs, nested and counted: `card[ status?, identity, price, proof×3–6, action, secondary-action? ]`. Two organisms with overlapping job trees are the same problem, however different they look. |
+| **Job tree** | An organism's jobs, nested and counted: `card[ status?, identity, price, proof×3–6, action, secondary-action? ]`. |
 | **Kind** | A human name for a family of job trees ("pricing card"), used to report coverage. Matching never uses kinds; it uses job overlap. |
 | **Slot** | The place in a layout where one job is done. Your plan name fills the identity slot. |
-| **Molecule** | One house-authored way to do a job, in final form: a price as a big number, proof as a checklist, proof as one quote. Molecules exist only in our dialect. They are the rooms. |
-| **Grammar** | How an organism is organised, written without any look: job tree, order, nesting, hierarchy, size and space ratios, grouping, cardinality. Portable between design systems. |
-| **Move** | The deliberate decision that makes a reference good, stored as a **move type** from a fixed vocabulary plus its arguments: `single-out(among: siblings, which: recommended)`, `lead-with(job: price)`, `prove-with(form: one-quote)`. Each specimen has one move and a sentence saying it in words. |
-| **Scope** | Where a move applies: *organism* (inside the card) or *siblings* (the card among its siblings). A siblings move is used only when the picked card has siblings on the page. |
-| **Expression** | One way our dialect can say a move type. A move type has several expressions, so twenty specimens with the same move type don't all come out the same. |
+| **Grammar** | What happens between slots: job tree, order, nesting, grouping, space between slots, each slot's hierarchy rank, how strongly the top rank leads, and fit. Never what is inside a slot. |
+| **Molecule** | One house-authored way to do one job, in final form: a price as a big number, proof as a checklist, proof as one quote. It owns everything inside its slot (size, weight, form) and takes only a rank, a lead strength and a density as input. Molecules exist only in our look. They are the rooms. |
+| **Lead strength** | How far the rank-1 slot stands above rank 2: *flat*, *clear* or *strong*. Grammar sets it; the molecule turns it into a size step. |
+| **Move** | A deliberate decision that the grammar fields and the molecule choice can't express, from a fixed vocabulary of **move types** with arguments: `single-out(which: recommended)`, `bind(price, action)`, `set-apart(group)`. A specimen has at most one, with a sentence saying it in words. |
+| **Expression** | One way our look can draw a move type. A move type has several. Each expression lists its **conditions** (jobs it needs, roles it needs, whether the card must be the chosen sibling); an expression *fits* when every condition holds. |
 | **Specimen** | One captured reference: its grammar, move, a screenshot, a source sidecar, where it came from, and why it was kept. |
-| **Source sidecar** | The specimen's original absolute values (sizes, colours, fonts), kept apart and read only by the round trip. The generator never reads it. |
-| **Shelf** | All the specimens. Our own organisms are on it too, marked *house*. |
-| **Dialect** | How a project's system says things. It has two layers: **house expressions**, written in roles ("the one solid block in the action hue", "space only, no edge"), and the **role map**, which turns roles into the project's tokens. Plumber's toy language is the first dialect. |
-| **Translation table** | Rows from grammar decisions and move types to house expressions. Shared across projects, because it is written in roles. |
-| **Descriptors** | Lead, density, shape, voice: values read off each candidate after it is built, used to choose a spread of variants. Nothing sets them. |
-| **Recipe** | Everything that made a variant: seed, specimens, expressions chosen, and the pinned versions (see heuristic S6). Printed under the variant and replayable. |
-| **Seed** | A number that picks among expressions and breaks ties. Same seed plus same pinned versions gives the same variants. |
-| **Tell** | A mark of a stock or generated look (an elevation shadow on every card, uppercase buttons, a divider under every row). The existing `tells` pack holds 17 for generated screens; the generator adds the stock-library ones. |
-| **Generic pile** | Plain stock-library organisms (MUI, Bootstrap, default shadcn, Chakra), captured as grammar like any specimen and used only to measure structural distance. |
-| **Round trip** | Rebuild a specimen from its grammar plus its own source sidecar and compare with the original, slot by slot. Proves capture loses nothing. |
-| **Dialect trip** | Build a specimen from its grammar plus our dialect, by hand or by the generator, and judge it. Proves the thing production does. |
-| **Funnel** | The count of candidates at every step of a run and why each one left. Logged every run. |
+| **Source sidecar** | The specimen's original absolute values (sizes, colours, fonts, weights), kept apart and read only by the round trip. |
+| **Shelf** | All the kept specimens. Our own organisms are on it too, marked *house*. |
+| **Dialect** | How a project's system draws things: house expressions, molecules, and the tokens behind them. Plumber's toy language is the first and, for now, only dialect. |
+| **Translation table** | Rows from move types and grammar decisions to house expressions in plumber's dialect. |
+| **Descriptors** | Lead, density, shape: values read off each candidate after it is built, used to choose a spread. Nothing sets them. |
+| **Drift** | How far mapping pushed a variant from its specimen: specimen jobs dropped, and your jobs placed by a default rule instead of a specimen slot. |
+| **Recipe** | Everything that made a variant: seed, specimen, molecules, expression, and the pinned versions (S6). Printed under the variant and replayable. |
+| **Seed** | A number that picks among fitting expressions and molecules and breaks ties. |
+| **Tell** | A mark of a stock or generated look (elevation on every card, uppercase buttons, a divider under every row). The `tells` pack holds 17 for generated screens; the generator adds stock-library ones. |
+| **Generic pile** | Plain stock-library organisms (MUI, Bootstrap, default shadcn, Chakra), captured as grammar and used at curation to keep generic structures off the shelf. |
+| **Round trip** | Rebuild a specimen from its grammar plus its own sidecar and compare with the original, slot by slot. Proves the layout, order, grouping and per-slot emphasis survive capture. |
+| **Dialect trip** | Build a specimen from its grammar plus our molecules and table. Proves what production does. |
+| **Funnel** | The count of candidates at every step of a run and why each one left, plus coverage: specimens overlapping the card, and molecules available per job. Logged every run. |
 
 ### The fixed job list
 
@@ -86,8 +87,8 @@ A job with no default whose specimen has no slot for it rules out that specimen.
 
 ## The specimen format
 
-Sizes and spaces are ratios, never steps. A step count depends on a scale you can't read off one card ("+3 steps" is
-a different hierarchy on a 1.125 scale and on a 1.25 one). Ratios are snapped to the project's steps only at
+All sizes and spaces are ratios to the organism's body text size. It is the one unit every card has, and it
+isn't thrown off by a 2px nudge the way a smallest gap is. Ratios are snapped to the project's steps only at
 translation.
 
 ```
@@ -95,81 +96,91 @@ specimen:   stripe-pricing-card-2026-11
 jobs:       card[ status?, identity, price, proof×4–8, action ]
 order:      status → identity → price → proof → action
 nesting:    stack[ status, identity, price, divider, list(proof), action ]
-hierarchy:  price 1, identity 2, action 3, proof 4                 (loudest first)
-size:       price ÷ body 2.6, identity ÷ body 1.3, proof ÷ body 0.9
-space:      inside a group 1, between groups 2.5                   (÷ smallest gap)
+hierarchy:  price 1, identity 2, action 3, proof 4      lead: strong
+space:      inside a group 0.5, between groups 1.5        (÷ body size)
 grouping:   by space, one divider
 container:  surface, no edge
 density:    airy
-fit:        identity up to 2 words, proof 4–8 items of up to 6 words, width 260–340 at body 16
-move:       single-out(among: siblings, which: recommended)        scope: siblings
-            "recommended is shown by lifting this card, not by colouring it"
+fit:        identity ≤ 2 words, proof 4–8 items of ≤ 6 words, width 16–21 × body
+move:       single-out(which: recommended)
+            "the recommended plan is the one that stands out, by lift, not by colour"
 kept:       the price is read first and the list never competes with it   (owner, 2026-11-xx)
+generic:    distance 0.41 to the nearest generic specimen (shadcn pricing)
 source:     stripe.com/pricing, captured 2026-11-xx, screenshot and sidecar beside it
 ```
 
 What each field may hold:
 
-- **Sizes** as ratios to the organism's body text size.
-- **Spaces** as ratios to its smallest gap.
-- **Colour** as roles (*the action*, *quieter*, *the only hue*), never values.
+- **Spaces and widths** as ratios to body size.
+- **Hierarchy** as ranks and a lead strength. Never a size: the molecule owns its size.
+- **Colour** as roles (*the action*, *quieter*), never values.
 - **Shape** as a few named words (*none, small, medium, round*), never a radius.
-- **Type** as *display / reading / mono* and a weight word, never a font name.
-- **Fit** as the ranges the reference was designed for: items per list, words per slot, the width it lives at.
+- **Fit** as the ranges the reference was designed for: items per list, words per slot, width ÷ body.
 
-Anything absolute goes in the source sidecar, never in the specimen. Validation fails a specimen that holds a pixel,
-a hex code or a font name.
+Validation fails a specimen holding a pixel, a hex code, a font name or a size inside a slot. Those belong in the
+sidecar or in a molecule.
+
+## Molecules
+
+- Each molecule does one job, takes **rank, lead strength and density** as input, and returns its final form in our
+  look. It never reads a specimen.
+- A molecule declares what it fits: item counts, text lengths, and the descriptors it adds to a variant (a big
+  number pushes the variant towards price-led).
+- When a job has several molecules, the seed picks among those that fit the content and the rank, with the spread
+  step (below) preferring variants whose molecules differ.
+- Molecules are authored by hand, from our own components where they exist. The first kind needs at least three
+  price, three proof, two identity, two action and two status molecules before the generator is worth running
+  (layer 2). With one price molecule every variant shows the same price, so the funnel reports molecules per job
+  beside specimen coverage.
 
 ## The generator: `card * shelf → variants`
 
 1. **Read the card.** Take the picked organism from the live page (the scene graph's instance level), label its jobs,
-   and write its grammar the way a specimen is written, including fit (its real item counts and text lengths) and
-   whether it has siblings. The card's grammar is cached with the recipe so replay doesn't relabel it.
-2. **Find.** Score every specimen. At tens to hundreds of specimens there is no index and no embedding: rank by job
-   overlap, then by structure distance (order, nesting, hierarchy, ratios). A specimen is kept only if your card can
-   fill its top-hierarchy job and every job its move names.
-3. **Map.** Pair your slots with the specimen's by job. Your extra jobs go where their placement rules say. Specimen
-   jobs you don't have are dropped. Check fit: if your counts or text lengths fall outside the specimen's ranges,
-   the variant is built anyway and marked for the stress check in step 7.
-4. **Check the grammar (cheap).** Before anything is built, run the static house rules on the mapped grammar: one
-   primary action, coral only for wrong, no divider under every row, ratios that snap to distinct steps. Most drops
-   happen here, for free.
-5. **Translate.** Snap ratios to the project's steps. Express the move: pick one of its move type's expressions (the
-   seed picks among the ones that fit). Choose a molecule for each slot from the house molecules for that job. A
-   grammar decision with no row in the table is left out of the variant and recorded in the funnel; the variant
-   continues with the rest.
-6. **Build off screen** with your app's own components and styles (the open problem in engine-foundations §6).
-7. **Judge.** Run `judge(snapshot, packs)` with the house rules, craft rules and tells, plus stress (Break it) on any
-   variant marked in step 3. Then the generic check, in grammar space: a variant whose grammar is nearer a
-   generic-pile specimen than any kept specimen is dropped.
-8. **Choose a spread.** Read the descriptors off the survivors. Pick three to six that differ most in lead, shape and
-   density, and keep one slot for a specimen the owner has seen least (the exploratory slot). Show each with its
-   recipe in plain words: "Price first, split. Structure from Stripe's pricing card. Recommended is the one solid
-   card in the row."
-9. **Log the funnel.** How many specimens were found, mapped, passed the cheap check, translated, built, judged and
-   shown, and why each one left. An empty grid shows the funnel instead.
+   write its grammar (with fit: its real counts and text lengths) and note whether it has siblings and whether it
+   is the chosen one among them. The card's grammar is cached with the recipe.
+2. **Find.** Score every specimen: job overlap first, then structure distance (order, nesting, ranks, space ratios).
+   A specimen is kept only if your card can fill its rank-1 job and every job its move names.
+3. **Map.** Pair your slots with the specimen's by job. Your extra jobs go where their placement rules say; specimen
+   jobs you don't have are dropped. Measure drift. Above the drift limit (a starting guess: more than one job
+   dropped, or more than one placed by rule), the variant ends: it would no longer be that specimen's structure.
+4. **Grammar check, before Translate.** Rules that need no look: one primary action, no divider under every row,
+   fit within the specimen's ranges or marked for stress.
+5. **Translate.** Snap space ratios to the project's steps. Pick a molecule for each slot (see Molecules). Draw the
+   move with a fitting expression, picked by the seed. If no expression fits, the variant goes on as **structure
+   only**, says so in its recipe, and ranks after variants that carry a move.
+6. **Dialect check, before Build.** Rules that need the look but not a render: coral only for wrong, every pairing
+   from `pairs.js`, ranks that snap to distinct steps.
+7. **Build off screen** with your app's own components and styles (the open problem in engine-foundations §6).
+8. **Judge.** Run `judge(snapshot, packs)` with the house rules, craft rules and tells, plus stress (Break it) on any
+   variant marked in step 4.
+9. **Choose a spread.** Read the descriptors off the survivors. Pick three to six that differ most in lead, shape,
+   density and molecules, and keep one slot for a specimen the owner has seen least. Show each with its recipe in
+   plain words: "Price first, split. Structure from Stripe's pricing card. This plan stands out as the one solid
+   card."
+10. **Log the funnel.** Every step's count, why each candidate left, and coverage. An empty grid shows the funnel.
+
+### Sibling moves stay on the picked card
+
+The generator builds one organism and never changes its siblings. So a move about siblings is drawn only with
+expressions that change the picked card itself. If the picked card isn't the chosen one, `single-out` doesn't apply
+and the variant is structure only. Building a whole row of siblings waits until single cards work.
 
 ### Feedback
 
 On any variant: *keep* or *drop*, and optionally which part was wrong (the structure, the move's expression, or a
-molecule). Without a reason, a drop lowers the specimen and the expression a little each. Weights are capped (no
-specimen is more than three times as likely as the average) and decay, so the same few don't win forever, and the
-exploratory slot keeps new ones visible.
+molecule). Without a reason, a drop lowers the specimen, the expression and the molecules a little each. Weights are
+capped (nothing is more than three times as likely as the average) and decay. The exploratory slot keeps unseen
+specimens visible.
 
-## The translation table (first rows)
-
-Rows are written in roles, so every project shares them. The role map turns roles into a project's tokens: for
-plumber, from [visual-language.md](../design/visual-language.md), which changes first if a row needs a new role.
+## The translation table (first rows, plumber's dialect)
 
 ### Move types
 
-| Move type | Stock libraries say it with | House expressions (the seed picks among those that fit) |
+| Move type | Stock libraries say it with | House expressions (conditions in brackets) |
 |---|---|---|
-| `single-out(among: siblings)` | shadow and lift, a "Popular" badge, a coloured border | the chosen card is the one solid block in the action hue, the others on paper · the chosen card is taller and its siblings sit on a shared inset ground · the chosen card's identity carries a status toy, nothing else changes |
-| `lead-with(job)` | bigger and bolder | the job is set in the display face at the top step · the job sits alone in its own group with the largest space after it |
-| `prove-with(form: list)` | checkmarks in a column | a list in the reading face with the proof toy at the first item only · items grouped by space in two columns at wide fit |
-| `prove-with(form: one-quote)` | quote card with avatar | the quote in the reading face with the name in the display face, no card |
-| `quiet(job)` | grey text | the hue's soft or ink at a lower step; never grey in a piece |
+| `single-out(which)` | shadow and lift, a "Popular" badge, a coloured border | this card is a solid block in the action hue (card is the chosen one) · this card's identity carries a status toy (card is the chosen one; a status molecule exists) · this card's action is the only filled one in its row (card is the chosen one; siblings use the outline action) |
+| `bind(a, b)` | none common | `a` and `b` share one row with no space between groups (both jobs present) · `b` sits on `a`'s ground (both jobs present; a ground role exists) |
+| `set-apart(group)` | a bordered inner box | the group sits on the inset ground, no edge (the group has 2+ slots) · the group is the only one with the largest space before it (any) |
 
 ### Grammar decisions
 
@@ -177,53 +188,51 @@ plumber, from [visual-language.md](../design/visual-language.md), which changes 
 |---|---|---|
 | group these | outlined card | a shared surface with no edge, or space alone |
 | separate rows | a divider under every row | space; one divider at most, only between groups |
-| the action | filled primary button, often blue | the action hue's soft block button, squashing when pressed |
-| title, name, number | bold sans | the display face, heavy |
-| sentence | body text | the reading face |
-| status: wrong / done | red / green | the wrong role (coral) / the done role (mint) |
+| quieter | grey text | the hue's soft or ink at a lower step; never grey in a piece |
+| status: wrong / done | red / green | coral / mint |
 | depth | elevation scale | none, unless depth is the meaning (a pressed key) |
 | decorative icon | icon in a tinted square | the job's toy, or nothing |
 
 ## Heuristics: what keeps it scalable
 
-- **S1. Match on jobs, never on looks or kinds.** The shelf is scored by job overlap and structure. A new organism
-  needs only specimens whose jobs overlap it, not a new kind.
-- **S2. Grammar holds ratios, the dialect holds values.** Only translation knows a project's numbers.
-- **S3. A second project writes a role map, not a table.** The translation table and molecules' structure are
-  shared, written in roles. A project brings its tokens, and plumber's role layer (the one clean-up already uses)
-  proposes the role map from them for the owner to confirm. Its house molecules are its own components, captured.
+- **S1. Match on jobs, never on looks or kinds.** A new organism needs only specimens whose jobs overlap it.
+- **S2. Grammar holds ratios and ranks; molecules hold looks.** Only translation and molecules know a project's
+  numbers.
+- **S3. One dialect for now.** The table, expressions and molecules are plumber's. Writing them in roles so another
+  project could reuse them is possible in principle and untested, and no part of this brief depends on it.
 - **S4. Taste is data.** Adding taste means adding specimens, expressions or molecules, not generator code.
 - **S5. One judge.** Candidates are judged by the engine's judge (engine-foundations: "no second engine for the
   generator"). Where the generator's taste and the page's rules disagree, the rules win.
-- **S6. Replay is pinned.** A recipe records the seed, a hash of the shelf, the weights snapshot, the table version,
-  the molecule set version, the job-labelling model and its version, and the cached card grammar. Replay uses
-  those, not today's.
-- **S7. Cheap checks first.** Everything that can be decided on grammar is decided before a build. Builds are the
-  cost; the funnel shows where they go.
-- **S8. Coverage is reported, not assumed.** For the picked card, the funnel says how many specimens overlap its
-  jobs. Below six, the grid says it is thin.
+- **S6. Replay is pinned.** A recipe records the seed, a hash of the shelf, the weights snapshot, the owner's seen
+  history (the exploratory slot reads it), the table version, the molecule set version, the job-labelling model and
+  its version, and the cached card grammar.
+- **S7. Cheap checks first.** Grammar check before Translate, dialect check before Build. Builds are the cost.
+- **S8. Coverage is reported.** The funnel says how many specimens overlap the card and how many molecules each job
+  has. Below six specimens or two molecules for any job, the grid says it is thin.
 
 ## Heuristics: what makes it fool-proof
 
-- **F1. No absolute value enters a specimen.** Capture writes values to the sidecar and grammar to the specimen;
-  validation fails a specimen holding a pixel, hex code or font name. This rule keeps stock looks out.
-- **F2. No row, left out.** A decision the table can't express is dropped from the variant and logged. To keep it,
-  add a role to the visual language first, then the row.
-- **F3. The round trip gates capture.** Grammar plus the specimen's own sidecar is rebuilt, and compared with the
-  original deterministically: each slot's box position and size ratios, order and grouping, from computed layout on
-  both sides. A screenshot is not the measure, because shared fonts and colours make any rebuild look close.
-- **F4. The dialect trip gates the thesis.** Specimens are built in our dialect (by hand first, layer 2) and judged
-  by the owner. The round trip proves capture; only this proves the product.
-- **F5. Generic is judged on structure.** The generic pile is captured as grammar. A variant whose grammar is nearer
-  a generic specimen than a kept one is dropped. Looks can't be the measure, because every variant wears our look.
-- **F6. No tells.** The stock-library tells reject a variant outright.
+- **F1. No absolute value enters a specimen.** Values go to the sidecar, sizes inside a slot to molecules.
+  Validation fails anything else.
+- **F2. An undrawable move is labelled.** A grammar decision with no row is left out and logged. A move with no
+  fitting expression makes the variant structure only, labelled.
+- **F3. The round trip gates capture.** Grammar plus the sidecar is rebuilt and compared deterministically from
+  computed layout on both sides: each slot's box, order, grouping, and each slot's weight and colour role. It proves
+  those survive. It doesn't prove anything about details inside a slot, which molecules replace anyway.
+- **F4. The dialect trip gates the thesis.** Specimens built by hand in our look (layer 3) are judged by the owner.
+  The round trip proves capture; only this proves the product.
+- **F5. Generic structure is kept off the shelf.** At curation a specimen needs a minimum grammar distance from the
+  nearest generic specimen (the threshold is set at layer 5 from real distances). At run time a variant inherits its
+  specimen's structure, so the run-time guard is drift (step 3), not distance.
+- **F6. No tells.** Stock-library tells reject a variant outright.
 - **F7. House rules are hard limits.** One primary action, coral only for wrong, every pairing from `pairs.js`,
-  ratios that snap to distinct steps.
-- **F8. Fit is stressed.** A variant whose real content falls outside its specimen's fit ranges goes through Break
-  it before it is shown.
+  ranks that snap to distinct steps.
+- **F8. Fit is stressed.** A variant whose real content falls outside its specimen's or its molecules' fit goes
+  through Break it before it is shown.
 - **F9. A person curates.** A specimen enters only with the owner's keep and one line of why.
-- **F10. The blind mix.** Before a kind is offered, generated variants are shuffled in with hand-made house
-  organisms. If the owner can pick out the generated ones, it isn't ready.
+- **F10. The blind mix.** Before a kind is offered: 12 cards, 6 generated and 6 hand-made house organisms of the same
+  kind, shuffled. The owner says which is which. It passes if the owner is right on 8 or fewer (6 is chance; the bar
+  is a guess, to revisit after the first try).
 - **F11. Copy nothing.** Specimens hold decisions; sidecars and screenshots stay local for comparison. No markup,
   assets or text from the source. Paid kits are checked for terms first.
 
@@ -232,9 +241,9 @@ plumber, from [visual-language.md](../design/visual-language.md), which changes 
 - Real products (Stripe, Linear, Vercel, Raycast and the like) for the shelf. Component libraries like shadcn and
   Radix go to the generic pile.
 - Capture renders the page in a browser, reads the organism's computed layout and styles, writes values to the
-  sidecar and ratios and roles to the specimen (the same role reading plumber already does for clean-up), has a model
-  label jobs and propose a move type, and a person keeps it or not.
-- Our own organisms are captured the same way and marked *house*. Their parts become the house molecules.
+  sidecar and ratios, ranks and roles to the specimen (the same role reading plumber already does for clean-up), has
+  a model label jobs and propose a move type, measures the generic distance, and a person keeps it or not.
+- Our own organisms are captured the same way and marked *house*. Their parts seed the molecules.
 
 ## Order
 
@@ -243,59 +252,55 @@ One layer at a time, each seen working before the next.
 | # | Layer | What can be seen |
 |---|---|---|
 | 0 | Sign-off on this brief | This page, agreed |
-| 1 | The specimen format and validator; 5 pricing cards written by hand, with sidecars | Five specimens that pass validation |
-| 2 | **The dialect trip by hand:** those 5 built in our dialect as static HTML, no generator, no off-screen build | Five cards in toys, side by side. If they aren't distinct and good, the thesis fails here, in a day |
-| 3 | The round trip on the 5 | Per-slot diffs within tolerance for at least 4 of 5 |
-| 4 | Capture from a live page; 20 pricing specimens and 5 generic ones | 20 kept by the owner, with the generic distance of each |
-| 5 | Read, find, map and the cheap check for one crafting-ui card | The funnel up to translation |
-| 6 | Translate and build off screen | 6 variants of that card in our dialect |
-| 7 | Judge, stress and spread | Before and after the filter, with the funnel |
+| 1 | The specimen format and validator; 5 pricing cards written by hand, with sidecars, chosen to differ in structure (not five stacks) | Five specimens that pass validation, with their structure distances to each other |
+| 2 | Molecules for the pricing jobs, by hand (3 price, 3 proof, 2 identity, 2 action, 2 status) | The molecules on one sheet at each rank and density |
+| 3 | **The dialect trip by hand:** the 5 built strictly from specimen, molecules and table as static HTML, no generator, no off-screen build. Every decision none of them supplied is written down | Five cards in toys side by side, and the list of missing decisions. The list is the main result: it shows what the spec still lacks. If the cards aren't distinct and good, the thesis fails here |
+| 4 | The round trip on the 5 | Per-slot diffs within tolerance for at least 4 of 5 |
+| 5 | Capture from a live page; 20 pricing specimens and 5 generic ones | The 20 and the 5 plotted by grammar distance. If the generic ones sit inside the cloud of kept ones, structure doesn't carry taste and F5 has to change before going on |
+| 6 | Read, find, map, both cheap checks for one crafting-ui card | The funnel up to Build |
+| 7 | Build off screen, judge, stress, spread | 3–6 variants of that card in our look, with the funnel |
 | 8 | The grid with recipes, keep and drop | The owner picks from it |
 
-Layer 6 needs the off-screen build (engine-foundations layer 6). Layers 1–5 don't.
+Layer 7 needs the off-screen build (engine-foundations layer 6). Layers 1–6 don't.
 
 ## Decided here, and why (change any at sign-off)
 
-- **The move is kept, as a structured decision with several house expressions.** The review's other option, keeping
-  structure only, throws away the decision that makes a reference worth having. A move type with several expressions
-  keeps the decision and still lets twenty specimens come out differently.
-- **The unit is the organism; siblings moves have a scope.** Pricing cards are the first kind and their best moves
-  are about siblings, so a move can say so, and is used only where the page has siblings. Generating whole tier
-  groups waits until single cards work.
-- **Molecules are ours, authored in final form.** They are the rooms. References give arrangement and moves, never
-  parts.
-- **Descriptors, not knobs.** Lead, shape and density are read off candidates to pick a spread. Setting them would
-  mean rearranging a specimen by rule, which is generating from nothing again.
-- **Left out, not ended.** A decision with no row drops that decision; the rest of the variant goes on.
-- **No embeddings in Find for now.** Scoring every specimen is cheap at this size and embeddings would only break
-  ties. They come back if the shelf reaches thousands.
+- **Grammar owns between slots, molecules own inside them.** Both claimed sizes before. Now a specimen gives ranks
+  and a lead strength, and the molecule turns them into sizes in our look.
+- **Moves are only what grammar and molecules can't say.** "Lead with price" is the hierarchy field and "prove with a quote" is
+  a molecule choice, so neither is a move.
+- **The generator never touches siblings.** Sibling moves use expressions on the picked card only. Rows of cards
+  wait.
+- **Structure only, labelled, rather than ended.** A variant whose move can't be drawn can still be a good structure;
+  it says so and ranks lower.
+- **Generic is a curation check, drift is the run-time check.** A variant inherits its specimen's structure, so its
+  distance to generic is decided when the specimen is kept.
+- **Body size is the unit.** Every card has one, and it doesn't move when an icon is nudged.
+- **No embeddings in Find for now.** Scoring every specimen is cheap at this size.
 - **Pricing cards first.** Clear jobs, many good public examples, easy to judge.
 
-## What the review changed (2026-11-20)
+## What the reviews changed (2026-11-20)
 
-A review of the first version found that several checks didn't test what they claimed. This version:
+**First review.** Translation drew every move the same way; the round trip needed values capture had thrown away;
+screenshot embeddings would call anything in our look "ours". The second version made moves typed with several
+expressions, added the sidecar and per-slot diffs, compared structure instead of screenshots, stored ratios, turned
+axes into descriptors, and added the funnel, fit, pinned replay and a hand-built check before any generator.
 
-- Turned the move into a typed decision with several expressions, so translation doesn't make every specimen look
-  the same.
-- Split the round trip (capture is faithful, via a sidecar and per-slot diffs) from the dialect trip (the product
-  works), and moved a hand-built dialect trip to layer 2.
-- Moved the generic check from screenshots to grammar, since every variant wears our look.
-- Stored ratios instead of steps.
-- Made axes into descriptors used to pick a spread.
-- Put molecules into Translate and wrote the placement rules per job.
-- Added scope for moves about siblings, fit ranges and stress, the funnel, a cheap grammar check before builds,
-  capped and decaying weights with an exploratory slot, pinned replay, a nested job tree with counts, and the
-  rule that a specimen must fill your top job and its move's jobs.
-- Said what a second project brings (a role map) and that matching never uses kinds.
-- Dropped the claim that the generator would be a few hundred lines; its size is unknown.
+**Second review.** The generic check passed by construction (a variant is its specimen's structure); grammar and
+molecules both claimed sizes; sibling moves changed cards the generator doesn't build. This version moves the
+generic check to curation and adds drift; splits grammar from molecules and drops the moves that repeated them;
+keeps sibling moves on the picked card; adds a molecule layer and molecule coverage; runs the look-dependent checks
+after Translate; uses body size for every ratio; labels structure-only variants; defines when an expression fits;
+narrows the round trip's claim; pins the seen history; gives the blind mix a count and a bar; and asks layer 3 for
+the list of decisions the spec didn't supply.
 
 ## Not known
 
-- Whether a hand-built dialect trip comes out distinct and good. Layer 2 answers it, and the brief stands or falls
-  on it.
-- How a structure distance should weigh order, nesting, hierarchy and ratios. A first weighting is a guess until
-  layer 5 shows rankings to the owner.
+- Whether a hand-built dialect trip comes out distinct and good (layer 3). The brief stands or falls on it.
+- Whether generic and kept specimens separate in grammar space at all (layer 5). The Stripe example's structure is
+  close to a stock pricing card's; if taste lives mostly in what this format doesn't store, the format has to grow.
+- How structure distance should weigh order, nesting, ranks and space. A guess until layer 6 shows rankings.
+- The drift limit and the generic threshold. Both are set from real numbers at layers 5 and 6.
 - How reliably a model labels jobs and proposes a move type. Unmeasured.
-- How a candidate is built off screen faithfully with the app's own components and data (open in
-  engine-foundations §6).
+- How a candidate is built off screen faithfully with the app's own components and data (engine-foundations §6).
 - Whether 20 specimens for the first kind is enough. A guess.

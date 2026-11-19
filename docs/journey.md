@@ -4104,6 +4104,12 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   trip only, compares structure instead of screenshots, stores ratios instead of steps, and adds a layer that builds
   five references in our look by hand before any generator exists. If those five aren't distinct and good, the idea
   fails in a day instead of at layer 6.
+- **A second review:** the generic check now passed by construction, since a variant inherits its reference's
+  structure; references and our own parts both claimed sizes; and moves about neighbouring cards changed cards the
+  generator doesn't build. The third version keeps generic structures off the shelf when a reference is kept, and
+  at run time measures how far mapping bent a reference instead. References now own only what happens between
+  parts and our parts own everything inside them. Moves about neighbours change only the picked card. The hand-built
+  layer must also write down every decision the brief didn't supply, which shows what the spec still lacks.
 
 ## Open gaps
 - **The mark was never tried among real neighbours** (a row of browser tabs, an npm page, a README header), only on empty tiles. Nobody outside has been asked whether the round leg reads as an R or leans towards a B.
