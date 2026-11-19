@@ -399,12 +399,19 @@ export function mountXray(o) {
     if (sp < 0.5 || !d) return 'still';
     return (vel.x * to.x + vel.y * to.y) / (sp * d) > 0.5 ? 'toward' : 'away';
   };
+  // the thin band X-ray keeps outside an element even at a margin of 0 (so a margin can be added) is not "the part under
+  // the hand" when the hand only arrives at the element: the card opened with a cryptic "right 0 0px" row. It counts
+  // once the hand is on the element and moves into the band
+  const quiet = (z) => (z && z.outside && z.box === 'margin' && !z.n ? null : z);
   const track = (e) => {
     // something else is in hand (a card open in blueprint): the X-ray steps aside first, and takes no pointer
     if (o.paused?.()) { card.removeAttribute('data-reach'); if (shown && !changes.size) draw(null); return; }
     // the card wakes to the pointer when the pointer is over it (with a little margin to reach its edge)
     if (!card.hidden) { const c = card.getBoundingClientRect(), on = e.clientX >= c.left - 4 && e.clientX <= c.right + 4 && e.clientY >= c.top - 4 && e.clientY <= c.bottom + 4; card.toggleAttribute('data-reach', on); if (on) { clearTimeout(waiting); return; } }
     if (held || noting) return;
+    // on plumber's own pieces (the bar, its lists, the dock): the X-ray steps aside at once, card and drawing, and
+    // takes the pointer back when the hand returns to the page
+    if (o.ours?.(e)) { clearTimeout(waiting); if (shown && !pinned && !changes.size) { ready = false; restAt = null; draw(null); } return; }
     const pt = { x: e.clientX, y: e.clientY }; ptNow = pt;
     // Shown, and the hand moves on: the card and its drawing stay with their element until the hand rests on another
     // one (owner, 2026-11-20: going for the card or a ruler's handle crossed other elements, the X-ray jumped to each, and
@@ -420,7 +427,7 @@ export function mountXray(o) {
         waiting = setTimeout(() => {
           if (card.hasAttribute('data-reach') || card.matches(':hover')) return;
           if (!there) { ready = false; restAt = null; draw(null); return; }
-          restAt = ptNow; lastOn = ptNow; zone = zoneAt(zonesOf(there), ptNow.x, ptNow.y); draw(there); if (zone) hold(there, zone.prop);
+          restAt = ptNow; lastOn = ptNow; zone = quiet(zoneAt(zonesOf(there), ptNow.x, ptNow.y)); draw(there); if (zone) hold(there, zone.prop);
         }, going === 'away' ? AWAY : going === 'toward' ? REST * 2 : REST);
         return;
       }
@@ -433,7 +440,7 @@ export function mountXray(o) {
     const el = pinned ?? (outside ? shown : under);
     if (el && el === shown) {
       lastOn = pt; clearTimeout(waiting);
-      const z = zoneAt(zonesOf(el), pt.x, pt.y);
+      const z0 = zoneAt(zonesOf(el), pt.x, pt.y), z = card.hidden ? quiet(z0) : z0;
       if (z?.prop === zone?.prop) { clearTimeout(warm); pending = undefined; return; }
       if (z?.prop === pending) return;
       // a warm-up outside the element, where the margin bands and rulers sit side by side; inside, at once
@@ -449,7 +456,7 @@ export function mountXray(o) {
     }
     clearTimeout(waiting);
     lastOn = el ? pt : null;
-    zone = el ? zoneAt(zonesOf(el), pt.x, pt.y) : null;
+    zone = el ? quiet(zoneAt(zonesOf(el), pt.x, pt.y)) : null;
     draw(el);
     if (el && zone) hold(el, zone.prop);
   };
@@ -777,7 +784,8 @@ export function mountXray(o) {
     follow,
     // an element chosen elsewhere (blueprint's list, or a click blueprint took): shown and held
     hold(el) { if (!el?.isConnected || o.paused?.()) return; pinned = el; lastOn = null; const r = el.getBoundingClientRect(); zone = null; draw(el); void r; },
-    release() { pinned = null; },
+    // let go (a fix put down, a selection cleared): what was drawn for it goes too, unless changes wait on it
+    release() { const was = pinned; pinned = null; if (was && shown === was && !changes.size && !held) { ready = false; draw(null); } },
     // something else took the screen (a card opened): out of the way at once
     hide() { card.removeAttribute('data-reach'); pinned = null; if (!changes.size) draw(null); },
     // results from before a reload (a write the dev server reloaded the page for), said again

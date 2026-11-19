@@ -2748,6 +2748,30 @@ field is empty). The table of five writes, before and after. The Next table: eig
   text-body at 11 places" into the throwaway test copy (never the bench source); the test server was restarted to
   make a fresh copy. Fixes are opened with the Fix button in tests from now on.
 - **Not checked:** whether the marks' settle-in replays on scroll (they are drawn again each frame their place moves).
+
+### Walking it as a user
+
+- **The itch:** "when the x-ray mode is active understand when i am on the plumber toolbar and give it more
+  priority", then "i see we have so many of these polish issues … i end up frustrated using any of these things".
+- **The system behind it:** each piece was built and checked on the path it was designed for, one at a time; nobody
+  walked Blueprint from opening it to closing it the way the owner uses it, so the rough edges were found by the
+  owner, one frustration at a time.
+- **What we did:** walked it as a user (open, rest on an element, go to the bar, open a list and click away, open a
+  fix, scroll, put it down, close), wrote down every rough edge, fixed them in one batch, and walked it again.
+  Found and fixed:
+  1. X-ray read the page through Blueprint's bar (the bar lives in the layer the page is read through): over
+     plumber's own pieces (the bar, its lists, the dock, the pill, the agent note) it now steps aside at once.
+  2. The card opened with a cryptic part row ("right 0 0px") because the thin band kept outside an element at a
+     margin of 0 counted as the part under the hand; it counts only once the card is open and the hand aims at it.
+     The card now opens on the part the hand is on ("text size · body 14px").
+  3. A click outside an open list didn't close it, and the same click opened a fix under it, so the list sat over
+     the fix's choice. The click now only closes the list, and a fix put in hand closes any open list.
+  4. The X-ray card stayed open through a fix until the next pointer move; a fix put in hand puts it away at once,
+     and letting go of a pinned element clears its drawing.
+  5. The fix's choice came loose from its element on scroll and hung at the window's edge; with its element out of
+     view it now waits above the bar. `bench/tells/shots/21-choice-docks-above-bar.jpg`.
+- **Left, named:** a note in the fix's choice offers only Keep as is and Skip, not the card's Edit the words and Ask
+  your agent, and it can sit over the heading next to it.
 - **Media hooks:** `bench/tells/shots/5-concerns-bar.jpg`.
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.

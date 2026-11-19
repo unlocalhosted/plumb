@@ -561,6 +561,9 @@ class PlumbOverlay extends HTMLElement {
         return { left: 12, top: 12, right: innerWidth - 12, bottom };
       },
       // the page's element under the pointer: through blueprint's glass and marks, never the overlay's own panels
+      // plumber's own pieces: the bar, its lists, the choice beside a fix, the dock, the pills and cards. Blueprint's bar
+      // lives inside its layer, which the page is read through, so the X-ray looked through the bar to the page under it
+      ours: (e) => e.composedPath().some((n) => n.matches?.('.fx, .fx-pop, .dock, .bp-hint, .xr-note, .xr-list, .tx-toast, .rd, .rd-callout')),
       partAt: (e) => {
         const first = e.composedPath()[0];
         if (e.composedPath().includes(self) && !first?.closest?.('.glass, .bp')) return null;
@@ -762,6 +765,8 @@ class PlumbOverlay extends HTMLElement {
   // its one behaviour; and the setup steps left, with the card that fixes them
   tool(name) { this.#$(`.dock .${name}`)?.click(); }
   setupLeft() { return this.#ready?.left ?? 0; }
+  // a fix put in hand: the X-ray's card and drawing go at once (it would otherwise wait for the next pointer move)
+  xrayAside() { this.#xray?.hide(); }
   openSetup() { this.#ready?.toggle(true); }
   remember(text, undo, place = null, group = null, extra = {}) { try { sessionStorage.setItem(RESUME, JSON.stringify({ ...extra, at: Date.now(), blueprint: !!this.#blueprint?.active, fix: text, undo: undo ?? [], group, pending: undo === undefined, place, scope: scopeKey(this.#blueprint?.scope), card: !!this.#blueprint?.carding })); } catch {} }
   forgetResume() { try { sessionStorage.removeItem(RESUME); } catch {} }

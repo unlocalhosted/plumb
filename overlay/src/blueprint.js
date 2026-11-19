@@ -90,7 +90,8 @@ export class Blueprint {
     // the fix panel drives the selection without drawing it: a cause in hand is its first place selected with every
     // other place as its group; the panel reads the plan, picks, takes, and applies through Changes' guarded writes
     this.#fix = new FixPanel(root, {
-      hold: (g, lead) => { this.#holding = true; const on = g.members.filter((m) => m.el), first = on.find((m) => m.el === lead) ?? on[0], rest = on.filter((m) => m !== first); this.#marks.prove(first?.el ?? null, first?.mark ?? null); if (!first) return; this.#selection.select(first.el, this.#itemOf(first.el), { key: first.mark.key, rule: first.mark.rule, mark: first.mark, group: rest.filter((m) => m.el !== first.el).map((m) => ({ el: m.el, item: this.#itemOf(m.el), key: m.mark.key })) }); },
+      hold: (g, lead) => { this.#holding = true; this.#host.xrayAside?.(); // the fix is the one job: the X-ray's card goes now, not on the next move
+        const on = g.members.filter((m) => m.el), first = on.find((m) => m.el === lead) ?? on[0], rest = on.filter((m) => m !== first); this.#marks.prove(first?.el ?? null, first?.mark ?? null); if (!first) return; this.#selection.select(first.el, this.#itemOf(first.el), { key: first.mark.key, rule: first.mark.rule, mark: first.mark, group: rest.filter((m) => m.el !== first.el).map((m) => ({ el: m.el, item: this.#itemOf(m.el), key: m.mark.key })) }); },
       release: () => { this.#holding = false; this.#marks.prove(null, null); this.#selection.clear(); },
       // the bar's tools and setup notice are the widget's (docs/design/one-bar.md)
       tool: (name) => this.#host.tool?.(name), setupLeft: () => this.#host.setupLeft?.() ?? 0, openSetup: () => this.#host.openSetup?.(),

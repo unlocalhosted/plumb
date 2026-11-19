@@ -573,6 +573,16 @@ export class FixPanel {
     this.#el.addEventListener('click', onClick);
     this.#choice.addEventListener('click', onClick);
     this.#pop.addEventListener('click', onClick);
+    // a press anywhere but the open list or its button closes it, and does only that (a menu's way: the press that
+    // closes it doesn't also choose an element on the page under it)
+    addEventListener('pointerdown', (e) => {
+      if (!this.#menu) return;
+      const path = e.composedPath();
+      if (path.includes(this.#pop) || path.some((n) => n.classList?.contains('cpick') || n.classList?.contains('more'))) return;
+      this.#menu = null; this.#html = ''; this.render();
+      e.preventDefault(); e.stopPropagation();
+      addEventListener('click', (c) => { c.preventDefault(); c.stopPropagation(); }, { capture: true, once: true });
+    }, true);
     // the fields own their keys: Enter does the field's action, Esc closes or leaves it; the page's keys never see them
     const onInput = (e) => {
       if (e.target.name === 'token') { this.#names.set(this.#held?.key, e.target.value.trim()); fit(e.target); this.#sayNew(); }
@@ -712,8 +722,9 @@ export class FixPanel {
     const live = this.#live();
     // nothing is put in hand while a write or an undo is out (the one that lands moves the panel on itself)
     if (!live.length || this.#flight || !this.#send('hold')) return;
-    // a cause in hand owns the screen: a card open is closed first
+    // a cause in hand owns the screen: a card open is closed first, and so is an open list
     if (this.#card.open) { this.#card.close(); this.#html = ''; }
+    if (this.#menu) { this.#menu = null; this.#html = ''; }
     if (this.#editor.open) { this.#editor.close(); this.#html = ''; }
     this.#notice = null;
     this.#at = (i + live.length) % live.length;
@@ -1081,7 +1092,9 @@ export class FixPanel {
     this.#choice.hidden = false;
     const bar = this.#el.getBoundingClientRect(), gap = 10, box = this.#choice.getBoundingClientRect(), w = box.width, h = box.height;
     // no place of it can be seen (off screen, inside something closed, only on focus): the row waits above the bar
-    if (!at) { this.#choice.style.left = `${Math.round(Math.max(gap, Math.min(innerWidth - w - gap, bar.left + bar.width / 2 - w / 2)))}px`; this.#choice.style.top = `${Math.round(Math.max(gap, bar.top - gap - h))}px`; return; }
+    // scrolled out of view: the same (it came loose and hung at the window's edge over other things)
+    const gone = at && (() => { const q = at.getBoundingClientRect(); return q.bottom < 0 || q.top > innerHeight || q.right < 0 || q.left > innerWidth; })();
+    if (!at || gone) { this.#choice.style.left = `${Math.round(Math.max(gap, Math.min(innerWidth - w - gap, bar.left + bar.width / 2 - w / 2)))}px`; this.#choice.style.top = `${Math.round(Math.max(gap, bar.top - gap - h))}px`; return; }
     const r = at.getBoundingClientRect();
     // what else the overlay shows (the X-ray card on the element, its caret): the choice keeps clear of it and of the bar
     const others = [...this.#choice.getRootNode().querySelectorAll('*')].filter((e) => e !== this.#choice && e !== this.#el && !this.#choice.contains(e) && !this.#el.contains(e)
