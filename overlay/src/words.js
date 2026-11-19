@@ -526,7 +526,7 @@ export const FIX = {
     back: 'back',
     cancel: 'cancel',
     reach: (n) => n === 1 ? 'The same code draws 1 other place on this page. A change here changes it too.' : `The same code draws ${n} other places on this page. A change here changes them too.`,
-    byHand: (v) => `${v}, typed by hand. Pick it to use the step.`,
+    byHand: (v) => `${v}, hard-coded. Pick it to use the step.`,
     offScale: (v, lo, hi) => lo && hi ? `${v} isn’t in your scale. Nearest: ${lo} or ${hi}.` : `${v} isn’t in your scale. Nearest: ${lo ?? hi}.`,
     setIn: (why) => `Set in code: ${String(why ?? '').replace(/\.$/, '')}.`,
     empty: (label) => `Your theme has no ${label.toLowerCase()} steps.`,
@@ -705,7 +705,7 @@ export const FIX = {
   what(mark) {
     if (mark.family === 'craft') return mark.what ?? 'Doesn’t follow the craft rules';
     if (/framework/.test(mark.rule)) return 'Tailwind’s default, not yours';
-    if (/by-value|matches/.test(mark.rule)) return 'Same value as a token, typed by hand';
+    if (/by-value|matches/.test(mark.rule)) return 'Same value as a token, hard-coded';
     if (/tier/.test(mark.rule)) return 'A raw token where a named one fits';
     if (/dead-class/.test(mark.rule)) return 'Class does nothing';
     if (/existence/.test(mark.rule)) return 'Uses a variable that doesn’t exist';
@@ -731,7 +731,8 @@ export const FIX = {
   },
   craftToken: 'Your theme has no step for this. This adds it, then uses it here.',
   // a value as the code has it: typed by hand (p-[18px]), or worked out from names that aren't tokens (H_TICKS + GAP)
-  typed: (value, alone = true, worked = false) => `${worked ? `This works out to ${value}` : `${value} is typed by hand`}${alone ? ', and your theme has nothing close.' : '.'}`,
+  // every one says what is wrong, not only what the value is (U4, 2026-11-20: "mt-8. This works out to 2rem." read as a fact)
+  typed: (value, alone = true, worked = false) => `${worked ? `This works out to ${value}, which isn’t one of your tokens` : `${value} is hard-coded`}${alone ? ', and your theme has nothing close.' : '.'}`,
   // the value a class or a style expression writes, and whether it is worked out rather than typed
   valueOf: (mark, cls) => { const w = written(cls); return w != null ? { value: w, worked: false } : { value: mark.value, worked: !!cls && mark.value != null && !String(cls).includes(String(mark.value)) }; },
   // one place, in a sentence: what its outline says to a screen reader, and what the panel says when it has nothing to offer
@@ -748,7 +749,9 @@ export const FIX = {
   unreachable: 'Can’t reach this in your code, so it can’t be checked.',
   elementClear: 'Nothing to fix on this element.',
   shadowColour: 'The colour is part of this shadow. Use a shadow token for the whole value, or change the colour by hand.',
-  tailwinds: (cls, value) => `${cls} is ${value}, from Tailwind’s defaults. Your theme doesn’t set it.`,
+  tailwinds: (cls, value) => `${cls} is ${value}, Tailwind’s default. ${FIX.frameworkWhy}`,
+  // why a Tailwind default is worth a note: it won't follow your theme
+  frameworkWhy: 'Your theme has no token for it, so it won’t change when your theme does.',
   // buttons
   use: (label) => `Use ${label}`,
   addToTheme: 'Add to theme',
