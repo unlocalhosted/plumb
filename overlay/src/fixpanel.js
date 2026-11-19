@@ -1057,6 +1057,8 @@ export class FixPanel {
     if (k === 'i' || k === 'I') { const info = this.#el.querySelector('.cause .info'); if (info) { info.click(); return true; } return false; }
     if (k === 'ArrowRight' || k === 'Tab') { this.skip(1); return true; }
     if (k === 'ArrowLeft') { this.skip(-1); return true; }
+    // the why box open: Esc is its Cancel, wherever the focus is; the fix in hand stays (U17, 2026-11-20)
+    if (k === 'Escape' && this.#keeping) { this.#closeKeep(); return true; }
     if (k === 'Escape') { const g = this.#cause(); this.#send('escape'); this.#putDown(g); return true; }
     return false;
   }

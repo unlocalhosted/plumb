@@ -993,8 +993,9 @@ class PlumbOverlay extends HTMLElement {
   #text = null; #help = null; #history = null;
   #onKeyDown = event => {
     if (this.#text?.editing) return; // the words being edited take the keys: Enter saves, Esc cancels
-    // a field of the overlay's own (a new token's name, why a cause is kept) takes its keys: Enter and Esc are its
-    if (event.composedPath()[0]?.localName === 'input' && this.#root.contains(event.composedPath()[0])) return;
+    // a field of the overlay's own (a new token's name, why a cause is kept, a note for your agent) takes its keys:
+    // Enter and Esc are its (U13, 2026-11-20: Esc in the agent note, a textarea, closed all of Blueprint)
+    if (/^(input|textarea)$/.test(event.composedPath()[0]?.localName ?? '') && this.#root.contains(event.composedPath()[0])) return;
     // ?: every gesture; Esc closes the sheet or a hint before anything else
     if (event.key === '?' && !event.altKey && !event.metaKey && !event.ctrlKey && !this.#typing(event)) { event.preventDefault(); event.stopPropagation(); this.#help.toggle(); return; }
     if (event.key === 'Escape' && (this.#help?.escape() || this.#history?.escape())) { event.preventDefault(); event.stopPropagation(); return; }
