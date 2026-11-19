@@ -170,13 +170,14 @@ export function mountXray(o) {
   // step"): on the pink face the pins wear, its name, what to do, and what you can do from here. Words are edited in
   // place; anything else goes to your agent; either way it can be kept as it is.
   function noteHtml(el) {
-    const h = C.getRootNode().querySelector('.bp-hint[data-on]');
-    if (!h || !el) return '';
-    const name = h.querySelector('.nm')?.textContent ?? '', advice = (h.querySelector('.say')?.textContent ?? '').slice(name.length).trim();
-    if (!name) return '';
+    // the element's own note, asked of the page's marks; never the pill's words, which may be about the element the
+    // hand just passed (U6)
+    const n = el && o.noteOf?.(el);
+    if (!n?.name) return '';
+    const { name, advice, rule } = n;
     const words = [...el.childNodes].some((n) => n.nodeType === 3 && n.data.trim());
     const b = (act, label, main) => `<button type="button" class="na${main ? ' main' : ''}" data-act="${act}">${label}</button>`;
-    return `<div class="nt" data-rule="${esc(h.dataset.rule ?? '')}"><b>${esc(name)}</b><span>${esc(advice)}</span></div><div class="nas">`
+    return `<div class="nt" data-rule="${esc(rule)}"><b>${esc(name)}</b><span>${esc(advice)}</span></div><div class="nas">`
       + (words && o.editWords ? b('edit', 'Edit the words', true) + b('agent', 'Ask your agent') : b('agent', 'Ask your agent', true))
       + (o.keepNote ? b('keep', 'Keep as is') : '') + '</div>';
   }

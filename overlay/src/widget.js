@@ -548,6 +548,7 @@ class PlumbOverlay extends HTMLElement {
       // a note's actions in the card: its words edited in place (text-edit.js), or kept as they are (the bar asks why)
       editWords: (el) => { const node = [...el.childNodes].find((n) => n.nodeType === 3 && n.data.trim()); if (node) this.#blueprint?.through(() => this.#text.start(node, node.data.length)) ?? this.#text.start(node, node.data.length); },
       keepNote: (el, rule) => this.#blueprint?.keepNote(el, rule),
+      noteOf: (el) => this.#blueprint?.noteOf(el) ?? null,
       // a card open in blueprint (an Alt+click, an element read alone, words being edited) is what's in hand: the X-ray steps aside
       paused: () => !!(self.#blueprint?.scope || self.#blueprint?.cardOpen || self.#blueprint?.fixing || self.#pinned || self.#text?.editing),
       // the card's room is the page above Plumber's own bar: it never sits on the fix panel or the dock (a card placed

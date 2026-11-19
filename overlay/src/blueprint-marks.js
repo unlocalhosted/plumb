@@ -553,6 +553,19 @@ export class MarkLayer {
     this.#redraw();
   }
 
+  // The note the X-ray card leads with, for the element it is on, never another's (U6, 2026-11-20: the card on a
+  // button read a heading's note, copied from the pill as the hand passed). The one the pill is saying when the pill
+  // is about this element; else this element's first note, from the picked concern only when one is picked (U7).
+  noteOf(el) {
+    const isNote = (m) => m.craft?.suggest?.kind === 'advice' || m.family === 'craft'; // what a pin names
+    const said = (m) => ({ name: FIX.what(m), advice: String(m.craft?.suggest?.text ?? m.title ?? '').replace(/`/g, ''), rule: m.rule ?? '' });
+    const hinted = this.#hinted && this.#nodes.get(this.#hinted);
+    if (hinted && hinted.el === el && isNote(hinted.mark) && (!this.#lit.length || this.#lit.includes(this.#hinted))) return said(hinted.mark);
+    const lit = new Set(this.#lit);
+    for (const [id, node] of this.#nodes) if (node.el === el && isNote(node.mark) && (!lit.size || lit.has(id))) return said(node.mark);
+    return null;
+  }
+
   // The fix in hand: its zones (by id) light, `lead` (the zone of the place it is on) the strongest; [] lets go.
   spotlight(ids, lead = null) {
     this.#lit = ids ?? [];
