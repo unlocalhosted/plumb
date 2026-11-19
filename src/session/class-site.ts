@@ -232,7 +232,9 @@ export function classSites(input: ClassSiteInput): ClassSiteAnswer {
   if (pick) {
     const h = pick.holder;
     answer.add = { file: h.src.file, kind: h.variable ? 'variable' : h.kind, prop: h.prop, ...variableOf(h), element: h.element, string: stringRef(pick),
-      ...(h.level === 0 && unfollowed.length ? { shared: true as const } : {}) };
+      // the element's own string, while classes also come in from where it is used (a usage found or not): an add there
+      // lands on every use of the component (e2e/class-site B2)
+      ...(h.level === 0 && (unfollowed.length || strings.some(f => f.holder.level > 0)) ? { shared: true as const } : {}) };
   } else if (always.length) answer.addRefused = sharedVariable(always[0]!.holder.variable!, always[0]!.holder.readers!);
   else if (strings.length) answer.addRefused = ADD_UNDER_CONDITION;
   else if (!ownAttribute && !sources.spread && !isComponentTag(sources.tag)) answer.add = { file: own.ref.file, kind: 'own', prop: 'className', element: own.ref };

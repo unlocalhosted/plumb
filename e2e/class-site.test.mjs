@@ -167,9 +167,11 @@ test('classes built in code, and no plain string anywhere, are refused in plain 
   assert.deepEqual(built.classes[0].sites, []);
   assert.match(built.classes[0].refused, /built in code/);
   assert.match(built.refused, /built in code/);
-  // glued to an expression: the plain part of a sum is not a string a class can be changed in
+  // glued to an expression: the plain part of a sum is a string as written, and a class in it is changed there
+  // (string sums, 2026-11-15)
   const glued = await o.site('<div id="glued"', 'flex');
-  assert.match(glued.refused ?? '', /built in code/);
+  assert.equal(glued.refused, undefined);
+  assert.equal(o.byToken(glued).flex.sites.length, 1);
   // part of the classes are written, part are not: no refusal as a whole
   const cond = await o.site('<div id="cond"', 'flex p-3');
   assert.equal(cond.refused, undefined);
@@ -276,9 +278,12 @@ test('F1-01: an element that spreads its props in is written where its usage pas
   assert.deepEqual(Object.keys(c).sort(), ['flex', 'gap-2', 'p-3']);
   assert.deepEqual([c['p-3'].sites[0].kind, c['p-3'].sites[0].prop, c['p-3'].sites[0].line, c['p-3'].sites[0].element.line], ['usage', 'className', usage.line, usage.line]);
   assert.equal(body.add.kind, 'usage');
-  // without the chain nothing is followed: still the plain refusal
+  // without the chain, the usage in the same file is found (a local component's usages, 2026-11-15): its classes are
+  // placed there, under that usage, and no add is offered, since it would land at one use only
   const alone = await o.site('<a href={to} {...props}', '');
-  assert.match(alone.addRefused ?? alone.refused ?? '', /spreads props|built in code/);
+  assert.deepEqual(alone.classes.map(c => [c.class, c.sites[0]?.kind, c.sites[0]?.element.tag]), [['flex', 'usage', 'Row'], ['gap-2', 'usage', 'Row'], ['p-3', 'usage', 'Row']]);
+  assert.equal(alone.add, null);
+  assert.ok(alone.addRefused);
   // the writer changes it at the usage, only there
   const s = c['p-3'].sites[0];
   const r = await o.post('swaps', { file: 'src/App.tsx', hash: body.hashes['src/App.tsx'], edits: [{ line: s.element.line, column: s.element.column, from: 'p-3', to: 'p-s4', at: { line: s.string.line, column: s.string.column } }] });

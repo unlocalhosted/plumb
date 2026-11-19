@@ -143,7 +143,8 @@ async function quiet(): Promise<void> {
   await job.done;
 }
 function buildLater(): void {
-  if (building?.revision === revision || !dirty && raw) return;
+  // PLUMB_BACKGROUND=0: built only when asked (tests of the per-file path, a machine short of CPU)
+  if (environment('BACKGROUND') === '0' || building?.revision === revision || !dirty && raw) return;
   const job: NonNullable<typeof building> = { revision, urgent: false, done: Promise.resolve() };
   let sliceStart = 0;
   const check = () => { if (job.revision !== revision) throw new Stale(); };

@@ -6,6 +6,9 @@ import { createServer } from 'node:http';
 import { Session } from '../dist/session/index.js';
 import { createHandler } from '../dist/session/server.js';
 const repo = new URL('../', import.meta.url).pathname;
+// this file checks the per-file path (a file's readings shared, refreshed without watchers): the whole-app report is
+// built only when asked, so no reading here comes from a background build that finished in between
+process.env.PLUMB_BACKGROUND = '0';
 
 test('HTTP readings share a file view and refresh source, helper, theme and ledger evidence without watchers', { timeout: 30000 }, async t => {
   const root = await mkdtemp(join(repo, 'fixtures/.reading-cache-'));

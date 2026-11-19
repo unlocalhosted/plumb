@@ -83,8 +83,15 @@ reserved.)
   before it says so (`scope: 'page' | 'file'`); the overlay doesn't show that yet.
 - **Answers that depend on whether the whole-app report exists yet (2026-11-18).** Since start-up stopped judging,
   edits made before the report was built were refused ("Apply requires a tracked project source file": the editable
-  files were filled only by the whole-app index; fixed). Still failing on main, same family, not yet looked at:
-  e2e/class-site (3 tests: a refusal's words come back empty), e2e/recipes N6, e2e/reading-cache.
+  files were filled only by the whole-app index; fixed).
+- **class-site, recipes and reading-cache, fixed (2026-11-19).** Correction: class-site and recipes were among the 36
+  old failures, and the note that all 36 passed was wrong for them; they failed on every commit tried. Two were tests
+  left behind by deliberate changes of 2026-11-15 (a plain string in a sum is where a class is written; a local
+  component's usages are found without the overlay's chain). One was a bug from the same change: an add into a
+  component's own string stopped saying it lands on every use once the usages were found, so a recipe wrote into the
+  component (class-site B2, recipes N6). reading-cache checks the per-file path and now builds the whole-app report
+  only when asked (`PLUMB_BACKGROUND=0`). Left: with the usage found, the add refusal says "Every class here is under
+  a condition", which reads wrong for a class that comes from a usage.
 - **Component root ranges depend on build order (2026-11-17).** A component's root class ranges reach the session's
   cache only from a build that keeps the component in its graph; a component first found while building another file
   is missing them in every later graph. Which ones depends on file order. Recording them at discovery changed 77

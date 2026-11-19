@@ -2450,6 +2450,11 @@ field is empty). The table of five writes, before and after. The Next table: eig
   minute. Checked on algorecall: 61 pages (6.5 files each) judged as groups equal the whole-app report on the page,
   725 findings spanning files among them; a page takes 47 ms. The engine also stopped refusing edits made before the
   whole-app report existed.
+- **Three tests, and one real bug among them (2026-11-19):** two were tests left behind by deliberate changes of 15
+  November. The third showed a real bug from the same change: once plumber found a component's usages by itself, a
+  class added into the component's own string stopped warning that it lands on every copy, so a recipe could restyle
+  every Panel when one was meant. It warns again. Also: yesterday's "all 36 old failures pass" was wrong for two of
+  them.
 - **The old failing tests, sorted:** the 36 files that failed before this work all pass now (time-outs on a busy
   machine). Of what a full run found, one was ours (the kept reading table skipped while the report built in the
   background; fixed), three passed again, and one Next.js test fails on every run, also before today's work.
