@@ -48,7 +48,7 @@ How to read an issue, and what each one needs:
   and looks like part of the problem.
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u02-craft-pins.jpg`
-- **Status:** fixing
+- **Status:** fixed 7856b3c4
 
 ### U3 · "Only left-over space between" doesn't say between what
 - **Where:** Blueprint, Craft and polish, the pin at the top left of the Ledger screen.
@@ -98,7 +98,7 @@ How to read an issue, and what each one needs:
   meant for a heading; the agent would be told to make a link an h2.
 - **Severity:** 1
 - **Evidence:** `docs/qa/shots/2026-11-20/u06-button-shows-heading-note.jpg`
-- **Status:** open
+- **Status:** fixing
 
 ### U7 · With one concern picked, pointing at a pinned element shows no note
 - **Where:** Blueprint, Craft and polish, the "Get started" button with its pin "Padding looks bigger than it is".
@@ -188,4 +188,54 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding.
 - **Severity:** 4
 - **Evidence:** `docs/qa/shots/2026-11-20/u13-agent-note.jpg`
+- **Status:** open
+
+### U15 · The first fix says text-sm isn't one of my sizes, then lists the size it is
+- **Where:** Fix, first fix on the Ledger screen (the line "Click the button above to create your free account").
+- **What I saw:** "11 places use Tailwind's default font size. `text-sm` isn't one of your font size tokens: 12px and
+  14px." `text-sm` is 14px, and the line is 14px on screen. The fix, "Use text-body", is also 14px. So the change
+  swaps a name and nothing on screen moves, but the words read as if the size were wrong.
+- **What I expected:** "`text-sm` is 14px, the same as your `text-body`. Use the name so it follows your theme." Then
+  I know nothing will look different and why it's still worth taking.
+- **Why it hurts:** understanding. I look for a size problem that isn't there.
+- **Severity:** 2
+- **Evidence:** `docs/qa/shots/2026-11-20/u15-fix-first.jpg`; in the page the line has class
+  `mt-2 text-sm text-slate-500`, font size 14px, and `--text-body` is 14px.
+- **Status:** open
+
+### U16 · Two fixes in a row have the same title with different counts
+- **Where:** Fix, fixes 1 and 2 of 50.
+- **What I saw:** fix 1 is "11 places use Tailwind's default font size", fix 2 is "19 places use Tailwind's default
+  font size". Only the small grey line under each says it's `text-sm` and then `text-xs`.
+- **What I expected:** the class in the title ("19 places use text-xs, Tailwind's default"), so I can tell the two
+  apart and see I moved on.
+- **Why it hurts:** understanding. After Skip it looks like the same fix came back with a different number.
+- **Severity:** 3
+- **Evidence:** `docs/qa/shots/2026-11-20/u15-fix-first.jpg`, `docs/qa/shots/2026-11-20/u16-fix-second.jpg`
+- **Status:** open
+
+### U17 · Escape in the "Why keep it?" box leaves Fix altogether
+- **Where:** Fix, Keep as is on fix 2.
+- **What I did:** pressed Keep as is. A box asked "Why keep it?" with "Keep 19 places" and "Cancel Esc". I pressed
+  Escape to cancel.
+- **What I saw:** the reason box closed and so did Fix: the bar went back to "All concerns" and I lost my place at
+  2 of 50.
+- **What I expected:** "Cancel" takes me back to the same fix with its choice row, as the label says.
+- **Why it hurts:** intent. Cancel did more than cancel; to get back to fix 2 I have to start Fix again.
+- **Severity:** 2
+- **Evidence:** `docs/qa/shots/2026-11-20/u17-keep-reason.jpg`
+- **Status:** open
+
+### U18 · The note counts change when I haven't changed anything
+- **Where:** Blueprint bar and the concern list, Ledger screen.
+- **What I did:** opened Blueprint (200 notes), stepped through two fixes without taking or keeping any, scrolled
+  down and back up. Then reloaded the page and opened Blueprint again.
+- **What I saw:** first load: 200 (Design system 125, Craft 21, Accessible 12, Anti-slop 42). After scrolling: 182
+  (125, 20, 11, 26). After reloading: 197 (125, 18, 12, 42). No file in the test copy changed in that time.
+- **What I expected:** the same page gives the same counts.
+- **Why it hurts:** trust. If the number moves on its own, I can't tell whether my fixes did anything.
+- **Severity:** 3
+- **Evidence:** `docs/qa/shots/2026-11-20/u03-concern-list.jpg` (200), `docs/qa/shots/2026-11-20/u18-counts-182.png`,
+  `docs/qa/shots/2026-11-20/u18-counts-197.png`; `fixtures/.tells-app/src` files were last written 04:29, before
+  the walk.
 - **Status:** open
