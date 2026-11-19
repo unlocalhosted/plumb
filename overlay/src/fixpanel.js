@@ -91,7 +91,7 @@ const FIX_CSS_BASE = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   .fx .one .dt .pl-pill { margin: 0; }
   .fx .one .sep { width: 1px; height: 22px; margin: 0 2px; background: var(--pl-rule); flex: none; }
   .fx .one .onav { display: inline-flex; align-items: center; gap: 2px; font: 500 12px/1 var(--pl-mono); color: var(--pl-ink-2); flex: none; }
-  .fx .one .onav button { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; color: var(--pl-ink-2); }
+  .fx .one .onav button { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; font-size: 16px; color: var(--pl-ink-2); } /* big enough to hit (U46) */
   .fx .one .onav button:hover { background: var(--pl-paper-2); }
   .fx .one .tb { flex: none; }
   .fx .one .passes { display: inline-flex; align-items: center; gap: 6px; padding: 0 4px; flex: none; }
@@ -161,9 +161,11 @@ const FIX_CSS_BASE = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
     font: 600 13.5px/1 var(--pl-round, var(--pl-sans)); color: var(--pl-text-primary); }
   .fx-pop .mrow .mi { width: 20px; height: 20px; flex: none; display: grid; place-items: center; } .fx-pop .mrow .mi svg { display: block; width: 100%; height: 100%; overflow: visible; }
   .fx-pop .mrow .mi .gl { width: 16px; height: 16px; color: var(--pl-icon-secondary, currentColor); } .fx-pop .mrow .mi .gl svg { width: 16px; height: 16px; }
-  .fx-pop .mrow .nm { flex: 1; padding-right: 14px; white-space: nowrap; }
+  .fx-pop .mrow .nm { flex: 1; min-width: 0; padding-right: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .fx-pop .mrow b { font: 600 12px/1 var(--pl-sans); font-variant-numeric: tabular-nums; padding: 4px 8px; border-radius: 999px; background: var(--pl-bg-inset); color: var(--pl-text-secondary); }
-  .fx-pop .mrow kbd { font: 500 10px/13px var(--pl-mono, monospace); color: var(--pl-text-secondary); }
+  /* a key cap that keeps its size: a long row name squeezed the C to 6px (U23) */
+  .fx-pop .mrow kbd { flex: none; display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 4px; box-sizing: border-box; border-radius: 6px;
+    background: var(--pl-bg-inset); font: 600 11px/1 var(--pl-sans); color: var(--pl-text-primary); }
   @media (hover: hover) and (pointer: fine) { .fx-pop .mrow:hover { background: var(--pl-bg-surface-hover); } }
   .fx-pop .mrow:focus-visible { box-shadow: 0 0 0 2px var(--pl-border-focus); }
   .fx-pop .mrow:active { background: var(--pl-bg-inset); }

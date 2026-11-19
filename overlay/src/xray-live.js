@@ -756,7 +756,7 @@ export function mountXray(o) {
     const [name, source] = o.name(el);
     const note = document.createElement('div');
     note.className = 'xr-note';
-    note.innerHTML = `<div class="nh"><i class="toy">${card.querySelector('.xr-head .toy')?.innerHTML ?? ''}</i>Note for your agent</div><code>${esc(name)}${source ? ` · ${esc(source)}` : ''}</code>
+    note.innerHTML = `<div class="nh"><i class="toy">${card.querySelector('.xr-head .toy')?.innerHTML ?? ''}</i>Note for your agent</div><code${source ? ` title="${esc(source)}"` : ''}>${esc(name)}${source ? ` · ${esc(tail(source))}` : ''}</code>
       <textarea placeholder="What should change here?" aria-label="Note for your agent about ${esc(name)}"></textarea>
       <div class="nf"><span class="keys"><kbd>⌘</kbd><kbd>↵</kbd>copy for your agent</span><span class="done"><i>✓</i>Copied with its place</span><span><kbd>Esc</kbd></span></div>`;
     note.style.left = `${cardAt.x}px`; note.style.top = `${cardAt.y}px`;
