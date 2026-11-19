@@ -121,6 +121,44 @@ const LESSON_CSS = `
   .notice b { font-weight: 700; }
   .notice code { font: 500 13px/18px var(--pl-mono); }
 
+  /* the problem first: the share on your steps (in the step's colour), the count typed by hand (butter), and why */
+  .today { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr); gap: 12px; }
+  .today .stat { display: grid; align-content: start; gap: 6px; padding: 18px 20px; border-radius: 22px; font: 500 14px/20px var(--pl-sans); }
+  .today .on { background: var(--hf); color: var(--hi); box-shadow: 0 4px 0 color-mix(in oklab, var(--hi) 22%, transparent); }
+  .today .hand { background: var(--pl-butter-face); color: var(--pl-butter-ink); box-shadow: 0 4px 0 color-mix(in oklab, var(--pl-butter-ink) 16%, transparent); }
+  .today .big { font: var(--pl-round-w, 750) 38px/40px var(--pl-round); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .today .bar { display: flex; height: 8px; margin-top: 4px; border-radius: 4px; overflow: hidden; background: color-mix(in oklab, var(--hi) 18%, transparent); }
+  .today .bar i { background: var(--hi); }
+  .today .whyit { padding: 18px 20px; border-radius: 22px; background: var(--pl-paper-2); }
+  .today .whyit b { display: block; margin-bottom: 6px; font: var(--pl-round-w, 700) 16px/20px var(--pl-round); color: var(--pl-ink); }
+  .today .whyit p { margin: 0; font: 500 14px/21px var(--pl-sans); color: var(--pl-ink-2); }
+  @media (max-width: 760px) { .today { grid-template-columns: 1fr 1fr; } .today .whyit { grid-column: 1 / -1; } }
+
+  /* the chosen block says the rule it becomes, so the rule is never a separate thing to read */
+  .becomes { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: 14px; background: var(--pl-cut); color: var(--pl-ink); font: var(--pl-round-w, 650) 15px/21px var(--pl-round); font-style: normal; animation: becomes-in 320ms var(--pl-spring-pop) both; }
+  .becomes .toy { flex: none; width: 22px; height: 22px; }
+  @keyframes becomes-in { from { opacity: 0; translate: 0 4px; } }
+  @media (prefers-reduced-motion: reduce) { .becomes { animation: none; } }
+
+  /* the drawing inside the lesson: the lesson names it, so its own title goes; its key sits small at the top; the
+     step marks are solid, the count lives in the tiles above, and Snap is a quiet toggle in the corner */
+  #gravity .gv-head { padding: 16px 20px 0; }
+  #gravity .gv-head > div:first-child { display: none; }
+  #gravity .gv-key { margin-left: 0; font: 500 13px/18px var(--pl-sans); color: var(--pl-ink-2); }
+  #gravity .gv-head { align-items: center; }
+  #gravity .gv-head .pl-act { margin-left: auto; }
+  #gravity .gv-plot { height: 250px; }
+  #gravity .gv-foot:not(:has(.pl-act)) { display: none; }
+  #gravity .sc-step .ring { box-shadow: none; background: color-mix(in oklab, var(--pl-sky) 30%, var(--pl-paper)); }
+  #gravity .sc-step[data-state="pointed"] .ring { background: color-mix(in oklab, var(--pl-sky) 55%, var(--pl-paper)); }
+  #gravity .sc-step[data-state="pulled"] .ring { background: color-mix(in oklab, var(--pl-mint) 45%, var(--pl-paper)); }
+  #gravity .sc-step .pl-tag { background: var(--pl-paper); color: var(--pl-ink-2); border-radius: 6px; padding: 1px 6px; font: 600 12px/16px var(--pl-sans); }
+  #gravity .gv-foot { justify-content: flex-end; padding: 0 16px 16px; }
+  #gravity .gv-foot .sc-count { display: none; }
+  #gravity .gv-foot .pl-act { height: 34px; padding: 0 14px; border-radius: 12px; font: 650 13.5px/1 var(--pl-sans); }
+  #gravity .gv-empty { font: var(--pl-round-w, 700) 20px/26px var(--pl-round); color: var(--pl-ink); }
+  #gravity .gv-empty small { font: 500 14px/20px var(--pl-sans); color: var(--pl-ink-2); }
+
   /* the drawing sits on the inset tone, like the design site's shelves: no outline, no shadow */
   #gravity .gv { border: 0; border-radius: 26px; background: var(--pl-paper-2); box-shadow: none; }
   #gravity .gv-foot { border-top: 0; }
@@ -148,7 +186,7 @@ const LESSON_CSS = `
   .steps i.twice { background: var(--pl-butter); }
   .steps .chip { width: 26px; height: 26px; }
 
-  .steps.aa { align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .steps.aa { min-height: 0; align-items: baseline; gap: 10px; flex-wrap: wrap; }
   .steps.aa span { font-family: var(--pl-sans); font-weight: 600; line-height: 1; color: var(--pl-sky); }
   .steps.aa span.twice { color: var(--pl-butter-line); }
   .steps.arcs { align-items: flex-end; gap: 10px; }
@@ -156,7 +194,7 @@ const LESSON_CSS = `
   .steps.arcs i.twice { border-color: var(--pl-butter-line); }
   /* colours: the palette as swatches by hue on the inset tone, and colours typed by hand beside the palette colour
      they're closest to */
-  .palette { display: grid; gap: 8px; padding: 22px; border-radius: 26px; background: var(--pl-paper-2); }
+  .palette { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 22px; padding: 22px; border-radius: 26px; background: var(--pl-paper-2); }
   .palette .hue { display: flex; flex-wrap: wrap; gap: 6px; }
   .palette .later { font: 500 13px/18px var(--pl-sans); color: var(--pl-ink-2); }
   .chip { width: 34px; height: 34px; border-radius: 11px; box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--pl-ink) 10%, transparent); }
@@ -332,7 +370,7 @@ export function mountLesson(host, data, { post } = {}) {
     const done = ORDER.filter((id) => !['welcome', 'rules'].includes(id) && state.decided.has(id));
     return `<aside class="rules" aria-live="polite"><h3><i class="toy">${toyOf('card')}</i>Your rules<span class="count">${done.length} of 4</span></h3>
       <p>Each answer adds a rule. Plumber keeps your code to them from now on: it points out what breaks one, and fixes it with you.</p>
-      <ol>${done.map((id) => { const l = ruleOf(id), sc = SCREENS.find((x) => x.id === id); return `<li class="${id === state.fresh ? 'fresh' : ''}" style="--hf: var(${HUES[sc.hue][0]}); --hi: var(${HUES[sc.hue][1]})"><span class="plate"><i class="toy">${toyOf(sc.toy)}</i></span><b>${esc(sc.name)}</b><span>${esc(l.plain)}</span><code>${esc(l.code)}</code></li>`; }).join('')}
+      <ol>${done.map((id) => { const l = ruleOf(id), sc = SCREENS.find((x) => x.id === id); return `<li class="${id === state.fresh ? 'fresh' : ''}" style="--hf: var(${HUES[sc.hue][0]}); --hi: var(${HUES[sc.hue][1]})"><span class="plate"><i class="toy">${toyOf(sc.toy)}</i></span><b>${esc(sc.name)}</b><span>${esc(l.plain)}</span></li>`; }).join('')}
         ${SCREENS.filter((x) => !['welcome', 'rules'].includes(x.id) && !state.decided.has(x.id)).map((x) => `<li class="empty"><span class="plate"><i class="toy">${toyOf(x.toy)}</i></span><b>${esc(x.name)}</b><span>Lands here when you choose.</span></li>`).join('')}</ol></aside>`;
   };
 
@@ -377,34 +415,46 @@ export function mountLesson(host, data, { post } = {}) {
     const keepVals = m.values.length ? m.values : (data[m.spec.data]?.steps ?? []).map((x) => x.px).filter((v, i, a) => a.indexOf(v) === i).sort((a, b) => a - b);
     // nothing to keep: the choice says so, with the command that drafts steps from the sizes the code uses
     const skipLine = `Your theme has no ${esc(m.spec.gravity.sizes)} yet. To draft them from the sizes your code already uses, run <code>${esc(data.runner ?? 'npx')} plumber propose --family ${m.family} --write</code>, then open this page again.`;
+    const d = data[m.spec.data] ?? { steps: [], strays: [] }, onSteps = d.steps.reduce((n, x) => n + x.uses, 0);
+    const lists = m.lanes.length > 1 ? `<div class="notice"><span><b>You have ${m.lanes.length} separate lists of ${m.spec.nouns}, and they repeat each other.</b> ${m.twice.length ? `${m.twice.join(', ')} each appear in more than one list under different names (yellow in the choices).` : ''}</span></div>` : '';
+    const chosen = (k) => state.choice[m.family] === k ? `<em class="becomes"><i class="toy">${toyOf('card')}</i>${esc(rule.plain)}</em>` : '';
     return `<section class="screen" style="--hf: var(${HUES[s.hue][0]}); --hi: var(${HUES[s.hue][1]})">${face(s, m.spec.title, m.spec.line)}
       <div class="body">
-        <div class="part"><h3>Yours, drawn</h3><div id="gravity"></div>${notice.length ? `<div class="notice">${notice.map((n) => `<span>${n}</span>`).join('')}</div>` : ''}</div>
-        <div class="part"><h3>Why it matters</h3><p>${m.spec.why}</p></div>
+        ${today(onSteps, m.byHand, `on your ${m.spec.gravity.sizes}`, `${m.byHand === 1 ? 'place types a' : 'places type a'} ${m.spec.noun} by hand`, m.spec.why)}
+        <div class="part"><h3>Where they land</h3><div id="gravity"></div>${lists}</div>
         <div class="part"><h3>Your choice</h3><div class="choices" role="radiogroup" aria-label="${esc(s.name)}">
-          ${m.needed ? `<button type="button" class="choice" role="radio" aria-checked="${state.choice[m.family] === 'tidy'}" data-pick="${m.family}:tidy"><b>One list of ${m.one.steps.length}<span class="rec">Suggested</span></b>${preview(m.family, m.one.steps.map((x) => x.px))}<span>Your lists merged into one, with Tailwind's name. The old names keep working, pointing at the new ones.</span></button>` : ''}
-          <button type="button" class="choice" role="radio" aria-checked="${state.choice[m.family] === 'keep'}" data-pick="${m.family}:keep"><b>${bare(m) ? 'Skip it for now' : 'Keep what you have'}</b>${bare(m) ? '' : preview(m.family, keepVals, m.twice)}<span>${bare(m) ? skipLine : m.lanes.length > 1 ? `All ${m.lanes.length} lists stay as they are. You can tidy them later.` : `Your ${m.spec.nouns} stay as they are.`}</span></button>
-        </div></div>
-        <div class="part"><h3>The rule it becomes</h3><div class="rule"><span class="plate"><i class="toy">${toyOf('card')}</i></span><p>${esc(rule.plain)}</p><code>${esc(rule.code)}</code></div>
-          <details class="more"><summary>Details for designers</summary><p>${m.lanes.map((l) => `${esc(l.name)} in ${esc(l.file)}: ${l.values.join(', ')}px`).join('<br>') || 'No lists of steps; single tokens only.'}${m.one ? `<br>Merged: ${m.one.steps.map((x) => `${esc(x.name)} ${esc(x.value)}`).join(', ')}` : ''}</p></details></div>
+          ${m.needed ? `<button type="button" class="choice" role="radio" aria-checked="${state.choice[m.family] === 'tidy'}" data-pick="${m.family}:tidy"><b>One list of ${m.one.steps.length}<span class="rec">Suggested</span></b>${preview(m.family, m.one.steps.map((x) => x.px))}<span>Your lists merged into one, with Tailwind's name. The old names keep working, pointing at the new ones.</span>${chosen('tidy')}</button>` : ''}
+          <button type="button" class="choice" role="radio" aria-checked="${state.choice[m.family] === 'keep'}" data-pick="${m.family}:keep"><b>${bare(m) ? 'Skip it for now' : 'Keep what you have'}</b>${bare(m) ? '' : preview(m.family, keepVals, m.twice)}<span>${bare(m) ? skipLine : m.lanes.length > 1 ? `All ${m.lanes.length} lists stay as they are. You can tidy them later.` : `Your ${m.spec.nouns} stay as they are.`}</span>${chosen('keep')}</button>
+        </div>
+          <details class="more"><summary>Details for designers</summary><p><code>${esc(rule.code)}</code><br>${m.lanes.map((l) => `${esc(l.name)} in ${esc(l.file)}: ${l.values.join(', ')}px`).join('<br>') || 'No lists of steps; single tokens only.'}${m.one ? `<br>Merged: ${m.one.steps.map((x) => `${esc(x.name)} ${esc(x.value)}`).join(', ')}` : ''}</p></details></div>
         ${nav(s.id)}
       </div></section>`;
   };
 
+  // the problem first: how much of this kind is on your steps, how much is typed by hand, and why that matters
+  const today = (on, hand, onWords, handWords, why) => {
+    const all = on + hand, share = all ? Math.round((on / all) * 100) : null;
+    return `<div class="today">
+      <div class="stat on"><span class="big">${share === null ? '–' : `${share}%`}</span><span>${all ? `${nf.format(on)} places ${onWords}` : 'Nothing found yet'}</span><span class="bar" aria-hidden="true"><i style="width: ${share ?? 0}%"></i></span></div>
+      <div class="stat hand"><span class="big">${nf.format(hand)}</span><span>${hand ? handWords : `None typed by hand`}</span></div>
+      <div class="whyit"><b>Why it matters</b><p>${why}</p></div></div>`;
+  };
+
   const colourScreen = () => {
-    const s = SCREENS[2], rule = colourRule();
+    const s = SCREENS[2], rule = colourRule(), onColours = (data.colour?.steps ?? []).reduce((n, x) => n + x.uses, 0);
+    const chosen = (k) => state.choice.color === k ? `<em class="becomes"><i class="toy">${toyOf('card')}</i>${esc(rule.plain)}</em>` : '';
     const chip = (v, title) => `<i class="chip" style="background: ${esc(v)}" title="${esc(title)}"></i>`;
     return `<section class="screen" style="--hf: var(${HUES[s.hue][0]}); --hi: var(${HUES[s.hue][1]})">${face(s, 'Colours: a small palette, and a name for each job.', 'Your palette is the colours themselves. Each job (text, a background, a border, a button) gets a name that points at one of them.')}
       <div class="body">
-        <div class="part"><h3>Yours, drawn</h3><div class="palette">${col.hues.slice(0, 12).map((h) => `<div class="hue">${h.map((p) => chip(p.value, `${p.name}: ${p.value}`)).join('')}</div>`).join('')}${col.hues.length > 12 ? `<span class="later">and ${col.hues.length - 12} more</span>` : ''}</div>
+        ${today(onColours, col.byHand, 'on your colours', col.byHand === 1 ? 'place types a colour by hand' : 'places type a colour by hand', 'Ten slightly different greys make an app look tired, and changing your brand colour means finding every copy. Named uses that point at one palette change everywhere at once, and let dark mode swap the palette underneath.')}
+        <div class="part"><h3>Your palette, and what's typed by hand</h3><div class="palette">${col.hues.slice(0, 12).map((h) => `<div class="hue">${h.map((p) => chip(p.value, `${p.name}: ${p.value}`)).join('')}</div>`).join('')}${col.hues.length > 12 ? `<span class="later">and ${col.hues.length - 12} more</span>` : ''}</div>
           ${col.typed.length ? `<div class="typed">${col.typed.slice(0, 6).map((t) => { const near = col.palette.find((p) => p.name.slice(2) === t.near) ?? col.roles.find((p) => p.name.slice(2) === t.near); return `<div class="t">${chip(t.css, t.css)}<code>${esc(asWritten(t.written[0]?.text, t.css))}</code><span>→</span>${near ? chip(near.value, near.name) : '<i></i>'}<span>${nf.format(t.places)} ${t.places === 1 ? 'place' : 'places'}${near ? `; your ${esc(near.name)}${t.distance === 0 ? ' exactly' : ' is close'}` : ''}</span></div>`; }).join('')}</div>` : ''}
-          <div class="notice"><span><b>${col.palette.length} ${col.palette.length === 1 ? 'colour' : 'colours'} in your palette, ${col.roles.length} named ${col.roles.length === 1 ? 'use' : 'uses'} built on ${col.palette.length === 1 ? 'it' : 'them'}.</b>${col.byHand ? ` ${nf.format(col.byHand)} ${col.byHand === 1 ? 'place types' : 'places type'} a colour by hand instead; the most common are above, each beside the palette colour it's closest to.` : ''}</span>${col.fixable.length ? `<span><b>${col.fixable.length} named ${col.fixable.length === 1 ? 'use copies' : 'uses copy'} a palette colour</b> instead of pointing at it, so ${col.fixable.length === 1 ? 'it won’t follow' : 'they won’t follow'} if the palette changes.</span>` : ''}</div></div>
-        <div class="part"><h3>Why it matters</h3><p>Ten slightly different greys make an app look tired, and changing your brand colour means finding every copy. Named uses that point at one palette change everywhere at once, and let dark mode swap the palette underneath.</p></div>
+          <div class="notice"><span><b>${col.palette.length} ${col.palette.length === 1 ? 'colour' : 'colours'} in your palette, ${col.roles.length} named ${col.roles.length === 1 ? 'use' : 'uses'} built on ${col.palette.length === 1 ? 'it' : 'them'}.</b>${col.typed.length ? ' The colours typed by hand most often are above, each beside the palette colour it is closest to.' : ''}</span>${col.fixable.length ? `<span><b>${col.fixable.length} named ${col.fixable.length === 1 ? 'use copies' : 'uses copy'} a palette colour</b> instead of pointing at it, so ${col.fixable.length === 1 ? 'it won’t follow' : 'they won’t follow'} if the palette changes.</span>` : ''}</div></div>
         <div class="part"><h3>Your choice</h3><div class="choices" role="radiogroup" aria-label="Colours">
-          ${col.fixable.length ? `<button type="button" class="choice" role="radio" aria-checked="${state.choice.color === 'point'}" data-pick="color:point"><b>Point the copies at the palette<span class="rec">Suggested</span></b><div class="steps">${col.fixable.slice(0, 8).map((h) => chip(h.value, `${h.name} → ${h.match.name}`)).join('')}</div><span>${col.fixable.length} named ${col.fixable.length === 1 ? 'use stops' : 'uses stop'} copying and ${col.fixable.length === 1 ? 'points' : 'point'} at the palette. Nothing looks different today.</span></button>` : ''}
-          <button type="button" class="choice" role="radio" aria-checked="${state.choice.color === 'keep'}" data-pick="color:keep"><b>${col.fixable.length ? 'Leave them' : 'Keep your palette as it is'}</b><span>${col.fixable.length ? 'The copies stay copies.' : 'Your palette and its named uses already point the right way.'}</span></button>
-        </div></div>
-        <div class="part"><h3>The rule it becomes</h3><div class="rule"><span class="plate"><i class="toy">${toyOf('card')}</i></span><p>${esc(rule.plain)}</p><code>${esc(rule.code)}</code></div></div>
+          ${col.fixable.length ? `<button type="button" class="choice" role="radio" aria-checked="${state.choice.color === 'point'}" data-pick="color:point"><b>Point the copies at the palette<span class="rec">Suggested</span></b><div class="steps">${col.fixable.slice(0, 8).map((h) => chip(h.value, `${h.name} → ${h.match.name}`)).join('')}</div><span>${col.fixable.length} named ${col.fixable.length === 1 ? 'use stops' : 'uses stop'} copying and ${col.fixable.length === 1 ? 'points' : 'point'} at the palette. Nothing looks different today.</span>${chosen('point')}</button>` : ''}
+          <button type="button" class="choice" role="radio" aria-checked="${state.choice.color === 'keep'}" data-pick="color:keep"><b>${col.fixable.length ? 'Leave them' : 'Keep your palette as it is'}</b><span>${col.fixable.length ? 'The copies stay copies.' : 'Your palette and its named uses already point the right way.'}</span>${chosen('keep')}</button>
+        </div>
+          <details class="more"><summary>Details for designers</summary><p><code>${esc(rule.code)}</code></p></details></div>
         ${nav('colour')}
       </div></section>`;
   };
@@ -436,6 +486,8 @@ export function mountLesson(host, data, { post } = {}) {
       for (const st of d.steps) { const k = `${st.px}px`, had = bySize.get(k); bySize.set(k, { name: k, px: st.px, uses: (had?.uses ?? 0) + st.uses }); }
       const named = d.steps.reduce((m, st) => m.set(st.name, `${st.px}px`), new Map());
       new Gravity(g, { steps: [...bySize.values()], strays: d.strays.map((st) => ({ ...st, near: named.get(st.near) ?? st.near })), words: SIZES[sizeFamily].gravity });
+      // in the lesson the snap toggle sits in the drawing's top row, beside its key, so the drawing has no empty footer
+      const snap = g.querySelector('.gv-foot .pl-act'), head = g.querySelector('.gv-head'); if (snap && head) head.append(snap);
     }
     state.fresh = '';
   };

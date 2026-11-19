@@ -3835,6 +3835,13 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   share of places on your steps (crafting-ui: spacing 85%, colours 75%, text 14%, corners 51%) and how many are typed
   by hand. "Your rules" is a lilac panel with a count ("1 of 4"). The last screen shows each rule as a block in its
   step's colour, the file it writes, and "Set it up" as a green block that lists its three effects.
+- **Third round, inside each step** (the owner: "inherit the style inside each page as well", "the ux / ui and
+  everything give it a thought"): each step was a long column that put the decision at the bottom, with two titles
+  over one drawing, a "why" paragraph nobody reads mid-flow, and the rule as a separate section after the choice. Now
+  each step starts with the problem: the share of places on your steps, the count typed by hand and why it matters,
+  as three tiles. Below them is the drawing under one title, with its key and the Snap toggle in one row, solid step
+  marks and no empty footer. The choice comes last, and the option you pick shows the rule it becomes inside it. The
+  config line moved into Details. The side panel no longer repeats each rule's code.
 - **Found on the way:** on the pink key the colours and corners toys, both pink, vanished. They now sit on a white
   cut-out.
 - **Proof:** screenshots of every step on crafting-ui in `docs/films/onboarding/` (welcome-design-style.png is the
