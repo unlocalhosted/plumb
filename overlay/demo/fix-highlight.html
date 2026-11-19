@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fix highlight · React Plumber</title>
+<style>
+  body { margin: 0; padding: 28px 16px 64px; background: #ecebe7; font: 14px/1.5 system-ui, sans-serif; color: #1c1b19; }
+  header { max-width: 1180px; margin: 0 auto 20px; } header h1 { font-size: 18px; margin: 0 0 4px; } header p { margin: 0; opacity: .7; font-size: 13px; }
+  #board { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(540px, 1fr)); gap: 24px; }
+  .opt > h2 { font: 600 13px/1 system-ui; margin: 0 0 8px; } .opt > h2 span { opacity: .55; font-weight: 500; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Which element is being fixed: four ways to say it</h1>
+  <p>The same fix in hand in each: the line under the button, its choice row beside it.</p>
+</header>
+<div id="board"></div>
+<script type="module">
+  import tokens from '../src/tokens.css?raw';
+  const page = `
+    <div class="pg">
+      <p class="hd">Finance. Simplified. Finally.</p>
+      <p class="sub">The all-in-one platform that helps modern teams manage their money.</p>
+      <span class="btn">Get started</span>
+      <p class="tgt"><span class="w">Click the button above to create your free account in seconds.</span></p>
+      <div class="choice"><b>A</b><span class="use">Use text-body ↵</span><span>Keep as is</span><span>Skip →</span></div>
+      <p class="more">01 // FEATURE · Smart sync · Our smart sync feature keeps your files in sync.</p>
+    </div>`;
+  const base = `${tokens}
+    .pg { position: relative; background: #f3f4f6; border-radius: 14px; padding: 26px 22px 22px; text-align: center; font-family: system-ui; overflow: hidden; }
+    .hd { font: 800 28px/1.1 system-ui; margin: 0 0 8px; color: #111; } .sub { margin: 0 0 14px; color: #222; font-size: 14px; }
+    .btn { display: inline-block; background: #4f46e5; color: #fff; padding: 8px 16px; border-radius: 6px; font-size: 14px; }
+    .tgt { position: relative; margin: 10px 0 0; padding: 2px 0; color: #64748b; font-size: 13px; }
+    .w { position: relative; }
+    .choice { display: inline-flex; gap: 6px; align-items: center; margin-top: 10px; background: #fff; border-radius: 12px; padding: 5px 6px; box-shadow: 0 6px 20px -8px rgb(0 0 0 / .25); font-size: 12px; }
+    .choice b { color: #3b82f6; padding: 0 6px; } .choice span { padding: 5px 8px; border-radius: 8px; background: #f4f4f2; } .choice .use { background: var(--pl-pink); color: #fff; font-weight: 600; }
+    .more { margin: 18px 0 0; color: #333; font-size: 12px; text-align: left; }
+    .mk { position: absolute; pointer-events: none; }`;
+  const OPTS = [
+    ['A · Corner marks', 'four crop marks at the corners of the words; nothing crosses the line', `
+      .tgt .w::before, .tgt .w::after, .tgt::before, .tgt::after { content: ''; position: absolute; width: 9px; height: 9px; border: 2px solid var(--pl-pink); }
+      .tgt .w::before { left: -7px; top: -5px; border-right: 0; border-bottom: 0; border-top-left-radius: 3px; }
+      .tgt .w::after { right: -7px; top: -5px; border-left: 0; border-bottom: 0; border-top-right-radius: 3px; }
+      .tgt { display: block; } .tgt .w { display: inline-block; }
+      .tgt .w { box-shadow: none; } .tgt::before, .tgt::after { display: none; }
+      .tgt .w > i { position: absolute; width: 9px; height: 9px; border: 2px solid var(--pl-pink); }
+      .tgt .w > i.bl { left: -7px; bottom: -5px; border-right: 0; border-top: 0; border-bottom-left-radius: 3px; }
+      .tgt .w > i.br { right: -7px; bottom: -5px; border-left: 0; border-top: 0; border-bottom-right-radius: 3px; }`, true],
+    ['B · Hug the words', 'a ring tight round what you see, not the element’s full-width box', `
+      .tgt .w { outline: 2px solid var(--pl-pink); outline-offset: 4px; border-radius: 4px; box-shadow: 0 0 0 7px color-mix(in oklab, var(--pl-pink) 14%, transparent); }`],
+    ['C · Highlighter', 'a soft marker stroke behind the words, like pen on paper', `
+      .tgt .w { background: color-mix(in oklab, var(--pl-pink) 26%, transparent); border-radius: 4px 6px 5px 3px; padding: 1px 5px; color: #1e293b; box-decoration-break: clone; -webkit-box-decoration-break: clone; }`],
+    ['D · Spotlight', 'the page steps back, the element stays bright; no line at all', `
+      .pg > *:not(.tgt):not(.choice) { opacity: .32; filter: saturate(.6); transition: opacity .3s; }
+      .tgt .w { color: #1e293b; font-weight: 500; }`],
+  ];
+  const board = document.getElementById('board');
+  for (const [title, sub, css, corners] of OPTS) {
+    const sec = document.createElement('section'); sec.className = 'opt';
+    sec.innerHTML = `<h2>${title} <span>${sub}</span></h2>`;
+    const host = document.createElement('div'); sec.append(host); board.append(sec);
+    const root = host.attachShadow({ mode: 'open' });
+    root.innerHTML = `<style>${base}${css}</style>${page}`;
+    if (corners) root.querySelector('.w').insertAdjacentHTML('beforeend', '<i class="bl"></i><i class="br"></i>');
+  }
+</script>
+</body>
+</html>
