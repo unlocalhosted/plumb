@@ -2838,6 +2838,28 @@ field is empty). The table of five writes, before and after. The Next table: eig
   from the page (positions in px, the words on screen); the tester re-walked most and marked them verified in the
   issue file.
 - **Left for the owner:** what the concern count counts (places, as today, or the fixes you step through; U4).
+
+### The third batch of fixes from the Blueprint walk (2026-11-20)
+
+- **Picking a concern, and the pins** (U8 again, U39, U40). Pins were drawn only for craft notes, so Design system
+  check on crafting-ui looked empty. Every picked concern now gets pins, and a kind of note is one pin on screen
+  with how many ("Tailwind's default, not yours ×23"): pinned one per element, the same name repeated 26 times and
+  covered the page. Pins keep below a sticky header, and their layer stands above the zones as a whole, so a hidden
+  concern's zone no longer takes the pointer off a pin.
+- **Alt+click says it is one element** (U31, half of U50): "This element" in the picker, "Nothing to fix on this
+  element."
+- **The notes' own words** (U3, U48): the left-over space note names the two parts ("“Ledger” and “Live · v2.4…”
+  are 963px apart"); the contrast note names its scale (APCA).
+- **The X-ray card** (U10, U11, U14): one number per side in the box drawing, the token's name on hover; the words in
+  hand outlined instead of tinted over; the agent note keeps its line number (App.jsx:23) and puts the full path on hover.
+- **Fix** (U47, U49, U52): back from the first fix stays there; leaving Fix puts the page back where it was, as
+  the README says; "Undone" no longer offers Undo again (it found the undo's own write after the reload).
+- **Small reads** (U23, U46, U55): the C key cap, 28px arrows, an open list above X-ray's drawing.
+- **A slip of mine:** for about ten minutes the overlay failed to load everywhere, from a duplicated name in the
+  fix bar code; and another session's new file wasn't registered as an overlay module, so every build failed until
+  it was added (8816fc27). Both are fixed; the tester was told so it wouldn't be logged as a product issue.
+- **Left for the owner:** the homepage's first sentence (U43) is in an uncommitted edit that looks like the
+  owner's own words; a corrected version is in the issue file.
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
 - Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".
@@ -4416,6 +4438,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- Picking a concern in Blueprint names its notes on the page, one pin per kind with how many; the X-ray card's box drawing shows one number per side; leaving Fix puts the page back where it was ([entry](#the-third-batch-of-fixes-from-the-blueprint-walk-2026-11-20)).
 - Blueprint's notes say what is wrong in plain words; History, Help and Setup open above the bar; Fix brings an element in below a sticky header with its choice beside it; Clean up's Copy and Close are in view ([entry](#the-second-batch-of-fixes-from-the-blueprint-walk-2026-11-20)).
 - In Blueprint, a pin no longer covers the words it marks and can be pointed at; the X-ray card always shows its own element's note, stays above the bar and holds still as you reach for it; Escape closes only the box you are in ([entry](#blueprint-walked-by-a-tester-and-fixed-as-it-went-2026-11-20)).
 - Plumber flags a subtitle that only repeats its heading ("Billing" over "Manage your billing and subscription") and leaves one that adds a fact alone, by asking a small language model on vm-agent; with no model set up it stays silent ([entry](#subtitles-that-repeat-the-heading-a-model-on-vm-agent-judges-them-2026-11-19)).
