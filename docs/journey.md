@@ -2585,6 +2585,19 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **The fix:** every finding now says what decided it: `by: 'rule'` or `by: 'model'`, and a model's note names it
   (`evidence.model`: `jev` or `minilm`). How the overlay shows the two kinds is not designed yet.
 - **Media hooks:** `bench/tells/shots/4-rule-vs-model.jpg`: rules boxed in blue, the model's notes dashed in purple.
+
+### Two views and six concerns (proposal)
+
+- **The itch:** "we need a better way to organise things". Blueprint showed 134 notes from eight groups of checks as
+  one pile, and the owner had seen none of the day's work in it. Then: "ways to look is also too much i only want
+  like 2 ways through overlay alt click and blueprint".
+- **The system behind it:** each group of checks and each way to look was added on its own, filed by who wrote the
+  check. Nothing sorted the notes by what a person would call the problem.
+- **What we chose:** a proposal, not built: `docs/briefs/concerns-and-two-views.md`. Two views (Alt+click works as
+  X-ray does; Blueprint opens on the concerns), six concerns named in the reader's words (Design system check, Craft
+  and polish, Accessible and correct, Anti-slop check, Words and clarity, States and behaviour), and three kinds of
+  judge shown as a mark (rule, quick read ✦, review ✦✦). The owner's idea of a component shown in every state
+  (empty, loading, error) sits under States and behaviour.
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
 - Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".
