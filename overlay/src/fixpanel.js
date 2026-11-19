@@ -42,7 +42,8 @@ import { groupsOf, isNote, placeKey } from './blueprint-panel.js';
 import { glide } from './inplace.js'; // the text styles the code is reaching for
 import { stampOf, parseStamp, sameStamp, stampNames } from './stamp.js';
 import { Scope } from './scope.js';
-import { CONCERNS, concernOf } from './concerns.js'; // what each note is about: Blueprint opens on them
+import { CONCERNS, ALL_TOY, concernOf } from './concerns.js';
+import { TOY_DEFS } from './toys.js'; // what each note is about: Blueprint opens on them
 import { Claims, LEVEL } from './claims.js';
 import { BUTTON_CSS, button } from './kit.js'; // the soft button (design site: Buttons)
 import { soften } from './soft.js'; // its press
@@ -144,18 +145,26 @@ const FIX_CSS_BASE = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   /* ···: a dot while setup steps are left (they are optional, so they never take a place in the line) */
   .fx .bar .more { position: relative; }
   .fx .bar .more.has-dot::after { content: ''; position: absolute; top: 6px; right: 6px; width: 6px; height: 6px; border-radius: 50%; background: var(--pl-butter); box-shadow: 0 0 0 1.5px var(--pl-bg-surface); }
-  /* the list that opens above the line, inside the bar: the bar grows upward as one body */
-  .fx .menu { display: flex; flex-direction: column; padding: 6px 6px 2px; border-bottom: 1px solid var(--pl-border-default); animation: pl-menu-in 160ms var(--pl-ease-out, ease-out) both; }
-  @keyframes pl-menu-in { from { opacity: 0; translate: 0 4px; } }
-  @media (prefers-reduced-motion: reduce) { .fx .menu { animation: none; } }
-  .fx .menu .mrow { all: unset; display: flex; align-items: center; gap: 10px; height: 32px; padding: 0 10px; border-radius: 8px; cursor: pointer;
-    font: 500 13px/1 var(--pl-sans, system-ui), sans-serif; color: var(--pl-text-primary); }
-  .fx .menu .mrow span { flex: 1; } .fx .menu .mrow b { font-weight: 600; font-variant-numeric: tabular-nums; color: var(--pl-text-secondary); }
-  .fx .menu .mrow kbd { font: 500 10px/13px var(--pl-mono, monospace); color: var(--pl-text-secondary); }
-  @media (hover: hover) and (pointer: fine) { .fx .menu .mrow:hover { background: var(--pl-bg-surface-hover); } }
-  .fx .menu .mrow:focus-visible { box-shadow: 0 0 0 2px var(--pl-border-focus); }
-  .fx .menu .mrow:active { background: var(--pl-bg-inset); }
-  .fx .menu .mrow[aria-pressed="true"] { background: var(--pl-pink-soft); color: var(--pl-pink-ink); } .fx .menu .mrow[aria-pressed="true"] b { color: inherit; }
+  /* the bar's lists: a small card above the button that opens them, as wide as its rows (toy rows) */
+  .fx-pop { position: fixed; z-index: 3; width: max-content; min-width: 232px; max-width: calc(100vw - 16px); box-sizing: border-box; padding: 6px; pointer-events: auto;
+    background: var(--pl-paper); border-radius: 16px; box-shadow: var(--pl-shadow-card); color: var(--pl-text-primary); animation: pl-pop-in 160ms var(--pl-ease-out, ease-out) both; transform-origin: bottom left; }
+  .fx-pop[hidden] { display: none; }
+  @keyframes pl-pop-in { from { opacity: 0; translate: 0 4px; scale: .98; } }
+  @media (prefers-reduced-motion: reduce) { .fx-pop { animation: none; } }
+  .fx-pop .menu { display: flex; flex-direction: column; gap: 2px; }
+  .fx-pop .sep { display: block; height: 1px; background: var(--pl-border-default); margin: 3px 8px; }
+  .fx-pop .mrow { all: unset; display: flex; align-items: center; gap: 11px; height: 38px; padding: 0 9px 0 9px; border-radius: 11px; cursor: pointer; box-sizing: border-box;
+    font: 600 13.5px/1 var(--pl-round, var(--pl-sans)); color: var(--pl-text-primary); }
+  .fx-pop .mrow .mi { width: 20px; height: 20px; flex: none; display: grid; place-items: center; } .fx-pop .mrow .mi svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .fx-pop .mrow .mi .gl { width: 16px; height: 16px; color: var(--pl-icon-secondary, currentColor); } .fx-pop .mrow .mi .gl svg { width: 16px; height: 16px; }
+  .fx-pop .mrow .nm { flex: 1; padding-right: 14px; white-space: nowrap; }
+  .fx-pop .mrow b { font: 600 12px/1 var(--pl-sans); font-variant-numeric: tabular-nums; padding: 4px 8px; border-radius: 999px; background: var(--pl-bg-inset); color: var(--pl-text-secondary); }
+  .fx-pop .mrow kbd { font: 500 10px/13px var(--pl-mono, monospace); color: var(--pl-text-secondary); }
+  @media (hover: hover) and (pointer: fine) { .fx-pop .mrow:hover { background: var(--pl-bg-surface-hover); } }
+  .fx-pop .mrow:focus-visible { box-shadow: 0 0 0 2px var(--pl-border-focus); }
+  .fx-pop .mrow:active { background: var(--pl-bg-inset); }
+  .fx-pop .mrow[aria-pressed="true"] { background: var(--pl-pink-block); color: var(--pl-pink-block-on); }
+  .fx-pop .mrow[aria-pressed="true"] b { background: color-mix(in oklab, #fff 26%, transparent); color: inherit; }
   .fx .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--pl-heat); box-shadow: 0 0 0 3px color-mix(in oklab, var(--pl-heat) 14%, transparent); flex: none; }
   .fx .count { font-weight: 550; } .fx .count span { color: var(--pl-text-secondary); font-weight: 450; }
   .fx .count .err { color: var(--pl-text-hard-coded); font-weight: 550; }
@@ -481,6 +490,10 @@ export class FixPanel {
     this.#choice.setAttribute('role', 'group');
     this.#choice.setAttribute('aria-label', 'Choose');
     root.append(this.#choice);
+    // the bar's lists (the concerns, ···): their own small piece above the button that opens them, as wide as their
+    // rows, never the bar's width
+    this.#pop = Object.assign(document.createElement('div'), { className: 'fx-pop', hidden: true });
+    root.append(this.#pop);
     soften(root);
     // Alt+click on words: a card beside them with their own values, problem or not (texteditor.js)
     let textGroup = null; // the step the card's last write made, until the card says it (the card's own bookkeeping, not the panel's)
@@ -540,7 +553,7 @@ export class FixPanel {
       if (b.classList.contains('start')) this.hold(0);
       else if (b.classList.contains('cleanup')) { this.#menu = null; this.#cleanup.start(); }
       else if (b.classList.contains('cpick')) { this.#menu = this.#menu === 'concern' ? null : 'concern'; this.#html = ''; this.render(); }
-      else if (b.classList.contains('mrow') && 'c' in b.dataset) { this.#concern = b.dataset.c || null; this.#menu = null; this.#host.spotlight(this.#concernLit()); this.#html = ''; this.render(); }
+      else if (b.classList.contains('pick') && 'c' in b.dataset) { this.#concern = b.dataset.c || null; this.#menu = null; this.#host.spotlight(this.#concernLit()); this.#html = ''; this.render(); }
       else if (b.classList.contains('more')) { this.#menu = this.#menu === 'more' ? null : 'more'; this.#html = ''; this.render(); }
       else if (b.classList.contains('tool')) { this.#menu = null; this.#html = ''; this.render(); this.#host.tool?.(b.dataset.tool); }
       else if (b.classList.contains('bar-close')) this.#host.tool?.('bp-toggle');
@@ -557,6 +570,7 @@ export class FixPanel {
     };
     this.#el.addEventListener('click', onClick);
     this.#choice.addEventListener('click', onClick);
+    this.#pop.addEventListener('click', onClick);
     // the fields own their keys: Enter does the field's action, Esc closes or leaves it; the page's keys never see them
     const onInput = (e) => {
       if (e.target.name === 'token') { this.#names.set(this.#held?.key, e.target.value.trim()); fit(e.target); this.#sayNew(); }
@@ -644,22 +658,37 @@ export class FixPanel {
     const n = this.#concernCounts(), all = [...n.values()].reduce((a, b) => a + b, 0), c = CONCERNS.find((x) => x.id === this.#concern);
     return `<button class="cpick" aria-haspopup="true" aria-expanded="${this.#menu === 'concern'}"><span class="cname">${esc(c ? c.name : 'All concerns')}</span><b>${c ? n.get(c.id) ?? 0 : all}</b><svg class="chev" viewBox="0 0 10 10" aria-hidden="true"><path d="M2.5 6.2L5 3.8l2.5 2.4"/></svg></button>`;
   }
-  // the list that opens above the line, inside the bar: the concerns, or the ··· list (setup, clean up, the dock's tools)
+  // the list that opens above its button: toy rows (overlay/demo/concern-menu.html, A), the pick a solid pink block
   #menuHtml() {
+    const row = (cls, data, icon, name, end, on = false) => `<button class="mrow ${cls}"${data}${on ? ' aria-pressed="true"' : cls === 'pick' ? ' aria-pressed="false"' : ''}><span class="mi">${icon}</span><span class="nm">${esc(name)}</span>${end}</button>`;
     if (this.#menu === 'concern') {
       const n = this.#concernCounts(), all = [...n.values()].reduce((a, b) => a + b, 0);
-      const row = (id, name, count) => `<button class="mrow" data-c="${id ?? ''}" aria-pressed="${(this.#concern ?? null) === id}"><span>${esc(name)}</span><b>${count}</b></button>`;
-      return `<div class="menu" role="group" aria-label="Show notes about">${row(null, 'All concerns', all)}${CONCERNS.filter((c) => n.get(c.id)).map((c) => row(c.id, c.name, n.get(c.id))).join('')}</div>`;
+      return `<div class="menu" role="group" aria-label="Show notes about">${row('pick', ' data-c=""', toyOf(ALL_TOY), 'All concerns', `<b>${all}</b>`, !this.#concern)}<i class="sep"></i>`
+        + CONCERNS.filter((c) => n.get(c.id)).map((c) => row('pick', ` data-c="${c.id}"`, toyOf(c.toy), c.name, `<b>${n.get(c.id)}</b>`, this.#concern === c.id)).join('') + '</div>';
     }
     if (this.#menu === 'more') {
       const B = FIX.bar, left = this.#host.setupLeft?.() ?? 0;
       return `<div class="menu" role="group" aria-label="${esc(B.more)}">`
-        + (left ? `<button class="mrow setup"><span>${esc(B.setupOptional)}</span><b>${left}</b></button>` : '')
-        + `<button class="mrow cleanup"><span>${esc(CLEANUP.bar)} ${esc(CLEANUP.barLong)}</span><kbd>C</kbd></button>`
-        + Object.entries(B.tools).map(([t, label]) => `<button class="mrow tool" data-tool="${t}"><span>${esc(label)}</span></button>`).join('')
+        + (left ? row('setup', '', toyOf('checkbox'), B.setupOptional, `<b>${left}</b>`) + '<i class="sep"></i>' : '')
+        + row('cleanup', '', toyOf('icon'), `${CLEANUP.bar} ${CLEANUP.barLong}`, '<kbd>C</kbd>')
+        + Object.entries(B.tools).map(([t, label]) => row('tool', ` data-tool="${t}"`, `<span class="gl">${BAR_ICON[t]}</span>`, label, '')).join('')
         + '</div>';
     }
     return '';
+  }
+  // the open list, placed above its button and kept inside the window
+  #placePop() {
+    const html = this.#on && this.#menu ? this.#menuHtml() : '';
+    if (html !== this.#popHtml) { this.#pop.innerHTML = html ? TOY_DEFS + html : ''; this.#popHtml = html; }
+    this.#pop.hidden = !html;
+    if (!html) return;
+    this.#pop.className = `fx-pop ${this.#el.classList.contains('pl-dark') ? 'pl-dark' : 'pl-light'}`;
+    const at = this.#el.querySelector(this.#menu === 'concern' ? '.cpick' : '.more')?.getBoundingClientRect(), bar = this.#el.getBoundingClientRect();
+    if (!at) return;
+    const w = this.#pop.offsetWidth;
+    const left = this.#menu === 'concern' ? at.left - 6 : at.right - w + 6;
+    this.#pop.style.left = `${Math.round(Math.max(8, Math.min(innerWidth - w - 8, left)))}px`;
+    this.#pop.style.bottom = `${Math.round(innerHeight - bar.top + 8)}px`;
   }
   // the cause in hand, by its key: the list shrinks while its own fix is tried (its finding is gone from the page as
   // previewed), so the cause is kept as it was read; its place in the list follows it
@@ -1096,7 +1125,7 @@ export class FixPanel {
       void unchecked;
       // the line's count is the concern picker: what it shows and how many (a problem's places and a note's elements)
       void status; void tidy;
-      html = this.#menuHtml() + (places || notes
+      html = (places || notes
         ? `<div class="line bar${notice ? ' has-notice' : ''}">${this.#error ? `<span class="quiet-line err">${esc(this.#error)}</span>` : this.#concernPick()}${notice}<span class="grow"></span>${button(esc(FIX.start), { cls: 'sm start', key: '↵', attrs: 'aria-keyshortcuts="Enter"' })}${end}</div>`
         : `<div class="line bar${notice ? ' has-notice' : ''}"><span class="quiet-line">${esc(this.#error ?? (!settled ? (this.#host.scope?.() ? FIX.checkingElement : FIX.checking) : this.#progress?.notChecked ? FIX.clearChecked(this.#progress.notChecked) : FIX.clear))}</span>${notice}${end}</div>`);
     } else {
@@ -1215,13 +1244,14 @@ export class FixPanel {
     // a field being typed in keeps its words, caret and focus through a redraw
     const typing = this.#el.getRootNode().activeElement, field = typing?.matches?.('input') && this.#el.contains(typing) ? { name: typing.name, value: typing.value, at: [typing.selectionStart, typing.selectionEnd] } : null;
     this.#el.innerHTML = html;
+    queueMicrotask(() => this.#placePop());
     if (field) { const f = this.#el.querySelector(`input[name="${field.name}"]`); if (f) { f.value = field.value; f.focus(); f.setSelectionRange(...field.at); } }
     const to = this.#el.scrollHeight;
     if (!still && from && from !== to) { this.#el.style.height = `${from}px`; void this.#el.offsetHeight; this.#el.style.height = `${to}px`; this.#life.timeout(() => (this.#el.style.height = ''), TIMING.open + 20); }
     // the bar changed size: what is placed clear of it is placed again (now, and once its height has moved)
     if (from !== to && this.#card.open) { this.#card.place(); if (!still) this.#life.timeout(() => this.#card.place(), TIMING.open + 40); }
   }
-  #html = ''; #choice; #onHtml = ''; #onBody = ''; #onAt = null; #stepOf = [];
+  #html = ''; #choice; #pop; #popHtml = ''; #onHtml = ''; #onBody = ''; #onAt = null; #stepOf = [];
 
   // The page celebrates: every fixed place clicks into place, one after another; the page breathes once; the ✓ draws
   // and bursts. Then the panel folds. (Places that a reload replaced are found again by nothing: the breath and the

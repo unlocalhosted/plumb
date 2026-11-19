@@ -2640,6 +2640,15 @@ field is empty). The table of five writes, before and after. The Next table: eig
   ··· while any are left), Clean up page, History, Help, Inspect an element. X-ray moves to Alt next, instead of
   getting a switch.
 - **Media hooks:** `bench/tells/shots/7-bar-concern-menu.png`, `bench/tells/shots/8-bar-more-menu.png`.
+- **The list, drawn again:** "the drop down is horrible looking … like the view inside dropdown". I had drawn it
+  freehand, plain words with numbers pushed to the far edge, without the toy language. Three drawings went on one
+  page (`overlay/demo/concern-menu.html`): toy rows, tiles, rows with a line of meaning. The owner took the toy rows,
+  and asked whether a list as wide as the toolbar would look wrong on a big screen. It would (the bar is 720px wide
+  with a fix in hand), so the lists are now their own small card above the button that opens them, as wide as their
+  rows (269px for the concerns): a toy beside each name (grid, alignment, pointer, stacked blocks), the count in a
+  pill, the pick a solid pink block. ··· is drawn the same way.
+- **Media hooks:** `bench/tells/shots/9-concern-menu-options.jpg`, `bench/tells/shots/10-concern-list.jpg`,
+  `bench/tells/shots/11-more-list.png`.
 - **Media hooks:** `bench/tells/shots/5-concerns-bar.jpg`.
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.

@@ -9,13 +9,15 @@
  * someone can use the page (contrast, hit targets) and the ones about how it behaves (presses, menus, timing).
  * ───────────────────────────────────────────────────────── */
 
+// each with its toy (toys.js): the list draws it beside the name
+export const ALL_TOY = 'layer';
 export const CONCERNS = [
-  { id: 'system', name: 'Design system check', short: 'Design system' },
-  { id: 'craft', name: 'Craft and polish', short: 'Craft' },
-  { id: 'access', name: 'Accessible and correct', short: 'Accessible' },
-  { id: 'slop', name: 'Anti-slop check', short: 'Anti-slop' },
-  { id: 'words', name: 'Words and clarity', short: 'Words' },
-  { id: 'states', name: 'States and behaviour', short: 'States' },
+  { id: 'system', name: 'Design system check', short: 'Design system', toy: 'grid' },
+  { id: 'craft', name: 'Craft and polish', short: 'Craft', toy: 'alignment' },
+  { id: 'access', name: 'Accessible and correct', short: 'Accessible', toy: 'cursor' },
+  { id: 'slop', name: 'Anti-slop check', short: 'Anti-slop', toy: 'shadow' },
+  { id: 'words', name: 'Words and clarity', short: 'Words', toy: 'type' },
+  { id: 'states', name: 'States and behaviour', short: 'States', toy: 'switch' },
 ];
 
 const BY_PACK = { a11y: 'access', html: 'access', forms: 'access', security: 'access', tells: 'slop', experience: 'states', components: 'states' };
