@@ -140,6 +140,31 @@ const LESSON_CSS = `
   @keyframes becomes-in { from { opacity: 0; translate: 0 4px; } }
   @media (prefers-reduced-motion: reduce) { .becomes { animation: none; } }
 
+  /* the sizes typed by hand, as three piles; each a soft block in a hue that says what it is (mint: the same, sky:
+     almost, coral: off), its busiest lines on a white cut-out: as written, where, and what it becomes */
+  .piles { display: grid; gap: 12px; }
+  .pile { display: grid; gap: 10px; padding: 18px 20px 20px; border-radius: 22px; background: var(--hf); color: var(--hi); box-shadow: 0 4px 0 color-mix(in oklab, var(--hi) 18%, transparent); }
+  .pile header { display: flex; align-items: baseline; gap: 12px; }
+  .pile header b { font: var(--pl-round-w, 700) 19px/24px var(--pl-round); }
+  .pile header .n { margin-left: auto; padding: 3px 10px; border-radius: 10px; background: var(--pl-cut); color: var(--pl-ink); font: var(--pl-round-w, 700) 14px/18px var(--pl-round); font-variant-numeric: tabular-nums; }
+  .pile > p { margin: 0; font: 500 14.5px/21px var(--pl-sans); }
+  .pile ol { display: grid; gap: 2px; margin: 0; padding: 6px; border-radius: 16px; background: var(--pl-cut); list-style: none; }
+  .pile li { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) 20px minmax(0, 1.1fr); align-items: center; gap: 12px; padding: 8px 10px; border-radius: 10px; color: var(--pl-ink); }
+  .pile li:hover { background: var(--pl-paper-2); }
+  .pile code { font: 600 13.5px/20px var(--pl-mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pile .was { color: var(--pl-ink); }
+  .pile .at { font: 500 13px/18px var(--pl-sans); color: var(--pl-ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pile .at b { color: var(--pl-ink); font-weight: 650; }
+  .pile .arrow { color: var(--pl-ink-2); text-align: center; }
+  .pile .to { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+  .pile .to code { padding: 1px 8px; border-radius: 7px; background: var(--hf); color: var(--hi); }
+  .pile .to small { font: 500 12.5px/16px var(--pl-sans); color: var(--pl-ink-2); }
+  .pile .to.far { font: 500 13px/18px var(--pl-sans); color: var(--pl-ink-2); }
+  .pile .more-n { font: 500 13px/18px var(--pl-sans); opacity: .8; }
+  .clear { display: flex; align-items: center; gap: 10px; margin: 0; padding: 16px 20px; border-radius: 22px; background: var(--pl-mint-face); color: var(--pl-mint-ink); font: var(--pl-round-w, 650) 16px/22px var(--pl-round); }
+  .clear .toy { width: 24px; height: 24px; }
+  @media (max-width: 760px) { .pile li { grid-template-columns: minmax(0, 1fr) 20px minmax(0, 1fr); } .pile .at { grid-column: 1 / -1; grid-row: 2; } }
+
   /* the drawing inside the lesson: the lesson names it, so its own title goes; its key sits small at the top; the
      step marks are solid, the count lives in the tiles above, and Snap is a quiet toggle in the corner */
   #gravity .gv-head { padding: 16px 20px 0; }
@@ -421,7 +446,7 @@ export function mountLesson(host, data, { post } = {}) {
     return `<section class="screen" style="--hf: var(${HUES[s.hue][0]}); --hi: var(${HUES[s.hue][1]})">${face(s, m.spec.title, m.spec.line)}
       <div class="body">
         ${today(onSteps, m.byHand, `on your ${m.spec.gravity.sizes}`, `${m.byHand === 1 ? 'place types a' : 'places type a'} ${m.spec.noun} by hand`, m.spec.why)}
-        <div class="part"><h3>Where they land</h3><div id="gravity"></div>${lists}</div>
+        <div class="part"><h3>The ${m.spec.nouns} typed by hand, sorted by what to do</h3>${sorted(m)}${lists}</div>
         <div class="part"><h3>Your choice</h3><div class="choices" role="radiogroup" aria-label="${esc(s.name)}">
           ${m.needed ? `<button type="button" class="choice" role="radio" aria-checked="${state.choice[m.family] === 'tidy'}" data-pick="${m.family}:tidy"><b>One list of ${m.one.steps.length}<span class="rec">Suggested</span></b>${preview(m.family, m.one.steps.map((x) => x.px))}<span>Your lists merged into one, with Tailwind's name. The old names keep working, pointing at the new ones.</span>${chosen('tidy')}</button>` : ''}
           <button type="button" class="choice" role="radio" aria-checked="${state.choice[m.family] === 'keep'}" data-pick="${m.family}:keep"><b>${bare(m) ? 'Skip it for now' : 'Keep what you have'}</b>${bare(m) ? '' : preview(m.family, keepVals, m.twice)}<span>${bare(m) ? skipLine : m.lanes.length > 1 ? `All ${m.lanes.length} lists stay as they are. You can tidy them later.` : `Your ${m.spec.nouns} stay as they are.`}</span>${chosen('keep')}</button>
@@ -429,6 +454,40 @@ export function mountLesson(host, data, { post } = {}) {
           <details class="more"><summary>Details for designers</summary><p><code>${esc(rule.code)}</code><br>${m.lanes.map((l) => `${esc(l.name)} in ${esc(l.file)}: ${l.values.join(', ')}px`).join('<br>') || 'No lists of steps; single tokens only.'}${m.one ? `<br>Merged: ${m.one.steps.map((x) => `${esc(x.name)} ${esc(x.value)}`).join(', ')}` : ''}</p></details></div>
         ${nav(s.id)}
       </div></section>`;
+  };
+
+  /* the sizes typed by hand, in three piles by what a person would do with them: exactly a step (swap in the name,
+     nothing moves), a step's near miss (snap it, it moves a pixel or two), far from every step (one-offs, or a step
+     your list is missing). Each pile shows its busiest lines as written, where they are, and what they'd become */
+  const sorted = (m) => {
+    const d = data[m.spec.data] ?? { steps: [], strays: [] }, steps = [...d.steps].sort((a, b) => a.px - b.px);
+    if (!d.strays.length) return `<p class="clear"><i class="toy">${toyOf('card')}</i>Nothing typed by hand: every ${esc(m.spec.noun)} comes from your theme.</p>`;
+    const stepOf = (name) => steps.find((x) => x.name === name);
+    const short = (name) => String(name).replace(/^(spacing|text|radius)-/, '');
+    const fmt = (v) => `${Math.round(v * 100) / 100}px`;
+    // a Tailwind class written with a bracket value becomes the same utility with the step's name (`p-[16px]` → `p-4`)
+    const swap = (text, step) => { const k = /^(-?[\w:-]*?)-\[[^\]]+\]$/.exec(text ?? ''); return k ? `${k[1]}-${short(step.name)}` : `step ${short(step.name)} · ${fmt(step.px)}`; };
+    const piles = { exact: [], close: [], far: [] };
+    for (const x of d.strays) {
+      const near = stepOf(x.near), off = near ? Math.abs(near.px - x.px) : Infinity;
+      piles[x.copy ? 'exact' : off <= Math.max(2, near.px * 0.125) ? 'close' : 'far'].push({ ...x, step: near, off });
+    }
+    const words = {
+      exact: ['Exactly one of your steps', `Typed as a number, but it is a step you have. Plumber swaps in the name; nothing on screen moves.`, 'mint'],
+      close: ['A step, nearly', `A pixel or two off a step: almost always the step was meant. Snapping it moves it by that much.`, 'sky'],
+      far: ['Far from every step', `One-offs, or a step your list is missing. Plumber points them out; you decide.`, 'coral'],
+    };
+    const row = (x, kind) => {
+      const w = x.written[0]?.text ?? fmt(x.px), at = x.where?.[0];
+      const lo = [...steps].reverse().find((st) => st.px < x.px), hi = steps.find((st) => st.px > x.px);
+      const to = kind === 'far' ? `<span class="to far">${lo && hi ? `between ${fmt(lo.px)} and ${fmt(hi.px)}` : hi ? `below your smallest, ${fmt(hi.px)}` : `above your largest, ${fmt(lo.px)}`}</span>` : `<span class="to"><code>${esc(swap(w, x.step))}</code>${kind === 'close' ? `<small>${fmt(x.off)} off</small>` : ''}</span>`;
+      return `<li><code class="was">${esc(w)}</code><span class="at">${at ? `${esc(at.file.split('/').pop())}:${at.line}` : ''}${x.places > 1 ? ` <b>×${nf.format(x.places)}</b>` : ''}</span><span class="arrow" aria-hidden="true">→</span>${to}</li>`;
+    };
+    return `<div class="piles">${Object.entries(piles).filter(([, xs]) => xs.length).map(([kind, xs]) => {
+      const n = xs.reduce((t, x) => t + x.places, 0), [title, say, hue] = words[kind];
+      return `<section class="pile" style="--hf: var(--pl-${hue}-face); --hi: var(--pl-${hue}-ink)"><header><b>${title}</b><span class="n">${nf.format(n)} ${n === 1 ? 'place' : 'places'}</span></header><p>${say}</p>
+        <ol>${[...xs].sort((a, b) => b.places - a.places).slice(0, 3).map((x) => row(x, kind)).join('')}</ol>${xs.length > 3 ? `<small class="more-n">and ${nf.format(xs.length - 3)} more ${xs.length - 3 === 1 ? 'size' : 'sizes'}</small>` : ''}</section>`;
+    }).join('')}</div>`;
   };
 
   // the problem first: how much of this kind is on your steps, how much is typed by hand, and why that matters

@@ -21,7 +21,8 @@ import { runnerOf } from '../runner.js';
  */
 export interface Written { text: string; n: number }
 export interface Step { name: string; px: number; uses: number }
-export interface Stray { px: number; places: number; scaled: number; near: string | null; copy: boolean; written: Written[] }
+/** `where`: the first places it is typed, as a person finds them (path from the project's folder, and line) */
+export interface Stray { px: number; places: number; scaled: number; near: string | null; copy: boolean; written: Written[]; where: { file: string; line: number }[] }
 export interface ColourStep { name: string; css: string; uses: number }
 export interface ColourStray { css: string; places: number; near: string | null; distance: number | null; alpha: string | null; written: Written[] }
 export interface SystemData {
@@ -146,7 +147,8 @@ export function systemOf(report: Report): SystemData {
   // names it (`p-4`); the theme defines no list of its own (algorecall: 98% of spacing on them, drawn as by hand before)
   const numeric = report.numericSpacing && !report.numericSpacing.replaced ? report.numericSpacing.unit : undefined;
   const base = numeric ? px(String(numeric.resolved)) : null;
-  const multiple = (value: string): number | null => { const m = /^calc\(\s*var\(--spacing\)\s*\*\s*(-?\d*\.?\d+)\s*\)$/.exec(value.trim()); return m ? Number(m[1]) : null; };
+  // Tailwind writes step 1 as the base itself (`gap-1` is `gap: var(--spacing)`), every other step as a multiple
+  const multiple = (value: string): number | null => { if (/^var\(--spacing\)$/.test(value.trim())) return 1; const m = /^calc\(\s*var\(--spacing\)\s*\*\s*(-?\d*\.?\d+)\s*\)$/.exec(value.trim()); return m ? Number(m[1]) : null; };
   function scale(family: Report['decisions'][number]['family'], props: Set<string>, least = 0): { steps: Step[]; strays: Stray[] } {
     const steps = new Map<string, Step>();
     for (const d of decisions) {
@@ -156,7 +158,7 @@ export function systemOf(report: Report): SystemData {
       const value = px(part);
       if (value !== null) steps.set(d.name, { name: d.name.slice(2), px: value, uses: 0 });
     }
-    const strays = new Map<number, { places: number; written: Map<string, number>; scaled: number }>();
+    const strays = new Map<number, { places: number; written: Map<string, number>; scaled: number; where: { file: string; line: number }[] }>();
     for (const d of decls) {
       if (!props.has(d.prop)) continue;
       const ref = refs(d).find(r => steps.has(r));
@@ -169,9 +171,10 @@ export function systemOf(report: Report): SystemData {
       const value = !scaled(d) ? px(d.resolved) : px(d.value);
       // below `least` is a unit artifact (a unitless or em value read as px), not a size anyone set
       if (value === null || value < Math.max(least, 0.01)) continue;
-      const s = strays.get(value) ?? { places: 0, written: new Map(), scaled: 0 };
+      const s = strays.get(value) ?? { places: 0, written: new Map<string, number>(), scaled: 0, where: [] as { file: string; line: number }[] };
       strays.set(value, s);
       s.places++; bump(s.written, d.site.text);
+      if (s.where.length < 3 && d.site.file) s.where.push({ file: relative(report.root, d.site.file).replaceAll('\\', '/'), line: d.site.line });
       if (scaled(d)) s.scaled++;
     }
     const ordered = [...steps.values()].sort((a, b) => a.px - b.px);
@@ -180,7 +183,7 @@ export function systemOf(report: Report): SystemData {
       let near: Step | undefined;
       for (const step of ordered) if (!near || Math.abs(step.px - value) < Math.abs(near.px - value)) near = step;
       out.push({ px: value, places: s.places, scaled: s.scaled, near: near ? near.name : null,
-        copy: near !== undefined && Math.abs(near.px - value) < 0.01, written: top(s.written) });
+        copy: near !== undefined && Math.abs(near.px - value) < 0.01, written: top(s.written), where: s.where });
     }
     return { steps: ordered, strays: out.sort((a, b) => a.px - b.px) };
   }

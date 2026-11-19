@@ -3842,6 +3842,17 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   as three tiles. Below them is the drawing under one title, with its key and the Snap toggle in one row, solid step
   marks and no empty footer. The choice comes last, and the option you pick shows the rule it becomes inside it. The
   config line moved into Details. The side panel no longer repeats each rule's code.
+- **Fourth round, the drawing replaced:** the owner didn't like the dot chart ("i want more and intuitiveness"). It
+  made a newcomer decode it: circle size meant usage, dot height meant nothing, and there were three legend colours.
+  Asked what intuitive means to them, they chose "feels like a guide" and "see the result", and picked sorting by what
+  to do. The sizes typed by hand now fall into three piles: exactly one of your steps (Plumber swaps in the name and
+  nothing moves), a step nearly (a pixel or two off, almost always the step was meant), and far from every step
+  (one-offs, or a step the list is missing). Each pile shows its busiest lines as written, where they are and what
+  they become (`gap-[20px]` in SiteHeader.tsx:162, five times, becomes `gap-5`). The page data now carries the first
+  three places of each value.
+- **A bug the piles exposed:** `gap-1` (160 places on crafting-ui) showed as typed by hand. Tailwind writes step 1 as
+  `var(--spacing)` with no `* 1`, and the page only read the multiplied form. Fixed: crafting-ui's spacing is 94% on
+  its steps (1,649 places), not 85%, and 100 places are typed by hand, not 258.
 - **Found on the way:** on the pink key the colours and corners toys, both pink, vanished. They now sit on a white
   cut-out.
 - **Proof:** screenshots of every step on crafting-ui in `docs/films/onboarding/` (welcome-design-style.png is the
