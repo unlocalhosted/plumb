@@ -55,7 +55,7 @@ export const HELP_CSS = `
   .hp .title { font: var(--pl-card-title); margin-bottom: var(--pl-space-3); }
   .hp h3 { margin: var(--pl-space-4) 0 var(--pl-space-2); font: var(--pl-card-label); letter-spacing: var(--pl-tracking-caps); text-transform: uppercase; color: var(--pl-text-secondary); }
   .hp dl { display: grid; grid-template-columns: 11.5em 1fr; column-gap: var(--pl-space-5); row-gap: var(--pl-space-2); margin: 0; }
-  .hp dt { font: var(--pl-card-code); color: var(--pl-text-primary); white-space: nowrap; }
+  .hp dt { font: var(--pl-card-code); color: var(--pl-text-primary); overflow-wrap: break-word; } /* a long key wraps in its column, never runs into its words (U29) */
   .hp dd { margin: 0; font: var(--pl-card-meta); color: var(--pl-text-secondary); }
   .tip { position: fixed; inset-inline-end: var(--pl-space-6); inset-block-end: max(calc(var(--pl-space-6) + var(--pl-tag-h) + var(--pl-space-4)), var(--pl-floor, 0px)); max-width: min(440px, calc(100vw - 2 * var(--pl-space-6)));
     display: flex; align-items: center; gap: var(--pl-space-4); padding: var(--pl-space-3) var(--pl-space-3) var(--pl-space-3) var(--pl-space-5); box-sizing: border-box; pointer-events: auto;
