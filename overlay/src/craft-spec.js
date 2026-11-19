@@ -126,6 +126,9 @@ export const STANDARD = {
   },
   alignment: {
     'icon-cap': { off: 1, icon: 32 },
+    'row-lines': { off: 2 }, // px a part may drift across a row of cards (a baseline for figures, a top for boxes)
+    'shared-edges': { edges: 1 }, // edges a card's lines may start on: one column; icons lead, their words hang
+    'action-fit': { filled: 1 }, // solid buttons a card may hold
     'optical-centre': { lean: 0.06, off: 1, icon: 32, sure: 1.4 },
     'half-pixel': { slack: 0.05 },
     'z-index-war': { above: 100 },

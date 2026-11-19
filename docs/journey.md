@@ -4334,6 +4334,17 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   Popular" badge decoration (in a row it marks the chosen plan, which is the point) and Arc's soft two-colour
   gradient a sign of generated pages. So the eye can find faults but can't yet say what is right, which is what a
   reference's read and a variant's case both need.
+- **Three alignment checks, and a read that says what holds.** Plumber gained three craft rules, unnumbered for now:
+  row lines (across cards side by side, each price, list and button sits on one line), shared edges (a card's lines
+  start on one edge; an icon may lead and its words hang), and action fit (one solid button per card, and the same
+  button width across a row). Their measures sit in one shared module, so the generator's read reports what holds as
+  well as what's wrong. Getting them to read real pages took five passes, each fixing a misreading: words sharing a
+  line counted as new edges, a taller chosen plan dropped out of its row, prices compared by tops instead of
+  baselines, an icon's inner space taken for misalignment, a plan with no price given one from its list. On the five
+  rows: Bencho holds everything; Linear lines up but its Business plan carries two buttons at their own width;
+  Supabase's taller chosen plan pushes its button, price and list 20 to 64px off its neighbours'. One misread is left:
+  Arc's animated price digits make its prices read 14px apart when they are about 4px by eye. The sheet is kept
+  locally (`generator/shots/layer1b-read.png`). The rules haven't been run against plumber's noise test yet.
 
 ## Open gaps
 - **The mark was never tried among real neighbours** (a row of browser tabs, an npm page, a README header), only on empty tiles. Nobody outside has been asked whether the round leg reads as an R or leans towards a B.

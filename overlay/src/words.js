@@ -301,6 +301,25 @@ export const CRAFT = {
     line: `Two sizes, centred, so their baselines are ${px(off)} apart. Align them.`,
     reason: 'Tops and centres of different sizes don’t line up to the eye; baselines do.',
   }),
+  'row-lines': ({ parts, off, cards }) => ({
+    label: 'Plans don’t line up',
+    line: `Across these ${cards} cards, the ${parts.join(', the ')} ${parts.length > 1 ? 'sit' : 'sits'} at different heights, up to ${px(Math.round(off))} apart.`,
+    reason: 'Plans are compared by reading straight across; a part that drifts down breaks the comparison.',
+  }),
+  'shared-edges': ({ edges, off, what }) => ({
+    label: 'Lines start on different edges',
+    line: `This card’s lines start on ${edges} edges; "${what}" is ${px(Math.abs(Math.round(off * 10) / 10))} ${off > 0 ? 'in from' : 'out past'} the rest.`,
+    reason: 'A card is one column: lines that start on one edge read as one thing.',
+  }),
+  'action-fit': ({ kind, n, names, full }) => (kind === 'filled' ? {
+    label: 'Two main buttons',
+    line: `${n} solid buttons in one card (${names.join(', ')}), so none of them leads.`,
+    reason: 'One solid button says what to do; two equal ones make people stop and choose.',
+  } : {
+    label: 'Buttons differ across plans',
+    line: `${full} of ${n} plans have a button that spans the card; the others fit their words.`,
+    reason: 'The same action drawn the same way across a row reads as the same choice.',
+  }),
   'icon-cap': ({ off }) => ({
     label: 'Icon sits off the text',
     line: `The icon’s centre is ${px(Math.abs(off))} ${off > 0 ? 'below' : 'above'} the middle of the capitals beside it.`,
@@ -483,7 +502,8 @@ export const FIX = {
   // rest
   problems: (n) => count(n, 'problem', 'problems'),
   // the Blueprint bar (docs/design/one-bar.md)
-  bar: { more: 'More', less: 'Fewer tools', close: 'Close', setup: (n) => count(n, 'setup step', 'setup steps'), setupOptional: 'Setup steps (optional)', review: 'Review',
+  // all: the picker's first row; thisElement: the same row after an Alt+click, when only that element is read (U31, U50)
+  bar: { all: 'All concerns', thisElement: 'This element', more: 'More', less: 'Fewer tools', close: 'Close', setup: (n) => count(n, 'setup step', 'setup steps'), setupOptional: 'Setup steps (optional)', review: 'Review',
     tools: { history: 'History', help: 'Help', pick: 'Inspect an element' } },
   fixes: (n) => count(n, 'fix', 'fixes'),
   notes: (n) => count(n, 'note', 'notes'),

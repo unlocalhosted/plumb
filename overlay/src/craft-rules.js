@@ -63,6 +63,7 @@ import { say } from './words.js';
 import { controlAround, controlKind, roleOf } from './roles.js';
 import { RUN_RULES } from './craft-headless.js';
 import { RANK_RULES } from './craft-ranks.js';
+import { rowsOf as cardRows, rowLines as partLines, edgesOf, actionsOf } from './craft-rows.js';
 import { recommend, recommendColour } from './craft-recommend.js';
 import { STAMP_ATTRIBUTE, placeOf } from './stamp.js';
 
@@ -2729,10 +2730,109 @@ export const interruptible = {
   },
 };
 
+// ── cards side by side: what a designer checks first on a row of plans (craft-rows.js) ──────────
+// Measured once per parent per pass: the rules below ask about every element, and a row's cards are its parent's.
+const ROWS = new WeakMap(); // facts → Map(parent → lines)
+const linesUnder = (parent, facts) => {
+  let m = ROWS.get(facts); if (!m) ROWS.set(facts, (m = new Map()));
+  if (!m.has(parent)) m.set(parent, parent ? cardRows(parent, facts) : []);
+  return m.get(parent);
+};
+const lineOf = (el, facts) => linesUnder(el.parentElement, facts).find((l) => l.includes(el)) ?? null;
+const said = (el) => (el?.innerText || '').trim().split('\n')[0].slice(0, 40);
+
+// Row lines. The mistake: plan cards side by side each stack their own content, so when one plan's description runs a
+// line longer or carries a badge, its price, list and button start lower than its neighbours'. Each card was checked
+// alone, with mock copy of equal length, and looked right. The principle: plans are compared by reading straight across
+// (similarity: the same part in the same place reads as the same kind of thing), so a part that drifts down breaks
+// the comparison. Sources: NN/g, "Comparison Tables for Products, Services, and Features" (attributes in a consistent
+// place); MDN, "Subgrid" (lining up the parts of cards in a row is the case subgrid exists for).
+export const rowLines = {
+  id: 'craft/row-lines', family: 'craft', number: [], owns: ['grid-rows'], once: 'element', reads: ['rect', 'style', 'kids', 'text', 'metrics'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
+    const lines = linesUnder(el, facts);
+    if (!lines.length) return [];
+    const out = [];
+    for (const line of lines) {
+      const off = partLines(line, facts).filter((p) => p.off > T.off);
+      if (!off.length) continue;
+      const worst = off.reduce((a, b) => (b.off > a.off ? b : a));
+      out.push({
+        ...say(this.id, { parts: off.map((p) => p.part), off: worst.off, cards: line.length }),
+        key: this.id, text: off.map((p) => p.part).join(', '), props: ['grid-template-rows'], value: `${Math.round(worst.off * 10) / 10}px`, n: worst.off,
+        evidence: { cards: line.length, parts: off.map((p) => ({ part: p.part, off: Math.round(p.off * 10) / 10 })) }, confidence: 0.85,
+        suggest: { kind: 'advice', text: `Lay the row out as a grid and give each card grid-rows-subgrid over its parts, so a longer description in one plan moves the same line in all of them.` },
+      });
+    }
+    return out;
+  },
+};
+
+// Shared edges. The mistake: a card is put together from pieces built apart (a header row, a badge, a list, a footer
+// with its own inset), so its lines start on two or three different edges. Each piece is aligned within itself, so
+// nothing looks wrong until the card is read as a whole. The principle: a card is one column, and everything that
+// starts a line starts on its edge; an icon may lead a line, and the words after it hang (Müller-Brockmann, "Grid
+// Systems in Graphic Design": one column, one alignment line; Prägnanz: the eye reads one edge as one shape).
+// Judged on cards in a row (craft-rows.js), where the comparison makes a second edge plain.
+export const sharedEdges = {
+  id: 'craft/shared-edges', family: 'craft', number: [], owns: ['margin-x'], once: 'element', reads: ['rect', 'style', 'text'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
+    if (!lineOf(el, facts)) return [];
+    const { edges } = edgesOf(el, facts);
+    if (edges.length <= T.edges) return [];
+    const [main, ...extra] = [...edges].sort((a, b) => b.els.length - a.els.length);
+    const far = extra.reduce((a, b) => (Math.abs(b.x - main.x) > Math.abs(a.x - main.x) ? b : a));
+    const off = Math.round((far.x - main.x) * 10) / 10;
+    return [{
+      ...say(this.id, { edges: edges.length, off, what: said(far.els[0]) }),
+      key: this.id, text: said(far.els[0]) || far.els[0].localName, props: ['margin-left', 'padding-left'], value: `${off}px`, n: Math.abs(off),
+      evidence: { edges: edges.map((g) => ({ x: g.x, lines: g.els.length })) }, confidence: 0.84,
+      suggest: { kind: 'advice', text: `Start "${said(far.els[0])}" on the card’s edge with the rest: take away the ${Math.abs(off)}px it is ${off > 0 ? 'set in' : 'pulled out'}.` },
+    }];
+  },
+};
+
+// Action fit. The mistake: two solid buttons in one card ("Start trial" and "Contact sales"), because each was the
+// most important thing to someone; then nothing leads. And across a row, one plan's button spans its card while the
+// next one's fits its label, because each card was built from a different example. The principle: one main action
+// per card, drawn as the one solid thing (Hick's law: one choice is quicker than two equal ones; Von Restorff: the one
+// thing that differs is the one noticed; Material 3, "Buttons": a filled button for the most important action), and
+// the same action drawn the same way across a row (similarity).
+export const actionFit = {
+  id: 'craft/action-fit', family: 'craft', number: [], owns: ['background-color', 'width'], once: 'element', reads: ['rect', 'style', 'text'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
+    const out = [];
+    if (lineOf(el, facts)) {
+      const { filled } = actionsOf(el, facts);
+      if (filled.length > T.filled) out.push({
+        ...say(this.id, { kind: 'filled', n: filled.length, names: filled.map(said) }),
+        key: this.id, text: filled.map(said).join(' · '), props: ['background-color'], value: `${filled.length}`, n: filled.length,
+        evidence: { filled: filled.map(said) }, confidence: 0.86,
+        suggest: { kind: 'advice', text: `Keep one solid button in the card; draw "${said(filled[0])}" as a quiet one (an outline, or words).` },
+      });
+    }
+    for (const line of linesUnder(el, facts)) {
+      const fits = line.map((card) => actionsOf(card, facts)).filter((a) => a.main);
+      const full = fits.filter((a) => a.full).length;
+      if (fits.length < 2 || full === 0 || full === fits.length) continue;
+      out.push({
+        ...say(this.id, { kind: 'width', n: fits.length, full }),
+        key: this.id, text: 'width', props: ['width'], value: `${full} of ${fits.length}`, n: fits.length - full,
+        evidence: { full, cards: fits.length }, confidence: 0.84,
+        suggest: { kind: 'advice', text: 'Give every plan’s button the same width: all span their card, or all fit their words.' },
+      });
+    }
+    return out;
+  },
+};
+
 export const RULES = [concentricRadius, innerOuterSpacing, textOpacity, halfPixel, hairline, imageOutline, layeredShadow, scaleFromZero, zIndexWar, contentAlign,
   buttonPadding, iconSide, measure, leading, tracking, tabularNums, headingWidow, oneLight, borderOnShadow, contrast, disabledContrast, hitTarget, mediaSize, imageFit, flexMin, imageGround, stickyRoom, fixedHeight, scrollOnDemand, declaredGap, listWrap, imageStretch, backgroundTile, fixedColumn,
   truncateIntent, scrollbarGutter, boldHover, hangingQuote, capsCase, gradientSpace, inputZoom, anchorOffset, middleTruncate,
   textWrapRole, continuousCorners, opticalSizing, tintedShadow, easedScrim, pureBlackWhite, contentSize,
   baselineAlign, iconCap, trimLeading, headingLead, pairSpacing, cardOpticalPadding, textCollision,
   weightLevels, greyLevels, rhythm, elevationLadder,
-  opticalCentre, overshoot, strokeWeight, scrollCue, pressFeedback, exitFaster, interruptible, ...RANK_RULES, ...RUN_RULES];
+  opticalCentre, overshoot, strokeWeight, scrollCue, pressFeedback, exitFaster, interruptible, rowLines, sharedEdges, actionFit, ...RANK_RULES, ...RUN_RULES];
