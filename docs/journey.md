@@ -4145,6 +4145,13 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   at run time measures how far mapping bent a reference instead. References now own only what happens between
   parts and our parts own everything inside them. Moves about neighbours change only the picked card. The hand-built
   layer must also write down every decision the brief didn't supply, which shows what the spec still lacks.
+- **"How are we making sure there is a taste scale?"** The owner's question showed that everything so far only kept
+  out what was bad; nothing said how good a variant was. The fourth version adds a taste ladder: about 15 cards the
+  owner places on five rungs, from broken to reference-grade, and every variant is placed by comparing it with
+  them, because people are consistent at "better than" and not at scores. Only the top two rungs are shown. A
+  model judge may take over the comparisons only while it agrees with the owner on at least 80% of held-out pairs.
+  The third review also added a control card to the hand-built layer, made only from our parts and placement
+  rules: if the reference-driven cards can't beat it, collecting references isn't worth building.
 
 ## Open gaps
 - **The mark was never tried among real neighbours** (a row of browser tabs, an npm page, a README header), only on empty tiles. Nobody outside has been asked whether the round leg reads as an R or leans towards a B.

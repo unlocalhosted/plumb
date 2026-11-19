@@ -1,6 +1,6 @@
 # Brief: an organism generator that learns from other people's taste and draws in ours
 
-Status: DRAFT for owner sign-off, 2026-11-20, third version after two reviews the same day (see **What the reviews
+Status: DRAFT for owner sign-off, 2026-11-20, fourth version after three reviews the same day (see **What the reviews
 changed**). Nothing is built, and no code is written until it is signed off.
 It builds on [engine-foundations.md](engine-foundations.md), which plans the layout generator (F7, "the engine is a
 function you can call on a candidate", layer 6). That brief leaves open how candidates are made. This one answers it.
@@ -29,7 +29,8 @@ molecules**: authored in-house, in final form, in our look, each doing one job. 
 **grammar**: what happens *between* the parts of a good organism (their order, grouping, spacing and which one is
 loudest) and its **move**, a deliberate decision that neither the grammar nor a molecule can say. The generator
 matches your card to similar grammars, fills their slots with our molecules, and draws the move in our look. Then
-the judge throws out anything that breaks our rules. Generic structure is kept off the shelf at curation. What you
+the judge throws out anything that breaks our rules, and a taste ladder of cards the owner has ranked decides which
+of the rest are good enough to show. Generic structure is kept off the shelf at curation. What you
 see is a small grid of variants, each labelled with its recipe.
 
 ## Terminology
@@ -54,7 +55,11 @@ Use these words in code, docs and the UI, with these meanings only.
 | **Shelf** | All the kept specimens. Our own organisms are on it too, marked *house*. |
 | **Dialect** | How a project's system draws things: house expressions, molecules, and the tokens behind them. Plumber's toy language is the first and, for now, only dialect. |
 | **Translation table** | Rows from move types and grammar decisions to house expressions in plumber's dialect. |
-| **Descriptors** | Lead, density, shape: values read off each candidate after it is built, used to choose a spread. Nothing sets them. |
+| **Density** | The specimen's spacing band (*airy, balanced, compact*), an input the molecules take. *Measured density* is a separate descriptor. |
+| **Descriptors** | Lead, shape and measured density: values read off each candidate after it is built, used to choose a spread. Nothing sets them. |
+| **Visual weight** | How strongly a slot draws the eye, computed from its styles by a fixed rule (see the specimen format). Ranks and lead strength come from it. |
+| **Content record** | A slot's content as named fields from its job's schema: a price is `amount, period?, was?`; proof is `items[]`. Molecules declare which fields they require. |
+| **Taste ladder** | A fixed set of anchor cards the owner has placed on five rungs, from broken to reference-grade. Every variant is placed on it by comparison, and only the top rungs are shown. |
 | **Drift** | How far mapping pushed a variant from its specimen: specimen jobs dropped, and your jobs placed by a default rule instead of a specimen slot. |
 | **Recipe** | Everything that made a variant: seed, specimen, molecules, expression, and the pinned versions (S6). Printed under the variant and replayable. |
 | **Seed** | A number that picks among fitting expressions and molecules and breaks ties. |
@@ -97,13 +102,14 @@ jobs:       card[ status?, identity, price, proof×4–8, action ]
 order:      status → identity → price → proof → action
 nesting:    stack[ status, identity, price, divider, list(proof), action ]
 hierarchy:  price 1, identity 2, action 3, proof 4      lead: strong
+colour:     price ink, identity ink, proof quieter, action the-action filled, status done
 space:      inside a group 0.5, between groups 1.5        (÷ body size)
 grouping:   by space, one divider
 container:  surface, no edge
 density:    airy
 fit:        identity ≤ 2 words, proof 4–8 items of ≤ 6 words, width 16–21 × body
 move:       single-out(which: recommended)
-            "the recommended plan is the one that stands out, by lift, not by colour"
+            "the recommended plan stands out from its row"      (the source's wording stays in the sidecar)
 kept:       the price is read first and the list never competes with it   (owner, 2026-11-xx)
 generic:    distance 0.41 to the nearest generic specimen (shadcn pricing)
 source:     stripe.com/pricing, captured 2026-11-xx, screenshot and sidecar beside it
@@ -113,17 +119,31 @@ What each field may hold:
 
 - **Spaces and widths** as ratios to body size.
 - **Hierarchy** as ranks and a lead strength. Never a size: the molecule owns its size.
-- **Colour** as roles (*the action*, *quieter*), never values.
+- **Colour** as one role per slot (*ink, quieter, the-action, done, wrong*), never values.
 - **Shape** as a few named words (*none, small, medium, round*), never a radius.
 - **Fit** as the ranges the reference was designed for: items per list, words per slot, width ÷ body.
 
 Validation fails a specimen holding a pixel, a hex code, a font name or a size inside a slot. Those belong in the
 sidecar or in a molecule.
 
+**How ranks are captured.** Each slot's visual weight is
+`(size ÷ body) × √(weight ÷ 400) × √(contrast ÷ body text contrast)`, where a filled control counts its fill's
+contrast against the ground. Slots are sorted by it; two within 10% share a rank. Lead strength is rank 1's weight
+over rank 2's: under 1.25 is *flat*, 1.25 to 2 is *clear*, over 2 is *strong*. These are starting numbers. Layer 4
+captures each specimen twice (two widths, two scroll positions) and the ranks must agree; if they don't, the rule
+changes before any shelf is built on it.
+
 ## Molecules
 
+- **Molecules are real components in the app's codebase**, the house's own parts (for plumber, components in
+  `web/`). The off-screen build in step 7 renders those components, so a variant is made of code the app already
+  ships, not of generated markup.
 - Each molecule does one job, takes **rank, lead strength and density** as input, and returns its final form in our
   look. It never reads a specimen.
+- **Content reaches a molecule as a content record.** Each job has a small schema of named fields (price:
+  `amount, period?, was?`; proof: `items[]`; action: `label, href`). Reading the card fills a record per slot from
+  the page. A molecule declares the fields it requires and the optional ones it uses; it fits only if every required
+  field is present. A strikethrough price requires `was`, so a card without an old price never gets one.
 - A molecule declares what it fits: item counts, text lengths, and the descriptors it adds to a variant (a big
   number pushes the variant towards price-led).
 - When a job has several molecules, the seed picks among those that fit the content and the rank, with the spread
@@ -136,8 +156,9 @@ sidecar or in a molecule.
 ## The generator: `card * shelf → variants`
 
 1. **Read the card.** Take the picked organism from the live page (the scene graph's instance level), label its jobs,
-   write its grammar (with fit: its real counts and text lengths) and note whether it has siblings and whether it
-   is the chosen one among them. The card's grammar is cached with the recipe.
+   fill a content record per slot, write its grammar (with fit: its real counts and text lengths) and note whether it
+   has siblings and whether it is the chosen one among them. The card's grammar and records are cached with the
+   recipe.
 2. **Find.** Score every specimen: job overlap first, then structure distance (order, nesting, ranks, space ratios).
    A specimen is kept only if your card can fill its rank-1 job and every job its move names.
 3. **Map.** Pair your slots with the specimen's by job. Your extra jobs go where their placement rules say; specimen
@@ -150,9 +171,10 @@ sidecar or in a molecule.
    only**, says so in its recipe, and ranks after variants that carry a move.
 6. **Dialect check, before Build.** Rules that need the look but not a render: coral only for wrong, every pairing
    from `pairs.js`, ranks that snap to distinct steps.
-7. **Build off screen** with your app's own components and styles (the open problem in engine-foundations §6).
+7. **Build off screen:** render the chosen molecule components with their content records, in the arrangement the
+   grammar gives, with the app's styles (the open problem in engine-foundations §6).
 8. **Judge.** Run `judge(snapshot, packs)` with the house rules, craft rules and tells, plus stress (Break it) on any
-   variant marked in step 4.
+   variant marked in step 4. Then place each survivor on the taste ladder (below); anything under rung 4 is dropped.
 9. **Choose a spread.** Read the descriptors off the survivors. Pick three to six that differ most in lead, shape,
    density and molecules, and keep one slot for a specimen the owner has seen least. Show each with its recipe in
    plain words: "Price first, split. Structure from Stripe's pricing card. This plan stands out as the one solid
@@ -171,6 +193,45 @@ On any variant: *keep* or *drop*, and optionally which part was wrong (the struc
 molecule). Without a reason, a drop lowers the specimen, the expression and the molecules a little each. Weights are
 capped (nothing is more than three times as likely as the average) and decay. The exploratory slot keeps unseen
 specimens visible.
+
+## The taste ladder
+
+Everything else in this brief keeps out what is bad: rules, tells, drift, curation. None of it says how good a
+variant is. The ladder does.
+
+**Why comparison, not a score.** People can't reliably give a card "7 out of 10", but they are consistent about
+"this one is better than that one". So taste is stored as comparisons against fixed anchors, the way a chess rating
+is built from games rather than from a judge's opinion of a player.
+
+**The anchors.** About 15 cards of the kind, placed by the owner on five rungs:
+
+| Rung | What it means | Example anchors |
+|---|---|---|
+| 1 | Broken | overlapping text, no clear action |
+| 2 | Stock | a default MUI or shadcn pricing card |
+| 3 | Fine | a competent card nobody would remember |
+| 4 | Good | one of our house cards; a well-made product card |
+| 5 | Reference-grade | the best kept specimens built in our look |
+
+Anchors are rendered in our look where they can be (rungs 3–5), so the comparison is about arrangement and
+decisions, not about which one wears our colours.
+
+**Placing a variant.** It is compared with one anchor from rung 3, then from rung 4, then rung 5, and placed under
+the first anchor it loses to; two anchors per rung, and a split result places it on the lower rung. Only rungs 4
+and 5 are shown, and each variant says where it landed and which anchors it beat.
+
+**Who compares.** The owner at first, during layers 3 and 8. A model judge (a vision model given the anchors and the
+principles in [PRINCIPLES.md](../PRINCIPLES.md)) takes over only after it agrees with the owner on at least 80% of
+40 held-out pairs. The agreement is rechecked every 50 owner picks; below 80% the judge stops and the owner
+compares again.
+
+**Reasons, not just a rung.** Each comparison names its deciding principles from a short list (one focal point; the
+eye reads the jobs in order; one rhythm of space; parts line up; nothing competes with the action). The craft rules
+check some of these directly; the rest are the judge's reasons. The rung is the result, and the reasons are the
+explanation shown in the recipe.
+
+**The ladder grows.** Every keep and drop in the grid is also a comparison, so the owner's picks keep adding
+evidence. A variant the owner keeps that sits on rung 4 can become a new anchor once it has won enough comparisons.
 
 ## The translation table (first rows, plumber's dialect)
 
@@ -230,10 +291,12 @@ specimens visible.
 - **F8. Fit is stressed.** A variant whose real content falls outside its specimen's or its molecules' fit goes
   through Break it before it is shown.
 - **F9. A person curates.** A specimen enters only with the owner's keep and one line of why.
-- **F10. The blind mix.** Before a kind is offered: 12 cards, 6 generated and 6 hand-made house organisms of the same
-  kind, shuffled. The owner says which is which. It passes if the owner is right on 8 or fewer (6 is chance; the bar
-  is a guess, to revisit after the first try).
-- **F11. Copy nothing.** Specimens hold decisions; sidecars and screenshots stay local for comparison. No markup,
+- **F10. The blind mix.** Before a kind is offered: 20 cards, 10 generated and 10 house cards made fresh for the
+  test, so nobody recognises them from memory, shuffled. A judge who hasn't seen any of them says which is which. It
+  passes if the judge is right on 12 or fewer (10 is chance; someone who spots 4 of the 10 generated cards gets 14
+  and fails).
+- **F11. The taste ladder gates the grid.** Nothing under rung 4 is shown.
+- **F12. Copy nothing.** Specimens hold decisions; sidecars and screenshots stay local for comparison. No markup,
   assets or text from the source. Paid kits are checked for terms first.
 
 ## Where specimens come from
@@ -254,8 +317,8 @@ One layer at a time, each seen working before the next.
 | 0 | Sign-off on this brief | This page, agreed |
 | 1 | The specimen format and validator; 5 pricing cards written by hand, with sidecars, chosen to differ in structure (not five stacks) | Five specimens that pass validation, with their structure distances to each other |
 | 2 | Molecules for the pricing jobs, by hand (3 price, 3 proof, 2 identity, 2 action, 2 status) | The molecules on one sheet at each rank and density |
-| 3 | **The dialect trip by hand:** the 5 built strictly from specimen, molecules and table as static HTML, no generator, no off-screen build. Every decision none of them supplied is written down | Five cards in toys side by side, and the list of missing decisions. The list is the main result: it shows what the spec still lacks. If the cards aren't distinct and good, the thesis fails here |
-| 4 | The round trip on the 5 | Per-slot diffs within tolerance for at least 4 of 5 |
+| 3 | **The dialect trip by hand, with a control:** the 5 built strictly from specimen, molecules and table as static HTML, no generator, no off-screen build. Every decision none of them supplied is written down. A sixth card, the **control**, uses the same molecules with only the placement rules and no specimen. The first taste ladder is set up and all six are placed on it | Six cards in toys side by side, unlabelled, and the list of missing decisions. If the owner can't tell the specimen cards from the control, or the control ranks as high, the shelf isn't earning its cost and the product is a molecule combinator: layers 4–5 are dropped or rethought. If the five aren't distinct and good, the thesis fails here |
+| 4 | The round trip on the 5, each captured twice | Per-slot diffs within tolerance for at least 4 of 5, and the same ranks from both captures |
 | 5 | Capture from a live page; 20 pricing specimens and 5 generic ones | The 20 and the 5 plotted by grammar distance. If the generic ones sit inside the cloud of kept ones, structure doesn't carry taste and F5 has to change before going on |
 | 6 | Read, find, map, both cheap checks for one crafting-ui card | The funnel up to Build |
 | 7 | Build off screen, judge, stress, spread | 3–6 variants of that card in our look, with the funnel |
@@ -275,6 +338,12 @@ Layer 7 needs the off-screen build (engine-foundations layer 6). Layers 1–6 do
   it says so and ranks lower.
 - **Generic is a curation check, drift is the run-time check.** A variant inherits its specimen's structure, so its
   distance to generic is decided when the specimen is kept.
+- **Molecules are the app's real components.** A variant is made of code the app already ships, and content binds
+  to them through content records, so a molecule never shows a field the card doesn't have.
+- **Taste is a ladder of comparisons, not a score.** Comparisons against fixed anchors are what people are
+  consistent at, and a model judge is used only while it agrees with the owner.
+- **A control card in layer 3.** It is the cheapest way to learn whether references add anything over our own
+  parts and placement rules.
 - **Body size is the unit.** Every card has one, and it doesn't move when an icon is nudged.
 - **No embeddings in Find for now.** Scoring every specimen is cheap at this size.
 - **Pricing cards first.** Clear jobs, many good public examples, easy to judge.
@@ -294,11 +363,22 @@ after Translate; uses body size for every ratio; labels structure-only variants;
 narrows the round trip's claim; pins the seen history; gives the blind mix a count and a bar; and asks layer 3 for
 the list of decisions the spec didn't supply.
 
+**Third review**, which recommended sign-off after two additions. This version adds a control card to layer 3, makes
+molecules the app's real components with content records for binding, gives a capture rule for ranks and lead
+strength, makes the blind mix use fresh cards, an unfamiliar judge and a stricter bar, splits input density from
+measured density, adds a colour field, and shows the house sentence for the example move. The owner's question the
+same day ("how are we making sure that there is a certain level of taste scale against which we compare our
+generations") added the taste ladder.
+
 ## Not known
 
 - Whether a hand-built dialect trip comes out distinct and good (layer 3). The brief stands or falls on it.
 - Whether generic and kept specimens separate in grammar space at all (layer 5). The Stripe example's structure is
   close to a stock pricing card's; if taste lives mostly in what this format doesn't store, the format has to grow.
+- Whether specimens beat the control (layer 3), which decides whether the shelf is worth building.
+- Whether a model judge can reach 80% agreement with the owner on the ladder. If it can't, the owner stays the judge
+  and the generator is limited by how many comparisons they are willing to make.
+- Whether the visual-weight rule gives stable ranks across captures (layer 4).
 - How structure distance should weigh order, nesting, ranks and space. A guess until layer 6 shows rankings.
 - The drift limit and the generic threshold. Both are set from real numbers at layers 5 and 6.
 - How reliably a model labels jobs and proposes a move type. Unmeasured.
