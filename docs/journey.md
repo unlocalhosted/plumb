@@ -4356,6 +4356,17 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   starting one.") and the five specimens are now kept. Supabase is kept for its order only, because its read shows
   its plans don't line up. The voice became a rule in the brief for every reason, case and pitch the generator shows:
   measurements are the proof under a reason, never the reason.
+- **The first of our own parts: the price (layer 2).** The generator draws cards from parts made in plumber's look,
+  one at a time and each reviewed before the next. The price came first, with a contract every part shares: it takes
+  how loud the card wants it (its rank, and how far the loudest part leads) and the card's density, and picks one of
+  the site's type steps (54, 40 or 24 for a figure, 14 as words), nothing in between. Three forms: a figure, a deal
+  with the old price struck through, and a quiet word that sits on the name's line. Three things changed after
+  looking at it on the design site: big figures broke "/ month" onto its own line in narrow cells, so the figure and
+  its period became one unit that never parts; the quiet form looked lost alone, so it is shown beside a plan name,
+  which is where it lives; and small regular words in white on the pink block fail the colour rules, so on a block
+  they go bold. Switching monthly to yearly rolls the number as one piece in the direction of travel, landing by
+  260ms (checked headless at 60, 140 and 260ms, since the app's pane freezes motion when hidden). Page:
+  `/design/price`. Not checked yet: the dark scheme.
 
 ## Open gaps
 - **The mark was never tried among real neighbours** (a row of browser tabs, an npm page, a README header), only on empty tiles. Nobody outside has been asked whether the round leg reads as an R or leans towards a B.

@@ -41,6 +41,7 @@ const LOAD = {
   xray: () => import('./parts/xray.js'),
   messages: () => import('./parts/messages.js'),
   surfaces: () => import('./parts/surfaces.js'),
+  price: () => import('./parts/price.js'),
 };
 
 export function Part({ id, css }) {

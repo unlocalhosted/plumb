@@ -44,6 +44,10 @@ export const GROUPS = [
     { id: 'marks', hue: 'lilac', toy: 'gap', name: 'Marks on the page', says: 'What Blueprint draws on your app: the three patterns, heat, a place in hand.' },
     { id: 'states', hue: 'lilac', toy: 'empty', name: 'States', says: 'Empty, loading, error, nothing to fix. A toy and one sentence.' },
   ]],
+  ['Pricing card parts', [
+    { id: 'price', hue: 'butter', toy: 'card', name: 'Price', says: 'What a plan costs: as a figure, as a deal, or as a quiet word. At every loudness a card asks for.', ready: true,
+      lede: 'The first of the parts the organism generator builds pricing cards from. A card says how loud its price should be; the price says it in our look, in one of three forms.' },
+  ]],
 ];
 export const PARTS = GROUPS.flatMap(([, parts]) => parts);
 export const partOf = (id) => PARTS.find((p) => p.id === id);
