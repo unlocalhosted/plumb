@@ -34,14 +34,14 @@ function Tile({ title, css }) {
   );
 }
 
-function Row({ c, css }) {
-  const [open, setOpen] = useState(false);
+// a check as a card: its name and where it is read; opened, it takes the whole row and says what it catches and how
+// it is fixed, with the fix playing where there is one
+function Card({ c, css, open, onOpen }) {
   return (
-    <li className="ck-row" data-open={open || undefined}>
-      <button type="button" className="ck-head" aria-expanded={open} onClick={() => setOpen(!open)}>
+    <li className="ck-card" data-open={open || undefined}>
+      <button type="button" className="ck-face" aria-expanded={open} onClick={onOpen}>
         <span className="ck-name">{c.name}</span>
-        <span className="ck-where" data-where={c.where}>{WHERE[c.where]}</span>
-        <i className="ck-chev" aria-hidden="true" />
+        <span className="ck-meta"><span className="ck-where" data-where={c.where}>{WHERE[c.where]}</span>{c.tile && <span className="ck-plays">▶ Shows the fix</span>}</span>
       </button>
       {open && (
         <div className="ck-body">
@@ -57,59 +57,73 @@ function Row({ c, css }) {
   );
 }
 
-export function ChecksClient({ css, data }) {
-  const [q, setQ] = useState('');
-  const groups = useMemo(() => {
-    const words = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
-    const hit = (c) => !words.length || words.every((w) => `${c.name} ${c.why} ${c.id}`.toLowerCase().includes(w));
-    return data.concerns.map((k) => ({ ...k, checks: data.checks.filter((c) => c.concern === k.id && hit(c)) }));
-  }, [q, data]);
-  const shown = groups.reduce((n, g) => n + g.checks.length, 0);
+export function OverviewGrid({ data }) {
   return (
     <div className="ck">
       <style>{CSS}</style>
-      <nav className="ck-jump" aria-label="Concerns">
+      <ul className="ck-concerns">
         {data.concerns.map((k) => (
-          <a key={k.id} href={`#${k.id}`}><Toy name={k.toy} size={22} /><span>{k.short}</span><b>{data.checks.filter((c) => c.concern === k.id).length}</b></a>
+          <li key={k.id}>
+            <a href={`/docs/checks-${k.id}`}>
+              <Toy name={k.toy} size={40} />
+              <span className="ck-cname">{k.name}</span>
+              <span className="ck-count">{data.checks.filter((c) => c.concern === k.id).length} checks</span>
+              <span className="ck-cabout">{ABOUT[k.id]}</span>
+            </a>
+          </li>
         ))}
-      </nav>
-      <label className="ck-find"><span>Find a check</span><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="contrast, padding, badge…" /><small>{shown} shown</small></label>
-      {groups.map((g) => (
-        <section key={g.id} id={g.id} className="ck-group">
-          <h2><Toy name={g.toy} size={30} />{g.name} <small>{g.checks.length}</small></h2>
-          <p className="ck-about">{ABOUT[g.id]}</p>
-          {g.checks.length ? <ul>{g.checks.map((c) => <Row key={c.id} c={c} css={css} />)}</ul> : <p className="ck-none">Nothing here matches.</p>}
-        </section>
-      ))}
+      </ul>
+    </div>
+  );
+}
+
+export function ConcernGrid({ css, concern, checks }) {
+  const [q, setQ] = useState(''), [open, setOpen] = useState(null);
+  const shown = useMemo(() => {
+    const words = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    return checks.filter((c) => !words.length || words.every((w) => `${c.name} ${c.why} ${c.id}`.toLowerCase().includes(w)));
+  }, [q, checks]);
+  return (
+    <div className="ck">
+      <style>{CSS}</style>
+      <div className="ck-lead"><Toy name={concern.toy} size={44} /><p>{ABOUT[concern.id]}</p></div>
+      <label className="ck-find"><span>Find a check</span><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="contrast, padding, badge…" /><small>{shown.length} of {checks.length}</small></label>
+      {shown.length ? <ul className="ck-grid">{shown.map((c) => <Card key={c.id} c={c} css={css} open={open === c.id} onOpen={() => setOpen(open === c.id ? null : c.id)} />)}</ul> : <p className="ck-none">Nothing here matches.</p>}
     </div>
   );
 }
 
 const CSS = `
   .ck { --ck-gap: 10px; }
-  .ck-jump { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 14px; }
-  .ck-jump a { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px 8px 8px; border-radius: 12px; background: var(--pl-bg-inset); color: var(--pl-text-primary); text-decoration: none; font: 600 14px/1 var(--pl-sans); }
-  .ck-jump a b { font: 600 12px/1 var(--pl-mono); color: var(--pl-text-secondary); }
-  @media (hover: hover) and (pointer: fine) { .ck-jump a:hover { background: color-mix(in oklab, var(--pl-bg-inset) 70%, var(--pl-sky-soft)); } }
   .ck-find { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; font: 500 14px var(--pl-sans); color: var(--pl-text-secondary); }
   .ck-find input { flex: 1; max-width: 360px; font: 500 15px var(--pl-sans); padding: 9px 12px; border-radius: 10px; border: 0; background: var(--pl-bg-inset); color: var(--pl-text-primary); }
   .ck-find input:focus-visible { outline: 2px solid var(--pl-sky); outline-offset: 1px; }
   .ck-find small { font: 500 12px var(--pl-mono); }
-  .ck-group { margin: 44px 0 0; scroll-margin-top: 80px; }
-  .ck-group h2 { display: flex; align-items: center; gap: 10px; margin: 0 0 4px; }
-  .ck-group h2 small { font: 600 14px var(--pl-mono); color: var(--pl-text-secondary); }
-  .ck-about { margin: 0 0 12px; color: var(--pl-text-secondary); max-width: 660px; }
-  .ck-group ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
-  .ck-head { all: unset; box-sizing: border-box; width: 100%; display: grid; grid-template-columns: 1fr auto 14px; gap: 12px; align-items: center; padding: 11px 12px; border-radius: 12px; cursor: pointer; font: 500 15px/1.3 var(--pl-sans); color: var(--pl-text-primary); }
-  @media (hover: hover) and (pointer: fine) { .ck-head:hover { background: var(--pl-bg-inset); } }
-  .ck-head:focus-visible { outline: 2px solid var(--pl-sky); outline-offset: -2px; }
-  .ck-row[data-open] .ck-head { background: var(--pl-bg-inset); border-radius: 12px 12px 0 0; font-weight: 650; }
+  /* the six concerns, as cards you go to */
+  .ck .ck-concerns { list-style: none; margin: 22px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
+  .ck-concerns a { display: grid; gap: 6px; align-content: start; height: 100%; box-sizing: border-box; padding: 18px; border-radius: 18px; background: var(--pl-bg-inset); color: var(--pl-text-primary); text-decoration: none;
+    transition: background-color 160ms var(--pl-ease-out), translate 220ms var(--pl-spring); }
+  @media (hover: hover) and (pointer: fine) { .ck-concerns a:hover { background: color-mix(in oklab, var(--pl-bg-inset) 80%, var(--pl-sky-soft)); translate: 0 -2px; } }
+  .ck-concerns a:focus-visible { outline: 2px solid var(--pl-sky); outline-offset: 2px; }
+  .ck-cname { margin-top: 6px; font: 650 18px/1.25 var(--pl-round, var(--pl-sans)); }
+  .ck-count { font: 600 12.5px/1 var(--pl-mono); color: var(--pl-text-secondary); }
+  .ck-cabout { font: 400 14px/1.5 var(--pl-sans); color: var(--pl-text-secondary); }
+  /* a concern's page: its toy and sentence, a filter, the checks as a grid of cards */
+  .ck-lead { display: flex; align-items: center; gap: 14px; margin: 6px 0 18px; } .ck-lead p { margin: 0; color: var(--pl-text-secondary); max-width: 620px; }
+  .ck .ck-grid { list-style: none; margin: 14px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); gap: 10px; grid-auto-flow: dense; }
+  .ck .ck-card { display: flex; flex-direction: column; margin: 0; border-radius: 14px; background: var(--pl-bg-inset); min-width: 0; }
+  .ck-card[data-open] { grid-column: 1 / -1; }
+  .ck-face { all: unset; box-sizing: border-box; width: 100%; flex: 1 0 auto; min-height: 92px; display: grid; align-content: space-between; gap: 12px; padding: 14px; border-radius: 14px; cursor: pointer; }
+  @media (hover: hover) and (pointer: fine) { .ck-card:not([data-open]) .ck-face:hover { background: color-mix(in oklab, var(--pl-bg-inset) 75%, var(--pl-sky-soft)); } }
+  .ck-face:focus-visible { outline: 2px solid var(--pl-sky); outline-offset: 2px; }
+  .ck-name { font: 600 15px/1.35 var(--pl-sans); color: var(--pl-text-primary); }
+  .ck-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .ck-plays { font: 600 11.5px/1 var(--pl-sans); color: var(--pl-pink); }
+  .ck-card[data-open] .ck-face { flex: none; min-height: 0; padding-bottom: 6px; }
   .ck-where { font: 600 11.5px/1 var(--pl-sans); padding: 5px 8px; border-radius: 99px; background: var(--pl-sky-soft); color: var(--pl-sky-ink); white-space: nowrap; }
   .ck-where[data-where="code"] { background: var(--pl-lilac-soft); color: var(--pl-lilac-ink); }
-  .ck-chev { width: 7px; height: 7px; border-right: 1.75px solid var(--pl-text-secondary); border-bottom: 1.75px solid var(--pl-text-secondary); rotate: 45deg; translate: 0 -2px; transition: rotate 200ms var(--pl-ease-out); }
-  .ck-row[data-open] .ck-chev { rotate: 225deg; translate: 0 2px; }
   /* the words first, then the fix playing at the row's full width (a tile is drawn for a stage this wide) */
-  .ck-body { display: grid; gap: 14px; padding: 6px 12px 16px; background: var(--pl-bg-inset); border-radius: 0 0 12px 12px; }
+  .ck-body { display: grid; gap: 14px; padding: 0 14px 16px; }
   .ck-text p { margin: 8px 0 0; font: 400 14.5px/1.55 var(--pl-sans); color: var(--pl-text-secondary); }
   .ck-text b { color: var(--pl-text-primary); font-weight: 650; }
   .ck-id code { font: 500 12px var(--pl-mono); color: var(--pl-text-secondary); }

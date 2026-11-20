@@ -6,7 +6,18 @@ export const SECTIONS = [
     pages: [
       { slug: 'quick-start', title: 'Quick start', load: () => import('./pages/quick-start.mdx') },
       { slug: 'what-plumber-is', title: 'What React Plumber is', load: () => import('./pages/what-plumber-is.mdx') },
-      { slug: 'what-plumber-checks', title: 'What Plumber checks', load: () => import('./pages/what-plumber-checks.mdx') },
+    ],
+  },
+  {
+    title: 'What it checks',
+    pages: [
+      { slug: 'what-plumber-checks', title: 'Every check', load: () => import('./pages/what-plumber-checks.mdx') },
+      { slug: 'checks-system', title: 'Design system check', load: () => import('./pages/checks/system.mdx') },
+      { slug: 'checks-craft', title: 'Craft and polish', load: () => import('./pages/checks/craft.mdx') },
+      { slug: 'checks-access', title: 'Accessible and correct', load: () => import('./pages/checks/access.mdx') },
+      { slug: 'checks-slop', title: 'Anti-slop check', load: () => import('./pages/checks/slop.mdx') },
+      { slug: 'checks-words', title: 'Words and clarity', load: () => import('./pages/checks/words.mdx') },
+      { slug: 'checks-states', title: 'States and behaviour', load: () => import('./pages/checks/states.mdx') },
     ],
   },
   {

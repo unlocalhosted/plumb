@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { SECTIONS, PAGES } from '../../../docs/manifest.js';
 import { Toy } from '../../../site/Toy.jsx';
 
-const HUE = { Start: ['mint', 'direction'], Concepts: ['lilac', 'layer'], Guides: ['sky', 'position'], Reference: ['butter', 'table'] };
+const HUE = { Start: ['mint', 'direction'], 'What it checks': ['pink', 'search'], Concepts: ['lilac', 'layer'], Guides: ['sky', 'position'], Reference: ['butter', 'table'] };
 const find = (slug) => PAGES.find((p) => p.slug === (slug?.[0] ?? PAGES[0].slug) && p.load);
 
 export function generateStaticParams() { return [{ slug: [] }, ...PAGES.filter((p) => p.load).map((p) => ({ slug: [p.slug] }))]; }
