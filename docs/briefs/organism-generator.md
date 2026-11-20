@@ -477,6 +477,15 @@ Layer 7 needs the off-screen build (engine-foundations layer 6). Layers 1–6 do
   and taste is kept by the same checks and ladder whatever the source.
 - **Reasons come from facts only.** Page facts, measured features and the owner's own `kept` line. A model may
   phrase them but not add claims, so no reason is a rationalisation.
+- **Polished parts come from curated libraries too (2026-11-20).** The first real test rearranged crafting
+  attention's own parts into four structures borrowed from references, plus a control with no reference. All four
+  were the same parts in a new order, taller and plainer than the original, and the control was as good as the
+  rest: borrowed structure didn't earn its cost, because the variety and the polish live in the parts. The owner:
+  "why didnt you used molecules from the sites i referenced those were much more polished". So parts now come from
+  two places: the product's own components, and the polished components of curated libraries whose terms allow it
+  (beUI's free components and Arc's open-source core, both meant to be installed and owned; Bencho's source is paid,
+  so it stays a reference unless the owner has Pro). A library part is installed into the product and set in the
+  product's own tokens, so it reads as the product's. References still give structure; libraries now give parts.
 - **Sections before parts.** Parts designed from the rules came out as combinations nobody would ship. A whole
   section, designed and signed off, is where taste is judged; parts are what it is made of.
 - **Molecules are the app's real components.** A variant is made of code the app already ships, and content binds

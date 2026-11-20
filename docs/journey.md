@@ -4468,6 +4468,17 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   line should stand out"), which makes them the best source for why each part exists. Fixed on the way: the first
   cut of algorecall's slabs took an inner row and lost each slab's coin and front edge, and tight cuts clipped
   shadows, so every cut now takes the whole part with a margin. Sheet: `generator/shots/molecules-sheet.png` (local).
+- **The first real test, and why the polish wasn't there.** Crafting attention's own parts were rearranged on its
+  live page (real fonts, colours and spacing, nothing redrawn) into the structures of three kept references (Arc's
+  lifetime card, Supabase's order, Bencho's card) and a control with no reference. The result: four reshuffles of
+  the same parts, each taller and plainer than the shipped card, and the control as good as the others. By the
+  brief's own test, borrowed structure isn't earning its cost; variety and polish live in the parts. The owner asked
+  the same thing from the other side: "why didnt you used molecules from the sites i referenced those were much more
+  polished". They had been ruled out twice: filed under "motion, later", then barred by the brief's rule that
+  references give structure only. Their terms: beUI's 160 components are free and installed with the shadcn CLI
+  ("the source is yours"), Arc's 121-component core is free and open source, Bencho's source is paid. The brief now
+  takes parts from those libraries too, installed into the product and set in its own tokens. Sheet:
+  `generator/shots/arrange-sheet.png` (local).
 
 ## Open gaps
 - **The mark was never tried among real neighbours** (a row of browser tabs, an npm page, a README header), only on empty tiles. Nobody outside has been asked whether the round leg reads as an R or leans towards a B.
