@@ -4422,6 +4422,15 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   afterwards. The price grid page is off the site until then. Looking at the four products turned up a catch: only
   crafting attention charges money (it ships a crafted lifetime pricing section); algorecall is free by design,
   React Plumber is MIT, crafting-ui is lessons. Pricing sections for the other three would be invented.
+- **Start from what each product really ships.** The owner agreed: each product starts with its real component, not
+  an invented pricing section. Those components already exist, designed and shipped in the owner's taste, so they are
+  the first house specimens rather than things to draw. The first is crafting attention's pricing on
+  craftingattention.com: one offer card with a pixel-type price beside an isometric "lifetime pass", a parity note,
+  one full-width button and a reassurance line. The eye's read: every line on one edge, one main button, the price
+  leading clearly with the headline second. Two notes: the button's arrow sits unevenly against its label, and the
+  "·"-joined lines trip plumber's check for chains of status words. Its keep-reason is written in a designer's
+  voice and waits for the owner. Fixed on the way: the drawn read was clipped from the wrong frame and showed the
+  hero instead of the card.
 
 ## Open gaps
 - **The mark was never tried among real neighbours** (a row of browser tabs, an npm page, a README header), only on empty tiles. Nobody outside has been asked whether the round leg reads as an R or leans towards a B.

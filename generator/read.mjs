@@ -76,7 +76,8 @@ try {
         return { row: { cards: row === card ? 1 : row.children.length, w: Math.round(rb.width), h: Math.round(rb.height) }, read: els.length, findings, measures };
       })()`);
       // the row with its marks, kept local beside the other screenshots
-      const box = await page.locator('[data-read-row]').boundingBox();
+      // boundingBox is in the window's frame; a full-page shot is clipped in the page's
+      const box = await page.locator('[data-read-row]').evaluate((e) => { const r = e.getBoundingClientRect(); return { x: r.left + scrollX, y: r.top + scrollY, width: r.width, height: r.height }; });
       if (box) await page.screenshot({ path: `${here}shots/read-${site.id}.png`, clip: { x: Math.max(0, box.x - 24), y: Math.max(0, box.y - 36), width: Math.min(1280 - Math.max(0, box.x - 24), box.width + 48), height: box.height + 84 }, fullPage: true });
       await writeFile(`${here}reads/${site.id}.json`, JSON.stringify({ id: site.id, url: site.url, ...read }, null, 2) + '\n');
       const inCard = read.findings.filter((f) => f.inCard);

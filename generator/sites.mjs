@@ -32,6 +32,13 @@ export const sites = [
     slots: `({ identity: find(root, /^Forever$/), status: find(root, /^Best value$/), price: biggest(root), proof: all(root, 'ul li'), action: find(root, /^Get Pro forever$/), help: find(root, /^Pay once/) })`,
     body: `all(root, 'ul li')[1]`,
   },
+  {
+    // a house section: one of the owner's own products, as shipped (craftingattention.com, the home page's pricing)
+    id: 'craftingattention-lifetime', url: 'https://craftingattention.com/', house: true,
+    root: `document.querySelector('#pricing .lifetime-offer')`,
+    slots: `({ meta: find(root, /^CraftingAttention$/), identity: find(root, /^Lifetime access$/), value: find(root, /^For the ones who build\.$/), price: biggest(root), media: root.querySelector('svg.lifetime-art'), help: find(root, /^India purchase parity/), action: find(root, /^Get Lifetime Access/), proof: find(root, /^Instant lifetime access/) })`,
+    body: `find(root, /^India purchase parity/)`,
+  },
 ];
 
 // In-page helpers, injected before a site's picks run.

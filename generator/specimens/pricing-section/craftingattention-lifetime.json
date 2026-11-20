@@ -1,0 +1,25 @@
+{
+  "id": "craftingattention-lifetime",
+  "kind": "pricing section",
+  "house": "craftingattention",
+  "status": "draft",
+  "jobs": [{ "job": "meta" }, { "job": "identity" }, { "job": "value" }, { "job": "price" }, { "job": "media" }, { "job": "help" }, { "job": "action" }, { "job": "proof" }],
+  "order": ["meta", "identity", "value", "price", "media", "help", "action", "proof"],
+  "nesting": { "stack": [{ "row": ["meta", "identity"], "ends": true }, "value", { "row": ["price", "media"] }, "help", "action", "proof"] },
+  "hierarchy": { "price": 1, "value": 2, "meta": 3, "identity": 3, "help": 3, "proof": 3, "action": 3 },
+  "lead": "clear",
+  "colour": { "meta": "quieter", "identity": "quieter", "value": "ink", "price": "the-action", "media": "the-action", "help": "quieter", "action": "the-action", "proof": "quieter" },
+  "space": { "inside": 1, "between": 2.5 },
+  "grouping": "space",
+  "container": { "ground": "tinted", "edge": "line", "shape": "medium" },
+  "density": "balanced",
+  "fit": { "width": [44, 50], "words": { "meta": 1, "identity": 2, "value": 5, "price": 1, "help": 18, "action": 3, "proof": 12 }, "counts": {}, "itemWords": 0 },
+  "move": { "type": "bind", "args": { "a": "price", "b": "media" }, "scope": "organism", "words": "the price sits beside the thing you are buying" },
+  "kept": { "by": "proposed", "why": "We set the price in the same pixel type as the brand and put the lifetime pass right beside it, so you're not looking at a number, you're looking at the thing you'd own. The price and the button share the one purple on the card, and everything else stays quiet, so the decision has nowhere else to go." },
+  "read": {
+    "holds": ["every line starts on one edge", "one main button, full width", "the price leads clearly, the headline second"],
+    "notes": ["the button's arrow sits unevenly against its label (craft/icon-side)", "lines joined with “·” read as a chain of statuses (tells/status-chain)"]
+  },
+  "generic": null,
+  "source": { "url": "https://craftingattention.com/#pricing", "captured": "2026-11-20", "sidecar": "generator/sidecars/craftingattention-lifetime.json", "code": "craftingattention/app/src/components/home/pricing/LifetimePricing.tsx" }
+}

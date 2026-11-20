@@ -17,6 +17,7 @@ const ABSOLUTE = /\b\d+(\.\d+)?px\b|#[0-9a-f]{3,8}\b|\b(rgb|rgba|hsl|oklch|lab)\
 
 const here = fileURLToPath(new URL('./specimens/', import.meta.url));
 const kind = process.argv[2] || 'pricing-card';
+// a house specimen (`house`: the product it ships in) is one of the owner's own products as shipped
 const files = (await readdir(here + kind)).filter((f) => f.endsWith('.json')).sort();
 const specimens = [];
 let failed = 0;
