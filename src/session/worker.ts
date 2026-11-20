@@ -240,7 +240,7 @@ let columnFindings = new Map<string, Map<number, Map<number, Report['findings']>
 /** What an edit may touch and the token names it may write: from the files the session collected and the project's
  * decisions, which it has from start-up on, not from the whole-app report (a page's edit before that report was built
  * found no editable file: "Apply requires a tracked project source file"). */
-let access: { revision: number; of: Report; editable: Set<string>; protectedFiles: Set<string>; decisionNames: Set<string> } | undefined;
+let access: { revision: number; of: Report; editable: Set<string>; protectedFiles: Set<string>; lockedFiles: Set<string>; decisionNames: Set<string> } | undefined;
 function writable(): NonNullable<typeof access> {
   const view = known();
   if (access?.revision === revision && access.of === view) return access;
@@ -251,9 +251,11 @@ function writable(): NonNullable<typeof access> {
   }
   for (const sheet of view.stylesheets) if (sheet.reached.some(reach => reach.kind === 'source')) editable.add(sheet.file);
   const protectedFiles = new Set([...view.decisions, ...view.decisionInventory ?? []].map(d => d.source.file));
-  if (view.config.path) protectedFiles.add(view.config.path);
-  if (view.tailwind.entry) protectedFiles.add(view.tailwind.entry);
-  return access = { revision, of: view, editable, protectedFiles, decisionNames: new Set([...view.decisions, ...view.decisionInventory ?? []].map(d => d.name)) };
+  // the config and the Tailwind entry are never edited by a fix; a stylesheet that defines tokens beside its rules is,
+  // but only its rules (the edits method leaves its custom properties alone)
+  const lockedFiles = new Set([view.config.path, view.tailwind.entry].filter((f): f is string => !!f));
+  for (const f of lockedFiles) protectedFiles.add(f);
+  return access = { revision, of: view, editable, protectedFiles, lockedFiles, decisionNames: new Set([...view.decisions, ...view.decisionInventory ?? []].map(d => d.name)) };
 }
 const declarationTables = new WeakMap<Report, Map<string, Report['declarations']>>();
 function classDeclarations(view: Report, site: Site): Report['declarations'] {
@@ -462,9 +464,12 @@ async function dispatch(method: string, params: Record<string, unknown>): Promis
     if (!writable().editable.has(file)) throw new Error('Apply requires a tracked project source file.');
     const text = await readFile(file, 'utf8'), hash = state.sourceHash(file) ?? sourceHash(text);
     if (sourceHash(text) !== hash) throw new Error('The file changed since the overlay read it. Read it again.');
-    if (writable().protectedFiles.has(file) || file.endsWith('.css') && /@theme\b/.test(cssCode(text))) throw new Error('Apply cannot edit config or a stylesheet that defines the theme.');
+    const css = file.endsWith('.css');
+    if (writable().lockedFiles.has(file) || css && /@theme\b/.test(cssCode(text)) || !css && writable().protectedFiles.has(file)) throw new Error('Apply cannot edit config or a stylesheet that defines the theme.');
     const local = scoped(view, file, params.line as number | undefined, params.column as number | undefined, text), sources = new Map([[file, text]]);
-    const edits = structuredEdits(local, sources, writable().decisionNames, true);
+    // in a stylesheet that defines tokens beside its rules, a token's own declaration is never a fix's to change
+    const definesToken = (at: number) => { const open = Math.max(text.lastIndexOf(';', at - 1), text.lastIndexOf('{', at - 1), text.lastIndexOf('}', at - 1)); return /^\s*--[\w-]+\s*:/.test(text.slice(open + 1, at + 1)); };
+    const edits = structuredEdits(local, sources, writable().decisionNames, true).filter(e => !(css && writable().protectedFiles.has(file) && definesToken(e.start)));
     return { file, hash, edits, refused: refusedSites(local, sources, edits) };
   }
   if (method === 'remaining') {
