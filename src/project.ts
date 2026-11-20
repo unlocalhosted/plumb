@@ -82,7 +82,10 @@ async function entryCss(root: string, diagnostics: Finding[], inputs: string[], 
     inputs.push(...candidates);
     const entry = await appTailwindEntry(root, candidates, diagnostics, inputs, graph);
     if (entry) return entry;
-    throw new UsageError(`Multiple Tailwind entry files: ${candidates.join(', ')}; set css in plumber.config.ts to one of them.\n  → \${EDITOR:-vi} plumber.config.ts`);
+    // A repository can hold dozens of entries; a wall of absolute paths hides the one line that says what to do.
+    const shown = candidates.slice(0, 5).map(file => `    ${relative(root, file)}`);
+    const more = candidates.length - shown.length;
+    throw new UsageError(`Multiple Tailwind entry files (${candidates.length}), and nothing says which one this app uses:\n${shown.join('\n')}${more ? `\n    and ${more} more` : ''}\n  → set css in plumber.config.ts to the one your app imports, e.g. css: '${relative(root, candidates[0]!)}'`);
   }
   return candidates[0] ?? null;
 }
