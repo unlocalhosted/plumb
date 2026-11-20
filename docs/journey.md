@@ -2944,6 +2944,10 @@ field is empty). The table of five writes, before and after. The Next table: eig
   for elements that were only rewritten, so their notes ("01 //", "Click the button above") stayed away. It now
   checks them again once they are still, and the page counts as unread until then. Three rounds on Ledger kept 80
   (commit 5a1ec206).
+  The tester then found one more way in: clicking the note on "Get started" and pressing Escape lost 1. What is
+  animating is read every 0.2 s, so just after the link's transition ended it still counted as moving, with no
+  animation left to wait on. Every element skipped as moving is now looked at again once still, whatever moved
+  it, except inside a looping animation, which never comes to rest. Three fresh loads kept 80 (commit 931c831a).
 - **Checked on the site in dark mode** at localhost:4330: four openings each showed 35 at about 1 s, and the concern
   list adds up to the bar. At 127.0.0.1:4330 the site never starts, because Next 16 refuses its live-update socket
   from that address, so Blueprint can only wait there.
