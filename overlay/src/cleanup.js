@@ -381,7 +381,8 @@ export class Cleanup {
     else if (s === 'preview') {
       say = sw ? S.head(p.before, p.after, p.places) : W2.previewing(this.#page?.moves ?? 0);
       more = `This is a preview. ${W2.holdSpace}`;
-      acts = b('Apply', 'apply', { key: '↵' }) + (this.#hasNext() ? b(W2.next, 'next', { quiet: true, key: '→' }) : '') + b(W2.cancel, 'cancel', { quiet: true, key: 'Esc' });
+      const n = this.#keptPasses().length;
+      acts = (n > 1 ? b(W.applyAll(n), 'apply-all', { key: '↵' }) + b(W.applyThis, 'apply', { quiet: true }) : b('Apply', 'apply', { key: '↵' })) + (this.#hasNext() ? b('Next', 'next', { quiet: true, key: '→' }) : '') + b(W2.cancel, 'cancel', { quiet: true, key: 'Esc' });
     } else if (s === 'nothing') {
       say = sw ? S.nothing : W2.nothing(this.#p?.roles?.length ?? 0); more = sw ? S.sub(p) : W2.nothingWhy;
       acts = b(this.#hasNext() || !sw ? W2.next : W2.done, this.#hasNext() || !sw ? 'next' : 'close', { key: this.#hasNext() || !sw ? '→' : 'Esc' });
@@ -394,7 +395,9 @@ export class Cleanup {
     } else if (s === 'ready') {
       say = sw ? S.head(p.before, p.after, p.places) : W2.head(this.#p?.cost?.sizesBefore ?? p.before, this.#p?.roles?.length ?? 0);
       more = this.#keptLine() + (sw ? S.sub(p) : this.#pageOnly ? (this.#site?.running ? W.siteReading(this.#site.read, this.#site.route) : this.#site?.error ? `${W.siteFailed} ${this.#site.error}` : W.pageOnly) : W2.why);
-      acts = (!sw && this.#pageOnly ? b(this.#site?.running ? W.siteBusy : W.readSite, 'site', { quiet: true }) : '') + b(W2.preview, 'preview', { quiet: true, key: 'P' }) + b('Apply', 'apply', { key: '↵' }) + b('Skip', 'skip', { quiet: true, key: '→' });
+      const n = this.#keptPasses().length;
+      acts = (!sw && this.#pageOnly ? b(this.#site?.running ? W.siteBusy : W.readSite, 'site', { quiet: true }) : '') + b(W2.preview, 'preview', { quiet: true, key: 'P' })
+        + (n > 1 ? b(W.applyAll(n), 'apply-all', { key: '↵' }) + b(W.applyThis, 'apply', { quiet: true }) : b('Apply', 'apply', { key: '↵' })) + b('Skip', 'skip', { quiet: true, key: '→' });
     }
     // in preview the detail is what changes: the styles as chips, rolling to their values, and how to compare
     const detail = s === 'preview' ? `<span class="roles">${chipsHtml(this.#steps().map((x) => x.chip))}</span><span class="cmp">${W2.holdSpace}</span>` : esc(more);
@@ -521,6 +524,7 @@ export class Cleanup {
     const act = target.closest?.('[data-cu]')?.dataset.cu;
     if (!act) return false;
     if (act === 'apply') this.#apply();
+    else if (act === 'apply-all') this.#applyAll();
     else if (act === 'preview') this.#togglePreview(true);
     else if (act === 'cancel') this.#togglePreview(false);
     else if (act === 'skip' || act === 'next') this.#next();
@@ -628,6 +632,54 @@ export class Cleanup {
     finally { removeEventListener('plumb:applied', heard); }
     this.#host.render();
   }
+  // every step kept on the page, and the one in hand, written as one change with one Undo (owner, 2026-11-20: "Apply
+  // all"). One write, not one per step: a write can reload the page, and the next step's would be lost with it
+  #keptPasses() { return PASSES.filter((p, i) => this.#done.get(p) === 'kept' || (i === this.#pass && ['ready', 'preview'].includes(this.#state))); }
+  async #applyAll() {
+    if (!['ready', 'preview'].includes(this.#state)) return;
+    const passes = this.#keptPasses();
+    if (passes.length < 2) return this.#apply();
+    const run = ++this.#run;
+    if (this.#state === 'ready') await this.#togglePreview(true);
+    if (run !== this.#run || this.#state !== 'preview') return;
+    this.#settle(); this.#listen(false); this.#held = false;
+    this.#send('write'); this.#host.render();
+    const group = `cleanup-all-${Date.now().toString(36)}`, i = this.#pass;
+    try {
+      const all = { tokens: [], css: [], swaps: [], props: [] }, refused = [];
+      let places = 0;
+      for (const k of passes) {
+        if (k === 'text') {
+          const w = this.#p?.write ?? {}, sites = new Set((this.#page?.roles ?? []).flatMap((x) => x.here).map((m) => `${m.site.file}:${m.site.line}:${m.site.column}`));
+          const sw = (w.swaps ?? []).map((f) => ({ ...f, edits: (f.edits ?? []).filter((e) => sites.has(`${f.file}:${e.line}:${e.column}`)) })).filter((f) => f.edits.length);
+          all.tokens.push(...(w.tokens ?? [])); all.css.push(...(w.css ?? [])); all.swaps.push(...sw); places += sw.reduce((n, f) => n + f.edits.length, 0);
+        } else {
+          const e = await this.#swaps[k].edits();
+          all.swaps.push(...(e.swaps ?? [])); all.props.push(...(e.props ?? [])); refused.push(...(e.refused ?? [])); places += e.places ?? this.#swaps[k].page?.places ?? 0;
+        }
+      }
+      if (!all.swaps.length && !all.props.length && !all.tokens.length && !all.css.length) throw new Error(refused[0]?.why ?? W.couldNot);
+      const files = new Set([...all.swaps, ...all.props, ...all.css].map((x) => x.file).filter(Boolean)).size, said = W.savedAll(passes.map((k) => W.pass[k]), places, files);
+      const landed = (undo = []) => {
+        if (run === this.#run) {
+          this.#saved = { group, places, files, pass: i, refused: refused.length };
+          for (const k of passes) this.#done.set(k, 'done');
+          this.#send('landed');
+          keep({ state: 'done', pass: i, saved: this.#saved, done: Object.fromEntries(this.#done) });
+        }
+        this.#host.wrote?.({ undo, trace: { group } }, said);
+      };
+      keep({ state: 'writing', pass: i, group, said, saved: { group, places, files, pass: i, refused: refused.length }, done: Object.fromEntries(this.#done) });
+      const r = await answered(this.#host.write(all, said, { step: W.pass[PASSES[i]], laws: LAWS, group }), group);
+      if (r?.lost && !r.landed) throw new Error(W.lost);
+      if (!r?.lost && !r?.ok) throw new Error(r?.why ?? W.couldNot);
+      landed(r.undo);
+      // the page now draws every step from its own classes: the previews (the same values) are let go
+      this.#life.frame(() => { this.#preview.clear((el, f) => f()); for (const k of passes) this.#swaps[k]?.clear(); });
+      this.#host.announce?.(said);
+    } catch (error) { if (run === this.#run) { keep(null); this.#send('failed'); this.#err = error?.message ?? W.couldNot; } }
+    this.#host.render();
+  }
   // a class-swap pass written: one class swap per write, through each class's site, as one step
   async #applySwaps() {
     const k = PASSES[this.#pass], i = this.#pass, sw = this.#sw, S = W[k];
@@ -684,7 +736,7 @@ export class Cleanup {
   // keys while a clean-up runs (the fix panel passes the key's name): true when handled
   key(k) {
     if (this.#state === 'idle') return false;
-    if (k === 'Enter' && ['ready', 'preview'].includes(this.#state)) { this.#apply(); return true; }
+    if (k === 'Enter' && ['ready', 'preview'].includes(this.#state)) { if (this.#keptPasses().length > 1) this.#applyAll(); else this.#apply(); return true; }
     if ((k === 'p' || k === 'P') && this.#state === 'ready') { this.#togglePreview(true); return true; }
     if (k === 'ArrowRight' && (['ready', 'nothing'].includes(this.#state) || (this.#state === 'preview' && this.#hasNext()) || (this.#state === 'done' && (this.#pass === 0 || this.#hasNext())))) { this.#next(); return true; }
     // Space is Blueprint's (hold to use the page) except while previewing, where held Space compares (#space)
