@@ -502,7 +502,8 @@ export const FIX = {
   frameworkSame: (value, token) => `is ${value}, the same as your ${token}. Use your name for it, so it changes when your theme does.`,
   frameworkOff: (value, prop, tokens) => `is ${value}, Tailwind’s size, not one of your ${prop} tokens: ${tokens}.`,
   // rest
-  problems: (n) => count(n, 'problem', 'problems'),
+  // one unit everywhere a count is shown: a fix, one cause wherever it is used (owner, 2026-11-20, U4 and U50)
+  problems: (n) => count(n, 'fix', 'fixes'),
   // the Blueprint bar (docs/design/one-bar.md)
   // all: the picker's first row; thisElement: the same row after an Alt+click, when only that element is read (U31, U50)
   // using: while Space is held, the page takes the clicks (U53); picking: Inspect an element has started (U51)
@@ -516,8 +517,8 @@ export const FIX = {
   places: (n, shown = n, here = false) => (shown > n ? `${count(n, 'place', 'places')} in your code · ${shown} ${here ? 'here' : 'on the page'}` : count(n, 'place', 'places')),
   // what a screen reader hears when a fix is put in hand
   inHand: (position, cls, what, n) => `${position}: ${cls}. ${what}, ${count(n, 'place', 'places')}.`,
-  // where this one is among its kind: fixes are counted apart from notes, as the resting line counts them
-  position: (g, list, isNote) => { const same = list.filter((x) => !!isNote(x) === !!isNote(g)); return `${isNote(g) ? 'Note ' : ''}${same.indexOf(g) + 1} of ${same.length}`; },
+  // where this one is in the list you work through: one count for fixes and notes, the bar's own (U4, U47)
+  position: (g, list) => `${list.indexOf(g) + 1} of ${list.length}`,
   stillChecking: 'checking…',
   unchecked: (n) => `${count(n, 'element', 'elements')} can’t be checked`,
   uncheckedTitle: 'Not in your code: drawn by a library, or added to the page at runtime.',
@@ -555,7 +556,7 @@ export const FIX = {
     empty: (label) => `Your theme has no ${label.toLowerCase()} steps.`,
     down: 'React Plumber isn’t running, so nothing can be written.',
     unreachable: 'Can’t find where this is written, so it can’t be edited.',
-    problems: (n) => `${n} ${n === 1 ? 'problem' : 'problems'} here`,
+    problems: (n) => `${count(n, 'fix', 'fixes')} here`,
     show: 'Show',
     // a value the page works out (clamp, var, calc): what it shows now, and the value as written
     fluid: (v, now) => `Fluid: ${v}. ${now} at this width.`,
@@ -792,7 +793,7 @@ export const FIX = {
 // ── the dock ──────────────────────────────────────────────
 // what the hover tag says about an element: its problems, or why there are none to say
 export const TAG = {
-  off: (n) => count(n, 'problem', 'problems'),
+  off: (n) => count(n, 'fix', 'fixes'),
   clean: 'Matches your theme',
   styledBy: (name) => `Styled by ${name}`,
   computed: 'Classes built in code',

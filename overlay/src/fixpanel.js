@@ -676,23 +676,22 @@ export class FixPanel {
   // put down: the page is back as it was read before (`keep` false), or what was taken is on it now (`keep`: the reading
   // made while it was tried is the page's)
   #letGo(keep) { const p = this.#pending; this.#pending = null; if (keep && p) this.set(p); }
-  // "N problems here" on a card (N-08): the bar's unit (a problem is a place in the code), counted for what is drawn on
-  // the card's element or inside it, the same in Blueprint over the whole page as over the element alone
+  // "N fixes here" on a card: the bar's unit, the fixes with a place on the card's element or inside it, the same in
+  // Blueprint over the whole page as over the element alone (U50: the card, the label and the bar counted three ways)
   #problemsIn(el) {
     if (!el) return 0;
-    let n = 0;
-    for (const g of this.#live()) if (!noteOf(g)) n += new Set(g.members.filter((m) => m.el && el.contains(m.el)).map(placeOfMember).filter(Boolean)).size;
-    return n;
+    return this.#live().filter((g) => g.members.some((m) => m.el && el.contains(m.el))).length;
   }
   #open() { return this.#groups.filter((g) => !this.#taken.has(g.key)); }
   // the causes to step through: the picked concern's only, problems before notes
   #live() { const open = this.#open().filter((g) => !this.#concern || concernOf(g.members[0].mark) === this.#concern); return [...open.filter((g) => !noteOf(g)), ...open.filter(noteOf)]; }
   // what the page lights at rest: the picked concern's marks, the rest quiet; nothing picked, nothing singled out
   #concernLit() { return this.#concern ? this.#live().flatMap((g) => g.members.map((m) => m.id)) : []; }
-  // how much each concern holds now (a problem counts its places, a note its elements), in CONCERNS' order
+  // how much each concern holds now, in fixes: one per cause to work through, as Fix steps through them (owner,
+  // 2026-11-20: places can't be worked through and didn't drop when one fix took 11 of them, U4)
   #concernCounts() {
     const n = new Map();
-    for (const g of this.#open()) { const c = concernOf(g.members[0].mark); n.set(c, (n.get(c) ?? 0) + (noteOf(g) ? g.members.length : placesOf(g))); }
+    for (const g of this.#open()) { const c = concernOf(g.members[0].mark); n.set(c, (n.get(c) ?? 0) + 1); }
     return n;
   }
   // the bar's one count, and what it shows: the picked concern and how many, opening the list of concerns
@@ -1307,18 +1306,42 @@ export class FixPanel {
     this.#el.toggleAttribute('data-rest', html.includes('class="line bar'));
     this.#el.toggleAttribute('data-one', /class="one[" ]/.test(html));
     this.#placeOn();
-    if (html === this.#html) return;
+    if (html === this.#html) { this.#rollCount(matchMedia('(prefers-reduced-motion: reduce)').matches); return; } // the count settled with nothing redrawn: it still rolls from the one remembered
     this.#html = html;
     const still = matchMedia('(prefers-reduced-motion: reduce)').matches, from = this.#el.offsetHeight;
     // a field being typed in keeps its words, caret and focus through a redraw
     const typing = this.#el.getRootNode().activeElement, field = typing?.matches?.('input') && this.#el.contains(typing) ? { name: typing.name, value: typing.value, at: [typing.selectionStart, typing.selectionEnd] } : null;
     this.#el.innerHTML = html;
+    this.#rollCount(still);
     queueMicrotask(() => this.#placePop());
     if (field) { const f = this.#el.querySelector(`input[name="${field.name}"]`); if (f) { f.value = field.value; f.focus(); f.setSelectionRange(...field.at); } }
     const to = this.#el.scrollHeight;
     if (!still && from && from !== to) { this.#el.style.height = `${from}px`; void this.#el.offsetHeight; this.#el.style.height = `${to}px`; this.#life.timeout(() => (this.#el.style.height = ''), TIMING.open + 20); }
     // the bar changed size: what is placed clear of it is placed again (now, and once its height has moved)
     if (from !== to && this.#card.open) { this.#card.place(); if (!still) this.#life.timeout(() => this.#card.place(), TIMING.open + 40); }
+  }
+  // The count rolls when it changes: a fix taken, the number goes down by it, the new value coming in from above (going
+  // down) or below (going up), short, with a touch of blur (interaction principles 23 and the visual language's
+  // "numbers roll"). A count shown for the first time, or the picked concern changed, just shows.
+  // A write usually reloads the page: the last count is kept in the tab for a minute, so the page that comes back rolls
+  // from it instead of showing the new number cold.
+  #countSeen = null; #countTick = 0;
+  // a count is the new one once it has held for a moment: while the page is read it climbs as readings arrive, and that
+  // is not a change (the reader's own "settled" can stay off on a page that keeps moving)
+  #rollCount(still) {
+    const tick = ++this.#countTick;
+    this.#life.timeout(() => { if (tick === this.#countTick) this.#rollSettled(still); }, 600);
+  }
+  #rollSettled(still) {
+    const b = this.#el.querySelector('.cpick b'), key = this.#concern ?? '', n = b ? Number(b.textContent) : null;
+    let was = this.#countSeen;
+    if (!was) try { const k = JSON.parse(sessionStorage.getItem('plumb:count') ?? 'null'); if (k && Date.now() - k.at < 60000 && k.path === location.pathname) was = k; } catch {}
+    this.#countSeen = b ? { key, n } : null;
+    if (b) try { sessionStorage.setItem('plumb:count', JSON.stringify({ key, n, at: Date.now(), path: location.pathname })); } catch {}
+    if (!b || still || !was || was.key !== key || was.n === n || !Number.isFinite(n)) return;
+    const dir = n < was.n ? -1 : 1;
+    b.style.display = 'inline-block';
+    b.animate([{ transform: `translateY(${dir < 0 ? -55 : 55}%)`, opacity: 0, filter: 'blur(2px)' }, { transform: 'none', opacity: 1, filter: 'none' }], { duration: 260, easing: 'cubic-bezier(.2, .9, .25, 1)' });
   }
   #html = ''; #choice; #pop; #popHtml = ''; #onHtml = ''; #onBody = ''; #onAt = null; #stepOf = [];
 
