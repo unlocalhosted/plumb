@@ -3796,6 +3796,25 @@ rule.
 **Sass.** Decided in: a `.scss` file becomes its own system, placed through the source map because the browser only
 sees compiled CSS. It is layer 9 in the brief, after the writes are made safe.
 
+### 67. Layer 1: the winning rule, proven by effect (2026-11-20)
+**The itch.** The page picked the winning rule by computing specificity by hand, which Fable's review showed was wrong
+for `@media`, `@layer`, Tailwind v4's layered utilities, `!important` and inline style. The owner, on my stopping
+between layers: "why do you keep fucking stopping i want the e2e system working".
+
+**What we built.** For each rule that sets the property or a shorthand of it, the page sets an unusual value in that
+rule for a moment, reads the element's computed value, and restores the rule exactly. The rule whose change moves the
+value is the winner. Rules inside `@media`, `@layer`, `@supports` and nesting are all walked; hover-type states are
+skipped; a style attribute is said instead of written around; the evidence says how many elements share the rule,
+its `@media` and `@layer`, and whether a value is only inherited. Routing follows the proof: a utility class in force
+goes to classes, a rule in your file to rules, and a value nothing sets is added as a class only where the project
+has utilities, else refused in words. The server now writes inside the `@media` block the page proved in force.
+Bundled CSS is traced through any source map now, not only Turbopack's one-file sections.
+
+**The proof.** On the plumber site: the heading's size proved to `.title` (shared by 5), the heading's colour
+inherited, `.lead`'s colour proved to `.lead`; a gap on the heading refused with a reason; five lookups in 16ms. On
+the ledger: `gap-2` and `text-xs` proved to Tailwind's `@layer utilities` and routed to classes. On a scratch file, a
+gap proven under `@media (min-width: 900px)` was written inside that block; without the proof it was refused.
+
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
 - Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".

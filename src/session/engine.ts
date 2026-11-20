@@ -1429,7 +1429,6 @@ export class Session extends EventEmitter {
       if (!placed) { results.push({ index, state: 'unplaced', why: 'No style system of this project writes this value where the page found it.' }); continue; }
       const { system, origin } = placed;
       if (origin.writable !== true) { results.push({ index, state: 'failed', why: origin.writable, said: origin.said }); continue; }
-      if (origin.conditions.media) { results.push({ index, state: 'failed', why: `${origin.said} sets it only under ${origin.conditions.media}; that isn't written yet.`, said: origin.said }); continue; }
       const path = this.file(origin.file);
       const entry = byFile.get(path) ?? byFile.set(path, { hash: origin.hash, edits: [], said: [] }).get(path)!;
       if (entry.hash !== origin.hash) { results.push({ index, state: 'failed', why: 'The file changed while the changes were read. Try again.' }); continue; }

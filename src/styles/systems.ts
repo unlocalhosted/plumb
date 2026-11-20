@@ -20,6 +20,9 @@ export interface Evidence {
   carriers?: string[];
   /** the computed value now */
   computed?: string;
+  /** the winning rule holds under this condition now (the browser's `conditionText`), and in this cascade layer */
+  media?: string;
+  layer?: string;
   /** the class strings that set it, as the page found them in the code (class-site): where a utility system writes */
   classes?: ClassPlace[];
 }

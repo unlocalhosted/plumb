@@ -74,55 +74,124 @@ let CARRIERS = {
   'padding-top': ['padding-top', 'padding-block-start', 'padding-block', 'padding'], 'padding-bottom': ['padding-bottom', 'padding-block-end', 'padding-block', 'padding'],
   'padding-left': ['padding-left', 'padding-inline-start', 'padding-inline', 'padding'], 'padding-right': ['padding-right', 'padding-inline-end', 'padding-inline', 'padding'],
 };
-// a selector's weight: ids, then classes, attributes and pseudo-classes, then elements
-function specificity(sel) {
-  const s = sel.replace(/::?[\w-]+\(/g, (m) => (m.startsWith('::') ? ' ' : ' .')).replace(/[()]/g, ' ');
-  return [(s.match(/#[\w-]+/g) ?? []).length, (s.match(/\.[\w-]+|\[[^\]]*\]|:(?!:)[\w-]+/g) ?? []).length, (s.match(/(^|[\s>+~])[a-z][\w-]*/gi) ?? []).length];
-}
-const heavier = (a, b) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
-// The rule that wins for el's prop among the page's stylesheets, and where it lives: a sheet Vite serves says its file
-// (data-vite-dev-id); a sheet a bundler serves (Next's chunks) is traced through its source map when the change is
-// written (fileOfBundled). Only rules outside @media and the like: a conditional rule is said, not written. A winner in
-// a sheet that is nobody's file (a package, an inline <style>) is nobody's to write: null.
 let table = null;
 /** The server's property table, read once (GET style-properties); the page's own until it answers. */
 export function loadProperties(request) {
   table ??= request('style-properties', {}).then((t) => { if (t && typeof t === 'object') CARRIERS = Object.fromEntries(Object.entries(t).map(([k, v]) => [k, v.carriers])); }).catch(() => { table = null; });
   return table;
 }
-export function winningRule(el, prop) {
-  const carriers = CARRIERS[prop];
-  if (!carriers) return null;
-  let best = null;
+
+// ── the winner, proven by effect ────────────────────────────
+// For each rule that sets the property (or a shorthand of it), the page sets a sentinel in that rule for a moment,
+// reads the element's computed value and puts the rule back as it was. The rule whose change moves the value is the
+// one that wins now. That one test covers specificity, source order, @layer, !important, @media and @scope, without
+// computing any of them by hand (docs/briefs/css-parity.md, layer 1).
+const SENTINEL = {
+  color: 'rgb(1, 2, 3)', 'background-color': 'rgb(1, 2, 3)', 'border-color': 'rgb(1, 2, 3)', 'box-shadow': 'rgb(1, 2, 3) 9px 8px 7px 0px',
+  'font-weight': '123', 'font-family': 'zzz-sentinel', 'text-transform': 'full-width', 'flex-direction': 'column-reverse', 'align-items': 'last baseline',
+  'justify-content': 'space-evenly', 'flex-wrap': 'wrap-reverse', flex: '7 7 7px', 'object-fit': 'scale-down', 'aspect-ratio': '7 / 3', 'line-height': '987.5px',
+};
+const sentinelOf = (prop) => SENTINEL[prop] ?? '987.5px';
+// states a rule may hold under while the pointer is on the element: said, not taken as the element's value
+const STATE = /:(hover|focus|focus-visible|focus-within|active|visited|checked|target)\b/;
+const GROUP = (r) => r.cssRules && !r.selectorText;
+// a nested rule's full selector: & is its parent's, a bare one is a descendant
+function fullSelector(r) {
+  const parent = r.parentRule;
+  if (!parent || !parent.selectorText) return r.selectorText;
+  const up = fullSelector(parent);
+  return r.selectorText.includes('&') ? r.selectorText.replace(/&/g, up) : `${up} ${r.selectorText}`;
+}
+function conditionsOf(r) {
+  const media = [], layer = [];
+  for (let p = r.parentRule; p; p = p.parentRule) {
+    if (p.media && p.conditionText !== undefined) media.unshift(p.conditionText);
+    else if (p.conditionText !== undefined) media.unshift(p.conditionText);
+    else if (p.name !== undefined && p.constructor?.name?.includes('Layer')) layer.unshift(p.name);
+  }
+  return { ...(media.length ? { media: media.join(' and ') } : {}), ...(layer.length ? { layer: layer.join('.') } : {}) };
+}
+// every style rule of a sheet in source order, inside groups and nesting too
+function* styleRules(rules) {
+  for (const r of rules) {
+    if (r.selectorText && r.style) { yield r; if (r.cssRules?.length) yield* styleRules(r.cssRules); }
+    else if (GROUP(r)) yield* styleRules(r.cssRules);
+  }
+}
+const setsAny = (r, carriers) => carriers.some((c) => r.style.getPropertyValue(c) !== '' || new RegExp(`(^|[;\\s])${c}\\s*:`).test(r.style.cssText));
+function proves(r, el, prop, carriers, before) {
+  const saved = r.style.cssText;
+  const important = carriers.some((c) => r.style.getPropertyPriority(c) === 'important');
+  try {
+    r.style.setProperty(prop, sentinelOf(prop), important ? 'important' : '');
+    return getComputedStyle(el).getPropertyValue(prop) !== before;
+  } catch { return false; } finally { r.style.cssText = saved; }
+}
+/**
+ * What the page sees for one property of one element: the declaration that wins now and where it lives, or that a
+ * style attribute sets it, or that nothing of the element's own sets it (inherited or the default).
+ *   { kind: 'rule', file | bundle, selectorText, nth, selector, media?, layer?, important, sharedBy, isClass }
+ *   { kind: 'inline' } · { kind: 'none', inherited }
+ */
+export function evidenceFor(el, prop) {
+  const carriers = CARRIERS[prop] ?? [prop];
+  if (carriers.some((c) => el.style?.getPropertyValue(c))) return { kind: 'inline' };
+  const before = getComputedStyle(el).getPropertyValue(prop);
+  const candidates = [];
   for (const sheet of document.styleSheets) {
     let rules; try { rules = sheet.cssRules; } catch { continue; }
-    if (!rules) continue;
+    if (!rules || sheet.ownerNode?.closest?.('plumb-overlay')) continue;
     const dev = sheet.ownerNode?.dataset?.viteDevId;
-    const file = dev && /\.css$/.test(dev) && !/node_modules/.test(dev) ? dev : null;
+    const file = dev && /\.(css|scss|sass)$/.test(dev) && !/node_modules/.test(dev) ? dev : null;
     const bundle = !file && sheet.href && new URL(sheet.href).origin === location.origin ? sheet.href : null;
-    const seen = new Map(); // selectorText → how many top-level rules with it so far: the nth is found again in the text
-    for (const r of rules) {
-      if (!(r.selectorText && r.style)) continue;
+    const seen = new Map();
+    for (const r of styleRules(rules)) {
       const nth = seen.get(r.selectorText) ?? 0; seen.set(r.selectorText, nth + 1);
-      // a stylesheet's own text keeps a shorthand that reads a variable: the CSSOM answers '' for its longhands
-      const sets = carriers.some((c) => r.style.getPropertyValue(c) !== '' || new RegExp(`(^|[;\\s])${c}\\s*:`).test(r.style.cssText));
-      if (!sets) continue;
-      for (const part of r.selectorText.split(',').map((x) => x.trim())) {
-        let hit = false; try { hit = el.matches(part); } catch { /* a selector the browser won't match */ }
-        if (!hit) continue;
-        const w = specificity(part);
-        if (!best || heavier(w, best.w) >= 0) best = { file, bundle, selectorText: r.selectorText, nth, selector: part, w };
-      }
+      if (!setsAny(r, carriers)) continue;
+      const selector = fullSelector(r);
+      let part = null;
+      for (const x of selector.split(',').map((y) => y.trim())) { let hit = false; try { hit = el.matches(x); } catch { /* not a selector the browser matches */ } if (hit) { part = x; break; } }
+      if (!part || STATE.test(part)) continue;
+      candidates.push({ r, file, bundle, nth, selector: part, sheet });
     }
   }
-  if (!best) return null;
-  if (best.file) return { file: best.file, selector: best.selector };
-  return best.bundle ? { bundle: best.bundle, selectorText: best.selectorText, nth: best.nth, selector: best.selector } : null;
+  // the last candidate is the likeliest winner: proving from the end finds it first
+  for (const c of candidates.reverse()) {
+    if (!proves(c.r, c.el ?? el, prop, carriers, before)) continue;
+    const cls = c.selector.match(/^\.((?:\\.|[\w-])+)$/)?.[1]?.replace(/\\(.)/g, '$1');
+    let sharedBy = 0; try { sharedBy = document.querySelectorAll(c.selector).length; } catch { /* counted as unknown */ }
+    return { kind: 'rule', ...(c.file ? { file: c.file } : {}), ...(c.bundle ? { bundle: c.bundle } : {}), selectorText: c.r.selectorText, nth: c.nth, selector: c.selector,
+      ...conditionsOf(c.r), important: carriers.some((x) => c.r.style.getPropertyPriority(x) === 'important'), sharedBy, isClass: !!cls && el.classList.contains(cls) };
+  }
+  const parent = el.parentElement;
+  return { kind: 'none', inherited: !!parent && getComputedStyle(parent).getPropertyValue(prop) === before };
 }
-// A bundled sheet's rule, traced to the file it was written in: the nth top-level rule with that selector in the
-// served text, then the source map section (or mapping) that covers its line. Turbopack writes one section per file.
+/** The winning rule of el's prop in a file of yours, for the rule system; null when a utility class, a style attribute
+ * or nothing of the element's own wins. */
+export function winningRule(el, prop) {
+  const e = evidenceFor(el, prop);
+  if (e.kind !== 'rule' || e.isClass && hasClassFor(el, prop)) return null;
+  return e.file || e.bundle ? e : null;
+}
+// A bundled sheet's rule, traced to the file it was written in: the nth rule with that selector in the served text
+// (rules in groups and nesting counted too), then the source map section, or mapping, that covers its line.
 const bundles = new Map();
-async function fileOfBundled({ bundle, selectorText, nth }) {
+const VLQ = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+function sourceAtLine(map, line) {
+  const lines = map.mappings.split(';');
+  let src = 0;
+  for (let i = 0; i <= line && i < lines.length; i++) {
+    for (const seg of lines[i].split(',')) {
+      if (!seg) continue;
+      const vals = []; let v = 0, shift = 0;
+      for (const ch of seg) { const d = VLQ.indexOf(ch); v += (d & 31) << shift; if (d & 32) shift += 5; else { vals.push(v & 1 ? -(v >> 1) : v >> 1); v = 0; shift = 0; } }
+      if (vals.length >= 4) src += vals[1];
+      if (i === line) return map.sources[src] ?? null;
+    }
+  }
+  return null;
+}
+export async function fileOfBundled({ bundle, selectorText, nth }) {
   if (!bundles.has(bundle)) bundles.set(bundle, (async () => {
     const text = await (await fetch(bundle, { cache: 'no-store' })).text();
     const ref = [...text.matchAll(/\/\*#\s*sourceMappingURL=([^\s*]+)/g)].at(-1)?.[1];
@@ -130,17 +199,21 @@ async function fileOfBundled({ bundle, selectorText, nth }) {
     return { text, map };
   })());
   const { text, map } = await bundles.get(bundle);
+  bundles.delete(bundle); // read again next time: a write changes the bundle
   if (!map) return null;
   const esc = selectorText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/,\s*/g, ',\\s*');
-  const at = [...text.matchAll(new RegExp(`(?:^|\\n)${esc}\\s*\\{`, 'g'))][nth];
+  const at = [...text.matchAll(new RegExp(`(?:^|\\n)[ \\t]*${esc}\\s*\\{`, 'g'))][nth];
   if (!at) return null;
   const line = text.slice(0, at.index + (at[0].startsWith('\n') ? 1 : 0)).split('\n').length - 1;
-  const section = (map.sections ?? []).filter((x) => x.offset.line <= line).at(-1);
-  const sources = section?.map?.sources ?? map.sources ?? [];
-  const source = sources.length === 1 ? sources[0] : null;
+  let source = null;
+  if (map.sections) {
+    const section = map.sections.filter((x) => x.offset.line <= line).at(-1);
+    const inner = section?.map;
+    source = inner?.sources?.length === 1 ? inner.sources[0] : inner ? sourceAtLine(inner, line - section.offset.line) : null;
+  } else source = map.sources?.length === 1 ? map.sources[0] : map.mappings ? sourceAtLine(map, line) : null;
   if (!source) return null;
-  const path = decodeURI(source.replace(/^file:\/\//, ''));
-  return /node_modules/.test(path) || !/\.css$/.test(path) ? null : path;
+  const path = decodeURI(String(source).replace(/^file:\/\//, '').replace(/^webpack:\/\/[^/]*\//, ''));
+  return /node_modules/.test(path) || !/\.(css|scss|sass)$/.test(path) ? null : path;
 }
 // the value a rule is given: your token's variable when the page has it, else the value itself
 const VAR = { 'font-size': (t) => [`--text-${t}`], 'line-height': (t) => [`--leading-${t}`], gap: (t) => [`--spacing-${t}`], 'border-radius': (t) => [`--radius-${t}`],
@@ -166,7 +239,7 @@ export const cssRules = {
         // a rule in a bundle: its file comes from the bundle's source map
         if (!claim.file && claim.bundle) { const file = await fileOfBundled(claim); if (!file) throw new Error(`${claim.selector} comes from a stylesheet Plumber can't trace to a file of yours.`); claim = { ...claim, file }; }
         const token = tokenOf(g);
-        sent.push({ g, change: { prop: g.prop, value: g.value, ...(token ? { token } : {}), evidence: { file: claim.file, selector: claim.selector, carriers: CARRIERS[g.prop] } } });
+        sent.push({ g, change: { prop: g.prop, value: g.value, ...(token ? { token } : {}), evidence: { file: claim.file, selector: claim.selector, carriers: CARRIERS[g.prop], ...(claim.media ? { media: claim.media } : {}), ...(claim.layer ? { layer: claim.layer } : {}) } } });
       } catch (error) { out.push({ id: g.id, state: 'failed', why: error?.message ?? String(error) }); }
     }
     if (!sent.length) return out;
@@ -187,15 +260,28 @@ export const cssRules = {
 // the order the systems are asked in: the first that owns a property writes it
 export const SYSTEMS = [utilityClasses, cssRules];
 
-/** Which system writes each change: the first that owns it, else the fallback. Changes come back grouped by system. */
+/**
+ * Which system writes each change, from what the page proves (evidenceFor): a utility class in force on the element is
+ * the class system's; a rule in one of your stylesheets is the rule system's; a style attribute is said, not written
+ * around; nothing of the element's own setting it goes to adding (layer 3: a class only where the project has utilities).
+ */
 export function route(changes, systems = SYSTEMS) {
-  const by = new Map();
+  const by = new Map(), put = (s, g) => (by.get(s) ?? by.set(s, []).get(s)).push(g);
+  const said = { id: 'said', async write(list) { return list.map((g) => ({ id: g.id, state: 'failed', why: g.why })); } };
   for (const g of changes) {
     const el = g.els[0];
-    let system = null, claim = null;
-    for (const s of systems) { const c = el ? s.owns(el, g.prop) : null; if (c) { system = s; claim = c; break; } }
-    system ??= systems.find((s) => s.fallback);
-    (by.get(system) ?? by.set(system, []).get(system)).push({ ...g, claim });
+    const e = el ? evidenceFor(el, g.prop) : { kind: 'none' };
+    if (e.kind === 'inline') put(said, { ...g, why: 'A style attribute on this element sets it. Change it there, or remove it and Sync again.' });
+    else if (e.kind === 'rule' && e.isClass && hasClassFor(el, g.prop)) put(utilityClasses, { ...g, claim: { system: 'class' } });
+    else if (e.kind === 'rule' && (e.file || e.bundle)) put(cssRules, { ...g, claim: { system: 'rule', ...e } });
+    else if (e.kind === 'rule') put(said, { ...g, why: `${e.selector} sets it from a stylesheet that isn't one of your files.` });
+    else put(addSystem(systems), { ...g, claim: null, evidence: e });
   }
   return by;
+}
+// the system that adds a value nothing sets: the utility system where the project has utilities, else a refusal in words
+function addSystem(systems) {
+  const tailwind = [...document.styleSheets].some((sh) => { try { return [...sh.cssRules].some((r) => r.name === 'utilities' || /--tw-/.test(r.cssText)); } catch { return false; } });
+  if (tailwind) return systems.find((s) => s.fallback) ?? utilityClasses;
+  return { id: 'said', async write(list) { return list.map((g) => ({ id: g.id, state: 'failed', why: g.evidence?.inherited ? 'Nothing of this element sets it; it comes from a parent. Change the parent, or give this element a rule of its own.' : 'Nothing of this element sets it, and this project has no utility classes to add. Give it a rule in your stylesheet first.' })); } };
 }

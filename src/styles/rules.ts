@@ -59,7 +59,8 @@ export const rules: StyleSystem = {
     const starts = lineStarts(text), name = file.split(/[/\\]/).pop()!;
     // the last declaration among the property and its shorthands, as the cascade takes them within one selector;
     // a conditional one (@media, @supports) applies only sometimes and is not the base value
-    const base = mine.filter(d => !conditionsOf(d).media);
+    // the page proved whether a conditional rule (@media, @supports) is the one in force now: the same pool is read here
+    const base = mine.filter(d => !!conditionsOf(d).media === !!evidence.media);
     const setting = base.filter(d => carriers.includes(d.prop)).at(-1);
     if (setting) {
       const at = offsetOf(text, starts, setting), range = valueRange(setting.site.text);
@@ -72,8 +73,8 @@ export const rules: StyleSystem = {
       }
       return { system: 'rule', file, start: at + range[0], end: at + range[1], value: text.slice(at + range[0], at + range[1]), prop, hash, said: `${want} in ${name}`, conditions, writable: true };
     }
-    // set only under a condition (@media, @supports): said, not written
-    const conditional = mine.filter(d => carriers.includes(d.prop)).at(-1);
+    // set only under a condition the page didn't see in force: said, not written
+    const conditional = evidence.media ? null : mine.filter(d => carriers.includes(d.prop)).at(-1);
     if (conditional) return { system: 'rule', file, start: 0, end: 0, value: null, prop: conditional.prop, hash, said: `${want} in ${name}`, conditions: conditionsOf(conditional), writable: `${want} in ${name} sets it only under ${conditionsOf(conditional).media}; that isn't written yet.` };
     // the rule sets something else: the property is added as its last declaration
     const last = base.at(-1);
