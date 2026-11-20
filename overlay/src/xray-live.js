@@ -39,6 +39,9 @@ import { xray, zonesOf, zoneAt, placeCard, contextOf } from './xray.js';
 import { sizing } from './boxmodel.js';
 import { picker } from './picker.js';
 import { burst } from './burst.js';
+import { button, KEEP_ICON } from './kit.js';
+import { toyOf } from './toys.js';
+import { CONCERNS } from './concerns.js';
 
 export const XRAY_LIVE_CSS = `
   .xr-card[hidden] { display: block; opacity: 0; pointer-events: none; }
@@ -47,24 +50,33 @@ export const XRAY_LIVE_CSS = `
   .xr-card { opacity: 1; transition: transform 420ms var(--pl-spring), opacity 200ms var(--pl-ease-out); z-index: 6; transform-origin: 0 0; }
   /* the pill's words, carried in as the card's first line */
   .xr-said[hidden] { display: none; }
-  /* the note, on the pink face the page's pins wear: a problem with something to do, not one more line of facts */
-  .xr-said { margin: -4px -4px 12px; padding: 12px 12px 10px; border-radius: 13px; background: var(--pl-pink-face); color: var(--pl-pink-ink); font: 400 13px/1.4 var(--pl-sans); }
-  .pl-dark .xr-said, .xr-said:where(.pl-dark *) { color: #fff; }
-  .xr-said .nt b { display: block; font: 650 14px/1.3 var(--pl-round, var(--pl-sans)); margin-bottom: 3px; }
-  .xr-said .nas { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-  .xr-said .na { all: unset; cursor: pointer; padding: 6px 10px; border-radius: 9px; font: 600 12px/1 var(--pl-sans); color: inherit; background: color-mix(in oklab, currentColor 10%, transparent); }
-  /* the main action, cut out of the face: white in both schemes (a pink block vanishes on the night face), ink letters */
-  .xr-said .na.main { background: var(--pl-cut); color: var(--pl-ink); }
-  @media (hover: hover) and (pointer: fine) { .xr-said .na:hover { background: color-mix(in oklab, currentColor 16%, transparent); } .xr-said .na.main:hover { background: color-mix(in oklab, var(--pl-cut) 88%, var(--pl-pink)); } }
-  .xr-said .na:focus-visible { box-shadow: 0 0 0 2px var(--pl-border-focus); }
-  .xr-said .na:active { translate: 0 1px; }
-  /* the pinned card: every note on the element, by concern; the picked one is the note above with its actions */
-  .xr-said .xa { margin: 12px -4px -2px; padding-top: 8px; border-top: 1px solid color-mix(in oklab, currentColor 14%, transparent); max-height: 180px; overflow: auto; }
-  .xr-said .xg { display: flex; justify-content: space-between; padding: 6px 4px 3px; font: 600 11px/1.2 var(--pl-sans); opacity: .7; }
-  .xr-said .xn { all: unset; box-sizing: border-box; display: block; width: 100%; cursor: pointer; padding: 5px 6px; border-radius: 8px; font: 500 12.5px/1.3 var(--pl-sans); color: inherit; }
-  .xr-said .xn[aria-current] { background: color-mix(in oklab, currentColor 12%, transparent); font-weight: 650; }
-  @media (hover: hover) and (pointer: fine) { .xr-said .xn:not([aria-current]):hover { background: color-mix(in oklab, currentColor 7%, transparent); } }
+  /* The card says what is wrong and what to do; the page drawing says what the element is (owner, 2026-11-20: the
+     tinted note box, the card inside the card, the developer words and the inspector dump were all wrong). A note is a
+     row like any other: its concern's toy, its name in the toy face, one plain sentence; colour comes from the toy,
+     never from a panel behind words. The box diagram and the measurement rows are the page's, so the card drops them. */
+  .xr-card .xr-box, .xr-card .xr-rows { display: none; }
+  .xr-said { margin: 2px 0 12px; font: 400 13px/1.4 var(--pl-sans); color: var(--pl-text-primary); }
+  .xr-said .nt { display: grid; grid-template-columns: 26px 1fr; gap: 0 10px; align-items: start; }
+  .xr-said .nt > i { width: 26px; height: 26px; margin-top: 1px; } .xr-said .nt > i svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .xr-said .nt b { display: block; font: 650 14.5px/1.3 var(--pl-round, var(--pl-sans)); margin-bottom: 2px; }
+  .xr-said .nt span { display: block; color: var(--pl-text-secondary); }
+  .xr-said .nas { display: flex; align-items: center; gap: 8px; margin: 12px 0 0 36px; }
+  .xr-said .xa { margin: 14px 0 0; display: grid; gap: 2px; max-height: 180px; overflow: auto; }
+  .xr-said .xn { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 20px 1fr; gap: 10px; align-items: center; min-height: 32px; padding: 4px 6px 4px 3px; border-radius: 10px; cursor: pointer; font: 500 13px/1.3 var(--pl-sans); color: var(--pl-text-secondary); }
+  .xr-said .xn > i { width: 20px; height: 20px; } .xr-said .xn > i svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .xr-said .xn[aria-current] { background: var(--pl-bg-inset); color: var(--pl-text-primary); font-weight: 600; }
+  @media (hover: hover) and (pointer: fine) { .xr-said .xn:not([aria-current]):hover { color: var(--pl-text-primary); background: color-mix(in oklab, var(--pl-bg-inset) 60%, transparent); } }
   .xr-said .xn:focus-visible { box-shadow: 0 0 0 2px var(--pl-border-focus); }
+  /* the open note in a list: its row, then its sentence and what to do, under its name (no second copy above) */
+  .xr-said .xi[data-open] { background: var(--pl-bg-inset); border-radius: 12px; padding-bottom: 10px; }
+  .xr-said .xi[data-open] .xn { color: var(--pl-text-primary); font: 650 14px/1.3 var(--pl-round, var(--pl-sans)); background: none; }
+  .xr-said .xd { padding: 0 8px 0 33px; color: var(--pl-text-secondary); }
+  .xr-said .xd .nas { margin: 10px 0 0; }
+  /* the element's name and file lead, one quiet line; the note comes after it, the part in hand last */
+  .xr-card { display: flex; flex-direction: column; } .xr-card > .xr-body { display: contents; }
+  .xr-card .xr-head { order: -1; grid-template-columns: 20px 1fr; gap: 0 8px; margin-bottom: 12px; }
+  .xr-card .xr-head .toy { width: 20px; height: 20px; }
+  .xr-card .xr-head b { font-size: 13px; line-height: 16px; } .xr-card .xr-head code { font-size: 10.5px; line-height: 13px; }
   .xr-many { display: inline-flex; align-items: center; height: 18px; padding: 0 6px; margin-left: 4px; border-radius: 99px; vertical-align: 2px; background: var(--pl-sky-soft); color: var(--pl-sky-ink); font: 600 11px/1 var(--pl-sans); letter-spacing: 0; }
   .xr-many[data-scope="all"] { background: var(--pl-pink-soft); color: var(--pl-pink-ink); } .xr-many[data-scope="one"] { background: var(--pl-bg-inset); color: var(--xr-label); }
   /* the value in hand, beside the pointer: its number and its token, while you drag or scroll */
@@ -189,14 +201,19 @@ export function mountXray(o) {
       notes = list; syncSaid(el, true); if (shown === el) draw(el);
     }).catch(() => {});
   }
+  // the kit's buttons: the one thing to do raised in pink; the second a quiet word; Keep a picture, named on hover
+  let curNote = null;
+  const actsFor = (n) => {
+    const el = notesFor ?? shown, words = n.words && el && [...el.childNodes].some((t) => t.nodeType === 3 && t.data.trim());
+    const main = words && o.editWords ? ['edit', 'Edit the words'] : ['agent', 'Ask your agent'];
+    return button(main[1], { cls: 'sm na main', attrs: `data-act="${main[0]}"` })
+      + (main[0] === 'edit' ? button('Ask your agent', { cls: 'sm quiet na', attrs: 'data-act="agent"' }) : '')
+      + (o.keepNote ? button('', { cls: 'sm quiet only na', icon: KEEP_ICON, attrs: 'data-act="keep" aria-label="Keep as is" data-tip="Keep as is"' }) : '');
+  };
+  const toyOfConcern = (id) => toyOf(CONCERNS.find((c) => c.id === id)?.toy ?? '');
   function listHtml() {
-    if (!notes || notes.length < 2) return '';
-    let html = '<div class="xa">', last = null;
-    notes.forEach((n, i) => {
-      if (n.concern !== last) { last = n.concern; const k = notes.filter((m) => m.concern === n.concern).length; html += `<div class="xg"><span>${esc(n.concernName)}</span><span>${k}</span></div>`; }
-      html += `<button type="button" class="xn" data-i="${i}"${i === notePick ? ' aria-current="true"' : ''}>${esc(n.name)}</button>`;
-    });
-    return html + '</div>';
+    return '<div class="xa">' + notes.map((n, i) => `<div class="xi"${i === notePick ? ' data-open' : ''}><button type="button" class="xn" data-i="${i}" title="${esc(n.concernName)}" aria-expanded="${i === notePick}"><i aria-hidden="true">${toyOfConcern(n.concern)}</i>${esc(n.name)}</button>`
+      + (i === notePick ? `<div class="xd"><span>${esc(n.advice)}</span><div class="nas">${actsFor(n)}</div></div>` : '') + '</div>').join('') + '</div>';
   }
   function noteHtml(el) {
     // the element's own note, asked of the page's marks; never the pill's words, which may be about the element the
@@ -207,10 +224,9 @@ export function mountXray(o) {
     const { name, advice, rule } = n;
     // Edit the words leads only a note about the words (an em dash, a stock word); a padding note is your agent's (U30)
     const words = n.words && [...el.childNodes].some((t) => t.nodeType === 3 && t.data.trim());
-    const b = (act, label, main) => `<button type="button" class="na${main ? ' main' : ''}" data-act="${act}">${label}</button>`;
-    return `<div class="nt" data-rule="${esc(rule)}"><b>${esc(name)}</b><span>${esc(advice)}</span></div><div class="nas">`
-      + (words && o.editWords ? b('edit', 'Edit the words', true) + b('agent', 'Ask your agent') : b('agent', 'Ask your agent', true))
-      + (o.keepNote ? b('keep', 'Keep as is') : '') + '</div>' + (all ? listHtml() : '');
+    curNote = { ...n, words };
+    if (all && all.length > 1) return listHtml();
+    return `<div class="nt" data-rule="${esc(rule)}"><i aria-hidden="true">${toyOfConcern(n.concern)}</i><div><b>${esc(name)}</b><span>${esc(advice)}</span></div></div><div class="nas">${actsFor(curNote)}</div>`;
   }
   // The note belongs to the element the card is on. The page's pill goes away as the hand leaves the element for the card;
   // that must not empty the card: a card that lost its note got shorter, was placed again (above, then below), and put
@@ -241,7 +257,7 @@ export function mountXray(o) {
     const act = e.target.closest?.('.na')?.dataset.act, el = shown;
     if (!act || !el) return;
     e.stopPropagation();
-    const name = said.querySelector('.nt b')?.textContent ?? '', advice = said.querySelector('.nt span')?.textContent ?? '', rule = said.querySelector('.nt')?.dataset.rule ?? '';
+    const { name = '', advice = '', rule = '' } = curNote ?? {};
     if (act === 'edit') { shrink(); o.editWords?.(el); }
     else if (act === 'agent') startNote(`${name}: ${advice}`);
     else if (act === 'keep') { shrink(); o.keepNote?.(el, rule); }

@@ -66,3 +66,8 @@ export const BUTTON_CSS = `
 const kbd = (k) => `<kbd>${k}</kbd>`;
 /** A toy button: button('Keep', { cls: 'sm quiet', key: 'K' }). cls: quiet | done | wrong, sm | lg, only. */
 export const button = (label, { cls = '', attrs = '', icon = '', key = '' } = {}) => `<button type="button" class="tb ${cls}" ${attrs}><span class="top">${icon ? `<i class="ic">${icon}</i>` : ''}${label ? `<span class="lb">${label}</span>` : ''}${key ? kbd(key) : ''}</span></button>`;
+
+// Keep as is: a mint block, its tick cut out. Skip: a sky block, the arrow to the next cut out (used where a row is short
+// of room: the fix bar, the X-ray card; their names are one hover away)
+export const KEEP_ICON = '<svg viewBox="0 0 18 18" aria-hidden="true"><rect x="1.5" y="1.5" width="15" height="15" rx="4.5" fill="var(--pl-mint)"/><path d="M5.4 9.3 7.8 11.6 12.6 6.6" fill="none" stroke="var(--pl-cut)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+export const SKIP_ICON = '<svg viewBox="0 0 18 18" aria-hidden="true"><rect x="1.5" y="1.5" width="15" height="15" rx="4.5" fill="var(--pl-sky)"/><path d="M5.5 9h6.4M9.3 6.1 12.2 9l-2.9 2.9" fill="none" stroke="var(--pl-cut)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';

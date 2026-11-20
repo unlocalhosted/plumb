@@ -3128,6 +3128,17 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **Still open:** the bar's other checks (progress shows, fits where the original sat, keeps its weight) aren't
   plumber rules yet.
 
+### 38. Alt and the X-ray card (2026-11-20)
+
+- **The itch:** holding Alt showed the old name tag outside Blueprint, and Alt-click opened the old element card with its heat and a dark spacing slider. Once the X-ray card took over, its pink note looked wrong. The owner on the note: "why is this black on muddy pink". On three new tints of it: "all of them look so ugly".
+- **How we found it:** the owner's screenshots, then a page that drew today's note beside three tints (overlay/demo/note-face.html). All three looked as bad, so the tint was not the cause.
+- **The system behind it:** the card did five jobs: a note, a control for the part under the pointer, the element's name and file, a drawing of its box, and five rows of measurements. Each job had arrived as another block stacked in the card. The note was a tinted panel of paragraphs, which the visual language rules out. It read as a second card inside the first, written in class names. Asked what was ugly at the root, the owner picked all four: the coloured box, the card inside a card, the words, and the whole card.
+- **What we chose and why:** split the work by where it belongs. The page drawing shows what the element is (spacing, size, edges), as it already did, so the card stops repeating it. The card says what is wrong and what to do. A note is a row: its concern's toy, its name, one sentence. The open note shows its sentence and actions under its own name, and the others are one line each. Colour comes from the toy, not from a panel. Actions are the kit's buttons: one pink raised action, with Keep as a small picture named on hover. The name and file lead the card as one quiet line.
+- **The fix and the proof:** holding Alt opens the X-ray anywhere and letting go closes it. Alt-click pins the card, and Esc or a click on the page puts it away. The pinned card lists every note on the element. Checked on the test app: the "Smart sync" heading shows its name line, "Tailwind's default, not yours" open with "Ask your agent" and Keep, "Heading level skipped" below it, and the text-size control.
+- **Still open:** the sentences are still developer words ("text-lg uses Tailwind's default type scale (--text-lg)"). Rewriting them in plain words is the next layer.
+- **Media hooks:** before and after of the Alt-click card on the same heading: the old card with its box diagram and pink note, then the new one.
+
+
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
 - Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".
@@ -4787,6 +4798,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- Holding Alt shows the X-ray on any element, and Alt-click pins its card. The card names the element, lists what is wrong with it (each note with its concern's toy and one thing to do) and holds one control for the part under your hand; the box drawing and the measurements stay on the page ([entry](#38-alt-and-the-x-ray-card-2026-11-20)).
 - Blueprint's count appears once the page is read, in about a second, and holds still; it used to climb for a second and the page took 10 s to count as read ([entry](#the-count-that-seemed-to-change-on-its-own-2026-11-20)).
 - Blueprint counts what you work through: one number in fixes, the same in the bar, Fix and the card, rolling down as fixes land; the page gets room under the bar ([entry](#the-fifth-batch-one-count-room-for-the-bar-2026-11-20)).
 - Picking a concern in Blueprint names its notes on the page, one pin per kind with how many; the X-ray card's box drawing shows one number per side; leaving Fix puts the page back where it was ([entry](#the-third-batch-of-fixes-from-the-blueprint-walk-2026-11-20)).

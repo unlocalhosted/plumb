@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Note face · React Plumber</title>
+<style>
+  body { margin: 0; padding: 28px 16px 64px; background: #ecebe7; font: 14px/1.5 system-ui, sans-serif; color: #1c1b19; }
+  #board { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px; }
+  h2 { font: 600 13px/1.3 system-ui; margin: 0 0 8px; } h2 span { display: block; opacity: .6; font-weight: 500; }
+</style>
+</head>
+<body>
+<div id="board"></div>
+<script type="module">
+  import tokens from '../src/tokens.css?raw';
+  const note = `<div class="card"><div class="said"><b>Tailwind’s default, not yours</b><span>text-lg uses Tailwind’s default type scale (--text-lg), not your theme</span>
+    <div class="nas"><button class="na main">Ask your agent</button><button class="na">Keep as is</button></div></div><div class="rest">text size · lg 18px</div></div>`;
+  const base = `${tokens}
+    .card { width: 292px; background: var(--pl-bg-surface); border-radius: 18px; padding: 10px; box-shadow: 0 10px 30px -12px rgb(0 0 0 / .3); font-family: var(--pl-sans); }
+    .said { padding: 12px 12px 10px; border-radius: 13px; font: 400 13px/1.4 var(--pl-sans); }
+    .said b { display: block; font: 650 14px/1.3 var(--pl-round, var(--pl-sans)); margin-bottom: 3px; }
+    .nas { display: flex; gap: 6px; margin-top: 10px; }
+    .na { all: unset; padding: 6px 10px; border-radius: 9px; font: 600 12px/1 var(--pl-sans); }
+    .rest { padding: 10px 4px 2px; font: 500 12px/1 var(--pl-mono); color: var(--pl-text-secondary); }`;
+  const OPTS = [
+    ['Today', 'dusty salmon face, near-black plum words', `.said { background: var(--pl-pink-face); color: var(--pl-pink-ink); } .na { background: color-mix(in oklab, currentColor 10%, transparent); color: inherit; } .na.main { background: var(--pl-cut); color: var(--pl-ink); }`],
+    ['A · Solid pink', 'the action hue itself, white words; the main action cut out in white', `.said { background: var(--pl-pink); color: var(--pl-pink-on); } .said span { font-weight: 500; } .na { background: color-mix(in oklab, #fff 22%, transparent); color: #fff; } .na.main { background: var(--pl-cut); color: color-mix(in oklab, var(--pl-pink) 70%, #000); }`],
+    ['B · Clean light pink', 'the pins’ own soft pink; pink headline, quiet grey words; main action solid pink', `.said { background: var(--pl-pink-soft); color: var(--pl-text-primary); } .said b { color: color-mix(in oklab, var(--pl-pink) 75%, #000); } .said span { color: var(--pl-text-secondary); } .na { background: color-mix(in oklab, var(--pl-pink) 12%, transparent); color: color-mix(in oklab, var(--pl-pink) 75%, #000); } .na.main { background: var(--pl-pink); color: var(--pl-pink-on); }`],
+    ['C · White card, pink mark', 'no tint at all: a pink bar on the left says “a note”; main action solid pink', `.said { background: var(--pl-bg-inset); color: var(--pl-text-primary); box-shadow: inset 3px 0 0 var(--pl-pink); } .said span { color: var(--pl-text-secondary); } .na { background: var(--pl-bg-surface); color: var(--pl-text-primary); box-shadow: inset 0 0 0 1px var(--pl-border-default); } .na.main { background: var(--pl-pink); color: var(--pl-pink-on); box-shadow: none; }`],
+  ];
+  for (const [t, sub, css] of OPTS) {
+    const sec = document.createElement('section'); sec.innerHTML = `<h2>${t}<span>${sub}</span></h2>`;
+    const host = document.createElement('div'); sec.append(host); document.getElementById('board').append(sec);
+    host.attachShadow({ mode: 'open' }).innerHTML = `<style>${base}${css}</style>${note}`;
+  }
+</script>
+</body>
+</html>

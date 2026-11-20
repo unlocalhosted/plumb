@@ -46,7 +46,7 @@ import { Scope } from './scope.js';
 import { CONCERNS, ALL_TOY, concernOf } from './concerns.js';
 import { TOY_DEFS } from './toys.js'; // what each note is about: Blueprint opens on them
 import { Claims, LEVEL } from './claims.js';
-import { BUTTON_CSS, button } from './kit.js'; // the soft button (design site: Buttons)
+import { BUTTON_CSS, button, KEEP_ICON, SKIP_ICON } from './kit.js'; // the soft button (design site: Buttons)
 import { soften } from './soft.js'; // its press
 import { toyOf } from './toys.js'; // the property's toy, at the head of the bar
 import { stepper, radius as radiusControl, swatches, bind as bindControl } from './editor-primitives.js'; // the property's control on the element (design site: Pickers)
@@ -67,9 +67,6 @@ const BAR_ICON = {
   x: '<svg class="x" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg>',
 };
 
-// Keep as is: a mint block, its tick cut out. Skip: a paper block, the arrow to the next cut out
-const KEEP_ICON = '<svg viewBox="0 0 18 18" aria-hidden="true"><rect x="1.5" y="1.5" width="15" height="15" rx="4.5" fill="var(--pl-mint)"/><path d="M5.4 9.3 7.8 11.6 12.6 6.6" fill="none" stroke="var(--pl-cut)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-const SKIP_ICON = '<svg viewBox="0 0 18 18" aria-hidden="true"><rect x="1.5" y="1.5" width="15" height="15" rx="4.5" fill="var(--pl-sky)"/><path d="M5.5 9h6.4M9.3 6.1 12.2 9l-2.9 2.9" fill="none" stroke="var(--pl-cut)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const TOOL_TOY = { history: 'progress', help: 'tooltip', pick: 'search' };
 
 const FIX_CSS_BASE = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `

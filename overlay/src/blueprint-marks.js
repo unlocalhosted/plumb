@@ -27,6 +27,7 @@
 import { proofSvg } from './proof.js';
 import { pxOf } from './value.js';
 import { FIX } from './words.js';
+import { concernOf } from './concerns.js';
 import { TELLS_RULES } from './tells-rules.js';
 import { RULES as CRAFT_RULES } from './craft-rules.js';
 
@@ -35,7 +36,7 @@ import { RULES as CRAFT_RULES } from './craft-rules.js';
 const WORDS_OWN = new Set(['text', 'sentence', 'subtitle', 'punctuation', 'wording']);
 const ABOUT_WORDS = new Set([...TELLS_RULES, ...CRAFT_RULES].filter((r) => r?.owns?.some((o) => WORDS_OWN.has(o))).map((r) => r.id));
 // What a note says, for a card: its name, what to do, its rule, and whether it is about the words (Edit the words leads)
-export const noteOfMark = (m) => ({ name: FIX.what(m), advice: String(m.craft?.suggest?.text ?? m.title ?? '').replace(/`/g, ''), rule: m.rule ?? '', words: ABOUT_WORDS.has(m.rule) });
+export const noteOfMark = (m) => ({ name: FIX.what(m), advice: String(m.craft?.suggest?.text ?? m.title ?? '').replace(/`/g, ''), rule: m.rule ?? '', words: ABOUT_WORDS.has(m.rule), concern: concernOf(m) });
 
 const TAG_H = 18; // a label's height: the code face's line and a pixel each side
 
