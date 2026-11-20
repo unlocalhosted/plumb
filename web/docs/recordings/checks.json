@@ -2467,6 +2467,105 @@
    "where": "page",
    "tile": "Weight",
    "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "tells/caps-subtitle",
+   "concern": "slop",
+   "name": "Subtitle in capitals",
+   "why": "Capitals make the second line louder than the first. The heading should lead.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "tells/italic-words",
+   "concern": "slop",
+   "name": "Italic accent",
+   "why": "Slanting a word for flavour is a template habit. The words should carry the weight on their own.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "tells/display-serif",
+   "concern": "slop",
+   "name": "Borrowed display serif",
+   "why": "It is the face generated pages pick for a quick dose of taste, so it reads as a template.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "tells/negative-tracking",
+   "concern": "slop",
+   "name": "Letters squeezed",
+   "why": "Squeezed headings are a template look. The type was spaced by the people who drew it.",
+   "where": "page",
+   "tile": "Letter spacing",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "tells/divider",
+   "concern": "slop",
+   "name": "Divider line",
+   "why": "Lines cut the page into strips. Space does the same job and keeps it calm.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "tells/bordered-box",
+   "concern": "slop",
+   "name": "Outlined box",
+   "why": "Boxes inside boxes make every part shout \"card\". A quiet fill or space groups it.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "tells/detailed-diagram",
+   "concern": "slop",
+   "name": "Busy diagram",
+   "why": "The more a diagram draws, the less anyone reads it. One idea needs few marks.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "tells/code-breadcrumb",
+   "concern": "slop",
+   "name": "Path as decoration",
+   "why": "A file path on a page dresses it up as a terminal. People need the name of the thing, not where it lives.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "tells/tag-row",
+   "concern": "slop",
+   "name": "Row of tags",
+   "why": "Tags that do nothing when pressed are labels pretending to be data.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "tells/busy-card",
+   "concern": "slop",
+   "name": "Too many voices",
+   "why": "Each style is another voice. Past three, nothing leads and the box reads as noise.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "tells/many-shades",
+   "concern": "slop",
+   "name": "Too many shades",
+   "why": "Each near-same shade asks people to tell it apart. A few steps, used the same way everywhere, read as a system.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
   }
  ]
 }
