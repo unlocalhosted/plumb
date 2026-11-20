@@ -1,0 +1,9 @@
+{
+  "name": "plumber-example-ledger-sloppy",
+  "private": true,
+  "type": "module",
+  "description": "The Ledger example with no rules accepted: everything plumber can find, for demos.",
+  "scripts": {
+    "dev": "vite --config vite.config.js"
+  }
+}

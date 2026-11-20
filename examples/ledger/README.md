@@ -11,5 +11,5 @@ npm run build                      # at the repo root: the example runs this bui
 cd examples/ledger && npx vite --config vite.config.js
 ```
 
-It runs at http://127.0.0.1:4340/. Writing a fix changes the files here: put them back with
+It runs at http://127.0.0.1:4340/. Writing a fix changes the files here: "Reset demo" in the bottom-left corner puts them back, or
 `git checkout -- examples/ledger` when you are done trying.
