@@ -120,9 +120,10 @@ One at a time, each shown working before the next, on a real plain-CSS app as we
 
 ## Progress
 
-- **Layers 0 to 9 (2026-11-20):** built and shown end to end on the plumber site (Next, plain CSS) and the ledger
-  (Vite, Tailwind); journey 65 to 68. Open: Clean up's system pass,
-  recipes and rename on the shared rule system, and a `.scss` file on Next (Sass ran through the engine and on a Vite page, journey 69).
+- **Layers 0 to 9 (2026-11-20):** built and shown end to end on the plumber site (Next, plain CSS), the ledger
+  (Vite, Tailwind), a Vite Sass page and a Next Sass page; journey 65 to 70. Rename, recipes and Clean up's type pass
+  work on plain CSS too. Left as a cleanup, not a gap: recipes still find their rule by class name, not through the
+  rule system.
 
 ## Decisions still open
 

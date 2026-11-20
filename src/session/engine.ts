@@ -1421,7 +1421,7 @@ export class Session extends EventEmitter {
    * it was read is refused. All of one call is one undo; a change no system can place is said, not guessed.
    */
   async styleWrite(options: { changes: { prop: string; value: string; token?: string; evidence: Evidence }[] }): Promise<Record<string, unknown>> {
-    const changes = options?.changes;
+    const changes = await Promise.all((options?.changes ?? []).map(async c => (c?.evidence ? { ...c, evidence: await this.evidenceFile(c.evidence) } : c)));
     if (!Array.isArray(changes) || !changes.length || changes.length > 32) throw new UsageError('Style write takes one to thirty-two changes.');
     const read: ReadFile = async (file) => { const path = this.file(file); await this.readableSource(path); const text = await readFile(path, 'utf8'); return { text, hash: sourceHash(text) }; };
     const ctx: StyleContext = { read, root: this.root, classEdit: place => this.classEdit(place) };
@@ -1471,8 +1471,9 @@ export class Session extends EventEmitter {
   /** Where one property of one element is written, from what the page saw: the card's read of a place (its words,
    * the value as written, the file's hash to send back with the write). Nothing is written. */
   async stylePlace(options: { prop: string; evidence: Evidence }): Promise<Record<string, unknown> | null> {
-    const { prop, evidence } = options ?? {} as { prop: string; evidence: Evidence };
-    if (typeof prop !== 'string' || !/^[a-z][a-z-]*$/.test(prop) || !evidence || typeof evidence !== 'object') throw new UsageError('Style place takes a property and what the page saw.');
+    const { prop } = options ?? {} as { prop: string; evidence: Evidence };
+    if (typeof prop !== 'string' || !/^[a-z][a-z-]*$/.test(prop) || !options?.evidence || typeof options.evidence !== 'object') throw new UsageError('Style place takes a property and what the page saw.');
+    const evidence = await this.evidenceFile(options.evidence);
     const read: ReadFile = async (file) => { const path = this.file(file); await this.readableSource(path); const text = await readFile(path, 'utf8'); return { text, hash: sourceHash(text) }; };
     const placed = await locateStyle(evidence, prop, { read, root: this.root, classEdit: place => this.classEdit(place) }).catch(() => null);
     if (!placed) return null;
@@ -1495,6 +1496,19 @@ export class Session extends EventEmitter {
     };
     await walk(this.root, 0);
     return out;
+  }
+  /** A source the page names from a bundler's root (`[project]/app/page.scss`, Turbopack's): found from this project's
+   * root or the folders above it, inside the repository's boundary. Other names are kept as they are. */
+  private async evidenceFile(evidence: Evidence): Promise<Evidence> {
+    const named = evidence.file;
+    if (!named || !named.startsWith('[project]/')) return evidence;
+    const rest = named.slice('[project]/'.length), boundary = sourceBoundary(this.root);
+    for (let dir = this.root; containsPath(boundary, dir); dir = dirname(dir)) {
+      const path = join(dir, rest);
+      if (await stat(path).then(s => s.isFile(), () => false)) return { ...evidence, file: path };
+      if (dirname(dir) === dir) break;
+    }
+    return evidence;
   }
   /** The properties a style change can be about, and the declarations that carry each (src/styles/properties.ts). */
   async styleProperties(): Promise<typeof PROPERTIES> { return PROPERTIES; }

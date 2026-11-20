@@ -3866,6 +3866,29 @@ Sync from the page wrote the title 28px → 32px in its nested rule and the row'
 the colour from `@include muted` with the mixin's name, and undo put both back. Said results now read `$gap: 20px`
 for a variable. Not tried: a `.scss` file on Next.
 
+### 70. The last parity gaps (2026-11-20)
+**The itch.** The owner: "fix the remaining parity gaps too": rename beyond colour names, recipes on plain CSS, Clean
+up's type pass, and a `.scss` file on Next.
+
+**What we built, and the proof.**
+- **Rename any token.** A map of whole custom properties (`--spacing-2` → `--space-tight`) renames the declaration and
+  every `var(...)` in CSS, Sass and JSX. On the scratch project: 5 uses in 4 files. A rename onto `--ink-quiet`, which
+  was already declared, was refused before anything was written.
+- **Motion recipes on plain CSS.** They refused outright without Tailwind. Now a hover, press or focus motion writes a
+  `transition` into the element's rule and a `:hover` / `:active` / `:focus-visible` rule with the changed values;
+  an entrance writes `@keyframes` (with its credit) and an `animation`. Shown: `fade-rise` and a 2px hover lift on
+  `.card2`. Fixed on the way: a one-line rule (`.card2 { … }`) got the new line above it, not inside (shadows too).
+- **Clean up's type pass on a page with no utility classes.** A role's `@utility` and class swap did nothing there; the
+  role's values now go into the rule that styles each element. Shown on the site with a synthetic role on the
+  homepage heading: `.title { font-size: 40px }` and `line-height: 44px`, 34px → 40px, then undone.
+- **Sass on Next.** A Next page styled by a `.scss` file (run once, not kept). Turbopack names the source
+  `turbopack:///[project]/…`, which the server now resolves from its root. Sync wrote the title 28px → 34px in its
+  nested rule and the gap 12px → 20px through `$gap`; undo put both back.
+
+**What the lab needed.** Next finds `sass` from its own install, so a link to the scratch `sass` sat in the repo's
+`node_modules` while it ran, then was removed. The site's own plumber route roots at `../homepage`, so the lab's copy
+was pointed at itself. The site's server was stopped while the lab ran (the laptop had 65 MB free) and started again.
+
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
 - Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".
@@ -5478,7 +5501,6 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   `generator/shots/generate-craftingattention.png` (local).
 
 ## Open gaps
-- **CSS parity gaps:** Clean up's system pass, recipes' own rule finder, rename beyond `--color-*`, and a `.scss` file on Next ([entry](#69-sass-run-for-real-2026-11-20)).
 - **CSS rule fixes are narrow.** They cover text size, line height, weight, gap, corners, width, height and padding per side, from rules outside `@media`. Padding set for two sides at once (`padding-x`) still goes to classes, and the change isn't checked against your token scale before it's written ([entry](#63-css-rule-fixes-work-on-the-next-site-2026-11-20)).
 - **The owner's slop checks are untuned on real apps.** Tight letters fire on every heading that sets them (28 on our homepage), the shade count reads greys mixed by opacity as separate shades, and none of the eleven has been run through a full plumber read or the docs' recordings yet ([entry](#56-the-owners-slop-list-becomes-eleven-anti-slop-checks-2026-11-20)).
 - **The mark was never tried among real neighbours** (a row of browser tabs, an npm page, a README header), only on empty tiles. Nobody outside has been asked whether the round leg reads as an R or leans towards a B.
@@ -5528,6 +5550,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- The last CSS parity gaps closed: any token renamed across CSS, Sass and code; motion recipes on plain CSS; Clean up's type roles written into each element's own rule; Sass on Next ([entry](#70-the-last-parity-gaps-2026-11-20)).
 - Sass works through plumber's engine: values in nested rules, `$variables` and nested `@media` are written where the `.scss` writes them, mixins are refused, and every write must still compile ([entry](#69-sass-run-for-real-2026-11-20)).
 - Plain CSS works end to end in plumber: the X-ray, the words card and Tidy write the CSS rule that styles an element (inside @media when that rule is in force), finding fixes reach stylesheets that also define tokens, and Sass is placed through its source map ([entry](#68-layers-2-to-9-parity-end-to-end-2026-11-20)).
 - Every X-ray Sync goes through one server-side interface for classes and plain CSS rules, as one undo; colour, margin, shadow and 35 other properties now reach a CSS rule ([entry](#66-layer-0-done-classes-behind-the-same-interface-2026-11-20)).

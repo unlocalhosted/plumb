@@ -218,7 +218,9 @@ export async function fileOfBundled({ bundle, selectorText, nth }) {
     source = inner?.sources?.length === 1 ? inner.sources[0] : inner ? sourceAtLine(inner, line - section.offset.line) : null;
   } else source = map.sources?.length === 1 ? map.sources[0] : map.mappings ? sourceAtLine(map, line) : null;
   if (!source) return null;
-  const path = decodeURI(String(source).replace(/^file:\/\//, '').replace(/^webpack:\/\/[^/]*\//, ''));
+  // Turbopack names a source by its root (`turbopack:///[project]/app/page.scss`): `[project]/…` is passed on, and the
+  // server finds it from its own root
+  const path = decodeURI(String(source).replace(/^(?:turbopack:\/\/\/)+/, '').replace(/^file:\/\//, '').replace(/^webpack:\/\/[^/]*\//, ''));
   return /node_modules/.test(path) || !/\.(css|scss|sass)$/.test(path) ? null : path;
 }
 // the value a rule is given: your token's variable when the page has it, else the value itself
