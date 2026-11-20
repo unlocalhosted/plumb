@@ -12,9 +12,11 @@ export async function playground({ here, root, src = 'src', aliases = [], allow 
   const req = createRequire(root + '/package.json');
   const { default: react } = await import(req.resolve('@vitejs/plugin-react'));
   const { default: tailwindcss } = await import(req.resolve('@tailwindcss/vite'));
+  // plumber itself, as the products load it: its overlay on the page (Alt+B), judging the atoms live as you use them
+  const { plumb } = await import(`${PLUMB}dist/hosts/vite.js`);
   const from = (p) => [root, ...SPARE].find((r) => existsSync(`${r}/node_modules/${p}`)) + '/node_modules/' + p;
   return {
-    root: here, publicDir: root + '/public', plugins: [react(), tailwindcss()],
+    root: here, publicDir: root + '/public', plugins: [plumb(), react(), tailwindcss()],
     resolve: { alias: [
       ...aliases,
       { find: /^@\//, replacement: `${root}/${src}/` },
