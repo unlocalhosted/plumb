@@ -2913,6 +2913,34 @@ field is empty). The table of five writes, before and after. The Next table: eig
      plumb repository apart from an app.
 - **Left:** the homepage's first sentence, in the owner's own uncommitted edit; the `--root` error that lists 45
   paths, as its own fix.
+### The count that seemed to change on its own (2026-11-20)
+
+- **The itch:** the tester opened Blueprint on Ledger and saw 200, then 182 after a scroll, then 197 after a reload,
+  with no file changed. Later, on the site, the bar said 256 and the list a second later said 264. "If the number
+  moves on its own, I can't tell whether my fixes did anything."
+- **How we found it:** sampling the bar every 30 ms after opening. The count first appeared 0.2 s in and climbed 47,
+  46, 54, 73, 75, 82 within a second, while the line no longer said it was checking. Scrolling, stepping through 20
+  fixes and reloading all ended on the same 82. The page counted as read only at 10 s, though nothing on it moved
+  after 0.4 s and the server had answered by 1.3 s. A trace in the reader showed one element still "reading" for
+  those 9 s: `<div id="root">`.
+- **The system behind it:** three gaps in one idea, "the page is read".
+  1. The bar's old status line kept the last settled count while the page was read again. When the count moved into
+     the concern picker, the picker counted the half-read page and skipped that rule.
+  2. Finding an element's source waits up to 10 s for React to reach it, for pages React hydrates a part at a time.
+     React never draws the box `createRoot` draws into, so every Blueprint opening waited the full 10 s on it.
+  3. The craft rules ask questions whose answers arrive later (an icon's ink, what a line under a heading means, a
+     component's source), and they judge big pages in slices between frames. The reader called the page read before
+     any of those landed, so notes kept arriving after "done".
+- **The fix and the proof:** the picker counts the fixes as last settled, less any taken since. On a first reading
+  the bar says "Checking this page…" until the page is read through; a page that never settles shows its count
+  after 4 s. Source-finding no longer waits on React's own container. The reader treats an open rule question or a
+  waiting slice as "not read yet". After the fix, five openings in a row each showed one number (80) at about 1 s and
+  kept it (commit ed803fc5).
+- **Not done:** an element outside any React root (static HTML next to the app) still waits the 10 s; not seen on
+  these pages.
+- **Media hooks:** a before/after clip of the bar opening: the number climbing, then "Checking this page…" and one
+  number.
+
 ### 38. The generator runs on all four products (2026-11-20)
 
 - **The itch:** the owner, after the first run on crafting attention: "do it for the other three products too". It
@@ -4622,6 +4650,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- Blueprint's count appears once the page is read, in about a second, and holds still; it used to climb for a second and the page took 10 s to count as read ([entry](#the-count-that-seemed-to-change-on-its-own-2026-11-20)).
 - Blueprint counts what you work through: one number in fixes, the same in the bar, Fix and the card, rolling down as fixes land; the page gets room under the bar ([entry](#the-fifth-batch-one-count-room-for-the-bar-2026-11-20)).
 - Picking a concern in Blueprint names its notes on the page, one pin per kind with how many; the X-ray card's box drawing shows one number per side; leaving Fix puts the page back where it was ([entry](#the-third-batch-of-fixes-from-the-blueprint-walk-2026-11-20)).
 - Blueprint's notes say what is wrong in plain words; History, Help and Setup open above the bar; Fix brings an element in below a sticky header with its choice beside it; Clean up's Copy and Close are in view ([entry](#the-second-batch-of-fixes-from-the-blueprint-walk-2026-11-20)).
