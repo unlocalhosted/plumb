@@ -175,8 +175,10 @@ export async function readiness(options: ReadinessOptions): Promise<ReadinessRep
   let host: Awaited<ReturnType<typeof hostConfig>>;
   try { host = await hostConfig(root, facts.host.value); } catch { /* An unreadable host config is unknown. */ }
   const hostFile = host ? relative(root, host.file) : 'package.json';
-  const evidence = (key: string, text: string): Evidence[] => [{ file: hostFile, line: host ? host.source.slice(0, host.offsets[key] ?? 0).split('\n').length : 1, text }];
-  const manual = (instruction: string) => step(`${instruction} Check ${hostFile}, then run plumber doctor.`, 'plumber doctor');
+  // a place only where there is one: with no dev server config found, package.json:1 pointed at a file that holds none
+  // of it (U21, 2026-11-20)
+  const evidence = (key: string, text: string): Evidence[] => host ? [{ file: hostFile, line: host.source.slice(0, host.offsets[key] ?? 0).split('\n').length, text }] : [];
+  const manual = (instruction: string) => step(`${instruction} Check ${host ? hostFile : 'your dev server config'}, then run plumber doctor.`, 'plumber doctor');
   const configFix = async (id: string, fallback: Fix): Promise<Fix> => {
     const after = host?.changes[id];
     if (!host || !after || after === host.source) return fallback;
