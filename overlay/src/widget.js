@@ -50,7 +50,7 @@ import { noteOfMark } from './blueprint-marks.js';
 import { PICKER_CSS } from './picker.js';
 import { TOY_DEFS } from './toys.js';
 import { classSiteOf, siteMatesOf } from './locate.js';
-import { route as routeStyles, loadProperties } from './style-systems.js';
+import { route as routeStyles, loadProperties, evidenceFor, fileOfBundled } from './style-systems.js';
 import { utility } from './craft-read.js';
 
 const tokensCss = await (await fetch(new URL('./tokens.css', import.meta.url))).text();
@@ -614,6 +614,18 @@ class PlumbOverlay extends HTMLElement {
       // the page that one written line draws. Several from one line change together: one of them alone would need a
       // condition in your code, so 'just this one' is offered only when the line draws one element
       scopeInfo: async (el, prop) => {
+        // where the value comes from, proven on the page (style-systems.js): a rule in your stylesheet reaches every
+        // element it styles, so that is the scope, said with the rule and its file
+        await loadProperties(request);
+        const e = evidenceFor(el, prop);
+        if ([...routeStyles([{ id: 0, prop, value: '', els: [el] }]).keys()][0]?.id === 'rule') {
+          const file = e.file ?? (e.bundle ? await fileOfBundled(e).catch(() => null) : null);
+          if (file) {
+            let mates = [el]; try { mates = [...new Set([el, ...document.querySelectorAll(e.selector)])]; } catch { /* the selector the browser gave is one it matches */ }
+            const short = file.split('/').pop();
+            return { scopes: mates.length > 1 ? ['page'] : ['one'], mates, where: `${e.selector} in ${short}${e.media ? ` under ${e.media}` : ''}`, rule: true };
+          }
+        }
         const side = /^(padding|margin)-(\w)/.exec(prop), L = side?.[1][0];
         const PRE = side ? [`${L}${side[2]}`, `${L}${/^[tb]/.test(side[2]) ? 'y' : 'x'}`, L] : { gap: ['gap'], 'border-radius': ['rounded'], width: ['w'], height: ['h'], 'font-size': ['text'] }[prop] ?? [];
         const cls = PRE.map((p) => utility(el, p)).find(Boolean);

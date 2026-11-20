@@ -446,7 +446,8 @@ export function mountXray(o) {
     if (scope === 'all' && o.component(el)) return o.everywhere?.(el) ?? [el];
     return scope === 'page' ? peers(el) : [el];
   };
-  const tail = (w) => (w ? String(w).split('/').pop() : '');
+  // a place in code (`src/a/b.jsx:12` → `b.jsx:12`), or a rule as said (`.title in foundations.css`) kept whole
+  const tail = (w) => (!w ? '' : / in /.test(w) ? String(w) : String(w).split('/').pop());
   const scopeSaid = (el) => scope === 'all' ? `all ${o.component(el)?.uses ?? ''}`.trim() : scope === 'page' ? `×${peers(el).length}` : 'this';
   const read = (el, prop) => { const cs = getComputedStyle(el); return prop === 'width' ? el.getBoundingClientRect().width : prop === 'height' ? el.getBoundingClientRect().height : prop === 'gap' ? parseFloat(cs.columnGap) || parseFloat(cs.rowGap) || 0 : parseFloat(cs.getPropertyValue(prop)) || 0; };
   const set = (el, prop, v) => {
