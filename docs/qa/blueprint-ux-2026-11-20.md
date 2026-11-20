@@ -74,7 +74,7 @@ How to read an issue, and what each one needs:
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u03-concern-list.jpg`; the notes' words come from the labels on the
   page's note shapes inside the overlay.
-- **Status:** partly fixed 20b7a36e (each design-system note now says what is wrong: "isn't one of your tokens", "won't change when your theme does"). needs owner: what the concern count counts. Today it counts places (Design system 125) while Fix steps through fixes ("1 of 49"); a code comment records places as a deliberate choice. Options: (a) count fixes, so the picker's number is the list you work through and matches "1 of 49"; costs: a page with one fix at 60 places reads as "1", and the number drops a lot from what you have seen. (b) keep places but show both ("125 places · 31 fixes"); costs: two numbers in a small control. (c) keep as is and fold every Tailwind default into one page note ("this page uses Tailwind's default type scale"); costs: a new kind of note, and those places leave the fix list. I'd pick (a). · tester (05:01): the new words are in (e.g. "mt-8. This works out to 2rem, which isn't one of your tokens."); the count is still 197 with 125 design-system notes, so the rest waits on the owner.
+- **Status:** fixed e3a74f91 (owner chose "count fixes", 2026-11-20): the bar, its list, Fix's position (notes included: "1 of 80") and the card all count fixes; the count rolls when it changes. Earlier: 20b7a36e made each design-system note say what is wrong
 
 ### U5 · The Blueprint bar covers the page's main heading
 - **Where:** Blueprint bar at rest, 1280×800.
@@ -84,7 +84,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding (the page I'm judging is partly hidden).
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u01-bar-at-rest.jpg`
-- **Status:** needs owner: the bar is 54px at the bottom centre; the only ways to keep it off a heading change the person's page or the bar. Options: (a) add room under the page while Blueprint is open (a spacer as tall as the bar), so anything can be scrolled out from under it; costs: Blueprint changes the page it judges, by one block at the very end. (b) the bar shrinks to a small pill when the pointer is far from it, growing back on approach; costs: one more motion, and the count is out of sight at rest. (c) leave it; the page scrolls. I'd pick (a), drawn as the margin pattern so it reads as plumber's, not the page's
+- **Status:** fixed bf325f80 (owner chose "room under the page"): while the bar shows, <html> gets as much padding at its foot as the bar takes; on the Ledger screen the last words end at 686px above the bar at 730; closing leaves no style attribute
 
 ### U6 · The card shows another element's note
 - **Where:** Blueprint, All concerns, the X-ray card on the "Get started" button.
@@ -260,7 +260,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding and DX. I run init twice, or wonder what the second one does differently.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u19-setup-panel.jpg`; panel text read from the page.
-- **Status:** fixed cc44f3ec: with no config, one step ("Choose your rules"), which says it records today's problems too (seen in `plumber doctor --verbose`; the test server on 4340 shows it after a restart) · tester (06:00): not visible yet. The setup panel on port 4340 still lists two `npx plumber init` steps, as the fixer expected, because that server has not been restarted. Re-check after a restart.
+- **Status:** fixed cc44f3ec: with no config, one step ("Choose your rules"), which says it records today's problems too (seen in `plumber doctor --verbose`; the test server on 4340 shows it after a restart) · tester (06:00): not visible yet. The setup panel on port 4340 still lists two `npx plumber init` steps, as the fixer expected, because that server has not been restarted. Re-check after a restart. · verified in the CLI (tester, 06:05): `node dist/cli.js doctor --verbose` lists one step with `npx plumber init` ("your answers become your rules, and today's problems are recorded with them"). The panel on 4340 still shows the old two until that server restarts. One small leftover: where the place used to be, the step prints an empty line.
 
 ### U21 · Setup steps point at package.json line 1 for things that aren't in package.json
 - **Where:** Setup steps, "Turn on React Fast Refresh", "Plugin order needs a check", "Check that saving updates the
@@ -272,7 +272,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** DX. I open package.json and find nothing to change.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u19-setup-panel.jpg`; panel text read from the page.
-- **Status:** fixed 5bf095fd: with no dev server config found, those steps carry no place and say "your dev server config" (seen in `plumber doctor`; the running test server still shows package.json:1 until it restarts) · tester (06:00): not visible yet, for the same reason as U20 (the 4340 server still says package.json:1).
+- **Status:** fixed 5bf095fd: with no dev server config found, those steps carry no place and say "your dev server config" (seen in `plumber doctor`; the running test server still shows package.json:1 until it restarts) · tester (06:00): not visible yet, for the same reason as U20 (the 4340 server still says package.json:1). · verified in the CLI (tester, 06:05): "Plugin order", "React Fast Refresh" and "Check that saving updates the page" no longer name package.json:1 and say "Check your dev server config". The package.json:1 lines left are about package.json itself (React installed), which is right. The 4340 panel waits for a restart.
 
 ### U22 · "Plugin order needs a check" gives me nothing to do
 - **Where:** Setup steps, under NOT CONFIRMED YET.
@@ -586,7 +586,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding. I lose my place and can't tell how much is left.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u47-note-31-of-31.jpg`
-- **Status:** partly fixed c2ba8519: ← on the first fix stays, and ‹ is off there. Still open: the counter changes from fixes to notes ("Note 1 of 31") with no line saying so, and fixes + notes (79) differ from the bar's count (197, places), which is the counting choice in U4 · tester (05:51): ← on fix 1 of 49 now stays, with ‹ faded. `docs/qa/shots/2026-11-20/u47-verified-first-fix.jpg`
+- **Status:** fixed c2ba8519 (← stays on the first) and e3a74f91 (one counter for fixes and notes, the bar's: "26 of 80")
 
 ### U48 · "Contrast 45 at 12px. Small text needs 60." gives a number with no scale
 - **Where:** Fix, Note 31 of 31, "1 paragraph: hard to read".
@@ -622,7 +622,7 @@ How to read an issue, and what each one needs:
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u50-scoped-all-concerns-7.jpg`,
   `docs/qa/shots/2026-11-20/u50-hover-2-problems.jpg`, `docs/qa/shots/2026-11-20/u50-editor-7-bar-11.jpg`
-- **Status:** partly fixed 5068ff8a: after an Alt+click the picker's first row says "This element", not "All concerns". Still open: the hover label, the editor and the bar count one element three ways (own notes, notes inside it, places), and there is no way back to the whole page but Esc then Alt+B · partly (tester, 05:38): the list now says "This element 11" (Design system 7, Craft 1, Anti-slop 3), so the label is right. Two parts remain: (1) Inspect's hover label on the same "Active users" card still says "Card div 2 problems"; (2) after picking the card, the bar opens on "Craft and polish 1" rather than the element's 11, so the bar's number is the smallest of the three. `docs/qa/shots/2026-11-20/u50-this-element-11.jpg`, `docs/qa/shots/2026-11-20/u50-hover-still-2.png` · tester (tester, 06:00): on the Churn card the editor says "6 fixes here" and the bar "This element 6": they agree now. The Inspect hover label was not re-checked.
+- **Status:** fixed 5068ff8a ("This element") and e3a74f91: the card says "N fixes here", the bar counts fixes, the hover label counts fixes; one unit. The hover label still counts the element alone, the card and bar the element and what is inside it. Still open: no way back to the whole page but Esc then Alt+B
 
 ### U51 · "Inspect an element" gives no sign that anything started
 - **Where:** ··· → Inspect an element.
@@ -659,7 +659,7 @@ How to read an issue, and what each one needs:
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u53-space-held.jpg` (taken while held); in the overlay the host gets
   `data-bp-pass` and `path.hit` turns `pointer-events: none`.
-- **Status:** partly fixed 30490ea6: while Space is held the bar says "Using the page" and the marks and pins fade to 20%. Still open: no hint at rest that Space exists · tester (tester, 06:00): while Space is held the bar says "Using the page". `docs/qa/shots/2026-11-20/u53-using-the-page.jpg`
+- **Status:** fixed 30490ea6 (while held: "Using the page", marks fade) and 92fd816b (owner's call: the first click in a tab that lands on a note opens its fix with "To click the page itself, hold Space.")
 
 ### U54 · History's timeline doesn't say what its parts or buttons do
 - **Where:** ··· → History, after one resize and its undo.
@@ -798,7 +798,7 @@ How to read an issue, and what each one needs:
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u64-aa-white.png`; the `.xr-chip` "Aa" has colour rgb(255,255,255) and a
   transparent background.
-- **Status:** open
+- **Status:** fixed 14d05782: the cause was oklch read as rgb (background became #0100115); now white "Aa" on #4f39f6, and the ratio reads 6.5, not the wrong 7.6
 
 ### U65 · A fix with a long class pushes Skip off the screen at 1280px
 - **Where:** Fix, fix 13 of 49 "3 places: padding looks bigger than it is", 1280×800.
@@ -811,7 +811,7 @@ How to read an issue, and what each one needs:
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u65-choice-row-off-edge.png`, `docs/qa/shots/2026-11-20/u65-fix-13.jpg`;
   in the overlay, Skip spans x 1246–1317 with a 1280px window.
-- **Status:** open
+- **Status:** partly fixed d46c6bde: the long class stays in its chip (ellipsis, whole on hover), the row wraps, and on fix 13 of 80 it spans 710–1270px with Skip ending at 1144px. Still open: a plain name for the fix instead of raw CSS
 
 ### U66 · `plumber craft` dies with a raw Playwright error when the page reloads while it reads
 - **Where:** `node dist/cli.js craft --url http://127.0.0.1:4340/ --no-probe --no-pairs --root fixtures/.tells-app`.
@@ -824,4 +824,4 @@ How to read an issue, and what each one needs:
   error from inside the browser library with no next step.
 - **Severity:** 3
 - **Evidence:** the three runs at 05:56–05:57; `fixtures/.tells-app/src/App.jsx` modified 05:56:32.
-- **Status:** open
+- **Status:** fixed a84ade6d: a reload mid-read is waited for and read again (twice at most), then said in plain words. Two runs with App.jsx touched 3 seconds in both gave 70 findings; not proven that the reload hit the read itself
