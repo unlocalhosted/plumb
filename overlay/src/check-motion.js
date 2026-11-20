@@ -60,7 +60,8 @@ export const CHECK_SPECS = {
     pick: '.q', prop: 'color', from: '#475569', to: '#94a3b8', labels: ['slate-500, Tailwind’s', 'muted'] }),
   'existence/dead-class': colourCheck({ html: '<span class="btn2 go" style="color:#111;box-shadow:inset 0 0 0 1px #d1d5db">Get started</span>', pick: '.go', from: 'transparent', to: '#4f46e5', labels: ['brand-500: no CSS', 'primary'],
     after: (s, p) => { const b = s.querySelector('.go'); b.style.color = p > 0.5 ? '#fff' : '#111'; b.style.boxShadow = `inset 0 0 0 1px rgb(209 213 219 / ${1 - p})`; } }),
-  'existence/dead-var': colourCheck({ html: '<div class="light"><b>Billing</b><span class="q">Next invoice on 1 December</span></div>', pick: '.q', prop: 'color', from: '#111827', to: '#64748b', labels: ['--text-muted: undefined', '--color-muted'] }),
+  // one line, on a variable nobody defined, stays full black among its muted siblings
+  'existence/dead-var': colourCheck({ html: '<div class="light" style="gap:6px"><b style="font-size:15px">Billing</b><span style="color:#64748b">Pro plan, paid monthly</span><span class="q">Next invoice on 1 December</span><span style="color:#64748b">Visa ending 4242</span></div>', pick: '.q', prop: 'color', from: '#111827', to: '#64748b', labels: ['--text-muted: undefined', '--color-muted'] }),
   // a length on one place, measured: two hairlines, the I-beam, the pill rolling the number (as the Padding tile)
   'provenance/arbitrary': (s) => {
     s.innerHTML = `<div class="ck-scene"><div style="display:grid;gap:8px;width:220px">${['Profile', 'Billing', 'Team'].map((w, i) => `<div class="panel${i === 1 ? ' x' : ''}" style="padding:16px">${w}</div>`).join('')}</div></div>`;
@@ -71,7 +72,7 @@ export const CHECK_SPECS = {
         at(t, `top:${y1}px;left:0;right:0`); at(u, `top:${y2}px;left:0;right:0`); at(beam, `left:${r.left - S.left - 24}px;top:${y1}px;height:${y2 - y1}px`); pillLeft(pill, (y1 + y2) / 2, r.left - S.left - 56); } };
   },
   'provenance/radius': (s) => {
-    s.innerHTML = `<div class="ck-scene"><div style="display:flex;gap:14px">${[0, 1, 2].map((i) => `<div class="panel${i === 1 ? ' x' : ''}" style="width:84px;height:68px;border-radius:12px"></div>`).join('')}</div></div>`;
+    s.innerHTML = `<div class="ck-scene"><div style="display:flex;gap:14px">${[0, 1, 2].map((i) => `<div class="panel${i === 1 ? ' x' : ''}" style="width:84px;height:68px;border-radius:12px;background:#dfe3ea"></div>`).join('')}</div></div>`;
     const x = s.querySelector('.x'), arc = make(s, 'arc'), pill = make(s, 'pill');
     return { from: 3, to: 12, unit: 'px', name: 'card', guides: [{ el: arc, kind: 'ring' }, { el: pill, kind: 'pill' }],
       at: (p) => { x.style.borderRadius = `${lerp(3, 12, p)}px`; },
@@ -94,14 +95,17 @@ export const CHECK_SPECS = {
       at: (p) => { const v = from.map((f, i) => lerp(f, to[i], p)); x.style.boxShadow = `0 ${v[1]}px ${v[2]}px ${v[3]}px rgb(${Math.round(lerp(79, 0, p))} ${Math.round(lerp(70, 0, p))} ${Math.round(lerp(229, 0, p))} / ${v[4]})`; },
       track: () => { const r = reach(); ringAround(ring, x, s, r); pillOver(pill, x, s, r + 8); } };
   },
+  // how long each menu takes to answer a press, as a bar: Edit's is three times its siblings', and shrinks to theirs.
+  // Landed, the three answer a press in turn, at one speed
   'provenance/motion': (s) => {
-    s.innerHTML = '<div class="ck-scene" style="align-content:center;gap:24px"><div style="display:flex;gap:10px"><span class="menu">File</span><span class="menu x">Edit</span><span class="menu">View</span></div><div style="position:relative;width:240px;height:10px"><i class="ghost" style="position:absolute;inset:0;border-radius:5px;border:1.5px dashed color-mix(in oklab, var(--pl-coral) 70%, transparent)"></i><i class="len" style="position:absolute;left:0;top:0;height:10px;width:240px;border-radius:5px;background:var(--c)"></i></div></div>';
-    const x = s.querySelector('.x'), len = s.querySelector('.len'), pill = make(s, 'pill');
+    s.innerHTML = `<div class="ck-scene"><div style="display:grid;grid-template-columns:auto 110px;gap:10px 14px;align-items:center">${['File', 'Edit', 'View'].map((w, i) => `<span class="menu${i === 1 ? ' x' : ''}" style="text-align:center">${w}</span><span style="height:8px"><i class="len${i === 1 ? ' lx' : ''}" style="display:block;height:8px;border-radius:4px;width:${i === 1 ? 110 : 38}px;background:${i === 1 ? 'var(--c)' : '#cbd5e1'}"></i></span>`).join('')}</div></div>`;
+    const lx = s.querySelector('.lx'), menus = [...s.querySelectorAll('.menu')], pill = make(s, 'pill');
     return { from: 440, to: 150, step: 10, unit: 'ms', name: 'fast', guides: [{ el: pill, kind: 'pill' }],
-      at: (p) => { len.style.width = `${lerp(240, 240 * 150 / 440, p)}px`; },
-      track: () => { const S = s.getBoundingClientRect(), r = len.getBoundingClientRect(); pillLeft(pill, r.bottom - S.top + 26, r.right - S.left); },
-      landed: () => { x.animate([{ background: '#f3f4f6' }, { background: '#4f46e5', color: '#fff', scale: .96, offset: .5 }, { background: '#f3f4f6' }], { duration: 300 }); } };
+      at: (p) => { lx.style.width = `${p ? 38 : 110}px`; },
+      track: () => { const S = s.getBoundingClientRect(), r = lx.getBoundingClientRect(); pillLeft(pill, r.top - S.top + r.height / 2, r.right - S.left + 40); },
+      landed: () => menus.forEach((m, i) => setTimeout(() => m.animate([{ background: '#f3f4f6' }, { background: '#4f46e5', color: '#fff', scale: .96, offset: .4 }, { background: '#f3f4f6' }], { duration: 380, easing: 'ease-out' }), 200 + i * 260)) };
   },
+
   // a page under an open dialog. Broken: a tooltip from the page, typed z-999, sits on top of the dimmed page and over
   // the dialog's question. Fixed: on the named tooltip layer it goes under the dim with the rest of the page, and the
   // dialog reads clean. Only its layer changes, so it stays where it is
@@ -131,13 +135,15 @@ export const CHECK_SPECS = {
       at: (p) => { x.style.boxShadow = `0 0 0 ${lerp(0, 2, p)}px #fff, 0 0 0 ${lerp(0, 5, p)}px rgb(165 180 252 / ${p})`; },
       track: () => { ringAround(ring, x, s, 11); pillOver(pill, x, s, 20); } };
   },
+  // two badges in a nav. Beta has styles laid over it from outside (tighter, smaller), so it no longer matches New
   'ownership/{Component}': (s) => {
-    s.innerHTML = '<div class="ck-scene"><div style="display:flex;gap:10px;align-items:center"><span class="badge x">Beta</span><span class="badge" style="padding:0 8px;font-size:12px">New</span></div></div>';
-    const x = s.querySelector('.x'), ring = make(s, 'ring'), pill = make(s, 'pill');
-    return { labels: ['styles laid over', 'size="sm"'], guides: [{ el: ring, kind: 'ring' }, { el: pill, kind: 'pill' }],
-      at: (p) => { x.style.padding = `0 ${lerp(2, 8, p)}px`; x.style.fontSize = `${lerp(10, 12, p)}px`; },
-      track: () => { ringAround(ring, x, s, 7); pillOver(pill, x, s, 16); } };
+    s.innerHTML = `<div class="ck-scene"><div style="display:grid;gap:8px;width:220px;font:600 14px system-ui">${[['Dashboard', 'New', ''], ['Reports', 'Beta', ' x'], ['Settings', '', '']].map(([w, b, x]) => `<div class="panel" style="display:flex;align-items:center;justify-content:space-between;padding:9px 12px">${w}${b ? `<span class="badge${x}" style="padding:0 8px;font-size:12px">${b}</span>` : ''}</div>`).join('')}</div></div>`;
+    const x = s.querySelector('.badge.x'), ring = make(s, 'ring'), pill = make(s, 'pill');
+    return { labels: ['px-0.5 text-[10px]', 'size="sm"'], guides: [{ el: ring, kind: 'ring' }, { el: pill, kind: 'pill' }],
+      at: (p) => { x.style.padding = p ? '0 8px' : '0 2px'; x.style.fontSize = p ? '12px' : '10px'; x.style.height = p ? '22px' : '16px'; },
+      track: () => { ringAround(ring, x, s, 6); const S = s.getBoundingClientRect(), r = x.getBoundingClientRect(); at(pill, `left:${r.left - S.left + r.width / 2}px;top:${r.bottom - S.top + 26}px`); } };
   },
+
 };
 
 // One player for every check: the tiles' own (playTile). The scene's elements carry a transition while it moves,
