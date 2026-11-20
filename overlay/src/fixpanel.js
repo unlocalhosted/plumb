@@ -509,11 +509,21 @@ export class FixPanel {
     // the floor: how much of the window's bottom the bar takes, as --pl-floor on the overlay, so the panels that open
     // from the dock (History, Help, Setup) open above the bar, not under it (U19, U27, U29, 2026-11-20). Kept by the
     // bar's own size: shown, grown taller, hidden
+    // The same measure is room under the page: <html> gets that much more padding at its foot while the bar shows, so
+    // anything can be scrolled out from under it (owner, 2026-11-20, U5: the bar sat on the page's first heading). The
+    // page inside <body>, which is what is read, doesn't move; closing puts <html>'s own style back exactly.
+    let kept = null, base = '0px';
+    const room = (px) => {
+      const html = document.documentElement;
+      if (px && kept === null) { kept = html.style.getPropertyValue('padding-bottom'); base = kept || getComputedStyle(html).paddingBottom || '0px'; }
+      if (px) html.style.setProperty('padding-bottom', `calc(${base} + ${px}px)`);
+      else if (kept !== null) { if (kept) html.style.setProperty('padding-bottom', kept); else html.style.removeProperty('padding-bottom'); if (!html.style.length) html.removeAttribute('style'); kept = null; }
+    };
     const floor = () => {
       const host = this.#el.getRootNode()?.host, r = this.#el.getBoundingClientRect();
       if (!host) return;
-      if (this.#el.hidden || !r.height) host.style.removeProperty('--pl-floor');
-      else host.style.setProperty('--pl-floor', `${Math.round(innerHeight - r.top + 12)}px`);
+      if (this.#el.hidden || !r.height) { host.style.removeProperty('--pl-floor'); room(0); }
+      else { const px = Math.round(innerHeight - r.top + 12); host.style.setProperty('--pl-floor', `${px}px`); room(px); }
     };
     new ResizeObserver(floor).observe(this.#el);
     // the choice is made on the element (design site: Fix bar): its own box beside the place in hand, outside the bar,
