@@ -1,0 +1,7714 @@
+{
+ "product": "craftingattention",
+ "atom": "buy",
+ "recorded": "2026-11-20",
+ "forms": [
+  {
+   "form": "house",
+   "gesture": "press",
+   "name": "As shipped",
+   "marks": [
+    {
+     "name": "point",
+     "t": 204
+    },
+    {
+     "name": "gesture",
+     "t": 810
+    },
+    {
+     "name": "let go",
+     "t": 965
+    }
+   ],
+   "movements": [
+    {
+     "after": "point",
+     "does": "moves across",
+     "elements": 2,
+     "firstMs": 103,
+     "lastMs": 156,
+     "longestMs": 53,
+     "biggest": 1.8,
+     "overshootPct": null
+    }
+   ],
+   "motions": [
+    {
+     "el": "svg (decor)",
+     "prop": "x",
+     "after": "point",
+     "startMs": 103,
+     "durationMs": 36,
+     "from": 221.9,
+     "to": 223.5,
+     "overshootPct": null
+    },
+    {
+     "el": "path",
+     "prop": "x",
+     "after": "point",
+     "startMs": 103,
+     "durationMs": 53,
+     "from": 225.5,
+     "to": 227.3,
+     "overshootPct": null
+    }
+   ],
+   "colours": [
+    {
+     "el": "a “Start with an account”",
+     "prop": "fill",
+     "after": "point",
+     "startMs": 103,
+     "durationMs": 103,
+     "from": "rgb(128,71,225)",
+     "to": "rgb(163,118,255)",
+     "deltaE": 12.5
+    }
+   ],
+   "faintestWords": 1,
+   "longestMovementMs": 53,
+   "maxOvershootPct": 0
+  },
+  {
+   "form": "beui/slide-action-button",
+   "gesture": "slide",
+   "name": "Slide to commit",
+   "marks": [
+    {
+     "name": "point",
+     "t": 203
+    },
+    {
+     "name": "gesture",
+     "t": 776
+    },
+    {
+     "name": "release",
+     "t": 1619
+    },
+    {
+     "name": "let go",
+     "t": 1621
+    }
+   ],
+   "movements": [
+    {
+     "after": "gesture",
+     "does": "fades",
+     "elements": 1,
+     "firstMs": 14,
+     "lastMs": 530,
+     "longestMs": 516,
+     "biggest": 1,
+     "overshootPct": 0
+    },
+    {
+     "after": "let go",
+     "does": "fades",
+     "elements": 3,
+     "firstMs": 18,
+     "lastMs": 1501,
+     "longestMs": 233,
+     "biggest": 1,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "moves across",
+     "elements": 3,
+     "firstMs": 14,
+     "lastMs": 929,
+     "longestMs": 915,
+     "biggest": 251.6,
+     "overshootPct": 0.4
+    },
+    {
+     "after": "let go",
+     "does": "moves across",
+     "elements": 3,
+     "firstMs": 1218,
+     "lastMs": 1601,
+     "longestMs": 383,
+     "biggest": 250.1,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "changes width",
+     "elements": 3,
+     "firstMs": 63,
+     "lastMs": 830,
+     "longestMs": 750,
+     "biggest": 294,
+     "overshootPct": 0
+    },
+    {
+     "after": "let go",
+     "does": "changes width",
+     "elements": 3,
+     "firstMs": 18,
+     "lastMs": 1601,
+     "longestMs": 383,
+     "biggest": 306.2,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "changes height",
+     "elements": 3,
+     "firstMs": 14,
+     "lastMs": 796,
+     "longestMs": 282,
+     "biggest": 6.8,
+     "overshootPct": null
+    },
+    {
+     "after": "let go",
+     "does": "changes height",
+     "elements": 2,
+     "firstMs": 18,
+     "lastMs": 1451,
+     "longestMs": 233,
+     "biggest": 2.5,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "scales",
+     "elements": 2,
+     "firstMs": 14,
+     "lastMs": 830,
+     "longestMs": 750,
+     "biggest": 0.96,
+     "overshootPct": 0
+    },
+    {
+     "after": "let go",
+     "does": "scales",
+     "elements": 2,
+     "firstMs": 18,
+     "lastMs": 1551,
+     "longestMs": 333,
+     "biggest": 0.99,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "moves up or down",
+     "elements": 1,
+     "firstMs": 63,
+     "lastMs": 764,
+     "longestMs": 701,
+     "biggest": 1.9,
+     "overshootPct": null
+    },
+    {
+     "after": "let go",
+     "does": "moves up or down",
+     "elements": 1,
+     "firstMs": 1218,
+     "lastMs": 1385,
+     "longestMs": 167,
+     "biggest": 1,
+     "overshootPct": null
+    }
+   ],
+   "motions": [
+    {
+     "el": "span “Slide to start with an accou” (decor)",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 14,
+     "durationMs": 516,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "button",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 14,
+     "durationMs": 915,
+     "from": 4,
+     "to": 255.5,
+     "overshootPct": 0.4
+    },
+    {
+     "el": "button",
+     "prop": "sc",
+     "after": "gesture",
+     "startMs": 14,
+     "durationMs": 149,
+     "from": 1,
+     "to": 0.94,
+     "overshootPct": null
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 14,
+     "durationMs": 816,
+     "from": 18,
+     "to": 269.6,
+     "overshootPct": 0
+    },
+    {
+     "el": "path",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 14,
+     "durationMs": 816,
+     "from": 24.7,
+     "to": 273.5,
+     "overshootPct": 0
+    },
+    {
+     "el": "path",
+     "prop": "h",
+     "after": "gesture",
+     "startMs": 14,
+     "durationMs": 282,
+     "from": 11.7,
+     "to": 4.9,
+     "overshootPct": null
+    },
+    {
+     "el": "button",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 63,
+     "durationMs": 67,
+     "from": 47.9,
+     "to": 45.4,
+     "overshootPct": null
+    },
+    {
+     "el": "button",
+     "prop": "h",
+     "after": "gesture",
+     "startMs": 63,
+     "durationMs": 67,
+     "from": 47.9,
+     "to": 45.4,
+     "overshootPct": null
+    },
+    {
+     "el": "path",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 63,
+     "durationMs": 701,
+     "from": 42.4,
+     "to": 44.3,
+     "overshootPct": null
+    },
+    {
+     "el": "span (decor)",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 80,
+     "durationMs": 750,
+     "from": 13.3,
+     "to": 307.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span (decor)",
+     "prop": "sc",
+     "after": "gesture",
+     "startMs": 80,
+     "durationMs": 750,
+     "from": 0.04,
+     "to": 1,
+     "overshootPct": 0
+    },
+    {
+     "el": "path",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 280,
+     "durationMs": 516,
+     "from": 4.8,
+     "to": 11,
+     "overshootPct": null
+    },
+    {
+     "el": "path",
+     "prop": "h",
+     "after": "gesture",
+     "startMs": 546,
+     "durationMs": 250,
+     "from": 4.5,
+     "to": 7.8,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "o",
+     "after": "let go",
+     "startMs": 18,
+     "durationMs": 100,
+     "from": 0,
+     "to": 1,
+     "overshootPct": 0
+    },
+    {
+     "el": "button",
+     "prop": "w",
+     "after": "let go",
+     "startMs": 18,
+     "durationMs": 100,
+     "from": 45.1,
+     "to": 47.6,
+     "overshootPct": null
+    },
+    {
+     "el": "button",
+     "prop": "h",
+     "after": "let go",
+     "startMs": 18,
+     "durationMs": 100,
+     "from": 45.1,
+     "to": 47.6,
+     "overshootPct": null
+    },
+    {
+     "el": "button",
+     "prop": "sc",
+     "after": "let go",
+     "startMs": 18,
+     "durationMs": 133,
+     "from": 0.94,
+     "to": 1,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "o",
+     "after": "let go",
+     "startMs": 1218,
+     "durationMs": 100,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "button",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1218,
+     "durationMs": 383,
+     "from": 255,
+     "to": 4.9,
+     "overshootPct": 0
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1218,
+     "durationMs": 383,
+     "from": 269,
+     "to": 18.9,
+     "overshootPct": 0
+    },
+    {
+     "el": "path",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1218,
+     "durationMs": 383,
+     "from": 273.2,
+     "to": 25.6,
+     "overshootPct": 0
+    },
+    {
+     "el": "path",
+     "prop": "y",
+     "after": "let go",
+     "startMs": 1218,
+     "durationMs": 167,
+     "from": 43.8,
+     "to": 42.8,
+     "overshootPct": null
+    },
+    {
+     "el": "path",
+     "prop": "w",
+     "after": "let go",
+     "startMs": 1218,
+     "durationMs": 134,
+     "from": 11.7,
+     "to": 5.2,
+     "overshootPct": null
+    },
+    {
+     "el": "path",
+     "prop": "h",
+     "after": "let go",
+     "startMs": 1218,
+     "durationMs": 233,
+     "from": 8.3,
+     "to": 10.8,
+     "overshootPct": null
+    },
+    {
+     "el": "span (decor)",
+     "prop": "w",
+     "after": "let go",
+     "startMs": 1218,
+     "durationMs": 383,
+     "from": 307.3,
+     "to": 1.1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span (decor)",
+     "prop": "sc",
+     "after": "let go",
+     "startMs": 1218,
+     "durationMs": 333,
+     "from": 1,
+     "to": 0.01,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “Slide to start with an accou” (decor)",
+     "prop": "o",
+     "after": "let go",
+     "startMs": 1268,
+     "durationMs": 233,
+     "from": 0,
+     "to": 0.99,
+     "overshootPct": 0
+    }
+   ],
+   "colours": [],
+   "faintestWords": null,
+   "longestMovementMs": 915,
+   "maxOvershootPct": 0.4
+  },
+  {
+   "form": "beui/hold-action-button",
+   "gesture": "hold",
+   "name": "Hold to commit",
+   "marks": [
+    {
+     "name": "point",
+     "t": 202
+    },
+    {
+     "name": "gesture",
+     "t": 776
+    },
+    {
+     "name": "release",
+     "t": 2683
+    },
+    {
+     "name": "let go",
+     "t": 2688
+    }
+   ],
+   "movements": [
+    {
+     "after": "gesture",
+     "does": "moves across",
+     "elements": 7,
+     "firstMs": 14,
+     "lastMs": 1614,
+     "longestMs": 1600,
+     "biggest": 310.4,
+     "overshootPct": 0
+    },
+    {
+     "after": "let go",
+     "does": "moves across",
+     "elements": 7,
+     "firstMs": 1,
+     "lastMs": 218,
+     "longestMs": 217,
+     "biggest": 310.3,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "changes width",
+     "elements": 7,
+     "firstMs": 14,
+     "lastMs": 146,
+     "longestMs": 132,
+     "biggest": 5.8,
+     "overshootPct": null
+    },
+    {
+     "after": "let go",
+     "does": "changes width",
+     "elements": 7,
+     "firstMs": 19,
+     "lastMs": 152,
+     "longestMs": 133,
+     "biggest": 5.9,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "scales",
+     "elements": 1,
+     "firstMs": 61,
+     "lastMs": 114,
+     "longestMs": 53,
+     "biggest": 0.02,
+     "overshootPct": null
+    },
+    {
+     "after": "let go",
+     "does": "scales",
+     "elements": 1,
+     "firstMs": 19,
+     "lastMs": 119,
+     "longestMs": 100,
+     "biggest": 0.02,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "changes height",
+     "elements": 2,
+     "firstMs": 61,
+     "lastMs": 97,
+     "longestMs": 36,
+     "biggest": 1.3,
+     "overshootPct": null
+    },
+    {
+     "after": "let go",
+     "does": "changes height",
+     "elements": 2,
+     "firstMs": 19,
+     "lastMs": 134,
+     "longestMs": 115,
+     "biggest": 1.8,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "fades",
+     "elements": 4,
+     "firstMs": 14,
+     "lastMs": 1713,
+     "longestMs": 83,
+     "biggest": 1,
+     "overshootPct": 0
+    },
+    {
+     "after": "let go",
+     "does": "fades",
+     "elements": 2,
+     "firstMs": 1,
+     "lastMs": 85,
+     "longestMs": 84,
+     "biggest": 1,
+     "overshootPct": 0
+    }
+   ],
+   "motions": [
+    {
+     "el": "button",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 14,
+     "durationMs": 132,
+     "from": 307.3,
+     "to": 301.5,
+     "overshootPct": null
+    },
+    {
+     "el": "span (decor)",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 14,
+     "durationMs": 132,
+     "from": 307.3,
+     "to": 301.5,
+     "overshootPct": null
+    },
+    {
+     "el": "span (decor)",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 14,
+     "durationMs": 1600,
+     "from": -307.3,
+     "to": 3.1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span (decor)",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 14,
+     "durationMs": 132,
+     "from": 307.3,
+     "to": 301.5,
+     "overshootPct": null
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 14,
+     "durationMs": 1600,
+     "from": -4,
+     "to": 300.4,
+     "overshootPct": 0
+    },
+    {
+     "el": "path",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 14,
+     "durationMs": 1600,
+     "from": -4,
+     "to": 300.4,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 14,
+     "durationMs": 116,
+     "from": 185.9,
+     "to": 182.5,
+     "overshootPct": null
+    },
+    {
+     "el": "span “Hold to start with an accoun”",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 14,
+     "durationMs": 116,
+     "from": 185.9,
+     "to": 182.5,
+     "overshootPct": null
+    },
+    {
+     "el": "span “Hold to start with an accoun”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 14,
+     "durationMs": 83,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “Keep holding” (decor)",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 14,
+     "durationMs": 83,
+     "from": 0,
+     "to": 1,
+     "overshootPct": 0
+    },
+    {
+     "el": "button",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 61,
+     "durationMs": 69,
+     "from": 0.2,
+     "to": 2.8,
+     "overshootPct": null
+    },
+    {
+     "el": "button",
+     "prop": "sc",
+     "after": "gesture",
+     "startMs": 61,
+     "durationMs": 53,
+     "from": 1,
+     "to": 0.98,
+     "overshootPct": null
+    },
+    {
+     "el": "span (decor)",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 61,
+     "durationMs": 69,
+     "from": 0.2,
+     "to": 2.8,
+     "overshootPct": null
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "h",
+     "after": "gesture",
+     "startMs": 61,
+     "durationMs": 36,
+     "from": 95.9,
+     "to": 94.6,
+     "overshootPct": null
+    },
+    {
+     "el": "path",
+     "prop": "h",
+     "after": "gesture",
+     "startMs": 61,
+     "durationMs": 36,
+     "from": 95.9,
+     "to": 94.6,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 61,
+     "durationMs": 36,
+     "from": 60.8,
+     "to": 62.1,
+     "overshootPct": null
+    },
+    {
+     "el": "span “Hold to start with an accoun”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 61,
+     "durationMs": 36,
+     "from": 60.8,
+     "to": 62.1,
+     "overshootPct": null
+    },
+    {
+     "el": "span “Keep holding” (decor)",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 61,
+     "durationMs": 69,
+     "from": 83.1,
+     "to": 81.7,
+     "overshootPct": null
+    },
+    {
+     "el": "span “Opening checkout” (decor)",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 61,
+     "durationMs": 69,
+     "from": 117.2,
+     "to": 115.2,
+     "overshootPct": null
+    },
+    {
+     "el": "span “Keep holding” (decor)",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1631,
+     "durationMs": 82,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “Opening checkout” (decor)",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1631,
+     "durationMs": 82,
+     "from": 0,
+     "to": 1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span (decor)",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1,
+     "durationMs": 201,
+     "from": 3.1,
+     "to": -307.2,
+     "overshootPct": 0
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1,
+     "durationMs": 217,
+     "from": 300.4,
+     "to": -4,
+     "overshootPct": 0
+    },
+    {
+     "el": "path",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1,
+     "durationMs": 217,
+     "from": 300.4,
+     "to": -4,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “Hold to start with an accoun”",
+     "prop": "o",
+     "after": "let go",
+     "startMs": 1,
+     "durationMs": 84,
+     "from": 0,
+     "to": 1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “Opening checkout” (decor)",
+     "prop": "o",
+     "after": "let go",
+     "startMs": 1,
+     "durationMs": 84,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "button",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 19,
+     "durationMs": 100,
+     "from": 3.1,
+     "to": 0.4,
+     "overshootPct": null
+    },
+    {
+     "el": "button",
+     "prop": "w",
+     "after": "let go",
+     "startMs": 19,
+     "durationMs": 133,
+     "from": 301.2,
+     "to": 307.1,
+     "overshootPct": null
+    },
+    {
+     "el": "button",
+     "prop": "sc",
+     "after": "let go",
+     "startMs": 19,
+     "durationMs": 100,
+     "from": 0.98,
+     "to": 1,
+     "overshootPct": null
+    },
+    {
+     "el": "span (decor)",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 19,
+     "durationMs": 100,
+     "from": 3.1,
+     "to": 0.4,
+     "overshootPct": null
+    },
+    {
+     "el": "span (decor)",
+     "prop": "w",
+     "after": "let go",
+     "startMs": 19,
+     "durationMs": 133,
+     "from": 301.2,
+     "to": 307.1,
+     "overshootPct": null
+    },
+    {
+     "el": "span (decor)",
+     "prop": "w",
+     "after": "let go",
+     "startMs": 19,
+     "durationMs": 133,
+     "from": 301.2,
+     "to": 307.1,
+     "overshootPct": null
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "h",
+     "after": "let go",
+     "startMs": 19,
+     "durationMs": 115,
+     "from": 94.1,
+     "to": 95.9,
+     "overshootPct": null
+    },
+    {
+     "el": "path",
+     "prop": "h",
+     "after": "let go",
+     "startMs": 19,
+     "durationMs": 115,
+     "from": 94.1,
+     "to": 95.9,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 19,
+     "durationMs": 83,
+     "from": 62.6,
+     "to": 61.1,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "w",
+     "after": "let go",
+     "startMs": 19,
+     "durationMs": 133,
+     "from": 182.2,
+     "to": 185.8,
+     "overshootPct": null
+    },
+    {
+     "el": "span “Hold to start with an accoun”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 19,
+     "durationMs": 83,
+     "from": 62.6,
+     "to": 61.1,
+     "overshootPct": null
+    },
+    {
+     "el": "span “Hold to start with an accoun”",
+     "prop": "w",
+     "after": "let go",
+     "startMs": 19,
+     "durationMs": 133,
+     "from": 182.2,
+     "to": 185.8,
+     "overshootPct": null
+    },
+    {
+     "el": "span “Keep holding” (decor)",
+     "prop": "w",
+     "after": "let go",
+     "startMs": 19,
+     "durationMs": 83,
+     "from": 81.6,
+     "to": 82.9,
+     "overshootPct": null
+    },
+    {
+     "el": "span “Opening checkout” (decor)",
+     "prop": "w",
+     "after": "let go",
+     "startMs": 19,
+     "durationMs": 115,
+     "from": 115,
+     "to": 117.2,
+     "overshootPct": null
+    }
+   ],
+   "colours": [],
+   "faintestWords": 0,
+   "longestMovementMs": 1600,
+   "maxOvershootPct": 0
+  },
+  {
+   "form": "arc/hold-to-confirm",
+   "gesture": "hold",
+   "name": "Hold to confirm",
+   "marks": [
+    {
+     "name": "point",
+     "t": 203
+    },
+    {
+     "name": "gesture",
+     "t": 777
+    },
+    {
+     "name": "release",
+     "t": 2691
+    },
+    {
+     "name": "let go",
+     "t": 2695
+    }
+   ],
+   "movements": [
+    {
+     "after": "gesture",
+     "does": "moves across",
+     "elements": 37,
+     "firstMs": 65,
+     "lastMs": 1495,
+     "longestMs": 366,
+     "biggest": 33.5,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "changes width",
+     "elements": 34,
+     "firstMs": 65,
+     "lastMs": 1545,
+     "longestMs": 416,
+     "biggest": 68.2,
+     "overshootPct": 1.6
+    },
+    {
+     "after": "gesture",
+     "does": "scales",
+     "elements": 5,
+     "firstMs": 65,
+     "lastMs": 1395,
+     "longestMs": 266,
+     "biggest": 0.4,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "moves up or down",
+     "elements": 18,
+     "firstMs": 1129,
+     "lastMs": 1279,
+     "longestMs": 150,
+     "biggest": 4,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "changes height",
+     "elements": 14,
+     "firstMs": 1129,
+     "lastMs": 1312,
+     "longestMs": 183,
+     "biggest": 7,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "fades",
+     "elements": 10,
+     "firstMs": 1129,
+     "lastMs": 1279,
+     "longestMs": 133,
+     "biggest": 1,
+     "overshootPct": 0
+    }
+   ],
+   "motions": [
+    {
+     "el": "button",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 47,
+     "from": 0.1,
+     "to": 1.6,
+     "overshootPct": null
+    },
+    {
+     "el": "button",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 81,
+     "from": 307.2,
+     "to": 303.4,
+     "overshootPct": null
+    },
+    {
+     "el": "button",
+     "prop": "sc",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 64,
+     "from": 1,
+     "to": 0.99,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 164,
+     "from": 215.9,
+     "to": 212.7,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 47,
+     "from": 46,
+     "to": 47.1,
+     "overshootPct": null
+    },
+    {
+     "el": "span (decor)",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 47,
+     "from": 46,
+     "to": 47.1,
+     "overshootPct": null
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 47,
+     "from": 46,
+     "to": 47.1,
+     "overshootPct": null
+    },
+    {
+     "el": "path",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 47,
+     "from": 49.5,
+     "to": 50.5,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 64,
+     "from": 189.9,
+     "to": 187.7,
+     "overshootPct": null
+    },
+    {
+     "el": "span “Hold to start with an accoun”",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 64,
+     "from": 189.9,
+     "to": 187.7,
+     "overshootPct": null
+    },
+    {
+     "el": "span “Hold to start with an accoun”",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 64,
+     "from": 189.9,
+     "to": 187.7,
+     "overshootPct": null
+    },
+    {
+     "el": "span (decor)",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 47,
+     "from": 0.1,
+     "to": 1.6,
+     "overshootPct": null
+    },
+    {
+     "el": "span (decor)",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 81,
+     "from": 307.2,
+     "to": 303.4,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 164,
+     "from": 215.9,
+     "to": 212.7,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 47,
+     "from": 46,
+     "to": 47.1,
+     "overshootPct": null
+    },
+    {
+     "el": "span (decor)",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 47,
+     "from": 46,
+     "to": 47.1,
+     "overshootPct": null
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 47,
+     "from": 46,
+     "to": 47.1,
+     "overshootPct": null
+    },
+    {
+     "el": "path",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 47,
+     "from": 49.5,
+     "to": 50.5,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 64,
+     "from": 189.9,
+     "to": 187.7,
+     "overshootPct": null
+    },
+    {
+     "el": "span “Hold to start with an accoun”",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 64,
+     "from": 189.9,
+     "to": 187.7,
+     "overshootPct": null
+    },
+    {
+     "el": "span “Hold to start with an accoun”",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 1113,
+     "durationMs": 99,
+     "from": 187.1,
+     "to": 118.9,
+     "overshootPct": 1.6
+    },
+    {
+     "el": "button",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 133,
+     "from": 302.7,
+     "to": 306.7,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 416,
+     "from": 212.7,
+     "to": 146.1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 150,
+     "from": 47.5,
+     "to": 72.8,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 67,
+     "from": 39.4,
+     "to": 42.6,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 83,
+     "from": 17.2,
+     "to": 10.6,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "h",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 83,
+     "from": 17.2,
+     "to": 10.6,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "sc",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 116,
+     "from": 1,
+     "to": 0.6,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 100,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span (decor)",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 150,
+     "from": 47.5,
+     "to": 72.8,
+     "overshootPct": 0
+    },
+    {
+     "el": "span (decor)",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 67,
+     "from": 39.4,
+     "to": 42.6,
+     "overshootPct": null
+    },
+    {
+     "el": "span (decor)",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 83,
+     "from": 17.2,
+     "to": 10.6,
+     "overshootPct": null
+    },
+    {
+     "el": "span (decor)",
+     "prop": "h",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 83,
+     "from": 17.2,
+     "to": 10.6,
+     "overshootPct": null
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 150,
+     "from": 47.5,
+     "to": 72.8,
+     "overshootPct": 0
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 67,
+     "from": 39.4,
+     "to": 42.6,
+     "overshootPct": null
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 83,
+     "from": 17.2,
+     "to": 10.6,
+     "overshootPct": null
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "h",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 83,
+     "from": 17.2,
+     "to": 10.6,
+     "overshootPct": null
+    },
+    {
+     "el": "path",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 150,
+     "from": 51,
+     "to": 74.9,
+     "overshootPct": 0
+    },
+    {
+     "el": "path",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 50,
+     "from": 42.8,
+     "to": 44.6,
+     "overshootPct": null
+    },
+    {
+     "el": "path",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 67,
+     "from": 10.3,
+     "to": 6.5,
+     "overshootPct": null
+    },
+    {
+     "el": "path",
+     "prop": "h",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 67,
+     "from": 10.3,
+     "to": 6.5,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 416,
+     "from": 187.1,
+     "to": 120.1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “Hold to start with an accoun”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 67,
+     "from": 38.4,
+     "to": 34.4,
+     "overshootPct": null
+    },
+    {
+     "el": "span “Hold to start with an accoun”",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 116,
+     "from": 187.1,
+     "to": 189.4,
+     "overshootPct": null
+    },
+    {
+     "el": "span “Hold to start with an accoun”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 100,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span (decor)",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 133,
+     "from": 302.7,
+     "to": 306.7,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 416,
+     "from": 212.7,
+     "to": 146.1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 150,
+     "from": 47.5,
+     "to": 72.8,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 67,
+     "from": 39.4,
+     "to": 42.6,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 83,
+     "from": 17.2,
+     "to": 10.6,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "h",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 83,
+     "from": 17.2,
+     "to": 10.6,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "sc",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 116,
+     "from": 1,
+     "to": 0.6,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 100,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span (decor)",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 150,
+     "from": 47.5,
+     "to": 72.8,
+     "overshootPct": 0
+    },
+    {
+     "el": "span (decor)",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 67,
+     "from": 39.4,
+     "to": 42.6,
+     "overshootPct": null
+    },
+    {
+     "el": "span (decor)",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 83,
+     "from": 17.2,
+     "to": 10.6,
+     "overshootPct": null
+    },
+    {
+     "el": "span (decor)",
+     "prop": "h",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 83,
+     "from": 17.2,
+     "to": 10.6,
+     "overshootPct": null
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 150,
+     "from": 47.5,
+     "to": 72.8,
+     "overshootPct": 0
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 67,
+     "from": 39.4,
+     "to": 42.6,
+     "overshootPct": null
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 83,
+     "from": 17.2,
+     "to": 10.6,
+     "overshootPct": null
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "h",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 83,
+     "from": 17.2,
+     "to": 10.6,
+     "overshootPct": null
+    },
+    {
+     "el": "path",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 150,
+     "from": 51,
+     "to": 74.9,
+     "overshootPct": 0
+    },
+    {
+     "el": "path",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 50,
+     "from": 42.8,
+     "to": 44.6,
+     "overshootPct": null
+    },
+    {
+     "el": "path",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 67,
+     "from": 10.3,
+     "to": 6.5,
+     "overshootPct": null
+    },
+    {
+     "el": "path",
+     "prop": "h",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 67,
+     "from": 10.3,
+     "to": 6.5,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 416,
+     "from": 187.1,
+     "to": 120.1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “Hold to start with an accoun”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 67,
+     "from": 38.4,
+     "to": 34.4,
+     "overshootPct": null
+    },
+    {
+     "el": "span “Hold to start with an accoun”",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 116,
+     "from": 187.1,
+     "to": 189.4,
+     "overshootPct": null
+    },
+    {
+     "el": "span “Hold to start with an accoun”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 100,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 150,
+     "from": 42.7,
+     "to": 39.4,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 183,
+     "from": 10.6,
+     "to": 17.6,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "h",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 183,
+     "from": 10.6,
+     "to": 17.6,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "sc",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 266,
+     "from": 0.6,
+     "to": 1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 100,
+     "from": 0,
+     "to": 1,
+     "overshootPct": 0
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 150,
+     "from": 42.7,
+     "to": 39.4,
+     "overshootPct": null
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 183,
+     "from": 10.6,
+     "to": 17.6,
+     "overshootPct": null
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "h",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 183,
+     "from": 10.6,
+     "to": 17.6,
+     "overshootPct": null
+    },
+    {
+     "el": "path",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 366,
+     "from": 52.6,
+     "to": 83.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "path",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 150,
+     "from": 7.1,
+     "to": 11.5,
+     "overshootPct": null
+    },
+    {
+     "el": "span “Opening checkout”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 83,
+     "from": 42.5,
+     "to": 38.5,
+     "overshootPct": null
+    },
+    {
+     "el": "span “Opening checkout”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 133,
+     "from": 0,
+     "to": 1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 150,
+     "from": 42.7,
+     "to": 39.4,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 183,
+     "from": 10.6,
+     "to": 17.6,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "h",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 183,
+     "from": 10.6,
+     "to": 17.6,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "sc",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 266,
+     "from": 0.6,
+     "to": 1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 100,
+     "from": 0,
+     "to": 1,
+     "overshootPct": 0
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 150,
+     "from": 42.7,
+     "to": 39.4,
+     "overshootPct": null
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 183,
+     "from": 10.6,
+     "to": 17.6,
+     "overshootPct": null
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "h",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 183,
+     "from": 10.6,
+     "to": 17.6,
+     "overshootPct": null
+    },
+    {
+     "el": "path",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 366,
+     "from": 52.6,
+     "to": 83.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "path",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 150,
+     "from": 7.1,
+     "to": 11.5,
+     "overshootPct": null
+    },
+    {
+     "el": "span “Opening checkout”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 83,
+     "from": 42.5,
+     "to": 38.5,
+     "overshootPct": null
+    },
+    {
+     "el": "span “Opening checkout”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1129,
+     "durationMs": 133,
+     "from": 0,
+     "to": 1,
+     "overshootPct": 0
+    },
+    {
+     "el": "button",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1146,
+     "durationMs": 83,
+     "from": 2.1,
+     "to": 0.6,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1146,
+     "durationMs": 349,
+     "from": 47.2,
+     "to": 80.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1146,
+     "durationMs": 349,
+     "from": 47.2,
+     "to": 80.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1146,
+     "durationMs": 349,
+     "from": 72.8,
+     "to": 106.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “Hold to start with an accoun”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1146,
+     "durationMs": 349,
+     "from": 72.8,
+     "to": 106.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “Hold to start with an accoun”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1146,
+     "durationMs": 133,
+     "from": 72.8,
+     "to": 95.1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span (decor)",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1146,
+     "durationMs": 83,
+     "from": 2.1,
+     "to": 0.6,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1146,
+     "durationMs": 349,
+     "from": 47.2,
+     "to": 80.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1146,
+     "durationMs": 349,
+     "from": 47.2,
+     "to": 80.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1146,
+     "durationMs": 349,
+     "from": 72.8,
+     "to": 106.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “Hold to start with an accoun”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1146,
+     "durationMs": 133,
+     "from": 72.8,
+     "to": 95.1,
+     "overshootPct": 0
+    },
+    {
+     "el": "path",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1146,
+     "durationMs": 66,
+     "from": 45.5,
+     "to": 44.5,
+     "overshootPct": null
+    },
+    {
+     "el": "path",
+     "prop": "h",
+     "after": "gesture",
+     "startMs": 1146,
+     "durationMs": 133,
+     "from": 5,
+     "to": 7.9,
+     "overshootPct": null
+    },
+    {
+     "el": "span “Opening checkout”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1146,
+     "durationMs": 349,
+     "from": 72.8,
+     "to": 106.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “Opening checkout”",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 1146,
+     "durationMs": 66,
+     "from": 117.9,
+     "to": 118.9,
+     "overshootPct": null
+    },
+    {
+     "el": "path",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1146,
+     "durationMs": 66,
+     "from": 45.5,
+     "to": 44.5,
+     "overshootPct": null
+    },
+    {
+     "el": "path",
+     "prop": "h",
+     "after": "gesture",
+     "startMs": 1146,
+     "durationMs": 133,
+     "from": 5,
+     "to": 7.9,
+     "overshootPct": null
+    },
+    {
+     "el": "span “Opening checkout”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1146,
+     "durationMs": 349,
+     "from": 72.8,
+     "to": 106.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “Opening checkout”",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 1146,
+     "durationMs": 66,
+     "from": 117.9,
+     "to": 118.9,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1163,
+     "durationMs": 332,
+     "from": 50.8,
+     "to": 80.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1163,
+     "durationMs": 332,
+     "from": 50.8,
+     "to": 80.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1163,
+     "durationMs": 332,
+     "from": 50.8,
+     "to": 80.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1163,
+     "durationMs": 332,
+     "from": 50.8,
+     "to": 80.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "path",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1212,
+     "durationMs": 67,
+     "from": 0,
+     "to": 1,
+     "overshootPct": 0
+    },
+    {
+     "el": "path",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1212,
+     "durationMs": 67,
+     "from": 0,
+     "to": 1,
+     "overshootPct": 0
+    }
+   ],
+   "colours": [],
+   "faintestWords": 0,
+   "longestMovementMs": 416,
+   "maxOvershootPct": 1.6
+  },
+  {
+   "form": "arc/confirm-morph",
+   "gesture": "confirm",
+   "name": "Press, then confirm",
+   "marks": [
+    {
+     "name": "point",
+     "t": 203
+    },
+    {
+     "name": "gesture",
+     "t": 789
+    },
+    {
+     "name": "confirm",
+     "t": 1506
+    },
+    {
+     "name": "let go",
+     "t": 2829
+    }
+   ],
+   "movements": [
+    {
+     "after": "gesture",
+     "does": "changes width",
+     "elements": 1,
+     "firstMs": 53,
+     "lastMs": 397,
+     "longestMs": 344,
+     "biggest": 72.9,
+     "overshootPct": 0
+    },
+    {
+     "after": "confirm",
+     "does": "changes width",
+     "elements": 5,
+     "firstMs": 20,
+     "lastMs": 1164,
+     "longestMs": 1011,
+     "biggest": 88,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "fades",
+     "elements": 4,
+     "firstMs": 56,
+     "lastMs": 214,
+     "longestMs": 133,
+     "biggest": 1,
+     "overshootPct": 0
+    },
+    {
+     "after": "confirm",
+     "does": "fades",
+     "elements": 5,
+     "firstMs": 20,
+     "lastMs": 1080,
+     "longestMs": 133,
+     "biggest": 1,
+     "overshootPct": 0
+    },
+    {
+     "after": "confirm",
+     "does": "moves across",
+     "elements": 3,
+     "firstMs": 20,
+     "lastMs": 1031,
+     "longestMs": 1011,
+     "biggest": 2,
+     "overshootPct": null
+    },
+    {
+     "after": "confirm",
+     "does": "moves up or down",
+     "elements": 3,
+     "firstMs": 20,
+     "lastMs": 1047,
+     "longestMs": 1011,
+     "biggest": 2,
+     "overshootPct": null
+    },
+    {
+     "after": "confirm",
+     "does": "changes height",
+     "elements": 3,
+     "firstMs": 20,
+     "lastMs": 1080,
+     "longestMs": 1011,
+     "biggest": 4.2,
+     "overshootPct": null
+    },
+    {
+     "after": "confirm",
+     "does": "scales",
+     "elements": 1,
+     "firstMs": 930,
+     "lastMs": 1164,
+     "longestMs": 234,
+     "biggest": 0.29,
+     "overshootPct": 0
+    }
+   ],
+   "motions": [
+    {
+     "el": "div",
+     "prop": "w",
+     "after": "confirm",
+     "startMs": 20,
+     "durationMs": 344,
+     "from": 268.1,
+     "to": 180.1,
+     "overshootPct": 0
+    },
+    {
+     "el": "div",
+     "prop": "o",
+     "after": "confirm",
+     "startMs": 20,
+     "durationMs": 77,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "x",
+     "after": "confirm",
+     "startMs": 20,
+     "durationMs": 1011,
+     "from": 16,
+     "to": 14,
+     "overshootPct": null
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "y",
+     "after": "confirm",
+     "startMs": 20,
+     "durationMs": 1011,
+     "from": 40,
+     "to": 38,
+     "overshootPct": null
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "w",
+     "after": "confirm",
+     "startMs": 20,
+     "durationMs": 1011,
+     "from": 16,
+     "to": 20,
+     "overshootPct": null
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "h",
+     "after": "confirm",
+     "startMs": 20,
+     "durationMs": 1011,
+     "from": 16,
+     "to": 20,
+     "overshootPct": null
+    },
+    {
+     "el": "path",
+     "prop": "x",
+     "after": "confirm",
+     "startMs": 20,
+     "durationMs": 1011,
+     "from": 18,
+     "to": 16.5,
+     "overshootPct": null
+    },
+    {
+     "el": "path",
+     "prop": "y",
+     "after": "confirm",
+     "startMs": 20,
+     "durationMs": 1011,
+     "from": 42,
+     "to": 40.5,
+     "overshootPct": null
+    },
+    {
+     "el": "path",
+     "prop": "w",
+     "after": "confirm",
+     "startMs": 20,
+     "durationMs": 1011,
+     "from": 12,
+     "to": 15,
+     "overshootPct": null
+    },
+    {
+     "el": "path",
+     "prop": "h",
+     "after": "confirm",
+     "startMs": 20,
+     "durationMs": 1011,
+     "from": 12,
+     "to": 15,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "o",
+     "after": "confirm",
+     "startMs": 31,
+     "durationMs": 133,
+     "from": 0,
+     "to": 0.99,
+     "overshootPct": 0
+    },
+    {
+     "el": "div",
+     "prop": "o",
+     "after": "confirm",
+     "startMs": 919,
+     "durationMs": 78,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "div",
+     "prop": "w",
+     "after": "confirm",
+     "startMs": 930,
+     "durationMs": 234,
+     "from": 179.4,
+     "to": 164.1,
+     "overshootPct": 0
+    },
+    {
+     "el": "circle",
+     "prop": "sc",
+     "after": "confirm",
+     "startMs": 930,
+     "durationMs": 234,
+     "from": 0.7,
+     "to": 0.99,
+     "overshootPct": 0
+    },
+    {
+     "el": "circle",
+     "prop": "o",
+     "after": "confirm",
+     "startMs": 930,
+     "durationMs": 117,
+     "from": 0,
+     "to": 1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "o",
+     "after": "confirm",
+     "startMs": 947,
+     "durationMs": 133,
+     "from": 0,
+     "to": 1,
+     "overshootPct": 0
+    },
+    {
+     "el": "circle",
+     "prop": "x",
+     "after": "confirm",
+     "startMs": 947,
+     "durationMs": 84,
+     "from": 19.3,
+     "to": 17.7,
+     "overshootPct": null
+    },
+    {
+     "el": "circle",
+     "prop": "y",
+     "after": "confirm",
+     "startMs": 947,
+     "durationMs": 100,
+     "from": 42.3,
+     "to": 40.5,
+     "overshootPct": null
+    },
+    {
+     "el": "circle",
+     "prop": "w",
+     "after": "confirm",
+     "startMs": 947,
+     "durationMs": 133,
+     "from": 11.3,
+     "to": 15.5,
+     "overshootPct": null
+    },
+    {
+     "el": "circle",
+     "prop": "h",
+     "after": "confirm",
+     "startMs": 947,
+     "durationMs": 133,
+     "from": 11.3,
+     "to": 15.5,
+     "overshootPct": null
+    },
+    {
+     "el": "div",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 53,
+     "durationMs": 344,
+     "from": 194.7,
+     "to": 267.6,
+     "overshootPct": 0
+    },
+    {
+     "el": "div",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 56,
+     "durationMs": 75,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 81,
+     "durationMs": 133,
+     "from": 0,
+     "to": 1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 81,
+     "durationMs": 133,
+     "from": 0,
+     "to": 1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 81,
+     "durationMs": 133,
+     "from": 0,
+     "to": 1,
+     "overshootPct": 0
+    }
+   ],
+   "colours": [
+    {
+     "el": "button",
+     "prop": "fill",
+     "after": "point",
+     "startMs": 84,
+     "durationMs": 16,
+     "from": "rgb(212,212,255)",
+     "to": "rgb(255,255,255)",
+     "deltaE": 13
+    },
+    {
+     "el": "button",
+     "prop": "fill",
+     "after": "point",
+     "startMs": 150,
+     "durationMs": 33,
+     "from": "rgb(255,255,255)",
+     "to": "rgb(235,255,255)",
+     "deltaE": 2.5
+    },
+    {
+     "el": "button",
+     "prop": "fill",
+     "after": "point",
+     "startMs": 583,
+     "durationMs": 59,
+     "from": "rgb(235,255,255)",
+     "to": "rgb(255,255,255)",
+     "deltaE": 2.5
+    }
+   ],
+   "faintestWords": 1,
+   "longestMovementMs": 1011,
+   "maxOvershootPct": 0
+  },
+  {
+   "form": "beui/button-stateful",
+   "gesture": "answer",
+   "name": "Press, and it answers",
+   "marks": [
+    {
+     "name": "point",
+     "t": 203
+    },
+    {
+     "name": "gesture",
+     "t": 776
+    },
+    {
+     "name": "let go",
+     "t": 2385
+    }
+   ],
+   "movements": [
+    {
+     "after": "gesture",
+     "does": "fades",
+     "elements": 72,
+     "firstMs": 79,
+     "lastMs": 1746,
+     "longestMs": 234,
+     "biggest": 1,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "moves across",
+     "elements": 121,
+     "firstMs": 13,
+     "lastMs": 1413,
+     "longestMs": 1073,
+     "biggest": 54,
+     "overshootPct": 143.4
+    },
+    {
+     "after": "let go",
+     "does": "moves across",
+     "elements": 67,
+     "firstMs": 1287,
+     "lastMs": 1520,
+     "longestMs": 217,
+     "biggest": 56.8,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "changes width",
+     "elements": 31,
+     "firstMs": 13,
+     "lastMs": 1413,
+     "longestMs": 1066,
+     "biggest": 23.1,
+     "overshootPct": 43.7
+    },
+    {
+     "after": "let go",
+     "does": "changes width",
+     "elements": 20,
+     "firstMs": 1287,
+     "lastMs": 1537,
+     "longestMs": 232,
+     "biggest": 38.8,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "moves up or down",
+     "elements": 76,
+     "firstMs": 65,
+     "lastMs": 1746,
+     "longestMs": 1066,
+     "biggest": 21.2,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "changes height",
+     "elements": 10,
+     "firstMs": 65,
+     "lastMs": 1346,
+     "longestMs": 1066,
+     "biggest": 10.4,
+     "overshootPct": 14.4
+    },
+    {
+     "after": "gesture",
+     "does": "scales",
+     "elements": 3,
+     "firstMs": 107,
+     "lastMs": 1413,
+     "longestMs": 183,
+     "biggest": 0.28,
+     "overshootPct": 0
+    },
+    {
+     "after": "let go",
+     "does": "moves up or down",
+     "elements": 31,
+     "firstMs": 1305,
+     "lastMs": 1587,
+     "longestMs": 217,
+     "biggest": 21.2,
+     "overshootPct": 0
+    },
+    {
+     "after": "let go",
+     "does": "changes height",
+     "elements": 7,
+     "firstMs": 1305,
+     "lastMs": 1421,
+     "longestMs": 116,
+     "biggest": 4.5,
+     "overshootPct": null
+    },
+    {
+     "after": "let go",
+     "does": "fades",
+     "elements": 28,
+     "firstMs": 1305,
+     "lastMs": 1587,
+     "longestMs": 233,
+     "biggest": 1,
+     "overshootPct": 0
+    },
+    {
+     "after": "let go",
+     "does": "scales",
+     "elements": 2,
+     "firstMs": 1305,
+     "lastMs": 1504,
+     "longestMs": 184,
+     "biggest": 0.28,
+     "overshootPct": 0
+    }
+   ],
+   "motions": [
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 13,
+     "durationMs": 251,
+     "from": 68.7,
+     "to": 80.3,
+     "overshootPct": 12.1
+    },
+    {
+     "el": "span",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 13,
+     "durationMs": 267,
+     "from": 170,
+     "to": 146.9,
+     "overshootPct": 12.6
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 13,
+     "durationMs": 301,
+     "from": 68.7,
+     "to": 103.9,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 13,
+     "durationMs": 301,
+     "from": 146,
+     "to": 123.2,
+     "overshootPct": 0
+    },
+    {
+     "el": "span (decor)",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 13,
+     "durationMs": 301,
+     "from": 68.9,
+     "to": 103.9,
+     "overshootPct": 0
+    },
+    {
+     "el": "span (decor)",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 13,
+     "durationMs": 251,
+     "from": 145.6,
+     "to": 123.3,
+     "overshootPct": 31.4
+    },
+    {
+     "el": "span “S”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 13,
+     "durationMs": 301,
+     "from": 68.9,
+     "to": 103.9,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 13,
+     "durationMs": 301,
+     "from": 78.1,
+     "to": 114.5,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “a”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 13,
+     "durationMs": 317,
+     "from": 84,
+     "to": 123.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “r”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 13,
+     "durationMs": 301,
+     "from": 92,
+     "to": 131.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 13,
+     "durationMs": 267,
+     "from": 97.6,
+     "to": 139.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 13,
+     "durationMs": 301,
+     "from": 103.5,
+     "to": 143.4,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “i”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 13,
+     "durationMs": 301,
+     "from": 118.5,
+     "to": 160.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 13,
+     "durationMs": 267,
+     "from": 122.2,
+     "to": 163.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “n”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 13,
+     "durationMs": 53,
+     "from": 200.3,
+     "to": 198.3,
+     "overshootPct": null
+    },
+    {
+     "el": "span “Start with an account”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 13,
+     "durationMs": 301,
+     "from": 213.5,
+     "to": 226.4,
+     "overshootPct": 0
+    },
+    {
+     "el": "span (decor)",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 13,
+     "durationMs": 301,
+     "from": 68.7,
+     "to": 103.9,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “S”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 13,
+     "durationMs": 301,
+     "from": 68.7,
+     "to": 103.9,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 13,
+     "durationMs": 301,
+     "from": 77.9,
+     "to": 113.2,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “a”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 13,
+     "durationMs": 301,
+     "from": 83.8,
+     "to": 119,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “r”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 13,
+     "durationMs": 284,
+     "from": 91.8,
+     "to": 126.9,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 13,
+     "durationMs": 284,
+     "from": 97.5,
+     "to": 132.5,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 13,
+     "durationMs": 284,
+     "from": 103.3,
+     "to": 138.4,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “w”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 13,
+     "durationMs": 301,
+     "from": 106.7,
+     "to": 141.9,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 13,
+     "durationMs": 301,
+     "from": 122,
+     "to": 157.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “u”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 13,
+     "durationMs": 284,
+     "from": 191.8,
+     "to": 226.8,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 13,
+     "durationMs": 284,
+     "from": 208.4,
+     "to": 243.5,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 13,
+     "durationMs": 150,
+     "from": 214.7,
+     "to": 223.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span (decor)",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 13,
+     "durationMs": 234,
+     "from": 217.9,
+     "to": 226.9,
+     "overshootPct": 0
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 13,
+     "durationMs": 234,
+     "from": 217.9,
+     "to": 226.9,
+     "overshootPct": 0
+    },
+    {
+     "el": "path",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 13,
+     "durationMs": 234,
+     "from": 221.4,
+     "to": 229.3,
+     "overshootPct": null
+    },
+    {
+     "el": "span “S”",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 115,
+     "from": 9.2,
+     "to": 10.4,
+     "overshootPct": null
+    },
+    {
+     "el": "span “t”",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 42,
+     "from": 5.8,
+     "to": 8.1,
+     "overshootPct": null
+    },
+    {
+     "el": "span “t”",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 42,
+     "from": 5.8,
+     "to": 3.5,
+     "overshootPct": null
+    },
+    {
+     "el": "span “w”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 215,
+     "from": 107,
+     "to": 151.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “w”",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 42,
+     "from": 11.6,
+     "to": 8.1,
+     "overshootPct": null
+    },
+    {
+     "el": "span “t”",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 42,
+     "from": 5.8,
+     "to": 7.6,
+     "overshootPct": null
+    },
+    {
+     "el": "span “h”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 215,
+     "from": 128.2,
+     "to": 171.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 232,
+     "from": 136.5,
+     "to": 179.9,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “a”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 215,
+     "from": 139.9,
+     "to": 187.8,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “c”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 232,
+     "from": 167.5,
+     "to": 221.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “c”",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 42,
+     "from": 8,
+     "to": 5.5,
+     "overshootPct": null
+    },
+    {
+     "el": "span “o”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 1,
+     "from": 183.5,
+     "to": 182.4,
+     "overshootPct": null
+    },
+    {
+     "el": "span “u”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 1,
+     "from": 191.8,
+     "to": 190.4,
+     "overshootPct": null
+    },
+    {
+     "el": "span “t”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 1,
+     "from": 208.4,
+     "to": 206.3,
+     "overshootPct": null
+    },
+    {
+     "el": "span “S”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 165,
+     "from": 37.9,
+     "to": 16.8,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 165,
+     "from": 37.9,
+     "to": 16.9,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “a”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 182,
+     "from": 37.9,
+     "to": 16.8,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “r”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 182,
+     "from": 37.9,
+     "to": 16.9,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 199,
+     "from": 37.9,
+     "to": 16.8,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 215,
+     "from": 37.9,
+     "to": 16.7,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “i”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 232,
+     "from": 118.5,
+     "to": 153.4,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “h”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 232,
+     "from": 128,
+     "to": 163,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 232,
+     "from": 136.3,
+     "to": 171.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “a”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 249,
+     "from": 139.7,
+     "to": 174.9,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “n”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 249,
+     "from": 147.7,
+     "to": 182.9,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “a”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 232,
+     "from": 159.4,
+     "to": 194.4,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “c”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 232,
+     "from": 167.4,
+     "to": 202.5,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “c”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 232,
+     "from": 175.3,
+     "to": 210.5,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “o”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 232,
+     "from": 183.3,
+     "to": 218.5,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “n”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 249,
+     "from": 199.9,
+     "to": 235.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 98,
+     "from": 39.3,
+     "to": 41.8,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 98,
+     "from": 23.9,
+     "to": 2,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "h",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 98,
+     "from": 17.4,
+     "to": 12.4,
+     "overshootPct": null
+    },
+    {
+     "el": "span (decor)",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 98,
+     "from": 39.3,
+     "to": 41.8,
+     "overshootPct": null
+    },
+    {
+     "el": "span (decor)",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 115,
+     "from": 17.4,
+     "to": 12.2,
+     "overshootPct": null
+    },
+    {
+     "el": "span (decor)",
+     "prop": "h",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 115,
+     "from": 17.4,
+     "to": 12.2,
+     "overshootPct": null
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 98,
+     "from": 39.3,
+     "to": 41.8,
+     "overshootPct": null
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 115,
+     "from": 17.4,
+     "to": 12.2,
+     "overshootPct": null
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "h",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 115,
+     "from": 17.4,
+     "to": 12.2,
+     "overshootPct": null
+    },
+    {
+     "el": "path",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 82,
+     "from": 42.8,
+     "to": 44.1,
+     "overshootPct": null
+    },
+    {
+     "el": "path",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 115,
+     "from": 10.5,
+     "to": 7.3,
+     "overshootPct": null
+    },
+    {
+     "el": "path",
+     "prop": "h",
+     "after": "gesture",
+     "startMs": 65,
+     "durationMs": 115,
+     "from": 10.5,
+     "to": 7.3,
+     "overshootPct": null
+    },
+    {
+     "el": "button",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 79,
+     "durationMs": 28,
+     "from": 1,
+     "to": 0.5,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “r”",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 79,
+     "durationMs": 28,
+     "from": 5.4,
+     "to": 7.9,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 79,
+     "durationMs": 28,
+     "from": 3.2,
+     "to": 7.9,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 79,
+     "durationMs": 28,
+     "from": 3.2,
+     "to": 7.7,
+     "overshootPct": null
+    },
+    {
+     "el": "span “n”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 79,
+     "durationMs": 201,
+     "from": 148.1,
+     "to": 195.8,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 79,
+     "durationMs": 235,
+     "from": 156.1,
+     "to": 204.9,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 79,
+     "durationMs": 28,
+     "from": 3.2,
+     "to": 7.9,
+     "overshootPct": null
+    },
+    {
+     "el": "span “a”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 79,
+     "durationMs": 235,
+     "from": 159.3,
+     "to": 213.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “S”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 107,
+     "durationMs": 106,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 107,
+     "durationMs": 123,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 107,
+     "durationMs": 207,
+     "from": 155.9,
+     "to": 191.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "sc",
+     "after": "gesture",
+     "startMs": 107,
+     "durationMs": 56,
+     "from": 1,
+     "to": 0.73,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 107,
+     "durationMs": 56,
+     "from": 1,
+     "to": 0.06,
+     "overshootPct": 0
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 107,
+     "durationMs": 1073,
+     "from": 73.5,
+     "to": 81.6,
+     "overshootPct": 32.1
+    },
+    {
+     "el": "path",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 107,
+     "durationMs": 1073,
+     "from": 74.8,
+     "to": 84.3,
+     "overshootPct": 20
+    },
+    {
+     "el": "span (decor)",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 107,
+     "durationMs": 207,
+     "from": 73.5,
+     "to": 103.9,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “O”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 107,
+     "durationMs": 207,
+     "from": 73.5,
+     "to": 103.9,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “O”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 107,
+     "durationMs": 190,
+     "from": 58.5,
+     "to": 38.2,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “O”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 107,
+     "durationMs": 207,
+     "from": 0,
+     "to": 0.99,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “p”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 107,
+     "durationMs": 207,
+     "from": 83.5,
+     "to": 114.5,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “e”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 107,
+     "durationMs": 223,
+     "from": 91.6,
+     "to": 123.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “n”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 107,
+     "durationMs": 207,
+     "from": 99.3,
+     "to": 131.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “i”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 107,
+     "durationMs": 190,
+     "from": 107.2,
+     "to": 139.5,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “n”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 107,
+     "durationMs": 207,
+     "from": 110.7,
+     "to": 143.4,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “g”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 107,
+     "durationMs": 190,
+     "from": 118.6,
+     "to": 151.5,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 107,
+     "durationMs": 207,
+     "from": 126.7,
+     "to": 160.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “c”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 107,
+     "durationMs": 190,
+     "from": 129.9,
+     "to": 163.5,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “h”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 107,
+     "durationMs": 190,
+     "from": 137.4,
+     "to": 171.5,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “e”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 107,
+     "durationMs": 190,
+     "from": 145.3,
+     "to": 179.9,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “c”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 107,
+     "durationMs": 190,
+     "from": 153,
+     "to": 188,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “k”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 107,
+     "durationMs": 190,
+     "from": 160.6,
+     "to": 196,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “o”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 107,
+     "durationMs": 207,
+     "from": 168.7,
+     "to": 204.9,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “u”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 107,
+     "durationMs": 207,
+     "from": 176.6,
+     "to": 213.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 107,
+     "durationMs": 190,
+     "from": 184.4,
+     "to": 221.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “a”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 114,
+     "durationMs": 133,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 114,
+     "durationMs": 1066,
+     "from": 42.7,
+     "to": 37.4,
+     "overshootPct": null
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 114,
+     "durationMs": 1066,
+     "from": 10.7,
+     "to": 21.1,
+     "overshootPct": 14.4
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "h",
+     "after": "gesture",
+     "startMs": 114,
+     "durationMs": 1066,
+     "from": 10.7,
+     "to": 21.1,
+     "overshootPct": 14.4
+    },
+    {
+     "el": "path",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 114,
+     "durationMs": 1066,
+     "from": 44,
+     "to": 40.1,
+     "overshootPct": null
+    },
+    {
+     "el": "path",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 114,
+     "durationMs": 1066,
+     "from": 8,
+     "to": 15.8,
+     "overshootPct": null
+    },
+    {
+     "el": "path",
+     "prop": "h",
+     "after": "gesture",
+     "startMs": 114,
+     "durationMs": 1066,
+     "from": 8,
+     "to": 15.8,
+     "overshootPct": null
+    },
+    {
+     "el": "span (decor)",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 114,
+     "durationMs": 150,
+     "from": 116.3,
+     "to": 123.3,
+     "overshootPct": null
+    },
+    {
+     "el": "span “p”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 114,
+     "durationMs": 216,
+     "from": 0,
+     "to": 0.99,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “r”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 131,
+     "durationMs": 116,
+     "from": 1,
+     "to": 0.01,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “p”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 131,
+     "durationMs": 183,
+     "from": 58.5,
+     "to": 38.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 131,
+     "durationMs": 149,
+     "from": 78.9,
+     "to": 80.3,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 131,
+     "durationMs": 82,
+     "from": 42.5,
+     "to": 40.5,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 131,
+     "durationMs": 183,
+     "from": 1.2,
+     "to": 23.7,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "h",
+     "after": "gesture",
+     "startMs": 131,
+     "durationMs": 116,
+     "from": 10.9,
+     "to": 15.6,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "sc",
+     "after": "gesture",
+     "startMs": 131,
+     "durationMs": 183,
+     "from": 0.72,
+     "to": 1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 131,
+     "durationMs": 183,
+     "from": 0.22,
+     "to": 0.99,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 147,
+     "durationMs": 117,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 147,
+     "durationMs": 133,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “e”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 147,
+     "durationMs": 216,
+     "from": 0,
+     "to": 0.99,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “w”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 163,
+     "durationMs": 134,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “e”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 163,
+     "durationMs": 184,
+     "from": 58.8,
+     "to": 38.2,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “n”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 163,
+     "durationMs": 217,
+     "from": 0,
+     "to": 0.99,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “w”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 180,
+     "durationMs": 100,
+     "from": 38.1,
+     "to": 16.9,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “i”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 180,
+     "durationMs": 117,
+     "from": 1,
+     "to": 0.01,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “i”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 197,
+     "durationMs": 100,
+     "from": 38,
+     "to": 16.8,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 197,
+     "durationMs": 117,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “h”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 197,
+     "durationMs": 133,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “n”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 197,
+     "durationMs": 166,
+     "from": 58.7,
+     "to": 38.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “i”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 197,
+     "durationMs": 217,
+     "from": 0,
+     "to": 0.99,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 213,
+     "durationMs": 101,
+     "from": 37.9,
+     "to": 16.7,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “h”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 213,
+     "durationMs": 117,
+     "from": 37.9,
+     "to": 16.7,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 213,
+     "durationMs": 134,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “i”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 213,
+     "durationMs": 183,
+     "from": 59,
+     "to": 38.2,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “n”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 213,
+     "durationMs": 217,
+     "from": 0,
+     "to": 0.99,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 230,
+     "durationMs": 100,
+     "from": 37.9,
+     "to": 16.9,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “a”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 230,
+     "durationMs": 117,
+     "from": 1,
+     "to": 0.01,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “n”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 230,
+     "durationMs": 200,
+     "from": 59.1,
+     "to": 38.1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “a”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 247,
+     "durationMs": 100,
+     "from": 37.9,
+     "to": 16.8,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “n”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 247,
+     "durationMs": 116,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 247,
+     "durationMs": 133,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “g”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 247,
+     "durationMs": 216,
+     "from": 0,
+     "to": 0.99,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “n”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 264,
+     "durationMs": 99,
+     "from": 37.9,
+     "to": 16.7,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 264,
+     "durationMs": 116,
+     "from": 37.9,
+     "to": 16.7,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “a”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 264,
+     "durationMs": 132,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “g”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 264,
+     "durationMs": 183,
+     "from": 59.1,
+     "to": 38.2,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 264,
+     "durationMs": 216,
+     "from": 0,
+     "to": 0.99,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “a”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 280,
+     "durationMs": 100,
+     "from": 37.8,
+     "to": 16.9,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “c”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 280,
+     "durationMs": 116,
+     "from": 1,
+     "to": 0.01,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 280,
+     "durationMs": 183,
+     "from": 59.1,
+     "to": 38.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “c”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 297,
+     "durationMs": 99,
+     "from": 37.8,
+     "to": 16.8,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “c”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 297,
+     "durationMs": 117,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “o”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 297,
+     "durationMs": 133,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “c”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 297,
+     "durationMs": 216,
+     "from": 0,
+     "to": 0.99,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “c”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 314,
+     "durationMs": 100,
+     "from": 37.8,
+     "to": 16.8,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “o”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 314,
+     "durationMs": 116,
+     "from": 37.8,
+     "to": 16.7,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “u”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 314,
+     "durationMs": 133,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “c”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 314,
+     "durationMs": 182,
+     "from": 59.2,
+     "to": 38.2,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “h”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 314,
+     "durationMs": 216,
+     "from": 0,
+     "to": 0.99,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “u”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 330,
+     "durationMs": 100,
+     "from": 37.8,
+     "to": 16.9,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “n”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 330,
+     "durationMs": 117,
+     "from": 1,
+     "to": 0.01,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “h”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 330,
+     "durationMs": 200,
+     "from": 59.2,
+     "to": 38.1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “n”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 347,
+     "durationMs": 100,
+     "from": 37.8,
+     "to": 16.8,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 347,
+     "durationMs": 116,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “e”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 347,
+     "durationMs": 216,
+     "from": 0,
+     "to": 0.99,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 363,
+     "durationMs": 100,
+     "from": 37.8,
+     "to": 16.7,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “e”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 363,
+     "durationMs": 183,
+     "from": 59.2,
+     "to": 38.2,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “c”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 363,
+     "durationMs": 217,
+     "from": 0,
+     "to": 0.99,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “c”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 380,
+     "durationMs": 217,
+     "from": 59.2,
+     "to": 38,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “k”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 396,
+     "durationMs": 217,
+     "from": 0,
+     "to": 0.99,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “k”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 414,
+     "durationMs": 183,
+     "from": 59.2,
+     "to": 38.2,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “o”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 414,
+     "durationMs": 216,
+     "from": 0,
+     "to": 0.99,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “o”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 430,
+     "durationMs": 217,
+     "from": 59.2,
+     "to": 38,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “u”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 447,
+     "durationMs": 217,
+     "from": 0,
+     "to": 0.99,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “u”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 463,
+     "durationMs": 184,
+     "from": 59.2,
+     "to": 38.2,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 463,
+     "durationMs": 217,
+     "from": 0,
+     "to": 0.99,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 480,
+     "durationMs": 200,
+     "from": 59.2,
+     "to": 38.1,
+     "overshootPct": 0
+    },
+    {
+     "el": "button",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 28,
+     "from": 0.5,
+     "to": 1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 166,
+     "from": 80.2,
+     "to": 88.5,
+     "overshootPct": 44.6
+    },
+    {
+     "el": "span",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 166,
+     "from": 147,
+     "to": 130.3,
+     "overshootPct": 43.7
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 233,
+     "from": 104.2,
+     "to": 112,
+     "overshootPct": null
+    },
+    {
+     "el": "span (decor)",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 233,
+     "from": 104.2,
+     "to": 112,
+     "overshootPct": null
+    },
+    {
+     "el": "span (decor)",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 28,
+     "from": 123.5,
+     "to": 107.5,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “S”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 233,
+     "from": 104.2,
+     "to": 112,
+     "overshootPct": null
+    },
+    {
+     "el": "span “t”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 217,
+     "from": 114.8,
+     "to": 121.9,
+     "overshootPct": null
+    },
+    {
+     "el": "span “a”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 233,
+     "from": 123.4,
+     "to": 130.4,
+     "overshootPct": null
+    },
+    {
+     "el": "span “r”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 217,
+     "from": 131.6,
+     "to": 138.4,
+     "overshootPct": null
+    },
+    {
+     "el": "span “t”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 217,
+     "from": 139.9,
+     "to": 146.4,
+     "overshootPct": null
+    },
+    {
+     "el": "span “t”",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 28,
+     "from": 3.7,
+     "to": 8.7,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 217,
+     "from": 143.6,
+     "to": 155.1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “w”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 217,
+     "from": 152,
+     "to": 163.4,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “i”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 233,
+     "from": 160.6,
+     "to": 171.9,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “i”",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 28,
+     "from": 3.4,
+     "to": 5.9,
+     "overshootPct": null
+    },
+    {
+     "el": "span “t”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 217,
+     "from": 163.9,
+     "to": 177.6,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 28,
+     "from": 8,
+     "to": 3.4,
+     "overshootPct": null
+    },
+    {
+     "el": "span “h”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 217,
+     "from": 171.9,
+     "to": 180.9,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “h”",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 28,
+     "from": 8.4,
+     "to": 5.6,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 217,
+     "from": 180.3,
+     "to": 186.6,
+     "overshootPct": null
+    },
+    {
+     "el": "span “a”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 233,
+     "from": 188.5,
+     "to": 194.9,
+     "overshootPct": null
+    },
+    {
+     "el": "span “n”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 217,
+     "from": 196.5,
+     "to": 202.8,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 217,
+     "from": 205.2,
+     "to": 211.4,
+     "overshootPct": null
+    },
+    {
+     "el": "span “Start with an account”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 217,
+     "from": 226.6,
+     "to": 218.3,
+     "overshootPct": 143.4
+    },
+    {
+     "el": "span (decor)",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 233,
+     "from": 104.2,
+     "to": 112,
+     "overshootPct": null
+    },
+    {
+     "el": "span “O”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 233,
+     "from": 104.2,
+     "to": 112,
+     "overshootPct": null
+    },
+    {
+     "el": "span “p”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 217,
+     "from": 114.8,
+     "to": 122.4,
+     "overshootPct": null
+    },
+    {
+     "el": "span “e”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 217,
+     "from": 123.4,
+     "to": 131,
+     "overshootPct": null
+    },
+    {
+     "el": "span “n”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 217,
+     "from": 131.6,
+     "to": 139.2,
+     "overshootPct": null
+    },
+    {
+     "el": "span “i”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 200,
+     "from": 139.9,
+     "to": 147.3,
+     "overshootPct": null
+    },
+    {
+     "el": "span “n”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 233,
+     "from": 143.6,
+     "to": 151.4,
+     "overshootPct": null
+    },
+    {
+     "el": "span “g”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 233,
+     "from": 152,
+     "to": 159.8,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 217,
+     "from": 160.6,
+     "to": 168.2,
+     "overshootPct": null
+    },
+    {
+     "el": "span “c”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 200,
+     "from": 163.9,
+     "to": 171.3,
+     "overshootPct": null
+    },
+    {
+     "el": "span “h”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 217,
+     "from": 171.9,
+     "to": 179.6,
+     "overshootPct": null
+    },
+    {
+     "el": "span “e”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 217,
+     "from": 180.3,
+     "to": 187.9,
+     "overshootPct": null
+    },
+    {
+     "el": "span “c”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 233,
+     "from": 188.5,
+     "to": 196.3,
+     "overshootPct": null
+    },
+    {
+     "el": "span “k”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 233,
+     "from": 196.5,
+     "to": 204.3,
+     "overshootPct": null
+    },
+    {
+     "el": "span “o”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 217,
+     "from": 205.2,
+     "to": 212.8,
+     "overshootPct": null
+    },
+    {
+     "el": "span “u”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 233,
+     "from": 213.5,
+     "to": 221.3,
+     "overshootPct": null
+    },
+    {
+     "el": "span “t”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1180,
+     "durationMs": 217,
+     "from": 221.8,
+     "to": 229.4,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 1208,
+     "durationMs": 189,
+     "from": 123,
+     "to": 107.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “O”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1208,
+     "durationMs": 105,
+     "from": 37.8,
+     "to": 16.8,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “O”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1208,
+     "durationMs": 105,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span (decor)",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1208,
+     "durationMs": 205,
+     "from": 92.2,
+     "to": 112,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “C”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1208,
+     "durationMs": 205,
+     "from": 92.2,
+     "to": 112,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “C”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1208,
+     "durationMs": 189,
+     "from": 59.2,
+     "to": 38.2,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “C”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1208,
+     "durationMs": 205,
+     "from": 0,
+     "to": 0.99,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “h”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1208,
+     "durationMs": 189,
+     "from": 102.2,
+     "to": 121.9,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “e”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1208,
+     "durationMs": 205,
+     "from": 110.6,
+     "to": 130.4,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “c”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1208,
+     "durationMs": 189,
+     "from": 118.8,
+     "to": 138.4,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “k”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1208,
+     "durationMs": 189,
+     "from": 126.8,
+     "to": 146.4,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “o”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1208,
+     "durationMs": 189,
+     "from": 135.5,
+     "to": 155.1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “u”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1208,
+     "durationMs": 189,
+     "from": 143.8,
+     "to": 163.4,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1208,
+     "durationMs": 205,
+     "from": 152.1,
+     "to": 171.9,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1208,
+     "durationMs": 189,
+     "from": 157.9,
+     "to": 177.6,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “r”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1208,
+     "durationMs": 189,
+     "from": 161.3,
+     "to": 180.9,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “e”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1208,
+     "durationMs": 189,
+     "from": 166.9,
+     "to": 186.6,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “a”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1208,
+     "durationMs": 205,
+     "from": 175.1,
+     "to": 194.9,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “d”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1208,
+     "durationMs": 189,
+     "from": 183.1,
+     "to": 202.8,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “y”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1208,
+     "durationMs": 189,
+     "from": 191.8,
+     "to": 211.4,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “p”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1213,
+     "durationMs": 117,
+     "from": 37.8,
+     "to": 16.7,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “p”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1213,
+     "durationMs": 117,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “e”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1213,
+     "durationMs": 133,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “h”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1213,
+     "durationMs": 234,
+     "from": 0,
+     "to": 1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “e”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1229,
+     "durationMs": 101,
+     "from": 37.8,
+     "to": 16.9,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “n”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1229,
+     "durationMs": 134,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1229,
+     "durationMs": 101,
+     "from": 42.3,
+     "to": 40.3,
+     "overshootPct": null
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 1229,
+     "durationMs": 117,
+     "from": 11.5,
+     "to": 15.6,
+     "overshootPct": null
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "h",
+     "after": "gesture",
+     "startMs": 1229,
+     "durationMs": 117,
+     "from": 11.5,
+     "to": 15.6,
+     "overshootPct": null
+    },
+    {
+     "el": "path",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 1229,
+     "durationMs": 117,
+     "from": 7.6,
+     "to": 10.4,
+     "overshootPct": null
+    },
+    {
+     "el": "path",
+     "prop": "h",
+     "after": "gesture",
+     "startMs": 1229,
+     "durationMs": 84,
+     "from": 5.3,
+     "to": 6.9,
+     "overshootPct": null
+    },
+    {
+     "el": "span “h”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1229,
+     "durationMs": 218,
+     "from": 59.2,
+     "to": 38,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “n”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1247,
+     "durationMs": 99,
+     "from": 37.8,
+     "to": 16.8,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “i”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1247,
+     "durationMs": 116,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “e”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1247,
+     "durationMs": 217,
+     "from": 0,
+     "to": 0.99,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 1247,
+     "durationMs": 116,
+     "from": 91.9,
+     "to": 88.6,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1247,
+     "durationMs": 83,
+     "from": 41.9,
+     "to": 40.3,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 1247,
+     "durationMs": 166,
+     "from": 4.1,
+     "to": 23.7,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "h",
+     "after": "gesture",
+     "startMs": 1247,
+     "durationMs": 99,
+     "from": 12.3,
+     "to": 15.6,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "sc",
+     "after": "gesture",
+     "startMs": 1247,
+     "durationMs": 166,
+     "from": 0.77,
+     "to": 1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1247,
+     "durationMs": 166,
+     "from": 0.39,
+     "to": 0.99,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “i”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1263,
+     "durationMs": 100,
+     "from": 37.8,
+     "to": 16.8,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “n”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1263,
+     "durationMs": 117,
+     "from": 37.8,
+     "to": 16.7,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “n”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1263,
+     "durationMs": 117,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “g”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1263,
+     "durationMs": 134,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “e”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1263,
+     "durationMs": 184,
+     "from": 59.2,
+     "to": 38.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “c”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1263,
+     "durationMs": 234,
+     "from": 0,
+     "to": 1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “g”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1280,
+     "durationMs": 100,
+     "from": 37.8,
+     "to": 16.9,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1280,
+     "durationMs": 133,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “c”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1280,
+     "durationMs": 217,
+     "from": 59.2,
+     "to": 38,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1296,
+     "durationMs": 101,
+     "from": 37.8,
+     "to": 16.8,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “c”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1296,
+     "durationMs": 117,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “k”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1296,
+     "durationMs": 218,
+     "from": 0,
+     "to": 0.99,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “c”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1313,
+     "durationMs": 100,
+     "from": 37.8,
+     "to": 16.8,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “h”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1313,
+     "durationMs": 117,
+     "from": 37.8,
+     "to": 16.7,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “h”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1313,
+     "durationMs": 117,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “e”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1313,
+     "durationMs": 134,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “k”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1313,
+     "durationMs": 184,
+     "from": 59.2,
+     "to": 38.2,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “o”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1313,
+     "durationMs": 233,
+     "from": 0,
+     "to": 1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “e”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1330,
+     "durationMs": 100,
+     "from": 37.8,
+     "to": 16.9,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “c”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1330,
+     "durationMs": 134,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “o”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1330,
+     "durationMs": 216,
+     "from": 59.2,
+     "to": 38,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “c”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1346,
+     "durationMs": 101,
+     "from": 37.8,
+     "to": 16.8,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “k”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1346,
+     "durationMs": 118,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “u”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1346,
+     "durationMs": 218,
+     "from": 0,
+     "to": 0.99,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “k”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1363,
+     "durationMs": 101,
+     "from": 37.8,
+     "to": 16.8,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “o”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1363,
+     "durationMs": 117,
+     "from": 37.8,
+     "to": 16.7,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “o”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1363,
+     "durationMs": 117,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “u”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1363,
+     "durationMs": 134,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “u”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1363,
+     "durationMs": 183,
+     "from": 59.2,
+     "to": 38.2,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1363,
+     "durationMs": 234,
+     "from": 0,
+     "to": 1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “u”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1380,
+     "durationMs": 100,
+     "from": 37.8,
+     "to": 16.9,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1380,
+     "durationMs": 134,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1380,
+     "durationMs": 217,
+     "from": 59.2,
+     "to": 38,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1397,
+     "durationMs": 100,
+     "from": 37.8,
+     "to": 16.8,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1397,
+     "durationMs": 216,
+     "from": 0,
+     "to": 0.99,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1413,
+     "durationMs": 184,
+     "from": 59.2,
+     "to": 38.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “r”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1413,
+     "durationMs": 234,
+     "from": 0,
+     "to": 1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “r”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1430,
+     "durationMs": 217,
+     "from": 59.2,
+     "to": 38,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “e”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1447,
+     "durationMs": 217,
+     "from": 0,
+     "to": 0.99,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “e”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1464,
+     "durationMs": 183,
+     "from": 59.2,
+     "to": 38.2,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “a”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1464,
+     "durationMs": 232,
+     "from": 0,
+     "to": 1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “a”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1480,
+     "durationMs": 216,
+     "from": 59.2,
+     "to": 38,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “d”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1497,
+     "durationMs": 216,
+     "from": 0,
+     "to": 0.99,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “d”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1514,
+     "durationMs": 182,
+     "from": 59.2,
+     "to": 38.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “y”",
+     "prop": "o",
+     "after": "gesture",
+     "startMs": 1514,
+     "durationMs": 232,
+     "from": 0,
+     "to": 1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “y”",
+     "prop": "y",
+     "after": "gesture",
+     "startMs": 1530,
+     "durationMs": 216,
+     "from": 59.2,
+     "to": 38,
+     "overshootPct": 0
+    },
+    {
+     "el": "span (decor)",
+     "prop": "w",
+     "after": "let go",
+     "startMs": 1287,
+     "durationMs": 18,
+     "from": 107.5,
+     "to": 145.6,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1287,
+     "durationMs": 217,
+     "from": 122.2,
+     "to": 78.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "w",
+     "after": "let go",
+     "startMs": 1287,
+     "durationMs": 18,
+     "from": 8.4,
+     "to": 5.9,
+     "overshootPct": null
+    },
+    {
+     "el": "span “a”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1287,
+     "durationMs": 217,
+     "from": 130.6,
+     "to": 84.1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “r”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1287,
+     "durationMs": 217,
+     "from": 138.8,
+     "to": 92.2,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “r”",
+     "prop": "w",
+     "after": "let go",
+     "startMs": 1287,
+     "durationMs": 18,
+     "from": 8,
+     "to": 5.6,
+     "overshootPct": null
+    },
+    {
+     "el": "span “t”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1287,
+     "durationMs": 217,
+     "from": 146.8,
+     "to": 97.8,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "w",
+     "after": "let go",
+     "startMs": 1287,
+     "durationMs": 18,
+     "from": 8.7,
+     "to": 5.9,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1287,
+     "durationMs": 217,
+     "from": 155.5,
+     "to": 103.7,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "w",
+     "after": "let go",
+     "startMs": 1287,
+     "durationMs": 18,
+     "from": 8.3,
+     "to": 3.4,
+     "overshootPct": null
+    },
+    {
+     "el": "span “w”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1287,
+     "durationMs": 217,
+     "from": 163.8,
+     "to": 107,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “w”",
+     "prop": "w",
+     "after": "let go",
+     "startMs": 1287,
+     "durationMs": 18,
+     "from": 8.3,
+     "to": 11.7,
+     "overshootPct": null
+    },
+    {
+     "el": "span “i”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1287,
+     "durationMs": 217,
+     "from": 172.1,
+     "to": 118.7,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “i”",
+     "prop": "w",
+     "after": "let go",
+     "startMs": 1287,
+     "durationMs": 18,
+     "from": 5.9,
+     "to": 3.7,
+     "overshootPct": null
+    },
+    {
+     "el": "span “t”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1287,
+     "durationMs": 217,
+     "from": 177.9,
+     "to": 122.4,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "w",
+     "after": "let go",
+     "startMs": 1287,
+     "durationMs": 18,
+     "from": 3.4,
+     "to": 5.9,
+     "overshootPct": null
+    },
+    {
+     "el": "span “h”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1287,
+     "durationMs": 200,
+     "from": 181.3,
+     "to": 128.5,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “h”",
+     "prop": "w",
+     "after": "let go",
+     "startMs": 1287,
+     "durationMs": 18,
+     "from": 5.6,
+     "to": 8.4,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1287,
+     "durationMs": 217,
+     "from": 186.9,
+     "to": 136.6,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "w",
+     "after": "let go",
+     "startMs": 1287,
+     "durationMs": 18,
+     "from": 8.2,
+     "to": 3.4,
+     "overshootPct": null
+    },
+    {
+     "el": "span “a”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1287,
+     "durationMs": 200,
+     "from": 195.1,
+     "to": 140.2,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “n”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1287,
+     "durationMs": 217,
+     "from": 203.1,
+     "to": 148,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1287,
+     "durationMs": 200,
+     "from": 211.8,
+     "to": 156.6,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "w",
+     "after": "let go",
+     "startMs": 1287,
+     "durationMs": 18,
+     "from": 7.9,
+     "to": 3.4,
+     "overshootPct": null
+    },
+    {
+     "el": "span “Start with an account”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1287,
+     "durationMs": 217,
+     "from": 218.6,
+     "to": 213.6,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 199,
+     "from": 88.2,
+     "to": 69,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "w",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 232,
+     "from": 131,
+     "to": 169.8,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 199,
+     "from": 112.2,
+     "to": 69,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "w",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 215,
+     "from": 107,
+     "to": 145.8,
+     "overshootPct": 0
+    },
+    {
+     "el": "span (decor)",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 199,
+     "from": 112.2,
+     "to": 69,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “S”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 199,
+     "from": 112.2,
+     "to": 69,
+     "overshootPct": 0
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 149,
+     "from": 92.2,
+     "to": 70.4,
+     "overshootPct": 0
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "y",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 49,
+     "from": 40,
+     "to": 42.1,
+     "overshootPct": null
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "w",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 66,
+     "from": 16,
+     "to": 11.5,
+     "overshootPct": null
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "h",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 66,
+     "from": 16,
+     "to": 11.5,
+     "overshootPct": null
+    },
+    {
+     "el": "path",
+     "prop": "w",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 66,
+     "from": 10.7,
+     "to": 7.7,
+     "overshootPct": null
+    },
+    {
+     "el": "path",
+     "prop": "h",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 49,
+     "from": 7.3,
+     "to": 5.4,
+     "overshootPct": null
+    },
+    {
+     "el": "span (decor)",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 199,
+     "from": 112.2,
+     "to": 69,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “C”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 199,
+     "from": 112.2,
+     "to": 69,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “C”",
+     "prop": "y",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 99,
+     "from": 37.8,
+     "to": 16.8,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “C”",
+     "prop": "o",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 99,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “h”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 199,
+     "from": 122.2,
+     "to": 79.1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “h”",
+     "prop": "y",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 116,
+     "from": 37.8,
+     "to": 16.7,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “h”",
+     "prop": "o",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 116,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “e”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 199,
+     "from": 130.6,
+     "to": 87.4,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “e”",
+     "prop": "o",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 133,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “c”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 199,
+     "from": 138.8,
+     "to": 95.6,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “k”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 199,
+     "from": 146.8,
+     "to": 103.6,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “o”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 215,
+     "from": 155.5,
+     "to": 112.1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “u”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 199,
+     "from": 163.8,
+     "to": 120.6,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 199,
+     "from": 172.1,
+     "to": 128.9,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 215,
+     "from": 177.9,
+     "to": 134.6,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “r”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 199,
+     "from": 181.3,
+     "to": 138.1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “e”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 215,
+     "from": 186.9,
+     "to": 143.6,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “a”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 182,
+     "from": 195.1,
+     "to": 152.2,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “d”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 199,
+     "from": 203.1,
+     "to": 160,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “y”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 199,
+     "from": 211.8,
+     "to": 168.6,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 66,
+     "from": 88.2,
+     "to": 81.9,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "y",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 49,
+     "from": 40,
+     "to": 42.1,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "w",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 66,
+     "from": 24,
+     "to": 1.1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "h",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 66,
+     "from": 16,
+     "to": 11.5,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "sc",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 66,
+     "from": 1,
+     "to": 0.72,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "o",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 66,
+     "from": 1,
+     "to": 0.03,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “a”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 199,
+     "from": 202.9,
+     "to": 159.7,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “c”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 182,
+     "from": 210.9,
+     "to": 168,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “c”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 182,
+     "from": 218.9,
+     "to": 176,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “o”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 182,
+     "from": 226.9,
+     "to": 184,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “u”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 199,
+     "from": 235.3,
+     "to": 192.1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “n”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 199,
+     "from": 243.6,
+     "to": 200.4,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 182,
+     "from": 251.9,
+     "to": 209,
+     "overshootPct": 0
+    },
+    {
+     "el": "span (decor)",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 199,
+     "from": 112.2,
+     "to": 69,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “S”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 199,
+     "from": 112.2,
+     "to": 69,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “S”",
+     "prop": "y",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 182,
+     "from": 59.2,
+     "to": 38.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “S”",
+     "prop": "o",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 199,
+     "from": 0,
+     "to": 0.99,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 215,
+     "from": 121.4,
+     "to": 78.1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "o",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 232,
+     "from": 0,
+     "to": 1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “a”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 199,
+     "from": 127.3,
+     "to": 84.1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “r”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 215,
+     "from": 135.3,
+     "to": 92,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 215,
+     "from": 141,
+     "to": 97.6,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 215,
+     "from": 146.8,
+     "to": 103.5,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “w”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 199,
+     "from": 150.2,
+     "to": 107,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “i”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 215,
+     "from": 161.9,
+     "to": 118.5,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 215,
+     "from": 165.5,
+     "to": 122.2,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “h”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 215,
+     "from": 171.4,
+     "to": 128.1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 199,
+     "from": 179.8,
+     "to": 136.6,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “a”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 182,
+     "from": 183.1,
+     "to": 140.2,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “n”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 199,
+     "from": 191.2,
+     "to": 148,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 215,
+     "from": 199.5,
+     "to": 156.2,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “a”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 199,
+     "from": 202.9,
+     "to": 159.7,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “c”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 215,
+     "from": 210.9,
+     "to": 167.6,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “c”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 215,
+     "from": 218.9,
+     "to": 175.6,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “o”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 215,
+     "from": 226.9,
+     "to": 183.6,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “u”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 199,
+     "from": 235.3,
+     "to": 192.1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “n”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 199,
+     "from": 243.6,
+     "to": 200.4,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 215,
+     "from": 251.9,
+     "to": 208.6,
+     "overshootPct": 0
+    },
+    {
+     "el": "span (decor)",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 166,
+     "from": 219.2,
+     "to": 217.4,
+     "overshootPct": null
+    },
+    {
+     "el": "span (decor)",
+     "prop": "w",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 116,
+     "from": 12.3,
+     "to": 16.8,
+     "overshootPct": null
+    },
+    {
+     "el": "span (decor)",
+     "prop": "h",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 116,
+     "from": 12.3,
+     "to": 16.8,
+     "overshootPct": null
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 166,
+     "from": 219.2,
+     "to": 217.4,
+     "overshootPct": null
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "w",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 116,
+     "from": 12.3,
+     "to": 16.8,
+     "overshootPct": null
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "h",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 116,
+     "from": 12.3,
+     "to": 16.8,
+     "overshootPct": null
+    },
+    {
+     "el": "path",
+     "prop": "h",
+     "after": "let go",
+     "startMs": 1305,
+     "durationMs": 99,
+     "from": 7.3,
+     "to": 9.9,
+     "overshootPct": null
+    },
+    {
+     "el": "path",
+     "prop": "x",
+     "after": "let go",
+     "startMs": 1320,
+     "durationMs": 134,
+     "from": 94.7,
+     "to": 72.2,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “e”",
+     "prop": "y",
+     "after": "let go",
+     "startMs": 1320,
+     "durationMs": 101,
+     "from": 37.8,
+     "to": 16.9,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “c”",
+     "prop": "o",
+     "after": "let go",
+     "startMs": 1320,
+     "durationMs": 134,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "y",
+     "after": "let go",
+     "startMs": 1320,
+     "durationMs": 217,
+     "from": 59.2,
+     "to": 38,
+     "overshootPct": 0
+    },
+    {
+     "el": "span (decor)",
+     "prop": "y",
+     "after": "let go",
+     "startMs": 1320,
+     "durationMs": 84,
+     "from": 41.7,
+     "to": 39.8,
+     "overshootPct": null
+    },
+    {
+     "el": "svg (decor)",
+     "prop": "y",
+     "after": "let go",
+     "startMs": 1320,
+     "durationMs": 84,
+     "from": 41.7,
+     "to": 39.8,
+     "overshootPct": null
+    },
+    {
+     "el": "path",
+     "prop": "y",
+     "after": "let go",
+     "startMs": 1320,
+     "durationMs": 101,
+     "from": 44.2,
+     "to": 42.9,
+     "overshootPct": null
+    },
+    {
+     "el": "path",
+     "prop": "w",
+     "after": "let go",
+     "startMs": 1320,
+     "durationMs": 84,
+     "from": 7.6,
+     "to": 9.9,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "y",
+     "after": "let go",
+     "startMs": 1320,
+     "durationMs": 84,
+     "from": 41.7,
+     "to": 39.8,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "w",
+     "after": "let go",
+     "startMs": 1320,
+     "durationMs": 184,
+     "from": 1.1,
+     "to": 23.7,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "h",
+     "after": "let go",
+     "startMs": 1320,
+     "durationMs": 101,
+     "from": 12.6,
+     "to": 16.8,
+     "overshootPct": null
+    },
+    {
+     "el": "span",
+     "prop": "sc",
+     "after": "let go",
+     "startMs": 1320,
+     "durationMs": 184,
+     "from": 0.72,
+     "to": 1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "o",
+     "after": "let go",
+     "startMs": 1320,
+     "durationMs": 184,
+     "from": 0.2,
+     "to": 0.99,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “c”",
+     "prop": "y",
+     "after": "let go",
+     "startMs": 1338,
+     "durationMs": 100,
+     "from": 37.8,
+     "to": 16.8,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “k”",
+     "prop": "o",
+     "after": "let go",
+     "startMs": 1338,
+     "durationMs": 116,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “a”",
+     "prop": "o",
+     "after": "let go",
+     "startMs": 1338,
+     "durationMs": 216,
+     "from": 0,
+     "to": 0.99,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “k”",
+     "prop": "y",
+     "after": "let go",
+     "startMs": 1354,
+     "durationMs": 100,
+     "from": 37.8,
+     "to": 16.8,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “o”",
+     "prop": "y",
+     "after": "let go",
+     "startMs": 1354,
+     "durationMs": 117,
+     "from": 37.8,
+     "to": 16.7,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “o”",
+     "prop": "o",
+     "after": "let go",
+     "startMs": 1354,
+     "durationMs": 117,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “u”",
+     "prop": "o",
+     "after": "let go",
+     "startMs": 1354,
+     "durationMs": 133,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “a”",
+     "prop": "y",
+     "after": "let go",
+     "startMs": 1354,
+     "durationMs": 183,
+     "from": 59.2,
+     "to": 38.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “r”",
+     "prop": "o",
+     "after": "let go",
+     "startMs": 1354,
+     "durationMs": 233,
+     "from": 0,
+     "to": 1,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “u”",
+     "prop": "y",
+     "after": "let go",
+     "startMs": 1371,
+     "durationMs": 100,
+     "from": 37.8,
+     "to": 16.9,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "o",
+     "after": "let go",
+     "startMs": 1371,
+     "durationMs": 133,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “r”",
+     "prop": "y",
+     "after": "let go",
+     "startMs": 1371,
+     "durationMs": 216,
+     "from": 59.2,
+     "to": 38,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "y",
+     "after": "let go",
+     "startMs": 1387,
+     "durationMs": 100,
+     "from": 37.8,
+     "to": 16.8,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "o",
+     "after": "let go",
+     "startMs": 1387,
+     "durationMs": 117,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "o",
+     "after": "let go",
+     "startMs": 1387,
+     "durationMs": 200,
+     "from": 0,
+     "to": 0.99,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "y",
+     "after": "let go",
+     "startMs": 1404,
+     "durationMs": 100,
+     "from": 37.8,
+     "to": 16.8,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “r”",
+     "prop": "y",
+     "after": "let go",
+     "startMs": 1404,
+     "durationMs": 116,
+     "from": 37.8,
+     "to": 16.7,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “r”",
+     "prop": "o",
+     "after": "let go",
+     "startMs": 1404,
+     "durationMs": 116,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “e”",
+     "prop": "o",
+     "after": "let go",
+     "startMs": 1404,
+     "durationMs": 133,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "y",
+     "after": "let go",
+     "startMs": 1404,
+     "durationMs": 183,
+     "from": 59.2,
+     "to": 38.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "o",
+     "after": "let go",
+     "startMs": 1404,
+     "durationMs": 183,
+     "from": 0,
+     "to": 0.97,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “e”",
+     "prop": "y",
+     "after": "let go",
+     "startMs": 1421,
+     "durationMs": 99,
+     "from": 37.8,
+     "to": 16.9,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “a”",
+     "prop": "o",
+     "after": "let go",
+     "startMs": 1421,
+     "durationMs": 133,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "y",
+     "after": "let go",
+     "startMs": 1421,
+     "durationMs": 166,
+     "from": 59.2,
+     "to": 38.7,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “a”",
+     "prop": "y",
+     "after": "let go",
+     "startMs": 1438,
+     "durationMs": 116,
+     "from": 37.8,
+     "to": 16.6,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “d”",
+     "prop": "o",
+     "after": "let go",
+     "startMs": 1438,
+     "durationMs": 116,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “w”",
+     "prop": "o",
+     "after": "let go",
+     "startMs": 1438,
+     "durationMs": 149,
+     "from": 0,
+     "to": 0.94,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “d”",
+     "prop": "y",
+     "after": "let go",
+     "startMs": 1454,
+     "durationMs": 100,
+     "from": 37.8,
+     "to": 16.8,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “y”",
+     "prop": "y",
+     "after": "let go",
+     "startMs": 1454,
+     "durationMs": 117,
+     "from": 37.8,
+     "to": 16.7,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “y”",
+     "prop": "o",
+     "after": "let go",
+     "startMs": 1454,
+     "durationMs": 117,
+     "from": 1,
+     "to": 0,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “w”",
+     "prop": "y",
+     "after": "let go",
+     "startMs": 1454,
+     "durationMs": 133,
+     "from": 59.2,
+     "to": 39.7,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “i”",
+     "prop": "o",
+     "after": "let go",
+     "startMs": 1454,
+     "durationMs": 133,
+     "from": 0,
+     "to": 0.89,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “i”",
+     "prop": "y",
+     "after": "let go",
+     "startMs": 1471,
+     "durationMs": 116,
+     "from": 59.2,
+     "to": 41.4,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "o",
+     "after": "let go",
+     "startMs": 1487,
+     "durationMs": 100,
+     "from": 0,
+     "to": 0.79,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “t”",
+     "prop": "y",
+     "after": "let go",
+     "startMs": 1504,
+     "durationMs": 83,
+     "from": 59.2,
+     "to": 44.3,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “h”",
+     "prop": "o",
+     "after": "let go",
+     "startMs": 1504,
+     "durationMs": 83,
+     "from": 0,
+     "to": 0.62,
+     "overshootPct": 0
+    },
+    {
+     "el": "span “h”",
+     "prop": "y",
+     "after": "let go",
+     "startMs": 1520,
+     "durationMs": 67,
+     "from": 59.2,
+     "to": 48.8,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "o",
+     "after": "let go",
+     "startMs": 1537,
+     "durationMs": 50,
+     "from": 0,
+     "to": 0.38,
+     "overshootPct": 0
+    },
+    {
+     "el": "span",
+     "prop": "y",
+     "after": "let go",
+     "startMs": 1554,
+     "durationMs": 33,
+     "from": 59.2,
+     "to": 54.4,
+     "overshootPct": null
+    },
+    {
+     "el": "span “a”",
+     "prop": "o",
+     "after": "let go",
+     "startMs": 1554,
+     "durationMs": 33,
+     "from": 0,
+     "to": 0.12,
+     "overshootPct": 0
+    }
+   ],
+   "colours": [],
+   "faintestWords": 0,
+   "longestMovementMs": 1073,
+   "maxOvershootPct": 143.4
+  },
+  {
+   "form": "beui/button-magnetic",
+   "gesture": "lean",
+   "name": "Press, and it leans in",
+   "marks": [
+    {
+     "name": "point",
+     "t": 204
+    },
+    {
+     "name": "gesture",
+     "t": 788
+    },
+    {
+     "name": "let go",
+     "t": 1745
+    }
+   ],
+   "movements": [
+    {
+     "after": "point",
+     "does": "moves across",
+     "elements": 1,
+     "firstMs": 132,
+     "lastMs": 196,
+     "longestMs": 64,
+     "biggest": 3,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "moves across",
+     "elements": 2,
+     "firstMs": 45,
+     "lastMs": 1145,
+     "longestMs": 316,
+     "biggest": 4.3,
+     "overshootPct": null
+    },
+    {
+     "after": "point",
+     "does": "moves up or down",
+     "elements": 1,
+     "firstMs": 132,
+     "lastMs": 296,
+     "longestMs": 164,
+     "biggest": 1.3,
+     "overshootPct": null
+    },
+    {
+     "after": "point",
+     "does": "changes width",
+     "elements": 1,
+     "firstMs": 132,
+     "lastMs": 213,
+     "longestMs": 81,
+     "biggest": 5.9,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "changes width",
+     "elements": 2,
+     "firstMs": 128,
+     "lastMs": 1145,
+     "longestMs": 316,
+     "biggest": 6,
+     "overshootPct": null
+    },
+    {
+     "after": "point",
+     "does": "scales",
+     "elements": 1,
+     "firstMs": 132,
+     "lastMs": 179,
+     "longestMs": 47,
+     "biggest": 0.02,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "scales",
+     "elements": 2,
+     "firstMs": 128,
+     "lastMs": 1113,
+     "longestMs": 284,
+     "biggest": 0.02,
+     "overshootPct": null
+    }
+   ],
+   "motions": [
+    {
+     "el": "button “Start with an account”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 45,
+     "durationMs": 267,
+     "from": -3.1,
+     "to": 0.5,
+     "overshootPct": null
+    },
+    {
+     "el": "button “Start with an account”",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 128,
+     "durationMs": 134,
+     "from": 313.5,
+     "to": 307.6,
+     "overshootPct": null
+    },
+    {
+     "el": "button “Start with an account”",
+     "prop": "sc",
+     "after": "gesture",
+     "startMs": 128,
+     "durationMs": 101,
+     "from": 1.02,
+     "to": 1,
+     "overshootPct": null
+    },
+    {
+     "el": "button “Start with an account”",
+     "prop": "x",
+     "after": "gesture",
+     "startMs": 829,
+     "durationMs": 316,
+     "from": 0,
+     "to": -4.3,
+     "overshootPct": null
+    },
+    {
+     "el": "button “Start with an account”",
+     "prop": "w",
+     "after": "gesture",
+     "startMs": 829,
+     "durationMs": 316,
+     "from": 307.3,
+     "to": 313.3,
+     "overshootPct": null
+    },
+    {
+     "el": "button “Start with an account”",
+     "prop": "sc",
+     "after": "gesture",
+     "startMs": 829,
+     "durationMs": 284,
+     "from": 1,
+     "to": 1.02,
+     "overshootPct": null
+    },
+    {
+     "el": "button “Start with an account”",
+     "prop": "x",
+     "after": "point",
+     "startMs": 132,
+     "durationMs": 64,
+     "from": 0,
+     "to": -3,
+     "overshootPct": null
+    },
+    {
+     "el": "button “Start with an account”",
+     "prop": "y",
+     "after": "point",
+     "startMs": 132,
+     "durationMs": 164,
+     "from": 24,
+     "to": 22.7,
+     "overshootPct": null
+    },
+    {
+     "el": "button “Start with an account”",
+     "prop": "w",
+     "after": "point",
+     "startMs": 132,
+     "durationMs": 81,
+     "from": 307.3,
+     "to": 313.2,
+     "overshootPct": null
+    },
+    {
+     "el": "button “Start with an account”",
+     "prop": "sc",
+     "after": "point",
+     "startMs": 132,
+     "durationMs": 47,
+     "from": 1,
+     "to": 1.02,
+     "overshootPct": null
+    }
+   ],
+   "colours": [],
+   "faintestWords": 1,
+   "longestMovementMs": 316,
+   "maxOvershootPct": 0
+  }
+ ]
+}

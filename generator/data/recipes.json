@@ -1,0 +1,673 @@
+[
+ {
+  "id": "beui/slide-action-button",
+  "lib": "beui",
+  "name": "Slide to commit",
+  "src": "vendor/beui/components/slide-action-button.tsx",
+  "job": "commit",
+  "driver": "position",
+  "commitRule": "threshold",
+  "effort": 3,
+  "secondsToCommit": 0.8,
+  "cancellable": true,
+  "undo": false,
+  "discoverable": "needs-words",
+  "states": [
+   "rest",
+   "dragging",
+   "done",
+   "resetting"
+  ],
+  "changesWidth": false,
+  "secondCopyOfFace": false,
+  "colourNeeds": [
+   "inverted-ground"
+  ],
+  "wordsDuringAction": "fade",
+  "inputs": [
+   "touch",
+   "mouse",
+   "keyboard"
+  ],
+  "reducedMotion": true,
+  "needsHover": false,
+  "springs": [
+   {
+    "use": "thumb settling",
+    "k": 360,
+    "c": 32,
+    "m": 0.6
+   }
+  ],
+  "durationsMs": [
+   1200
+  ],
+  "feel": {
+   "by": "claude, 2026-11-20 (one rater)",
+   "playful_serious": 0,
+   "calm_lively": 0,
+   "soft_exact": 1,
+   "quiet_showy": 1,
+   "quick_ceremonial": 2
+  },
+  "primitives": [
+   "one-driver",
+   "derived-channels",
+   "threshold-commit",
+   "rewind-on-release",
+   "icon-morph",
+   "auto-reset",
+   "keyboard-same-rule",
+   "reduced-motion"
+  ],
+  "measured": {
+   "craftingattention/buy": {
+    "recorded": "2026-11-20",
+    "frames": null,
+    "movementGroups": 12,
+    "longestMovementMs": 915,
+    "settleAfterLettingGoMs": 1601,
+    "maxOvershootPct": 0.4,
+    "overshootReliable": true,
+    "faintestWords": null,
+    "colourChanges": 0,
+    "source": "generator/data/motion-craftingattention-buy.json"
+   }
+  }
+ },
+ {
+  "id": "beui/hold-action-button",
+  "lib": "beui",
+  "name": "Hold, and a liquid fills it",
+  "src": "vendor/beui/components/hold-action-button.tsx",
+  "job": "commit",
+  "driver": "time-held",
+  "commitRule": "held-time",
+  "effort": 3,
+  "secondsToCommit": 1.6,
+  "cancellable": true,
+  "undo": false,
+  "discoverable": "needs-words",
+  "states": [
+   "rest",
+   "pressed",
+   "holding",
+   "done"
+  ],
+  "changesWidth": false,
+  "secondCopyOfFace": false,
+  "colourNeeds": [
+   "second-hue"
+  ],
+  "wordsDuringAction": "replaced",
+  "inputs": [
+   "touch",
+   "mouse",
+   "keyboard"
+  ],
+  "reducedMotion": true,
+  "needsHover": false,
+  "springs": [
+   {
+    "use": "press",
+    "k": 500,
+    "c": 30,
+    "m": 0.6
+   }
+  ],
+  "durationsMs": [
+   1600,
+   240
+  ],
+  "feel": {
+   "by": "claude, 2026-11-20 (one rater)",
+   "playful_serious": -1.5,
+   "calm_lively": 1,
+   "soft_exact": -1,
+   "quiet_showy": 1,
+   "quick_ceremonial": 1.5
+  },
+  "primitives": [
+   "one-driver",
+   "timed-commit",
+   "rewind-on-release",
+   "press-depth",
+   "keyboard-same-rule",
+   "escape-hatches",
+   "reduced-motion"
+  ],
+  "measured": {
+   "craftingattention/buy": {
+    "recorded": "2026-11-20",
+    "frames": null,
+    "movementGroups": 10,
+    "longestMovementMs": 1600,
+    "settleAfterLettingGoMs": 218,
+    "maxOvershootPct": 0,
+    "overshootReliable": true,
+    "faintestWords": 0,
+    "colourChanges": 0,
+    "source": "generator/data/motion-craftingattention-buy.json"
+   }
+  }
+ },
+ {
+  "id": "arc/hold-to-confirm",
+  "lib": "arc",
+  "name": "Hold, and the done colours are uncovered",
+  "src": "vendor/arc/hold-to-confirm/hold-to-confirm.tsx",
+  "job": "commit",
+  "driver": "time-held",
+  "commitRule": "held-time",
+  "effort": 3,
+  "secondsToCommit": 1.2,
+  "cancellable": true,
+  "undo": false,
+  "discoverable": "needs-words",
+  "states": [
+   "rest",
+   "hover",
+   "pressed",
+   "holding",
+   "done"
+  ],
+  "changesWidth": false,
+  "secondCopyOfFace": true,
+  "colourNeeds": [
+   "deeper-shade",
+   "danger"
+  ],
+  "wordsDuringAction": "flip-at-edge",
+  "inputs": [
+   "touch",
+   "mouse",
+   "keyboard"
+  ],
+  "reducedMotion": true,
+  "needsHover": false,
+  "springs": [
+   {
+    "use": "press",
+    "visualDuration": 0.2,
+    "bounce": 0
+   },
+   {
+    "use": "rewind",
+    "visualDuration": 0.3,
+    "bounce": 0
+   }
+  ],
+  "durationsMs": [
+   1200
+  ],
+  "feel": {
+   "by": "claude, 2026-11-20 (one rater)",
+   "playful_serious": 1.5,
+   "calm_lively": -1,
+   "soft_exact": 2,
+   "quiet_showy": -1,
+   "quick_ceremonial": 1
+  },
+  "primitives": [
+   "one-driver",
+   "timed-commit",
+   "clip-reveal",
+   "rewind-on-release",
+   "resume-from-progress",
+   "press-depth",
+   "haptic-tick",
+   "keyboard-same-rule",
+   "escape-hatches"
+  ],
+  "measured": {
+   "craftingattention/buy": {
+    "recorded": "2026-11-20",
+    "frames": null,
+    "movementGroups": 6,
+    "longestMovementMs": 416,
+    "settleAfterLettingGoMs": null,
+    "maxOvershootPct": 1.6,
+    "overshootReliable": true,
+    "faintestWords": 0,
+    "colourChanges": 0,
+    "source": "generator/data/motion-craftingattention-buy.json"
+   }
+  }
+ },
+ {
+  "id": "arc/confirm-morph",
+  "lib": "arc",
+  "name": "Press, then confirm in place",
+  "src": "vendor/arc/confirm-morph/confirm-morph.tsx",
+  "job": "commit",
+  "driver": "state",
+  "commitRule": "confirm",
+  "effort": 2,
+  "secondsToCommit": 0.6,
+  "cancellable": true,
+  "undo": true,
+  "discoverable": "obvious",
+  "states": [
+   "rest",
+   "hover",
+   "confirming",
+   "pending",
+   "done",
+   "error",
+   "undoing"
+  ],
+  "changesWidth": true,
+  "secondCopyOfFace": false,
+  "colourNeeds": [
+   "deeper-shade",
+   "danger"
+  ],
+  "wordsDuringAction": "replaced",
+  "inputs": [
+   "touch",
+   "mouse",
+   "keyboard"
+  ],
+  "reducedMotion": true,
+  "needsHover": false,
+  "springs": [
+   {
+    "use": "width",
+    "visualDuration": 0.3,
+    "bounce": 0
+   },
+   {
+    "use": "tick",
+    "visualDuration": 0.2,
+    "bounce": 0
+   }
+  ],
+  "durationsMs": [
+   100,
+   180,
+   30
+  ],
+  "feel": {
+   "by": "claude, 2026-11-20 (one rater)",
+   "playful_serious": 1,
+   "calm_lively": -1,
+   "soft_exact": 1.5,
+   "quiet_showy": -1,
+   "quick_ceremonial": 0.5
+  },
+  "primitives": [
+   "state-machine",
+   "width-morph",
+   "crossfade-faces",
+   "spring-retarget",
+   "critically-damped",
+   "path-draw",
+   "escape-hatches",
+   "reduced-motion"
+  ],
+  "measured": {
+   "craftingattention/buy": {
+    "recorded": "2026-11-20",
+    "frames": null,
+    "movementGroups": 8,
+    "longestMovementMs": 1011,
+    "settleAfterLettingGoMs": 1164,
+    "maxOvershootPct": 0,
+    "overshootReliable": true,
+    "faintestWords": 1,
+    "colourChanges": 3,
+    "source": "generator/data/motion-craftingattention-buy.json"
+   }
+  }
+ },
+ {
+  "id": "beui/button-stateful",
+  "lib": "beui",
+  "name": "Press, and it answers",
+  "src": "vendor/beui/components/button/stateful.tsx",
+  "job": "commit",
+  "driver": "state",
+  "commitRule": "press",
+  "effort": 1,
+  "secondsToCommit": 0.1,
+  "cancellable": false,
+  "undo": false,
+  "discoverable": "obvious",
+  "states": [
+   "rest",
+   "hover",
+   "pressed",
+   "pending",
+   "done",
+   "error"
+  ],
+  "changesWidth": true,
+  "secondCopyOfFace": false,
+  "colourNeeds": [
+   "none"
+  ],
+  "wordsDuringAction": "replaced",
+  "inputs": [
+   "touch",
+   "mouse",
+   "keyboard"
+  ],
+  "reducedMotion": true,
+  "needsHover": false,
+  "springs": [
+   {
+    "use": "label swap",
+    "k": 460,
+    "c": 30,
+    "m": 0.55
+   }
+  ],
+  "durationsMs": [
+   150,
+   160
+  ],
+  "feel": {
+   "by": "claude, 2026-11-20 (one rater)",
+   "playful_serious": 0,
+   "calm_lively": 0.5,
+   "soft_exact": 0.5,
+   "quiet_showy": 0,
+   "quick_ceremonial": -1.5
+  },
+  "primitives": [
+   "state-machine",
+   "width-morph",
+   "rolling-glyphs",
+   "spring-retarget",
+   "reduced-motion"
+  ],
+  "measured": {
+   "craftingattention/buy": {
+    "recorded": "2026-11-20",
+    "frames": null,
+    "movementGroups": 12,
+    "longestMovementMs": 1073,
+    "settleAfterLettingGoMs": 1587,
+    "maxOvershootPct": 143.4,
+    "overshootReliable": false,
+    "faintestWords": 0,
+    "colourChanges": 0,
+    "source": "generator/data/motion-craftingattention-buy.json"
+   }
+  }
+ },
+ {
+  "id": "beui/button-magnetic",
+  "lib": "beui",
+  "name": "Press, and it leans in",
+  "src": "vendor/beui/components/magnetic.tsx",
+  "job": "commit",
+  "driver": "pointer-distance",
+  "commitRule": "press",
+  "effort": 1,
+  "secondsToCommit": 0.1,
+  "cancellable": false,
+  "undo": false,
+  "discoverable": "obvious",
+  "states": [
+   "rest",
+   "hover",
+   "pressed"
+  ],
+  "changesWidth": false,
+  "secondCopyOfFace": false,
+  "colourNeeds": [
+   "none"
+  ],
+  "wordsDuringAction": "kept",
+  "inputs": [
+   "touch",
+   "mouse",
+   "keyboard"
+  ],
+  "reducedMotion": true,
+  "needsHover": true,
+  "springs": [
+   {
+    "use": "follow pointer",
+    "k": 200,
+    "c": 15,
+    "m": 0.3
+   }
+  ],
+  "durationsMs": [],
+  "feel": {
+   "by": "claude, 2026-11-20 (one rater)",
+   "playful_serious": -1.5,
+   "calm_lively": 1.5,
+   "soft_exact": -0.5,
+   "quiet_showy": 2,
+   "quick_ceremonial": -1
+  },
+  "primitives": [
+   "magnetic-pull",
+   "press-depth",
+   "reduced-motion"
+  ],
+  "measured": {
+   "craftingattention/buy": {
+    "recorded": "2026-11-20",
+    "frames": null,
+    "movementGroups": 7,
+    "longestMovementMs": 316,
+    "settleAfterLettingGoMs": null,
+    "maxOvershootPct": 0,
+    "overshootReliable": true,
+    "faintestWords": 1,
+    "colourChanges": 0,
+    "source": "generator/data/motion-craftingattention-buy.json"
+   }
+  }
+ },
+ {
+  "id": "beui/action-swap",
+  "lib": "beui",
+  "name": "A label that swaps in place",
+  "src": "vendor/beui/components/action-swap.tsx",
+  "job": "feedback",
+  "driver": "state",
+  "commitRule": "none",
+  "effort": 0,
+  "secondsToCommit": 0,
+  "cancellable": false,
+  "undo": false,
+  "discoverable": "obvious",
+  "states": [
+   "rest",
+   "changing"
+  ],
+  "changesWidth": false,
+  "secondCopyOfFace": false,
+  "colourNeeds": [
+   "none"
+  ],
+  "wordsDuringAction": "roll",
+  "inputs": [
+   "touch",
+   "mouse",
+   "keyboard"
+  ],
+  "reducedMotion": true,
+  "needsHover": false,
+  "springs": [
+   {
+    "use": "arriving word",
+    "k": 460,
+    "c": 30,
+    "m": 0.55
+   }
+  ],
+  "durationsMs": [
+   140,
+   160
+  ],
+  "feel": {
+   "by": "claude, 2026-11-20 (one rater)",
+   "playful_serious": 0,
+   "calm_lively": 0,
+   "soft_exact": 0.5,
+   "quiet_showy": -1,
+   "quick_ceremonial": -2
+  },
+  "primitives": [
+   "rolling-glyphs",
+   "spring-retarget",
+   "crossfade-faces",
+   "reduced-motion"
+  ]
+ },
+ {
+  "id": "arc/copy-button",
+  "lib": "arc",
+  "name": "Copy, and a tick is drawn",
+  "src": "vendor/arc/copy-button/copy-button.tsx",
+  "job": "copy",
+  "driver": "state",
+  "commitRule": "press",
+  "effort": 1,
+  "secondsToCommit": 0.1,
+  "cancellable": false,
+  "undo": false,
+  "discoverable": "obvious",
+  "states": [
+   "rest",
+   "hover",
+   "pressed",
+   "done",
+   "error",
+   "resetting"
+  ],
+  "changesWidth": false,
+  "secondCopyOfFace": false,
+  "colourNeeds": [
+   "none"
+  ],
+  "wordsDuringAction": "replaced",
+  "inputs": [
+   "touch",
+   "mouse",
+   "keyboard"
+  ],
+  "reducedMotion": true,
+  "needsHover": false,
+  "springs": [
+   {
+    "use": "icon settle",
+    "visualDuration": 0.2,
+    "bounce": 0
+   }
+  ],
+  "durationsMs": [
+   40,
+   60,
+   1900
+  ],
+  "feel": {
+   "by": "claude, 2026-11-20 (one rater)",
+   "playful_serious": 0.5,
+   "calm_lively": -1,
+   "soft_exact": 1.5,
+   "quiet_showy": -1.5,
+   "quick_ceremonial": -2
+  },
+  "primitives": [
+   "path-draw",
+   "critically-damped",
+   "auto-reset",
+   "clipboard-fallback"
+  ]
+ },
+ {
+  "id": "beui/digit-swap",
+  "lib": "beui",
+  "name": "Digits that drop into slots",
+  "src": "vendor/beui/components/digit-swap.tsx",
+  "job": "value",
+  "driver": "value",
+  "commitRule": "none",
+  "effort": 0,
+  "secondsToCommit": 0,
+  "cancellable": false,
+  "undo": false,
+  "discoverable": "obvious",
+  "states": [
+   "rest",
+   "changing"
+  ],
+  "changesWidth": false,
+  "secondCopyOfFace": false,
+  "colourNeeds": [
+   "none"
+  ],
+  "wordsDuringAction": "roll",
+  "inputs": [],
+  "reducedMotion": true,
+  "needsHover": false,
+  "springs": [],
+  "durationsMs": [
+   180,
+   6
+  ],
+  "feel": {
+   "by": "claude, 2026-11-20 (one rater)",
+   "playful_serious": 0.5,
+   "calm_lively": 0.5,
+   "soft_exact": 1.5,
+   "quiet_showy": 0,
+   "quick_ceremonial": -2
+  },
+  "primitives": [
+   "rolling-glyphs",
+   "fixed-slots",
+   "reduced-motion"
+  ]
+ },
+ {
+  "id": "arc/animated-counter",
+  "lib": "arc",
+  "name": "A number on wheels",
+  "src": "vendor/arc/animated-counter/animated-counter.tsx",
+  "job": "value",
+  "driver": "value",
+  "commitRule": "none",
+  "effort": 0,
+  "secondsToCommit": 0,
+  "cancellable": false,
+  "undo": false,
+  "discoverable": "obvious",
+  "states": [
+   "rest",
+   "changing"
+  ],
+  "changesWidth": true,
+  "secondCopyOfFace": false,
+  "colourNeeds": [
+   "none"
+  ],
+  "wordsDuringAction": "roll",
+  "inputs": [],
+  "reducedMotion": true,
+  "needsHover": false,
+  "springs": [],
+  "durationsMs": [],
+  "feel": {
+   "by": "claude, 2026-11-20 (one rater)",
+   "playful_serious": 0,
+   "calm_lively": 0.5,
+   "soft_exact": 1,
+   "quiet_showy": 0.5,
+   "quick_ceremonial": -1
+  },
+  "primitives": [
+   "one-driver",
+   "place-value-columns",
+   "rolling-glyphs",
+   "fixed-slots"
+  ]
+ }
+]

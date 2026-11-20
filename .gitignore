@@ -45,3 +45,4 @@ docs/films/*-draft/
 /generator/sidecars/
 /generator/reads/
 /generator/library/cache/
+/generator/data/traces/
