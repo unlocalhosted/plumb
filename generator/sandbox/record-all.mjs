@@ -12,6 +12,8 @@ import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { measure } from '../data/measure.mjs';
 const here = fileURLToPath(new URL('./', import.meta.url));
+// plumber's engine, as the generator bundles it (generator/read.mjs), judging what is drawn at each state
+const ENGINE = (await readFile(`${here}../reads/craft.iife.js`, 'utf8').catch(() => '')).replaceAll('{}.url', '"http://plumb.invalid/overlay/src/craft.js"');
 const arg = (k, d) => { const i = process.argv.indexOf(`--${k}`); return i > 0 ? process.argv[i + 1] : d; };
 const PORT = arg('port', '4410'), WORKERS = +arg('workers', '4'), ONLY = arg('only', null)?.split(',');
 const installed = JSON.parse(await readFile(`${here}installed.json`, 'utf8')).filter((x) => x.ok && (!ONLY || ONLY.includes(x.key)));
@@ -37,6 +39,15 @@ const START = () => {
     if (rec.frames.length < 900) rec.frames.push({ t, els }); if (rec.on) requestAnimationFrame(sample); };
   window.__rec = rec; requestAnimationFrame(sample);
 };
+// plumber on the stage as drawn this moment (its `now` mode): every craft note, with the words it sits on
+const JUDGE = () => {
+  if (!window.PlumbCraft) return null;
+  const stage = document.querySelector('#stage');
+  const els = [stage, ...stage.querySelectorAll('*')].filter((e) => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0; });
+  const craft = new PlumbCraft.Craft({ now: true, theme: new PlumbCraft.Theme({ decisions: () => [] }) });
+  return craft.enrich(els.map((el, i) => ({ id: i, el, marks: [], dims: {}, file: 'part', line: 1, column: 1 })))
+    .flatMap((i) => i.marks.filter((m) => m.family === 'craft' && !/^experience\/font|^a11y\/(skip|lang)|heading-missing/.test(m.rule)).map((m) => ({ rule: m.rule, says: m.title ?? m.what, on: (i.el.textContent || i.el.tagName).trim().slice(0, 30) })));
+};
 const MARK = (name) => window.__rec.marks.push({ name, t: Math.round(performance.now() - window.__rec.t0) });
 const STOP = () => { window.__rec.on = false; const r = window.__rec; return { ...r, frames: r.frames.filter((_, i) => i % 2 === 0) }; };
 // what the part draws: painted (non-background) pixels on the stage at rest, and the thing to use
@@ -54,6 +65,7 @@ async function one(browser, x) {
   try {
     await page.goto(`http://localhost:${PORT}/?part=${x.key}`, { waitUntil: 'networkidle', timeout: 30000 });
     await page.waitForTimeout(1500);
+    if (ENGINE) await page.addScriptTag({ content: ENGINE }).catch(() => {});
     const s = await page.evaluate(() => window.__sandbox ?? null);
     const rest = await page.locator('#stage').screenshot({ path: `${here}shots/${x.key}-rest.png` });
     const t = await page.evaluate(TARGET);
@@ -69,15 +81,18 @@ async function one(browser, x) {
     out.error = s?.error ?? errors[0] ?? (t ? null : 'nothing to use');
     if (!out.renders) return out;
     out.target = t.tag; out.size = [Math.round(t.w), Math.round(t.h)];
+    out.plumber = { rest: await page.evaluate(JUDGE).catch(() => null) };
     await page.mouse.move(t.x, t.y - 150);
     await page.evaluate(START); await page.waitForTimeout(150);
     await page.evaluate(MARK, 'point'); await page.mouse.move(t.x, t.y, { steps: 5 }); await page.waitForTimeout(450);
+    out.plumber['pointed at'] = await page.evaluate(JUDGE).catch(() => null);
     await page.evaluate(MARK, 'gesture');
-    if (r.driver === 'position') { await page.mouse.move(t.l + 8, t.y); await page.mouse.down(); for (let i = 1; i <= 20; i++) { await page.mouse.move(t.l + 8 + (t.stageW * 0.75 * i) / 20, t.y); await page.waitForTimeout(25); } await page.locator('#stage').screenshot({ path: `${here}shots/${x.key}-mid.png` }); await page.evaluate(MARK, 'let go'); await page.mouse.up(); }
-    else if (r.driver === 'time-held') { await page.mouse.down(); await page.waitForTimeout(700); await page.locator('#stage').screenshot({ path: `${here}shots/${x.key}-mid.png` }); await page.waitForTimeout(1800); await page.evaluate(MARK, 'let go'); await page.mouse.up(); }
-    else if (r.driver === 'pointer-distance') { await page.mouse.move(t.x + t.w * 0.45, t.y - t.h, { steps: 8 }); await page.waitForTimeout(300); await page.locator('#stage').screenshot({ path: `${here}shots/${x.key}-mid.png` }); await page.evaluate(MARK, 'let go'); await page.mouse.click(t.x, t.y); }
-    else { await page.mouse.down(); await page.waitForTimeout(90); await page.mouse.up(); await page.waitForTimeout(250); await page.locator('#stage').screenshot({ path: `${here}shots/${x.key}-mid.png` }); await page.evaluate(MARK, 'let go'); }
+    if (r.driver === 'position') { await page.mouse.move(t.l + 8, t.y); await page.mouse.down(); for (let i = 1; i <= 20; i++) { await page.mouse.move(t.l + 8 + (t.stageW * 0.75 * i) / 20, t.y); await page.waitForTimeout(25); } await page.locator('#stage').screenshot({ path: `${here}shots/${x.key}-mid.png` }); out.plumber.mid = await page.evaluate(JUDGE).catch(() => null); await page.evaluate(MARK, 'let go'); await page.mouse.up(); }
+    else if (r.driver === 'time-held') { await page.mouse.down(); await page.waitForTimeout(700); await page.locator('#stage').screenshot({ path: `${here}shots/${x.key}-mid.png` }); out.plumber.mid = await page.evaluate(JUDGE).catch(() => null); await page.waitForTimeout(1800); await page.evaluate(MARK, 'let go'); await page.mouse.up(); }
+    else if (r.driver === 'pointer-distance') { await page.mouse.move(t.x + t.w * 0.45, t.y - t.h, { steps: 8 }); await page.waitForTimeout(300); await page.locator('#stage').screenshot({ path: `${here}shots/${x.key}-mid.png` }); out.plumber.mid = await page.evaluate(JUDGE).catch(() => null); await page.evaluate(MARK, 'let go'); await page.mouse.click(t.x, t.y); }
+    else { await page.mouse.down(); await page.waitForTimeout(90); await page.mouse.up(); await page.waitForTimeout(250); await page.locator('#stage').screenshot({ path: `${here}shots/${x.key}-mid.png` }); out.plumber.mid = await page.evaluate(JUDGE).catch(() => null); await page.evaluate(MARK, 'let go'); }
     await page.waitForTimeout(1500);
+    out.plumber.done = await page.evaluate(JUDGE).catch(() => null);
     const rec = await page.evaluate(STOP);
     const m = measure(rec);
     Object.assign(out, { frames: rec.frames.length, marks: m.marks, movements: m.movements, colours: m.colours.slice(0, 12), faintestWords: m.faintestWords, longestMovementMs: m.longestMovementMs, maxOvershootPct: m.maxOvershootPct, errorsDuringUse: errors.slice(0, 2) });
