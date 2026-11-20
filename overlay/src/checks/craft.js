@@ -136,3 +136,248 @@ export const CRAFT = {
     },
   },
 };
+
+// ── the second dozen and more ─────────────────────────────────
+const four = (g) => [{ el: g[0], kind: g[0].classList.contains('vl') ? 'v' : 'h' }, { el: g[1], kind: g[1].classList.contains('vl') ? 'v' : 'h' }, { el: g[2], kind: 'beam' }, { el: g[3], kind: 'pill' }];
+const sun = (w, h) => `<div class="art" style="position:absolute;inset:0;background:linear-gradient(#bae6fd,#e0f2fe 60%,#86efac 60%)"><i style="position:absolute;left:${w * 0.62}px;top:${h * 0.18}px;width:${h * 0.32}px;height:${h * 0.32}px;border-radius:50%;background:#fbbf24"></i><i style="position:absolute;left:${w * 0.12}px;bottom:${h * 0.4}px;width:${w * 0.42}px;height:${h * 0.32}px;background:#16a34a;clip-path:polygon(0 100%,50% 0,100% 100%)"></i></div>`;
+Object.assign(CRAFT, {
+  'craft/text-opacity': {
+    code: ['text-black/45', 'text-muted'],
+    note: ['See-through words take the colour of what’s under them: grey on white, almost gone on blue.', 'A muted colour made for each surface reads the same on both.'],
+    scene: (s) => {
+      scene(s, `<div style="display:flex;gap:12px">${[['#fff', '#111827', 'Draft'], ['#1e3a8a', '#fff', 'Live']].map(([bg, ink, t], i) => `<div style="width:118px;padding:14px;border-radius:12px;background:${bg};color:${ink};box-shadow:inset 0 0 0 1px rgb(0 0 0 / .08);display:grid;gap:4px;font:600 14px system-ui">${t}<span class="m${i}" style="font:500 12px system-ui;color:#000;opacity:.45">Edited 2h ago</span></div>`).join('')}</div>`, '#f9fafb');
+      const m0 = s.querySelector('.m0'), m1 = s.querySelector('.m1');
+      return { ...ringed(s, m1, ['black at 45%', 'muted'], 6, 18, true), at: (p) => { m0.style.cssText += p ? ';color:#6b7280;opacity:1' : ';color:#000;opacity:.45'; m1.style.cssText += p ? ';color:#a5b4fc;opacity:1' : ';color:#000;opacity:.45'; } };
+    },
+  },
+  'craft/half-pixel': {
+    code: ['left-1/2 -translate-x-1/2 (141px wide)', 'snapped to a whole pixel'],
+    note: ['Centred on half a pixel, the words smear across two rows of pixels (shown magnified).', 'On a whole pixel, every edge is sharp.'],
+    scene: (s) => {
+      scene(s, '<div style="display:grid;justify-items:center;gap:10px"><span class="x" style="padding:8px 14px;border-radius:10px;background:#111827;color:#fff;font:600 22px system-ui;filter:blur(.8px)">Link copied</span><small style="font:500 11px system-ui;color:#6b7280">magnified ×2</small></div>');
+      const x = s.querySelector('.x');
+      return { ...ringed(s, x, ['x = 70.5px', 'x = 70px'], 8, 20), at: (p) => { x.style.filter = p ? 'blur(0px)' : 'blur(.8px)'; } };
+    },
+  },
+  'craft/scale-from-zero': {
+    code: ['from scale-0', 'from scale-95, fading in'],
+    note: ['Grown from a dot, the menu seems to come from nowhere.', 'Starting near full size, it simply arrives where it belongs.'],
+    scene: (s) => {
+      scene(s, '<div style="position:relative;width:170px;height:120px"><div class="gh" style="position:absolute;inset:0;border-radius:12px;border:1.5px dashed #a5b4fc;scale:0.04"></div><div class="x" style="position:absolute;inset:0;border-radius:12px;background:#fff;box-shadow:0 10px 30px -10px rgb(0 0 0 / .35),0 0 0 1px rgb(0 0 0 / .06);display:grid;align-content:center;gap:6px;padding:0 14px;font:500 13px system-ui;color:#111827"><span>Rename</span><span>Duplicate</span><span style="color:#dc2626">Delete</span></div></div>');
+      const x = s.querySelector('.x'), gh = s.querySelector('.gh');
+      const open = (from) => x.animate([{ scale: from, opacity: 0 }, { scale: 1, opacity: 1 }], { duration: 320, easing: 'cubic-bezier(.2,.8,.2,1)', delay: 250 });
+      return { ...ringed(s, x, ['from 0', 'from 0.95'], 8, 20, true), at: (p) => { gh.style.scale = p ? '0.95' : '0.04'; open(p ? 0.95 : 0); } };
+    },
+  },
+  'craft/z-index-war': {
+    code: ['z-[99999] (help button)', 'z-raised'],
+    note: ['The help button was typed 99999, so it sits on the toast that says your work was saved.', 'On its own layer, under messages: the toast reads in full.'],
+    scene: (s) => {
+      scene(s, '<div style="position:relative;width:240px;height:150px;border-radius:12px;background:#f3f4f6;overflow:hidden"><div style="position:absolute;left:14px;top:14px;right:14px;display:grid;gap:8px"><i style="height:10px;border-radius:5px;background:#e5e7eb"></i><i style="height:10px;width:70%;border-radius:5px;background:#e5e7eb"></i></div><div style="position:absolute;left:40px;right:16px;bottom:18px;padding:10px 12px;border-radius:10px;background:#111827;color:#fff;font:500 12px system-ui;z-index:50">Saved. All changes are live.</div><div class="x" style="position:absolute;right:12px;bottom:12px;width:40px;height:40px;border-radius:50%;background:#4f46e5;color:#fff;display:grid;place-items:center;font:700 16px system-ui;box-shadow:0 6px 16px -4px rgb(0 0 0 / .4);z-index:99999">?</div></div>');
+      const x = s.querySelector('.x');
+      return { ...ringed(s, x, ['z 99999', 'raised'], 5, 18), curve: 'steps(1, jump-end)', at: (p) => { x.style.zIndex = p ? 10 : 99999; } };
+    },
+  },
+  'craft/icon-side': {
+    code: ['pl-4 with an icon', 'pl-3 with an icon'],
+    note: ['The icon brings its own space, so the left side looks wider than the right.', 'A little less on the icon’s side: both sides look equal.'],
+    scene: (s) => {
+      scene(s, '<span class="btn2 x" style="background:#4f46e5;padding:0 16px 0 16px;gap:8px;height:38px"><svg class="ic" viewBox="0 0 24 24" width="18" height="18"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>New project</span>');
+      const x = s.querySelector('.x'), ic = s.querySelector('.ic'), g = G(s, 'vl', 'vl', 'hbeam', 'pill');
+      return { from: 16, to: 12, unit: 'px', guides: four(g), at: (p) => { x.style.paddingLeft = p ? '12px' : '16px'; },
+        track: () => { const a = box(x, s), b = box(ic, s); gapX(s, g, a.l, b.l + 3, a.b + 14); at(g[3], `left:${a.l - 8}px;top:${a.b + 14}px;translate:-100% -50%`); } };
+    },
+  },
+  'craft/measure': {
+    code: ['max-w-none (≈ 100 characters a line)', 'max-w-prose (65)'],
+    note: ['A hundred letters a line: the eye loses its place on the way back (shown small).', 'Around 65 letters: each line is easy to follow back to the start.'],
+    scene: (s) => {
+      scene(s, '<div style="width:300px;height:150px;display:grid;place-items:start;overflow:hidden"><p class="x" style="margin:0;width:700px;transform-origin:0 0;scale:.42;font:400 15px/1.6 system-ui;color:#374151">Plumber reads your page the way a designer would. It looks at the type, the spacing and the colour, finds what has drifted from your system, and offers a fix you can take with one click. Every change lands in your code, at the line that made it, so what you see is what you ship. Nothing is rewritten that you did not choose.</p></div>');
+      const x = s.querySelector('.x'), g = G(s, 'vl', 'vl', 'hbeam', 'pill');
+      return { from: 100, to: 65, unit: 'ch', guides: four(g), at: (p) => { x.style.width = p ? '455px' : '700px'; },
+        track: () => { const b = box(x, s); gapX(s, g, b.l, b.r, b.t - 10); at(g[3], `left:${(b.l + b.r) / 2}px;top:${b.b + 16}px`); } };
+    },
+  },
+  'craft/border-on-shadow': {
+    code: ['border-black/25', 'border-subtle (solid)'],
+    note: ['A see-through border darkens where the shadow is under it: the edge is heavier at the bottom.', 'A solid border is one weight all the way round.'],
+    scene: (s) => {
+      scene(s, '<div class="x" style="width:150px;height:84px;border-radius:14px;background:#fff;border:2px solid rgb(0 0 0 / .25);box-shadow:0 12px 22px -6px rgb(0 0 0 / .45);display:grid;place-items:center;font:600 13px system-ui;color:#111827">Invoice #204</div>', '#f4f4f5');
+      const x = s.querySelector('.x');
+      return { ...ringed(s, x, ['black at 25%', 'border-subtle'], 12, 22), at: (p) => { x.style.borderColor = p ? '#d4d4d8' : 'rgb(0 0 0 / .25)'; } };
+    },
+  },
+  'craft/words-on-layers': {
+    code: ['text-gray-900 over the fill', 'text that turns white over the fill'],
+    note: ['As the fill slides under the words, they go dark on blue and can’t be read.', 'Where the fill is, the words turn white: they read at every percent.'],
+    scene: (s) => {
+      scene(s, '<div class="bar" style="position:relative;width:220px;height:36px;border-radius:10px;background:#e5e7eb;overflow:hidden;font:600 13px/36px system-ui;text-align:center"><i style="position:absolute;inset:0 40% 0 0;background:#4f46e5"></i><span style="position:relative;color:#111827">Uploading 60%</span><span class="w" style="position:absolute;inset:0;color:#fff;clip-path:inset(0 40% 0 0);opacity:0">Uploading 60%</span></div>');
+      const w = s.querySelector('.w');
+      return { ...ringed(s, s.querySelector('.bar'), ['one colour', 'follows the fill'], 8, 20), at: (p) => { w.style.opacity = p ? 1 : 0; } };
+    },
+  },
+  'craft/media-size': {
+    code: ['size-9 (one avatar)', 'size-8'],
+    note: ['One avatar is a size bigger than the rest: it looks like a mistake, not a choice.', 'One size down the list.'],
+    scene: (s) => {
+      scene(s, `<div style="display:grid;gap:8px;width:180px">${[['Ana', '#f472b6'], ['Sam', '#60a5fa'], ['Kai', '#34d399']].map(([n, c], i) => `<div style="display:flex;align-items:center;gap:10px;font:600 13px system-ui;color:#111827"><i class="${i === 1 ? 'x' : ''}" style="width:${i === 1 ? 38 : 30}px;height:${i === 1 ? 38 : 30}px;border-radius:50%;background:${c};flex:none"></i>${n}</div>`).join('')}</div>`);
+      const x = s.querySelector('.x'), [sq, pill] = G(s, 'sq', 'pill');
+      return { from: 38, to: 30, unit: 'px', guides: [{ el: sq, kind: 'ring' }, { el: pill, kind: 'pill' }], at: (p) => { x.style.width = x.style.height = p ? '30px' : '38px'; },
+        track: () => { const b = box(x, s); at(sq, `left:${b.l - 3}px;top:${b.t - 3}px;width:${b.w + 6}px;height:${b.h + 6}px`); at(pill, `left:${b.l - 10}px;top:${b.t + b.h / 2}px;translate:-100% -50%`); } };
+    },
+  },
+  'craft/image-fit': {
+    code: ['w-full h-24 (no fit)', 'object-cover'],
+    note: ['Given a box of a different shape, the picture is pulled out of shape to fill it.', 'Cropped to fill: the sun stays round.'],
+    scene: (s) => {
+      scene(s, `<div class="bx" style="position:relative;width:220px;height:100px;border-radius:12px;overflow:hidden"><div class="x" style="position:absolute;left:0;top:0;width:120px;height:100px;transform-origin:0 0;scale:1.833 1">${sun(120, 100)}</div></div>`);
+      const x = s.querySelector('.x');
+      return { ...ringed(s, s.querySelector('.bx'), ['stretched', 'object-cover'], 8, 20), at: (p) => { x.style.scale = p ? '1.833' : '1.833 1'; } };
+    },
+  },
+  'craft/image-ground': {
+    code: ['no colour under the picture', 'bg-gray-800 under the picture'],
+    note: ['The picture hasn’t loaded: white words on a pale box, gone.', 'A dark colour waits under the picture, so the words read before it arrives.'],
+    scene: (s) => {
+      scene(s, '<div class="x" style="position:relative;width:230px;height:110px;border-radius:12px;background:#f3f4f6;display:grid;align-content:end;padding:14px;box-sizing:border-box;color:#fff;font:800 20px system-ui">Summer sale<span style="font:500 12px system-ui">Up to 40% off</span><i style="position:absolute;right:10px;top:10px;font:500 10px system-ui;color:#9ca3af;font-style:normal">picture not loaded</i></div>');
+      const x = s.querySelector('.x');
+      return { ...ringed(s, x, ['nothing under it', 'gray-800 under it'], 8, 20), at: (p) => { x.style.background = p ? '#1f2937' : '#f3f4f6'; } };
+    },
+  },
+  'craft/sticky-room': {
+    code: ['sticky, stretched to the row', 'sticky self-start'],
+    note: ['Stretched as tall as its row, the side panel has nowhere to slide, so it scrolls away.', 'As tall as its content: the dotted room is where it slides while you scroll.'],
+    scene: (s) => {
+      scene(s, '<div style="display:grid;grid-template-columns:70px 1fr;gap:10px;width:230px;height:150px"><div style="position:relative;border-radius:10px;background:radial-gradient(color-mix(in oklab, var(--pl-butter) 85%, transparent) .8px, transparent 1px) 0 0 / 4px 4px"><div class="x" style="height:150px;border-radius:10px;background:#e0e7ff;font:600 11px system-ui;color:#3730a3;padding:8px;box-sizing:border-box">On this page</div></div><div style="display:grid;gap:8px;align-content:start">' + '<i style="height:12px;border-radius:6px;background:#e5e7eb"></i>'.repeat(7) + '</div></div>');
+      const x = s.querySelector('.x');
+      return { from: 150, to: 60, unit: 'px', name: 'self-start', ...((() => { const [sq, pill] = G(s, 'sq', 'pill'); return { guides: [{ el: sq, kind: 'ring' }, { el: pill, kind: 'pill' }], track: () => { const b = box(x, s); at(sq, `left:${b.l - 3}px;top:${b.t - 3}px;width:${b.w + 6}px;height:${b.h + 6}px`); at(pill, `left:${b.l + b.w / 2}px;top:${b.b + 16}px`); } }; })()),
+        at: (p) => { x.style.height = p ? '60px' : '150px'; } };
+    },
+  },
+  'craft/scroll-on-demand': {
+    code: ['overflow-y-scroll', 'overflow-y-auto'],
+    note: ['Three rows fit, yet a scrollbar says there is more.', 'The bar shows only when there is more to see.'],
+    scene: (s) => {
+      scene(s, '<div class="bx" style="position:relative;width:200px;border-radius:12px;background:#fff;box-shadow:inset 0 0 0 1px #e5e7eb;font:500 13px system-ui;color:#111827;overflow:hidden"><div style="display:grid">' + ['Inbox', 'Starred', 'Sent'].map((w) => `<span style="padding:9px 14px">${w}</span>`).join('') + '</div><i class="x" style="position:absolute;right:3px;top:4px;bottom:4px;width:8px;border-radius:4px;background:#f3f4f6;box-shadow:inset 0 0 0 1px #e5e7eb"><b style="position:absolute;left:1px;right:1px;top:1px;height:70%;border-radius:3px;background:#c7c9d1"></b></i></div>');
+      const x = s.querySelector('.x');
+      return { ...ringed(s, x, ['always shown', 'when needed'], 5, 18), at: (p) => { x.style.opacity = p ? 0 : 1; } };
+    },
+  },
+  'craft/declared-gap': {
+    code: ['justify-between, no gap', 'gap-2'],
+    note: ['The space between the buttons is whatever is left over; on a narrow screen that’s nothing.', 'A gap of its own: the buttons never touch.'],
+    scene: (s) => {
+      scene(s, '<div style="display:flex;justify-content:space-between;align-items:center;width:210px;padding:10px;border-radius:12px;background:#fff;box-shadow:inset 0 0 0 1px #e5e7eb;font:700 14px system-ui;color:#111827">Projects<span class="x" style="display:flex;gap:0"><span class="btn2 a" style="height:30px;padding:0 10px;font-size:12px;background:#fff;color:#111827;box-shadow:inset 0 0 0 1px #d1d5db">Import</span><span class="btn2 b" style="height:30px;padding:0 10px;font-size:12px;background:#4f46e5">New</span></span></div>');
+      const x = s.querySelector('.x'), a = s.querySelector('.a'), b = s.querySelector('.b'), g = G(s, 'vl', 'vl', 'hbeam', 'pill');
+      return { from: 0, to: 8, unit: 'px', name: 'gap-2', guides: four(g), at: (p) => { x.style.gap = p ? '8px' : '0px'; },
+        track: () => { const A = box(a, s), B = box(b, s); gapX(s, g, A.r, B.l, A.b + 16); at(g[3], `left:${(A.r + B.l) / 2}px;top:${A.b + 38}px`); } };
+    },
+  },
+  'craft/list-wrap': {
+    code: ['flex (no wrap)', 'flex flex-wrap'],
+    note: ['Five tags from your data, one row: the last ones run out of the card.', 'Told to wrap, a long list takes a second row.'],
+    scene: (s) => {
+      scene(s, '<div class="bx" style="width:190px;padding:12px;border-radius:12px;background:#fff;box-shadow:inset 0 0 0 1px #e5e7eb;font:700 13px system-ui;color:#111827;display:grid;gap:8px">Design system<div class="x" style="display:flex;gap:6px;flex-wrap:nowrap">' + ['tokens', 'type', 'colour', 'motion', 'icons'].map((t) => `<span class="badge" style="padding:0 8px;font-size:11px;flex:none">${t}</span>`).join('') + '</div></div>');
+      const x = s.querySelector('.x');
+      return { ...ringed(s, s.querySelector('.bx'), ['nowrap', 'flex-wrap'], 8, 20), at: (p) => { x.style.flexWrap = p ? 'wrap' : 'nowrap'; } };
+    },
+  },
+  'craft/image-stretch': {
+    code: ['w-14 (height from the row)', 'size-14 self-start'],
+    note: ['Given only a width, the picture stretches to the row’s height and the sun turns into an egg.', 'A height of its own: the picture keeps its shape.'],
+    scene: (s) => {
+      scene(s, `<div style="display:flex;gap:12px;width:230px;padding:10px;border-radius:12px;background:#fff;box-shadow:inset 0 0 0 1px #e5e7eb"><div class="x" style="position:relative;width:56px;height:100px;flex:none;border-radius:8px;overflow:hidden"><div class="in" style="position:absolute;left:0;top:0;width:56px;height:56px;transform-origin:0 0;scale:1 1.79">${sun(56, 56)}</div></div><div style="display:grid;gap:4px;align-content:start;font:500 12px/1.4 system-ui;color:#4b5563"><b style="font:700 13px system-ui;color:#111827">Morning hike</b>Up the ridge before the heat, back by ten, coffee at the top.</div></div>`);
+      const x = s.querySelector('.x'), inn = s.querySelector('.in');
+      return { ...ringed(s, x, ['stretched', 'size-14'], 5, 18), at: (p) => { x.style.height = p ? '56px' : '100px'; inn.style.scale = p ? '1' : '1 1.79'; } };
+    },
+  },
+  'craft/background-tile': {
+    code: ['bg-[url(beach.jpg)]', 'bg-cover bg-no-repeat'],
+    note: ['The photo repeats like wallpaper: you see its seams.', 'One photo, covering the box.'],
+    scene: (s) => {
+      scene(s, '<div class="x" style="width:230px;height:110px;border-radius:12px;background-image:linear-gradient(#bae6fd,#e0f2fe 55%,#fde68a 55%);background-size:76px 55px;box-shadow:inset 0 0 0 1px rgb(0 0 0 / .06);display:grid;place-items:center;font:800 18px system-ui;color:#0c4a6e">Book a stay</div>');
+      const x = s.querySelector('.x');
+      return { ...ringed(s, x, ['repeats', 'cover, no-repeat'], 8, 20), at: (p) => { x.style.backgroundSize = p ? '230px 110px' : '76px 55px'; } };
+    },
+  },
+  'craft/fixed-column': {
+    code: ['grid-cols-[96px_1fr]', 'grid-cols-1 sm:grid-cols-[96px_1fr]'],
+    note: ['On a phone, the fixed label column leaves the field a sliver.', 'One column where two don’t fit: the label sits over its field.'],
+    scene: (s) => {
+      scene(s, '<div style="width:150px;padding:12px;border-radius:18px;background:#fff;box-shadow:inset 0 0 0 2px #111827"><div class="x" style="display:grid;grid-template-columns:96px 1fr;gap:6px;align-items:center;font:600 12px system-ui;color:#374151">Billing email<span style="height:28px;border-radius:7px;box-shadow:inset 0 0 0 1px #d1d5db"></span></div></div>');
+      const x = s.querySelector('.x');
+      return { ...ringed(s, x, ['96px + the rest', 'one column'], 8, 20), at: (p) => { x.style.gridTemplateColumns = p ? '1fr' : '96px 1fr'; } };
+    },
+  },
+  'craft/scrollbar-gutter': {
+    code: ['(no gutter)', 'scrollbar-gutter: stable'],
+    note: ['When the list grows a scrollbar, everything centred shifts 8px left (dashes: where it was).', 'Room kept for the bar: nothing moves when it comes.'],
+    scene: (s) => {
+      scene(s, '<div style="position:relative;width:220px;height:120px;border-radius:12px;background:#fff;box-shadow:inset 0 0 0 1px #e5e7eb;overflow:hidden"><i style="position:absolute;right:3px;top:4px;bottom:4px;width:8px;border-radius:4px;background:#e5e7eb"></i><div style="position:absolute;inset:0 0 0 0;display:grid;place-items:center"><div style="position:relative"><span style="position:absolute;inset:-4px -6px;border:1.5px dashed #a5b4fc;border-radius:8px"></span><b class="x" style="display:block;font:700 16px system-ui;color:#111827;translate:-8px 0">Settings</b></div></div></div>');
+      const x = s.querySelector('.x');
+      return { from: 8, to: 0, unit: 'px', ...((() => { const [ring, pill] = G(s, 'ring', 'pill'); return { guides: [{ el: ring, kind: 'ring' }, { el: pill, kind: 'pill' }], track: () => { ringAround(ring, x, s, 8); pillUnder(pill, x, s, 30); } }; })()),
+        at: (p) => { x.style.translate = p ? '0 0' : '-8px 0'; } };
+    },
+  },
+  'craft/bold-hover': {
+    code: ['hover:font-bold', 'hover:font-bold, width kept'],
+    note: ['Bold is wider: on hover, Docs grows and pushes Pricing over.', 'Room for the bold is kept, so nothing beside it moves.'],
+    scene: (s) => {
+      scene(s, '<div style="display:flex;gap:18px;font:400 15px system-ui;color:#111827"><span>Home</span><span class="d" style="font-weight:700">Docs</span><span class="pr" style="margin-left:0">Pricing</span></div><i style="position:absolute;left:50%;top:calc(50% + 18px);translate:-50% 0;font:500 11px system-ui;color:#6b7280;font-style:normal">pointer on Docs</i>');
+      const pr = s.querySelector('.pr'), d = s.querySelector('.d'), [l, m, beam, pill] = G(s, 'vl', 'vl', 'hbeam', 'pill');
+      const rest = () => { const old = d.style.fontWeight; d.style.transition = 'none'; d.style.fontWeight = '400'; const x = box(pr, s).l; d.style.fontWeight = old; return x; };
+      let home = 0;
+      return { from: 4, to: 0, unit: 'px', guides: four([l, m, beam, pill]),
+        at: (p) => { pr.style.marginLeft = '0px'; if (!home) home = rest(); pr.style.translate = p ? `${-(box(pr, s).l - home)}px 0` : '0 0'; },
+        track: () => { const b = box(pr, s); gapX(s, [l, m, beam, pill], home || b.l, b.l, b.t - 8); at(pill, `left:${b.l + b.w / 2}px;top:${b.b + 34}px`); } };
+    },
+  },
+  'craft/caps-case': {
+    code: ['uppercase', 'uppercase, case features on'],
+    note: ['In capitals, the dash and brackets sit at the height of small letters: they hang low.', 'The font’s case forms lift them to sit with the capitals.'],
+    scene: (s) => {
+      scene(s, '<p class="x" style="margin:0;font:800 26px system-ui;color:#111827;letter-spacing:.01em">SALE – (50% OFF)</p>');
+      const x = s.querySelector('.x');
+      return { ...ringed(s, x, ['case off', 'case on'], 8, 22, true), at: (p) => { x.style.fontFeatureSettings = p ? '"case" 1' : 'normal'; } };
+    },
+  },
+  'craft/gradient-space': {
+    code: ['from-blue-500 to-yellow-400', 'bg-linear-to-r/oklch'],
+    note: ['Mixed in sRGB, blue and yellow meet in a muddy grey.', 'Mixed in OKLCH, the middle stays bright.'],
+    scene: (s) => {
+      scene(s, '<div class="x" style="width:240px;height:70px;border-radius:12px;background:linear-gradient(to right in srgb, #3b82f6, #facc15)"></div>');
+      const x = s.querySelector('.x');
+      return { ...ringed(s, x, ['in sRGB', 'in OKLCH'], 8, 20), at: (p) => { x.style.background = `linear-gradient(to right in ${p ? 'oklch' : 'srgb'}, #3b82f6, #facc15)`; } };
+    },
+  },
+  'craft/anchor-offset': {
+    code: ['(no scroll margin)', 'scroll-mt-12'],
+    note: ['Jump to “Billing” and the heading lands under the sticky header.', 'Room for the header: the heading lands just below it.'],
+    scene: (s) => {
+      scene(s, '<div style="position:relative;width:220px;height:140px;border-radius:12px;background:#fff;box-shadow:inset 0 0 0 1px #e5e7eb;overflow:hidden"><div style="position:absolute;left:0;right:0;top:0;height:34px;background:rgb(255 255 255 / .92);box-shadow:0 1px 0 #e5e7eb;z-index:2;display:flex;align-items:center;padding:0 12px;font:700 12px system-ui;color:#111827;backdrop-filter:blur(4px)">Account</div><div class="x" style="position:absolute;left:12px;right:12px;top:14px;display:grid;gap:6px"><b style="font:700 16px system-ui;color:#111827">Billing</b><i style="height:9px;border-radius:5px;background:#e5e7eb"></i><i style="height:9px;width:70%;border-radius:5px;background:#e5e7eb"></i></div></div>');
+      const x = s.querySelector('.x');
+      return { from: 14, to: 46, unit: 'px', name: 'scroll-mt-12', ...((() => { const [ring, pill] = G(s, 'ring', 'pill'); return { guides: [{ el: ring, kind: 'ring' }, { el: pill, kind: 'pill' }], track: () => { ringAround(ring, x.firstElementChild, s, 5); pillUnder(pill, x, s, 20); } }; })()),
+        at: (p) => { x.style.top = p ? '46px' : '14px'; } };
+    },
+  },
+  'craft/continuous-corners': {
+    code: ['rounded-3xl (a circle’s arc)', 'corner-shape: squircle'],
+    note: ['A circle’s arc meets the straight edge with a kink you can feel at this size.', 'A corner that eases into its curve looks softer, like a phone’s icon.'],
+    scene: (s) => {
+      const c = (k, h) => `M${k} 0 H${120 - k} C${120 - k + h} 0 120 ${k - h} 120 ${k} V${120 - k} C120 ${120 - k + h} ${120 - k + h} 120 ${120 - k} 120 H${k} C${k - h} 120 0 ${120 - k + h} 0 ${120 - k} V${k} C0 ${k - h} ${k - h} 0 ${k} 0 Z`;
+      const arc = c(30, 13.4), sq = c(44, 30);
+      scene(s, `<svg class="sv" viewBox="-2 -2 124 124" width="124" height="124"><path class="x" d="${arc}" fill="#6366f1" style="d:path('${arc}')"/></svg>`);
+      const x = s.querySelector('.x');
+      return { ...ringed(s, s.querySelector('.sv'), ['circle arc', 'squircle'], 6, 18), at: (p) => { x.style.d = `path('${p ? sq : arc}')`; } };
+    },
+  },
+  'craft/optical-sizing': {
+    code: ['font-optical-sizing: none', 'font-optical-sizing: auto'],
+    note: ['With optical size off, a big headline is drawn with the small-text cut: thick and loose.', 'On, the headline gets its display cut: finer strokes, tighter fit.'],
+    scene: (s) => {
+      scene(s, '<p class="x" style="margin:0;font:600 40px/1 system-ui;color:#111827;font-optical-sizing:none;font-variation-settings:\'opsz\' 12">Quarterly</p>');
+      const x = s.querySelector('.x');
+      return { ...ringed(s, x, ['optical size off', 'auto'], 8, 22, true), at: (p) => { x.style.fontVariationSettings = p ? "'opsz' 40" : "'opsz' 12"; } };
+    },
+  },
+});
