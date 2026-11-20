@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clean-up motion · React Plumber</title>
+<style>
+  body { margin: 0; padding: 28px 16px 64px; background: #ecebe7; font: 14px/1.5 system-ui, sans-serif; color: #1c1b19; }
+  header { max-width: 1100px; margin: 0 auto 18px; display: flex; align-items: end; gap: 16px; }
+  header h1 { font-size: 18px; margin: 0; } header p { margin: 4px 0 0; opacity: .65; font-size: 13px; }
+  header button { margin-left: auto; font: 600 13px system-ui; padding: 8px 14px; border-radius: 10px; border: 0; background: #f24a9f; color: #fff; cursor: pointer; }
+  #board { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(500px, 1fr)); gap: 22px; }
+  .tile h2 { font: 600 13px/1 system-ui; margin: 0 0 8px; } .tile h2 span { font-weight: 500; opacity: .55; }
+</style>
+</head>
+<body>
+<header><div><h1>How a change moves: text, padding, margin, gap</h1><p>Guides draw in, the page moves on the spring, the number rolls and lands, the guides go.</p></div><button id="play">Play again</button></header>
+<div id="board"></div>
+<script type="module">
+  import tokens from '../src/tokens.css?raw';
+  const SPRING = 'linear(0, 0.21 6%, 0.62 15%, 0.9 25%, 1.01 36%, 1.02 46%, 1 60%, 1)';
+  const T = { guides: 420, hold: 260, move: 720, land: 520, out: 320 };
+  const css = `${tokens}
+    :host { display: block; }
+    .stage { position: relative; height: 260px; border-radius: 16px; background: #fff; overflow: hidden; font-family: system-ui; }
+    .pg { position: absolute; inset: 0; padding: 40px 72px 40px 96px; }
+    /* the guides, as one family: hairlines across, an I-beam in the gutter, the value in a pill */
+    .g { position: absolute; pointer-events: none; }
+    .hl { left: 0; right: 0; height: 1px; background: color-mix(in oklab, var(--c) 60%, transparent); transform-origin: left; }
+    .vl { top: 0; bottom: 0; width: 1px; background: color-mix(in oklab, var(--c) 60%, transparent); transform-origin: top; }
+    .beam { width: 9px; } .beam::before { content: ''; position: absolute; left: 4px; top: 0; bottom: 0; width: 1.5px; background: var(--c); }
+    .beam::after { content: ''; position: absolute; inset: 0; border-top: 1.5px solid var(--c); border-bottom: 1.5px solid var(--c); }
+    .hbeam { height: 9px; } .hbeam::before { content: ''; position: absolute; top: 4px; left: 0; right: 0; height: 1.5px; background: var(--c); }
+    .hbeam::after { content: ''; position: absolute; inset: 0; border-left: 1.5px solid var(--c); border-right: 1.5px solid var(--c); }
+    .pill { height: 22px; padding: 0 8px; border-radius: 11px; background: var(--c); color: #fff; font: 600 12px/22px system-ui; font-variant-numeric: tabular-nums; white-space: nowrap;
+      translate: -50% -50%; box-shadow: 0 1px 2px rgb(0 0 0 / .25); display: inline-flex; gap: 4px; transition: background-color 280ms ease-out; }
+    .pill .roll { display: inline-block; height: 22px; overflow: hidden; } .pill .roll > span { display: flex; flex-direction: column; }
+    .pill .roll b { height: 22px; font-weight: inherit; } .pill i { font-style: normal; opacity: .85; font-weight: 500; }
+    .stage { --c: var(--pl-coral); } .stage[data-landed] { --c: var(--pl-sky); }
+    /* the space patterns: hatch for padding, dither for margin, stripes for a gap */
+    .hatch { background: repeating-linear-gradient(45deg, color-mix(in oklab, var(--pl-mint) 55%, transparent) 0 1px, transparent 1px 6px), color-mix(in oklab, var(--pl-mint) 10%, transparent); }
+    .dither { background: radial-gradient(color-mix(in oklab, var(--pl-butter) 85%, transparent) 0.8px, transparent 1px) 0 0 / 4px 4px; }
+    .stripes { background: repeating-linear-gradient(90deg, color-mix(in oklab, var(--pl-lilac) 60%, transparent) 0 1px, transparent 1px 4px), color-mix(in oklab, var(--pl-lilac) 12%, transparent); }
+    .card { background: #f3f4f6; border-radius: 12px; }
+    .txt { margin: 0; color: #111; font-weight: 700; letter-spacing: -0.01em; line-height: 1.15; }
+    .sub { margin: 6px 0 0; color: #64748b; font-size: 13px; }
+  `;
+  const roll = (from, to) => { const steps = []; const a = Math.round(from), b = Math.round(to), dir = Math.sign(b - a) || 1; for (let v = a; v !== b + dir; v += dir) steps.push(v); return steps; };
+  const pillHtml = (vals, unit, name = '') => `<span class="roll"><span>${vals.map((v) => `<b>${v}</b>`).join('')}</span></span>${unit}${name ? ` <i>${name}</i>` : ''}`;
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  const animate = (el, kf, o) => el.animate(kf, { fill: 'both', ...o }).finished;
+
+  // one tile: build(stage) returns { from, to, unit, name, guides(), apply(value) }; the beats are the same for all
+  async function play(stage, spec) {
+    stage.removeAttribute('data-landed');
+    const g = spec.guides(); // [{ el, kind: 'h'|'v'|'beam'|'pill' }]
+    const pill = g.find((x) => x.kind === 'pill').el, vals = roll(spec.from, spec.to);
+    pill.innerHTML = pillHtml(vals, spec.unit);
+    const strip = pill.querySelector('.roll > span');
+    // 1. the guides draw in: lines sweep from the edge, the beam and the pill pop
+    await Promise.all(g.map((x, i) => x.kind === 'h' ? animate(x.el, [{ transform: 'scaleX(0)', opacity: 0 }, { transform: 'scaleX(1)', opacity: 1 }], { duration: T.guides, delay: i * 40, easing: 'cubic-bezier(.2,.8,.2,1)' })
+      : x.kind === 'v' ? animate(x.el, [{ transform: 'scaleY(0)', opacity: 0 }, { transform: 'scaleY(1)', opacity: 1 }], { duration: T.guides, delay: i * 40, easing: 'cubic-bezier(.2,.8,.2,1)' })
+      : animate(x.el, [{ opacity: 0, scale: 0.85 }, { opacity: 1, scale: 1 }], { duration: T.guides * 0.8, delay: 120, easing: 'cubic-bezier(.34,1.56,.64,1)' })));
+    await wait(T.hold);
+    // 2. the page moves on the spring; the guides follow it every frame; the number rolls with it
+    spec.ease(true); spec.apply(spec.to);
+    strip.animate([{ transform: 'translateY(0)' }, { transform: `translateY(${-(vals.length - 1) * 22}px)` }], { duration: T.move, easing: SPRING, fill: 'both' });
+    const t0 = performance.now();
+    await new Promise((done) => { const f = () => { spec.track(); if (performance.now() - t0 < T.move + 80) requestAnimationFrame(f); else done(); }; f(); });
+    // 3. it lands: the pill turns to the scale's colour and names the step, a small settle
+    stage.setAttribute('data-landed', '');
+    pill.innerHTML = pillHtml([Math.round(spec.to)], spec.unit, spec.name);
+    pill.animate([{ scale: 1 }, { scale: 1.08 }, { scale: 1 }], { duration: 360, easing: 'cubic-bezier(.34,1.56,.64,1)' });
+    await wait(T.land);
+    // 4. the guides go, the page keeps its change
+    await Promise.all(g.map((x) => animate(x.el, [{ opacity: 1 }, { opacity: 0 }], { duration: T.out, easing: 'ease-out' })));
+  }
+
+  const TILES = [
+    ['Text size', '18px → 24px: baseline and cap line ride the words', (s) => {
+      s.innerHTML = `<div class="pg"><p class="txt" style="font-size:18px">Recent deploys</p><p class="sub">Every release this week, newest first.</p></div>
+        <i class="g hl cap"></i><i class="g hl base"></i><i class="g beam"></i><i class="g pill"></i>`;
+      const t = s.querySelector('.txt'), cap = s.querySelector('.cap'), base = s.querySelector('.base'), beam = s.querySelector('.beam'), pill = s.querySelector('.pill');
+      const track = () => { const S = s.getBoundingClientRect(), r = t.getBoundingClientRect(), fs = parseFloat(getComputedStyle(t).fontSize);
+        const b = r.top - S.top + (r.height + fs * 0.72) / 2, c = b - fs * 0.72;
+        cap.style.top = `${c}px`; base.style.top = `${b}px`; beam.style.cssText = `left:80px;top:${c}px;height:${b - c}px`; pill.style.cssText = `left:44px;top:${(b + c) / 2}px`; };
+      track();
+      return { from: 18, to: 24, unit: 'px', name: 'title', guides: () => [{ el: cap, kind: 'h' }, { el: base, kind: 'h' }, { el: beam, kind: 'beam' }, { el: pill, kind: 'pill' }],
+        ease: (on) => { t.style.transition = on ? `font-size ${T.move}ms ${SPRING}` : ''; t.animate([{ filter: 'blur(0)' }, { filter: 'blur(1.2px)', offset: .35 }, { filter: 'blur(0)' }], { duration: T.move }); },
+        apply: (v) => { t.style.fontSize = `${v}px`; }, track, reset: () => { t.style.transition = ''; t.style.fontSize = '18px'; track(); } };
+    }],
+    ['Padding', '28px → 16px: the hatch is the space, the beam measures it', (s) => {
+      s.innerHTML = `<div class="pg" style="display:grid;place-items:center;padding:0"><div class="card box" style="position:relative;padding:28px;width:300px"><div class="hatch pad" style="position:absolute;inset:0;border-radius:12px"></div><div class="in" style="position:relative;background:#fff;border-radius:6px;padding:10px 12px;font-weight:600">Total revenue <span style="color:#64748b;font-weight:500">$48,200</span></div></div></div>
+        <i class="g hl top"></i><i class="g hl inner"></i><i class="g beam"></i><i class="g pill"></i>`;
+      const box = s.querySelector('.box'), inn = s.querySelector('.in'), pad = s.querySelector('.pad'), top = s.querySelector('.top'), inner = s.querySelector('.inner'), beam = s.querySelector('.beam'), pill = s.querySelector('.pill');
+      const clip = () => { const p = parseFloat(getComputedStyle(box).paddingTop); pad.style.clipPath = `path(evenodd, "M0 0H${box.offsetWidth}V${box.offsetHeight}H0Z M${p} ${p}H${box.offsetWidth - p}V${box.offsetHeight - p}H${p}Z")`; };
+      const track = () => { clip(); const S = s.getBoundingClientRect(), a = box.getBoundingClientRect(), b = inn.getBoundingClientRect(); const y1 = a.top - S.top, y2 = b.top - S.top;
+        top.style.top = `${y1}px`; inner.style.top = `${y2}px`; beam.style.cssText = `left:${a.left - S.left - 26}px;top:${y1}px;height:${y2 - y1}px`; pill.style.cssText = `left:${a.left - S.left - 58}px;top:${(y1 + y2) / 2}px`; };
+      track();
+      return { from: 28, to: 16, unit: 'px', name: 'space-4', guides: () => [{ el: top, kind: 'h' }, { el: inner, kind: 'h' }, { el: beam, kind: 'beam' }, { el: pill, kind: 'pill' }],
+        ease: (on) => { box.style.transition = on ? `padding ${T.move}ms ${SPRING}` : ''; }, apply: (v) => { box.style.padding = `${v}px`; }, track,
+        reset: () => { box.style.transition = ''; box.style.padding = '28px'; track(); } };
+    }],
+    ['Margin', '40px → 24px: the dither between two blocks closes up', (s) => {
+      s.innerHTML = `<div class="pg" style="padding:30px 72px 0 120px"><div class="card a" style="height:56px;display:flex;align-items:center;padding:0 14px;font-weight:600">Overview</div><div class="dither m" style="height:40px"></div><div class="card b" style="height:56px;display:flex;align-items:center;padding:0 14px;font-weight:600">Deployments</div></div>
+        <i class="g hl t"></i><i class="g hl u"></i><i class="g beam"></i><i class="g pill"></i>`;
+      const m = s.querySelector('.m'), a = s.querySelector('.a'), b = s.querySelector('.b'), t = s.querySelector('.t'), u = s.querySelector('.u'), beam = s.querySelector('.beam'), pill = s.querySelector('.pill');
+      const track = () => { const S = s.getBoundingClientRect(), y1 = a.getBoundingClientRect().bottom - S.top, y2 = b.getBoundingClientRect().top - S.top;
+        t.style.top = `${y1}px`; u.style.top = `${y2}px`; beam.style.cssText = `left:84px;top:${y1}px;height:${y2 - y1}px`; pill.style.cssText = `left:52px;top:${(y1 + y2) / 2}px`; };
+      track();
+      return { from: 40, to: 24, unit: 'px', name: 'space-6', guides: () => [{ el: t, kind: 'h' }, { el: u, kind: 'h' }, { el: beam, kind: 'beam' }, { el: pill, kind: 'pill' }],
+        ease: (on) => { m.style.transition = on ? `height ${T.move}ms ${SPRING}` : ''; }, apply: (v) => { m.style.height = `${v}px`; }, track,
+        reset: () => { m.style.transition = ''; m.style.height = '40px'; track(); } };
+    }],
+    ['Gap', '12px → 20px: stripes in each gap, the items slide apart together', (s) => {
+      s.innerHTML = `<div class="pg" style="display:grid;place-items:center;padding:0"><div class="row" style="display:flex;gap:12px;position:relative">${['Design', 'Build', 'Ship'].map((w) => `<div class="card it" style="width:96px;height:70px;display:grid;place-items:center;font-weight:600">${w}</div>`).join('')}</div></div>
+        <i class="g stripes s1" style="opacity:0"></i><i class="g stripes s2" style="opacity:0"></i><i class="g vl l1"></i><i class="g vl l2"></i><i class="g hbeam"></i><i class="g pill"></i>`;
+      const row = s.querySelector('.row'), its = [...s.querySelectorAll('.it')], st = [s.querySelector('.s1'), s.querySelector('.s2')], l1 = s.querySelector('.l1'), l2 = s.querySelector('.l2'), hb = s.querySelector('.hbeam'), pill = s.querySelector('.pill');
+      const track = () => { const S = s.getBoundingClientRect(); const r = its.map((x) => x.getBoundingClientRect());
+        [0, 1].forEach((k) => { const x1 = r[k].right - S.left, x2 = r[k + 1].left - S.left; st[k].style.cssText = `left:${x1}px;top:${r[0].top - S.top}px;width:${x2 - x1}px;height:${r[0].height}px;opacity:${st[k].style.opacity || 0}`; });
+        const x1 = r[0].right - S.left, x2 = r[1].left - S.left, y = r[0].bottom - S.top + 22;
+        l1.style.left = `${x1}px`; l2.style.left = `${x2}px`; hb.style.cssText = `top:${y}px;left:${x1}px;width:${x2 - x1}px`; pill.style.cssText = `left:${(x1 + x2) / 2}px;top:${y + 26}px`; };
+      track();
+      return { from: 12, to: 20, unit: 'px', name: 'space-5', guides: () => [{ el: l1, kind: 'v' }, { el: l2, kind: 'v' }, { el: hb, kind: 'beam' }, { el: pill, kind: 'pill' }, ...st.map((el) => ({ el, kind: 'beam' }))],
+        ease: (on) => { row.style.transition = on ? `gap ${T.move}ms ${SPRING}` : ''; }, apply: (v) => { row.style.gap = `${v}px`; }, track,
+        reset: () => { row.style.transition = ''; row.style.gap = '12px'; track(); } };
+    }],
+  ];
+  const board = document.getElementById('board'), runs = [];
+  for (const [title, sub, build] of TILES) {
+    const sec = document.createElement('section'); sec.className = 'tile'; sec.innerHTML = `<h2>${title} <span>${sub}</span></h2>`;
+    const host = document.createElement('div'); sec.append(host); board.append(sec);
+    const root = host.attachShadow({ mode: 'open' }); root.innerHTML = `<style>${css}</style><div class="stage"></div>`;
+    const stage = root.querySelector('.stage'); const spec = build(stage);
+    for (const g of stage.querySelectorAll('.g')) g.style.opacity = 0;
+    runs.push(async () => { spec.reset(); stage.getAnimations({ subtree: true }).forEach((a) => a.cancel()); for (const g of stage.querySelectorAll('.g')) g.style.opacity = 0; await wait(300); for (const g of stage.querySelectorAll('.g')) g.style.opacity = ''; await play(stage, spec); });
+  }
+  const all = () => runs.forEach((r, i) => setTimeout(r, i * 260));
+  document.getElementById('play').onclick = all;
+  all();
+</script>
+</body>
+</html>
