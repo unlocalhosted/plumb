@@ -164,7 +164,8 @@ export function evidenceFor(el, prop) {
       ...conditionsOf(c.r), important: carriers.some((x) => c.r.style.getPropertyPriority(x) === 'important'), sharedBy, isClass: !!cls && el.classList.contains(cls) };
   }
   const parent = el.parentElement;
-  return { kind: 'none', inherited: !!parent && getComputedStyle(parent).getPropertyValue(prop) === before };
+  const inheritable = /^(color|font-|line-height|letter-spacing|text-transform|text-align|word-spacing|white-space|visibility|cursor)/.test(prop);
+  return { kind: 'none', inherited: inheritable && !!parent && getComputedStyle(parent).getPropertyValue(prop) === before };
 }
 /** The winning rule of el's prop in a file of yours, for the rule system; null when a utility class, a style attribute
  * or nothing of the element's own wins. */

@@ -120,11 +120,9 @@ One at a time, each shown working before the next, on a real plain-CSS app as we
 
 ## Progress
 
-- **Layer 0, done (2026-11-20):** the interface lives on the server (`src/styles/`) with two systems, utility classes and
-  plain stylesheet rules. Sync sends evidence for both; the engine places, checks and commits every edit as one undo.
-  One property table (`src/styles/properties.ts`, 38 properties) is read by the page instead of its own copy (journey
-  65, 66). Still on the page: spelling a value as a class (`gap-6`), which needs the element's live classes and active
-  variants; it moves when the card's picks do (layer 4).
+- **Layers 0 to 9 (2026-11-20):** built and shown end to end on the plumber site (Next, plain CSS) and the ledger
+  (Vite, Tailwind); journey 65 to 68. Open: the element card's layout and spacing buttons, Clean up's system pass,
+  recipes and rename on the shared rule system, and Sass run against a real `sass` install.
 
 ## Decisions still open
 

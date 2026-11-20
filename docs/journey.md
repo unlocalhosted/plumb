@@ -3815,6 +3815,33 @@ inherited, `.lead`'s colour proved to `.lead`; a gap on the heading refused with
 the ledger: `gap-2` and `text-xs` proved to Tailwind's `@layer utilities` and routed to classes. On a scratch file, a
 gap proven under `@media (min-width: 900px)` was written inside that block; without the proof it was refused.
 
+### 68. Layers 2 to 9: parity end to end (2026-11-20)
+**The itch.** The owner wanted the whole plain-CSS path working, not a layer at a time.
+
+**What now works, and how it was shown.**
+- **The X-ray card says where a rule-owned value comes from:** the rule, its file, and every element it styles.
+- **Writes are safe:** the card reads a place with its file's hash and Sync sends it back. Read a place, edit the file
+  by hand, then Sync: refused with "changed since the card read it", nothing written.
+- **The words card's picks** (size, weight, line height, letter spacing, colour, text style) write the CSS rule when a
+  rule owns every property the pick touches, with your token's variable as the value; otherwise the class way.
+- **Tidy** writes values a rule owns into that rule, in the same undo step as its class changes. Values use your own
+  token when one on the page has exactly that value (`--pl-space-4`, not only Tailwind's `--spacing-4`).
+- **Finding fixes on a stylesheet:** a file that defines tokens beside its rules was locked whole. Now only its token
+  declarations are; `gap: 15px` in such a file was fixed to `var(--spacing-2)` through the engine.
+- **`@media`:** written inside the block the page proves in force (layer 1).
+- **Sass:** a `.scss` file is placed through the project's own `sass` and its source map, a `$variable` used as the
+  value offers its definition, a mixin or `@extend` is said, and a write must still compile. Without `sass` installed
+  it says so (shown); with it, not yet run, because `sass` is installed nowhere on this machine.
+
+**End to end, on the final build.** The plumber site (Next, plain CSS): the heading's size wrote `.title` (34px → 44px
+→ back), `.lead`'s colour wrote `.lead` and was undone, a gap on the heading was refused with a reason. The ledger
+(Vite, Tailwind): a `gap-2` row wrote `gap-6` in `src/App.jsx` (8px → 24px → back). Every test file was left clean.
+
+**Not done.** The element card's layout and spacing buttons carry only classes, so on a plain-CSS page they still write
+classes. Clean up's system pass (apply-all) is class-based. Recipes keep their own rule finder, and rename knows only
+`--color-*` names. The card's buttons were not driven by hand in this pass: its Alt-held card closes under synthetic
+clicks, so the writes were run through the same code from the console.
+
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
 - Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".
@@ -5427,6 +5454,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   `generator/shots/generate-craftingattention.png` (local).
 
 ## Open gaps
+- **CSS parity gaps:** the element card's layout and spacing buttons, Clean up's system pass, recipes' own rule finder, rename beyond `--color-*`, and Sass not yet run against a real `sass` install ([entry](#68-layers-2-to-9-parity-end-to-end-2026-11-20)).
 - **CSS rule fixes are narrow.** They cover text size, line height, weight, gap, corners, width, height and padding per side, from rules outside `@media`. Padding set for two sides at once (`padding-x`) still goes to classes, and the change isn't checked against your token scale before it's written ([entry](#63-css-rule-fixes-work-on-the-next-site-2026-11-20)).
 - **The owner's slop checks are untuned on real apps.** Tight letters fire on every heading that sets them (28 on our homepage), the shade count reads greys mixed by opacity as separate shades, and none of the eleven has been run through a full plumber read or the docs' recordings yet ([entry](#56-the-owners-slop-list-becomes-eleven-anti-slop-checks-2026-11-20)).
 - **The mark was never tried among real neighbours** (a row of browser tabs, an npm page, a README header), only on empty tiles. Nobody outside has been asked whether the round leg reads as an R or leans towards a B.
@@ -5476,6 +5504,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- Plain CSS works end to end in plumber: the X-ray, the words card and Tidy write the CSS rule that styles an element (inside @media when that rule is in force), finding fixes reach stylesheets that also define tokens, and Sass is placed through its source map ([entry](#68-layers-2-to-9-parity-end-to-end-2026-11-20)).
 - Every X-ray Sync goes through one server-side interface for classes and plain CSS rules, as one undo; colour, margin, shadow and 35 other properties now reach a CSS rule ([entry](#66-layer-0-done-classes-behind-the-same-interface-2026-11-20)).
 - The same CSS rule fixes work on a Next site: the rule's file is read from Next's CSS source map; the plumber homepage at localhost:4330 can now be fixed with plumber ([entry](#63-css-rule-fixes-work-on-the-next-site-2026-11-20)).
 - On a Vite app with plain CSS, the X-ray's Sync writes a change into the stylesheet rule that styles the element (a shorthand gets the property added after it), with undo; every change goes through one style-system interface, so more ways of styling can be added ([entry](#62-sync-picks-a-style-system-for-each-change-2026-11-20)).
