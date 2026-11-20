@@ -104,23 +104,6 @@ async function doctorFixture(t, host) {
   cli(root, ['init', '--force'], 0);
   return root;
 }
-test('doctor: a misordered Vite config fails with the line to move; the right order passes', { timeout: 120000 }, async t => {
-  const root = await doctorFixture(t, 'vite');
-  const config = order => `import { plumb } from '@unlocalhosted/react-plumber/vite';\nimport react from '@vitejs/plugin-react';\nexport default { plugins: [${order}] };\n`;
-  await file(root, 'vite.config.mjs', config('react(), plumb()'));
-  const failed = cli(root, ['doctor'], 1);
-  assert.match(failed, /✗ Shows on your page\s+Move Plumber before the JSX plugins → plumber (?:fix locate\.order|install --overlay --write)/);
-  await file(root, 'vite.config.mjs', config('plumb(), react()'));
-  assert.match(cli(root, ['doctor'], 0), /✓ Shows on your page/);
-});
-test('doctor: a Next config without withPlumb fails with the fix; wrapped, it passes', { timeout: 120000 }, async t => {
-  const root = await doctorFixture(t, 'next');
-  await file(root, 'next.config.mjs', 'export default { reactStrictMode: true };\n');
-  const failed = cli(root, ['doctor'], 1);
-  assert.match(failed, /✗ Shows on your page\s+Plumber isn't in next\.config\.mjs → plumber install --overlay --write/);
-  await file(root, 'next.config.mjs', "import { withPlumb } from '@unlocalhosted/react-plumber/next/config';\nexport default withPlumb({ reactStrictMode: true });\n");
-  assert.match(cli(root, ['doctor'], 0), /✓ Shows on your page/);
-});
 
 // ── Next ─────────────────────────────────────────────────
 // Turbopack's root must hold the package, the fixture and the node_modules this tree links from (a worktree links the main checkout's).

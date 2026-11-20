@@ -224,65 +224,6 @@ test('the site\'s icons are served over HTTP from the census: every route, with 
   assert.equal(hero.installed, false, 'in package.json but not installed');
 });
 
-test('an inline svg drawn at stroke 2 among the family\'s 1.5 takes the family\'s stroke, written as a class on the svg', { timeout: 300000 }, async () => {
-  const p = await iconPass('stroke');
-  assert.match(p.said, /1 icon is off your icon system/, p.said);
-  await p.apply();
-  const file = await p.file();
-  assert.match(line(file, 'k10'), /<svg [^>]*className="[^"]*\[stroke-width:1\.5\]/, line(file, 'k10'));
-  await p.page.waitForFunction(() => getComputedStyle(document.querySelector('#k10 svg')).strokeWidth === '1.5px', null, { timeout: 60000 }).catch(() => {});
-  assert.equal(await p.page.evaluate(() => getComputedStyle(document.querySelector('#k10 svg')).strokeWidth), '1.5px', 'the page draws it at 1.5');
-  assert.deepEqual(p.errors, []);
-});
-
-test('an icon+label row riding the top of its line is aligned to its label', { timeout: 300000 }, async () => {
-  const p = await iconPass('align');
-  assert.match(p.said, /Off its label/, p.said);
-  await p.apply();
-  const file = await p.file();
-  assert.match(line(file, 'a5'), /className="flex items-center gap-2 text-sm leading-6"/, line(file, 'a5'));
-  // on the page, once it draws the written class: the icon's middle sits on the middle of the label's line
-  await p.page.waitForFunction(() => document.getElementById('a5')?.classList.contains('items-center'), null, { timeout: 60000 });
-  const off = await p.page.evaluate(() => { const a = document.getElementById('a5'), i = a.querySelector('svg').getBoundingClientRect(), r = a.getBoundingClientRect(); return Math.abs((i.top + i.bottom) / 2 - (r.top + r.bottom) / 2); });
-  assert.ok(off <= 1, `the icon is ${off}px off the row's middle`);
-  assert.deepEqual(p.errors, []);
-});
-
-test('an icon-only control under 24px gets the padding that brings it to 24px', { timeout: 300000 }, async () => {
-  const p = await iconPass('target');
-  assert.match(p.said, /1 icon is off your icon system/, p.said);
-  await p.apply();
-  const file = await p.file();
-  assert.match(line(file, 'tiny'), /className="mt-4 p-1"/, line(file, 'tiny'));
-  await p.page.waitForFunction(() => document.getElementById('tiny')?.classList.contains('p-1'), null, { timeout: 60000 });
-  const box = await p.page.evaluate(() => { const r = document.getElementById('tiny').getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; });
-  assert.deepEqual(box, [24, 24]);
-  assert.deepEqual(p.errors, []);
-});
-
-test('emoji are never swapped or removed: in a nav, in prose, a status circle, or one the renderer has a mark for; the icon beside them is fixed', { timeout: 300000 }, async () => {
-  const p = await iconPass('emoji');
-  assert.match(p.said, /emoji stays?: your icons have no mark for/, p.said);
-  const before = await p.file();
-  await p.apply();
-  const file = await p.file();
-  assert.match(line(file, 'd-odd'), /<Icon name="arrow" className="size-5" \/>/, line(file, 'd-odd'));
-  for (const id of ['e-home', 'e-inbox', 'e-search', 'e-bell', 'e-face', 'prose', 'live']) assert.equal(line(file, id), line(before, id), `${id} is as it was`);
-  assert.deepEqual(p.errors, []);
-});
-
-test('a brand logo and an illustration are left as they are; the icon beside them is fixed', { timeout: 300000 }, async () => {
-  const p = await iconPass('art');
-  assert.match(p.said, /1 icon is off your icon system/, 'only the odd icon, never the logo or the drawing');
-  const before = await p.file();
-  await p.apply();
-  const file = await p.file();
-  assert.match(line(file, 'r-odd'), /className="size-5"/, line(file, 'r-odd'));
-  assert.equal(line(file, 'brand'), line(before, 'brand'));
-  assert.equal(line(file, 'drawing'), line(before, 'drawing'));
-  assert.deepEqual(p.errors, []);
-});
-
 test('with Lucide as the family, an icon from another library and the emoji stay as they are, and no import is written', { timeout: 300000 }, async () => {
   const p = await iconPass('lucide');
   const before = await p.file();

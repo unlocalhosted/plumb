@@ -125,38 +125,3 @@ test('The STATUS label carries both of its problems: its size is off the type sc
   assert.ok(status.some((m) => !m.id.includes(':craft/')), `the drift mark on its size stays: ${JSON.stringify(status)}`);
   assert.deepEqual(errors, []);
 });
-
-test('The icon button: one fix on the theme’s steps (pl-s4 pr-s6, never pl-5); applied, the button is quiet in every family', { timeout: 120000 }, async (t) => {
-  const launched = await browser(t); if (!launched) return;
-  const { root, url } = await fixture(t, PAGE);
-  const { page, errors, overlay } = await open(t, launched, url);
-  await blueprint(page, overlay);
-  await page.waitForTimeout(600);
-  const invite = await on(page, 'invite');
-  const pad = invite.filter((m) => m.rule === 'button-padding');
-  assert.equal(pad.length, 1, JSON.stringify(invite));
-  const words = await openMark(page, overlay, pad[0].id, { options: true });
-  assert.equal(words.target, 's6', 'the pick is 24px on the right (s6), 16px on the left (s4)');
-  assert.deepEqual(words.options.map((o) => o.tk), ['s1', 's2', 's3', 's4', 's6']);
-  await applyFix(page, overlay);
-  const source = join(root, 'src/App.jsx');
-  const line = async () => (await readFile(source, 'utf8')).split('\n').find((l) => l.includes('id="invite"'));
-  for (let i = 0; i < 100 && !/pl-s4 pr-s6/.test(await line()); i++) await page.waitForTimeout(100);
-  assert.match(await line(), /rounded-control bg-accent pl-s4 pr-s6 py-s3/);
-  // the write reloads the page by itself; let that land, then read the page again
-  await page.waitForTimeout(800);
-  await page.reload();
-  await page.waitForLoadState('load');
-  await page.waitForFunction(() => window.__plumb?.overlay);
-  await page.evaluate(() => window.__plumb.ready());
-  try { await blueprint(page, overlay); } catch { await page.keyboard.press('Escape'); await page.waitForTimeout(500); await blueprint(page, overlay); }
-  await page.waitForTimeout(600);
-  // quiet: no mark of any family is drawn on it
-  const after = await page.evaluate(() => {
-    const el = document.getElementById('invite').getBoundingClientRect();
-    return [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .hit')].map((h) => ({ id: h.dataset.id, r: h.getBoundingClientRect() }))
-      .filter(({ r }) => r.left + r.width / 2 >= el.left - 2 && r.left + r.width / 2 <= el.right + 20 && r.top + r.height / 2 >= el.top - 2 && r.top + r.height / 2 <= el.bottom + 2).map((h) => h.id);
-  });
-  assert.deepEqual(after, []);
-  assert.deepEqual(errors, []);
-});

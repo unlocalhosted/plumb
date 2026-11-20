@@ -42,69 +42,6 @@ const read = page => page.evaluate(() => {
     right: innerWidth - box.right, bottom: innerHeight - box.bottom, background: getComputedStyle(dock).backgroundColor };
 });
 
-test('the dock says React Plumber is ready, folds away, and Select picks an element without Alt, into blueprint', { timeout: 90000 }, async t => {
-  const launched = await browser(t); if (!launched) return;
-  const url = await demo(t);
-  const page = await launched.newPage();
-  const errors = []; page.on('pageerror', error => errors.push(error.message));
-  await page.goto(url);
-  await page.waitForFunction(() => window.__plumb?.overlay);
-  await page.evaluate(() => window.__plumb.ready());
-
-  // Ready: bottom right, one line, the status announced politely.
-  const dock = dockOf(page);
-  await dock.waitFor();
-  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.dock').dataset.state === 'ready');
-  let s = await read(page);
-  assert.equal(s.say, 'Hold Alt to inspect');
-  assert.ok(s.right >= 12 && s.right <= 20 && s.bottom >= 12 && s.bottom <= 20, `bottom right with a 16px inset: ${s.right}, ${s.bottom}`);
-  assert.equal(await dock.locator('[role="status"]').getAttribute('aria-live'), 'polite');
-
-  // After four seconds the line folds away and the mark is alone; pointed at, its tools come out (docs/design/one-bar.md)
-  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.dock').hasAttribute('data-fold'), null, { timeout: 8000 });
-  assert.equal(await dock.locator('.say').isVisible(), false);
-  assert.equal(await dock.getByRole('button', { name: 'Select an element' }).isVisible(), false, 'at rest the dock is its mark alone');
-  await dock.hover();
-  assert.equal(await dock.getByRole('button', { name: 'Select an element' }).isVisible(), true, 'pointed at, Select comes out');
-
-  // Select arms the reticle and stays on when Alt is let go; the page is not clickable while it is on.
-  await dock.getByRole('button', { name: 'Select an element' }).click();
-  s = await read(page);
-  assert.deepEqual([s.state, s.pressed, s.cursor, s.folded, s.say], ['select', 'true', 'crosshair', false, 'Click an element to inspect it · Esc']);
-  await page.keyboard.down('Alt'); await page.keyboard.up('Alt');
-  assert.equal((await read(page)).state, 'select', 'letting go of Alt does not end Select');
-
-  // Picking opens blueprint on the element, in its card (one interface), and ends Select; '.' puts its cause in hand.
-  const row = await page.locator('#sync-row').boundingBox();
-  await page.mouse.move(row.x + row.width / 2, row.y + 3);
-  await page.mouse.click(row.x + row.width / 2, row.y + 3);
-  // the card owns the screen (docs/briefs/qa-fixes.md, cause 3): it opens on the row, nothing in hand; '.' hands over to
-  // the fixes, the row's own cause in hand
-  await page.locator('plumb-overlay').locator('.ec .drill').first().waitFor({ timeout: 20000 });
-  assert.match(await page.locator('plumb-overlay').locator('.ec .hd .n').innerText(), /SyncRow/);
-  assert.equal(await page.locator('plumb-overlay').locator('.fx .cause').count(), 0, 'no cause in hand while the card is open');
-  await page.keyboard.press('.');
-  const held = page.locator('plumb-overlay').locator('.fx .cause .cls');
-  await held.waitFor({ timeout: 20000 });
-  assert.ok((await page.locator('#sync-row').getAttribute('class')).split(/\s+/).includes((await held.innerText()).trim()), 'the row\'s own cause is in hand');
-  s = await read(page);
-  assert.deepEqual([s.pressed, s.cursor], ['false', '']);
-
-  // Esc puts the cause down, Esc again leaves blueprint; Select then Esc leaves without picking.
-  const reading = page.locator('plumb-overlay').locator('.fx');
-  await page.keyboard.press('Escape');
-  await page.keyboard.press('Escape');
-  await reading.waitFor({ state: 'hidden', timeout: 10000 });
-  await dock.hover();
-  await dock.getByRole('button', { name: 'Select an element' }).click();
-  assert.equal((await read(page)).state, 'select');
-  await page.keyboard.press('Escape');
-  s = await read(page);
-  assert.deepEqual([s.state, s.pressed, s.cursor], ['ready', 'false', '']);
-  assert.equal(await reading.isVisible(), false, 'Esc out of Select opens nothing');
-  assert.deepEqual(errors, []);
-});
-
 test('the dock reads on dark pages and is still under reduced motion', { timeout: 60000 }, async t => {
   const launched = await browser(t); if (!launched) return;
   const url = await demo(t);

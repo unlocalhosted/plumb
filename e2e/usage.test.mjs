@@ -75,42 +75,6 @@ async function fixture(t) {
   return { root, url, page, errors, locate };
 }
 
-test('Vite: library-drawn hosts answer with your usage, exactly on an indexed opening, down to the last <path>', { timeout: 120000 }, async t => {
-  const { root, page, errors, locate } = await fixture(t);
-  const usage = { file: 'src/App.jsx', ...position(APP, '<Search id="icon"'), component: 'Search', props: ['className'] };
-  for (const selector of ['#icon', '#path']) {
-    const found = await locate(selector);
-    assert.equal(found.via, 'usage', selector + ' ' + JSON.stringify(found));
-    assert.deepEqual({ file: found.file, line: found.line, column: found.column, component: found.component, props: found.props }, usage, selector);
-    assert.equal(found.chain.length, 1, 'the chain stops at the usage: nothing below it is yours');
-    assert.equal(await page.getAttribute(selector, 'data-plumb-source'), null);
-  }
-  // a library wrapping another library's icon: every host inside answers with where you used the outer one
-  const badge = { file: 'src/App.jsx', ...position(APP, '<Badge id="badge"'), component: 'Badge', props: ['tone'] };
-  for (const selector of ['#badge', '#badge-icon']) {
-    const found = await locate(selector);
-    assert.deepEqual({ file: found.file, line: found.line, column: found.column, component: found.component, props: found.props }, badge, selector + ' ' + JSON.stringify(found));
-  }
-  // a portal follows React, not the DOM: the menu's container answers with the MenuItems usage
-  const menu = await locate('[role="menu"]');
-  assert.deepEqual({ via: menu.via, file: menu.file, line: menu.line, column: menu.column, component: menu.component, props: menu.props },
-    { via: 'usage', file: 'src/App.jsx', ...position(APP, '<MenuItems'), component: 'MenuItems', props: ['className'] }, JSON.stringify(menu));
-  const button = await locate('#menu-button');
-  assert.equal(button.via, 'usage'); assert.equal(button.component, 'MenuButton'); assert.deepEqual(button.props, ['className']);
-  // your own <a> inside the menu item is yours: its stamp answers
-  assert.equal((await locate('a[href="#item"]')).via, 'stamp');
-  // a creator call in your code answers the call's line, because the index has that call (at the name being called)
-  const made = await locate('#made');
-  assert.deepEqual({ via: made.via, file: made.file, line: made.line, column: made.column }, { via: 'call', file: 'src/App.jsx', ...position(APP, 'createElement(') }, JSON.stringify(made));
-  assert.deepEqual(errors, []);
-  // the file changes under the running page (no reload): the usage refuses with the mismatch, never a nearby line
-  await writeFile(join(root, 'src/App.jsx'), '// a line above\n' + APP);
-  await delay(2200); // the overlay keeps an index for two seconds
-  const stale = await locate('#icon');
-  assert.equal(stale.location, null); assert.equal(stale.reason, 'source-mismatch', JSON.stringify(stale));
-  assert.equal(await locate('#icon', {}), null);
-});
-
 // Turbopack's root must hold the package, the fixture and the node_modules this tree links from (a worktree links the main checkout's).
 async function turbopackRoot() {
   const parts = [repo.replace(/\/$/, ''), dirname(await realpath(join(repo, 'node_modules')))].map((p) => p.split(sep));

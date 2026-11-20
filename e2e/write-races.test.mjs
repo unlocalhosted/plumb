@@ -207,23 +207,3 @@ test('two pages writing one file: the server takes them in turn, the late one re
     assert.equal(located.line, 4); assert.deepEqual(errors, []);
   }
 });
-
-// The session tells Vite about every file it writes (`written`, through the engine's worker to the host), so a hot
-// update never waits on the watcher, and two writes within one poll tick are two updates, not one. With no watcher at
-// all, that word is the only way Vite can hear a write: the page must still update, twice.
-test('a write reaches Vite from the session itself: with no file watcher, two writes in a row both reach the page', { timeout: 120000 }, async t => {
-  const { url, open, swap } = await site(t, { watch: null });
-  const { page, errors, logs } = await open();
-  const first = await swap(3, 'gap-2', 'gap-3');
-  assert.equal(first.status, 200, JSON.stringify(first.body));
-  await page.waitForFunction(() => document.querySelector('#title')?.className === 'p-4 gap-3', undefined, { timeout: 8000, polling: 50 });
-  const second = await swap(4, 'p-[13px]', 'p-3');
-  assert.equal(second.status, 200, JSON.stringify(second.body));
-  await page.waitForFunction(() => document.querySelector('#copy')?.className === 'p-3', undefined, { timeout: 8000, polling: 50 });
-  assert.equal(logs.filter(line => /hot updated: \/src\/App\.jsx/.test(line)).length, 2, logs.filter(line => /vite/.test(line)).join(' | '));
-  // a reload gets the module as written, never a 304 of an older one
-  await page.reload(); await page.waitForSelector('#copy');
-  assert.equal(await page.evaluate(() => document.querySelector('#copy').className), 'p-3');
-  assert.equal(await page.evaluate(() => document.querySelector('#title').className), 'p-4 gap-3');
-  assert.deepEqual(errors, []);
-});

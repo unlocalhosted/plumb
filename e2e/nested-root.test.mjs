@@ -83,37 +83,6 @@ async function reading(launched, url) {
   return { ...result, errors };
 }
 
-test('a project below its repository top counts each place once, the same as the project at the top', { timeout: 180000 }, async (t) => {
-  const launched = await browser(t); if (!launched) return;
-  // the top: the app is its own repository
-  const plain = await mkdtemp(join(tmpdir(), 'plumb-plain-'));
-  t.after(() => rm(plain, { recursive: true, force: true }));
-  const top = join(plain, 'app');
-  await app(top);
-  execFileSync('git', ['init', '-q'], { cwd: top });
-  // nested: the same app under a hidden parent inside a repository, the way a worktree's fixture or a monorepo app sits
-  const outer = await mkdtemp(join(tmpdir(), 'plumb-outer-'));
-  t.after(() => rm(outer, { recursive: true, force: true }));
-  execFileSync('git', ['init', '-q'], { cwd: outer });
-  const nested = join(outer, '.hidden', 'worktrees', 'app');
-  await app(nested);
-
-  const atTop = await reading(launched, await serve(t, top));
-  const below = await reading(launched, await serve(t, nested));
-  assert.deepEqual(atTop.errors, []); assert.deepEqual(below.errors, []);
-  // the stamps differ by design: the nested app's are named from the repository root
-  assert.equal(atTop.stamp, 'src/App.jsx');
-  assert.equal(below.stamp, '.hidden/worktrees/app/src/App.jsx');
-  // the counts do not: one place per class site, counted once, named the one way the page names files
-  assert.equal(atTop.line, '3 problems · 2 fixes · 1 element can’t be checked', atTop.line);
-  assert.equal(below.line, atTop.line);
-  assert.deepEqual({ problems: below.problems, places: below.places, unrendered: below.unrendered, notes: below.notes }, { problems: atTop.problems, places: atTop.places, unrendered: atTop.unrendered, notes: atTop.notes });
-  assert.deepEqual(below.keys, atTop.keys);
-  assert.deepEqual(below.sites, atTop.sites);
-  assert.equal(atTop.places, 3, JSON.stringify(atTop.sites));
-  assert.ok(atTop.sites.every((s) => s.includes(' src/App.jsx:') && s.endsWith('×1')), JSON.stringify(atTop.sites));
-});
-
 // A stamped locate is one GET resolve with the stamp's name, line, column and hash: a lookup, not work. Warm, it is
 // single-digit milliseconds on the server; through the overlay's locate (hydration check, the fetch, the answer) it
 // stays well under 30 ms at the 95th percentile, for an app below its repository top (where a stamp's name and the

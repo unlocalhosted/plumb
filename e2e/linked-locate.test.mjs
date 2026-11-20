@@ -117,38 +117,4 @@ for (const workspace of [false, true]) {
       body: JSON.stringify({ file: join(library, 'dist/index.js'), hash: snapshot.hash, edits: [{ id: 'unproved' }] }) });
     assert.equal(refused.status, 400);
   });
-  test(`${name}: real Base UI owners locate and Node applies the authored edit`, { timeout: 90000 }, async t => {
-    let browser;
-    try { browser = await chromium.launch({ headless: true, executablePath: (process.env.PLUMBER_CHROMIUM ?? process.env.PLUMB_CHROMIUM) || undefined }); }
-    catch (error) {
-      if (!/Executable doesn't exist/.test(error.message)) throw error;
-      t.skip('Playwright Chromium missing. Install with: npx playwright install chromium'); return;
-    }
-    t.after(() => browser.close());
-    const fixture = await project(t, workspace), { url, appSource, librarySource } = fixture;
-    const page = await browser.newPage(), errors = []; page.on('pageerror', error => errors.push(error.message));
-    await page.goto(url);
-    await page.waitForFunction(() => window.__plumb && document.getElementById('linked'));
-    assert.equal((await page.evaluate(() => window.__plumb.ready())).status, 'ready');
-    const location = await page.$eval('#linked', element => window.__plumb.locate(element, { explain: true }));
-    if (!workspace) {
-      assert.equal(location.location, null); assert.equal(location.detail.file, '../library/src/Button.jsx');
-      assert.equal(await page.$eval('#linked', element => window.__plumb.site(element)), null);
-      for (const id of ['#unchecked-owner', '#unchecked-only']) {
-        const unchecked = await page.$eval(id, element => window.__plumb.locate(element, { explain: true }));
-        assert.equal(unchecked.location, null); assert.equal(unchecked.detail.file, '../library/src/Button.jsx');
-      }
-      await page.locator('#unchecked-only').click({ modifiers: ['Alt'] });
-      await page.waitForFunction(() => document.querySelector('plumb-overlay')?.shadowRoot?.textContent.includes('written in ../library/src/Button.jsx, outside this project’s source'));
-      assert.deepEqual(errors, []);
-      return;
-    }
-    const owner = { file: workspace ? 'app/src/App.jsx' : 'src/App.jsx', ...position(appSource, '<LibButton'), component: 'LibButton' };
-    const chain = workspace ? [{ file: 'library/src/Button.jsx', ...position(librarySource, '<Button'), component: 'Button' }, owner] : [owner];
-    assert.deepEqual(location, { ...chain[0], tag: 'button', via: 'owner-stack', chain, index: 0 });
-    const site = await page.$eval('#linked', element => window.__plumb.site(element));
-    assert.deepEqual(site.declarations.map(d => d.site.text), [workspace ? 'gap-[17px]' : 'gap-[13px]']);
-    await edit(fixture, location, workspace ? 'gap-[17px]' : 'gap-[13px]');
-    assert.deepEqual(errors, []);
-  });
 }

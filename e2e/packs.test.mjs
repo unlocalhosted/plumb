@@ -467,29 +467,6 @@ test('one line that draws thirty buttons is one finding per check, at that line,
   assert.equal(text.stdout.match(/experience\/button-name-reused/g)?.length, 1, text.stdout);
 });
 
-test('on the page, thirty rows from one line say as much as three (the fewest the repeated-name check needs)', { timeout: 240000 }, async (t) => {
-  const browser = await chromium.launch({ headless: true, executablePath: process.env.PLUMBER_CHROMIUM || undefined });
-  t.after(() => browser.close());
-  const problems = async (app) => {
-    const { url } = await fixture(t, app);
-    const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' });
-    await page.goto(url);
-    await page.waitForFunction(() => window.__plumb); await page.evaluate(() => window.__plumb.ready());
-    await page.keyboard.press('Alt+B');
-    await page.waitForFunction(() => window.__plumb.overlay.progress?.done, null, { timeout: 60000 });
-    // what the bar says: its count, and the rest of the line it reads out (fixes, notes)
-    await page.waitForFunction(() => !/checking/i.test(document.querySelector('plumb-overlay').shadowRoot.querySelector('.fx .status')?.textContent ?? 'checking'), null, { timeout: 60000 });
-    const said = await page.evaluate(() => { const st = document.querySelector('plumb-overlay').shadowRoot.querySelector('.fx .status'); return { count: st.querySelector('.count').textContent, rest: st.getAttribute('aria-description') ?? '' }; });
-    const marked = await page.evaluate(() => [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .hit')].filter((h) => h.dataset.id.endsWith('experience/state-in-label')).length);
-    await page.close();
-    return { ...said, marked };
-  };
-  const many = await problems(MANY), three = await problems(MANY.replace('length: 30', 'length: 3'));
-  // what is counted is places; what is marked is elements (the thirty each carry their own mark)
-  assert.deepEqual({ count: many.count, rest: many.rest }, { count: three.count, rest: three.rest }, JSON.stringify({ many, three }));
-  assert.ok(many.marked > three.marked, JSON.stringify({ many, three }));
-});
-
 // algorecall's showcase page has no <main>; the finding was said on the first element judged, an icon in a feedback dock
 // drawn before the page, so the report named the dock's file. A finding about the page belongs on the page's own element.
 const DOCKED = `import { useEffect, useState } from 'react';
@@ -541,14 +518,6 @@ export function App() {
   );
 }
 `;
-test('a page with a box moved by script every frame is still read through', { timeout: 240000 }, async (t) => {
-  if (!await built()) return t.skip('Run npm run build first.');
-  const { root, url } = await fixture(t, MOVED);
-  const result = await plumber(['craft', '--url', url, '--json', '--no-probe', '--no-pairs', '--timeout', '45000', '--root', root]);
-  const page = JSON.parse(result.stdout).routes[0];
-  assert.ok(page.read > 0, `read ${page.read}`);
-  assert.equal(page.complete, true, 'stopped before every element was read');
-});
 
 // algorecall's /login was judged as its loading screen (14 elements of 118) once pages settled quickly: the dev server was
 // still compiling the route on its first visit. A route whose code arrives three seconds late, behind a small fallback.

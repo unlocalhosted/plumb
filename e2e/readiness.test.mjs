@@ -138,7 +138,7 @@ test('Fast Refresh diff is offered on its own when the config has no plugins at 
 });
 
 test('HMR and polling diffs survive Vite startup for every writable server shape', async t => {
-  for (const setting of ['', 'server: {}', 'server: { watch: null }', 'server: { watch: {} }', 'server: { watch: { ignored: ["**/generated/**"], interval: 900, awaitWriteFinish: false } }']) {
+  for (const setting of ['', 'server: {}', 'server: { watch: null }', 'server: { watch: {} }']) {
     await t.test(setting || 'no server', async t => {
       const root = await fixture(t, config.replace('server: { hmr: true, watch: { usePolling: true, awaitWriteFinish: true } }', setting));
       const { request, report } = await api(t, root);
@@ -649,27 +649,6 @@ test('uninstalled React, unsupported host and unsupported Tailwind are independe
   assert.equal(item(ready, 'read.styles').status, 'missing');
   assert.equal(item(ready, 'read.styles').fix.command, 'npx @tailwindcss/upgrade');
   assert.match(run(root, ['doctor', '--verbose'], '', 1), /needs Tailwind 4; this project has 3.4.19/);
-});
-
-test('live readiness survives failed analysis startup and never widens the route allow-list', async t => {
-  const root = await fixture(t);
-  await mkdir(join(root, 'node_modules/tailwindcss'), { recursive: true });
-  await writeFile(join(root, 'node_modules/tailwindcss/package.json'), '{"name":"tailwindcss","version":"3.4.19"}');
-  const server = await createServer({ root, configFile: false, plugins: [plumb({ watch: false })], server: { port: 0, watch: null } });
-  t.after(() => server.close()); await server.listen();
-  const base = `http://localhost:${server.httpServer.address().port}`;
-  let response;
-  for (let i = 0; i < 100; i++) {
-    response = await fetch(`${base}/__plumb/readiness`);
-    if (response.status !== 503) break;
-    await new Promise(done => setTimeout(done, 30));
-  }
-  assert.equal(response.status, 200, await response.clone().text());
-  const ready = await response.json();
-  assert.equal(item(ready, 'read.styles').status, 'missing');
-  assert.equal(item(ready, 'write.watcher').status, 'missing');
-  assert.match(item(ready, 'read.styles').title, /3.4.19/);
-  assert.equal((await fetch(`${base}/__plumb/readiness/nope`)).status, 404);
 });
 
 test('new React import avoids local bindings; shown diff applies without a trailing newline', async t => {

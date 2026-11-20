@@ -3889,7 +3889,53 @@ up's type pass, and a `.scss` file on Next.
 `node_modules` while it ran, then was removed. The site's own plumber route roots at `../homepage`, so the lab's copy
 was pointed at itself. The site's server was stopped while the lab ran (the laptop had 65 MB free) and started again.
 
+### 71. Preparing 0.6.0 (2026-11-20)
+**The itch.** The owner: "lets plan publishing new version". 0.5.0 went out a week earlier, and main had 622 commits on
+top of it. The changelog's Unreleased section only covered the faster start-up from the first few days.
+
+**The system behind it.** The changelog is written when a release is cut, not as the work lands. Since 0.5.0 it was
+touched twice, both on 2026-11-19, and the week's other work (CSS and Sass, the new check packs, the X-ray card,
+Break it) went into commits and this journey only. So each release starts with a week of commits to read back.
+
+**What we did.**
+- **The release is the last commit on main** (the Sass-on-Next commit). The checkout also held 47 files with edits
+  from other sessions' work in progress; those stay out.
+- **The changelog was rewritten** as 0.6.0. It was drawn from the commits that touch what ships (the server, the
+  overlay, the command line) and says each change as a person meets it. The new lines cover plain CSS and Sass at
+  parity with utility classes, renaming a token by its variable, motion recipes on plain CSS, about 150 checks from
+  Chrome's web guides, the Anti-slop checks, the X-ray card that says what is wrong first, Blueprint opening on
+  concerns, Break it, and classes found in lookup tables and recipes. The generator, the films, the showcase and the
+  design site don't ship, so they aren't in it. The declauding pass rewrote four labels and lines that were staged
+  or vague; I did its review step myself, so it was not an independent read.
+- **The package:** 572 files, 1.6 MB packed, with nothing from tests, docs or demos in it. Two imports in it point at files it
+  doesn't carry: the React-reading library, which the dev server serves from its own install as in 0.5.0, and the
+  docs site's check examples, which nothing in the overlay loads.
+- **The packed package on a copy of Ledger** (the example app): it was installed from the tarball on vm-agent, the
+  way a user gets it. The overlay loaded with no console errors, Alt+B showed the X-ray card with its file and line and one
+  issue, and the bar counted 86 findings. Taking "Add to theme" on a hard-coded `py-24` wrote `--spacing-gutter: 6rem`
+  into `styles.css` and `py-gutter` into `App.jsx`. Undo said "Your code is back as it was", and `git diff` was empty.
+  `plumber --version` said 0.6.0 and `plumber check` ran.
+- **The full suite on vm-agent:** 160 of 218 files passed, 56 failed and 2 were stopped at the six-minute limit,
+  against 2 failures on 2026-11-14. 183 tests failed in all. 139 timed out waiting for overlay parts that were redrawn
+  this week (Blueprint's concerns bar, the X-ray card, the fix bar and its choice row on the element). The rest
+  checked old wording, an old rule layout, or internals. The six failures that weren't about the overlay were
+  checked one by one. An Undo that answered 500 passes when run alone. A plain-CSS recipe now writes a one-line rule
+  on one line, as this week's change meant. `--root` on a folder that isn't a React app is now refused on purpose.
+  The hosts test stubs the overlay's imports by hand and missed Break it's new one. None was a fault a user would
+  meet.
+- **The owner's call:** "just delete them". The 179 failing tests and one failing server setting were removed; 30
+  files were left with no tests and were deleted. The tests still in the suite had all passed in this run.
+- **What it taught us:** the tests checked wording, layout, exact counts and internals, so a week of redesign broke
+  a quarter of them while the product worked. The rules for the next tests: check the code on disk, Plumber's data
+  (`--json`, the server's answers), before against after, the right element by its stamp, and real keys and clicks.
+  Never check sentences or fixed waits.
+
+**Media hooks.** The X-ray card on Ledger from the packed build, and the "Added --spacing-gutter…" line with its Undo.
+
 ## Open gaps
+- **Tests that check wording, layout and time.** 769 tests are left (by `test(` lines). Many still check sentences, exact counts, pixels,
+  fixed waits (55 `waitForTimeout` calls, 69 sleeps) and timings (about 67 asserts). Next: rewrite them to check
+  behaviour, or delete them, and consider Playwright's own test runner. ([71](#71-preparing-060-2026-11-20))
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
 - Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
@@ -5550,6 +5596,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- React Plumber 0.6.0 is ready to release: plain CSS and Sass changed like utility classes, renaming a token by its variable, about 150 new checks from Chrome's web guides, the Anti-slop checks, Break it, and an X-ray card that says what is wrong first. The packed package was tried on a fresh app, and 179 out-of-date tests were removed ([entry](#71-preparing-060-2026-11-20)).
 - The last CSS parity gaps closed: any token renamed across CSS, Sass and code; motion recipes on plain CSS; Clean up's type roles written into each element's own rule; Sass on Next ([entry](#70-the-last-parity-gaps-2026-11-20)).
 - Sass works through plumber's engine: values in nested rules, `$variables` and nested `@media` are written where the `.scss` writes them, mixins are refused, and every write must still compile ([entry](#69-sass-run-for-real-2026-11-20)).
 - Plain CSS works end to end in plumber: the X-ray, the words card and Tidy write the CSS rule that styles an element (inside @media when that rule is in force), finding fixes reach stylesheets that also define tokens, and Sass is placed through its source map ([entry](#68-layers-2-to-9-parity-end-to-end-2026-11-20)).

@@ -123,23 +123,6 @@ test('B2: a :root property that is only lengths is not the project’s shadow, a
   assert.equal(flat.body.css.boxShadow, '0 2px 4px');
 });
 
-// B3 · the variant split on every colon
-test('B3: an arbitrary or responsive variant is not the element’s resting shadow, and an apply leaves it alone', async t => {
-  const app = `export function A() {\n  return <div id="a" className="p-4 [&:hover]:shadow-md md:shadow-lg">A</div>;\n}\nexport function B() {\n  return <div id="b" className="p-4 shadow-sm [&:hover]:shadow-lg">B</div>;\n}\n`;
-  const api = await project(t, tailwind('  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.06);\n  --shadow-md: 0 1px 3px 0 rgb(0 0 0 / 0.12);\n  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);', app));
-  const a = await api.at('src/App.tsx', '<div id="a"'), b = await api.at('src/App.tsx', '<div id="b"');
-  assert.equal((await api.view(a)).element.shadow.source, 'none');
-  assert.equal((await api.view(b)).element.shadow.class, 'shadow-sm');
-  const original = await api.read('src/App.tsx');
-  const done = await api.apply(a, { recipe: 'floating' });
-  assert.equal(done.status, 200, JSON.stringify(done.body));
-  const after = await api.read('src/App.tsx');
-  assert.match(after, /className="p-4 \[&:hover\]:shadow-md md:shadow-lg [^"]*shadow-\w+"|className="p-4 [^"]*shadow-\w+[^"]*\[&:hover\]:shadow-md md:shadow-lg"/);
-  assert.ok(after.includes('[&:hover]:shadow-md') && after.includes('md:shadow-lg'), after);
-  await api.undo(done.body.undo);
-  assert.equal(await api.read('src/App.tsx'), original);
-});
-
 // B5 · duration-[…] read ms only; B6 · an arbitrary hover shadow became var(--shadow-[…])
 test('B5, B6: duration-[0.3s] is 300ms, and an arbitrary hover shadow is read as its value', async t => {
   const app = `export function A() {\n  return <button id="a" className="transition duration-[0.3s] hover:shadow-[0_1px_2px_#0003]">A</button>;\n}\n`;

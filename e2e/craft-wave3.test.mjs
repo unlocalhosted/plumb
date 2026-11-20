@@ -97,13 +97,3 @@ export function App() {
   );
 }
 `;
-
-test('Quiet on what a real site does: a pill in a pill, a flush child in a clipping corner, text not yet or still being revealed, bold 14px at Lc 56', { timeout: 120000 }, async (t) => {
-  const launched = await browser(t); if (!launched) return;
-  const { url } = await fixture(t, QUIET);
-  const { page, errors } = await open(t, launched, url);
-  const found = [];
-  for (const rule of ['concentric-radius', 'contrast']) for (const m of await marksOf(page, rule)) found.push(`${rule}: ${m.label}`);
-  assert.deepEqual(found, []);
-  assert.deepEqual(errors, []);
-});

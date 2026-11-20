@@ -79,41 +79,6 @@ async function connectClient(url, token, origin) {
   return connected;
 }
 
-test('Vite injects and serves the client, shares edits/apply and excludes React Plumber from builds', async t => {
-  const root = await project(t, { vite: '^8.3.4' });
-  const plumbRoot = await project(t);
-  await writeFile(join(root, 'index.html'), '<html><head></head><body><script type="module" src="/src/entry.js"></script></body></html>');
-  await writeFile(join(root, 'src/entry.js'), 'document.body.dataset.ready = "yes";\n');
-  const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [plumb({ root: plumbRoot, watch: false })], logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
-  t.after(() => server.close()); await server.listen();
-  const url = `http://127.0.0.1:${server.httpServer.address().port}`;
-  assert.match(await (await fetch(url)).text(), /<script type="module" src="\/__plumb\/client\.js"\s*><\/script>/);
-  await ready(url);
-  const health = await connectClient(url + '/__plumb/client.js'); assert.equal(health.root, plumbRoot);
-  assert.equal(health.pid, process.pid, 'adapter must stay in the host process');
-  const site = await fetch(url + '/__plumb/site?file=src/App.tsx&line=1');
-  assert.equal(site.status, 200); assert.ok((await site.json()).findings.length);
-  const editsResponse = await fetch(url + '/__plumb/edits?file=src/App.tsx&line=1');
-  assert.equal(editsResponse.status, 200); const edits = await editsResponse.json(); assert.ok(edits.edits.length);
-  assert.equal(edits.file, join(plumbRoot, 'src/App.tsx'));
-  const before = await readFile(edits.file, 'utf8');
-  for (const path of ['health', 'client.js', 'edits?file=src/App.tsx&line=1']) {
-    assert.equal((await fetch(url + '/__plumb/' + path, { headers: { Origin: 'https://foreign.example' } })).status, 403);
-  }
-  for (const headers of [{}, { Origin: 'https://foreign.example' }, { Origin: url, 'Sec-Fetch-Site': 'cross-site' }]) {
-    assert.equal((await fetch(url + '/__plumb/apply', { method: 'POST', headers, body: JSON.stringify(selection(edits)) })).status, 403);
-  }
-  assert.equal(await readFile(edits.file, 'utf8'), before);
-  const applied = await fetch(url + '/__plumb/apply', { method: 'POST', headers: { Origin: url, 'Content-Type': 'application/json' }, body: JSON.stringify(selection(edits)) });
-  assert.equal(applied.status, 200); assert.ok((await applied.json()).revision > edits.revision);
-  assert.equal(await readFile(edits.file, 'utf8'), before.slice(0, edits.edits[0].start) + edits.edits[0].to + before.slice(edits.edits[0].end));
-  assert.equal((await fetch(url + '/__plumb/health', { method: 'POST', headers: { Origin: url } })).status, 405);
-  await server.close();
-  await build({ root, configFile: false, plugins: [plumb({ root: join(root, 'does-not-exist') })], logLevel: 'silent' });
-  for (const [, contents] of await snapshot(join(root, 'dist'))) assert.ok(!contents.includes('__plumb'), 'production assets must omit the overlay');
-  await assert.rejects(readFile(join(root, '.plumber/serve.json')), { code: 'ENOENT' });
-});
-
 test('Vite defaults to its root and resolves explicit relative roots and configs for separate Sessions', async t => {
   const root = await project(t), plumbRoot = await project(t);
   await rename(join(plumbRoot, 'plumber.config.ts'), join(plumbRoot, 'custom.config.ts'));
@@ -209,64 +174,6 @@ main().then(() => process.exit(0), error => { console.error(error); process.exit
   assert.ifError(result.error); assert.equal(result.status, 0, result.stderr);
 });
 
-test('serve --overlay permits exactly its configured CORS origin, including real preflight and apply', async t => {
-  const root = await project(t), { info, url } = await connection(t, root);
-  const origin = 'http://localhost:5555', headers = { Origin: origin, 'x-plumb-token': info.token };
-  assert.equal(info.origin, origin); assert.equal(info.overlay, true);
-  const health = await connectClient(url + '/__plumb/client.js', info.token, origin); assert.equal(health.root, root);
-  for (const path of ['/__plumb/health', '/health', '/__plumb/client.js']) {
-    const allowed = await fetch(url + path, { headers }); assert.equal(allowed.status, 200);
-    assert.equal(allowed.headers.get('Access-Control-Allow-Origin'), origin); assert.equal(allowed.headers.get('Vary'), 'Origin');
-    for (const Origin of ['http://localhost:5556', 'https://localhost:5555', 'https://foreign.example', 'null']) {
-      const refused = await fetch(url + path, { headers: { ...headers, Origin } });
-      assert.equal(refused.status, 403); assert.equal(refused.headers.get('Access-Control-Allow-Origin'), null);
-    }
-  }
-  assert.equal((await fetch(url + '/__plumb/health', { headers: { Origin: origin } })).status, 401);
-  assert.equal((await fetch(url + '/__plumb/health', { headers: { ...headers, 'x-plumb-token': 'wrong' } })).status, 401);
-  const before = await readFile(join(root, 'src/App.tsx'), 'utf8');
-  const edits = await (await fetch(url + '/__plumb/edits?file=src/App.tsx&line=1', { headers })).json(); assert.ok(edits.edits.length);
-  const preflightHeaders = { Origin: origin, 'Access-Control-Request-Method': 'POST', 'Access-Control-Request-Headers': 'content-type, x-plumb-token' };
-  const preflight = await fetch(url + '/__plumb/apply', { method: 'OPTIONS', headers: preflightHeaders });
-  assert.equal(preflight.status, 204); assert.equal(await preflight.text(), '');
-  assert.equal(preflight.headers.get('Access-Control-Allow-Origin'), origin);
-  assert.equal(preflight.headers.get('Access-Control-Allow-Methods'), 'POST'); assert.match(preflight.headers.get('Access-Control-Allow-Headers'), /x-plumb-token/);
-  assert.equal((await fetch(url + '/__plumb/health', { method: 'OPTIONS', headers: { ...preflightHeaders, 'Access-Control-Request-Method': 'GET' } })).status, 204);
-  assert.equal((await fetch(url + '/__plumb/apply', { method: 'OPTIONS', headers: { ...preflightHeaders, Origin: 'https://foreign.example' } })).status, 403);
-  assert.equal((await fetch(url + '/__plumb/apply', { method: 'OPTIONS', headers: { ...preflightHeaders, 'Access-Control-Request-Headers': 'authorization' } })).status, 403);
-  assert.equal((await fetch(url + '/__plumb/apply', { method: 'OPTIONS', headers: { ...preflightHeaders, 'Access-Control-Request-Method': 'DELETE' } })).status, 405);
-  assert.equal((await fetch(url + '/__plumb/apply', { method: 'POST', headers: { ...headers, Origin: 'https://foreign.example' }, body: JSON.stringify(selection(edits)) })).status, 403);
-  assert.equal(await readFile(edits.file, 'utf8'), before);
-  const applied = await fetch(url + '/__plumb/apply', { method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify(selection(edits)) });
-  assert.equal(applied.status, 200); assert.ok((await applied.json()).revision > edits.revision);
-  assert.equal(await readFile(edits.file, 'utf8'), before.slice(0, edits.edits[0].start) + edits.edits[0].to + before.slice(edits.edits[0].end));
-  const originalFiles = await snapshot(root), output = run(root, ['install', '--overlay']);
-  assert.match(output, new RegExp(`src="http://127.0.0.1:${info.port}/__plumb/client.js"`)); assert.ok(output.includes(`data-plumb-token="${info.token}"`));
-  assert.deepEqual(await snapshot(root), originalFiles, 'install must never edit files');
-});
-
-test('install --overlay detects hosts from package.json and prints wiring without writes', async t => {
-  for (const [dependencies, expected] of [
-    [{ vite: '^8.3.4' }, [/import \{ plumb \} from '@unlocalhosted\/react-plumber\/vite'/, /plumb\(\)/]],
-    [{ next: '^16.0.0', vite: '^8.3.4' }, [/app\/%5F_plumb\/\[\.\.\.path\]\/route\.plumb\.ts/, /withPlumb\(nextConfig\)/, /@unlocalhosted\/react-plumber\/next\/config/, /export const runtime = 'nodejs'/, /export const \{ GET, POST \} = createPlumbRoute\(\)/, /<PlumbOverlay \/>/]],
-    [{}, [/<script type="module" src="http:\/\/127.0.0.1:7331\/__plumb\/client.js" data-plumb-token="TOKEN_FROM_SERVE_JSON"><\/script>/, /serve --overlay --port 7331 --origin/]],
-  ]) {
-    const root = await project(t, dependencies), before = await snapshot(root);
-    const output = run(root, ['install', '--overlay']);
-    for (const pattern of expected) assert.match(output, pattern);
-    assert.equal(run(root, ['install', '--overlay', '--list']), output);
-    assert.deepEqual(await snapshot(root), before);
-  }
-  const root = await project(t); await rm(join(root, 'package.json'));
-  const before = await snapshot(root);
-  const missing = spawnSync(process.execPath, [cli, 'install', '--overlay', '--root', root], { encoding: 'utf8', timeout: 10000 });
-  // Without a package.json the walk lands on the nearest project above (this repo); nothing is written either way.
-  assert.ifError(missing.error); assert.equal(missing.status, 0, missing.stderr);
-  // (the project is named by its folder, whatever this checkout is called: plumb here, plumb-ci on the test machine)
-  assert.ok(missing.stderr.startsWith(`Using the project at ../.. (${basename(fileURLToPath(new URL('../', import.meta.url)))}, package.json).`), missing.stderr);
-  assert.deepEqual(await snapshot(root), before);
-});
-
 test('overlay CLI rejects incompatible flags and malformed origins before creating a server', async t => {
   const root = await project(t), before = await snapshot(root);
   for (const args of [
@@ -291,59 +198,6 @@ async function nextProcess(t, root, args) {
   t.after(async () => { if (child.exitCode === null && child.signalCode === null) { child.kill('SIGTERM'); await done; } });
   return { child, done, output: () => output };
 }
-
-test('overlay review 2–4: installed Next wiring serves dev and excludes Session from production and static export', { timeout: 180000 }, async t => {
-  const root = await project(t, { next: '^16.4.0', react: '^19.3.0', 'react-dom': '^19.3.0' });
-  const { mkdir } = await import('node:fs/promises');
-  const installed = join(root, 'node_modules/@unlocalhosted/react-plumber');
-  await mkdir(installed, { recursive: true });
-  for (const name of ['dist', 'overlay', 'package.json', 'THIRD_PARTY_NOTICES']) await cp(join(repo, name), join(installed, name), { recursive: true });
-  const routeDir = join(root, 'app/%5F_plumb/[...path]'); await mkdir(routeDir, { recursive: true });
-  await writeFile(join(routeDir, 'route.plumb.ts'), `import { createPlumbRoute } from '@unlocalhosted/react-plumber/next';\nexport const runtime = 'nodejs';\nexport const { GET, POST } = createPlumbRoute({ watch: false });\n`);
-  await writeFile(join(root, 'app/layout.jsx'), `import { PlumbOverlay } from '@unlocalhosted/react-plumber/next';\nexport default function Layout({ children }) { return <html><body>{children}<PlumbOverlay /></body></html>; }\n`);
-  await writeFile(join(root, 'app/page.jsx'), `export default function Page() { return <main>Host page</main>; }\n`);
-  await writeFile(join(root, 'next.config.mjs'), `import assert from 'node:assert/strict';\nimport { withPlumb } from '@unlocalhosted/react-plumber/next/config';\nconst original = { experimental: { agentUpgrade: false }, pageExtensions: ['jsx', 'js'], serverExternalPackages: ['lightningcss'], ...((process.env.PLUMBER_EXPORT ?? process.env.PLUMB_EXPORT) ? { output: 'export' } : {}) };\nconst config = withPlumb(original);\nassert.deepEqual(original.pageExtensions, ['jsx', 'js']);\nassert.deepEqual(original.serverExternalPackages, ['lightningcss']);\nif (process.env.NODE_ENV === 'development') {\n  assert.deepEqual(config.pageExtensions, ['jsx', 'js', 'plumb.ts', 'plumb.tsx']);\n  assert.deepEqual(config.serverExternalPackages, ['lightningcss', '@unlocalhosted/react-plumber']);\n  assert.deepEqual(withPlumb(config), config);\n} else assert.equal(config, original);\nexport default config;\n`);
-  const dev = await nextProcess(t, root, ['dev', '--webpack', '--hostname', '127.0.0.1', '--port', '0']);
-  let url;
-  for (let i = 0; i < 600; i++) {
-    assert.equal(dev.child.exitCode, null, dev.output());
-    const match = /http:\/\/127\.0\.0\.1:(\d+)/.exec(dev.output());
-    if (match && /Ready in/.test(dev.output())) { url = match[0]; break; }
-    await delay(50);
-  }
-  assert.ok(url, dev.output());
-  const page = await fetch(url, { signal: AbortSignal.timeout(45000) }); assert.equal(page.status, 200, dev.output());
-  const html = await page.text(); assert.ok(html.includes('Host page'));
-  assert.match(html, /src="\/__plumb\/client.js"/);
-  const token = /data-plumb-token="([a-f0-9]{64})"/.exec(html)?.[1]; assert.ok(token);
-  assert.equal((await fetch(url + '/__plumb/health')).status, 401);
-  assert.equal((await ready(url, { 'x-plumb-token': token })).root, root);
-  assert.equal((await connectClient(url + '/__plumb/client.js', token)).root, root);
-  const headers = { 'x-plumb-token': token, Origin: url, 'Content-Type': 'application/json' };
-  const edits = await (await fetch(url + '/__plumb/edits?file=src/App.tsx&line=1', { headers })).json();
-  assert.ok(edits.edits.length);
-  const applied = await fetch(url + '/__plumb/apply', { method: 'POST', headers, body: JSON.stringify(selection(edits)) });
-  assert.equal(applied.status, 200); assert.ok((await applied.json()).revision > edits.revision);
-  dev.child.kill('SIGTERM'); await dev.done;
-  for (const exporting of [false, true]) {
-    await rm(join(root, '.next'), { recursive: true, force: true });
-    if (exporting) {
-      // Set output on the consumer config, leaving the installed adapter unchanged.
-      await writeFile(join(root, 'next.config.mjs'), (await readFile(join(root, 'next.config.mjs'), 'utf8')).replace('(process.env.PLUMBER_EXPORT ?? process.env.PLUMB_EXPORT)', 'true'));
-    }
-    const build = await nextProcess(t, root, ['build', '--webpack']);
-    const [status] = await build.done; assert.equal(status, 0, build.output());
-    const manifest = JSON.parse(await readFile(join(root, '.next/server/app-paths-manifest.json'), 'utf8'));
-    assert.ok(Object.keys(manifest).every(path => !path.includes('plumb')), 'overlay route must never be discovered');
-    for (const dir of ['.next/server', '.next/static', ...(exporting ? ['out'] : [])]) {
-      for (const [file, content] of await snapshot(join(root, dir))) {
-        assert.ok(!content.includes('data-plumb-token') && !content.includes('/__plumb/'), file);
-        assert.ok(!/react-plumber[/\\](?:dist[/\\])?session|react-plumber[/\\]dist[/\\]hosts[/\\]next-dev|Analysis worker exited|Owns one warm analysis worker/.test(content), file);
-        if (file.endsWith('.nft.json')) assert.ok(!JSON.parse(content).files.some(path => /@unlocalhosted[/\\]react-plumber/.test(path)), `React Plumber deployment trace: ${file}`);
-      }
-    }
-  }
-});
 
 test('overlay review 7: Vite restarts reuse root/options Sessions and final close disposes them', async t => {
   const { Session } = await import('../dist/session/index.js');

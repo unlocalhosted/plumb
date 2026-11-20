@@ -54,37 +54,6 @@ const CLEAN = `export function App() {
 }
 `;
 
-test('plumber craft names each broken rule at its source line, writes SARIF, and exits 1', { timeout: 240000 }, async (t) => {
-  if (!await readFile(cli).then(() => true, () => false)) return t.skip('Run npm run build first.');
-  const { root, url } = await fixture(t, BROKEN);
-  const sarifPath = join(root, 'craft.sarif');
-  const result = await plumber(['--url', url, '--json', '--sarif', sarifPath, '--root', root]);
-  assert.equal(result.code, 1, result.stderr);
-  const report = JSON.parse(result.stdout);
-  const at = (rule) => report.findings.filter((f) => f.rule === `craft/${rule}`).map((f) => f.sites[0]);
-  for (const [rule, id] of [['button-padding', 'pad'], ['tracking', 'track'], ['contrast', 'faint'], ['hit-target', 'tiny']]) {
-    const sites = at(rule);
-    assert.ok(sites.some((s) => s.file.endsWith('src/App.jsx') && s.line === lineOf(BROKEN, id)), `${rule}: expected src/App.jsx:${lineOf(BROKEN, id)}, got ${JSON.stringify(sites)}`);
-  }
-  // each finding names the laws of UX its rule measures: a decided list for every rule, empty when its root is not one
-  const records = report.routes.flatMap((r) => r.findings);
-  assert.ok(records.length && records.every((r) => Array.isArray(r.laws)), `every rule is mapped: ${JSON.stringify(records.filter((r) => !Array.isArray(r.laws)).map((r) => r.rule))}`);
-  assert.deepEqual(records.find((r) => r.rule === 'craft/hit-target')?.laws, [{ id: 'fitts', name: 'Fitts’s law' }]);
-  assert.deepEqual(records.find((r) => r.rule === 'craft/button-padding')?.laws, []);
-  const sarif = JSON.parse(await readFile(sarifPath, 'utf8'));
-  const results = sarif.runs[0].results;
-  assert.equal(sarif.version, '2.1.0');
-  assert.ok(results.some((r) => r.ruleId === 'craft/tracking' && r.locations[0].physicalLocation.region.startLine === lineOf(BROKEN, 'track')));
-  assert.ok(results.every((r) => r.locations[0].physicalLocation.artifactLocation.uri.endsWith('src/App.jsx')));
-  // every craft finding says where its rule is read about: the JSON's `docs`, the text's "Read more" line
-  assert.ok(report.findings.length && report.findings.every((f) => f.docs === docsUrl(f.rule) && /\/docs\/rules#craft-[a-z0-9-]+$/.test(f.docs)), `docs on every finding: ${JSON.stringify(report.findings.map((f) => [f.rule, f.docs]))}`);
-  // the human report names the same lines
-  const text = await plumber(['--url', url, '--root', root]);
-  assert.equal(text.code, 1);
-  assert.match(text.stdout, new RegExp(`src/App.jsx:${lineOf(BROKEN, 'pad')}:\\d+  craft/button-padding`));
-  assert.match(text.stdout, new RegExp(`src/App.jsx:${lineOf(BROKEN, 'tiny')}:\\d+  craft/hit-target\\n.*\\n.*\\n  Law: Fitts’s law\\n  Read more: ${docsUrl('craft/hit-target').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\n`));
-});
-
 test('plumber craft on a clean page prints no findings and exits 0', { timeout: 240000 }, async (t) => {
   if (!await readFile(cli).then(() => true, () => false)) return t.skip('Run npm run build first.');
   const { root, url } = await fixture(t, CLEAN);

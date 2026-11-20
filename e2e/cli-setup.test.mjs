@@ -58,20 +58,6 @@ test('setup: no project here (also stops at home)', async t => {
   assert.match(result.stderr, /^✗ No project here\./);
 });
 
-test('setup: subfolder and explicit subfolder use nearest project, with same report', async t => {
-  const project = await fixture(t, app);
-  await mkdir(join(project.root, 'src/hero'), { recursive: true });
-  const root = await run(project, ['--json'], '', 0);
-  for (const [args, cwd] of [[['--json'], join(project.root, 'src/hero')], [['--json', '--root', 'src/hero'], project.root]]) {
-    const child = await run(project, args, `Using the project at ../.. (${project.root.split('/').at(-1)}, package.json).\n`, 0, cwd);
-    const stable = text => {
-      const { timing, moduleGraph: { cacheHits, cacheMisses, parseMs, totalMs, ...moduleGraph }, ...report } = JSON.parse(text);
-      return { ...report, moduleGraph };
-    };
-    assert.deepEqual(stable(child.stdout), stable(root.stdout));
-  }
-});
-
 test('setup: workspace lists Next, Vite and library with commands; chosen app runs', async t => {
   const project = await fixture(t, {
     'package.json': { workspaces: ['apps/*', 'packages/*'] },
