@@ -1,0 +1,38 @@
+[
+ {
+  "id": "house",
+  "parts": {}
+ },
+ {
+  "id": "arc-badge",
+  "parts": {
+   "status": "arc/badge"
+  }
+ },
+ {
+  "id": "beui-animated-badge",
+  "parts": {
+   "status": "beui/animated-badge"
+  }
+ },
+ {
+  "id": "beui-expandable-control",
+  "parts": {
+   "navigation": "beui/expandable-control"
+  }
+ },
+ {
+  "id": "arc-badge+beui-expandable-control",
+  "parts": {
+   "status": "arc/badge",
+   "navigation": "beui/expandable-control"
+  }
+ },
+ {
+  "id": "beui-animated-badge+beui-expandable-control",
+  "parts": {
+   "status": "beui/animated-badge",
+   "navigation": "beui/expandable-control"
+  }
+ }
+]

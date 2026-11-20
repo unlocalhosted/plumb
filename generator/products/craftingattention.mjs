@@ -9,7 +9,8 @@ export const product = {
   tokens: ['src/index.css', 'src/components/home/home-system.css', 'src/components/home/homepage.css'],
   // the wrapper and mode its home page sets, so its styles apply (LandingPage.tsx; lib/theme.ts)
   wrapper: 'ca-landing home-redesign home-discovery', mode: 'light',
-  organism: { specimen: 'craftingattention-lifetime', component: 'src/components/home/pricing/LifetimePricing.tsx',
+  organism: { specimen: 'craftingattention-lifetime', component: 'src/components/home/pricing/LifetimePricing.tsx', card: '.lifetime-offer', name: 'the offer card',
+    looks: { price: { color: 'var(--color-accent-solid)' } },
     // slot → the house molecule that fills it today (generator/molecules.mjs)
     slots: { price: 'pixel-price', position: 'price-ladder', action: 'buy-button', proof: 'benefit', status: 'offer-header' } },
   // content the product has (currency-config.ts getPricingTier: three launch stages; one lifetime price; no periods)

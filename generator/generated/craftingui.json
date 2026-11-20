@@ -1,0 +1,378 @@
+{
+ "product": "crafting-ui",
+ "organism": "the wall of live lessons",
+ "kept": {
+  "media": "the gesture stickers are the product’s own drawings; no library part says what a gesture looks like"
+ },
+ "matched": {
+  "navigation": [
+   "arc/animated-counter",
+   "arc/pagination",
+   "beui/pagination"
+  ],
+  "media": []
+ },
+ "unplaced": {
+  "navigation": [
+   "arc/metric-card",
+   "beui/digit-swap",
+   "beui/number-ticker",
+   "beui/animated-number",
+   "beui/cylinder-carousel",
+   "arc/context-menu",
+   "arc/file-dropzone",
+   "arc/expandable-card",
+   "arc/breadcrumb",
+   "arc/gauge",
+   "arc/swipe-actions",
+   "arc/usage-meter",
+   "arc/carousel",
+   "arc/treemap",
+   "arc/rich-text-editor",
+   "arc/expandable-text",
+   "beui/breadcrumb",
+   "beui/shader-background",
+   "arc/split-button",
+   "arc/button-group",
+   "arc/dropdown-menu",
+   "beui/tabs",
+   "arc/icon-morph"
+  ],
+  "media": [
+   "arc/card-stack",
+   "beui/morphing-lightbox",
+   "beui/animated-sidebar",
+   "beui/bouncy-accordion",
+   "beui/image-generation",
+   "beui/action-swap-roll",
+   "arc/expanding-button-group",
+   "arc/image-compare",
+   "beui/message-bubble",
+   "arc/icon-morph"
+  ]
+ },
+ "bridge": {
+  "answered": 11,
+  "own": [
+   "--font-display",
+   "--text-3xl",
+   "--text-xs",
+   "--ease-spring",
+   "--surface"
+  ],
+  "missed": [
+   "--control-height-sm",
+   "--duration-fast",
+   "--duration-instant",
+   "--radius-control",
+   "--shadow-resting",
+   "--surface-muted",
+   "--text-secondary"
+  ]
+ },
+ "results": [
+  {
+   "id": "house",
+   "parts": {},
+   "notes": [
+    {
+     "rule": "craft/tracking",
+     "what": "Capitals too tight",
+     "title": "14px capitals with no letter spacing.",
+     "slot": "navigation"
+    },
+    {
+     "rule": "craft/disabled-contrast",
+     "what": "Disabled text unreadable",
+     "title": "Faded to 0.3, the words drop to contrast 39.",
+     "slot": "navigation"
+    },
+    {
+     "rule": "craft/scrollbar-gutter",
+     "what": "Jumps when it scrolls",
+     "title": "The content moves sideways when the scrollbar appears.",
+     "slot": null
+    }
+   ],
+   "w": 1200,
+   "added": [],
+   "verdict": "house",
+   "case": null
+  },
+  {
+   "id": "arc-animated-counter",
+   "parts": {
+    "navigation": "arc/animated-counter"
+   },
+   "notes": [
+    {
+     "rule": "craft/tracking",
+     "what": "Capitals too tight",
+     "title": "14px capitals with no letter spacing.",
+     "slot": "navigation"
+    },
+    {
+     "rule": "craft/tracking",
+     "what": "Capitals too tight",
+     "title": "14px capitals with no letter spacing.",
+     "slot": "navigation"
+    },
+    {
+     "rule": "craft/tracking",
+     "what": "Capitals too tight",
+     "title": "14px capitals with no letter spacing.",
+     "slot": "navigation"
+    },
+    {
+     "rule": "craft/tracking",
+     "what": "Capitals too tight",
+     "title": "14px capitals with no letter spacing.",
+     "slot": "navigation"
+    },
+    {
+     "rule": "craft/tracking",
+     "what": "Capitals too tight",
+     "title": "14px capitals with no letter spacing.",
+     "slot": "navigation"
+    },
+    {
+     "rule": "craft/tracking",
+     "what": "Capitals too tight",
+     "title": "14px capitals with no letter spacing.",
+     "slot": "navigation"
+    },
+    {
+     "rule": "craft/tracking",
+     "what": "Capitals too tight",
+     "title": "14px capitals with no letter spacing.",
+     "slot": "navigation"
+    },
+    {
+     "rule": "craft/tracking",
+     "what": "Capitals too tight",
+     "title": "14px capitals with no letter spacing.",
+     "slot": "navigation"
+    },
+    {
+     "rule": "craft/tracking",
+     "what": "Capitals too tight",
+     "title": "14px capitals with no letter spacing.",
+     "slot": "navigation"
+    },
+    {
+     "rule": "craft/tracking",
+     "what": "Capitals too tight",
+     "title": "14px capitals with no letter spacing.",
+     "slot": "navigation"
+    },
+    {
+     "rule": "craft/tracking",
+     "what": "Capitals too tight",
+     "title": "14px capitals with no letter spacing.",
+     "slot": "navigation"
+    },
+    {
+     "rule": "craft/tracking",
+     "what": "Capitals too tight",
+     "title": "14px capitals with no letter spacing.",
+     "slot": "navigation"
+    },
+    {
+     "rule": "craft/tracking",
+     "what": "Capitals too tight",
+     "title": "14px capitals with no letter spacing.",
+     "slot": "navigation"
+    },
+    {
+     "rule": "craft/tracking",
+     "what": "Capitals too tight",
+     "title": "14px capitals with no letter spacing.",
+     "slot": "navigation"
+    },
+    {
+     "rule": "craft/tracking",
+     "what": "Capitals too tight",
+     "title": "14px capitals with no letter spacing.",
+     "slot": "navigation"
+    },
+    {
+     "rule": "craft/tracking",
+     "what": "Capitals too tight",
+     "title": "14px capitals with no letter spacing.",
+     "slot": "navigation"
+    },
+    {
+     "rule": "craft/text-collision",
+     "what": "Words run into other words",
+     "title": "This runs straight into “1”, with no space between them.",
+     "slot": "navigation"
+    },
+    {
+     "rule": "craft/tracking",
+     "what": "Capitals too tight",
+     "title": "14px capitals with no letter spacing.",
+     "slot": "navigation"
+    },
+    {
+     "rule": "craft/tracking",
+     "what": "Capitals too tight",
+     "title": "14px capitals with no letter spacing.",
+     "slot": "navigation"
+    },
+    {
+     "rule": "craft/tracking",
+     "what": "Capitals too tight",
+     "title": "14px capitals with no letter spacing.",
+     "slot": "navigation"
+    },
+    {
+     "rule": "craft/tracking",
+     "what": "Capitals too tight",
+     "title": "14px capitals with no letter spacing.",
+     "slot": "navigation"
+    },
+    {
+     "rule": "craft/tracking",
+     "what": "Capitals too tight",
+     "title": "14px capitals with no letter spacing.",
+     "slot": "navigation"
+    },
+    {
+     "rule": "craft/tracking",
+     "what": "Capitals too tight",
+     "title": "14px capitals with no letter spacing.",
+     "slot": "navigation"
+    },
+    {
+     "rule": "craft/tracking",
+     "what": "Capitals too tight",
+     "title": "14px capitals with no letter spacing.",
+     "slot": "navigation"
+    },
+    {
+     "rule": "craft/tracking",
+     "what": "Capitals too tight",
+     "title": "14px capitals with no letter spacing.",
+     "slot": "navigation"
+    },
+    {
+     "rule": "craft/scrollbar-gutter",
+     "what": "Jumps when it scrolls",
+     "title": "The content moves sideways when the scrollbar appears.",
+     "slot": null
+    }
+   ],
+   "w": 1200,
+   "added": [
+    {
+     "rule": "craft/text-collision",
+     "what": "Words run into other words",
+     "title": "This runs straight into “1”, with no space between them.",
+     "slot": "navigation"
+    }
+   ],
+   "verdict": "dropped",
+   "case": {
+    "now": "navigation: How much is live out of how much there will be, in small capitals, with arrows that page the row and fade at either end.",
+    "change": "navigation: the count of live lessons rolls up as the row comes into view (arc/animated-counter)",
+    "why": "The count is a promise that the wall keeps growing. A number that rolls up reads as one that is still moving.",
+    "proof": "3 notes before, 26 after; 1 added (Words run into other words), 1 resolved (Disabled text unreadable)"
+   }
+  },
+  {
+   "id": "arc-pagination",
+   "parts": {
+    "navigation": "arc/pagination"
+   },
+   "notes": [
+    {
+     "rule": "craft/tracking",
+     "what": "Capitals too tight",
+     "title": "14px capitals with no letter spacing.",
+     "slot": "navigation"
+    },
+    {
+     "rule": "craft/hit-target",
+     "what": "Too small to tap",
+     "title": "11×23. People miss anything under 24×24.",
+     "slot": "navigation"
+    },
+    {
+     "rule": "craft/hit-target",
+     "what": "Too small to tap",
+     "title": "11×23. People miss anything under 24×24.",
+     "slot": "navigation"
+    },
+    {
+     "rule": "craft/hit-target",
+     "what": "Too small to tap",
+     "title": "18×18. People miss anything under 24×24.",
+     "slot": "navigation"
+    },
+    {
+     "rule": "craft/scrollbar-gutter",
+     "what": "Jumps when it scrolls",
+     "title": "The content moves sideways when the scrollbar appears.",
+     "slot": null
+    }
+   ],
+   "w": 1200,
+   "added": [
+    {
+     "rule": "craft/hit-target",
+     "what": "Too small to tap",
+     "title": "11×23. People miss anything under 24×24.",
+     "slot": "navigation"
+    },
+    {
+     "rule": "craft/hit-target",
+     "what": "Too small to tap",
+     "title": "11×23. People miss anything under 24×24.",
+     "slot": "navigation"
+    },
+    {
+     "rule": "craft/hit-target",
+     "what": "Too small to tap",
+     "title": "18×18. People miss anything under 24×24.",
+     "slot": "navigation"
+    }
+   ],
+   "verdict": "dropped",
+   "case": {
+    "now": "navigation: How much is live out of how much there will be, in small capitals, with arrows that page the row and fade at either end.",
+    "change": "navigation: the arrows become a page control that says which page of the row you are on, and the count stays beside it (arc/pagination)",
+    "why": "Arrows only say there is more to the side. Saying which page you are on tells you how much of the wall you have already seen.",
+    "proof": "3 notes before, 5 after; 3 added (Too small to tap (×3)), 1 resolved (Disabled text unreadable)"
+   }
+  },
+  {
+   "id": "beui-pagination",
+   "parts": {
+    "navigation": "beui/pagination"
+   },
+   "notes": [
+    {
+     "rule": "craft/tracking",
+     "what": "Capitals too tight",
+     "title": "14px capitals with no letter spacing.",
+     "slot": "navigation"
+    },
+    {
+     "rule": "craft/scrollbar-gutter",
+     "what": "Jumps when it scrolls",
+     "title": "The content moves sideways when the scrollbar appears.",
+     "slot": null
+    }
+   ],
+   "w": 1200,
+   "added": [],
+   "verdict": "kept",
+   "case": {
+    "now": "navigation: How much is live out of how much there will be, in small capitals, with arrows that page the row and fade at either end.",
+    "change": "navigation: the arrows become numbered pages with a pill that glides to the page in view (beui/pagination)",
+    "why": "Numbered pages show how big the collection is at a glance, which is what the count of live lessons is there to say.",
+    "proof": "3 notes before, 2 after; 0 added, 1 resolved (Disabled text unreadable)"
+   }
+  }
+ ]
+}

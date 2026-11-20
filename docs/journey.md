@@ -2913,6 +2913,35 @@ field is empty). The table of five writes, before and after. The Next table: eig
      plumb repository apart from an app.
 - **Left:** the homepage's first sentence, in the owner's own uncommitted edit; the `--root` error that lists 45
   paths, as its own fix.
+### 38. The generator runs on all four products (2026-11-20)
+
+- **The itch:** the owner, after the first run on crafting attention: "do it for the other three products too". It
+  worked on one card, and nothing in it had been tried on a product with another design system.
+- **How we found what broke:** by running it. Each product got its own card template, adapters and product file, and
+  the first sheets showed the gaps. The "Why" line was describing the house part instead of giving a reason. One note
+  was repeated five times. Two parts named "pagination" landed on the same card, so it was judged twice. A share
+  counter came out in the library's display size instead of the site's text size. The stepper was laid across a
+  narrow column instead of down it.
+- **The system behind it:** the generator was written around one card. Its playground, its slot list and the look of
+  each slot were all crafting attention's.
+- **What changed:** each product now has its own playground, built with that product's own Vite plugins and packages
+  (generator/playground/<product>/, sharing vite.base.mjs and page.jsx). An adapter names the slot it fills. Each
+  adapter also carries a `why` written like a designer explaining the choice to a client. A slot can take the type of
+  the words around it. A product can keep a slot as it is and say why: crafting-ui's stickers are its own drawings,
+  and no library part says what a gesture looks like. The bridge learned crafting-ui's token names (--fg, --draw,
+  --line).
+- **The proof:** `node generator/generate.mjs <product>`, run once each.
+  - crafting attention: 5 of 7 kept.
+  - algorecall's review stack: 2 of 5 kept (the animated badge, alone and with the chip).
+  - crafting-ui's wall: 1 of 3 kept (beUI's numbered pages).
+  - React Plumber's section: 2 of 12 kept (Arc's counter for the shares, and Arc's stepper for check, see and fix).
+  Most drops are real: library buttons with a tabindex they don't need, or page controls too small to tap.
+- **Media hooks:** the four sheets, generator/shots/generate-<product>.png (local).
+- **Still open:** beUI's digit swap is dropped for 13 "words run into other words". That is probably the same misread
+  as Arc's rolling digits: the engine reads stacked digit slots as overlapping words. In algorecall the chip alone is
+  dropped, but the chip paired with the badge is kept, which the judge should explain. algorecall has no colour for
+  "late", because its hues belong to patterns, so the badges stay neutral.
+
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
 - Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".

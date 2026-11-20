@@ -3,7 +3,7 @@
 import { loadCatalogue } from './library/catalogue.mjs';
 
 // the jobs that can do a slot's work: a price is shown by anything that shows a number
-const ACCEPTS = { price: ['price', 'value'], value: ['value', 'price'] };
+const ACCEPTS = { price: ['price', 'value'], value: ['value', 'price'], navigation: ['navigation', 'value'], proof: ['proof', 'position'] };
 export async function match(product, { per = 6 } = {}) {
   const cat = await loadCatalogue();
   const out = {};

@@ -4,45 +4,45 @@
   "parts": {}
  },
  {
-  "id": "animated-counter",
+  "id": "arc-animated-counter",
   "parts": {
    "price": "arc/animated-counter"
   }
  },
  {
-  "id": "number-ticker",
+  "id": "beui-number-ticker",
   "parts": {
    "price": "beui/number-ticker"
   }
  },
  {
-  "id": "animated-number",
+  "id": "beui-animated-number",
   "parts": {
    "price": "beui/animated-number"
   }
  },
  {
-  "id": "stepper",
+  "id": "arc-stepper",
   "parts": {
    "position": "arc/stepper"
   }
  },
  {
-  "id": "animated-counter+stepper",
+  "id": "arc-animated-counter+arc-stepper",
   "parts": {
    "price": "arc/animated-counter",
    "position": "arc/stepper"
   }
  },
  {
-  "id": "number-ticker+stepper",
+  "id": "beui-number-ticker+arc-stepper",
   "parts": {
    "price": "beui/number-ticker",
    "position": "arc/stepper"
   }
  },
  {
-  "id": "animated-number+stepper",
+  "id": "beui-animated-number+arc-stepper",
   "parts": {
    "price": "beui/animated-number",
    "position": "arc/stepper"

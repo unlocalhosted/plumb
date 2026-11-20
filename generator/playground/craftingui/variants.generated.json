@@ -1,0 +1,24 @@
+[
+ {
+  "id": "house",
+  "parts": {}
+ },
+ {
+  "id": "arc-animated-counter",
+  "parts": {
+   "navigation": "arc/animated-counter"
+  }
+ },
+ {
+  "id": "arc-pagination",
+  "parts": {
+   "navigation": "arc/pagination"
+  }
+ },
+ {
+  "id": "beui-pagination",
+  "parts": {
+   "navigation": "beui/pagination"
+  }
+ }
+]

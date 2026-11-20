@@ -1,0 +1,84 @@
+[
+ {
+  "id": "house",
+  "parts": {}
+ },
+ {
+  "id": "arc-copy-button",
+  "parts": {
+   "action": "arc/copy-button"
+  }
+ },
+ {
+  "id": "arc-code-block",
+  "parts": {
+   "action": "arc/code-block"
+  }
+ },
+ {
+  "id": "beui-action-swap-blur",
+  "parts": {
+   "action": "beui/action-swap-blur"
+  }
+ },
+ {
+  "id": "arc-animated-counter",
+  "parts": {
+   "value": "arc/animated-counter"
+  }
+ },
+ {
+  "id": "beui-digit-swap",
+  "parts": {
+   "value": "beui/digit-swap"
+  }
+ },
+ {
+  "id": "arc-stepper",
+  "parts": {
+   "proof": "arc/stepper"
+  }
+ },
+ {
+  "id": "arc-copy-button+arc-animated-counter",
+  "parts": {
+   "action": "arc/copy-button",
+   "value": "arc/animated-counter"
+  }
+ },
+ {
+  "id": "arc-copy-button+beui-digit-swap",
+  "parts": {
+   "action": "arc/copy-button",
+   "value": "beui/digit-swap"
+  }
+ },
+ {
+  "id": "arc-code-block+arc-animated-counter",
+  "parts": {
+   "action": "arc/code-block",
+   "value": "arc/animated-counter"
+  }
+ },
+ {
+  "id": "arc-code-block+beui-digit-swap",
+  "parts": {
+   "action": "arc/code-block",
+   "value": "beui/digit-swap"
+  }
+ },
+ {
+  "id": "beui-action-swap-blur+arc-animated-counter",
+  "parts": {
+   "action": "beui/action-swap-blur",
+   "value": "arc/animated-counter"
+  }
+ },
+ {
+  "id": "beui-action-swap-blur+beui-digit-swap",
+  "parts": {
+   "action": "beui/action-swap-blur",
+   "value": "beui/digit-swap"
+  }
+ }
+]

@@ -1,0 +1,503 @@
+{
+ "product": "algorecall",
+ "organism": "the review stack",
+ "kept": {},
+ "matched": {
+  "status": [
+   "arc/badge",
+   "beui/animated-badge"
+  ],
+  "navigation": [
+   "beui/expandable-control"
+  ]
+ },
+ "unplaced": {
+  "status": [
+   "arc/chip-group",
+   "arc/countdown",
+   "beui/animated-toast-stack",
+   "beui/loader",
+   "beui/status-bar",
+   "beui/message",
+   "beui/message-scroller",
+   "beui/file-diff",
+   "beui/tabs",
+   "beui/todo-list",
+   "beui/thinking-shimmer"
+  ],
+  "navigation": [
+   "arc/metric-card",
+   "arc/animated-counter",
+   "beui/digit-swap",
+   "beui/number-ticker",
+   "beui/animated-number",
+   "beui/cylinder-carousel",
+   "arc/context-menu",
+   "arc/file-dropzone",
+   "arc/expandable-card",
+   "arc/breadcrumb",
+   "arc/pagination",
+   "arc/gauge",
+   "arc/swipe-actions",
+   "arc/usage-meter",
+   "arc/carousel",
+   "arc/treemap",
+   "arc/rich-text-editor",
+   "arc/expandable-text",
+   "beui/pagination",
+   "beui/breadcrumb",
+   "beui/shader-background",
+   "arc/split-button",
+   "arc/button-group",
+   "arc/dropdown-menu",
+   "beui/tabs",
+   "arc/icon-morph"
+  ]
+ },
+ "bridge": {
+  "answered": 8,
+  "own": [
+   "--border",
+   "--foreground"
+  ],
+  "missed": [
+   "--duration-instant",
+   "--info",
+   "--success",
+   "--text-secondary",
+   "--tone-amber",
+   "--tone-orchid",
+   "--tone-rose",
+   "--tone-sky",
+   "--tone-teal",
+   "--tone-violet",
+   "--warning"
+  ]
+ },
+ "results": [
+  {
+   "id": "house",
+   "parts": {},
+   "notes": [
+    {
+     "rule": "html/figure-caption",
+     "what": "Figure with no caption",
+     "title": "This figure has no caption.",
+     "slot": null
+    },
+    {
+     "rule": "craft/concentric-radius",
+     "what": "Corner doesn’t match its parent",
+     "title": "This 0px corner sits 0px inside a 15px corner. Use 15px.",
+     "slot": null
+    },
+    {
+     "rule": "craft/concentric-radius",
+     "what": "Corner doesn’t match its parent",
+     "title": "This 0px corner sits 0px inside a 15px corner. Use 15px.",
+     "slot": null
+    },
+    {
+     "rule": "craft/concentric-radius",
+     "what": "Corner doesn’t match its parent",
+     "title": "This 0px corner sits 0px inside a 15px corner. Use 15px.",
+     "slot": null
+    },
+    {
+     "rule": "craft/concentric-radius",
+     "what": "Corner doesn’t match its parent",
+     "title": "This 0px corner sits 0px inside a 15px corner. Use 15px.",
+     "slot": null
+    },
+    {
+     "rule": "craft/concentric-radius",
+     "what": "Corner doesn’t match its parent",
+     "title": "This 0px corner sits 0px inside a 15px corner. Use 15px.",
+     "slot": null
+    },
+    {
+     "rule": "craft/concentric-radius",
+     "what": "Corner doesn’t match its parent",
+     "title": "This 0px corner sits 0px inside a 15px corner. Use 15px.",
+     "slot": null
+    },
+    {
+     "rule": "html/list-structure",
+     "what": "List item outside a list",
+     "title": "This <li> is not inside a <ul> or <ol>.",
+     "slot": "navigation"
+    }
+   ],
+   "w": 560,
+   "added": [],
+   "verdict": "house",
+   "case": null
+  },
+  {
+   "id": "arc-badge",
+   "parts": {
+    "status": "arc/badge"
+   },
+   "notes": [
+    {
+     "rule": "html/figure-caption",
+     "what": "Figure with no caption",
+     "title": "This figure has no caption.",
+     "slot": null
+    },
+    {
+     "rule": "craft/concentric-radius",
+     "what": "Corner doesn’t match its parent",
+     "title": "This 0px corner sits 0px inside a 15px corner. Use 15px.",
+     "slot": null
+    },
+    {
+     "rule": "craft/contrast",
+     "what": "Hard to read",
+     "title": "Contrast is 59 on the APCA scale at 11px. Small text needs 60.",
+     "slot": "status"
+    },
+    {
+     "rule": "craft/concentric-radius",
+     "what": "Corner doesn’t match its parent",
+     "title": "This 0px corner sits 0px inside a 15px corner. Use 15px.",
+     "slot": null
+    },
+    {
+     "rule": "craft/concentric-radius",
+     "what": "Corner doesn’t match its parent",
+     "title": "This 0px corner sits 0px inside a 15px corner. Use 15px.",
+     "slot": null
+    },
+    {
+     "rule": "craft/concentric-radius",
+     "what": "Corner doesn’t match its parent",
+     "title": "This 0px corner sits 0px inside a 15px corner. Use 15px.",
+     "slot": null
+    },
+    {
+     "rule": "craft/concentric-radius",
+     "what": "Corner doesn’t match its parent",
+     "title": "This 0px corner sits 0px inside a 15px corner. Use 15px.",
+     "slot": null
+    },
+    {
+     "rule": "craft/concentric-radius",
+     "what": "Corner doesn’t match its parent",
+     "title": "This 0px corner sits 0px inside a 15px corner. Use 15px.",
+     "slot": null
+    },
+    {
+     "rule": "html/list-structure",
+     "what": "List item outside a list",
+     "title": "This <li> is not inside a <ul> or <ol>.",
+     "slot": "navigation"
+    }
+   ],
+   "w": 560,
+   "added": [
+    {
+     "rule": "craft/contrast",
+     "what": "Hard to read",
+     "title": "Contrast is 59 on the APCA scale at 11px. Small text needs 60.",
+     "slot": "status"
+    }
+   ],
+   "verdict": "dropped",
+   "case": {
+    "now": "plumber's notes on it: Figure with no caption; Corner doesn’t match its parent (×6); List item outside a list",
+    "change": "status: how late each slab is, as a small pill (arc/badge)",
+    "why": "Lateness is the one thing that differs from slab to slab. On a pill it reads as the slab’s state rather than part of its name.",
+    "proof": "8 notes before, 9 after; 1 added (Hard to read), 0 resolved"
+   }
+  },
+  {
+   "id": "beui-animated-badge",
+   "parts": {
+    "status": "beui/animated-badge"
+   },
+   "notes": [
+    {
+     "rule": "html/figure-caption",
+     "what": "Figure with no caption",
+     "title": "This figure has no caption.",
+     "slot": null
+    },
+    {
+     "rule": "craft/concentric-radius",
+     "what": "Corner doesn’t match its parent",
+     "title": "This 0px corner sits 0px inside a 15px corner. Use 15px.",
+     "slot": null
+    },
+    {
+     "rule": "craft/concentric-radius",
+     "what": "Corner doesn’t match its parent",
+     "title": "This 0px corner sits 0px inside a 15px corner. Use 15px.",
+     "slot": null
+    },
+    {
+     "rule": "craft/concentric-radius",
+     "what": "Corner doesn’t match its parent",
+     "title": "This 0px corner sits 0px inside a 15px corner. Use 15px.",
+     "slot": null
+    },
+    {
+     "rule": "craft/concentric-radius",
+     "what": "Corner doesn’t match its parent",
+     "title": "This 0px corner sits 0px inside a 15px corner. Use 15px.",
+     "slot": null
+    },
+    {
+     "rule": "craft/concentric-radius",
+     "what": "Corner doesn’t match its parent",
+     "title": "This 0px corner sits 0px inside a 15px corner. Use 15px.",
+     "slot": null
+    },
+    {
+     "rule": "craft/concentric-radius",
+     "what": "Corner doesn’t match its parent",
+     "title": "This 0px corner sits 0px inside a 15px corner. Use 15px.",
+     "slot": null
+    },
+    {
+     "rule": "html/list-structure",
+     "what": "List item outside a list",
+     "title": "This <li> is not inside a <ul> or <ol>.",
+     "slot": "navigation"
+    }
+   ],
+   "w": 560,
+   "added": [],
+   "verdict": "kept",
+   "case": {
+    "now": "plumber's notes on it: Figure with no caption; Corner doesn’t match its parent (×6); List item outside a list",
+    "change": "status: how late each slab is, as a badge with a mark beside the words (beui/animated-badge)",
+    "why": "A mark beside the words lets you scan the stack for what is late without reading every line.",
+    "proof": "8 notes before, 8 after; 0 added, 0 resolved"
+   }
+  },
+  {
+   "id": "beui-expandable-control",
+   "parts": {
+    "navigation": "beui/expandable-control"
+   },
+   "notes": [
+    {
+     "rule": "html/figure-caption",
+     "what": "Figure with no caption",
+     "title": "This figure has no caption.",
+     "slot": null
+    },
+    {
+     "rule": "craft/concentric-radius",
+     "what": "Corner doesn’t match its parent",
+     "title": "This 0px corner sits 0px inside a 15px corner. Use 15px.",
+     "slot": null
+    },
+    {
+     "rule": "craft/concentric-radius",
+     "what": "Corner doesn’t match its parent",
+     "title": "This 0px corner sits 0px inside a 15px corner. Use 15px.",
+     "slot": null
+    },
+    {
+     "rule": "craft/concentric-radius",
+     "what": "Corner doesn’t match its parent",
+     "title": "This 0px corner sits 0px inside a 15px corner. Use 15px.",
+     "slot": null
+    },
+    {
+     "rule": "craft/concentric-radius",
+     "what": "Corner doesn’t match its parent",
+     "title": "This 0px corner sits 0px inside a 15px corner. Use 15px.",
+     "slot": null
+    },
+    {
+     "rule": "craft/concentric-radius",
+     "what": "Corner doesn’t match its parent",
+     "title": "This 0px corner sits 0px inside a 15px corner. Use 15px.",
+     "slot": null
+    },
+    {
+     "rule": "craft/concentric-radius",
+     "what": "Corner doesn’t match its parent",
+     "title": "This 0px corner sits 0px inside a 15px corner. Use 15px.",
+     "slot": null
+    },
+    {
+     "rule": "html/list-structure",
+     "what": "List item outside a list",
+     "title": "This <li> is not inside a <ul> or <ol>.",
+     "slot": "navigation"
+    },
+    {
+     "rule": "experience/button-name-reused",
+     "what": "Many buttons, one name",
+     "title": "3 buttons here are all named \"+3 more\".",
+     "slot": "navigation"
+    }
+   ],
+   "w": 560,
+   "added": [
+    {
+     "rule": "experience/button-name-reused",
+     "what": "Many buttons, one name",
+     "title": "3 buttons here are all named \"+3 more\".",
+     "slot": "navigation"
+    }
+   ],
+   "verdict": "dropped",
+   "case": {
+    "now": "navigation: A dashed place, not a laid slab: the rest of the stack folded into a count.",
+    "change": "navigation: the rest of the queue as a chip that opens to offer the whole list, instead of a dashed place (beui/expandable-control)",
+    "why": "The dashed place tells you there is more and gives you nothing to do about it. A chip you can open answers the question it raises.",
+    "proof": "8 notes before, 9 after; 1 added (Many buttons, one name), 0 resolved"
+   }
+  },
+  {
+   "id": "arc-badge+beui-expandable-control",
+   "parts": {
+    "status": "arc/badge",
+    "navigation": "beui/expandable-control"
+   },
+   "notes": [
+    {
+     "rule": "html/figure-caption",
+     "what": "Figure with no caption",
+     "title": "This figure has no caption.",
+     "slot": null
+    },
+    {
+     "rule": "craft/concentric-radius",
+     "what": "Corner doesn’t match its parent",
+     "title": "This 0px corner sits 0px inside a 15px corner. Use 15px.",
+     "slot": null
+    },
+    {
+     "rule": "craft/contrast",
+     "what": "Hard to read",
+     "title": "Contrast is 59 on the APCA scale at 11px. Small text needs 60.",
+     "slot": "status"
+    },
+    {
+     "rule": "craft/concentric-radius",
+     "what": "Corner doesn’t match its parent",
+     "title": "This 0px corner sits 0px inside a 15px corner. Use 15px.",
+     "slot": null
+    },
+    {
+     "rule": "craft/concentric-radius",
+     "what": "Corner doesn’t match its parent",
+     "title": "This 0px corner sits 0px inside a 15px corner. Use 15px.",
+     "slot": null
+    },
+    {
+     "rule": "craft/concentric-radius",
+     "what": "Corner doesn’t match its parent",
+     "title": "This 0px corner sits 0px inside a 15px corner. Use 15px.",
+     "slot": null
+    },
+    {
+     "rule": "craft/concentric-radius",
+     "what": "Corner doesn’t match its parent",
+     "title": "This 0px corner sits 0px inside a 15px corner. Use 15px.",
+     "slot": null
+    },
+    {
+     "rule": "craft/concentric-radius",
+     "what": "Corner doesn’t match its parent",
+     "title": "This 0px corner sits 0px inside a 15px corner. Use 15px.",
+     "slot": null
+    },
+    {
+     "rule": "html/list-structure",
+     "what": "List item outside a list",
+     "title": "This <li> is not inside a <ul> or <ol>.",
+     "slot": "navigation"
+    }
+   ],
+   "w": 560,
+   "added": [
+    {
+     "rule": "craft/contrast",
+     "what": "Hard to read",
+     "title": "Contrast is 59 on the APCA scale at 11px. Small text needs 60.",
+     "slot": "status"
+    }
+   ],
+   "verdict": "dropped",
+   "case": {
+    "now": "navigation: A dashed place, not a laid slab: the rest of the stack folded into a count.",
+    "change": "status: how late each slab is, as a small pill (arc/badge) · navigation: the rest of the queue as a chip that opens to offer the whole list, instead of a dashed place (beui/expandable-control)",
+    "why": "Lateness is the one thing that differs from slab to slab. On a pill it reads as the slab’s state rather than part of its name. The dashed place tells you there is more and gives you nothing to do about it. A chip you can open answers the question it raises.",
+    "proof": "8 notes before, 9 after; 1 added (Hard to read), 0 resolved"
+   }
+  },
+  {
+   "id": "beui-animated-badge+beui-expandable-control",
+   "parts": {
+    "status": "beui/animated-badge",
+    "navigation": "beui/expandable-control"
+   },
+   "notes": [
+    {
+     "rule": "html/figure-caption",
+     "what": "Figure with no caption",
+     "title": "This figure has no caption.",
+     "slot": null
+    },
+    {
+     "rule": "craft/concentric-radius",
+     "what": "Corner doesn’t match its parent",
+     "title": "This 0px corner sits 0px inside a 15px corner. Use 15px.",
+     "slot": null
+    },
+    {
+     "rule": "craft/concentric-radius",
+     "what": "Corner doesn’t match its parent",
+     "title": "This 0px corner sits 0px inside a 15px corner. Use 15px.",
+     "slot": null
+    },
+    {
+     "rule": "craft/concentric-radius",
+     "what": "Corner doesn’t match its parent",
+     "title": "This 0px corner sits 0px inside a 15px corner. Use 15px.",
+     "slot": null
+    },
+    {
+     "rule": "craft/concentric-radius",
+     "what": "Corner doesn’t match its parent",
+     "title": "This 0px corner sits 0px inside a 15px corner. Use 15px.",
+     "slot": null
+    },
+    {
+     "rule": "craft/concentric-radius",
+     "what": "Corner doesn’t match its parent",
+     "title": "This 0px corner sits 0px inside a 15px corner. Use 15px.",
+     "slot": null
+    },
+    {
+     "rule": "craft/concentric-radius",
+     "what": "Corner doesn’t match its parent",
+     "title": "This 0px corner sits 0px inside a 15px corner. Use 15px.",
+     "slot": null
+    },
+    {
+     "rule": "html/list-structure",
+     "what": "List item outside a list",
+     "title": "This <li> is not inside a <ul> or <ol>.",
+     "slot": "navigation"
+    }
+   ],
+   "w": 560,
+   "added": [],
+   "verdict": "kept",
+   "case": {
+    "now": "navigation: A dashed place, not a laid slab: the rest of the stack folded into a count.",
+    "change": "status: how late each slab is, as a badge with a mark beside the words (beui/animated-badge) · navigation: the rest of the queue as a chip that opens to offer the whole list, instead of a dashed place (beui/expandable-control)",
+    "why": "A mark beside the words lets you scan the stack for what is late without reading every line. The dashed place tells you there is more and gives you nothing to do about it. A chip you can open answers the question it raises.",
+    "proof": "8 notes before, 8 after; 0 added, 0 resolved"
+   }
+  }
+ ]
+}
