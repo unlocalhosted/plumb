@@ -38,8 +38,9 @@ const ABOUT_WORDS = new Set([...TELLS_RULES, ...CRAFT_RULES].filter((r) => r?.ow
 // What a note says, for a card: its name, what to do, its rule, and whether it is about the words (Edit the words leads)
 // the sentence is the one the fix bar says for one place (FIX.line: "text-lg is 18px, Tailwind's default. Your theme has
 // no token for it…"), never the reader's raw title, which is written for the command line ("`text-lg` uses Tailwind's
-// default type scale (`--text-lg`), not your theme"); a craft rule says what to do in its own words
-export const noteOfMark = (m) => ({ name: FIX.what(m), advice: String((m.family === 'craft' ? m.craft?.suggest?.text ?? m.title : FIX.line(m)) ?? '').replace(/`/g, ''), rule: m.rule ?? '', words: ABOUT_WORDS.has(m.rule), concern: concernOf(m) });
+// default type scale (`--text-lg`), not your theme"); a craft rule says what is wrong here (its line, about this
+// element's own words), then what to do
+export const noteOfMark = (m) => ({ name: FIX.what(m), advice: String((m.family === 'craft' ? [m.title, m.craft?.suggest?.text].filter(Boolean).join(' ') : FIX.line(m)) ?? '').replace(/`/g, ''), rule: m.rule ?? '', words: ABOUT_WORDS.has(m.rule), concern: concernOf(m) });
 
 const TAG_H = 18; // a label's height: the code face's line and a pixel each side
 

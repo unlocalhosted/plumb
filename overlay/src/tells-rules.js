@@ -98,7 +98,7 @@ export const statusChain = rule('status-chain', 'text', 'p,div,span,small,li,dd,
   // said once, on the innermost element that holds the whole chain
   if ([...el.children].some((k) => (trimmed(k.textContent).match(SEPARATORS) ?? []).length >= count)) return;
   if (facts.rect(el).height > px(facts.style(el).lineHeight === 'normal' ? px(facts.style(el).fontSize) * 1.4 : facts.style(el).lineHeight) * 2.2 || !shown(el, facts)) return;
-  return found(this, el, { count: count + 1 }, { value: quote(text, 60), confidence: 0.8, advice: 'Keep the one fact people act on. Move the others to where they matter, or drop them.' });
+  return found(this, el, { count: count + 1, text: quote(text, 48) }, { value: quote(text, 60), confidence: 0.8, advice: 'Keep the one people need here. Drop the rest, or move each one to where it matters.' });
 });
 
 // U9: a flavour word set as a badge: a small rounded fill or outline holding only that word, outside a control.

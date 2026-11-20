@@ -70,7 +70,16 @@ export const XRAY_LIVE_CSS = `
   .xr-said .nt > i { width: 26px; height: 26px; margin-top: 1px; } .xr-said .nt > i svg { display: block; width: 100%; height: 100%; overflow: visible; }
   .xr-said .nt b { display: block; font: 650 14.5px/1.3 var(--pl-round, var(--pl-sans)); margin-bottom: 2px; }
   .xr-said .nt span { display: block; color: var(--pl-text-secondary); }
-  .xr-said .nas { display: flex; align-items: center; gap: 8px; margin: 12px 0 0 36px; }
+  /* the toy and the name share a line; the sentence and the actions take the card's full width under them */
+  .xr-said .nt { align-items: center; } .xr-said .nt > div { display: contents; } .xr-said .nt b { margin: 0; }
+  .xr-said .nt span { grid-column: 1 / -1; margin-top: 6px; }
+  .xr-said .nas { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 12px 0 0; }
+  /* a second word beside the pink one is a plain word, not a second raised button: two raised words and Keep ran off
+     the card (owner, 2026-11-20) */
+  .xr-said .nas .tb.quiet:not(.only) { --lift: 0px; height: 28px; padding-top: 0; background: none; box-shadow: none; }
+  .xr-said .nas .tb.quiet:not(.only) .top { height: 28px; padding: 0 6px; background: none; box-shadow: none; transform: none; color: var(--pl-text-secondary); }
+  @media (hover: hover) and (pointer: fine) { .xr-said .nas .tb.quiet:not(.only):hover .top { color: var(--pl-text-primary); background: var(--pl-bg-inset); } }
+  .xr-said .nas .tb.only { margin-left: auto; }
   .xr-said .xa { margin: 14px 0 0; display: grid; gap: 2px; max-height: 180px; overflow: auto; }
   .xr-said .xn { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 20px 1fr; gap: 10px; align-items: center; min-height: 32px; padding: 4px 6px 4px 3px; border-radius: 10px; cursor: pointer; font: 500 13px/1.3 var(--pl-sans); color: var(--pl-text-secondary); }
   .xr-said .xn > i { width: 20px; height: 20px; } .xr-said .xn > i svg { display: block; width: 100%; height: 100%; overflow: visible; }
@@ -80,7 +89,7 @@ export const XRAY_LIVE_CSS = `
   /* the open note in a list: its row, then its sentence and what to do, under its name (no second copy above) */
   .xr-said .xi[data-open] { background: var(--pl-bg-inset); border-radius: 12px; padding-bottom: 10px; }
   .xr-said .xi[data-open] .xn { color: var(--pl-text-primary); font: 650 14px/1.3 var(--pl-round, var(--pl-sans)); background: none; }
-  .xr-said .xd { padding: 0 8px 0 33px; color: var(--pl-text-secondary); }
+  .xr-said .xd { padding: 0 8px 0 9px; color: var(--pl-text-secondary); }
   .xr-said .xd .nas { margin: 10px 0 0; }
   /* the element's name and file lead, one quiet line; the note comes after it, the part in hand last */
   .xr-card { display: flex; flex-direction: column; } .xr-card > .xr-body { display: contents; }
