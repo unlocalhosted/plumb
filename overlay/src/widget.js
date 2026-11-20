@@ -505,10 +505,20 @@ class PlumbOverlay extends HTMLElement {
   // design site's X-ray page runs). This adapter tells it what your page is: names from your components, places from
   // the stamps, your theme's steps, and writes through the engine (the class showing now, variants.js; located in your
   // code, locate.js; written by the server's swaps, one Undo group per change).
-  #xray = null; #xrayByAlt = false; #xrayResults = null; // results said again after a write's reload
+  #xray = null; #xrayByAlt = false; #xrayResults = null;
+  // the X-ray pinned by an Alt-click outside Blueprint: up until a plain click on the page (not on plumber) or Esc
+  #xrayPinOff = null;
+  #pinXray() {
+    this.#xrayPinOff?.();
+    const done = () => { this.#xrayPinOff?.(); if (this.#xray && !this.#blueprint?.active && !this.#armed) this.#toggleXray(); };
+    const down = (e) => { if (e.altKey || this.#ours(e)) return; done(); };
+    const key = (e) => { if (e.key === 'Escape' && !this.#xray?.pending && !this.#typing(e)) done(); };
+    addEventListener('pointerdown', down, true); addEventListener('keydown', key, true);
+    this.#xrayPinOff = () => { removeEventListener('pointerdown', down, true); removeEventListener('keydown', key, true); this.#xrayPinOff = null; };
+  } // results said again after a write's reload
   #barSeen = null; // the bar the X-ray card keeps clear of, watched while the X-ray is on
   #toggleXray() {
-    if (this.#xray) { this.#barSeen?.disconnect(); this.#barSeen = null; this.#xray.destroy(); this.#xray = null; this.#root.querySelector('.xr-host')?.remove(); this.removeAttribute('data-xray'); return; }
+    if (this.#xray) { this.#xrayPinOff?.(); this.#barSeen?.disconnect(); this.#barSeen = null; this.#xray.destroy(); this.#xray = null; this.#root.querySelector('.xr-host')?.remove(); this.removeAttribute('data-xray'); return; }
     this.#ready?.dismiss();
     this.setAttribute('data-xray', '');
     if (!this.#root.querySelector('style[data-xray]')) {
@@ -1067,6 +1077,7 @@ class PlumbOverlay extends HTMLElement {
     // Alt is the X-ray outside Blueprint too: held, the element under the pointer is drawn on and said, the same card
     // Blueprint shows; let go, it leaves (Blueprint's own X-ray stays)
     if (!this.#xray && !this.#blueprint?.active) { this.#toggleXray(); this.#xrayByAlt = true; }
+    else if (this.#xrayPinOff) { this.#xrayPinOff(); this.#xray?.release(); this.#xrayByAlt = true; } // Alt again: hover leads
     this.toggleAttribute('data-armed', true); // the drawings on the page step out of the pointer's way
     this.#help?.hint('inspect');
     this.#blueprint?.yieldInput(true);
@@ -1190,10 +1201,17 @@ class PlumbOverlay extends HTMLElement {
     const element = walked ? this.#walk.chain[this.#walk.at] : under ?? this.#hover?.element;
     this.#walk = null;
     if (element && element !== document.documentElement && element !== document.body) {
-      // One interface: the pick opens blueprint on that element, in its card. Alt is let go with it.
-      this.#disarm();
+      // One view for one element (docs/briefs/concerns-and-two-views.md): the click pins the X-ray's card on it, the
+      // card Alt has been showing; the old element card, its heat and its drag handles are not opened. Alt is let go
+      // with it, and the X-ray stays while the card is pinned: a click elsewhere on the page or Esc puts it away.
       this.#ready?.dismiss();
-      this.#xray?.hide();
+      if (this.#xray) {
+        this.#xrayByAlt = false; this.#disarm();
+        this.#xray.hold(element);
+        if (!this.#blueprint?.active) this.#pinXray();
+        return;
+      }
+      this.#disarm();
       this.#blueprint.enterAt(element, { card: true, box: walked });
     }
   };
