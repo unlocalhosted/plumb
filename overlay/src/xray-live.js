@@ -138,6 +138,10 @@ export const XRAY_LIVE_CSS = `
   .xr-card .xr-head code { flex: none; margin-left: auto; max-width: 52%; padding: 3px 7px; border-radius: 7px; background: var(--pl-bg-inset); direction: ltr;
     font: 500 11px/14px var(--pl-mono); color: var(--pl-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .xr-card .xr-head code.none { background: none; padding: 0; }
+  .xr-card .xr-head .xr-noteit { all: unset; flex: none; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 7px; cursor: pointer; color: var(--pl-text-secondary); }
+  .xr-card .xr-head .xr-noteit svg { width: 15px; height: 15px; }
+  @media (hover: hover) and (pointer: fine) { .xr-card .xr-head .xr-noteit:hover { background: var(--pl-bg-inset); color: var(--pl-pink); } }
+  .xr-card .xr-head .xr-noteit:focus-visible { box-shadow: 0 0 0 2px var(--pl-border-focus); }
   /* the part in hand: its control, and the words about its keys only while the hand is on it */
   .xr-card .xr-hand { order: 2; margin: 4px -2px 0; }
   /* the words about its keys slide in under the control while the hand is on it, and take no room when it isn't */
@@ -339,6 +343,7 @@ export function mountXray(o) {
     mo.observe(h, { attributes: true, childList: true, subtree: true, characterData: true });
     off.push(() => mo.disconnect());
   }
+  card.addEventListener('click', (e) => { if (e.target.closest?.('.xr-noteit')) { e.stopPropagation(); startNote(); } });
   said.addEventListener('click', (e) => {
     const pg = e.target.closest?.('.pg');
     if (pg) { e.stopPropagation(); goTo(notePick + +pg.dataset.dir); return; }
@@ -481,6 +486,10 @@ export function mountXray(o) {
     card.toggleAttribute('data-still', same);
     const foot = pendHtml();
     if (!same || x.card + foot !== lastCard) { body.innerHTML = x.card + foot; lastCard = x.card + foot; }
+    // a note for your agent, about any element: a small button at the end of the head line (owner, 2026-11-20: "i was
+    // able to write comment for agent as well that has gone too")
+    const headEl = body.querySelector('.xr-head');
+    if (headEl && !headEl.querySelector('.xr-noteit')) headEl.insertAdjacentHTML('beforeend', '<button type="button" class="xr-noteit" title="Note for your agent" aria-label="Note for your agent"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3.5h10a1.5 1.5 0 0 1 1.5 1.5v5A1.5 1.5 0 0 1 13 11.5H8l-3 2.5v-2.5H3A1.5 1.5 0 0 1 1.5 10V5A1.5 1.5 0 0 1 3 3.5Z" fill="currentColor"/></svg></button>');
     const where = body.querySelector('.xr-head code:not(.none)');
     if (where && source && where.textContent === source) { where.textContent = tail(source); where.title = source; }
     const head = body.querySelector('.xr-head b');
@@ -973,6 +982,11 @@ export function mountXray(o) {
 
   return {
     get pending() { return count(); },
+    get pinned() { return !!pinned; },
+    // a note for your agent about the element the card is on, any element, not only one with an issue
+    note() { if (shown && !noting) startNote(); },
+    // Alt + scroll walked to another level (the parent, or back down): the card and its drawing follow, not pinned
+    peek(el) { if (!el?.isConnected || o.paused?.()) return; lastOn = null; zone = null; ready = true; draw(el); },
     // what the card keeps clear of moved: placed again, once a frame at most
     follow,
     // an element chosen elsewhere (blueprint's list, or a click blueprint took): shown and held

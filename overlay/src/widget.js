@@ -1066,6 +1066,10 @@ class PlumbOverlay extends HTMLElement {
     // list of causes, the fix bar and the clean-up are as they were. The X-ray comes and goes with it (#blueprintState)
     if (event.altKey && event.code === 'KeyB' && !event.repeat) { event.preventDefault(); event.stopPropagation(); this.#disarm(); this.#wholePage(); return; }
     // changes the X-ray has collected take Enter (Sync) and Esc (put back) before blueprint's own keys
+    // a pinned X-ray card with nothing changed: Enter writes a note for your agent about its element
+    if (event.key === 'Enter' && this.#xray?.pinned && !this.#xray.pending && !this.#blueprint?.active && !event.altKey && !event.metaKey && !event.ctrlKey && !this.#typing(event)) {
+      event.preventDefault(); event.stopPropagation(); this.#xray.note(); return;
+    }
     if (this.#xray?.pending && (event.key === 'Enter' || event.key === 'Escape') && !event.altKey && !event.metaKey && !event.ctrlKey && !this.#typing(event)) {
       event.preventDefault(); event.stopPropagation();
       if (event.key === 'Enter') this.#xray.sync(); else this.#xray.putBack();
@@ -1209,7 +1213,7 @@ class PlumbOverlay extends HTMLElement {
       if (next < 0 || next >= w.chain.length) { w.travel = 0; break; }
       w.at = next; moved = true;
     }
-    if (moved) { this.#hover?.controller.abort(); this.#hover = null; this.#hoverOn(w.chain[w.at]); }
+    if (moved) { this.#hover?.controller.abort(); this.#hover = null; this.#hoverOn(w.chain[w.at]); this.#xray?.peek(w.chain[w.at]); } // the X-ray follows the walk
   };
 
   #crumbs() {
