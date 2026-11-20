@@ -101,6 +101,24 @@ export const XRAY_LIVE_CSS = `
   .xr-said .xh i { width: 16px; height: 16px; } .xr-said .xh i svg { display: block; width: 100%; height: 100%; overflow: visible; }
   .xr-said .wr { display: block; font-style: normal; color: var(--pl-text-primary); }
   .xr-said .td { display: block; margin-top: 4px; font-style: normal; color: var(--pl-text-secondary); }
+  /* what an issue is about, one hover away: the concern's name on the small dark label pictures wear */
+  .xr-said .cn { position: relative; cursor: default; pointer-events: auto; }
+  .xr-said .cn::after { content: attr(data-tip); position: absolute; left: calc(100% + 6px); top: 50%; translate: -3px -50%; padding: 4px 8px; border-radius: 8px;
+    background: var(--pl-text-primary); color: var(--pl-bg-surface); font: 600 11px/1.2 var(--pl-sans); font-style: normal; white-space: nowrap; opacity: 0; scale: .92;
+    pointer-events: none; transition: opacity 140ms var(--pl-ease-out), scale 220ms var(--pl-spring-pop), translate 220ms var(--pl-spring-pop); z-index: 3; }
+  .xr-said .cn:hover::after { opacity: 1; scale: 1; translate: 0 -50%; } /* beside the toy, over the name for a moment: a label above would be clipped by the pages' scroller */
+  .xr-said .xh .pgr { display: inline-flex; align-items: center; gap: 2px; margin-left: auto; color: var(--pl-text-secondary); font: 600 11.5px/1 var(--pl-sans); font-variant-numeric: tabular-nums; }
+  .xr-said .pg { all: unset; box-sizing: border-box; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 8px; cursor: pointer; }
+  .xr-said .pg::before { content: ''; width: 6px; height: 6px; border-left: 1.75px solid currentColor; border-bottom: 1.75px solid currentColor; rotate: 45deg; translate: 1px 0; }
+  .xr-said .pg[data-dir="1"]::before { rotate: -135deg; translate: -1px 0; }
+  .xr-said .pg:disabled { opacity: .3; cursor: default; }
+  @media (hover: hover) and (pointer: fine) { .xr-said .pg:not(:disabled):hover { background: var(--pl-bg-inset); color: var(--pl-text-primary); } }
+  .xr-said .pg:focus-visible { box-shadow: 0 0 0 2px var(--pl-border-focus); }
+  /* the pages: side by side, one in view, snapping; the scrollbar is the count above */
+  .xr-said .xs { display: grid; grid-auto-flow: column; grid-auto-columns: 100%; align-items: start; overflow-x: auto; overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory; scrollbar-width: none; outline: none; }
+  .xr-said .xs::-webkit-scrollbar { display: none; }
+  .xr-said .sl { scroll-snap-align: start; scroll-snap-stop: always; min-width: 0; }
   /* the open note in a list: its row, then its sentence and what to do, under its name (no second copy above) */
   .xr-said .xi[data-open] { background: var(--pl-bg-inset); border-radius: 12px; padding-bottom: 10px; }
   .xr-said .xi[data-open] .xn { color: var(--pl-text-primary); font: 650 14px/1.3 var(--pl-round, var(--pl-sans)); background: none; }
@@ -261,9 +279,13 @@ export function mountXray(o) {
   // what is wrong, then what to do (an older note without the two parts says its advice)
   const sentence = (n) => n.wrong ? `<i class="wr">${esc(n.wrong)}</i>${n.todo ? `<i class="td">${esc(n.todo)}</i>` : ''}` : esc(n.advice);
   const toyOfConcern = (id) => toyOf(CONCERNS.find((c) => c.id === id)?.toy ?? '');
+  // Many issues, one at a time (owner, 2026-11-20: "scroll left to right… if one element has more than 2-3 issues"):
+  // each is a page of its own, whole (name, what is wrong, what to do, its actions); swipe, scroll sideways, or the
+  // arrows by the count move to the next. The card keeps the height of the tallest, so it holds still as you page.
   function listHtml() {
-    return '<div class="xa">' + notes.map((n, i) => `<div class="xi"${i === notePick ? ' data-open' : ''}><button type="button" class="xn" data-i="${i}" title="${esc(n.concernName)}" aria-expanded="${i === notePick}"><i aria-hidden="true">${toyOfConcern(n.concern)}</i>${esc(n.name)}</button>`
-      + (i === notePick ? `<div class="xd"><span>${sentence(n)}</span><div class="nas">${actsFor(n)}</div></div>` : '') + '</div>').join('') + '</div>';
+    return '<div class="xs" tabindex="-1">' + notes.map((n, i) => `<section class="sl" data-i="${i}" aria-label="Issue ${i + 1} of ${notes.length}">`
+      + `<div class="nt" data-rule="${esc(n.rule)}"><i class="cn" data-tip="${esc(n.concernName)}" aria-label="${esc(n.concernName)}" role="img">${toyOfConcern(n.concern)}</i><div><b>${esc(n.name)}</b><span>${sentence(n)}</span></div></div>`
+      + `<div class="nas">${actsFor(n)}</div></section>`).join('') + '</div>';
   }
   function noteHtml(el) {
     // the element's own note, asked of the page's marks; never the pill's words, which may be about the element the
@@ -275,9 +297,12 @@ export function mountXray(o) {
     // Edit the words leads only a note about the words (an em dash, a stock word); a padding note is your agent's (U30)
     const words = n.words && [...el.childNodes].some((t) => t.nodeType === 3 && t.data.trim());
     curNote = { ...n, words };
-    const k = all ? all.length : 1, head = `<div class="xh"><i aria-hidden="true">${toyOf('error')}</i>${k === 1 ? '1 issue' : `${k} issues`}</div>`;
+    const k = all ? all.length : 1, pager = all && k > 1
+      ? `<span class="pgr"><button type="button" class="pg" data-dir="-1" aria-label="Previous issue"${notePick ? '' : ' disabled'}></button><span class="at">${notePick + 1} of ${k}</span><button type="button" class="pg" data-dir="1" aria-label="Next issue"${notePick < k - 1 ? '' : ' disabled'}></button></span>` : '';
+    const head = `<div class="xh"><i aria-hidden="true">${toyOf('error')}</i>${k === 1 ? '1 issue' : `${k} issues`}${pager}</div>`;
     if (all && all.length > 1) return head + listHtml();
-    return `${head}<div class="nt" data-rule="${esc(rule)}"><i aria-hidden="true">${toyOfConcern(n.concern)}</i><div><b>${esc(name)}</b><span>${sentence(n)}</span></div></div><div class="nas">${actsFor(curNote)}</div>`;
+    const cname = CONCERNS.find((c) => c.id === n.concern)?.short ?? '';
+    return `${head}<div class="nt" data-rule="${esc(rule)}"><i class="cn" data-tip="${esc(cname)}" aria-label="${esc(cname)}" role="img">${toyOfConcern(n.concern)}</i><div><b>${esc(name)}</b><span>${sentence(n)}</span></div></div><div class="nas">${actsFor(curNote)}</div>`;
   }
   // The note belongs to the element the card is on. The page's pill goes away as the hand leaves the element for the card;
   // that must not empty the card: a card that lost its note got shorter, was placed again (above, then below), and put
@@ -288,7 +313,7 @@ export function mountXray(o) {
     watchHint();
     const html = noteHtml(el);
     if (!force && el === saidEl && (!html || said.dataset.for)) return;
-    if (said.dataset.for !== html) { said.innerHTML = html; said.dataset.for = html; }
+    if (said.dataset.for !== html) { said.innerHTML = html; said.dataset.for = html; const xs = said.querySelector('.xs'); if (xs) requestAnimationFrame(() => { xs.scrollLeft = notePick * xs.clientWidth; }); }
     said.hidden = !html; saidEl = el;
   }
   // the page's pill can come up a moment after the card (it answers its own pointer events): watched, the card's note
@@ -303,8 +328,10 @@ export function mountXray(o) {
     off.push(() => mo.disconnect());
   }
   said.addEventListener('click', (e) => {
-    const row = e.target.closest?.('.xn');
-    if (row && shown) { e.stopPropagation(); notePick = +row.dataset.i; syncSaid(shown, true); draw(shown); return; }
+    const pg = e.target.closest?.('.pg');
+    if (pg) { e.stopPropagation(); goTo(notePick + +pg.dataset.dir); return; }
+    const sl = e.target.closest?.('.sl');
+    if (sl && notes) curNote = { ...notes[+sl.dataset.i] };
     const act = e.target.closest?.('.na')?.dataset.act, el = shown;
     if (!act || !el) return;
     e.stopPropagation();
@@ -312,6 +339,30 @@ export function mountXray(o) {
     if (act === 'edit') { shrink(); o.editWords?.(el); }
     else if (act === 'agent') startNote(`${name}: ${advice}`);
     else if (act === 'keep') { shrink(); o.keepNote?.(el, rule); }
+  });
+  // paging: the arrows scroll to an issue; a swipe or a sideways scroll settles on one, and the count follows
+  const pagerSay = () => {
+    const at = said.querySelector('.at'), [prev, next] = said.querySelectorAll('.pg');
+    if (at) at.textContent = `${notePick + 1} of ${notes.length}`;
+    if (prev) prev.disabled = notePick === 0; if (next) next.disabled = notePick >= notes.length - 1;
+    if (notes?.[notePick]) curNote = { ...notes[notePick] };
+  };
+  function goTo(i) {
+    const xs = said.querySelector('.xs'); if (!xs || !notes) return;
+    notePick = Math.max(0, Math.min(notes.length - 1, i)); pagerSay();
+    xs.scrollTo({ left: notePick * xs.clientWidth, behavior: still() ? 'instant' : 'smooth' });
+  }
+  // the count follows where the pages settle, never the positions a smooth scroll passes through (a click on the next
+  // arrow read the halfway point and landed one page off)
+  let settleT = 0;
+  said.addEventListener('scroll', (e) => {
+    const xs = e.target; if (!xs.classList?.contains('xs') || !notes) return;
+    clearTimeout(settleT);
+    settleT = setTimeout(() => { const i = Math.round(xs.scrollLeft / Math.max(1, xs.clientWidth)); if (i !== notePick) { notePick = i; pagerSay(); } }, 140);
+  }, true);
+  said.addEventListener('keydown', (e) => {
+    if (!said.querySelector('.xs') || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') || e.target.closest?.('input, textarea')) return;
+    e.preventDefault(); e.stopPropagation(); goTo(notePick + (e.key === 'ArrowRight' ? 1 : -1));
   });
   function grow(el) {
     from = pillBox();
