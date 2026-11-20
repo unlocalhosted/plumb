@@ -224,9 +224,18 @@ const FIX_CSS_BASE = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
      text runs wider (Linux, Windows) the tools pushed Close past the bar's edge */
   .fx .bar:has(.tools) .notice { display: none; }
   @media (max-width: 560px) {
+    /* a phone's fix: the words take the full width on top, the arrows and Clean up a row of their own under them; the
+       choice row wraps inside the window (U58: one word a line in a 60px column, Skip past the edge) */
+    .fx .one { flex-wrap: wrap; row-gap: 8px; }
+    .fx .one .lines { flex: 1 1 calc(100% - 52px); }
+    .fx .one .sep { display: none; }
+    .fx .one .onav { margin-left: 48px; }
+    .fx .one .onav ~ * { margin-left: auto; }
+    .fx.fx-on { flex-wrap: wrap; max-width: calc(100vw - 16px); }
     .fx .bar { padding: 0 4px 0 12px; gap: 4px; }
-    /* a phone's bar keeps the count, its two actions and Close; the tools are on the dock's mark once Blueprint closes */
-    .fx .bar .long, .fx .bar .notice, .fx .bar .more, .fx .bar .tools, .fx .bar .bar-close .word, .fx .bar .bar-close kbd { display: none; }
+    /* a phone's bar keeps the count, Fix, ··· and Close: ··· is the only way to setup, Clean up, History and Help while
+       Blueprint is open (U57: it was hidden, and with it the way to undo) */
+    .fx .bar .long, .fx .bar .notice, .fx .bar .tools, .fx .bar .bar-close .word, .fx .bar .bar-close kbd { display: none; }
     .fx .bar .pl-act.quiet kbd { display: none; } .fx .bar .pl-act { padding: 0 11px; }
     .fx .bar .bar-close:not(.tb) .x { display: block; }
   }
