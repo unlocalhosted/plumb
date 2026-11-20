@@ -260,7 +260,7 @@ export function craftReport(root: string, findings: Finding[]): Report {
 
 export function formatCraft(pages: CraftPage[], findings: Finding[], root: string): string {
   const read = pages.reduce((n, page) => n + page.read, 0);
-  const lines = [`React Plumber craft: ${pages.length} ${pages.length === 1 ? 'route' : 'routes'}, ${read} elements read, ${findings.length} ${findings.length === 1 ? 'finding' : 'findings'}`];
+  const lines = [`React Plumber craft: ${pages.length} ${pages.length === 1 ? 'route' : 'routes'}, ${read} elements read, ${findings.length} ${findings.length === 1 ? 'finding' : 'findings'} from the craft, accessibility and generated-look checks. For your tokens, run plumber check.`]; // says what it counts (U35)
   for (const page of pages) if (!page.complete) lines.push(`  ${page.route}: stopped before every element was read (raise --timeout)`);
   // the laws each rule measures, as its records carry them
   const laws = new Map(pages.flatMap(page => page.findings.map(record => [record.rule, record.laws ?? []] as const)));
