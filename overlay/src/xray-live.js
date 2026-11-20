@@ -119,7 +119,12 @@ export const XRAY_LIVE_CSS = `
   .xr-said .xs { display: grid; grid-auto-flow: column; grid-auto-columns: 100%; align-items: start; overflow-x: auto; overscroll-behavior-x: contain;
     scroll-snap-type: x mandatory; scrollbar-width: none; outline: none; }
   .xr-said .xs::-webkit-scrollbar { display: none; }
-  .xr-said .sl { scroll-snap-align: start; scroll-snap-stop: always; min-width: 0; }
+  .xr-said .xs { grid-template-rows: auto 1fr auto; padding-bottom: 12px; margin-bottom: -12px; } /* room for the buttons' shadows, which the scroller would cut */
+  .xr-said .sl { scroll-snap-align: start; scroll-snap-stop: always; min-width: 0; grid-row: 1 / -1; display: grid; grid-template-rows: subgrid; }
+  .xr-said .sl .sh { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: center; }
+  .xr-said .sl .sh > i { width: 26px; height: 26px; } .xr-said .sl .sh > i svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .xr-said .sl .sh b { font: 650 14.5px/1.3 var(--pl-round, var(--pl-sans)); }
+  .xr-said .sl .sw { margin-top: 6px; } .xr-said .sl .nas { margin-top: 12px; align-self: end; }
   /* the open note in a list: its row, then its sentence and what to do, under its name (no second copy above) */
   .xr-said .xi[data-open] { background: var(--pl-bg-inset); border-radius: 12px; padding-bottom: 10px; }
   .xr-said .xi[data-open] .xn { color: var(--pl-text-primary); font: 650 14px/1.3 var(--pl-round, var(--pl-sans)); background: none; }
@@ -159,6 +164,10 @@ export const XRAY_LIVE_CSS = `
   .xr-hand .hs .ep.st .notch .lab { color: var(--pl-coral); }
   .xr-hand .hs .ep.st .opt, .xr-hand .hs .ep.st .notch { flex: 1; }
   .xr-hand .hs .ep .page:disabled { visibility: hidden; }
+  /* the one a scroll up or down changes: the steps, or a chip, ringed in sky */
+  .xr-hand .hs .ep.st, .xr-hand .hc { transition: box-shadow 200ms var(--pl-ease-out); }
+  .xr-hand .hs:is([data-seg="value"], :not([data-seg])) .ep.st { box-shadow: inset 0 0 0 1.5px color-mix(in oklab, var(--pl-sky) 55%, transparent); }
+  .xr-hand .hs[data-seg="scope"] .hc[data-s="scope"], .xr-hand .hs[data-seg="mode"] .hc[data-s="mode"] { box-shadow: 0 0 0 1.5px var(--pl-lilac); }
   /* the value holds still while it changes: the step's name in a column of its own, the number in even figures */
   .xr-hand .slot b { min-width: 5.4ch; } .xr-hand .slot span { font-variant-numeric: tabular-nums; }
   .xr-card .xr-said { order: 1; }
@@ -307,9 +316,11 @@ export function mountXray(o) {
   // each is a page of its own, whole (name, what is wrong, what to do, its actions); swipe, scroll sideways, or the
   // arrows by the count move to the next. The card keeps the height of the tallest, so it holds still as you page.
   function listHtml() {
-    return '<div class="xs" tabindex="-1">' + notes.map((n, i) => `<section class="sl" data-i="${i}" aria-label="Issue ${i + 1} of ${notes.length}">`
-      + `<div class="nt" data-rule="${esc(n.rule)}"><i class="cn" data-tip="${esc(n.concernName)}" aria-label="${esc(n.concernName)}" role="img">${toyOfConcern(n.concern)}</i><div><b>${esc(n.name)}</b><span>${sentence(n)}</span></div></div>`
-      + `<div class="nas">${actsFor(n)}</div></section>`).join('') + '</div>';
+    // three rows every page shares (subgrid): the name, the sentence, the actions; a short issue leaves room, and its
+    // actions stay where the others' are (owner, 2026-11-20: "use sub-grid so that… everything remain at its place")
+    return '<div class="xs" tabindex="-1">' + notes.map((n, i) => `<section class="sl" data-i="${i}" data-rule="${esc(n.rule)}" aria-label="Issue ${i + 1} of ${notes.length}">`
+      + `<div class="sh"><i class="cn" data-tip="${esc(n.concernName)}" aria-label="${esc(n.concernName)}" role="img">${toyOfConcern(n.concern)}</i><b>${esc(n.name)}</b></div>`
+      + `<div class="sw">${sentence(n)}</div><div class="nas">${actsFor(n)}</div></section>`).join('') + '</div>';
   }
   function noteHtml(el) {
     // the element's own note, asked of the page's marks; never the pill's words, which may be about the element the
@@ -755,9 +766,13 @@ export function mountXray(o) {
       bindSteps(rowEl, { pick: (_, i) => { at = i; apply(S[i]); paint(); }, page: (_, st) => { start = Math.max(0, st); paint(); } });
       if (inHand) showSeg(true);
     };
+    // the gestures, kept (owner, 2026-11-20: "dont remove the scroll based interaction i liked it"): sideways moves
+    // between where, which sides and the value, up and down changes the one you are on; said under it while the hand
+    // is on the control
     rowEl.addEventListener('click', (e) => { const c = e.target.closest?.('.hc'); if (!c || !inHand) return; e.stopPropagation(); cycle(inHand, c.dataset.s); });
     const p = { row: rowEl, at: () => at, set: (i) => { const k = Math.max(0, Math.min(S.length - 1, i)); if (k === at) return; at = k; start = null; apply(S[k]); paint(); } };
     const segs = [...(scopes.length > 1 ? ['scope'] : []), ...(sided || sized ? ['mode'] : []), 'value'];
+    hand.insertAdjacentHTML('beforeend', `<div class="say">${segs.length > 1 ? '<span>scroll sideways to choose</span><span>·</span>' : ''}<span>scroll up or down to change</span></div>`);
     inHand = { el, prop, p, S, sided, sized, sizing: sized ? sizingOf(el, prop) : null, scopes, segs, seg: 'value', tx: 0, ty: 0, axis: null, idle: 0 };
     paint();
   }
@@ -827,14 +842,14 @@ export function mountXray(o) {
     h.idle = setTimeout(() => { h.axis = null; h.ax = h.ay = 0; h.ty = 0; h.switched = false; if (h.tx) { h.tx = 0; thumbAt(0); } }, 200);
     if (!h.axis) { h.ax = (h.ax ?? 0) + dx; h.ay = (h.ay ?? 0) + dy; if (Math.abs(h.ax) + Math.abs(h.ay) < 6) return; h.axis = Math.abs(h.ax) > Math.abs(h.ay) ? 'x' : 'y'; }
     if (h.axis === 'x') {
-      if (!h.p.row.querySelector('.thumb') || h.segs.length < 2 || h.switched) return;
+      if (h.segs.length < 2 || h.switched) return;
       h.tx += dx;
       const dir = Math.sign(h.tx), i = h.segs.indexOf(h.seg), next = h.segs[i + dir];
       if (next && Math.abs(h.tx) >= 44) {
         h.seg = next; h.tx = 0; h.switched = true; showSeg(); thumbAt(0);
         const row = h.p.row;
-        row.querySelector('.thumb').animate?.([{ scale: '1.12 0.86' }, { scale: '0.96 1.05', offset: 0.45 }, { scale: '1.01 0.99', offset: 0.75 }, { scale: '1 1' }], { duration: 420, easing: 'ease-out' });
-        (h.seg === 'value' ? row.querySelector('.drum') : row.querySelector(`[data-s="${h.seg}"]`))?.animate?.([{ scale: 0.9 }, { scale: 1.06, offset: 0.5 }, { scale: 1 }], { duration: 320, easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)' });
+        row.querySelector('.thumb')?.animate?.([{ scale: '1.12 0.86' }, { scale: '0.96 1.05', offset: 0.45 }, { scale: '1.01 0.99', offset: 0.75 }, { scale: '1 1' }], { duration: 420, easing: 'ease-out' });
+        (h.seg === 'value' ? row.querySelector('.ep.st') : row.querySelector(`[data-s="${h.seg}"]`))?.animate?.([{ scale: 0.9 }, { scale: 1.06, offset: 0.5 }, { scale: 1 }], { duration: 320, easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)' });
       } else thumbAt(next ? 0.36 * (1 - Math.exp(-Math.abs(h.tx) / 22)) : Math.min(1, Math.abs(h.tx) / 60), dir);
       return;
     }
