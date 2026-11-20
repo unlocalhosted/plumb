@@ -1,6 +1,6 @@
 // The button census as a page to read and explore, in the manner of a newspaper data story: a headline, a lede, charts
 // annotated in plain words, and every button in a searchable table at the end. Built from data/buttons.json.
-//   node generator/data/census-page.mjs   → generator/shots/census.html (published as an artifact)
+//   node generator/data/census-page.mjs   → web/public/research/button-census.html (the plumber site serves it at /research/button-census.html)
 import { readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 const here = fileURLToPath(new URL('./', import.meta.url));
@@ -25,11 +25,10 @@ const stats = { n, regs: new Set(D.map((r) => r.registry)).size, named: c((r) =>
   springs: springs.length, springParts: c((r) => r.springs.length), median: median.toFixed(2), bouncy: springs.filter((z) => z < 0.6).length, still: springs.filter((z) => z >= 0.97).length,
   reduced: c((r) => r.reducedMotion), keyboard: c((r) => r.keyboard), hard: c((r) => r.hardcodedColours.length), lines: D.reduce((a, r) => a + r.lines, 0) };
 
-const html = `<title>The Button Census</title>
-<meta name="claude:viewport-fit-sides" content="cover">
+const head = `<title>The Button Census</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap">
-<style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap">`;
+const html = `<style>
 /* Layout: a newspaper story column (about 600px) with charts that step wider than the text, then a full-width table. */
 :root {
   --paper: #ffffff; --ink: #121212; --gray: #5a5a5a; --rule: #dfdfdf; --faint: #f3f3f1;
@@ -284,5 +283,23 @@ document.getElementById('tbody').addEventListener('click', (e) => { const tr = e
 document.getElementById('tbody').addEventListener('keydown', (e) => { const tr = e.target.closest('tr.row'); if (tr && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); toggle(tr); } });
 render();
 </script>`;
-await writeFile(`${here}../shots/census.html`, html);
-console.log(`shots/census.html · ${(html.length / 1e6).toFixed(2)} MB · ${n} buttons`);
+// a complete page of its own, served by the plumber site from its public folder
+const page = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="${stats.n.toLocaleString()} button components from ${stats.regs} public shadcn registries, read from their source: how they commit, how their springs move, what they add on top, and every one searchable.">
+<style>html { color-scheme: light; -webkit-text-size-adjust: 100%; } :root[data-theme="dark"] { color-scheme: dark; } *, *::before, *::after { box-sizing: border-box; } body { margin: 0; } [hidden] { display: none !important; } img, svg { max-width: 100%; }</style>
+${head}
+</head>
+<body>
+${html}
+</body>
+</html>
+`;
+const { mkdir } = await import('node:fs/promises');
+const out = `${here}../../web/public/research/button-census.html`;
+await mkdir(`${here}../../web/public/research`, { recursive: true });
+await writeFile(out, page);
+console.log(`web/public/research/button-census.html · ${(page.length / 1e6).toFixed(2)} MB · ${n} buttons`);
