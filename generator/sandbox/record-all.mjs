@@ -70,6 +70,7 @@ async function one(browser, x) {
     await page.waitForTimeout(1500);
     if (ENGINE) await page.addScriptTag({ content: ENGINE }).catch(() => {});
     const s = await page.evaluate(() => window.__sandbox ?? null);
+    if (!(await page.evaluate(() => !!document.querySelector('#stage')))) { out.renders = false; out.error = `did not load: ${s?.error ?? errors[0] ?? 'unknown'}`; return out; }
     await shoot(page, `${here}shots/${x.key}-rest.png`);
     const t = await page.evaluate(TARGET);
     // drew a shape: around the edge of the thing to use, a drawn button has a border or a fill; words alone don't

@@ -107,8 +107,14 @@ function extract(p, src) {
   const kind = isExample ? 'example' : HOLDS_CONFIRM ? (rendersButton ? 'contains' : 'not') : PROMPT ? 'group' : GROUP.test(nameWords) || GROUP.test(subject) ? 'group'
     : /\b(button|btn|cta)\b/.test(nameWords) || /\b(button|btn|cta|call to action)\b/.test(subject) || COMMITS.test(nameWords) || COMMITS.test(subject) ? 'button'
     : rendersButton && (HOLDER.test(subject) || /\bbutton\b/i.test(desc)) ? 'contains' : 'not';
+  // what the author says the part is decides how it commits, when they name a gesture: code patterns miss gestures written
+  // in unusual ways (a slide-to-confirm read as a press, a hold-to-confirm read as a confirm) and the recorder then
+  // drives the wrong gesture. The code's reading stays as the fallback.
+  const authorSays = `${p.name} ${p.title ?? ""} ${desc}`.replace(/[-_]/g, " ").toLowerCase();
+  const told = /\b(slide|swipe|drag)( to| and)\b/.test(authorSays) ? ['threshold', 'position'] : /\b(hold|long press|press and hold|press & hold)\b/.test(authorSays) ? ['held-time', 'time-held'] : /\bcountdown\b/.test(authorSays) ? ['countdown', 'state'] : /\b(confirm|are you sure|two step|double click)\b/.test(authorSays) && !/\bdialog|modal\b/.test(authorSays) ? ['confirm', 'state'] : null;
+  const rule = told ? told[0] : commitRule, drives = told ? told[1] : driver;
   return { id: `${p.registry}/${p.name}`, kind: kind, found: named ? 'named' : 'described', rendersButton, itemType: p.type?.split(':')[1] ?? 'ui', registry: p.registry, name: p.title, description: p.description, homepage: p.homepage, rank: p.rank, lines: p.lines, animationLib: lib,
-    job: 'commit', driver, commitRule, effort, secondsToCommit: commitRule === 'held-time' ? (heldMs ? heldMs / 1000 : null) : commitRule === 'threshold' ? 0.8 : commitRule === 'confirm' ? 0.6 : 0.1,
+    job: 'commit', driver: drives, commitRule: rule, ruleFrom: told ? 'the author’s words' : 'the code', effort: { press: 1, confirm: 2, countdown: 2, 'held-time': 3, threshold: 3 }[rule], secondsToCommit: rule === 'held-time' ? (heldMs ? heldMs / 1000 : null) : rule === 'threshold' ? 0.8 : rule === 'confirm' ? 0.6 : 0.1,
     cancellable: drag || held || confirm, undo: has(src, /\bundo\b/i), discoverable: drag || held ? 'needs-words' : 'obvious', states: [...new Set(states)], changesWidth, secondCopyOfFace,
     colourNeeds, hardcodedColours: hard, wordsDuringAction: words, tricks, reducedMotion, keyboard, needsHover,
     springs: springPhysics, durationsMs: [...new Set(durations)].slice(0, 10), eases, feel, evidence: ev };

@@ -41,6 +41,19 @@ async function themeOf(registry) {
 const cssText = (o, pad = '') => Object.entries(o).map(([k, v]) => typeof v === 'object' ? `${pad}${k} {\n${cssText(v, pad + '  ')}\n${pad}}` : `${pad}${k}: ${v};`).join('\n');
 const STANDARD = new Set(['background', 'foreground', 'card', 'card-foreground', 'popover', 'popover-foreground', 'primary', 'primary-foreground', 'secondary', 'secondary-foreground', 'muted', 'muted-foreground', 'accent', 'accent-foreground', 'destructive', 'border', 'input', 'ring', 'radius']);
 const colourNames = new Set(), themeKeys = new Map();
+// shadcn's standard pieces (dropdown-menu, dialog, tooltip…), fetched on demand from shadcn's own registry the first
+// time a part asks for one, into the sandbox's components/ui, imports pointed at the sandbox's own utils and button
+async function standardPiece(name) {
+  const to = `${here}components/ui/${name}.tsx`;
+  if (existsSync(to)) return to;
+  try {
+    const r = await fetch(`https://ui.shadcn.com/r/styles/new-york-v4/${name}.json`, { headers: { 'user-agent': 'Mozilla/5.0 (component research)' } });
+    if (!r.ok) return null;
+    const item = await r.json(); const f = (item.files ?? [])[0]; if (!f?.content) return null;
+    await writeFile(to, f.content.replace(/["']@\/lib\/utils["']/g, "'../../lib/utils'").replace(/["']@\/(?:registry\/[^"']+\/)?(?:components\/)?ui\/([\w-]+)["']/g, "'./$1'"));
+    return to;
+  } catch { return null; }
+}
 const report = [];
 for (const r of pick) {
   const p = harvest[r.id]; const key = keyOf(r.id), dir = `${here}parts/${key}/`;
@@ -57,14 +70,16 @@ for (const r of pick) {
   for (const f of files) { if (!f.content) continue; const path = (f.target || f.path || `${basename(f.path ?? 'part')}`).replace(/^\.?\/+/, '').replace(/^~\//, ''); const to = join(dir, path); await mkdir(dirname(to), { recursive: true }); written.push({ to, content: f.content, type: f.type }); }
   const byBase = new Map(written.map((w) => [basename(w.to).replace(/\.(tsx?|jsx?)$/, ''), w.to]));
   const rel = (from, to) => { let s = relative(dirname(from), to).replace(/\.(tsx?|jsx?)$/, ''); return s.startsWith('.') ? s : `./${s}`; };
+  const wanted = new Set();
   for (const w of written) {
     const src = w.content.replace(/(from\s+|import\s*\(\s*)(["'])(@\/[^"']+|~\/[^"']+)\2/g, (m, pre, q, spec) => {
       const base = spec.split('/').pop();
       if (/\/(lib\/)?utils$|\/cn$/.test(spec)) return `${pre}${q}${rel(w.to, SANDBOX.utils)}${q}`;
       if (byBase.has(base)) return `${pre}${q}${rel(w.to, byBase.get(base))}${q}`;
       if (base === 'button') return `${pre}${q}${rel(w.to, SANDBOX.button)}${q}`;
+      if (/\/ui\/[\w-]+$/.test(spec)) { wanted.add(base); return `${pre}${q}${rel(w.to, `${here}components/ui/${base}.tsx`)}${q}`; }
       return m;
-    });
+    }).replace(/(from\s+)(["'])cn\2/g, (m, pre, q) => `${pre}${q}${rel(w.to, SANDBOX.utils)}${q}`);
     await writeFile(w.to, src);
   }
   // its theme: the library's, then its own and its dependencies' (later wins), scoped to this part
@@ -74,6 +89,7 @@ for (const r of pick) {
   for (const [k, v] of Object.entries(theme)) themeKeys.set(k, v);
   const css = { ...lt.css, ...(item.css ?? {}) };
   await writeFile(`${dir}theme.css`, `[data-part="${key}"] {\n${Object.entries(vars).map(([k, v]) => `  --${k}: ${v};`).join('\n')}\n}\n${cssText(css)}\n`);
+  for (const n of wanted) await standardPiece(n);
   // the entry: the author's example if there is one, else the part's main export with words in it
   const main = written.find((w) => /registry:(example)/.test(w.type ?? '')) ?? written.find((w) => basename(w.to).replace(/\.(tsx?|jsx?)$/, '').toLowerCase() === p.name.toLowerCase()) ?? written.find((w) => /\.(tsx|jsx)$/.test(w.to)) ?? written[0];
   if (!main) { report.push({ id: r.id, key, ok: false, why: 'no files' }); continue; }
