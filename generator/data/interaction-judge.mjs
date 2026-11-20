@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { STANDARDS, MOMENTS } from './standards.mjs';
 const here = fileURLToPath(new URL('./', import.meta.url));
-const [atom = 'buy'] = process.argv.slice(2);
+const [atom = 'buy', mode = 'light'] = process.argv.slice(2);
 const product = atom === 'start' ? 'algorecall' : 'craftingattention';
 const moment = MOMENTS[`${product}/${atom}`];
 const DEV = `${process.env.HOME}/.claude/bin/dev-server`, PG = `${here}../playground/${product}`;
@@ -25,7 +25,7 @@ if (started) {
   for (let i = 0; i < 40 && !(await up()); i++) await new Promise((r) => setTimeout(r, 750));
 }
 const engine = (await readFile(`${here}../reads/craft.iife.js`, 'utf8')).replaceAll('{}.url', '"http://plumb.invalid/overlay/src/craft.js"');
-const URL_ = `http://localhost:4399/atoms.html?atom=${atom}`;
+const URL_ = `http://localhost:4399/atoms.html?atom=${atom}${mode === 'dark' ? '&mode=dark' : ''}`;
 
 // ── in the page: a recorder on one form's stage ─────────────────────────────────────────────────────────────────
 const RECORD = ({ form, done }) => {
@@ -190,6 +190,11 @@ for (const f of forms) {
 await b.close();
 if (started) try { execFileSync(DEV, ['--stop', PG], { stdio: 'ignore' }); } catch {}
 
+// a fault the shipped button already has, in the same words at rest, is the product's, not the form's: every form wears
+// the shipped skin, so it would count against all of them alike. The shipped card keeps it; the forms note it.
+const shippedWords = out.find((x) => x.form === 'house')?.words;
+for (const m of out) if (m.form !== 'house' && shippedWords && m.words?.says === shippedWords.says && m.words.when === shippedWords.when) { m.inherited = m.words; m.words = null; }
+
 // ── the verdicts ────────────────────────────────────────────────────────────────────────────────────────────────
 const EFFORT = { press: 'press', answer: 'press', lean: 'press', confirm: 'confirm', hold: 'deliberate', slide: 'deliberate' };
 const fitFor = (m) => {
@@ -232,6 +237,6 @@ const choose = { form: pick.form, name: pick.name,
   // the best of the new forms, for when the product wants more than what it ships
   instead: runner ? { form: runner.form, name: runner.name, why: runner.results.filter((r) => !r.ok).length ? `It has ${runner.results.filter((r) => !r.ok).length} thing${runner.results.filter((r) => !r.ok).length > 1 ? 's' : ''} to fix: ${runner.results.filter((r) => !r.ok).map((r) => r.name.charAt(0).toLowerCase() + r.name.slice(1)).join('; ')}.` : 'It meets every standard too.' } : null };
 await mkdir(`${here}../playground/atoms/verdicts`, { recursive: true });
-await writeFile(`${here}../playground/atoms/verdicts/${product}-${atom}.json`, JSON.stringify({ moment, choose, forms: verdicts, judged: new Date().toISOString().slice(0, 10) }, null, 1));
+await writeFile(`${here}../playground/atoms/verdicts/${product}-${atom}${mode === 'dark' ? '-dark' : ''}.json`, JSON.stringify({ moment, choose, forms: verdicts, judged: new Date().toISOString().slice(0, 10) }, null, 1));
 console.log(`\nchoose ${pick.name}: ${choose.why}`);
 for (const v of verdicts) console.log(`  ${v.verdict.padEnd(10)} ${v.name}: ${v.results.filter((r) => !r.ok).map((r) => r.name).join('; ') || 'all standards met'}`);

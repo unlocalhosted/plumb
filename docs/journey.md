@@ -3128,6 +3128,25 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **Still open:** the bar's other checks (progress shows, fits where the original sat, keeps its weight) aren't
   plumber rules yet.
 
+### 49. Metal and the beam find their surface: crafting attention's dark page (2026-11-20)
+
+**The itch.** After the effects vanished on the light page, the owner chose "a dark surface".
+
+**What we did.** The atoms page and the judge now open crafting attention in its own dark mode (`?mode=dark`, its
+theme's switch), and forms made for one surface show only there. The beam breathes outward in the brand's blue-purple,
+its hue pinned (it cycled to orange). Metal needed a dark face to read at all: a lavender face swallows chrome, so the
+metal form is a near-black face with purple words and a silver rim, the black card of a lifetime purchase.
+
+**What the judge and the eye found.** The judge said crafting attention's own dark-mode button sets dark words on light
+purple at 5.8:1 (WCAG passes) but APCA 42 where 60 is needed; every form wearing that skin inherited it, so the judge
+now books a fault the shipped button already has to the product, not the form. The filmstrip caught what the judge
+missed: on the dark page the pour deepened the lavender under dark words and "Opening checkout" nearly vanished. The
+pour now picks its ink from the shade's own lightness (light words on a deep shade), in both modes.
+
+**The proof.** On the dark page every form of ours passes; metal and the beam join the recommendations page in a
+section of their own, with metal's cost said plainly (it stops being the one bright thing on the card). Filmstrips:
+`docs/films/pour/dark-strip.png`, `light-pour-check.png`.
+
 ### 48. Metal, beam and wave on the buy button: built, and none good enough to show (2026-11-20)
 
 **The itch.** The owner shared libraries.dev ("metal, distortion, magnetic ui, gooey, border beam … the taste lies
@@ -5190,6 +5209,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- The buy-button recommendations gain a dark-page section: a beam while checkout opens and lifetime in metal, live in crafting attention's dark skin; the pour now stays readable in dark mode ([entry](#49-metal-and-the-beam-find-their-surface-crafting-attentions-dark-page-2026-11-20)).
 - Every design-system and Craft check in the docs plays its fix on its own card: flip Broken / Fixed and the change moves the way How a change moves does, and nothing else on the page moves ([entry](#55-every-check-plays-its-fix-on-a-card-that-stays-still-2026-11-20)).
 - The plumber site has the recommendations page for crafting attention's buy button: the shipped button and four recommendations, each live in its own colours and type, with the idea it came from, its measured numbers and the standards it passed (`/research/buy-recommendations.html`).
 - Plumber judges a motion by what it is for and whether it harms anyone, not by its length: a bounce the design meant is said as meant, with its source, and you can Keep a fault with a reason ([entry](#54-judging-what-a-motion-is-for-not-how-long-it-takes-2026-11-20)).

@@ -11,7 +11,7 @@ export function Beam({ label, doneLabel, icon, onCommit }) {
   const [done, setDone] = useState(false);
   useEffect(() => () => clearTimeout(timer.current), []);
   return (
-    <BorderBeam active={done && !still()} size="pulse-outside" colorVariant="ocean" theme="light" strength={1} duration={1.4} style={{ width: 'min(100%, var(--atom-width, 100%))' }}>
+    <BorderBeam active={done && !still()} size="pulse-outside" colorVariant="ocean" staticColors theme="dark" strength={1} duration={1.4} style={{ width: 'min(100%, var(--atom-width, 100%))' }}>
       <button type="button" className="np" style={{ width: '100%' }} data-state={done ? 'done' : 'rest'}
         onClick={() => { if (done) return; setDone(true); onCommit?.(); clearTimeout(timer.current); timer.current = setTimeout(() => setDone(false), 2800); }}>
         <span className="np-row"><span>{done ? doneLabel : label}</span>{icon && !done && icon}</span>

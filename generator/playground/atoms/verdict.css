@@ -32,3 +32,5 @@
 .owner-row button:focus-visible, .owner-row input:focus-visible { outline: 2px solid var(--pl-ink); outline-offset: 2px; }
 .owner-row input { flex: 1; min-width: 0; font: 400 13px/1.3 var(--pl-sans); padding: 8px 10px; border: 0; border-radius: 8px; background: var(--pl-paper-2); color: var(--pl-ink); }
 .atom .owner-pick .owner-saved { margin: 0; min-height: 1.2em; font: 400 12px/1.3 var(--pl-sans); color: var(--pl-ink-2); opacity: 1; }
+/* on the product's dark page the picker's words take the page's own ink */
+[data-mode="dark"] .owner-pick, [data-mode="dark"] .owner-pick .owner-q, [data-mode="dark"] .owner-pick .owner-saved { color: inherit; }

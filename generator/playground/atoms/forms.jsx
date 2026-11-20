@@ -13,6 +13,8 @@ import { Pour } from './native/pour.jsx';
 import { Lead } from './native/lead.jsx';
 import { Answer } from './native/answer.jsx';
 import { Sheen } from './native/sheen.jsx';
+import { Metal } from './native/metal.jsx';
+import { Beam } from './native/beam.jsx';
 
 const Icon = ({ atom }) => atom.iconHTML ? <span aria-hidden className="atom-icon" dangerouslySetInnerHTML={{ __html: atom.iconHTML }} /> : null;
 const face = 'h-[var(--atom-height)] rounded-[var(--atom-radius)] text-[length:var(--atom-size)] font-[number:var(--atom-weight)] shadow-[var(--atom-lip)]';
@@ -43,6 +45,12 @@ export const FORMS = {
     { id: 'native/sheen', name: 'A sheen, once', gesture: 'press',
       why: 'A soft light crosses the button when it comes into view and when the pointer arrives, never on a loop: the one thing to do catches the eye without nagging.',
       roles: {}, render: (a) => <Sheen label={a.label} doneLabel={a.doneLabel} icon={<Icon atom={a} />} /> },
+    { id: 'native/metal', name: 'Lifetime in metal', gesture: 'press', surface: 'dark',
+      why: 'The one rare, valuable purchase gets the material that says precious: a silver ring on its edge that dents like liquid as the pointer nears.',
+      roles: {}, render: (a) => <Metal label={a.label} doneLabel={a.doneLabel} icon={<Icon atom={a} />} /> },
+    { id: 'native/beam', name: 'A beam while checkout opens', gesture: 'press', surface: 'dark',
+      why: 'A glow breathes around the button only between the press and the next screen: it says working, and nothing glows at rest.',
+      roles: {}, render: (a) => <Beam label={a.label} doneLabel={a.doneLabel} icon={<Icon atom={a} />} /> },
     { id: 'beui/slide-action-button', name: 'Slide to commit', gesture: 'slide',
       why: 'Committing takes a deliberate gesture: drawing the thumb across is a small ceremony, and nobody does it by accident.',
       // the track carries the action colour, so the action keeps its weight; the trail is the stronger fill; the thumb is the ink

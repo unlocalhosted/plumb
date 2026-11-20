@@ -76,8 +76,10 @@ function Page({ Shipped, product, atom }) {
     }, 100);
     return () => clearInterval(t);
   }, [atom.pick]);
-  const forms = FORMS[atom.job] ?? [];
-  const verdicts = VERDICTS[`./verdicts/${product.id}-${atom.id}.json`];
+  const dark = document.documentElement.dataset.mode === 'dark';
+  // a form made for one surface (metal, the beam: tuned for dark) shows only on it
+  const forms = (FORMS[atom.job] ?? []).filter((f) => !f.surface || f.surface === (dark ? 'dark' : 'light'));
+  const verdicts = VERDICTS[`./verdicts/${product.id}-${atom.id}${dark ? '-dark' : ''}.json`];
   const verdictOf = (id) => verdicts?.forms.find((f) => f.form === id);
   // the words default to the original's own; the gesture forms say the same thing as a gesture
   const label = atom.label ?? skin?.text ?? '', lower = label ? label[0].toLowerCase() + label.slice(1) : '';
@@ -111,6 +113,9 @@ function Page({ Shipped, product, atom }) {
 export function mountAtoms({ Shipped, product }) {
   // use any form and plumber shows what went wrong in that gesture, over time, with its fix (gesture.js)
   Promise.all([import('./gesture.js'), import('../../../overlay/src/craft.js')]).then(([g, engine]) => g.watchGestures(document, engine));
+  // the product's own dark mode (?mode=dark), for the forms that belong on a dark surface
+  const mode = new URLSearchParams(location.search).get('mode');
+  if (mode === 'dark' || mode === 'light') document.documentElement.dataset.mode = mode;
   const want = new URLSearchParams(location.search).get('atom');
   const atom = product.atoms.find((x) => x.id === want) ?? product.atoms[0];
   createRoot(document.getElementById('root')).render(<Page Shipped={Shipped} product={product} atom={atom} />);

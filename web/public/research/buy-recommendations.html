@@ -20,6 +20,11 @@ h1 { font:700 clamp(32px,6vw,48px)/1.08 var(--serif); margin:0; max-width:780px;
 /* each button on crafting attention's own page colour, light in either theme, as it ships */
 .live { background:#fff; border-radius:10px; overflow:hidden; box-shadow:inset 0 0 0 1px rgba(0,0,0,.06); color-scheme:light; }
 .live iframe { display:block; width:100%; height:130px; border:0; }
+.live.dark { background:oklch(0.135 0.02 260); box-shadow:inset 0 0 0 1px rgba(255,255,255,.06); color-scheme:dark; }
+.rec .live.dark p { color:#9a9aa5; }
+h2.section { font:700 30px/1.15 var(--serif); margin:56px 0 6px; }
+p.section-dek { font:400 17px/1.55 var(--serif); color:var(--gray); margin:0 0 8px; max-width:700px; }
+.cost { color:var(--gray); }
 .rec .live p, .baseline .live p { margin:0; padding:0 14px 12px; font:500 12px/1.3 var(--sans); color:#6b6b6b; text-align:center; }
 .num { font:700 12px/1 var(--sans); letter-spacing:.06em; text-transform:uppercase; color:var(--mark); }
 .rec h2 { font:700 26px/1.2 var(--serif); margin:6px 0 10px; }
@@ -32,7 +37,7 @@ h1 { font:700 clamp(32px,6vw,48px)/1.08 var(--serif); margin:0; max-width:780px;
 </style></head>
 <body><main>
 <p class="kicker">React Plumber · Recommendations</p>
-<h1>Four ways to make crafting attention’s buy button answer the press</h1>
+<h1>Ways to make crafting attention’s buy button answer the press</h1>
 <p class="dek">Each one is built in crafting attention’s own colours, type and corner, grounded in an idea that ships in public button libraries, and checked in a real browser before it reached this page. Press them; they are live.</p>
 <p class="byline">The moment: a first-time visitor on the pricing page, buying lifetime access. Judged 20 November 2026.</p>
 
@@ -80,6 +85,29 @@ h1 { font:700 clamp(32px,6vw,48px)/1.08 var(--serif); margin:0; max-width:780px;
       <dt>Measured</dt><dd>One pass of 0.46 s; nothing moves with reduced motion</dd>
       <dt>Checked</dt><dd class="pass">Passes all five standards it is held to</dd></dl></div>
 </section>
+
+<h2 class="section">On crafting attention’s dark page</h2>
+<p class="section-dek">Two effects from libraries.dev, metal and the border beam, are tuned for dark surfaces. On the light page they vanished, so they are offered only for the dark one.</p>
+
+<section class="rec">
+  <div class="live dark"><iframe title="A beam while checkout opens, live, dark page" src="buy-recommendations/app/index.html?r=beam&amp;mode=dark" loading="lazy"></iframe><p>Press it: the glow breathes while checkout opens</p></div>
+  <div><span class="num">5 · A beam while checkout opens</span><h2>The edge says “working”, only while it is</h2>
+    <p>Nothing glows at rest. After the press, a soft glow in the brand’s blue-purple breathes outward around the button until checkout opens, then fades. With reduced motion there is no glow and the words carry the wait.</p>
+    <p>Pick it when checkout can take a moment and the dark page is quiet enough for one soft light.</p>
+    <dl class="facts"><dt>From the idea</dt><dd>Border beam, pulse outside (libraries.dev, <code>border-beam</code>, MIT)</dd>
+      <dt>Checked</dt><dd class="pass">Passes all five standards it is held to, on the dark page</dd></dl></div>
+</section>
+
+<section class="rec">
+  <div class="live dark"><iframe title="Lifetime in metal, live, dark page" src="buy-recommendations/app/index.html?r=metal&amp;mode=dark" loading="lazy"></iframe><p>Bring the pointer close: the ring dents like liquid</p></div>
+  <div><span class="num">6 · Lifetime in metal</span><h2>The black card of a one-time purchase</h2>
+    <p>The face goes near-black with the words in the brand’s purple, and a silver ring lives on the edge, denting toward the pointer as it nears. Chrome only reads against a dark face, so here the metal carries the emphasis instead of the fill.</p>
+    <p class="cost">What it costs: on the dark page the button stops being the one bright thing on the card, so the eye has to find it by its rim. Pick it only if “lifetime” should feel like a membership more than a purchase.</p>
+    <dl class="facts"><dt>From the idea</dt><dd>Liquid metal (libraries.dev, <code>metal-fx</code>, MIT)</dd>
+      <dt>Checked</dt><dd class="pass">Passes all five standards it is held to, on the dark page</dd></dl></div>
+</section>
+
+<p class="note" style="margin-top:28px">A note on crafting attention itself: in dark mode its own buy button sets dark words on light purple at 5.8:1, which passes WCAG 2.2, but the newer APCA model scores it 42 where text this size needs 60. Every form above wears that same pairing on the dark page.</p>
 
 <p class="note">How they were checked: each was pressed to the end, started and abandoned, used from the keyboard alone, and used again with reduced motion turned on, while plumber read the words on it every tenth of a second. The five standards come from Nielsen’s heuristics, Apple’s and Google’s design guidelines and WCAG 2.2. The ideas come from 81 working buttons out of 335 recorded from public libraries.</p>
 </main></body></html>

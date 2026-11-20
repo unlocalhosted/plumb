@@ -14,7 +14,10 @@
 /* the flood: the deeper shade, with its own copy of the words, clipped to a circle growing from the press */
 /* a press only has to read as pressed, so the shade is a rich step of the same colour, not the 3:1 shade a progress
    fill needs (that one reads as near-black on a purple); the button's own ink still reads on it */
-.pour-flood { position: absolute; inset: 0; background: color-mix(in oklch, var(--atom-fill) 66%, black); color: var(--atom-on-fill);
+.pour-flood { position: absolute; inset: 0; --pour: color-mix(in oklch, var(--atom-fill) 66%, black); background: var(--pour);
+  /* the words take an ink picked from the shade's own lightness: light on a deep shade, dark on a light one, so a light
+     button with dark words (crafting attention in dark mode) still reads once the shade has passed */
+  color: oklch(from var(--pour) clamp(0.12, (0.62 - l) * 100, 0.98) 0.02 h);
   clip-path: circle(0 at var(--x, 50%) var(--y, 50%)); transition: clip-path 260ms cubic-bezier(.4, 0, .2, 1); }
 .pour[data-state="pouring"] .pour-flood, .pour[data-state="done"] .pour-flood { clip-path: circle(var(--reach, 200%) at var(--x, 50%) var(--y, 50%)); transition-duration: 440ms; transition-timing-function: cubic-bezier(.22, 1, .36, 1); }
 /* done: the arrow has gone where it pointed; the words say what is happening */
