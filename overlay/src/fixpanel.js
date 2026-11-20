@@ -123,10 +123,14 @@ const FIX_CSS_BASE = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   /* the choice, on the element: a small card beside it, the options and the soft buttons */
   /* it is a .fx (the card's inner rules apply as they are), undocked: placed beside the element, a card, not glass */
   .fx.fx-on { left: 0; top: 0; bottom: auto; translate: none; width: auto; height: auto; max-width: min(560px, calc(100vw - 24px)); z-index: 3; overflow: visible;
-    display: flex; flex-flow: row nowrap; align-items: center; gap: 6px; padding: 5px; width: max-content; background: var(--pl-paper); -webkit-backdrop-filter: none; backdrop-filter: none;
+    display: flex; flex-flow: row wrap; align-items: center; gap: 6px; padding: 5px; width: max-content; background: var(--pl-paper); -webkit-backdrop-filter: none; backdrop-filter: none;
     border-radius: 16px; box-shadow: var(--pl-shadow-tag); transition: none; animation: pl-pop 220ms var(--pl-spring-pop) both; }
   .fx.fx-on:has(.field, .say, .note, .hint) { flex-wrap: wrap; width: auto; }
-  .fx.fx-on .chips { display: inline-flex; gap: 3px; padding: 0 2px; }
+  .fx.fx-on .chips { display: inline-flex; gap: 3px; padding: 0 2px; min-width: 0; max-width: 100%; }
+  /* a long class (text-box:trim-both_cap_alphabetic) stays in its chip and its button, cut with an ellipsis, whole on
+     hover: spilling, it made the row wider than it measured and pushed Skip off the window (U65) */
+  .fx.fx-on .chip { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fx.fx-on .take { max-width: 240px; } .fx.fx-on .take > :not(kbd) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
   .fx.fx-on > .ic.sm { display: block; width: 22px; height: 22px; margin: 0 2px 0 4px; flex: none; } .fx.fx-on > .ic.sm svg { display: block; width: 100%; height: 100%; overflow: visible; }
   .fx.fx-on .ctl { display: inline-flex; align-items: center; flex: none; }
   .fx.fx-on .ctl .ep { flex: none; }
