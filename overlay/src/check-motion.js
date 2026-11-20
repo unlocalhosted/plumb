@@ -19,6 +19,7 @@ import { CRAFT } from './checks/craft.js';
 import { SLOP } from './checks/slop.js';
 import { WORDS } from './checks/words.js';
 import { STATES } from './checks/states.js';
+import { ACCESS } from './checks/access.js';
 const CSS = `
   .ck-scene { position: absolute; inset: 0; display: grid; place-items: center; }
   .btn2 { display: inline-flex; align-items: center; height: 40px; padding: 0 18px; border-radius: 9px; color: #fff; font: 600 14px system-ui; }
@@ -144,7 +145,7 @@ export const CHECK_SPECS = {
 };
 
 // the other concerns' examples: each entry's scene, beside its words (checks/<concern>.js)
-for (const [id, ex] of Object.entries({ ...CRAFT, ...SLOP, ...WORDS, ...STATES })) CHECK_SPECS[id] = ex.scene;
+for (const [id, ex] of Object.entries({ ...CRAFT, ...SLOP, ...WORDS, ...STATES, ...ACCESS })) CHECK_SPECS[id] = ex.scene;
 
 // a label is words, not markup: "<Button>" is shown, not made
 const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
@@ -171,6 +172,9 @@ export function mountCheck(host, id, { tokensCss = '', onMove } = {}) {
       // flipped while it plays: the guides stay up and the scene turns round at once; otherwise they start over.
       // The scene's own transitions keep going either way, so it turns from where it is
       for (const g of spec.guides) g.el.getAnimations().forEach((a) => turning ? (a.commitStyles?.(), a.cancel()) : a.cancel());
+      // the guides follow the scene for as long as they are up, not only during the move: a transition that is still
+      // settling while the pill lands (a line folding to nothing) is drawn where it really is
+      const follow = () => { if (mine !== run) return; spec.track(); requestAnimationFrame(follow); }; requestAnimationFrame(follow);
       stage.toggleAttribute('data-back', !fixed); guides(true);
       if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
         busy = false;
@@ -185,7 +189,7 @@ export function mountCheck(host, id, { tokensCss = '', onMove } = {}) {
       if (mine !== run) return;
       busy = false;
       if (fixed) spec.landed?.();
-      guides(false);
+      guides(false); run++; // the play is over: stop following
     },
     // a still: the scene at broken (0) or fixed (1), no guides (a gallery card's picture)
     still(p) { run++; guides(false); spec.at(p); spec.track(); },
