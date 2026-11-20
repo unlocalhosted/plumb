@@ -444,3 +444,6 @@ export class PageGuides {
   clear() { cancelAnimationFrame(this.#frame); this.#frame = 0; this.#groups = []; this.#layer.replaceChildren(); this.#layer.removeAttribute('data-landed'); }
   remove() { this.clear(); this.#layer.remove(); }
 }
+
+// the tiles' own beats and pieces, for the checks' examples (check-motion.js): one motion for every fix (principle 35b)
+export { T as TILE_BEATS, roll as rollValues, pillHtml, animate as animateTo, wait as waitFor, guideRules };

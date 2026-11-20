@@ -42,13 +42,13 @@ function Card({ c, css, open, onOpen }) {
   return (
     <li className="ck-card" data-open={open || undefined} data-ex={ex || undefined}>
       <button type="button" className="ck-face" aria-expanded={open} onClick={onOpen}>
-        {ex && !open && <Thumb id={c.id} />}
+        {ex && !open && <Thumb id={c.id} css={css} />}
         <span className="ck-name">{c.name}</span>
         <span className="ck-meta"><span className="ck-where" data-where={c.where}>{WHERE[c.where]}</span>{(ex || c.tile) && !open && <span className="ck-plays">Play the fix</span>}</span>
       </button>
       {open && (
         <div className="ck-body">
-          {ex ? <Specimen id={c.id} /> : c.tile && <Tile title={c.tile} css={css} />}
+          {ex ? <Specimen id={c.id} css={css} /> : c.tile && <Tile title={c.tile} css={css} />}
           <div className="ck-text">
             {!ex && <p><b>What it catches.</b> {c.why || 'See the rule for what it looks for.'}</p>}
             <p><b>How Plumber fixes it.</b> {c.fix}</p>
