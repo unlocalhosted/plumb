@@ -246,6 +246,12 @@ and icon passes' cases, and the palette after a write, were tested again through
 
 ### Craft suggestions
 
+- craft/concentric-radius reads an SVG's box, so an icon drawn as a circle inside a square SVG is flagged against
+  its card's corner (six false notes on algorecall's Today stack, 2026-11-20).
+- craft/shared-edges is written for a card: on a section laid out in columns it counts each designed column as a new
+  edge (three on React Plumber's section on craftingui.com, 2026-11-20).
+- craft/row-lines can't yet read Arc's rolling price digits: their text boxes don't sit where the digits are drawn
+  (14px measured, about 4px by eye).
 - A step suggestion prefers the theme step named for the job only by the words in its name (caps, label, display,
   body, button…). A theme that names its steps another way gets the step nearest the standard's number, as before.
 - The craft rules about buttons and targets take the element's role from the role file; rules about type still

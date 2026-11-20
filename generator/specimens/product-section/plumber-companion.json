@@ -1,0 +1,130 @@
+{
+  "id": "plumber-companion",
+  "kind": "product section",
+  "house": "react-plumber",
+  "jobs": [
+    {
+      "job": "meta"
+    },
+    {
+      "job": "identity"
+    },
+    {
+      "job": "value"
+    },
+    {
+      "job": "proof",
+      "count": [
+        3,
+        3
+      ]
+    },
+    {
+      "job": "action"
+    },
+    {
+      "job": "media"
+    }
+  ],
+  "order": [
+    "meta",
+    "identity",
+    "value",
+    "proof",
+    "action",
+    "media"
+  ],
+  "nesting": {
+    "row": [
+      "meta",
+      {
+        "stack": [
+          "identity",
+          "value",
+          {
+            "list": "proof"
+          },
+          "action"
+        ]
+      },
+      "media"
+    ]
+  },
+  "hierarchy": {
+    "identity": 1,
+    "value": 2,
+    "meta": 3,
+    "media": 3,
+    "proof": 4,
+    "action": 5
+  },
+  "lead": "clear",
+  "colour": {
+    "meta": "quieter",
+    "identity": "ink",
+    "value": "quieter",
+    "proof": "the-action",
+    "action": "the-action",
+    "media": "the-action"
+  },
+  "space": {
+    "inside": 1,
+    "between": 2.5
+  },
+  "grouping": "three columns: a label, the pitch, the proof",
+  "container": {
+    "ground": "none",
+    "edge": "none",
+    "shape": "none"
+  },
+  "density": "airy",
+  "fit": {
+    "width": [
+      60,
+      66
+    ],
+    "words": {
+      "identity": 2,
+      "value": 12,
+      "meta": 3
+    },
+    "counts": {
+      "proof": [
+        3,
+        3
+      ]
+    },
+    "itemWords": 12
+  },
+  "move": {
+    "type": "bind",
+    "args": {
+      "a": "value",
+      "b": "media"
+    },
+    "scope": "organism",
+    "words": "the claim sits beside its proof: the site checked by its own tool"
+  },
+  "kept": {
+    "by": "claude",
+    "why": "We said what the tool does in one line, gave the three verbs you'd actually use (check, see, fix) and put the install command right under them. Then, instead of a screenshot, we ran the tool on this very site and showed the result beside the pitch, so the claim and its proof sit side by side.",
+    "confirmed": "2026-11-20"
+  },
+  "status": "kept",
+  "generic": null,
+  "read": {
+    "holds": [
+      "one main button (Copy)",
+      "the claim leads clearly"
+    ],
+    "notes": [
+      "39 half-pixel sizes and 6 gaps held apart by leftover space, from plumber's own rules on its own section",
+      "shared-edges counts its three designed columns as three edges, a misread: the check is written for a card, not a multi-column section"
+    ]
+  },
+  "source": {
+    "url": "https://craftingui.com/",
+    "captured": "2026-11-20",
+    "sidecar": "generator/sidecars/plumber-companion.json"
+  }
+}

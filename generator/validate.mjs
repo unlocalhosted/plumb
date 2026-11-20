@@ -50,8 +50,9 @@ for (const f of files) {
     need(typeof s.move.words === 'string' && s.move.words.length > 10, 'a move needs its sentence');
     if (s.move.type === 'bind') need(jobs.includes(s.move.args.a) && jobs.includes(s.move.args.b), 'bind names jobs the specimen has');
   }
-  need(s.kept && s.kept.why && ['owner', 'proposed'].includes(s.kept.by), 'kept needs a why and who (owner, or proposed until the owner confirms)');
-  if (s.status === 'kept') need(s.kept?.by === 'owner', 'only the owner can keep a specimen');
+  need(s.kept && s.kept.why && ['owner', 'claude', 'proposed'].includes(s.kept.by), 'kept needs a why and who (owner, claude, or proposed)');
+  // kept by Claude's judgement against the owner's bar, or by the owner; the owner overrules by saying so (brief, F9)
+  if (s.status === 'kept') need(['owner', 'claude'].includes(s.kept?.by), 'a kept specimen says who kept it: owner or claude');
   // `only`: what the owner keeps it for, when not all of it (Supabase is kept for its order, not its alignment)
   if (s.kept?.only) need(Array.isArray(s.kept.only) && s.kept.only.every((f) => ['order', 'nesting', 'hierarchy', 'space', 'grouping', 'container', 'density', 'move'].includes(f)), 'kept.only names grammar fields');
   need(s.source && s.source.url && s.source.sidecar, 'source needs url and sidecar');
@@ -88,8 +89,8 @@ console.log(`\nStructure distance (0 same, 1 unrelated): jobs · order · ranks 
 const ids = specimens.map((s) => s.id), w = Math.max(...ids.map((i) => i.length));
 console.log(''.padEnd(w + 2) + ids.map((i) => i.slice(0, 8).padStart(9)).join(''));
 for (const a of specimens) console.log(a.id.padEnd(w + 2) + specimens.map((b) => (a === b ? '—' : distance(a, b).all.toFixed(2)).padStart(9)).join(''));
-console.log('\nNearest neighbour of each, and what separates them:');
-for (const a of specimens) {
+if (specimens.length > 1) console.log('\nNearest neighbour of each, and what separates them:');
+for (const a of specimens.length > 1 ? specimens : []) {
   const [b, d] = specimens.filter((x) => x !== a).map((x) => [x, distance(a, x)]).sort((p, q) => p[1].all - q[1].all)[0];
   console.log(`  ${a.id.padEnd(w)} → ${b.id.padEnd(w)} ${d.all.toFixed(2)}  (jobs ${d.jobs.toFixed(2)}, order ${d.order.toFixed(2)}, ranks ${d.ranks.toFixed(2)}, space ${d.space.toFixed(2)}, shape ${d.shape.toFixed(2)})`);
 }

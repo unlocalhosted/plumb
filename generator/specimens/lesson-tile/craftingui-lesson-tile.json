@@ -1,0 +1,74 @@
+{
+  "id": "craftingui-lesson-tile",
+  "kind": "lesson tile",
+  "house": "crafting-ui",
+  "jobs": [
+    {
+      "job": "media"
+    },
+    {
+      "job": "identity"
+    }
+  ],
+  "order": [
+    "media",
+    "identity"
+  ],
+  "nesting": {
+    "stack": [
+      "media",
+      "identity"
+    ]
+  },
+  "hierarchy": {
+    "identity": 1
+  },
+  "lead": "flat",
+  "colour": {
+    "media": "the-action",
+    "identity": "ink"
+  },
+  "space": {
+    "inside": 0.75,
+    "between": 0.75
+  },
+  "grouping": "space",
+  "container": {
+    "ground": "none",
+    "edge": "none",
+    "shape": "none"
+  },
+  "density": "airy",
+  "fit": {
+    "width": [
+      9,
+      11
+    ],
+    "words": {
+      "identity": 4
+    },
+    "counts": {},
+    "itemWords": 0
+  },
+  "move": null,
+  "kept": {
+    "by": "claude",
+    "why": "Each lesson is a small line drawing of the gesture it teaches, sitting on a hatched shadow, with just its name underneath. No card, no description, no badge: the drawing tells you what you'll learn before you read a word, and eleven of them in a row read like a shelf of tools.",
+    "confirmed": "2026-11-20"
+  },
+  "status": "kept",
+  "generic": null,
+  "read": {
+    "holds": [
+      "one edge",
+      "eleven tiles, names on one line across the row",
+      "no notes from plumber's craft rules"
+    ],
+    "notes": []
+  },
+  "source": {
+    "url": "https://craftingui.com/",
+    "captured": "2026-11-20",
+    "sidecar": "generator/sidecars/craftingui-lesson-tile.json"
+  }
+}

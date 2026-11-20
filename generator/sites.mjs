@@ -39,6 +39,28 @@ export const sites = [
     slots: `({ meta: find(root, /^CraftingAttention$/), identity: find(root, /^Lifetime access$/), value: find(root, /^For the ones who build\.$/), price: biggest(root), media: root.querySelector('svg.lifetime-art'), help: find(root, /^India purchase parity/), action: find(root, /^Get Lifetime Access/), proof: find(root, /^Instant lifetime access/) })`,
     body: `find(root, /^India purchase parity/)`,
   },
+  {
+    // house: algorecall's first review stack (Today, signed out): pattern slabs, the top one chosen, the rest waiting
+    id: 'algorecall-today-stack', url: 'https://algorecall.com/today', house: true,
+    wait: 6000,
+    root: `[...document.querySelectorAll('*')].filter((e) => e.childElementCount === 0 && e.textContent.trim() === 'Arrays & Hashing').map((e) => upTo(e, (a) => /\\+\\d+ more/.test(a.innerText) && /Two Pointers/.test(a.innerText))).find(Boolean)`,
+    slots: `({ status: upTo(find(root, /^Arrays & Hashing$/), (e) => e.parentElement === root || e.parentElement?.parentElement === root), identity: ['Stack', 'Linked List', 'Math & Geometry', 'Sliding Window', 'Two Pointers'].map((n) => find(root, new RegExp('^' + n.replace(/[&]/g, '\\\\$&') + '$'))), media: [...root.querySelectorAll('img, svg')].filter(visible).slice(0, 6), navigation: find(root, /^\\+\\d+ more$/) })`,
+    body: `find(root, /^Stack$/)`,
+  },
+  {
+    // house: one of crafting-ui's live lesson tiles on the home page, in its row
+    id: 'craftingui-lesson-tile', url: 'https://craftingui.com/', house: true,
+    root: `upTo(find(document.body, /^Pull to refresh$/), (e) => e.querySelector('svg, img') && e.getBoundingClientRect().height > 120)`,
+    slots: `({ media: root.querySelector('svg, img'), identity: find(root, /^Pull to refresh$/) })`,
+    body: `find(root, /^Pull to refresh$/)`,
+  },
+  {
+    // house: React Plumber's own section as shipped, on craftingui.com ("The companion tool")
+    id: 'plumber-companion', url: 'https://craftingui.com/', house: true,
+    root: `upTo(find(document.body, /^THE COMPANION TOOL$/i), (e) => /npm install/.test(e.innerText) && /CHECKED BY ITS OWN TOOL/i.test(e.innerText))`,
+    slots: `({ meta: find(root, /^THE COMPANION TOOL$/i), identity: find(root, /^React Plumber$/), value: find(root, /^Finds where your React/), proof: all(root, '*').filter((e) => e.childElementCount === 0 && /^(CHECK|SEE|FIX)$/i.test(e.textContent.trim())), action: find(root, /^COPY$/i), media: find(root, /^THIS SITE, CHECKED BY ITS OWN TOOL$/i) })`,
+    body: `find(root, /^Finds where your React/)`,
+  },
 ];
 
 // In-page helpers, injected before a site's picks run.
@@ -46,6 +68,7 @@ export const helpers = `
 const visible = (e) => { const r = e.getBoundingClientRect(); const cs = getComputedStyle(e); return r.width > 2 && r.height > 2 && cs.visibility !== 'hidden' && cs.opacity !== '0'; };
 const find = (root, re) => { const hits = [...root.querySelectorAll('*')].filter((e) => visible(e) && re.test((e.innerText || '').trim())); return hits.sort((a, b) => a.querySelectorAll('*').length - b.querySelectorAll('*').length)[0] || null; };
 const all = (root, sel) => [...root.querySelectorAll(sel)].filter(visible);
+const upTo = (el, ok) => { for (let e = el; e && e !== document.body; e = e.parentElement) if (ok(e)) return e; return null; };
 const cardAround = (el) => { let p = el; while (p.parentElement && p.parentElement.getBoundingClientRect().height < 1100 && p.parentElement.getBoundingClientRect().width < 700) p = p.parentElement; return p; };
 const biggest = (root) => { const leaves = [...root.querySelectorAll('*')].filter((e) => visible(e) && [...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())); const top = leaves.sort((a, b) => parseFloat(getComputedStyle(b).fontSize) - parseFloat(getComputedStyle(a).fontSize))[0]; let p = top; while (p.parentElement && p.parentElement.getBoundingClientRect().height < top.getBoundingClientRect().height * 1.6) p = p.parentElement; return p; };
 `;

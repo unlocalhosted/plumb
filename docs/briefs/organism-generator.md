@@ -416,7 +416,9 @@ on it; a feature that doesn't vary is dropped.
   ranks that snap to distinct steps.
 - **F8. Fit is stressed.** A variant whose real content falls outside its specimen's or its molecules' fit goes
   through Break it before it is shown.
-- **F9. A person curates.** A specimen enters only with the owner's keep and one line of why.
+- **F9. Curated with judgement, not by asking.** Claude keeps or drops a specimen and writes its why, held to the
+  owner's bar ("something a real designer would ship"); the owner overrules by saying so. Owner, 2026-11-20: "dont
+  ask me for everything use your own brain". The kept line records who kept it (`claude` or `owner`).
 - **F10. The blind mix.** Before a kind is offered: 20 cards, 10 generated and 10 house cards made fresh for the
   test, so nobody recognises them from memory, shuffled. A judge who hasn't seen any of them says which is which. It
   passes if the judge is right on 12 or fewer (10 is chance; 14 right means spotting 7 of the 10 generated cards,

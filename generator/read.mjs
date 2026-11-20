@@ -22,14 +22,15 @@ try {
     const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, bypassCSP: true });
     try {
       await page.goto(site.url, { waitUntil: 'domcontentloaded', timeout: 30000 });
-      await page.waitForTimeout(3500);
+      await page.waitForTimeout(site.wait ?? 3500);
       // fixed and sticky bars (site menus) would cover the row; they go before anything is measured, so the marks land true
       await page.evaluate(() => { for (const e of document.querySelectorAll('body *')) { const pos = getComputedStyle(e).position; if (pos === 'fixed' || pos === 'sticky') e.style.setProperty('display', 'none', 'important'); } });
       await page.addScriptTag({ content: engine });
       const read = await page.evaluate(`(async () => { ${helpers}
         const card = ${site.root}; if (!card) throw new Error('card not found');
         // the row: the smallest ancestor that holds a sibling card (clearly wider than the card)
-        let row = card; while (row.parentElement && row.getBoundingClientRect().width < card.getBoundingClientRect().width * 1.6) row = row.parentElement;
+        // a section already spanning most of the window has no row around it: it is read on its own
+        let row = card; if (card.getBoundingClientRect().width < innerWidth * 0.6) while (row.parentElement && row.getBoundingClientRect().width < card.getBoundingClientRect().width * 1.6) row = row.parentElement;
         row.scrollIntoView({ block: 'center' }); await new Promise((r) => setTimeout(r, 800));
         const els = [card === row ? card : row, ...row.querySelectorAll('*')].filter((e) => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0; });
         const craft = new PlumbCraft.Craft({ theme: new PlumbCraft.Theme({ decisions: () => [] }) });

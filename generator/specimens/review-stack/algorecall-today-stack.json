@@ -1,0 +1,120 @@
+{
+  "id": "algorecall-today-stack",
+  "kind": "review stack",
+  "house": "algorecall",
+  "jobs": [
+    {
+      "job": "status"
+    },
+    {
+      "job": "media",
+      "count": [
+        6,
+        6
+      ]
+    },
+    {
+      "job": "identity",
+      "count": [
+        5,
+        9
+      ]
+    },
+    {
+      "job": "navigation"
+    }
+  ],
+  "order": [
+    "status",
+    "media",
+    "identity",
+    "navigation"
+  ],
+  "nesting": {
+    "stack": [
+      {
+        "row": [
+          "status"
+        ]
+      },
+      {
+        "list": {
+          "row": [
+            "media",
+            "identity"
+          ]
+        }
+      },
+      "navigation"
+    ]
+  },
+  "hierarchy": {
+    "status": 1,
+    "identity": 2,
+    "navigation": 3
+  },
+  "lead": "flat",
+  "colour": {
+    "status": "the-action",
+    "media": "ink",
+    "identity": "ink",
+    "navigation": "quieter"
+  },
+  "space": {
+    "inside": 0.5,
+    "between": 0.2
+  },
+  "grouping": "one stack of raised slabs, the rest folded into a count",
+  "container": {
+    "ground": "surface",
+    "edge": "line",
+    "shape": "small"
+  },
+  "density": "compact",
+  "fit": {
+    "width": [
+      30,
+      36
+    ],
+    "words": {
+      "identity": 3,
+      "navigation": 2
+    },
+    "counts": {
+      "identity": [
+        5,
+        9
+      ]
+    },
+    "itemWords": 3
+  },
+  "move": {
+    "type": "single-out",
+    "args": {
+      "which": "next"
+    },
+    "scope": "organism",
+    "words": "the slab to press next stands out from the stack"
+  },
+  "kept": {
+    "by": "claude",
+    "why": "We drew the day's reviews as a stack of slabs you could pick up, and lit the top one in the pattern's own green, so there's never a question of where to start. Only six show; the rest fold into \"+4 more\", which keeps the first day from looking like homework.",
+    "confirmed": "2026-11-20"
+  },
+  "status": "kept",
+  "generic": null,
+  "read": {
+    "holds": [
+      "every slab starts on one edge",
+      "one slab lit, the rest quiet"
+    ],
+    "notes": [
+      "plumber flags the six slab icons' corners, a misread: each icon is a circle drawn inside a square SVG box, and craft/concentric-radius reads the box"
+    ]
+  },
+  "source": {
+    "url": "https://algorecall.com/today",
+    "captured": "2026-11-20",
+    "sidecar": "generator/sidecars/algorecall-today-stack.json"
+  }
+}

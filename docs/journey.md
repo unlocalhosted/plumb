@@ -4431,6 +4431,16 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   "·"-joined lines trip plumber's check for chains of status words. Its keep-reason is written in a designer's
   voice and waits for the owner. Fixed on the way: the drawn read was clipped from the wrong frame and showed the
   hero instead of the card.
+- **"Use your own brain."** The owner, after another turn that ended with a question: "dont ask me for everything use
+  your own fucking brain for god sake". The cause was a rule I had written into the brief myself (only the owner
+  keeps a specimen), which turned every small call into a question. Curation is now mine, held to the owner's bar,
+  and the owner overrules by saying so. With that, the other three products were read the same day: algorecall's
+  review stack on Today (slabs you pick up, the next one lit green, the rest folded into "+4 more"), crafting-ui's
+  lesson tiles (a line drawing of the gesture on a hatched shadow, the name under it, eleven in a row), and React
+  Plumber's own section on craftingui.com (check, see, fix, the install line, and the site checked by its own tool
+  beside the pitch). All four are kept as house specimens with reasons in a designer's voice. The eye found two
+  misreads of its own, now in the backlog: icons drawn as circles inside square SVG boxes, and a three-column section
+  read as three edges. Sheet: `generator/shots/house-specimens.png` (local).
 
 ## Open gaps
 - **The mark was never tried among real neighbours** (a row of browser tabs, an npm page, a README header), only on empty tiles. Nobody outside has been asked whether the round leg reads as an R or leans towards a B.

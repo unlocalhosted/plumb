@@ -16,7 +16,7 @@ try {
     const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, bypassCSP: true });
     try {
       await page.goto(site.url, { waitUntil: 'domcontentloaded', timeout: 30000 });
-      await page.waitForTimeout(3500);
+      await page.waitForTimeout(site.wait ?? 3500);
       await page.addScriptTag({ content: `${capture}\nwindow.captureOrganism = captureOrganism;` });
       const result = await page.evaluate(`(() => { ${helpers}
         const root = ${site.root}; if (!root) throw new Error('card not found');
