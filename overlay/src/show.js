@@ -19,7 +19,8 @@
  * ───────────────────────────────────────────────────────── */
 
 export const HUES = ['sky', 'lilac', 'mint', 'butter', 'pink']; // coral is "off the scale": never a role's hue
-export const BEAT = { in: 240, move: 520, hold: 200, out: 160 };
+// a little slower than a flick, so each change can be watched (and filmed): marked, moved, held to be seen, let go
+export const BEAT = { in: 300, move: 640, hold: 460, out: 200, travel: 560 };
 const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 const wait = (ms, signal) => new Promise((done) => { if (signal?.aborted) return done(); const t = setTimeout(done, ms); signal?.addEventListener('abort', () => { clearTimeout(t); done(); }, { once: true }); });
 
@@ -172,6 +173,7 @@ export function ease(el, set, { props = ['font-size', 'line-height', 'letter-spa
 // while the measures follow the page live, a hold on the landed values, and the marks lift. One pass, one beat
 export const SWEEP = { read: 1100, land: 900 };
 export async function playAll(steps, { marks, signal } = {}) {
+  await bringIntoView(steps.flatMap((s) => s.bands?.() ?? []), signal);
   const quick = signal?.aborted || still();
   for (const s of steps) s.chip?.setAttribute('data-on', '');
   if (!quick) { marks?.show(steps.flatMap((s) => s.bands()), 'sky'); await wait(SWEEP.read, signal); }
@@ -183,9 +185,25 @@ export async function playAll(steps, { marks, signal } = {}) {
 
 // The sequencer. steps: [{ chip, to, bands() → [{ rect, kind }], morph(animate) }]; morph sets the role's places, with
 // motion when `animate`. Resolves when every role is set; an aborted signal sets the rest at once.
+// The page comes to the change (owner, 2026-11-20: "focus me to the element we are changing"): when none of a step's
+// places is in view, the page glides so the first one sits a third of the way down, clear of the bar at the bottom,
+// and the show waits for it to arrive. Nothing moves when one is already in view.
+async function bringIntoView(bands, signal) {
+  const rects = (bands ?? []).map((b) => b.rect?.()).filter((r) => r && r.height > 0 && r.width > 0);
+  if (!rects.length) return;
+  const top = 64, bottom = innerHeight - 150;
+  if (rects.some((r) => r.top >= top && r.bottom <= bottom)) return;
+  const r = rects[0], by = r.top - innerHeight * 0.33;
+  if (Math.abs(by) < 4) return;
+  const smooth = !(signal?.aborted || still());
+  scrollBy({ top: by, behavior: smooth ? 'smooth' : 'instant' });
+  if (smooth) await wait(BEAT.travel, signal);
+}
 export async function play(steps, { marks, signal, onStep } = {}) {
   for (let i = 0; i < steps.length; i++) {
-    const s = steps[i], quick = signal?.aborted || still();
+    const s = steps[i];
+    await bringIntoView(s.bands?.(), signal);
+    const quick = signal?.aborted || still();
     onStep?.(i);
     s.chip?.setAttribute('data-on', '');
     if (!quick) { marks?.show(s.bands(), s.chip?.dataset.tone ?? HUES[i % HUES.length]); await wait(BEAT.in, signal); }

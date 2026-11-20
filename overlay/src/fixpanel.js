@@ -119,8 +119,9 @@ const FIX_CSS_BASE = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   .fx .cu-one .lines { min-width: 180px; }
   .fx .cu-one .dt .roles .sh-chips, .fx .cu-one .dt .roles { display: inline-flex; gap: 4px; }
   .fx .cu-one .dt .cmp { margin-left: 6px; white-space: nowrap; }
-  /* a narrow screen keeps the headline: the strip shows only the pass in hand */
-  @media (max-width: 1080px) { .fx .one .passes .ps:not(.now) { display: none; } }
+  /* a narrow screen keeps every pass in the strip, smaller (owner, 2026-11-20: "why i am not seeing the toolbar with
+     the phases"): showing only the pass in hand hid where Clean up is going */
+  @media (max-width: 1080px) { .fx .one .passes { gap: 3px; padding: 0 2px; } .fx .one .ps { width: 17px; height: 17px; } .fx .one .ps.now::before { inset: -4px; border-radius: 7px; } }
   ${BUTTON_CSS}
   .tb.sm { --h: 30px; }
   .tb.sm .top { padding: 0 11px; font-size: 12.5px; border-radius: 11px; }
