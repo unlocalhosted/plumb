@@ -1,0 +1,5733 @@
+[
+ {
+  "lib": "arc",
+  "name": "button",
+  "title": "Button",
+  "description": "A clear, responsive action with quiet secondary states.",
+  "kind": "ui",
+  "jobs": [
+   "action"
+  ],
+  "needs": [],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/button.json",
+  "page": "https://uiarc.dev/components/button",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "action-swap",
+  "title": "Action swap",
+  "description": "Swap an action label while preserving its place and intent.",
+  "kind": "ui",
+  "jobs": [
+   "action"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/action-swap.json",
+  "page": "https://uiarc.dev/components/action-swap",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "action-button",
+  "title": "Action button",
+  "description": "A compact button for frequent toolbar actions.",
+  "kind": "ui",
+  "jobs": [
+   "action"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/action-button.json",
+  "page": "https://uiarc.dev/components/action-button",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "split-button",
+  "title": "Split button",
+  "description": "A primary action with a menu of nearby alternatives.",
+  "kind": "ui",
+  "jobs": [
+   "action",
+   "navigation"
+  ],
+  "needs": [],
+  "deps": [
+   "@radix-ui/react-dropdown-menu",
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/split-button.json",
+  "page": "https://uiarc.dev/components/split-button",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "button-group",
+  "title": "Button group",
+  "description": "Related actions joined into one surface with hairline dividers: a hover highlight glides between segments, the pressed one answers in place, and an attached menu can close the row.",
+  "kind": "ui",
+  "jobs": [
+   "action",
+   "navigation"
+  ],
+  "needs": [],
+  "deps": [
+   "@radix-ui/react-dropdown-menu",
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/button-group.json",
+  "page": "https://uiarc.dev/components/button-group",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "floating-button-group",
+  "title": "Floating button group",
+  "description": "Separate soft buttons in a quiet tray, with one shared highlight that morphs from button to button as you move, and a pressed state that settles in place.",
+  "kind": "ui",
+  "jobs": [
+   "action"
+  ],
+  "needs": [],
+  "deps": [
+   "@radix-ui/react-tooltip",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/floating-button-group.json",
+  "page": "https://uiarc.dev/components/floating-button-group",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "expanding-button-group",
+  "title": "Expanding button group",
+  "description": "Icon buttons in a compact group: the one you point at or focus grows to reveal its label while its neighbours slide aside, and an action confirms in place.",
+  "kind": "ui",
+  "jobs": [
+   "action",
+   "media"
+  ],
+  "needs": [],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/expanding-button-group.json",
+  "page": "https://uiarc.dev/components/expanding-button-group",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "dropdown-menu",
+  "title": "Dropdown menu",
+  "description": "A focused list of actions anchored to a trigger.",
+  "kind": "ui",
+  "jobs": [
+   "proof",
+   "navigation"
+  ],
+  "needs": [],
+  "deps": [
+   "@radix-ui/react-dropdown-menu",
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/dropdown-menu.json",
+  "page": "https://uiarc.dev/components/dropdown-menu",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "context-menu",
+  "title": "Context menu",
+  "description": "Secondary actions kept close to the selected object.",
+  "kind": "ui",
+  "jobs": [
+   "navigation"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/context-menu.json",
+  "page": "https://uiarc.dev/components/context-menu",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "copy-button",
+  "title": "Copy button",
+  "description": "Copy a value with immediate confirmation.",
+  "kind": "ui",
+  "jobs": [
+   "action"
+  ],
+  "needs": [],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/copy-button.json",
+  "page": "https://uiarc.dev/components/copy-button",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "drawer",
+  "title": "Drawer",
+  "description": "A temporary side surface for focused work.",
+  "kind": "ui",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "@radix-ui/react-dialog",
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/drawer.json",
+  "page": "https://uiarc.dev/components/drawer",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "theme-switch",
+  "title": "Theme switcher",
+  "description": "Four smooth ways to move between light and dark appearance.",
+  "kind": "ui",
+  "jobs": [
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/theme-switch.json",
+  "page": "https://uiarc.dev/components/theme-switch",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "theme-switch-eclipse",
+  "title": "Eclipse",
+  "description": "The next appearance crosses the page like an eclipse.",
+  "kind": "ui",
+  "jobs": [
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/theme-switch-eclipse.json",
+  "page": "https://uiarc.dev/components/theme-switch-eclipse",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "theme-switch-split",
+  "title": "Split",
+  "description": "The next appearance opens from a slim center seam.",
+  "kind": "ui",
+  "jobs": [
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/theme-switch-split.json",
+  "page": "https://uiarc.dev/components/theme-switch-split",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "theme-switch-rise",
+  "title": "Rise",
+  "description": "The next appearance rises into place.",
+  "kind": "ui",
+  "jobs": [
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/theme-switch-rise.json",
+  "page": "https://uiarc.dev/components/theme-switch-rise",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "avatar",
+  "title": "Avatar",
+  "description": "A compact identity marker for people and accounts.",
+  "kind": "ui",
+  "jobs": [
+   "media"
+  ],
+  "needs": [
+   "people"
+  ],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/avatar.json",
+  "page": "https://uiarc.dev/components/avatar",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "avatar-group",
+  "title": "Avatar group",
+  "description": "Show a team or set of contributors in a small space.",
+  "kind": "ui",
+  "jobs": [
+   "media"
+  ],
+  "needs": [
+   "people"
+  ],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/avatar-group.json",
+  "page": "https://uiarc.dev/components/avatar-group",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "input",
+  "title": "Input",
+  "description": "A single line field with clear labels and useful states.",
+  "kind": "ui",
+  "jobs": [
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/input.json",
+  "page": "https://uiarc.dev/components/input",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "textarea",
+  "title": "Textarea",
+  "description": "A multiline field for notes, descriptions, and longer text.",
+  "kind": "ui",
+  "jobs": [
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/textarea.json",
+  "page": "https://uiarc.dev/components/textarea",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "select",
+  "title": "Select",
+  "description": "A compact choice field with a keyboard friendly menu.",
+  "kind": "ui",
+  "jobs": [
+   "navigation",
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "@radix-ui/react-select",
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/select.json",
+  "page": "https://uiarc.dev/components/select",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "combobox",
+  "title": "Combobox",
+  "description": "Search and select from a list without leaving the field.",
+  "kind": "ui",
+  "jobs": [
+   "proof",
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/combobox.json",
+  "page": "https://uiarc.dev/components/combobox",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "checkbox",
+  "title": "Checkbox",
+  "description": "A binary choice with a precise, legible state.",
+  "kind": "ui",
+  "jobs": [
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "@radix-ui/react-checkbox",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/checkbox.json",
+  "page": "https://uiarc.dev/components/checkbox",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "switch",
+  "title": "Switch",
+  "description": "A tactile toggle for settings that take effect immediately.",
+  "kind": "ui",
+  "jobs": [
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "@radix-ui/react-switch",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/switch.json",
+  "page": "https://uiarc.dev/components/switch",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "multi-select",
+  "title": "Multi-select",
+  "description": "Select several values while keeping the field readable.",
+  "kind": "ui",
+  "jobs": [
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/multi-select.json",
+  "page": "https://uiarc.dev/components/multi-select",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "number-field",
+  "title": "Number field",
+  "description": "Enter a bounded number with clear increment controls.",
+  "kind": "ui",
+  "jobs": [
+   "value",
+   "input"
+  ],
+  "needs": [
+   "a number that changes"
+  ],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/number-field.json",
+  "page": "https://uiarc.dev/components/number-field",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "password-field",
+  "title": "Password field",
+  "description": "Capture sensitive text with a visible reveal control.",
+  "kind": "ui",
+  "jobs": [
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/password-field.json",
+  "page": "https://uiarc.dev/components/password-field",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "search-field",
+  "title": "Search field",
+  "description": "A recognizable search entry point with clear affordances.",
+  "kind": "ui",
+  "jobs": [
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/search-field.json",
+  "page": "https://uiarc.dev/components/search-field",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "tag-input",
+  "title": "Tag input",
+  "description": "Turn short text values into removable tags.",
+  "kind": "ui",
+  "jobs": [
+   "status",
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/tag-input.json",
+  "page": "https://uiarc.dev/components/tag-input",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "file-dropzone",
+  "title": "File dropzone",
+  "description": "A generous target for dropping one or more files.",
+  "kind": "ui",
+  "jobs": [
+   "navigation"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/file-dropzone.json",
+  "page": "https://uiarc.dev/components/file-dropzone",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "radio-group",
+  "title": "Radio group",
+  "description": "Choose one option from a visible set.",
+  "kind": "ui",
+  "jobs": [
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/radio-group.json",
+  "page": "https://uiarc.dev/components/radio-group",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "segmented-control",
+  "title": "Segmented control",
+  "description": "Switch between a small set of related views.",
+  "kind": "ui",
+  "jobs": [
+   "navigation",
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/segmented-control.json",
+  "page": "https://uiarc.dev/components/segmented-control",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "calendar",
+  "title": "Calendar",
+  "description": "Browse dates in a clear, compact month view.",
+  "kind": "ui",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/calendar.json",
+  "page": "https://uiarc.dev/components/calendar",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "date-picker",
+  "title": "Date picker",
+  "description": "Choose a date without losing context.",
+  "kind": "ui",
+  "jobs": [
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/date-picker.json",
+  "page": "https://uiarc.dev/components/date-picker",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "time-picker",
+  "title": "Time picker",
+  "description": "Choose a time with sensible keyboard behavior.",
+  "kind": "ui",
+  "jobs": [
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/time-picker.json",
+  "page": "https://uiarc.dev/components/time-picker",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "accordion",
+  "title": "Accordion",
+  "description": "Progressively reveal supporting information in place.",
+  "kind": "ui",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "@radix-ui/react-accordion",
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/accordion.json",
+  "page": "https://uiarc.dev/components/accordion",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "dialog",
+  "title": "Dialog",
+  "description": "A focused surface for decisions that need attention.",
+  "kind": "ui",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "@radix-ui/react-dialog",
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/dialog.json",
+  "page": "https://uiarc.dev/components/dialog",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "popover",
+  "title": "Popover",
+  "description": "A small anchored surface for contextual information.",
+  "kind": "ui",
+  "jobs": [
+   "help"
+  ],
+  "needs": [],
+  "deps": [
+   "@radix-ui/react-popover"
+  ],
+  "item": "https://uiarc.dev/r/popover.json",
+  "page": "https://uiarc.dev/components/popover",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "tooltip",
+  "title": "Tooltip",
+  "description": "Short supporting text for unfamiliar controls.",
+  "kind": "ui",
+  "jobs": [
+   "help"
+  ],
+  "needs": [],
+  "deps": [
+   "@radix-ui/react-tooltip",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/tooltip.json",
+  "page": "https://uiarc.dev/components/tooltip",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "tabs",
+  "title": "Tabs",
+  "description": "Switch between related content in the same context.",
+  "kind": "ui",
+  "jobs": [
+   "navigation",
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "@radix-ui/react-tabs",
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/tabs.json",
+  "page": "https://uiarc.dev/components/tabs",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "expandable-card",
+  "title": "Expandable card",
+  "description": "Give a dense card more room when requested.",
+  "kind": "ui",
+  "jobs": [
+   "navigation"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/expandable-card.json",
+  "page": "https://uiarc.dev/components/expandable-card",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "breadcrumb",
+  "title": "Breadcrumb",
+  "description": "Show where a page sits in a hierarchy.",
+  "kind": "ui",
+  "jobs": [
+   "navigation"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/breadcrumb.json",
+  "page": "https://uiarc.dev/components/breadcrumb",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "alert",
+  "title": "Alert",
+  "description": "A persistent message that helps people recover or continue.",
+  "kind": "ui",
+  "jobs": [],
+  "needs": [
+   "people"
+  ],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/alert.json",
+  "page": "https://uiarc.dev/components/alert",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "toast",
+  "title": "Toast",
+  "description": "Brief confirmation for a completed background action.",
+  "kind": "ui",
+  "jobs": [
+   "action"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/toast.json",
+  "page": "https://uiarc.dev/components/toast",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "rating",
+  "title": "Rating",
+  "description": "A simple, accessible way to capture a numeric opinion.",
+  "kind": "ui",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/rating.json",
+  "page": "https://uiarc.dev/components/rating",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "progress",
+  "title": "Progress",
+  "description": "Show how much of a known task is complete.",
+  "kind": "ui",
+  "jobs": [
+   "position"
+  ],
+  "needs": [
+   "ordered stages"
+  ],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/progress.json",
+  "page": "https://uiarc.dev/components/progress",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "skeleton",
+  "title": "Skeleton",
+  "description": "Reserve space while content is still loading.",
+  "kind": "ui",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/skeleton.json",
+  "page": "https://uiarc.dev/components/skeleton",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "badge",
+  "title": "Badge",
+  "description": "A small label for status, category, or metadata.",
+  "kind": "ui",
+  "jobs": [
+   "status"
+  ],
+  "needs": [],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/badge.json",
+  "page": "https://uiarc.dev/components/badge",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "card",
+  "title": "Card",
+  "description": "A contained group of related content and actions.",
+  "kind": "ui",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "@radix-ui/react-dialog",
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/card.json",
+  "page": "https://uiarc.dev/components/card",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "metric-card",
+  "title": "Metric card",
+  "description": "A compact summary for a number that needs context.",
+  "kind": "ui",
+  "jobs": [
+   "value"
+  ],
+  "needs": [
+   "a number that changes"
+  ],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/metric-card.json",
+  "page": "https://uiarc.dev/components/metric-card",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "empty-state",
+  "title": "Empty state",
+  "description": "A useful next step when there is nothing to show yet.",
+  "kind": "ui",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/empty-state.json",
+  "page": "https://uiarc.dev/components/empty-state",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "tree-view",
+  "title": "Tree view",
+  "description": "Navigate nested folders and structured content.",
+  "kind": "ui",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/tree-view.json",
+  "page": "https://uiarc.dev/components/tree-view",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "pagination",
+  "title": "Pagination",
+  "description": "Move through a long collection with clear bounds.",
+  "kind": "ui",
+  "jobs": [
+   "navigation"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/pagination.json",
+  "page": "https://uiarc.dev/components/pagination",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "filter-toolbar",
+  "title": "Filter toolbar",
+  "description": "Keep collection filters close and easy to reset.",
+  "kind": "ui",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/filter-toolbar.json",
+  "page": "https://uiarc.dev/components/filter-toolbar",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "sortable-data-table",
+  "title": "Sortable data table",
+  "description": "Compare structured records with sortable columns.",
+  "kind": "ui",
+  "jobs": [
+   "proof"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/sortable-data-table.json",
+  "page": "https://uiarc.dev/components/sortable-data-table",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "sparkline",
+  "title": "Sparkline",
+  "description": "Show a compact trend beside a value.",
+  "kind": "ui",
+  "jobs": [
+   "media"
+  ],
+  "needs": [
+   "a data series"
+  ],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/sparkline.json",
+  "page": "https://uiarc.dev/components/sparkline",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "gauge",
+  "title": "Gauge",
+  "description": "Show a value against a known range.",
+  "kind": "ui",
+  "jobs": [
+   "value"
+  ],
+  "needs": [],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/gauge.json",
+  "page": "https://uiarc.dev/components/gauge",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "animated-counter",
+  "title": "Animated counter",
+  "description": "Give changing totals a clear sense of movement.",
+  "kind": "ui",
+  "jobs": [
+   "value"
+  ],
+  "needs": [
+   "a number that changes"
+  ],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/animated-counter.json",
+  "page": "https://uiarc.dev/components/animated-counter",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "code-block",
+  "title": "Code block",
+  "description": "Present code with legible hierarchy and copy access.",
+  "kind": "ui",
+  "jobs": [
+   "action"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/code-block.json",
+  "page": "https://uiarc.dev/components/code-block",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "reorderable-list",
+  "title": "Reorderable list",
+  "description": "Organize items with direct drag and drop.",
+  "kind": "ui",
+  "jobs": [
+   "proof"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/reorderable-list.json",
+  "page": "https://uiarc.dev/components/reorderable-list",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "text-reveal",
+  "title": "Text reveal",
+  "description": "Reveal a short piece of content with restrained motion.",
+  "kind": "ui",
+  "jobs": [
+   "identity"
+  ],
+  "needs": [],
+  "deps": [],
+  "item": "https://uiarc.dev/r/text-reveal.json",
+  "page": "https://uiarc.dev/components/text-reveal",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "in-view-title",
+  "title": "In-view title",
+  "description": "Bring a section title in as it scrolls into view.",
+  "kind": "ui",
+  "jobs": [
+   "identity"
+  ],
+  "needs": [],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/in-view-title.json",
+  "page": "https://uiarc.dev/components/in-view-title",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "text-morph",
+  "title": "Text morph",
+  "description": "Morph a label into its next state, letter by letter.",
+  "kind": "ui",
+  "jobs": [
+   "identity"
+  ],
+  "needs": [],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/text-morph.json",
+  "page": "https://uiarc.dev/components/text-morph",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "text-shimmer",
+  "title": "Text shimmer",
+  "description": "Show ongoing work with a calm light across the words.",
+  "kind": "ui",
+  "jobs": [
+   "identity"
+  ],
+  "needs": [],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/text-shimmer.json",
+  "page": "https://uiarc.dev/components/text-shimmer",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "hold-to-confirm",
+  "title": "Hold to confirm",
+  "description": "Confirm a destructive action by holding, not tapping.",
+  "kind": "ui",
+  "jobs": [
+   "action"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/hold-to-confirm.json",
+  "page": "https://uiarc.dev/components/hold-to-confirm",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "swipe-actions",
+  "title": "Swipe actions",
+  "description": "Reveal row actions with a swipe, or from the same actions in a menu.",
+  "kind": "ui",
+  "jobs": [
+   "navigation"
+  ],
+  "needs": [],
+  "deps": [
+   "@radix-ui/react-dropdown-menu",
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/swipe-actions.json",
+  "page": "https://uiarc.dev/components/swipe-actions",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "reactions",
+  "title": "Reactions",
+  "description": "Acknowledge a post in one tap, with counts that roll.",
+  "kind": "ui",
+  "jobs": [],
+  "needs": [
+   "a number that changes"
+  ],
+  "deps": [
+   "@radix-ui/react-popover",
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/reactions.json",
+  "page": "https://uiarc.dev/components/reactions",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "slider",
+  "title": "Slider",
+  "description": "Pick a value or a range on a track that follows your finger.",
+  "kind": "ui",
+  "jobs": [
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/slider.json",
+  "page": "https://uiarc.dev/components/slider",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "elastic-slider",
+  "title": "Elastic slider",
+  "description": "A slider that stretches like rubber past its ends, with a swaying value tag and detents the thumb clicks into.",
+  "kind": "ui",
+  "jobs": [
+   "status",
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/elastic-slider.json",
+  "page": "https://uiarc.dev/components/elastic-slider",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "range-histogram-slider",
+  "title": "Range histogram slider",
+  "description": "A price range over a live histogram of the data, lighting the bars inside the range and settling on bar edges.",
+  "kind": "ui",
+  "jobs": [
+   "price",
+   "status",
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/range-histogram-slider.json",
+  "page": "https://uiarc.dev/components/range-histogram-slider",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "ruler-slider",
+  "title": "Ruler slider",
+  "description": "A tape of ticks that slides under a fixed needle, with momentum, snapping, and a rolling readout.",
+  "kind": "ui",
+  "jobs": [
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/ruler-slider.json",
+  "page": "https://uiarc.dev/components/ruler-slider",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "inline-edit",
+  "title": "Inline edit",
+  "description": "Rename in place: the text becomes a field without moving.",
+  "kind": "ui",
+  "jobs": [
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/inline-edit.json",
+  "page": "https://uiarc.dev/components/inline-edit",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "expanding-search",
+  "title": "Expanding search",
+  "description": "An icon that morphs into a search field with results beneath it.",
+  "kind": "ui",
+  "jobs": [
+   "media",
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/expanding-search.json",
+  "page": "https://uiarc.dev/components/expanding-search",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "chip-group",
+  "title": "Chip group",
+  "description": "Filter by a few facets with chips that morph as you pick them.",
+  "kind": "ui",
+  "jobs": [
+   "status"
+  ],
+  "needs": [],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/chip-group.json",
+  "page": "https://uiarc.dev/components/chip-group",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "password-strength",
+  "title": "Password strength",
+  "description": "Show how strong a new password is while it is typed.",
+  "kind": "ui",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/password-strength.json",
+  "page": "https://uiarc.dev/components/password-strength",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "bottom-sheet",
+  "title": "Bottom sheet",
+  "description": "A sheet that rests at a peek or full height and follows your finger.",
+  "kind": "ui",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "@radix-ui/react-dialog",
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/bottom-sheet.json",
+  "page": "https://uiarc.dev/components/bottom-sheet",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "hover-card",
+  "title": "Hover card",
+  "description": "Preview a person or link on hover or focus without leaving the page.",
+  "kind": "ui",
+  "jobs": [
+   "help"
+  ],
+  "needs": [],
+  "deps": [
+   "@radix-ui/react-popover",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/hover-card.json",
+  "page": "https://uiarc.dev/components/hover-card",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "resizable-panels",
+  "title": "Resizable panels",
+  "description": "Trade space between panes by dragging the divider between them.",
+  "kind": "ui",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/resizable-panels.json",
+  "page": "https://uiarc.dev/components/resizable-panels",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "toast-stack",
+  "title": "Toast stack",
+  "description": "Stack short results at the edge until you reach for them.",
+  "kind": "ui",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/toast-stack.json",
+  "page": "https://uiarc.dev/components/toast-stack",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "usage-meter",
+  "title": "Usage meter",
+  "description": "Show what fills an allowance and how close it is to the limit.",
+  "kind": "ui",
+  "jobs": [
+   "value"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/usage-meter.json",
+  "page": "https://uiarc.dev/components/usage-meter",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "onboarding-checklist",
+  "title": "Onboarding checklist",
+  "description": "Guide a new workspace through setup, one step at a time.",
+  "kind": "ui",
+  "jobs": [
+   "proof",
+   "position"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/onboarding-checklist.json",
+  "page": "https://uiarc.dev/components/onboarding-checklist",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "image-compare",
+  "title": "Image compare",
+  "description": "Drag a divider across two images to see what changed.",
+  "kind": "ui",
+  "jobs": [
+   "proof",
+   "media"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/image-compare.json",
+  "page": "https://uiarc.dev/components/image-compare",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "carousel",
+  "title": "Carousel",
+  "description": "Browse a row of slides by dragging, flicking, or arrowing through them.",
+  "kind": "ui",
+  "jobs": [
+   "navigation"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/carousel.json",
+  "page": "https://uiarc.dev/components/carousel",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "card-stack",
+  "title": "Card stack",
+  "description": "Review a deck one card at a time, with a throw and an undo.",
+  "kind": "ui",
+  "jobs": [
+   "media"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/card-stack.json",
+  "page": "https://uiarc.dev/components/card-stack",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "bar-chart",
+  "title": "Bar chart",
+  "description": "Compare one measure across days and scrub any bar for its value.",
+  "kind": "ui",
+  "jobs": [
+   "proof",
+   "media"
+  ],
+  "needs": [
+   "a data series"
+  ],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/bar-chart.json",
+  "page": "https://uiarc.dev/components/bar-chart",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "activity-heatmap",
+  "title": "Activity heatmap",
+  "description": "See a year of activity at a glance, one square per day.",
+  "kind": "ui",
+  "jobs": [],
+  "needs": [
+   "a data series"
+  ],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/activity-heatmap.json",
+  "page": "https://uiarc.dev/components/activity-heatmap",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "timeline",
+  "title": "Timeline",
+  "description": "Follow what happened, newest first, grouped by day.",
+  "kind": "ui",
+  "jobs": [
+   "position"
+  ],
+  "needs": [
+   "ordered stages"
+  ],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/timeline.json",
+  "page": "https://uiarc.dev/components/timeline",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "user-menu",
+  "title": "User menu",
+  "description": "Your account, settings, theme, and sign out behind the avatar. Opens as a bottom sheet on phones.",
+  "kind": "ui",
+  "jobs": [
+   "navigation",
+   "media"
+  ],
+  "needs": [
+   "people"
+  ],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/user-menu.json",
+  "page": "https://uiarc.dev/components/user-menu",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "stepper",
+  "title": "Stepper",
+  "description": "Show where a person is in a multi-step flow and what is done.",
+  "kind": "ui",
+  "jobs": [
+   "position"
+  ],
+  "needs": [
+   "ordered stages"
+  ],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/stepper.json",
+  "page": "https://uiarc.dev/components/stepper",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "signature-pad",
+  "title": "Signature pad",
+  "description": "Smooth ink that thins with speed, with undo, replay, and PNG or SVG export.",
+  "kind": "ui",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/signature-pad.json",
+  "page": "https://uiarc.dev/components/signature-pad",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "icon-morph",
+  "title": "Icon morph",
+  "description": "Icons that morph between states: menu to close, play to pause, copy to check, and more.",
+  "kind": "ui",
+  "jobs": [
+   "action",
+   "navigation",
+   "media"
+  ],
+  "needs": [],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/icon-morph.json",
+  "page": "https://uiarc.dev/components/icon-morph",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "date-range-picker",
+  "title": "Date range picker",
+  "description": "A range picker that grows from its trigger into two months with presets and a stretching range highlight.",
+  "kind": "ui",
+  "jobs": [
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/date-range-picker.json",
+  "page": "https://uiarc.dev/components/date-range-picker",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "color-picker",
+  "title": "Color picker",
+  "description": "A swatch that grows into a picker with format morphing, eyedropper, saved swatches, and contrast readout.",
+  "kind": "ui",
+  "jobs": [
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/color-picker.json",
+  "page": "https://uiarc.dev/components/color-picker",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "morph-select",
+  "title": "Morph select",
+  "description": "A select whose trigger grows into the list, with a gliding highlight and type-ahead.",
+  "kind": "ui",
+  "jobs": [
+   "proof",
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/morph-select.json",
+  "page": "https://uiarc.dev/components/morph-select",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "line-chart",
+  "title": "Line chart",
+  "description": "A multi-series line chart with a gliding crosshair, legend toggles, and paths that morph between ranges.",
+  "kind": "ui",
+  "jobs": [
+   "media"
+  ],
+  "needs": [
+   "a data series"
+  ],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/line-chart.json",
+  "page": "https://uiarc.dev/components/line-chart",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "donut-chart",
+  "title": "Donut chart",
+  "description": "A donut whose arcs morph between datasets, with the active value rolling into the center.",
+  "kind": "ui",
+  "jobs": [
+   "media"
+  ],
+  "needs": [
+   "a data series"
+  ],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/donut-chart.json",
+  "page": "https://uiarc.dev/components/donut-chart",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "streamgraph",
+  "title": "Streamgraph",
+  "description": "Layered streams on a wiggle baseline that morph between ranges, with a layer you can isolate and read week by week.",
+  "kind": "ui",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/streamgraph.json",
+  "page": "https://uiarc.dev/components/streamgraph",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "brush-chart",
+  "title": "Brush chart",
+  "description": "A dense time series with an overview strip: drag a window to zoom, resize it by its handles, and read events in place.",
+  "kind": "ui",
+  "jobs": [
+   "media"
+  ],
+  "needs": [
+   "a data series"
+  ],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/brush-chart.json",
+  "page": "https://uiarc.dev/components/brush-chart",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "ridgeline",
+  "title": "Ridgeline",
+  "description": "Overlapping distributions, one ridge per group: hover to lift a ridge and read its quartiles, switch datasets and every curve morphs.",
+  "kind": "ui",
+  "jobs": [
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/ridgeline.json",
+  "page": "https://uiarc.dev/components/ridgeline",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "treemap",
+  "title": "Treemap",
+  "description": "A squarified treemap: click to drill and the tiles grow to fill the view, with a breadcrumb back and metrics that morph every tile.",
+  "kind": "ui",
+  "jobs": [
+   "navigation"
+  ],
+  "needs": [],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/treemap.json",
+  "page": "https://uiarc.dev/components/treemap",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "waffle-chart",
+  "title": "Waffle chart",
+  "description": "A ten by ten unit chart where every cell is one percent, and cells fly to their new group when the data changes.",
+  "kind": "ui",
+  "jobs": [
+   "media"
+  ],
+  "needs": [
+   "a data series"
+  ],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/waffle-chart.json",
+  "page": "https://uiarc.dev/components/waffle-chart",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "slope-chart",
+  "title": "Slope chart",
+  "description": "Before and after on two axes: lines draw in, rank moves sit beside each value, and switching datasets slides every line to its new slope.",
+  "kind": "ui",
+  "jobs": [
+   "media"
+  ],
+  "needs": [
+   "a data series"
+  ],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/slope-chart.json",
+  "page": "https://uiarc.dev/components/slope-chart",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "countdown",
+  "title": "Countdown",
+  "description": "A launch countdown with rolling digits that morphs into a live state at zero.",
+  "kind": "ui",
+  "jobs": [
+   "status"
+  ],
+  "needs": [],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/countdown.json",
+  "page": "https://uiarc.dev/components/countdown",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "cookie-consent",
+  "title": "Cookie consent",
+  "description": "A consent bar that morphs into preferences and folds into a reopen button.",
+  "kind": "ui",
+  "jobs": [
+   "action"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/cookie-consent.json",
+  "page": "https://uiarc.dev/components/cookie-consent",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "announcement-bar",
+  "title": "Announcement bar",
+  "description": "A top banner that rotates messages, counts down, and collapses smoothly when dismissed.",
+  "kind": "ui",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/announcement-bar.json",
+  "page": "https://uiarc.dev/components/announcement-bar",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "json-viewer",
+  "title": "JSON viewer",
+  "description": "A collapsible JSON tree with search, paging for long arrays, and copy value or path.",
+  "kind": "ui",
+  "jobs": [
+   "action"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/json-viewer.json",
+  "page": "https://uiarc.dev/components/json-viewer",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "scrub-input",
+  "title": "Scrub input",
+  "description": "A Figma-style number field: drag the label to scrub, or type values, units, and arithmetic.",
+  "kind": "ui",
+  "jobs": [
+   "value",
+   "input"
+  ],
+  "needs": [
+   "a number that changes"
+  ],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/scrub-input.json",
+  "page": "https://uiarc.dev/components/scrub-input",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "tree-table",
+  "title": "Tree table",
+  "description": "A table with nested rows, tri-state selection, hierarchy-preserving sort, and lazy-loaded children.",
+  "kind": "ui",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/tree-table.json",
+  "page": "https://uiarc.dev/components/tree-table",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "phone-input",
+  "title": "Phone input",
+  "description": "A phone field with a country picker, formatting as you type, and E.164 output.",
+  "kind": "ui",
+  "jobs": [
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/phone-input.json",
+  "page": "https://uiarc.dev/components/phone-input",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "money-input",
+  "title": "Money input",
+  "description": "A currency field with live grouping, stable width, rolling digits, and minor-unit output.",
+  "kind": "ui",
+  "jobs": [
+   "price",
+   "status",
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/money-input.json",
+  "page": "https://uiarc.dev/components/money-input",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "shortcut-recorder",
+  "title": "Shortcut recorder",
+  "description": "Record key combinations into key caps, with conflict warnings, Kbd, and a searchable cheatsheet.",
+  "kind": "ui",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/shortcut-recorder.json",
+  "page": "https://uiarc.dev/components/shortcut-recorder",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "confirm-morph",
+  "title": "Confirm morph",
+  "description": "A destructive button that morphs into an inline confirmation, a spinner, and a result with undo.",
+  "kind": "ui",
+  "jobs": [
+   "action"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/confirm-morph.json",
+  "page": "https://uiarc.dev/components/confirm-morph",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "mention-input",
+  "title": "Mention input",
+  "description": "A textarea with @people and #channel mentions that act as single tokens, with suggestions at the caret.",
+  "kind": "ui",
+  "jobs": [
+   "input"
+  ],
+  "needs": [
+   "people"
+  ],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/mention-input.json",
+  "page": "https://uiarc.dev/components/mention-input",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "chat-thread",
+  "title": "Chat thread",
+  "description": "A chat thread with grouped messages, reactions, read receipts, typing, and a composer with attachments.",
+  "kind": "ui",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/chat-thread.json",
+  "page": "https://uiarc.dev/components/chat-thread",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "rich-text-editor",
+  "title": "Rich text editor",
+  "description": "A lightweight editor with markdown shortcuts, a floating toolbar, a slash menu, and HTML and markdown output.",
+  "kind": "ui",
+  "jobs": [
+   "navigation"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/rich-text-editor.json",
+  "page": "https://uiarc.dev/components/rich-text-editor",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "billing-toggle",
+  "title": "Billing toggle",
+  "description": "A monthly and yearly switch with a savings badge and prices that roll to the new amount.",
+  "kind": "ui",
+  "jobs": [
+   "price",
+   "status",
+   "input"
+  ],
+  "needs": [
+   "a number that changes",
+   "two billing periods"
+  ],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/billing-toggle.json",
+  "page": "https://uiarc.dev/components/billing-toggle",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "scroll-area",
+  "title": "Scroll area",
+  "description": "A native scroll container with thin overlay scrollbars and edge fades that appear only when content overflows.",
+  "kind": "ui",
+  "jobs": [],
+  "needs": [],
+  "deps": [],
+  "item": "https://uiarc.dev/r/scroll-area.json",
+  "page": "https://uiarc.dev/components/scroll-area",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "radio-cards",
+  "title": "Radio cards",
+  "description": "Selectable option cards with a sliding selection ring, price and description slots, and radio keyboard behavior.",
+  "kind": "ui",
+  "jobs": [
+   "price",
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/radio-cards.json",
+  "page": "https://uiarc.dev/components/radio-cards",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "comment-thread",
+  "title": "Comment thread",
+  "description": "Threaded comments with replies, reactions, mentions, inline edit, and resolve.",
+  "kind": "ui",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/comment-thread.json",
+  "page": "https://uiarc.dev/components/comment-thread",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "slot-text",
+  "title": "Slot text",
+  "description": "Text and numbers that spin into their new value on staggered slot machine reels.",
+  "kind": "ui",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/slot-text.json",
+  "page": "https://uiarc.dev/components/slot-text",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "toggle-group",
+  "title": "Toggle group",
+  "description": "A row of icon or text toggles, single or multiple: one pressed fill glides between options, or each fades in on its own and neighbours join, as in a formatting toolbar.",
+  "kind": "ui",
+  "jobs": [
+   "media",
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/toggle-group.json",
+  "page": "https://uiarc.dev/components/toggle-group",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "expandable-text",
+  "title": "Expandable text",
+  "description": "Long text clamped to a few lines with a soft fade that glides open with Read more and closes with Show less, shown only when the text overflows.",
+  "kind": "ui",
+  "jobs": [
+   "navigation"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/expandable-text.json",
+  "page": "https://uiarc.dev/components/expandable-text",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "signup-form",
+  "title": "Sign up form",
+  "description": "An account creation flow with field validation, password strength, and a clear completion state.",
+  "kind": "block",
+  "jobs": [
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/signup-form.json",
+  "page": "https://uiarc.dev/components/blocks/signup-form",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "logo-marquee",
+  "title": "Logo marquee",
+  "description": "A quiet, continuously moving row of brand marks with a pause control.",
+  "kind": "block",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "lucide-react"
+  ],
+  "item": "https://uiarc.dev/r/logo-marquee.json",
+  "page": "https://uiarc.dev/components/blocks/logo-marquee",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "plan-comparison",
+  "title": "Plan comparison",
+  "description": "Compare meaningful differences between plans and billing periods.",
+  "kind": "block",
+  "jobs": [
+   "price",
+   "proof"
+  ],
+  "needs": [
+   "two billing periods",
+   "several plans"
+  ],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/plan-comparison.json",
+  "page": "https://uiarc.dev/components/blocks/plan-comparison",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "command-palette",
+  "title": "Command palette",
+  "description": "A complete keyboard driven action surface with search, grouped results, and shortcuts.",
+  "kind": "block",
+  "jobs": [
+   "action"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/command-palette.json",
+  "page": "https://uiarc.dev/components/blocks/command-palette",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "notification-center",
+  "title": "Notification center",
+  "description": "A home for updates with read state, grouped information, and animated disclosure.",
+  "kind": "block",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "@radix-ui/react-popover",
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/notification-center.json",
+  "page": "https://uiarc.dev/components/blocks/notification-center",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "file-upload",
+  "title": "File upload",
+  "description": "A complete file selection flow with constraints, progress, and error feedback.",
+  "kind": "block",
+  "jobs": [
+   "position"
+  ],
+  "needs": [
+   "ordered stages"
+  ],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/file-upload.json",
+  "page": "https://uiarc.dev/components/blocks/file-upload",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "otp-input",
+  "title": "OTP input",
+  "description": "A six digit verification flow with paste support and keyboard navigation.",
+  "kind": "block",
+  "jobs": [
+   "value",
+   "input"
+  ],
+  "needs": [
+   "a number that changes"
+  ],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/otp-input.json",
+  "page": "https://uiarc.dev/components/blocks/otp-input",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "changelog-feed",
+  "title": "Changelog feed",
+  "description": "Release notes you can filter, open in place, and scroll through month by month.",
+  "kind": "block",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/changelog-feed.json",
+  "page": "https://uiarc.dev/components/blocks/changelog-feed",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "sign-in",
+  "title": "Sign in",
+  "description": "A sign in card that morphs from email to a six digit code to your account.",
+  "kind": "block",
+  "jobs": [
+   "value"
+  ],
+  "needs": [
+   "a number that changes"
+  ],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/sign-in.json",
+  "page": "https://uiarc.dev/components/blocks/sign-in",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "page-header",
+  "title": "Page header",
+  "description": "A project page header that folds into a compact bar as you scroll, with tabs whose counts roll.",
+  "kind": "block",
+  "jobs": [
+   "navigation"
+  ],
+  "needs": [
+   "a number that changes"
+  ],
+  "deps": [
+   "@radix-ui/react-dropdown-menu",
+   "@radix-ui/react-tabs",
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/page-header.json",
+  "page": "https://uiarc.dev/components/blocks/page-header",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "empty-states",
+  "title": "Empty states",
+  "description": "Four empty states in one illustration whose shapes morph between scenes as you switch tabs.",
+  "kind": "block",
+  "jobs": [
+   "navigation",
+   "media",
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/empty-states.json",
+  "page": "https://uiarc.dev/components/blocks/empty-states",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "login-centered",
+  "title": "Centered login",
+  "description": "A passkey-first login card on a quiet ring backdrop that morphs through email and code.",
+  "kind": "block",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/login-centered.json",
+  "page": "https://uiarc.dev/components/blocks/login-centered",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "site-header",
+  "title": "Site header",
+  "description": "A sticky website header that turns solid on scroll, with a gliding active link, mega menu panels, and a mobile sheet.",
+  "kind": "block",
+  "jobs": [
+   "navigation"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/site-header.json",
+  "page": "https://uiarc.dev/components/blocks/site-header",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "site-footer",
+  "title": "Site footer",
+  "description": "A website footer with link columns and newsletter, a minimal layout, and a large fading Arc mark.",
+  "kind": "block",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/site-footer.json",
+  "page": "https://uiarc.dev/components/blocks/site-footer",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "hero-section",
+  "title": "Hero section",
+  "description": "Three full screen SaaS heroes: a live dashboard rising from the bottom edge over a drifting mesh, a workflow graph that routes sample events node by node, and editorial type over a mesh gradient.",
+  "kind": "block",
+  "jobs": [
+   "status",
+   "media"
+  ],
+  "needs": [
+   "a data series"
+  ],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/hero-section.json",
+  "page": "https://uiarc.dev/components/blocks/hero-section",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "faq-section",
+  "title": "FAQ section",
+  "description": "FAQs as an accordion, a topic rail, or a searchable list that highlights matches.",
+  "kind": "block",
+  "jobs": [
+   "proof"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/faq-section.json",
+  "page": "https://uiarc.dev/components/blocks/faq-section",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "contact-section",
+  "title": "Contact section",
+  "description": "A validated contact form that morphs into a confirmation, support channels, and office cards with local times.",
+  "kind": "block",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/contact-section.json",
+  "page": "https://uiarc.dev/components/blocks/contact-section",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "blog-grid",
+  "title": "Blog grid",
+  "description": "A blog index with a featured post, category filter, post cards, pagination and an in-place reader.",
+  "kind": "block",
+  "jobs": [
+   "navigation"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/blog-grid.json",
+  "page": "https://uiarc.dev/components/blocks/blog-grid",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "comparison-table",
+  "title": "Comparison table",
+  "description": "An us versus them table with a sticky header, a highlighted column, and a stacked phone view.",
+  "kind": "block",
+  "jobs": [
+   "proof"
+  ],
+  "needs": [
+   "several plans"
+  ],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/comparison-table.json",
+  "page": "https://uiarc.dev/components/blocks/comparison-table",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "stats-band",
+  "title": "Stats band",
+  "description": "Headline numbers that count up in view, each with a tiny visual that proves it and a context line on hover, plain or in a hairline grid.",
+  "kind": "block",
+  "jobs": [
+   "value",
+   "media",
+   "identity"
+  ],
+  "needs": [
+   "a number that changes"
+  ],
+  "deps": [
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/stats-band.json",
+  "page": "https://uiarc.dev/components/blocks/stats-band",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "cta-section",
+  "title": "CTA section",
+  "description": "A call to action as a centered closing section, a split beside a setup card that completes itself, or a dismissible banner.",
+  "kind": "block",
+  "jobs": [
+   "action"
+  ],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/cta-section.json",
+  "page": "https://uiarc.dev/components/blocks/cta-section",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "arc",
+  "name": "newsletter-signup",
+  "title": "Newsletter signup",
+  "description": "An email signup framed by a stack of past issues; subscribing drops the next issue, addressed to you, onto the front.",
+  "kind": "block",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "lucide-react",
+   "motion"
+  ],
+  "item": "https://uiarc.dev/r/newsletter-signup.json",
+  "page": "https://uiarc.dev/components/blocks/newsletter-signup",
+  "terms": "Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing)"
+ },
+ {
+  "lib": "beui",
+  "name": "bookshelf",
+  "title": "Bookshelf",
+  "description": "A shelf of book spines. Click one and it slides out and turns in 3D to show its cover while the others make room. Arrow keys browse, Escape puts it back, and reduced motion swaps the turn for a fade.",
+  "kind": "component",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/bookshelf.json",
+  "page": "https://beui.dev/components/bookshelf",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "dropdown-menu",
+  "title": "Dropdown Menu",
+  "description": "Composable dropdown menu that opens from its trigger, with a gliding highlight, submenus that stay open on a diagonal path, checkbox and radio items, shortcuts and full keyboard support.",
+  "kind": "component",
+  "jobs": [
+   "navigation",
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/dropdown-menu.json",
+  "page": "https://beui.dev/components/dropdown-menu",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "before-after-slider",
+  "title": "Before After Slider",
+  "description": "Compare two images with a draggable divider. Drag or click anywhere on the frame, use the arrow keys, and keep vertical page scroll on touch.",
+  "kind": "component",
+  "jobs": [
+   "proof",
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/before-after-slider.json",
+  "page": "https://beui.dev/components/before-after-slider",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "timeline",
+  "title": "Timeline",
+  "description": "A draggable timeline of dated events around a focused card.",
+  "kind": "component",
+  "jobs": [
+   "position"
+  ],
+  "needs": [
+   "ordered stages"
+  ],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/timeline.json",
+  "page": "https://beui.dev/components/timeline",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "alert",
+  "title": "Animated Alert",
+  "description": "Composable feedback with smooth transitions.",
+  "kind": "component",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/alert.json",
+  "page": "https://beui.dev/components/alert",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "collapsible",
+  "title": "Animated Collapsible",
+  "description": "Expandable content with a smooth reveal.",
+  "kind": "component",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/collapsible.json",
+  "page": "https://beui.dev/components/collapsible",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "aspect-ratio",
+  "title": "Aspect Ratio",
+  "description": "Responsive media with smooth aspect ratio transitions.",
+  "kind": "component",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/aspect-ratio.json",
+  "page": "https://beui.dev/components/aspect-ratio",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "arc-picker",
+  "title": "Arc Picker",
+  "description": "Radial text picker with top, bottom, left or right curves, smooth wheel movement and live selection on each scroll step. One persistent bracket frame grows and squeezes around each label. Supports drag momentum, keyboard input, disabled choices, controlled or uncontrolled values, forms and reduced motion.",
+  "kind": "component",
+  "jobs": [
+   "status",
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/arc-picker.json",
+  "page": "https://beui.dev/components/arc-picker",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "sortable-stack",
+  "title": "Sortable List",
+  "description": "Composable sortable list with group, item, drag handle, content and undo parts, plus a shared state hook. Spring layout, keyboard reordering, accessible position announcements, and controlled or uncontrolled items.",
+  "kind": "component",
+  "jobs": [
+   "proof"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/sortable-stack.json",
+  "page": "https://beui.dev/components/sortable-stack",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "morphing-lightbox",
+  "title": "Image Viewer Morphing",
+  "description": "A thumbnail-connected image viewer with composable gallery, thumbnail, content, caption and navigation parts, plus a shared state hook. Expand into the full-size image and return to the thumbnail on close, with swipe navigation, zoom and pan.",
+  "kind": "component",
+  "jobs": [
+   "media"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/morphing-lightbox.json",
+  "page": "https://beui.dev/components/morphing-lightbox",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "date-range-picker",
+  "title": "Date Range Picker",
+  "description": "Composable date range picker with root, trigger, popover content, calendar, header, grid, summary, footer, clear and preset parts, plus a shared state hook. Compact inline and dropdown compositions, direct month and year selection, and full keyboard navigation.",
+  "kind": "component",
+  "jobs": [
+   "input",
+   "help"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/date-range-picker.json",
+  "page": "https://beui.dev/components/date-range-picker",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "card",
+  "title": "Card",
+  "description": "Composable card with header, title, description, action, content and footer parts. Outlined or muted surfaces, standard or compact spacing, and an opt-in selectable state with press feedback that composes with Checkbox, Radio and Button.",
+  "kind": "component",
+  "jobs": [
+   "action",
+   "input",
+   "identity"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/card.json",
+  "page": "https://beui.dev/components/card",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "color-picker",
+  "title": "Color Picker",
+  "description": "Composable color picker whose trigger chip morphs into the saturation and brightness area. A loupe lifts off each thumb while you drag. Includes hue and opacity sliders, hex, RGB and HSL fields, an eye dropper, presets, full keyboard control, and a controlled or uncontrolled value.",
+  "kind": "component",
+  "jobs": [
+   "status",
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/color-picker.json",
+  "page": "https://beui.dev/components/color-picker",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "color-selector",
+  "title": "Animated Color Selector",
+  "description": "Composable color swatches with a spring-gliding selection ring, press feedback, native radio keyboard navigation, and controlled or uncontrolled state.",
+  "kind": "component",
+  "jobs": [
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/color-selector.json",
+  "page": "https://beui.dev/components/color-selector",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "pagination",
+  "title": "Animated Pagination",
+  "description": "Page navigation with a gliding current-page pill, page numbers that slide as the window moves, and ellipses that jump several pages.",
+  "kind": "component",
+  "jobs": [
+   "navigation"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/pagination.json",
+  "page": "https://beui.dev/components/pagination",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "avatar-group",
+  "title": "Animated Avatar Group",
+  "description": "Overlapping avatars that fan apart on hover, lift with a name tooltip, and expand from a +N count to show everyone.",
+  "kind": "component",
+  "jobs": [
+   "media",
+   "help"
+  ],
+  "needs": [
+   "people"
+  ],
+  "deps": [
+   "@floating-ui/dom",
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/avatar-group.json",
+  "page": "https://beui.dev/components/avatar-group",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "breadcrumb",
+  "title": "Animated Breadcrumb",
+  "description": "Composable breadcrumb navigation with soft path transitions, a hoverable overflow dropdown for long trails, custom separators, and router-link support.",
+  "kind": "component",
+  "jobs": [
+   "navigation"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/breadcrumb.json",
+  "page": "https://beui.dev/components/breadcrumb",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "tilt-card",
+  "title": "Tilt Card",
+  "description": "3D perspective tilt on hover with cursor-tracked glare.",
+  "kind": "component",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/tilt-card.json",
+  "page": "https://beui.dev/components/tilt-card",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "button-metallic",
+  "title": "Button Metallic Button",
+  "description": "A neutral button surface framed by a pronounced chrome rim with a straight traveling reflection.",
+  "kind": "component",
+  "jobs": [
+   "action"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/button-metallic.json",
+  "page": "https://beui.dev/components/button-metallic",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "button-base",
+  "title": "Button Button",
+  "description": "Press scale, hover lift, variants and sizes.",
+  "kind": "component",
+  "jobs": [
+   "action"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/button-base.json",
+  "page": "https://beui.dev/components/button-base",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "button-stateful",
+  "title": "Button Stateful Button",
+  "description": "Idle → loading → success / error with blur-swap slots and morphing width.",
+  "kind": "component",
+  "jobs": [
+   "action"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/button-stateful.json",
+  "page": "https://beui.dev/components/button-stateful",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "button-magnetic",
+  "title": "Button Magnetic Button",
+  "description": "Button composed with the Magnetic wrapper for cursor-attracted pull.",
+  "kind": "component",
+  "jobs": [
+   "action"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/button-magnetic.json",
+  "page": "https://beui.dev/components/button-magnetic",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "expanding-arrow-button",
+  "title": "Animated CTA Buttons Expanding Arrow Button",
+  "description": "An accent tile that expands into a dotted-arrow trail on hover or focus.",
+  "kind": "component",
+  "jobs": [
+   "action"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/expanding-arrow-button.json",
+  "page": "https://beui.dev/components/expanding-arrow-button",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "hold-action-button",
+  "title": "Animated CTA Buttons Hold Action Button",
+  "description": "Hold to complete with a vertical or horizontal liquid fill; release early to cancel.",
+  "kind": "component",
+  "jobs": [
+   "action"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/hold-action-button.json",
+  "page": "https://beui.dev/components/hold-action-button",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "slide-action-button",
+  "title": "Animated CTA Buttons Slide Action Button",
+  "description": "Drag the thumb to the end to confirm an action; release early to spring back.",
+  "kind": "component",
+  "jobs": [
+   "action"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/slide-action-button.json",
+  "page": "https://beui.dev/components/slide-action-button",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "expandable-control",
+  "title": "Expandable Control",
+  "description": "Click-to-expand button and chip controls that reveal a label or trailing action through spring layout continuity.",
+  "kind": "component",
+  "jobs": [
+   "action",
+   "status"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/expandable-control.json",
+  "page": "https://beui.dev/components/expandable-control",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "adaptive-stepper",
+  "title": "Adaptive Stepper",
+  "description": "Composable numeric stepper whose fixed footprint adapts at its minimum and maximum while the value rolls between steps.",
+  "kind": "component",
+  "jobs": [
+   "position"
+  ],
+  "needs": [
+   "ordered stages"
+  ],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/adaptive-stepper.json",
+  "page": "https://beui.dev/components/adaptive-stepper",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "marquee",
+  "title": "Marquee",
+  "description": "Infinite horizontal or vertical scroll with pause-on-hover.",
+  "kind": "component",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/marquee.json",
+  "page": "https://beui.dev/components/marquee",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "tabs",
+  "title": "Tabs",
+  "description": "Pill, segment or underline tabs with a spring layoutId indicator and optional icons.",
+  "kind": "component",
+  "jobs": [
+   "status",
+   "navigation"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/tabs.json",
+  "page": "https://beui.dev/components/tabs",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "switch",
+  "title": "Switch",
+  "description": "Toggle with a spring-driven thumb and press feedback.",
+  "kind": "component",
+  "jobs": [
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/switch.json",
+  "page": "https://beui.dev/components/switch",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "input",
+  "title": "Input",
+  "description": "Text input with label, left/right icons, optional stable error row, error shake and success check draw.",
+  "kind": "component",
+  "jobs": [
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/input.json",
+  "page": "https://beui.dev/components/input",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "select",
+  "title": "Select Select",
+  "description": "Composable primitives (Select, SelectTrigger, SelectValue, SelectContent, SelectItem); the panel pinches off the trigger and separates, with a short, shared row reveal. Position-aware (opens upward when needed).",
+  "kind": "component",
+  "jobs": [
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/select.json",
+  "page": "https://beui.dev/components/select",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "select-morph",
+  "title": "Select Morph Select",
+  "description": "Composable primitives (MorphSelect, MorphSelectTrigger, MorphSelectValue, MorphSelectContent, MorphSelectItem) where the trigger morphs into the panel via a shared layoutId: one continuous surface that grows open and shrinks back, never detaching.",
+  "kind": "component",
+  "jobs": [
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/select-morph.json",
+  "page": "https://beui.dev/components/select-morph",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "combobox",
+  "title": "Combobox",
+  "description": "Searchable combobox with a morphing portal, grouped filtering, keyboard navigation, and controlled or uncontrolled state.",
+  "kind": "component",
+  "jobs": [
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/combobox.json",
+  "page": "https://beui.dev/components/combobox",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "multi-select",
+  "title": "Multi Select",
+  "description": "Composable multi-select primitives with searchable options, removable animated tokens, and a morphing collision-aware panel.",
+  "kind": "component",
+  "jobs": [
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/multi-select.json",
+  "page": "https://beui.dev/components/multi-select",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "checkbox",
+  "title": "Checkbox",
+  "description": "Form choice control with a draw-on checkmark, spring press feedback and indeterminate state support.",
+  "kind": "component",
+  "jobs": [
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/checkbox.json",
+  "page": "https://beui.dev/components/checkbox",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "radio",
+  "title": "Radio Group",
+  "description": "Single-select choice control with a gliding layoutId indicator dot and spring press feedback.",
+  "kind": "component",
+  "jobs": [
+   "status",
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/radio.json",
+  "page": "https://beui.dev/components/radio",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "bottom-sheet",
+  "title": "Bottom Sheet",
+  "description": "Vaul-inspired draggable bottom sheet with snap points, inertia and glass surface.",
+  "kind": "component",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/bottom-sheet.json",
+  "page": "https://beui.dev/components/bottom-sheet",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "pull-to-refresh",
+  "title": "Pull to Refresh",
+  "description": "Native-feeling pull-to-refresh container with drag resistance, threshold feedback and async refresh handling.",
+  "kind": "component",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/pull-to-refresh.json",
+  "page": "https://beui.dev/components/pull-to-refresh",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "shared-layout-bg",
+  "title": "Shared Layout Background",
+  "description": "A pill that glides between hovered items via motion's shared layout, with blur enter/exit.",
+  "kind": "component",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/shared-layout-bg.json",
+  "page": "https://beui.dev/components/shared-layout-bg",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "bounce-sidebar",
+  "title": "Bounce Sidebar",
+  "description": "A vertical sidebar whose active dot jumps between destinations on a curved, spring-loaded path.",
+  "kind": "component",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/bounce-sidebar.json",
+  "page": "https://beui.dev/components/bounce-sidebar",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "animated-sidebar",
+  "title": "Animated Sidebar",
+  "description": "A composable application sidebar with morphing nested navigation that folds into an animated icon rail on desktop and becomes a focus-managed sheet on mobile.",
+  "kind": "component",
+  "jobs": [
+   "media"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/animated-sidebar.json",
+  "page": "https://beui.dev/components/animated-sidebar",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "file-tree",
+  "title": "File Tree",
+  "description": "Composable file and folder primitives with springing branches, a gliding selection, and complete keyboard navigation.",
+  "kind": "component",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/file-tree.json",
+  "page": "https://beui.dev/components/file-tree",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "preview-rail",
+  "title": "Preview Rail",
+  "description": "Codex app-inspired navigation rail with compact ticks that form a hover pyramid and reveal a floating destination preview.",
+  "kind": "component",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/preview-rail.json",
+  "page": "https://beui.dev/components/preview-rail",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "dock",
+  "title": "Dock",
+  "description": "macOS-style dock with grouped actions and a gliding active pill.",
+  "kind": "component",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/dock.json",
+  "page": "https://beui.dev/components/dock",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "tooltip",
+  "title": "Tooltip",
+  "description": "Composable hover, focus and tap tooltip with a subtle scale and fade, collision-aware side and alignment, an optional arrow, a pointer corridor onto hoverable content, one label at a time, keyboard-only focus reveal and optional cursor tracking.",
+  "kind": "component",
+  "jobs": [
+   "help"
+  ],
+  "needs": [],
+  "deps": [
+   "@floating-ui/dom",
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/tooltip.json",
+  "page": "https://beui.dev/components/tooltip",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "context-menu",
+  "title": "Animated Context Menu",
+  "description": "Composable context-menu primitives with a pointer-origin clip morph, a gliding active row, checkbox and radio choices, keyboard navigation, typeahead, and long-press support.",
+  "kind": "component",
+  "jobs": [
+   "navigation",
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/context-menu.json",
+  "page": "https://beui.dev/components/context-menu",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "popover",
+  "title": "Popover Gooey Popover",
+  "description": "Composable Popover, PopoverTrigger, PopoverContent; the panel oozes out of the trigger through an SVG goo filter with a liquid neck, crisp content fading in on top. Click or hover, controlled or uncontrolled.",
+  "kind": "component",
+  "jobs": [
+   "help"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/popover.json",
+  "page": "https://beui.dev/components/popover",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "popover-morph",
+  "title": "Popover Morph Popover",
+  "description": "Composable MorphPopover, MorphPopoverTrigger, MorphPopoverContent. The full-size panel reveals from the corner nearest the trigger on one synchronized spring clip, keeping content and borders unscaled, then retraces the clip on close. Clip-path and its drop-shadow may paint. Side/align aware, controlled or uncontrolled.",
+  "kind": "component",
+  "jobs": [
+   "help"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/popover-morph.json",
+  "page": "https://beui.dev/components/popover-morph",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "morphing-modal",
+  "title": "Morphing Modal",
+  "description": "Family-app-style modal. A single panel that morphs its height as you navigate between inner views, with blur cross-fade on content.",
+  "kind": "component",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/morphing-modal.json",
+  "page": "https://beui.dev/components/morphing-modal",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "center-morph-modal",
+  "title": "Center Morph Modal",
+  "description": "A composable modal whose full-size surface unfolds from its exact center toward every edge, then folds back the same way with an inset close control.",
+  "kind": "component",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/center-morph-modal.json",
+  "page": "https://beui.dev/components/center-morph-modal",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "text-scramble",
+  "title": "Text Animation Text Scramble",
+  "description": "A controlled character scramble that resolves changed text while keeping its final value accessible.",
+  "kind": "component",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/text-scramble.json",
+  "page": "https://beui.dev/components/text-scramble",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "chromatic-text-reveal",
+  "title": "Text Animation Dia Text Animation",
+  "description": "A Dia-inspired text effect with a fixed sentence prefix and a cycling final word revealed by a colorful sweep.",
+  "kind": "component",
+  "jobs": [
+   "identity"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/chromatic-text-reveal.json",
+  "page": "https://beui.dev/components/chromatic-text-reveal",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "text-reveal",
+  "title": "Text Animation Text Reveal",
+  "description": "Word or character reveal with spring slide-up and blur.",
+  "kind": "component",
+  "jobs": [
+   "identity"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/text-reveal.json",
+  "page": "https://beui.dev/components/text-reveal",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "text-shimmer",
+  "title": "Text Animation Text Shimmer",
+  "description": "Gradient sweep across text for loading or emphasis.",
+  "kind": "component",
+  "jobs": [
+   "identity"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/text-shimmer.json",
+  "page": "https://beui.dev/components/text-shimmer",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "text-cascade",
+  "title": "Text Animation Text Cascade",
+  "description": "Letter-by-letter slot roll for standalone text: old letters drop away as new ones land, left to right.",
+  "kind": "component",
+  "jobs": [],
+  "needs": [
+   "a number that changes"
+  ],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/text-cascade.json",
+  "page": "https://beui.dev/components/text-cascade",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "digit-swap",
+  "title": "Number Animation Digit Swap",
+  "description": "Fixed-slot digits and mask glyphs that roll on change with controllable direction, stagger, replay, and suffix emphasis.",
+  "kind": "component",
+  "jobs": [
+   "value"
+  ],
+  "needs": [
+   "a number that changes"
+  ],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/digit-swap.json",
+  "page": "https://beui.dev/components/digit-swap",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "number-ticker",
+  "title": "Number Animation Number Ticker",
+  "description": "Slot-machine rolling digits with staggered entry.",
+  "kind": "component",
+  "jobs": [
+   "value"
+  ],
+  "needs": [
+   "a number that changes"
+  ],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/number-ticker.json",
+  "page": "https://beui.dev/components/number-ticker",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "animated-number",
+  "title": "Number Animation Animated Number",
+  "description": "Spring-driven count-up triggered when in view.",
+  "kind": "component",
+  "jobs": [
+   "value"
+  ],
+  "needs": [
+   "a number that changes"
+  ],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/animated-number.json",
+  "page": "https://beui.dev/components/animated-number",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "animated-badge",
+  "title": "Animated Badge",
+  "description": "Status badge with animated state icons, pulse feedback and compact size variants.",
+  "kind": "component",
+  "jobs": [
+   "status"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/animated-badge.json",
+  "page": "https://beui.dev/components/animated-badge",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "action-swap-cascade",
+  "title": "Action Swap Cascade",
+  "description": "Letter-by-letter slot roll: the old label's letters drop away as the new ones land, left to right.",
+  "kind": "component",
+  "jobs": [
+   "action"
+  ],
+  "needs": [
+   "a number that changes"
+  ],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/action-swap-cascade.json",
+  "page": "https://beui.dev/components/action-swap-cascade",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "action-swap-blur",
+  "title": "Action Swap Blur",
+  "description": "Copy-button style swap with blur, opacity and scale.",
+  "kind": "component",
+  "jobs": [
+   "action"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/action-swap-blur.json",
+  "page": "https://beui.dev/components/action-swap-blur",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "action-swap-roll",
+  "title": "Action Swap Roll",
+  "description": "The next text or icon rolls in from below with blur.",
+  "kind": "component",
+  "jobs": [
+   "action",
+   "media"
+  ],
+  "needs": [
+   "a number that changes"
+  ],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/action-swap-roll.json",
+  "page": "https://beui.dev/components/action-swap-roll",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "animated-toast-stack",
+  "title": "Animated Toast Stack",
+  "description": "Stacked toasts with status morphs, swipe dismissal, actions and layout-aware motion.",
+  "kind": "component",
+  "jobs": [
+   "status"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/animated-toast-stack.json",
+  "page": "https://beui.dev/components/animated-toast-stack",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "theme-toggle",
+  "title": "Theme Toggle",
+  "description": "Theme toggle button that repaints the whole page through the View Transition API: a rectangle or circle clip-path reveal, or slats that open across the screen like a shutter.",
+  "kind": "component",
+  "jobs": [
+   "action",
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "next-themes",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/theme-toggle.json",
+  "page": "https://beui.dev/components/theme-toggle",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "bouncy-accordion",
+  "title": "Bouncy Accordion",
+  "description": "Single-open accordion with weighted spring layout, icon rows and reduced-motion-safe content reveals.",
+  "kind": "component",
+  "jobs": [
+   "media"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/bouncy-accordion.json",
+  "page": "https://beui.dev/components/bouncy-accordion",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "drawer",
+  "title": "Drawer",
+  "description": "Side panel that slides in from the left or right with a spring, backdrop blur, body scroll lock and esc-to-close.",
+  "kind": "component",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/drawer.json",
+  "page": "https://beui.dev/components/drawer",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "smooth-scroll",
+  "title": "Scroll Animation Smooth Scroll",
+  "description": "Smooth-scroll provider over Lenis with a useSmoothScroll hook exposing scroll offset, progress and velocity. Reduced-motion safe.",
+  "kind": "component",
+  "jobs": [
+   "position"
+  ],
+  "needs": [
+   "ordered stages"
+  ],
+  "deps": [
+   "lenis",
+   "motion"
+  ],
+  "item": "https://beui.dev/r/smooth-scroll.json",
+  "page": "https://beui.dev/components/smooth-scroll",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "scroll-progress",
+  "title": "Scroll Animation Scroll Progress",
+  "description": "Reading-progress indicator (fixed bar or circular ring) driven by scroll position via useSmoothScroll, with spring smoothing.",
+  "kind": "component",
+  "jobs": [
+   "status",
+   "position"
+  ],
+  "needs": [
+   "ordered stages"
+  ],
+  "deps": [
+   "clsx",
+   "lenis",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/scroll-progress.json",
+  "page": "https://beui.dev/components/scroll-progress",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "parallax",
+  "title": "Scroll Animation Parallax",
+  "description": "Wrapper that drifts its children at a speed factor as they cross the viewport, on either axis. Reduced-motion safe.",
+  "kind": "component",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/parallax.json",
+  "page": "https://beui.dev/components/parallax",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "scroll-to",
+  "title": "Scroll Animation Scroll To",
+  "description": "Button that smooth-scrolls to a target (offset, selector or element) via the active SmoothScroll provider; reduced-motion jumps instantly.",
+  "kind": "component",
+  "jobs": [
+   "action"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lenis",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/scroll-to.json",
+  "page": "https://beui.dev/components/scroll-to",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "scroll-reveal",
+  "title": "Scroll Animation Scroll Reveal",
+  "description": "Reveals its children with a spring slide and blur as they enter the viewport, once or every time. Reduced-motion keeps a fade.",
+  "kind": "component",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/scroll-reveal.json",
+  "page": "https://beui.dev/components/scroll-reveal",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "range-slider-inline",
+  "title": "Range Slider Inline Slider",
+  "description": "An inset fill and inline label and value. Ten evenly spaced stops span the track; markers under text stay hidden but remain interactive, and the thumb parts around either label as it passes.",
+  "kind": "component",
+  "jobs": [
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/range-slider-inline.json",
+  "page": "https://beui.dev/components/range-slider-inline",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "range-slider",
+  "title": "Range Slider Range Slider",
+  "description": "Tick dots, and a vertical-bar thumb that bounces as it lands on each step.",
+  "kind": "component",
+  "jobs": [
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/range-slider.json",
+  "page": "https://beui.dev/components/range-slider",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "range-slider-fluid",
+  "title": "Range Slider Fluid Slider",
+  "description": "No thumb. The fill slides behind a rounded liquid cap, and the label flips color wherever the fill covers it.",
+  "kind": "component",
+  "jobs": [
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/range-slider-fluid.json",
+  "page": "https://beui.dev/components/range-slider-fluid",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "range-slider-wave",
+  "title": "Range Slider Wave Slider",
+  "description": "Equalizer bars peak around the handle and drop back once it passes, so the value moves down the track as a wave.",
+  "kind": "component",
+  "jobs": [
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/range-slider-wave.json",
+  "page": "https://beui.dev/components/range-slider-wave",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "range-slider-bubble",
+  "title": "Range Slider Bubble Slider",
+  "description": "Grab the thumb and a value bubble pops out of it. The bubble tilts and squashes with how fast you drag, then settles upright.",
+  "kind": "component",
+  "jobs": [
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/range-slider-bubble.json",
+  "page": "https://beui.dev/components/range-slider-bubble",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "range-slider-ruler",
+  "title": "Range Slider Ruler Slider",
+  "description": "The needle stays put and the scale scrolls under it. A flick keeps going and settles on the nearest tick. Fractional steps read at the step's own precision.",
+  "kind": "component",
+  "jobs": [
+   "position",
+   "input"
+  ],
+  "needs": [
+   "ordered stages"
+  ],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/range-slider-ruler.json",
+  "page": "https://beui.dev/components/range-slider-ruler",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "wheel-picker",
+  "title": "Wheel Picker",
+  "description": "iOS-style picker wheel: a 3D drum on native momentum scroll that snaps to the nearest notch, with wheel, drag and keyboard control. Composes side by side for date and time pickers, reduced-motion safe.",
+  "kind": "component",
+  "jobs": [
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/wheel-picker.json",
+  "page": "https://beui.dev/components/wheel-picker",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "table",
+  "title": "Table Data Table",
+  "description": "10k virtualized rows with sortable headers, row selection, column resize and reorder.",
+  "kind": "component",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "@tanstack/react-virtual",
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/table.json",
+  "page": "https://beui.dev/components/table",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "table-editable",
+  "title": "Table Editable Table",
+  "description": "Edit cells inline and insert or delete rows and columns via border handles; the table re-renders from the updated data and column defs.",
+  "kind": "component",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "@tanstack/react-virtual",
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/table-editable.json",
+  "page": "https://beui.dev/components/table-editable",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "table-async",
+  "title": "Table Async Table",
+  "description": "Loads pages on demand: skeleton rows on first load, then infinite scroll via onEndReached as the virtualized list nears the bottom.",
+  "kind": "component",
+  "jobs": [
+   "proof"
+  ],
+  "needs": [],
+  "deps": [
+   "@tanstack/react-virtual",
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/table-async.json",
+  "page": "https://beui.dev/components/table-async",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "shader-background",
+  "title": "Shader Background",
+  "description": "Canvas shader backgrounds (mesh gradient, grain, warp, waves, voronoi, dot orbit and more) with a single typed variant prop. Reduced-motion freezes animated variants.",
+  "kind": "component",
+  "jobs": [
+   "navigation"
+  ],
+  "needs": [],
+  "deps": [
+   "@paper-design/shaders-react",
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/shader-background.json",
+  "page": "https://beui.dev/components/shader-background",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "cylinder-carousel",
+  "title": "Cylinder Carousel",
+  "description": "A carousel whose items line the inside of a cylinder, receding into the center and growing toward the edges. Drag, scroll or arrow-key to roll it, with a springy glide and snap. Reduced-motion drops the glide.",
+  "kind": "component",
+  "jobs": [
+   "navigation"
+  ],
+  "needs": [
+   "a number that changes"
+  ],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/cylinder-carousel.json",
+  "page": "https://beui.dev/components/cylinder-carousel",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "loader",
+  "title": "Loader",
+  "description": "Loading indicator with seventeen variants: spinner, dots, bars, dot-matrix, dither, morph, comet, scramble, metaballs, newton, helix, percent, and five terminal-style ascii spinners. Scales from one size prop, uses currentColor, and reduced-motion swaps every transform for a calm opacity pulse.",
+  "kind": "component",
+  "jobs": [
+   "status"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/loader.json",
+  "page": "https://beui.dev/components/loader",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "line-chart",
+  "title": "Line Chart",
+  "description": "Line and area charts that morph with your data, with a snapping crosshair and value tooltips.",
+  "kind": "component",
+  "jobs": [
+   "media"
+  ],
+  "needs": [
+   "a data series"
+  ],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/line-chart.json",
+  "page": "https://beui.dev/components/line-chart",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "bar-chart",
+  "title": "Bar Chart",
+  "description": "Grouped, stacked and horizontal bars that grow in, rescale and reorder with springs.",
+  "kind": "component",
+  "jobs": [
+   "media"
+  ],
+  "needs": [
+   "a data series"
+  ],
+  "deps": [
+   "@floating-ui/dom",
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/bar-chart.json",
+  "page": "https://beui.dev/components/bar-chart",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "sparkline",
+  "title": "Sparkline",
+  "description": "A compact inline trend for stat cards and tables, with a change badge and optional readout.",
+  "kind": "component",
+  "jobs": [
+   "value",
+   "status",
+   "media"
+  ],
+  "needs": [
+   "a data series"
+  ],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/sparkline.json",
+  "page": "https://beui.dev/components/sparkline",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "sankey-chart",
+  "title": "Sankey Chart",
+  "description": "Weighted flows between stages that draw in and morph with your data.",
+  "kind": "component",
+  "jobs": [
+   "position",
+   "media"
+  ],
+  "needs": [
+   "ordered stages",
+   "a data series"
+  ],
+  "deps": [
+   "@floating-ui/dom",
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/sankey-chart.json",
+  "page": "https://beui.dev/components/sankey-chart",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "treemap",
+  "title": "Treemap",
+  "description": "Proportional tiles that morph with your data, with value and share tooltips.",
+  "kind": "component",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "@floating-ui/dom",
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/treemap.json",
+  "page": "https://beui.dev/components/treemap",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "candlestick-chart",
+  "title": "Candlestick Chart",
+  "description": "Live OHLC candles with volume, a last-price line, and a crosshair readout.",
+  "kind": "component",
+  "jobs": [
+   "price",
+   "status",
+   "media"
+  ],
+  "needs": [
+   "a data series"
+  ],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/candlestick-chart.json",
+  "page": "https://beui.dev/components/candlestick-chart",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "donut-chart",
+  "title": "Donut Chart",
+  "description": "Rounded share segments with a linked center readout and legend.",
+  "kind": "component",
+  "jobs": [
+   "media"
+  ],
+  "needs": [
+   "a data series"
+  ],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/donut-chart.json",
+  "page": "https://beui.dev/components/donut-chart",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "volume-profile",
+  "title": "Volume Profile",
+  "description": "Animated volume by price, with point of control and value area highlights.",
+  "kind": "component",
+  "jobs": [
+   "price"
+  ],
+  "needs": [],
+  "deps": [
+   "@floating-ui/dom",
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/volume-profile.json",
+  "page": "https://beui.dev/components/volume-profile",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "status-bar",
+  "title": "Status Bar",
+  "description": "Animated status history with rounded bars and period tooltips.",
+  "kind": "component",
+  "jobs": [
+   "status"
+  ],
+  "needs": [],
+  "deps": [
+   "@floating-ui/dom",
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/status-bar.json",
+  "page": "https://beui.dev/components/status-bar",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "composition-chart",
+  "title": "Composition Chart",
+  "description": "Stacked bar and area shares with period tooltips and a compact interactive legend.",
+  "kind": "component",
+  "jobs": [
+   "media"
+  ],
+  "needs": [
+   "a data series"
+  ],
+  "deps": [
+   "@floating-ui/dom",
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/composition-chart.json",
+  "page": "https://beui.dev/components/composition-chart",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "funnel-chart",
+  "title": "Funnel Chart",
+  "description": "Vertical and horizontal funnels with curved stages and animated number tooltips.",
+  "kind": "component",
+  "jobs": [
+   "value",
+   "position",
+   "media"
+  ],
+  "needs": [
+   "a number that changes",
+   "ordered stages",
+   "a data series"
+  ],
+  "deps": [
+   "@floating-ui/dom",
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/funnel-chart.json",
+  "page": "https://beui.dev/components/funnel-chart",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "liquidity-heatmap",
+  "title": "Liquidity Heatmap",
+  "description": "Animated liquidity bands across price and time, with a price trace and depth tooltips.",
+  "kind": "component",
+  "jobs": [
+   "price"
+  ],
+  "needs": [
+   "a data series"
+  ],
+  "deps": [
+   "@floating-ui/dom",
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/liquidity-heatmap.json",
+  "page": "https://beui.dev/components/liquidity-heatmap",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "bump-chart",
+  "title": "Bump Chart",
+  "description": "Animated rankings with curved paths, interactive rank dots, and tooltips.",
+  "kind": "component",
+  "jobs": [
+   "media"
+  ],
+  "needs": [
+   "a data series"
+  ],
+  "deps": [
+   "@floating-ui/dom",
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/bump-chart.json",
+  "page": "https://beui.dev/components/bump-chart",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "order-book",
+  "title": "Order Book",
+  "description": "Animated order book with bid and ask depth, spread, and volume balance.",
+  "kind": "component",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/order-book.json",
+  "page": "https://beui.dev/components/order-book",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "heat-calendar",
+  "title": "Heat Calendar",
+  "description": "Composable activity calendar with Grid, Legend, and Tooltip parts, controlled range selection, and UTC calendar dates. Supply weekly intensities to visualize activity and total a selected span.",
+  "kind": "component",
+  "jobs": [
+   "help"
+  ],
+  "needs": [],
+  "deps": [
+   "@floating-ui/dom",
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/heat-calendar.json",
+  "page": "https://beui.dev/components/heat-calendar",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "returns-calendar",
+  "title": "Returns Calendar",
+  "description": "Composable monthly returns calendar with Grid and Tooltip parts, controlled month or year selections, and compounded totals. Supply your own years and monthly percentages.",
+  "kind": "component",
+  "jobs": [
+   "help"
+  ],
+  "needs": [
+   "two billing periods"
+  ],
+  "deps": [
+   "@floating-ui/dom",
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/returns-calendar.json",
+  "page": "https://beui.dev/components/returns-calendar",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "price-target-fan",
+  "title": "Price Target Fan",
+  "description": "Composable price target chart with Header, Plot, SVG, Axes, History, Targets, Now, Cursor, and Tooltip parts. Supply dated price history and targets; scrub with a pointer or keyboard and customize the active readout.",
+  "kind": "component",
+  "jobs": [
+   "price",
+   "media",
+   "help"
+  ],
+  "needs": [
+   "a data series"
+  ],
+  "deps": [
+   "@floating-ui/dom",
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/price-target-fan.json",
+  "page": "https://beui.dev/components/price-target-fan",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "crash",
+  "title": "Crash Plane",
+  "description": "A paper plane flies the multiplier up a curve through a speed field; a parachute opens where you cash out, and a crash tumbles the plane out of the sky.",
+  "kind": "block",
+  "jobs": [
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "@floating-ui/dom",
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/crash.json",
+  "page": "https://beui.dev/components/crash",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "crash-balloon",
+  "title": "Crash Balloon",
+  "description": "A hot-air balloon climbs an altimeter: the tape and clouds scroll past as the multiplier rises, a parachutist bails at your cash out, and a crash pops the envelope.",
+  "kind": "block",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "@floating-ui/dom",
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/crash-balloon.json",
+  "page": "https://beui.dev/components/crash-balloon",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "crash-tower",
+  "title": "Crash Tower",
+  "description": "Blocks stack higher with the multiplier and the tower sways more the taller it grows; your cash-out block keeps a pennant, and a crash topples the top of the stack.",
+  "kind": "block",
+  "jobs": [
+   "navigation"
+  ],
+  "needs": [],
+  "deps": [
+   "@floating-ui/dom",
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/crash-tower.json",
+  "page": "https://beui.dev/components/crash-tower",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "mines",
+  "title": "Mines",
+  "description": "A mines board: pick tiles to find gems, each one raising the multiplier, and cash out before you hit a mine. Each gem you find is numbered in pick order, an odds ring shows the chance the next pick is safe, and the round's end reveals every tile in a ripple from your last pick before a ticket-stub result card rises with the outcome, stats and a miniature of your run. Distinct synthesized sounds for gems, streaks, mines and cash outs; keyboard playable, reduced-motion safe.",
+  "kind": "block",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "@floating-ui/dom",
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/mines.json",
+  "page": "https://beui.dev/components/mines",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "plinko",
+  "title": "Plinko",
+  "description": "A Plinko board where balls drop through rows of pegs, bounce left or right off each one and land in a slot. Pegs flash when hit, the slot pulses on landing, several balls can fall at once, and reduced motion lands a ball instantly.",
+  "kind": "block",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "@floating-ui/dom",
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/plinko.json",
+  "page": "https://beui.dev/components/plinko",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "slide-game",
+  "title": "Slide",
+  "description": "A slide game: set a bet and a target, then a reel of colour-coded multiplier cards races past two tabs at the center of the stage, turning in 3D as they pass, slows through the last few and clicks the round's result into place between them. Cards that would beat your target carry a pip, the tabs turn primary on a win and red on a miss, and recent rounds collect in a history strip. Server-decided results, optional tick and win sounds, reduced-motion safe.",
+  "kind": "block",
+  "jobs": [
+   "position",
+   "navigation"
+  ],
+  "needs": [
+   "ordered stages"
+  ],
+  "deps": [
+   "@floating-ui/dom",
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/slide-game.json",
+  "page": "https://beui.dev/components/slide-game",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "voice-orb",
+  "title": "Voice Orb",
+  "description": "Breathing liquid voice visualization with flowing highlights, custom pigments and a soft, voice-reactive silhouette. Accepts a normalized level, MotionValue or caller-owned audio analyser, pauses offscreen and supports reduced motion.",
+  "kind": "component",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/voice-orb.json",
+  "page": "https://beui.dev/components/voice-orb",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "message-bubble",
+  "title": "Message Bubble",
+  "description": "A focused conversational surface with visual tones, independent alignment, grouped messages, expandable content, and interactive link or button support.",
+  "kind": "component",
+  "jobs": [
+   "action",
+   "media"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/message-bubble.json",
+  "page": "https://beui.dev/components/message-bubble",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "message",
+  "title": "Message",
+  "description": "Composable conversation primitives for message rows, grouped bubbles, avatars, metadata, live markers, and a mount-only trailing-edge pop-up for newly sent rows.",
+  "kind": "component",
+  "jobs": [
+   "status"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/message.json",
+  "page": "https://beui.dev/components/message",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "message-scroller",
+  "title": "Message Scroller",
+  "description": "A reader-aware conversation viewport that follows streamed output at the live edge and releases control when the reader moves away.",
+  "kind": "component",
+  "jobs": [
+   "status"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/message-scroller.json",
+  "page": "https://beui.dev/components/message-scroller",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "prompt-input",
+  "title": "Prompt Input",
+  "description": "An auto-growing agent composer with prompt actions, model selection, keyboard submission, and animated send and stop states.",
+  "kind": "component",
+  "jobs": [
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/prompt-input.json",
+  "page": "https://beui.dev/components/prompt-input",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "todo-list",
+  "title": "Todo List",
+  "description": "A collapsible agent task plan with morphing status marks, a completion count, compact metadata, and smooth list updates.",
+  "kind": "component",
+  "jobs": [
+   "status",
+   "proof"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/todo-list.json",
+  "page": "https://beui.dev/components/todo-list",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "code-block",
+  "title": "Code Block",
+  "description": "A syntax-highlighted code surface with stable streaming updates, line numbers, focused lines, smooth following, and copy feedback.",
+  "kind": "component",
+  "jobs": [
+   "action"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "shiki",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/code-block.json",
+  "page": "https://beui.dev/components/code-block",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "approval-card",
+  "title": "Approval Card",
+  "description": "A human-in-the-loop decision surface for approvals, single or multiple-choice questions, custom responses, and multi-step review flows.",
+  "kind": "component",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/approval-card.json",
+  "page": "https://beui.dev/components/approval-card",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "file-diff",
+  "title": "File Diff",
+  "description": "A syntax-highlighted file change disclosure with progressive rows, line numbers, live change counts, smooth following, and completion collapse.",
+  "kind": "component",
+  "jobs": [
+   "status"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "shiki",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/file-diff.json",
+  "page": "https://beui.dev/components/file-diff",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "tool-result",
+  "title": "Tool Result",
+  "description": "A lightweight execution disclosure for syntax-highlighted terminal output and request responses that collapses into a compact completed state.",
+  "kind": "component",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "shiki",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/tool-result.json",
+  "page": "https://beui.dev/components/tool-result",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "streaming-response",
+  "title": "Streaming Response",
+  "description": "A stable response surface with completion actions, rendered content, and an expandable source summary.",
+  "kind": "component",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/streaming-response.json",
+  "page": "https://beui.dev/components/streaming-response",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "image-generation",
+  "title": "Image Generation",
+  "description": "A stable generated-image surface that moves from queued work through progressive refinement to a completed result without layout shift.",
+  "kind": "component",
+  "jobs": [
+   "media"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/image-generation.json",
+  "page": "https://beui.dev/components/image-generation",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "tool-approval",
+  "title": "Tool Approval",
+  "description": "A human-in-the-loop permission card for reviewing tool details, allowing once, remembering access, or denying execution.",
+  "kind": "component",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "shiki",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/tool-approval.json",
+  "page": "https://beui.dev/components/tool-approval",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "citations",
+  "title": "Citations",
+  "description": "Inline citation markers paired with a collapsible, progressively rendered reference collection for grounded agent responses.",
+  "kind": "component",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/citations.json",
+  "page": "https://beui.dev/components/citations",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "agent-activity",
+  "title": "Agent Activity",
+  "description": "One adaptive activity stream for reasoning, searches, tool calls, structured execution traces, or a chronological mix.",
+  "kind": "component",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/agent-activity.json",
+  "page": "https://beui.dev/components/agent-activity",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "reasoning-text",
+  "title": "Agent Loading States Reasoning Text",
+  "description": "Shimmering reasoning copy with an ASCII loader and cascade, phrase-swap, or per-letter scramble transitions.",
+  "kind": "component",
+  "jobs": [
+   "action"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/reasoning-text.json",
+  "page": "https://beui.dev/components/reasoning-text",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "thinking-shimmer",
+  "title": "Agent Loading States Thinking Shimmer",
+  "description": "A quiet shimmer that keeps the agent's current status readable while work continues.",
+  "kind": "component",
+  "jobs": [
+   "status",
+   "identity"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/thinking-shimmer.json",
+  "page": "https://beui.dev/components/thinking-shimmer",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "agent-progress",
+  "title": "Agent Loading States Agent Progress",
+  "description": "A compact activity glyph, action verb, and live tabular timer for longer-running agent work.",
+  "kind": "component",
+  "jobs": [
+   "action",
+   "status",
+   "position"
+  ],
+  "needs": [
+   "ordered stages"
+  ],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/agent-progress.json",
+  "page": "https://beui.dev/components/agent-progress",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "ai-sidebar",
+  "title": "AI Sidebar",
+  "description": "A collapsible AI workspace sidebar for folders, projects, files, and bookmarks with keyboard navigation, optimistic moves, inline rename, and overflow-aware labels.",
+  "kind": "component",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/ai-sidebar.json",
+  "page": "https://beui.dev/components/ai-sidebar",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "chat-app",
+  "title": "Chat App",
+  "description": "A complete agent conversation workspace composing navigation, messages, streaming, planning, approvals, tools, code, diffs, generated media, sources, and prompt input.",
+  "kind": "component",
+  "jobs": [
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "shiki",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/chat-app.json",
+  "page": "https://beui.dev/components/chat-app",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "infinite-masonry",
+  "title": "Infinite Masonry",
+  "description": "Responsive virtualized masonry that measures variable-height cards and loads more data as the user nears the end.",
+  "kind": "block",
+  "jobs": [
+   "navigation"
+  ],
+  "needs": [],
+  "deps": [
+   "@tanstack/react-virtual",
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/infinite-masonry.json",
+  "page": "https://beui.dev/components/infinite-masonry",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "notification-stack",
+  "title": "Notification Stack",
+  "description": "Compact notification cards that spring from a stacked summary into a readable list on hover, focus or tap.",
+  "kind": "block",
+  "jobs": [
+   "proof"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/notification-stack.json",
+  "page": "https://beui.dev/components/notification-stack",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "project-folder",
+  "title": "Project Folder",
+  "description": "An interactive project folder that opens its file fan on hover or focus, expands into a focus-managed overlay, then retraces the complete path when closed.",
+  "kind": "block",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/project-folder.json",
+  "page": "https://beui.dev/components/project-folder",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "card-folder",
+  "title": "Card Folder",
+  "description": "A landscape card tucked into a stitched purse pocket that lifts forward as the purse compresses into its bottom seam, with controlled open and card-detail visibility plus a separate overflow action.",
+  "kind": "block",
+  "jobs": [
+   "action"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/card-folder.json",
+  "page": "https://beui.dev/components/card-folder",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "knockout-wheel",
+  "title": "Fixtures Knockout Wheel",
+  "description": "The tournament drawn radially. The champion holds the hub, each round is a ring further out, and the teams themselves form the rim. Nodes spring in ring by ring, and hovering one isolates that team while the rest recede. Teams show a flag, a logo or their initials, and a deeper draw grows another ring.",
+  "kind": "block",
+  "jobs": [],
+  "needs": [
+   "people"
+  ],
+  "deps": [
+   "@floating-ui/dom",
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/knockout-wheel.json",
+  "page": "https://beui.dev/components/knockout-wheel",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "knockout-bracket",
+  "title": "Fixtures Knockout Bracket",
+  "description": "Pages one round at a time. The leftmost round stacks at a fixed rhythm, each later round centers between its two feeder matches, and cards, elbow connectors, headers and stage height animate into every new layout. A third place play-off sits below the tree under its own rule. Round names, team artwork, dates and result chips all come from the data you pass.",
+  "kind": "block",
+  "jobs": [
+   "position"
+  ],
+  "needs": [
+   "ordered stages",
+   "people"
+  ],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/knockout-bracket.json",
+  "page": "https://beui.dev/components/knockout-bracket",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "availability-scheduler",
+  "title": "Availability Scheduler",
+  "description": "Weekly availability editor where each day springs between available and unavailable, time ranges add and remove with blur-slide motion, times pick from a scrollable dropdown, and a copy menu clones hours to other days.",
+  "kind": "block",
+  "jobs": [
+   "action",
+   "navigation"
+  ],
+  "needs": [],
+  "deps": [
+   "@floating-ui/dom",
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/availability-scheduler.json",
+  "page": "https://beui.dev/components/availability-scheduler",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "swap",
+  "title": "Multi-chain Swap",
+  "description": "Cross-chain swap widget with chain + token selectors, morphing views, animated flip and quote.",
+  "kind": "block",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/swap.json",
+  "page": "https://beui.dev/components/swap",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "dynamic-island",
+  "title": "Dynamic Island",
+  "description": "iOS-style island pill that morphs between live activity views with bouncy shell resize and blur crossfades.",
+  "kind": "block",
+  "jobs": [
+   "status"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/dynamic-island.json",
+  "page": "https://beui.dev/components/dynamic-island",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "command-palette",
+  "title": "Command Palette",
+  "description": "⌘K palette with fuzzy filter, spring-animated active row and glass surface.",
+  "kind": "block",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/command-palette.json",
+  "page": "https://beui.dev/components/command-palette",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "morphing-search-chips",
+  "title": "Morphing Search Chip Search",
+  "description": "Docked search bar that springs wider on focus and unfolds a recent-searches panel out of its own edge. Terms become removable chips, the bar grows with them, and suggestions filter as you type.",
+  "kind": "block",
+  "jobs": [
+   "status"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/morphing-search-chips.json",
+  "page": "https://beui.dev/components/morphing-search-chips",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "morphing-search",
+  "title": "Morphing Search Morphing Search",
+  "description": "Search field or compact icon that morphs into a glass results surface, whether opened by click or keyboard shortcut.",
+  "kind": "block",
+  "jobs": [
+   "media",
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/morphing-search.json",
+  "page": "https://beui.dev/components/morphing-search",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "expandable-action-bar",
+  "title": "Expandable Action Bar",
+  "description": "Compact icon actions that expand into labeled controls on hover or focus with shared layout motion.",
+  "kind": "block",
+  "jobs": [
+   "action",
+   "media"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/expandable-action-bar.json",
+  "page": "https://beui.dev/components/expandable-action-bar",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "overflow-actions",
+  "title": "Overflow Actions",
+  "description": "Connected pill rail for primary actions that springs open to reveal extra controls.",
+  "kind": "block",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/overflow-actions.json",
+  "page": "https://beui.dev/components/overflow-actions",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "expandable-tabs",
+  "title": "Expandable Tabs",
+  "description": "Icon tab bar where the active tab expands to a labelled pill, with a panel above that morphs height and slides content direction-aware on switch.",
+  "kind": "block",
+  "jobs": [
+   "navigation",
+   "media",
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/expandable-tabs.json",
+  "page": "https://beui.dev/components/expandable-tabs",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "morphing-tabs",
+  "title": "Morphing Tabs",
+  "description": "Reorderable tabs whose selected item grows into a white content surface, with the active shape gliding as tabs move and a shared morph between rooms.",
+  "kind": "block",
+  "jobs": [
+   "navigation"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/morphing-tabs.json",
+  "page": "https://beui.dev/components/morphing-tabs",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "swipeable-list",
+  "title": "Swipeable List",
+  "description": "Mobile-style list rows that swipe left or right to reveal contextual action buttons.",
+  "kind": "block",
+  "jobs": [
+   "action",
+   "proof"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/swipeable-list.json",
+  "page": "https://beui.dev/components/swipeable-list",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "attachment-upload",
+  "title": "File Upload Attachment Upload",
+  "description": "A mixed attachment workspace with a dropzone, staggered file and image rows, animated upload, success, failure, retry and removal feedback, shared-layout image previews, and an audio waveform.",
+  "kind": "block",
+  "jobs": [
+   "media"
+  ],
+  "needs": [],
+  "deps": [
+   "@floating-ui/dom",
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/attachment-upload.json",
+  "page": "https://beui.dev/components/attachment-upload",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "file-upload",
+  "title": "File Upload Upload Queue",
+  "description": "A drag-and-drop upload queue with progress rows, upload states, retry, and removal.",
+  "kind": "block",
+  "jobs": [
+   "position"
+  ],
+  "needs": [
+   "ordered stages"
+  ],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/file-upload.json",
+  "page": "https://beui.dev/components/file-upload",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "prediction-market-card",
+  "title": "Prediction Market Market Cards",
+  "description": "Compact market listings with consistent outcome rows, animated odds CTAs, payout multipliers and bookmarks. Odds CTAs use green/red backgrounds and roll into Yes/No labels on hover or keyboard focus. Use Update odds to preview animated price changes.",
+  "kind": "block",
+  "jobs": [
+   "price"
+  ],
+  "needs": [
+   "a number that changes"
+  ],
+  "deps": [
+   "@floating-ui/dom",
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/prediction-market-card.json",
+  "page": "https://beui.dev/components/prediction-market-card",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "prediction-market",
+  "title": "Prediction Market Trade Ticket",
+  "description": "Buy and sell outcomes with rolling amount entry, quick add chips and trade states.",
+  "kind": "block",
+  "jobs": [
+   "price"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/prediction-market.json",
+  "page": "https://beui.dev/components/prediction-market",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "wallet-card",
+  "title": "Wallet Card",
+  "description": "Wallet overview card with an account switcher and search that morph open from their triggers, a cascading balance with a live change pill and privacy toggle, copy-address, and Send / Deposit / Swap / Buy actions.",
+  "kind": "block",
+  "jobs": [
+   "action",
+   "status",
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/wallet-card.json",
+  "page": "https://beui.dev/components/wallet-card",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "otp-input",
+  "title": "OTP Input",
+  "description": "One-time-code input with a gliding focus ring, digits that roll in per slot, error shake and a success check draw.",
+  "kind": "block",
+  "jobs": [
+   "input"
+  ],
+  "needs": [
+   "a number that changes"
+  ],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/otp-input.json",
+  "page": "https://beui.dev/components/otp-input",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "signup-form",
+  "title": "Sign Up Form",
+  "description": "Composed sign-up form that flags a field only once it is left, then clears the moment it is fixed, with a length-weighted strength meter, password reveal and an animated submit lifecycle.",
+  "kind": "block",
+  "jobs": [
+   "value",
+   "action",
+   "input"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/signup-form.json",
+  "page": "https://beui.dev/components/signup-form",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "card-dealer",
+  "title": "Card Dealer",
+  "description": "A card table with a face-down deck, a fanned hand and a discard pile. Cards arc across the table between them and flip in flight, hop over each other when the hand is sorted, and lift on hover. Data-driven by each card's zone, with custom faces and backs, keyboard-playable hand cards and reduced-motion support.",
+  "kind": "block",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/card-dealer.json",
+  "page": "https://beui.dev/components/card-dealer",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "bloom-menu",
+  "title": "Bloom Menu",
+  "description": "A button that morphs open into a menu and blooms iris-out from the center, the grid revealing in every direction with radially staggered items.",
+  "kind": "block",
+  "jobs": [
+   "action",
+   "navigation"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/bloom-menu.json",
+  "page": "https://beui.dev/components/bloom-menu",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "feedback-widget",
+  "title": "Feedback Widget",
+  "description": "Corner trigger that morphs open into a feedback popup with message entry and animated sending, success and retry states.",
+  "kind": "block",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "lucide-react",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/feedback-widget.json",
+  "page": "https://beui.dev/components/feedback-widget",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "not-found-glitch",
+  "title": "404 / Not Found Glitch",
+  "description": "Digits scramble through random glyphs before resolving, with a chromatic split on hover.",
+  "kind": "block",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/not-found-glitch.json",
+  "page": "https://beui.dev/components/not-found-glitch",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "not-found-magnetic",
+  "title": "404 / Not Found Magnetic",
+  "description": "Each digit is cursor-attracted via the Magnetic wrapper and springs back on leave.",
+  "kind": "block",
+  "jobs": [
+   "value"
+  ],
+  "needs": [
+   "a number that changes"
+  ],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/not-found-magnetic.json",
+  "page": "https://beui.dev/components/not-found-magnetic",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "not-found-spotlight",
+  "title": "404 / Not Found Spotlight",
+  "description": "A dark panel where a cursor-tracked spotlight reveals the bright code from a dim base.",
+  "kind": "block",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/not-found-spotlight.json",
+  "page": "https://beui.dev/components/not-found-spotlight",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "not-found-stacked",
+  "title": "404 / Not Found Stacked",
+  "description": "A code card over a hidden stack that fans out with a spring on hover.",
+  "kind": "block",
+  "jobs": [],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/not-found-stacked.json",
+  "page": "https://beui.dev/components/not-found-stacked",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ },
+ {
+  "lib": "beui",
+  "name": "not-found-terminal",
+  "title": "404 / Not Found Terminal",
+  "description": "A terminal window that types a failed cd command and a 404 status, with a blinking caret.",
+  "kind": "block",
+  "jobs": [
+   "status"
+  ],
+  "needs": [],
+  "deps": [
+   "clsx",
+   "motion",
+   "tailwind-merge"
+  ],
+  "item": "https://beui.dev/r/not-found-terminal.json",
+  "page": "https://beui.dev/components/not-found-terminal",
+  "terms": "beUI free components: installed with the shadcn CLI, \"the source is yours\"; Pro items are not in the registry (beui.dev)"
+ }
+]
