@@ -14,7 +14,7 @@
 import { SPRING } from './motion-beats.js';
 import { MOTION_CSS, TILE_BEATS as T, playTile, pillHtml } from './show-motion.js';
 
-import { lerp, at, make, ringAround, pillOver, pillLeft } from './check-kit.js';
+import { lerp, at, make, ringAround, pillOver, pillLeft, box, shadowReach } from './check-kit.js';
 import { CRAFT } from './checks/craft.js';
 const CSS = `
   .ck-scene { position: absolute; inset: 0; display: grid; place-items: center; }
@@ -35,7 +35,8 @@ const CSS = `
 const colourCheck = ({ html, pick, from, to, prop = 'background', labels, after }) => (s) => {
   s.innerHTML = `<div class="ck-scene">${html}</div>`;
   const el = s.querySelector(pick), ring = make(s, 'ring'), pill = make(s, 'pill');
-  return { labels, curve: 'ease-in-out', guides: [{ el: ring, kind: 'ring' }, { el: pill, kind: 'pill' }],
+  const sw = (c) => `<i class="chip" style="background:${c === 'transparent' ? 'repeating-conic-gradient(#d1d5db 0 25%, #fff 0 50%) 0 0 / 6px 6px' : c}"></i>`;
+  return { labels, chip: (i) => sw(i ? to : from), curve: 'ease-in-out', guides: [{ el: ring, kind: 'ring' }, { el: pill, kind: 'pill' }],
     at: (p) => { el.style[prop] = p ? to : from; after?.(s, p); }, track: () => { ringAround(ring, el, s); pillOver(pill, el, s, 18); } };
 };
 const REBRAND = '<span class="cap">Your theme was rebranded from indigo to teal.</span>';
@@ -81,10 +82,10 @@ export const CHECK_SPECS = {
     const from = [0, 18, 40, -6, 0.45], to = [0, 1, 3, 0, 0.14];
     s.innerHTML = '<div class="ck-scene" style="background:#f3f4f6"><div style="display:flex;gap:22px"><div class="x" style="width:120px;height:80px;border-radius:12px;background:#fff"></div><div style="width:120px;height:80px;border-radius:12px;background:#fff;box-shadow:0 1px 3px rgb(0 0 0 / .14)"></div></div></div>';
     const x = s.querySelector('.x'), ring = make(s, 'ring'), pill = make(s, 'pill');
-    const reach = () => { const n = (getComputedStyle(x).boxShadow.match(/-?[\d.]+px/g) ?? []).map(parseFloat); return 6 + Math.max(0, (n[1] ?? 0) + (n[2] ?? 0) * 0.5); };
+    // dashes where the shadow reaches: a wide indigo glow, then the card shadow your theme uses
     return { labels: ['glow, by hand', 'shadow-card'], guides: [{ el: ring, kind: 'ring' }, { el: pill, kind: 'pill' }],
       at: (p) => { const v = from.map((f, i) => lerp(f, to[i], p)); x.style.boxShadow = `0 ${v[1]}px ${v[2]}px ${v[3]}px rgb(${Math.round(lerp(79, 0, p))} ${Math.round(lerp(70, 0, p))} ${Math.round(lerp(229, 0, p))} / ${v[4]})`; },
-      track: () => { const r = reach(); ringAround(ring, x, s, r); pillOver(pill, x, s, r + 8); } };
+      track: () => { const b = box(x, s), e = shadowReach(x); at(ring, `left:${b.l - e.x}px;top:${b.t - e.top}px;width:${b.w + e.x * 2}px;height:${b.h + e.top + e.bottom}px;border-radius:${12 + e.x}px`); at(pill, `left:${b.l + b.w / 2}px;top:${b.t - e.top - 14}px`); } };
   },
   // how long each menu takes to answer a press, as a bar: Edit's is three times its siblings', and shrinks to theirs.
   // Landed, the three answer a press in turn, at one speed
@@ -114,17 +115,19 @@ export const CHECK_SPECS = {
   'dead/color': (s) => {
     const rows = [['primary', '#4f46e5', '31 uses'], ['muted', '#64748b', '18 uses'], ['danger', '#dc2626', '4 uses'], ['brand-old', '#7c3aed', 'unused'], ['accent-2', '#db2777', 'unused']];
     s.innerHTML = `<div class="ck-scene"><div class="list" style="display:grid;gap:6px;width:250px">${rows.map(([n, c, u]) => `<span class="sw${u === 'unused' ? ' dead' : ''}" style="height:24px"><i style="background:${c}"></i>${n}<small style="${u === 'unused' ? 'color:#dc2626' : ''}">${u}</small></span>`).join('')}</div></div>`;
-    const dead = [...s.querySelectorAll('.dead')], list = s.querySelector('.list'), ring = make(s, 'ring'), pill = make(s, 'pill');
-    return { labels: ['2 nobody uses', '3, each in use'], guides: [{ el: ring, kind: 'ring' }, { el: pill, kind: 'pill' }],
+    const dead = [...s.querySelectorAll('.dead')], list = s.querySelector('.list'), marks = dead.map(() => make(s, 'sq')), pill = make(s, 'pill');
+    // a box on each colour nobody uses, closing with it
+    return { labels: ['2 nobody uses', '3, each in use'], guides: [...marks.map((el) => ({ el, kind: 'beam' })), { el: pill, kind: 'pill' }],
       at: (p) => { for (const d of dead) { d.style.height = `${lerp(24, 0, p)}px`; d.style.opacity = String(1 - p); d.style.marginTop = `${lerp(0, -6, p)}px`; } },
-      track: () => { ringAround(ring, list, s, 8); pillOver(pill, list, s, 16); } };
+      track: () => { dead.forEach((d, i) => { const q = box(d, s); at(marks[i], `left:${q.l - 6}px;top:${q.t - 2}px;width:${q.w + 12}px;height:${Math.max(0, q.h + 4)}px;border-style:dashed;opacity:${Math.min(1, q.h / 12)}`); }); pillOver(pill, list, s, 16); } };
   },
   'imitation/{Component}': (s) => {
     s.innerHTML = '<div class="ck-scene" style="gap:14px;align-content:center"><span class="btn2 x" style="background:#4f46e5">Invite</span><span style="font:500 12px system-ui;color:#6b7280">Press <span class="key">Tab</span></span></div>';
-    const x = s.querySelector('.x'), ring = make(s, 'ring'), pill = make(s, 'pill');
+    const x = s.querySelector('.x'), ring = make(s, 'sq'), pill = make(s, 'pill');
+    // dashes where the focus ring belongs: empty on the copy, filled by the real Button
     return { labels: ['div, by hand', '<Button>'], guides: [{ el: ring, kind: 'ring' }, { el: pill, kind: 'pill' }],
       at: (p) => { x.style.boxShadow = `0 0 0 ${lerp(0, 2, p)}px #fff, 0 0 0 ${lerp(0, 5, p)}px rgb(165 180 252 / ${p})`; },
-      track: () => { ringAround(ring, x, s, 11); pillOver(pill, x, s, 20); } };
+      track: () => { const q = box(x, s); at(ring, `left:${q.l - 6}px;top:${q.t - 6}px;width:${q.w + 12}px;height:${q.h + 12}px;border-radius:15px;border-style:dashed`); pillOver(pill, x, s, 22); } };
   },
   // two badges in a nav. Beta has styles laid over it from outside (tighter, smaller), so it no longer matches New
   'ownership/{Component}': (s) => {
@@ -140,6 +143,8 @@ export const CHECK_SPECS = {
 // the other concerns' examples: each entry's scene, beside its words (checks/<concern>.js)
 for (const [id, ex] of Object.entries(CRAFT)) CHECK_SPECS[id] = ex.scene;
 
+// a label is words, not markup: "<Button>" is shown, not made
+const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
 // One player for every check: the tiles' own (playTile). The scene's elements carry a transition while it moves,
 // so at(0) or at(1) is all a spec says; a flip mid-move turns the transition round from where it is.
 export function mountCheck(host, id, { tokensCss = '', onMove } = {}) {
@@ -167,11 +172,11 @@ export function mountCheck(host, id, { tokensCss = '', onMove } = {}) {
       if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
         busy = false;
         spec.at(fixed ? 1 : 0); spec.track(); onMove?.(fixed); stage.toggleAttribute('data-landed', true);
-        if (pill) pill.innerHTML = spec.labels ? spec.labels[fixed ? 1 : 0] : pillHtml([(spec.fmt ?? Math.round)(fixed ? spec.to : spec.from)], spec.unit, fixed ? spec.name : '');
+        if (pill) pill.innerHTML = spec.labels ? esc(spec.labels[fixed ? 1 : 0]) : pillHtml([(spec.fmt ?? Math.round)(fixed ? spec.to : spec.from)], spec.unit, fixed ? spec.name : '');
         return;
       }
       const [from, to] = fixed ? [spec.from, spec.to] : [spec.to, spec.from];
-      await playTile(stage, { from, to, step: spec.step, fmt: spec.fmt, unit: spec.unit, name: fixed ? spec.name : '', labels: spec.labels && (fixed ? spec.labels : [...spec.labels].reverse()),
+      await playTile(stage, { from, to, step: spec.step, fmt: spec.fmt, unit: spec.unit, name: fixed ? spec.name : '', labels: spec.labels && (fixed ? spec.labels : [...spec.labels].reverse()).map(esc), chip: spec.chip && ((i) => spec.chip(fixed ? i : 1 - i)),
         guides: kinds, stale: () => mine !== run, track: spec.track, now: turning,
         ease: (on) => { stage.toggleAttribute('data-moving', on); onMove?.(fixed); }, apply: () => spec.at(fixed ? 1 : 0) });
       if (mine !== run) return;

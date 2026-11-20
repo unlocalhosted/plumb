@@ -1,7 +1,10 @@
 // Craft and polish: an example for each check, the way the design-system checks have theirs (check-motion.js).
 // Each entry: the line of code before and after, a sentence for each state, and the scene (a stage → a spec the
 // tiles' player runs: at(p) sets broken (0) or fixed (1), track() puts the guides where the scene is now).
-import { at, make, ringAround, pillOver, pillUnder, gapY, gapX, box } from '../check-kit.js';
+import { at, make, ringAround, pillOver, pillUnder, gapY, gapX, box, charBox, chip, shadowReach, shadowOffsetY } from '../check-kit.js';
+// a line across from x1 to x2 at y, or down from y1 to y2 at x
+const lineH = (el, y, x1, x2) => at(el, `top:${y}px;left:${x1}px;width:${x2 - x1}px;right:auto`);
+const lineV = (el, x, y1, y2, extra = '') => at(el, `left:${x}px;top:${y1}px;height:${y2 - y1}px;bottom:auto;${extra}`);
 
 const scene = (s, html, bg = '') => { s.innerHTML = `<div class="ck-scene"${bg ? ` style="background:${bg}"` : ''}>${html}</div>`; };
 const G = (s, ...cls) => cls.map((c) => make(s, c));
@@ -38,8 +41,11 @@ export const CRAFT = {
     note: ['Heavy dividers are louder than the rows they divide.', 'A hairline keeps the rows apart without shouting over them.'],
     scene: (s) => {
       scene(s, `<div class="lst" style="width:190px;border-radius:12px;background:#fff;box-shadow:inset 0 0 0 1px #e5e7eb;font:500 13px system-ui;color:#111827">${['Invoices', 'Members', 'Settings'].map((w, i) => `<div class="${i < 2 ? 'rw' : ''}" style="padding:10px 14px;${i < 2 ? 'border-bottom:2px solid #9ca3af' : ''}">${w}</div>`).join('')}</div>`, '#f9fafb');
-      const rows = [...s.querySelectorAll('.rw')], lst = s.querySelector('.lst');
-      return { ...ringed(s, lst, ['2px, gray-400', '1px hairline'], 8, 20), at: (p) => { for (const r of rows) r.style.borderBottom = p ? '1px solid #e5e7eb' : '2px solid #9ca3af'; } };
+      const rows = [...s.querySelectorAll('.rw')], marks = rows.map(() => make(s, 'sq')), pill = make(s, 'pill');
+      // a box round each divider itself, the line the check is about
+      return { from: 2, to: 1, unit: 'px', name: 'hairline', guides: [...marks.map((el) => ({ el, kind: 'beam' })), { el: pill, kind: 'pill' }],
+        at: (p) => { for (const r of rows) r.style.borderBottom = p ? '1px solid #e5e7eb' : '2px solid #9ca3af'; },
+        track: () => { rows.forEach((r, i) => { const b = box(r, s), bw = parseFloat(getComputedStyle(r).borderBottomWidth); at(marks[i], `left:${b.l - 4}px;top:${b.b - bw - 4}px;width:${b.w + 8}px;height:${bw + 8}px;border-radius:5px`); }); at(pill, `left:${box(rows[0], s).r + 12}px;top:${box(rows[0], s).b}px;translate:0 -50%`); } };
     },
   },
   'craft/image-outline': {
@@ -47,18 +53,24 @@ export const CRAFT = {
     note: ['White photos on a white page: you can’t tell where a picture ends.', 'A faint outline inside the picture gives it an edge on any background.'],
     scene: (s) => {
       scene(s, `<div class="row" style="display:flex;gap:16px">${[['Mug', '38px', '34px', '6px 6px 16px 16px'], ['Vase', '26px', '50px', '13px 13px 8px 8px']].map(([w, iw, ih, r]) => `<figure style="margin:0;display:grid;gap:6px;font:500 12px system-ui;color:#374151"><div class="ph" style="width:96px;height:84px;border-radius:10px;background:#fff;display:grid;place-items:center;box-shadow:inset 0 0 0 1px rgb(0 0 0 / 0)"><i style="width:${iw};height:${ih};border-radius:${r};background:linear-gradient(#f4f4f5,#e4e4e7)"></i></div>${w} · $24</figure>`).join('')}</div>`);
-      const phs = [...s.querySelectorAll('.ph')];
-      return { ...ringed(s, s.querySelector('.row'), ['no edge', 'outline, 10%'], 10, 22), at: (p) => { for (const x of phs) x.style.boxShadow = `inset 0 0 0 1px rgb(0 0 0 / ${p ? 0.1 : 0})`; } };
+      const phs = [...s.querySelectorAll('.ph')], edges = phs.map(() => make(s, 'sq')), pill = make(s, 'pill');
+      // dashes exactly on each picture's edge: the edge you can't see until it has an outline
+      return { labels: ['no edge', 'outline, 10%'], guides: [...edges.map((el) => ({ el, kind: 'beam' })), { el: pill, kind: 'pill' }],
+        at: (p) => { for (const x of phs) x.style.boxShadow = `inset 0 0 0 1px rgb(0 0 0 / ${p ? 0.1 : 0})`; },
+        track: () => { phs.forEach((x, i) => { const b = box(x, s); at(edges[i], `left:${b.l}px;top:${b.t}px;width:${b.w}px;height:${b.h}px;border-radius:10px;border-style:dashed`); }); pillOver(pill, s.querySelector('.row'), s, 18); } };
     },
   },
   'craft/layered-shadow': {
     code: ['shadow-[0_22px_40px_rgb(0_0_0/.35)]', 'shadow-card'],
     note: ['One big blur reads as a smudge under the card, not a card off the page.', 'Small, tight shadows stacked: the card has an edge and a weight.'],
     scene: (s) => {
-      scene(s, '<div class="x" style="width:150px;height:92px;border-radius:14px;background:#fff;display:grid;place-items:center;font:600 13px system-ui;color:#111827;box-shadow:0 22px 40px -4px rgb(0 0 0 / .35), 0 0 0 0 rgb(0 0 0 / 0), 0 0 0 0 rgb(0 0 0 / 0)">Team plan</div>', '#f4f4f5');
-      const x = s.querySelector('.x');
-      return { ...ringed(s, x, ['one 40px blur', 'shadow-card'], 12, 26),
-        at: (p) => { x.style.boxShadow = p ? '0 1px 2px rgb(0 0 0 / .08), 0 4px 10px -2px rgb(0 0 0 / .08), 0 12px 24px -8px rgb(0 0 0 / .14)' : '0 22px 40px -4px rgb(0 0 0 / .35), 0 0 0 0 rgb(0 0 0 / 0), 0 0 0 0 rgb(0 0 0 / 0)'; } };
+      const one = '0 22px 40px -4px rgb(0 0 0 / .35), 0 0 0 0 rgb(0 0 0 / 0), 0 0 0 0 rgb(0 0 0 / 0)', layered = '0 1px 2px rgb(0 0 0 / .08), 0 4px 10px -2px rgb(0 0 0 / .08), 0 12px 24px -8px rgb(0 0 0 / .14)';
+      scene(s, `<div class="x" style="width:150px;height:84px;border-radius:14px;background:#fff;display:grid;place-items:center;font:600 13px system-ui;color:#111827;box-shadow:${one}">Team plan</div>`, '#f4f4f5');
+      const x = s.querySelector('.x'), [reach, pill] = G(s, 'sq', 'pill');
+      // dashes where the shadow reaches: a wide smudge, then a tight edge
+      return { labels: ['one 40px blur', 'shadow-card'], guides: [{ el: reach, kind: 'beam' }, { el: pill, kind: 'pill' }],
+        at: (p) => { x.style.boxShadow = p ? layered : one; },
+        track: () => { const b = box(x, s), e = shadowReach(x); at(reach, `left:${b.l - e.x}px;top:${b.t - e.top}px;width:${b.w + e.x * 2}px;height:${b.h + e.top + e.bottom}px;border-radius:${14 + e.x}px;border-style:dashed`); at(pill, `left:${b.l + b.w / 2}px;top:${b.t - e.top - 14}px`); } };
     },
   },
   'craft/content-align': {
@@ -110,9 +122,12 @@ export const CRAFT = {
     note: ['One card is lit from below while its neighbours are lit from above.', 'One light for the page: every shadow falls the same way.'],
     scene: (s) => {
       const down = '0 6px 14px -4px rgb(0 0 0 / .28)', up = '0 -6px 14px -4px rgb(0 0 0 / .28)';
-      scene(s, `<div style="display:flex;gap:16px">${[0, 1, 2].map((i) => `<div class="${i === 1 ? 'x' : ''}" style="width:68px;height:60px;border-radius:12px;background:#fff;box-shadow:${i === 1 ? up : down}"></div>`).join('')}</div>`, '#f4f4f5');
-      const x = s.querySelector('.x');
-      return { ...ringed(s, x, ['lit from below', 'shadow-card'], 12, 24, true), at: (p) => { x.style.boxShadow = p ? down : up; } };
+      scene(s, `<div style="display:flex;gap:16px">${[0, 1, 2].map((i) => `<div class="cd${i === 1 ? ' x' : ''}" style="width:68px;height:60px;border-radius:12px;background:#fff;box-shadow:${i === 1 ? up : down}"></div>`).join('')}</div>`, '#f4f4f5');
+      const cards = [...s.querySelectorAll('.cd')], x = s.querySelector('.x'), dots = cards.map(() => make(s, 'sq')), pill = make(s, 'pill');
+      // a mark on the side each shadow falls: two below, one above, until it joins them
+      return { labels: ['lit from below', 'shadow-card'], guides: [...dots.map((el) => ({ el, kind: 'beam' })), { el: pill, kind: 'pill' }],
+        at: (p) => { x.style.boxShadow = p ? down : up; },
+        track: () => { cards.forEach((c, i) => { const b = box(c, s), oy = shadowOffsetY(c), y = b.t + b.h / 2 + (b.h / 2 + 12) * Math.max(-1, Math.min(1, oy / 6)); at(dots[i], `left:${b.l + b.w / 2 - 5}px;top:${y - 5}px;width:10px;height:10px;border-radius:50%;background:var(--c);border:0`); }); pillUnder(pill, x, s, 36); } };
     },
   },
   'craft/tabular-nums': {
@@ -120,8 +135,14 @@ export const CRAFT = {
     note: ['Each digit is its own width, so the amounts don’t line up to compare.', 'Every digit one width: the column lines up.'],
     scene: (s) => {
       scene(s, `<div class="x" style="font:600 17px/1.65 system-ui;font-variant-numeric:proportional-nums;text-align:right;color:#111827">${['$1,111.11', '$48,200.00', '$904.50', '$17.71'].map((n) => `<div>${n}</div>`).join('')}</div>`);
-      const x = s.querySelector('.x');
-      return { ...ringed(s, x, ['proportional', 'tabular-nums'], 10, 16), at: (p) => { x.style.fontVariantNumeric = p ? 'tabular-nums' : 'proportional-nums'; } };
+      const x = s.querySelector('.x'), ref = x.children[1].firstChild, n = ref.length;
+      // the columns of the longest amount, drawn down the whole list (as the Number columns tile does): with digits
+      // of their own widths the other rows cross the lines; with one width they fall between them
+      const ticks = Array.from({ length: 7 }, (_, k) => [ref, n - 1 - k, make(s, 'vl')]);
+      const pill = make(s, 'pill');
+      return { labels: ['proportional', 'tabular-nums'], guides: [...ticks.map((t) => ({ el: t[2], kind: 'v' })), { el: pill, kind: 'pill' }],
+        at: (p) => { x.style.fontVariantNumeric = p ? 'tabular-nums' : 'proportional-nums'; },
+        track: () => { const X = box(x, s); for (const [t, i, el] of ticks) { const c = charBox(t, i, s); lineV(el, c.l, X.t - 8, X.b + 8); } pillUnder(pill, x, s, 22); } };
     },
   },
   'craft/pair-spacing': {
@@ -146,36 +167,51 @@ Object.assign(CRAFT, {
     note: ['See-through words take the colour of what’s under them: grey on white, almost gone on blue.', 'A muted colour made for each surface reads the same on both.'],
     scene: (s) => {
       scene(s, `<div style="display:flex;gap:12px">${[['#fff', '#111827', 'Draft'], ['#1e3a8a', '#fff', 'Live']].map(([bg, ink, t], i) => `<div style="width:118px;padding:14px;border-radius:12px;background:${bg};color:${ink};box-shadow:inset 0 0 0 1px rgb(0 0 0 / .08);display:grid;gap:4px;font:600 14px system-ui">${t}<span class="m${i}" style="font:500 12px system-ui;color:#000;opacity:.45">Edited 2h ago</span></div>`).join('')}</div>`, '#f9fafb');
-      const m0 = s.querySelector('.m0'), m1 = s.querySelector('.m1');
-      return { ...ringed(s, m1, ['black at 45%', 'muted'], 6, 18, true), at: (p) => { m0.style.cssText += p ? ';color:#6b7280;opacity:1' : ';color:#000;opacity:.45'; m1.style.cssText += p ? ';color:#a5b4fc;opacity:1' : ';color:#000;opacity:.45'; } };
+      const m0 = s.querySelector('.m0'), m1 = s.querySelector('.m1'), [a, b, pill] = G(s, 'sq', 'sq', 'pill');
+      // the same line on two grounds: see-through, it is two different colours
+      return { labels: ['black at 45%', 'muted'], chip: (i) => chip(i ? '#a5b4fc' : 'rgb(0 0 0 / .45)'), guides: [{ el: a, kind: 'beam' }, { el: b, kind: 'beam' }, { el: pill, kind: 'pill' }],
+        at: (p) => { m0.style.cssText += p ? ';color:#6b7280;opacity:1' : ';color:#000;opacity:.45'; m1.style.cssText += p ? ';color:#a5b4fc;opacity:1' : ';color:#000;opacity:.45'; },
+        track: () => { for (const [el, m] of [[a, m0], [b, m1]]) { const B = box(m, s); at(el, `left:${B.l - 4}px;top:${B.t - 3}px;width:${B.w + 8}px;height:${B.h + 6}px;border-style:dashed`); } const B0 = box(m0, s), B1 = box(m1, s); at(pill, `left:${(B0.l + B1.r) / 2}px;top:${B0.b + 34}px`); } };
     },
   },
   'craft/half-pixel': {
     code: ['left-1/2 -translate-x-1/2 (141px wide)', 'snapped to a whole pixel'],
     note: ['Centred on half a pixel, the words smear across two rows of pixels (shown magnified).', 'On a whole pixel, every edge is sharp.'],
     scene: (s) => {
-      scene(s, '<div style="display:grid;justify-items:center;gap:10px"><span class="x" style="padding:8px 14px;border-radius:10px;background:#111827;color:#fff;font:600 22px system-ui;filter:blur(.8px)">Link copied</span><small style="font:500 11px system-ui;color:#6b7280">magnified ×2</small></div>');
-      const x = s.querySelector('.x');
-      return { ...ringed(s, x, ['x = 70.5px', 'x = 70px'], 8, 20), at: (p) => { x.style.filter = p ? 'blur(0px)' : 'blur(.8px)'; } };
+      scene(s, '<div style="display:grid;justify-items:center;gap:10px"><span class="x" style="padding:8px 14px;border-radius:10px;background:#111827;color:#fff;font:600 22px system-ui;filter:blur(.8px);translate:3px 0">Link copied</span><small style="font:500 11px system-ui;color:#6b7280">magnified: each line is one pixel</small></div>');
+      const x = s.querySelector('.x'), [grid, edge, pill] = G(s, 'sq', 'vl', 'pill');
+      x.style.translate = '0 0'; const home = box(x, s).l; x.style.translate = '3px 0';
+      // the pixel grid under the tooltip's edge: half a pixel off, the edge falls between two lines and blurs
+      return { labels: ['x = 70.5px', 'x = 70px'], guides: [{ el: grid, kind: 'beam' }, { el: edge, kind: 'v' }, { el: pill, kind: 'pill' }],
+        at: (p) => { x.style.filter = p ? 'blur(0px)' : 'blur(.8px)'; x.style.translate = p ? '0 0' : '3px 0'; },
+        track: () => { const b = box(x, s); at(grid, `left:${home - 24}px;top:${b.t - 10}px;width:48px;height:${b.h + 20}px;border:0;border-radius:0;background:repeating-linear-gradient(90deg, color-mix(in oklab, var(--c) 55%, transparent) 0 1px, transparent 1px 6px)`); lineV(edge, b.l, b.t - 16, b.b + 16); at(pill, `left:${b.l}px;top:${b.t - 28}px`); } };
     },
   },
   'craft/scale-from-zero': {
     code: ['from scale-0', 'from scale-95, fading in'],
     note: ['Grown from a dot, the menu seems to come from nowhere.', 'Starting near full size, it simply arrives where it belongs.'],
     scene: (s) => {
-      scene(s, '<div style="position:relative;width:170px;height:120px"><div class="gh" style="position:absolute;inset:0;border-radius:12px;border:1.5px dashed #a5b4fc;scale:0.04"></div><div class="x" style="position:absolute;inset:0;border-radius:12px;background:#fff;box-shadow:0 10px 30px -10px rgb(0 0 0 / .35),0 0 0 1px rgb(0 0 0 / .06);display:grid;align-content:center;gap:6px;padding:0 14px;font:500 13px system-ui;color:#111827"><span>Rename</span><span>Duplicate</span><span style="color:#dc2626">Delete</span></div></div>');
-      const x = s.querySelector('.x'), gh = s.querySelector('.gh');
-      const open = (from) => x.animate([{ scale: from, opacity: 0 }, { scale: 1, opacity: 1 }], { duration: 320, easing: 'cubic-bezier(.2,.8,.2,1)', delay: 250 });
-      return { ...ringed(s, x, ['from 0', 'from 0.95'], 8, 20, true), at: (p) => { gh.style.scale = p ? '0.95' : '0.04'; open(p ? 0.95 : 0); } };
+      scene(s, '<div style="position:relative;width:170px;height:120px"><div class="x" style="position:absolute;inset:0;border-radius:12px;background:#fff;box-shadow:0 10px 30px -10px rgb(0 0 0 / .35),0 0 0 1px rgb(0 0 0 / .06);display:grid;align-content:center;gap:6px;padding:0 14px;font:500 13px system-ui;color:#111827"><span>Rename</span><span>Duplicate</span><span style="color:#dc2626">Delete</span></div></div>');
+      const x = s.querySelector('.x'), [start, pill] = G(s, 'sq', 'pill');
+      let from = 0;
+      // the opening plays slowed down while the guides are up, so you watch where it starts
+      const open = () => x.animate([{ scale: from, opacity: 0 }, { scale: 1, opacity: 1 }], { duration: 760, easing: 'cubic-bezier(.2,.8,.2,1)', delay: 120 });
+      // dashes where the menu starts its opening: a point, then nearly its own size
+      return { from: 0, to: 0.95, step: 0.05, fmt: (v) => v.toFixed(2), unit: '', name: 'scale', guides: [{ el: start, kind: 'beam' }, { el: pill, kind: 'pill' }],
+        at: (p) => { from = p ? 0.95 : 0; open(); },
+        track: () => { const b = box(x.parentElement, s), w = Math.max(6, b.w * from), h = Math.max(6, b.h * from); at(start, `left:${b.l + (b.w - w) / 2}px;top:${b.t + (b.h - h) / 2}px;width:${w}px;height:${h}px;border-radius:${from ? 12 : 50}px;border-style:dashed`); pillUnder(pill, x.parentElement, s, 24); } };
     },
   },
   'craft/z-index-war': {
     code: ['z-[99999] (help button)', 'z-raised'],
     note: ['The help button was typed 99999, so it sits on the toast that says your work was saved.', 'On its own layer, under messages: the toast reads in full.'],
     scene: (s) => {
-      scene(s, '<div style="position:relative;width:240px;height:150px;border-radius:12px;background:#f3f4f6;overflow:hidden"><div style="position:absolute;left:14px;top:14px;right:14px;display:grid;gap:8px"><i style="height:10px;border-radius:5px;background:#e5e7eb"></i><i style="height:10px;width:70%;border-radius:5px;background:#e5e7eb"></i></div><div style="position:absolute;left:40px;right:16px;bottom:18px;padding:10px 12px;border-radius:10px;background:#111827;color:#fff;font:500 12px system-ui;z-index:50">Saved. All changes are live.</div><div class="x" style="position:absolute;right:12px;bottom:12px;width:40px;height:40px;border-radius:50%;background:#4f46e5;color:#fff;display:grid;place-items:center;font:700 16px system-ui;box-shadow:0 6px 16px -4px rgb(0 0 0 / .4);z-index:99999">?</div></div>');
-      const x = s.querySelector('.x');
-      return { ...ringed(s, x, ['z 99999', 'raised'], 5, 18), curve: 'steps(1, jump-end)', at: (p) => { x.style.zIndex = p ? 10 : 99999; } };
+      scene(s, '<div style="position:relative;width:240px;height:150px;border-radius:12px;background:#f3f4f6;overflow:hidden"><div style="position:absolute;left:14px;top:14px;right:14px;display:grid;gap:8px"><i style="height:10px;border-radius:5px;background:#e5e7eb"></i><i style="height:10px;width:70%;border-radius:5px;background:#e5e7eb"></i></div><div class="t" style="position:absolute;left:40px;right:16px;bottom:18px;padding:10px 12px;border-radius:10px;background:#111827;color:#fff;font:500 12px system-ui;z-index:50">Saved. All changes are live.</div><div class="x" style="position:absolute;right:12px;bottom:12px;width:40px;height:40px;border-radius:50%;background:#4f46e5;color:#fff;display:grid;place-items:center;font:700 16px system-ui;box-shadow:0 6px 16px -4px rgb(0 0 0 / .4);z-index:99999">?</div></div>');
+      const x = s.querySelector('.x'), t = s.querySelector('.t'), [lap, pill] = G(s, 'sq', 'pill');
+      // a box on where the two overlap: whichever is on top there is the question
+      return { labels: ['button 99999 › toast 50', 'toast 50 › button 10'], curve: 'steps(1, jump-end)', guides: [{ el: lap, kind: 'beam' }, { el: pill, kind: 'pill' }],
+        at: (p) => { x.style.zIndex = p ? 10 : 99999; },
+        track: () => { const a = box(x, s), b = box(t, s), l = Math.max(a.l, b.l), r = Math.min(a.r, b.r), tp = Math.max(a.t, b.t), bt = Math.min(a.b, b.b); at(lap, `left:${l - 3}px;top:${tp - 3}px;width:${r - l + 6}px;height:${bt - tp + 6}px;border-style:dashed`); at(pill, `left:${(a.l + b.l) / 2 + 10}px;top:${b.t - 18}px`); } };
     },
   },
   'craft/icon-side': {
@@ -203,17 +239,23 @@ Object.assign(CRAFT, {
     note: ['A see-through border darkens where the shadow is under it: the edge is heavier at the bottom.', 'A solid border is one weight all the way round.'],
     scene: (s) => {
       scene(s, '<div class="x" style="width:150px;height:84px;border-radius:14px;background:#fff;border:2px solid rgb(0 0 0 / .25);box-shadow:0 12px 22px -6px rgb(0 0 0 / .45);display:grid;place-items:center;font:600 13px system-ui;color:#111827">Invoice #204</div>', '#f4f4f5');
-      const x = s.querySelector('.x');
-      return { ...ringed(s, x, ['black at 25%', 'border-subtle'], 12, 22), at: (p) => { x.style.borderColor = p ? '#d4d4d8' : 'rgb(0 0 0 / .25)'; } };
+      const x = s.querySelector('.x'), [topEdge, botEdge, pill] = G(s, 'sq', 'sq', 'pill');
+      // the border at its top and at its bottom: see-through, the bottom is darker where the shadow is under it
+      return { labels: ['black at 25%', 'border-subtle'], chip: (i) => chip(i ? '#d4d4d8' : 'rgb(0 0 0 / .25)'), guides: [{ el: topEdge, kind: 'beam' }, { el: botEdge, kind: 'beam' }, { el: pill, kind: 'pill' }],
+        at: (p) => { x.style.borderColor = p ? '#d4d4d8' : 'rgb(0 0 0 / .25)'; },
+        track: () => { const b = box(x, s); at(topEdge, `left:${b.l + b.w / 2 - 22}px;top:${b.t - 4}px;width:44px;height:10px;border-radius:5px`); at(botEdge, `left:${b.l + b.w / 2 - 22}px;top:${b.b - 6}px;width:44px;height:10px;border-radius:5px`); at(pill, `left:${b.r + 14}px;top:${b.t + b.h / 2}px;translate:0 -50%`); } };
     },
   },
   'craft/words-on-layers': {
     code: ['text-gray-900 over the fill', 'text that turns white over the fill'],
     note: ['As the fill slides under the words, they go dark on blue and can’t be read.', 'Where the fill is, the words turn white: they read at every percent.'],
     scene: (s) => {
-      scene(s, '<div class="bar" style="position:relative;width:220px;height:36px;border-radius:10px;background:#e5e7eb;overflow:hidden;font:600 13px/36px system-ui;text-align:center"><i style="position:absolute;inset:0 40% 0 0;background:#4f46e5"></i><span style="position:relative;color:#111827">Uploading 60%</span><span class="w" style="position:absolute;inset:0;color:#fff;clip-path:inset(0 40% 0 0);opacity:0">Uploading 60%</span></div>');
-      const w = s.querySelector('.w');
-      return { ...ringed(s, s.querySelector('.bar'), ['one colour', 'follows the fill'], 8, 20), at: (p) => { w.style.opacity = p ? 1 : 0; } };
+      scene(s, '<div class="bar" style="position:relative;width:220px;height:36px;border-radius:10px;background:#e5e7eb;overflow:hidden;font:600 13px/36px system-ui;text-align:center"><i class="f" style="position:absolute;inset:0 40% 0 0;background:#4f46e5"></i><span class="tx" style="position:relative;color:#111827">Uploading 60%</span><span class="w" style="position:absolute;inset:0;color:#fff;clip-path:inset(0 40% 0 0);opacity:0">Uploading 60%</span></div>');
+      const w = s.querySelector('.w'), f = s.querySelector('.f'), tx = s.querySelector('.tx'), [edge, lap, pill] = G(s, 'vl', 'sq', 'pill');
+      // the fill's edge, and the part of the words that sits on the fill
+      return { labels: ['one colour', 'follows the fill'], guides: [{ el: edge, kind: 'v' }, { el: lap, kind: 'beam' }, { el: pill, kind: 'pill' }],
+        at: (p) => { w.style.opacity = p ? 1 : 0; },
+        track: () => { const F = box(f, s), T = box(tx, s); lineV(edge, F.r, F.t - 14, F.b + 14); at(lap, `left:${T.l - 3}px;top:${T.t + 6}px;width:${F.r - T.l + 3}px;height:${T.h - 12}px;border-style:dashed`); at(pill, `left:${F.r}px;top:${F.t - 24}px`); } };
     },
   },
   'craft/media-size': {
@@ -231,8 +273,11 @@ Object.assign(CRAFT, {
     note: ['Given a box of a different shape, the picture is pulled out of shape to fill it.', 'Cropped to fill: the sun stays round.'],
     scene: (s) => {
       scene(s, `<div class="bx" style="position:relative;width:220px;height:100px;border-radius:12px;overflow:hidden"><div class="x" style="position:absolute;left:0;top:0;width:120px;height:100px;transform-origin:0 0;scale:1.833 1">${sun(120, 100)}</div></div>`);
-      const x = s.querySelector('.x');
-      return { ...ringed(s, s.querySelector('.bx'), ['stretched', 'object-cover'], 8, 20), at: (p) => { x.style.scale = p ? '1.833' : '1.833 1'; } };
+      const x = s.querySelector('.x'), sunEl = x.querySelector('i'), [round, pill] = G(s, 'sq', 'pill');
+      // an outline on the sun: an oval while the picture is pulled, a circle once it is cropped
+      return { labels: ['stretched', 'object-cover'], guides: [{ el: round, kind: 'beam' }, { el: pill, kind: 'pill' }],
+        at: (p) => { x.style.scale = p ? '1.833' : '1.833 1'; },
+        track: () => { const b = box(sunEl, s); at(round, `left:${b.l - 4}px;top:${b.t - 4}px;width:${b.w + 8}px;height:${b.h + 8}px;border-radius:50%;border-style:dashed`); pillOver(pill, s.querySelector('.bx'), s, 16); } };
     },
   },
   'craft/image-ground': {
@@ -241,7 +286,7 @@ Object.assign(CRAFT, {
     scene: (s) => {
       scene(s, '<div class="x" style="position:relative;width:230px;height:110px;border-radius:12px;background:#f3f4f6;display:grid;align-content:end;padding:14px;box-sizing:border-box;color:#fff;font:800 20px system-ui">Summer sale<span style="font:500 12px system-ui">Up to 40% off</span><i style="position:absolute;right:10px;top:10px;font:500 10px system-ui;color:#9ca3af;font-style:normal">picture not loaded</i></div>');
       const x = s.querySelector('.x');
-      return { ...ringed(s, x, ['nothing under it', 'gray-800 under it'], 8, 20), at: (p) => { x.style.background = p ? '#1f2937' : '#f3f4f6'; } };
+      return { ...ringed(s, x, ['nothing under it', 'gray-800 under it'], 8, 20), chip: (i) => chip(i ? '#1f2937' : 'repeating-conic-gradient(#d1d5db 0 25%, #fff 0 50%) 0 0 / 6px 6px'), at: (p) => { x.style.background = p ? '#1f2937' : '#f3f4f6'; } };
     },
   },
   'craft/sticky-room': {
@@ -258,9 +303,12 @@ Object.assign(CRAFT, {
     code: ['overflow-y-scroll', 'overflow-y-auto'],
     note: ['Three rows fit, yet a scrollbar says there is more.', 'The bar shows only when there is more to see.'],
     scene: (s) => {
-      scene(s, '<div class="bx" style="position:relative;width:200px;border-radius:12px;background:#fff;box-shadow:inset 0 0 0 1px #e5e7eb;font:500 13px system-ui;color:#111827;overflow:hidden"><div style="display:grid">' + ['Inbox', 'Starred', 'Sent'].map((w) => `<span style="padding:9px 14px">${w}</span>`).join('') + '</div><i class="x" style="position:absolute;right:3px;top:4px;bottom:4px;width:8px;border-radius:4px;background:#f3f4f6;box-shadow:inset 0 0 0 1px #e5e7eb"><b style="position:absolute;left:1px;right:1px;top:1px;height:70%;border-radius:3px;background:#c7c9d1"></b></i></div>');
-      const x = s.querySelector('.x');
-      return { ...ringed(s, x, ['always shown', 'when needed'], 5, 18), at: (p) => { x.style.opacity = p ? 0 : 1; } };
+      scene(s, '<div class="bx" style="position:relative;width:200px;border-radius:12px;background:#fff;box-shadow:inset 0 0 0 1px #e5e7eb;font:500 13px system-ui;color:#111827;overflow:hidden"><div class="ct" style="display:grid">' + ['Inbox', 'Starred', 'Sent'].map((w) => `<span style="padding:9px 14px">${w}</span>`).join('') + '</div><i class="x" style="position:absolute;right:3px;top:4px;bottom:4px;width:8px;border-radius:4px;background:#f3f4f6;box-shadow:inset 0 0 0 1px #e5e7eb"><b style="position:absolute;left:1px;right:1px;top:1px;height:70%;border-radius:3px;background:#c7c9d1"></b></i></div>');
+      const x = s.querySelector('.x'), ct = s.querySelector('.ct'), bx = s.querySelector('.bx'), [end, edge, bar, pill] = G(s, 'hl', 'hl', 'sq', 'pill');
+      // where the content ends and where the box ends are one line: there is nothing more, yet a bar is drawn
+      return { labels: ['always shown', 'when needed'], guides: [{ el: end, kind: 'h' }, { el: edge, kind: 'h' }, { el: bar, kind: 'beam' }, { el: pill, kind: 'pill' }],
+        at: (p) => { x.style.opacity = p ? 0 : 1; },
+        track: () => { const C = box(ct, s), B = box(bx, s), X = box(x, s); lineH(end, C.b, B.l - 16, B.r + 16); lineH(edge, B.b + 1, B.l - 16, B.r + 16); at(bar, `left:${X.l - 3}px;top:${X.t - 3}px;width:${X.w + 6}px;height:${X.h + 6}px;border-style:dashed`); at(pill, `left:${X.r + 14}px;top:${X.t + X.h / 2}px;translate:0 -50%`); } };
     },
   },
   'craft/declared-gap': {
@@ -277,9 +325,12 @@ Object.assign(CRAFT, {
     code: ['flex (no wrap)', 'flex flex-wrap'],
     note: ['Five tags from your data, one row: the last ones run out of the card.', 'Told to wrap, a long list takes a second row.'],
     scene: (s) => {
-      scene(s, '<div class="bx" style="width:190px;padding:12px;border-radius:12px;background:#fff;box-shadow:inset 0 0 0 1px #e5e7eb;font:700 13px system-ui;color:#111827;display:grid;gap:8px">Design system<div class="x" style="display:flex;gap:6px;flex-wrap:nowrap">' + ['tokens', 'type', 'colour', 'motion', 'icons'].map((t) => `<span class="badge" style="padding:0 8px;font-size:11px;flex:none">${t}</span>`).join('') + '</div></div>');
-      const x = s.querySelector('.x');
-      return { ...ringed(s, s.querySelector('.bx'), ['nowrap', 'flex-wrap'], 8, 20), at: (p) => { x.style.flexWrap = p ? 'wrap' : 'nowrap'; } };
+      scene(s, '<div class="bx" style="width:190px;padding:12px;border-radius:12px;background:#fff;box-shadow:inset 0 0 0 1px #d1d5db;font:700 13px system-ui;color:#111827;display:grid;gap:8px">Design system<div class="x" style="display:flex;gap:6px;flex-wrap:nowrap">' + ['tokens', 'type', 'colour', 'motion', 'icons'].map((t) => `<span class="badge" style="padding:0 8px;font-size:11px;flex:none">${t}</span>`).join('') + '</div></div>');
+      const x = s.querySelector('.x'), bx = s.querySelector('.bx'), [edge, pill] = G(s, 'vl', 'pill');
+      // the card's inner edge: the tags run past it until they wrap
+      return { labels: ['nowrap', 'flex-wrap'], guides: [{ el: edge, kind: 'v' }, { el: pill, kind: 'pill' }],
+        at: (p) => { x.style.flexWrap = p ? 'wrap' : 'nowrap'; },
+        track: () => { const B = box(bx, s); lineV(edge, B.r - 12, B.t - 14, B.b + 14); at(pill, `left:${B.r - 12}px;top:${B.t - 26}px`); } };
     },
   },
   'craft/image-stretch': {
@@ -287,8 +338,11 @@ Object.assign(CRAFT, {
     note: ['Given only a width, the picture stretches to the row’s height and the sun turns into an egg.', 'A height of its own: the picture keeps its shape.'],
     scene: (s) => {
       scene(s, `<div style="display:flex;gap:12px;width:230px;padding:10px;border-radius:12px;background:#fff;box-shadow:inset 0 0 0 1px #e5e7eb"><div class="x" style="position:relative;width:56px;height:100px;flex:none;border-radius:8px;overflow:hidden"><div class="in" style="position:absolute;left:0;top:0;width:56px;height:56px;transform-origin:0 0;scale:1 1.79">${sun(56, 56)}</div></div><div style="display:grid;gap:4px;align-content:start;font:500 12px/1.4 system-ui;color:#4b5563"><b style="font:700 13px system-ui;color:#111827">Morning hike</b>Up the ridge before the heat, back by ten, coffee at the top.</div></div>`);
-      const x = s.querySelector('.x'), inn = s.querySelector('.in');
-      return { ...ringed(s, x, ['stretched', 'size-14'], 5, 18), at: (p) => { x.style.height = p ? '56px' : '100px'; inn.style.scale = p ? '1' : '1 1.79'; } };
+      const x = s.querySelector('.x'), inn = s.querySelector('.in'), g = G(s, 'hl', 'hl', 'beam', 'pill');
+      // a line where the square picture should end, and one where the row pulls it to: the beam is the stretch, and it closes
+      return { from: 44, to: 0, unit: 'px', name: 'size-14', guides: four(g),
+        at: (p) => { x.style.height = p ? '56px' : '100px'; inn.style.scale = p ? '1' : '1 1.79'; },
+        track: () => { const b = box(x, s); at(g[0], `top:${b.t + b.w}px;left:${b.l - 14}px;width:${b.w + 28}px;right:auto`); at(g[1], `top:${b.b}px;left:${b.l - 14}px;width:${b.w + 28}px;right:auto`); at(g[2], `left:${b.l - 18}px;top:${b.t + b.w}px;height:${Math.max(0, b.b - b.t - b.w)}px`); at(g[3], `left:${b.l - 24}px;top:${(b.t + b.w + b.b) / 2}px;translate:-100% -50%`); } };
     },
   },
   'craft/background-tile': {
@@ -296,17 +350,25 @@ Object.assign(CRAFT, {
     note: ['The photo repeats like wallpaper: you see its seams.', 'One photo, covering the box.'],
     scene: (s) => {
       scene(s, '<div class="x" style="width:230px;height:110px;border-radius:12px;background-image:linear-gradient(#bae6fd,#e0f2fe 55%,#fde68a 55%);background-size:76px 55px;box-shadow:inset 0 0 0 1px rgb(0 0 0 / .06);display:grid;place-items:center;font:800 18px system-ui;color:#0c4a6e">Book a stay</div>');
-      const x = s.querySelector('.x');
-      return { ...ringed(s, x, ['repeats', 'cover, no-repeat'], 8, 20), at: (p) => { x.style.backgroundSize = p ? '230px 110px' : '76px 55px'; } };
+      const x = s.querySelector('.x'), cols = [0, 1, 2].map(() => make(s, 'vl')), rows = [0].map(() => make(s, 'hl')), pill = make(s, 'pill');
+      // a line on every seam between copies of the photo: they slide out to the edges as it becomes one picture
+      return { labels: ['repeats', 'cover, no-repeat'], guides: [...cols.map((el) => ({ el, kind: 'v' })), ...rows.map((el) => ({ el, kind: 'h' })), { el: pill, kind: 'pill' }],
+        at: (p) => { x.style.backgroundSize = p ? '230px 110px' : '76px 55px'; },
+        track: () => { const b = box(x, s), [tw, th] = getComputedStyle(x).backgroundSize.split(' ').map(parseFloat); cols.forEach((el, k) => { const xx = b.l + tw * (k + 1); lineV(el, Math.min(xx, b.r), b.t, b.b); el.style.opacity = xx < b.r - 1 ? '' : '0'; }); rows.forEach((el, k) => { const yy = b.t + th * (k + 1); lineH(el, Math.min(yy, b.b), b.l, b.r); el.style.opacity = yy < b.b - 1 ? '' : '0'; }); pillOver(pill, x, s, 16); } };
     },
   },
   'craft/fixed-column': {
     code: ['grid-cols-[96px_1fr]', 'grid-cols-1 sm:grid-cols-[96px_1fr]'],
     note: ['On a phone, the fixed label column leaves the field a sliver.', 'One column where two don’t fit: the label sits over its field.'],
     scene: (s) => {
-      scene(s, '<div style="width:150px;padding:12px;border-radius:18px;background:#fff;box-shadow:inset 0 0 0 2px #111827"><div class="x" style="display:grid;grid-template-columns:96px 1fr;gap:6px;align-items:center;font:600 12px system-ui;color:#374151">Billing email<span style="height:28px;border-radius:7px;box-shadow:inset 0 0 0 1px #d1d5db"></span></div></div>');
-      const x = s.querySelector('.x');
-      return { ...ringed(s, x, ['96px + the rest', 'one column'], 8, 20), at: (p) => { x.style.gridTemplateColumns = p ? '1fr' : '96px 1fr'; } };
+      scene(s, '<div style="width:150px;padding:12px;border-radius:18px;background:#fff;box-shadow:inset 0 0 0 2px #111827"><div class="x" style="display:grid;grid-template-columns:96px 1fr;gap:6px;align-items:center;font:600 12px system-ui;color:#374151">Billing email<span class="f" style="height:28px;border-radius:7px;box-shadow:inset 0 0 0 1px #d1d5db"></span></div></div>');
+      const x = s.querySelector('.x'), f = s.querySelector('.f'), g = G(s, 'vl', 'vl', 'hbeam', 'pill');
+      const fw = (c) => { x.style.transition = 'none'; x.style.gridTemplateColumns = c; const w = box(f, s).w; x.style.transition = ''; return Math.round(w); };
+      const narrow = fw('96px 1fr'), full = fw('1fr'); x.style.gridTemplateColumns = '96px 1fr';
+      // the field's width, end to end: a sliver beside the fixed column, the full width in one
+      return { from: narrow, to: full, unit: 'px', name: 'one column', guides: four(g),
+        at: (p) => { x.style.gridTemplateColumns = p ? '1fr' : '96px 1fr'; },
+        track: () => { const b = box(f, s); gapX(s, g, b.l, b.r, b.b + 14); at(g[3], `left:${b.l + b.w / 2}px;top:${b.b + 34}px`); } };
     },
   },
   'craft/scrollbar-gutter': {
@@ -337,8 +399,11 @@ Object.assign(CRAFT, {
     note: ['In capitals, the dash and brackets sit at the height of small letters: they hang low.', 'The font’s case forms lift them to sit with the capitals.'],
     scene: (s) => {
       scene(s, '<p class="x" style="margin:0;font:800 26px system-ui;color:#111827;letter-spacing:.01em">SALE – (50% OFF)</p>');
-      const x = s.querySelector('.x');
-      return { ...ringed(s, x, ['case off', 'case on'], 8, 22, true), at: (p) => { x.style.fontFeatureSettings = p ? '"case" 1' : 'normal'; } };
+      const x = s.querySelector('.x'), [cap, mid, base, pill] = G(s, 'hl', 'hl', 'hl', 'pill');
+      // the capitals' top, middle and baseline: the dash and brackets belong on the middle line
+      return { labels: ['case off', 'case on'], guides: [{ el: cap, kind: 'h' }, { el: base, kind: 'h' }, { el: mid, kind: 'h' }, { el: pill, kind: 'pill' }],
+        at: (p) => { x.style.fontFeatureSettings = p ? '"case" 1' : 'normal'; },
+        track: () => { const m = capMid(x, s), b = box(x, s); lineH(cap, m.cap, b.l - 10, b.r + 10); lineH(base, m.base, b.l - 10, b.r + 10); lineH(mid, m.mid, b.l - 10, b.r + 10); mid.style.borderTop = '1.5px dashed var(--c)'; mid.style.background = 'none'; pillUnder(pill, x, s, 22); } };
     },
   },
   'craft/gradient-space': {
@@ -346,8 +411,11 @@ Object.assign(CRAFT, {
     note: ['Mixed in sRGB, blue and yellow meet in a muddy grey.', 'Mixed in OKLCH, the middle stays bright.'],
     scene: (s) => {
       scene(s, '<div class="x" style="width:240px;height:70px;border-radius:12px;background:linear-gradient(to right in srgb, #3b82f6, #facc15)"></div>');
-      const x = s.querySelector('.x');
-      return { ...ringed(s, x, ['in sRGB', 'in OKLCH'], 8, 20), at: (p) => { x.style.background = `linear-gradient(to right in ${p ? 'oklch' : 'srgb'}, #3b82f6, #facc15)`; } };
+      const x = s.querySelector('.x'), [mid, pill] = G(s, 'vl', 'pill');
+      // the middle of the gradient, and its colour in the pill
+      return { labels: ['in sRGB', 'in OKLCH'], chip: (i) => chip(`color-mix(in ${i ? 'oklch' : 'srgb'}, #3b82f6, #facc15)`), guides: [{ el: mid, kind: 'v' }, { el: pill, kind: 'pill' }],
+        at: (p) => { x.style.background = `linear-gradient(to right in ${p ? 'oklch' : 'srgb'}, #3b82f6, #facc15)`; },
+        track: () => { const b = box(x, s); lineV(mid, b.l + b.w / 2, b.t - 14, b.b + 14); at(pill, `left:${b.l + b.w / 2}px;top:${b.b + 28}px`); } };
     },
   },
   'craft/anchor-offset': {
@@ -367,17 +435,25 @@ Object.assign(CRAFT, {
       const c = (k, h) => `M${k} 0 H${120 - k} C${120 - k + h} 0 120 ${k - h} 120 ${k} V${120 - k} C120 ${120 - k + h} ${120 - k + h} 120 ${120 - k} 120 H${k} C${k - h} 120 0 ${120 - k + h} 0 ${120 - k} V${k} C0 ${k - h} ${k - h} 0 ${k} 0 Z`;
       const arc = c(30, 13.4), sq = c(44, 30);
       scene(s, `<svg class="sv" viewBox="-2 -2 124 124" width="124" height="124"><path class="x" d="${arc}" fill="#6366f1" style="d:path('${arc}')"/></svg>`);
-      const x = s.querySelector('.x');
-      return { ...ringed(s, s.querySelector('.sv'), ['circle arc', 'squircle'], 6, 18), at: (p) => { x.style.d = `path('${p ? sq : arc}')`; } };
+      const x = s.querySelector('.x'), sv = s.querySelector('.sv'), [circle, pill] = G(s, 'arc', 'pill');
+      // a true circle's arc drawn on the corner: the eased corner leaves it, starting its curve earlier and softer
+      return { labels: ['circle arc', 'squircle'], guides: [{ el: circle, kind: 'beam' }, { el: pill, kind: 'pill' }],
+        at: (p) => { x.style.d = `path('${p ? sq : arc}')`; },
+        track: () => { const b = box(sv, s); at(circle, `left:${b.l + 2 - 4}px;top:${b.t + 2 - 4}px;width:${60 + 8}px;height:${60 + 8}px;border-top-left-radius:${30 + 4}px;border-width:1.5px`); at(pill, `left:${b.l}px;top:${b.t - 18}px`); } };
     },
   },
   'craft/optical-sizing': {
     code: ['font-optical-sizing: none', 'font-optical-sizing: auto'],
     note: ['With optical size off, a big headline is drawn with the small-text cut: thick and loose.', 'On, the headline gets its display cut: finer strokes, tighter fit.'],
     scene: (s) => {
-      scene(s, '<p class="x" style="margin:0;font:600 40px/1 system-ui;color:#111827;font-optical-sizing:none;font-variation-settings:\'opsz\' 12">Quarterly</p>');
-      const x = s.querySelector('.x');
-      return { ...ringed(s, x, ['optical size off', 'auto'], 8, 22, true), at: (p) => { x.style.fontVariationSettings = p ? "'opsz' 40" : "'opsz' 12"; } };
+      scene(s, '<p class="x" style="margin:0;font:600 40px/1 system-ui;color:#111827;font-variation-settings:\'opsz\' 12">Quarterly</p>');
+      const x = s.querySelector('.x'), g = G(s, 'vl', 'vl', 'hbeam', 'pill');
+      const wide = (v) => { x.style.transition = 'none'; x.style.fontVariationSettings = `'opsz' ${v}`; const w = box(x, s).w; x.style.transition = ''; return Math.round(w); };
+      const w12 = wide(12), w40 = wide(40); x.style.fontVariationSettings = "'opsz' 12";
+      // the word's width, end to end: the small-text cut sets it wide and loose, the display cut fits it
+      return { from: w12, to: w40, unit: 'px', name: 'display cut', guides: four(g),
+        at: (p) => { x.style.fontVariationSettings = p ? "'opsz' 40" : "'opsz' 12"; },
+        track: () => { const b = box(x, s); gapX(s, g, b.l, b.r, b.b + 12); at(g[3], `left:${b.l + b.w / 2}px;top:${b.b + 32}px`); } };
     },
   },
 });
@@ -402,8 +478,12 @@ Object.assign(CRAFT, {
     scene: (s) => {
       const hard = 'linear-gradient(rgb(0 0 0 / 0) 46%, rgb(0 0 0 / .72) 72%)', soft = 'linear-gradient(rgb(0 0 0 / 0) 25%, rgb(0 0 0 / .02) 35%, rgb(0 0 0 / .07) 45%, rgb(0 0 0 / .16) 55%, rgb(0 0 0 / .3) 65%, rgb(0 0 0 / .47) 75%, rgb(0 0 0 / .62) 87%, rgb(0 0 0 / .72) 100%)';
       scene(s, `<div class="bx" style="position:relative;width:230px;height:124px;border-radius:12px;overflow:hidden">${sun(230, 124)}<i class="x" style="position:absolute;inset:0;background:${hard}"></i><b style="position:absolute;left:12px;bottom:10px;font:800 17px system-ui;color:#fff">Alpine trails</b></div>`);
-      const x = s.querySelector('.x');
-      return { ...ringed(s, s.querySelector('.bx'), ['hard edge', 'eased'], 8, 20), at: (p) => { x.style.background = p ? soft : hard; } };
+      const x = s.querySelector('.x'), bx = s.querySelector('.bx'), [line, pill] = G(s, 'hl', 'pill');
+      let on = 0;
+      // a line on the row where the fade begins: you can see it, until the fade eases in from nothing
+      return { labels: ['hard edge', 'eased'], guides: [{ el: line, kind: 'h' }, { el: pill, kind: 'pill' }],
+        at: (p) => { on = p; x.style.background = p ? soft : hard; },
+        track: () => { const b = box(bx, s), y = b.t + b.h * (on ? 0.25 : 0.46); lineH(line, y, b.l - 12, b.r + 12); line.style.opacity = on ? 0.35 : ''; at(pill, `left:${b.r + 12}px;top:${y}px;translate:0 -50%`); } };
     },
   },
   'craft/pure-black-white': {
@@ -412,7 +492,7 @@ Object.assign(CRAFT, {
     scene: (s) => {
       scene(s, `<div style="display:flex;gap:12px">${[0, 1, 2].map((i) => `<div class="${i === 1 ? 'x' : ''}" style="width:70px;height:86px;border-radius:12px;background:${i === 1 ? '#ffffff' : '#fbf8f3'};box-shadow:0 1px 2px rgb(60 40 20 / .1)"></div>`).join('')}</div>`, '#efe9df');
       const x = s.querySelector('.x');
-      return { ...ringed(s, x, ['#ffffff', 'surface'], 8, 20), at: (p) => { x.style.background = p ? '#fbf8f3' : '#ffffff'; } };
+      return { ...ringed(s, x, ['#ffffff', 'surface'], 8, 20), chip: (i) => chip(i ? '#fbf8f3' : '#ffffff'), at: (p) => { x.style.background = p ? '#fbf8f3' : '#ffffff'; } };
     },
   },
   'craft/content-size': {
@@ -420,8 +500,11 @@ Object.assign(CRAFT, {
     note: ['Fixed at 96px, the Spanish label breaks onto two lines and spills.', 'A minimum, not a fixed width: the button fits its words in any language.'],
     scene: (s) => {
       scene(s, '<div style="display:flex;gap:10px;align-items:center"><span class="btn2" style="width:96px;justify-content:center;padding:0;height:auto;min-height:38px;background:#4f46e5">Save</span><span class="btn2 x" style="width:96px;justify-content:center;padding:6px 0;height:auto;min-height:38px;background:#4f46e5;line-height:1.2;text-align:center;box-sizing:border-box">Guardar cambios</span></div>');
-      const x = s.querySelector('.x');
-      return { ...ringed(s, x, ['w-24', 'fits its words'], 6, 18), at: (p) => { x.style.width = p ? '148px' : '96px'; x.style.padding = p ? '6px 16px' : '6px 0'; } };
+      const x = s.querySelector('.x'), g = G(s, 'vl', 'vl', 'hbeam', 'pill');
+      // the button's width, end to end: fixed at 96, then as wide as its words
+      return { from: 96, to: 148, unit: 'px', name: 'fits its words', guides: four(g),
+        at: (p) => { x.style.width = p ? '148px' : '96px'; x.style.padding = p ? '6px 16px' : '6px 0'; },
+        track: () => { const b = box(x, s); gapX(s, g, b.l, b.r, b.t - 12); at(g[3], `left:${b.l + b.w / 2}px;top:${b.t - 30}px`); } };
     },
   },
   'craft/baseline-align': {
@@ -485,9 +568,12 @@ Object.assign(CRAFT, {
     code: ['text-gray-600 (a fourth grey)', 'text-muted'],
     note: ['A grey between your two greys: it reads as a slip, not a level.', 'Back on your muted grey: two levels, clearly apart.'],
     scene: (s) => {
-      scene(s, '<div style="width:190px;display:grid;gap:3px;font:500 13px/1.45 system-ui"><b style="font:700 15px system-ui;color:#111827">Design review</b><span style="color:#6b7280">Thursday, 3:00 pm</span><span class="x" style="color:#4b5563">Room 4, second floor</span><span style="color:#6b7280">Ana, Sam and Kai</span></div>');
-      const x = s.querySelector('.x');
-      return { ...ringed(s, x, ['gray-600', 'muted'], 5, 18, true), curve: 'ease-in-out', at: (p) => { x.style.color = p ? '#6b7280' : '#4b5563'; } };
+      scene(s, '<div class="col" style="width:190px;display:grid;gap:3px;font:500 13px/1.45 system-ui"><b style="font:700 15px system-ui;color:#111827">Design review</b><span style="color:#6b7280">Thursday, 3:00 pm</span><span class="x" style="color:#4b5563">Room 4, second floor</span><span style="color:#6b7280">Ana, Sam and Kai</span></div>');
+      const x = s.querySelector('.x'), lines = [...s.querySelector('.col').children], dots = lines.map(() => make(s, 'sq')), pill = make(s, 'pill');
+      // a swatch beside every line, its own colour: four greys, then three
+      return { labels: ['gray-600, a 4th grey', 'muted'], chip: (i) => chip(i ? '#6b7280' : '#4b5563'), curve: 'ease-in-out', guides: [...dots.map((el) => ({ el, kind: 'beam' })), { el: pill, kind: 'pill' }],
+        at: (p) => { x.style.color = p ? '#6b7280' : '#4b5563'; },
+        track: () => { lines.forEach((l, i) => { const b = box(l, s); at(dots[i], `left:${b.l - 22}px;top:${b.t + b.h / 2 - 6}px;width:12px;height:12px;border-radius:4px;border:0;background:${getComputedStyle(l).color}`); }); const b = box(x, s); at(pill, `left:${b.r + 8}px;top:${b.t + b.h / 2}px;translate:0 -50%`); } };
     },
   },
   'craft/rhythm': {
@@ -503,10 +589,13 @@ Object.assign(CRAFT, {
     code: ['shadow-[0_3px_8px…] (menu)', 'shadow-popover'],
     note: ['The menu’s shadow is one hair bigger than the card’s: they look like the same height.', 'A clear step up: the menu floats over the card.'],
     scene: (s) => {
-      const card = '0 2px 6px rgb(0 0 0 / .14)', near = '0 3px 8px rgb(0 0 0 / .15)', far = '0 16px 34px -8px rgb(0 0 0 / .3), 0 4px 10px rgb(0 0 0 / .08)';
-      scene(s, `<div style="position:relative;width:200px;height:120px"><div style="position:absolute;inset:0;border-radius:12px;background:#fff;box-shadow:${card};padding:12px;font:700 13px system-ui;color:#111827">Project Atlas</div><div class="x" style="position:absolute;right:-6px;top:34px;width:110px;padding:6px;border-radius:10px;background:#fff;box-shadow:${near};display:grid;gap:2px;font:500 12px system-ui;color:#374151"><span style="padding:4px 6px">Rename</span><span style="padding:4px 6px">Archive</span></div></div>`, '#f4f4f5');
-      const x = s.querySelector('.x');
-      return { ...ringed(s, x, ['a step too close', 'shadow-popover'], 10, 24, true), at: (p) => { x.style.boxShadow = p ? far : `${near}, 0 0 0 0 rgb(0 0 0 / 0)`; } };
+      const card = '0 2px 6px rgb(0 0 0 / .14)', near = '0 3px 8px rgb(0 0 0 / .15), 0 0 0 0 rgb(0 0 0 / 0)', far = '0 16px 34px -8px rgb(0 0 0 / .3), 0 4px 10px rgb(0 0 0 / .08)';
+      scene(s, `<div style="position:relative;width:200px;height:120px"><div class="c" style="position:absolute;inset:0;border-radius:12px;background:#fff;box-shadow:${card};padding:12px;font:700 13px system-ui;color:#111827">Project Atlas</div><div class="x" style="position:absolute;right:-6px;top:34px;width:110px;padding:6px;border-radius:10px;background:#fff;box-shadow:${near};display:grid;gap:2px;font:500 12px system-ui;color:#374151"><span style="padding:4px 6px">Rename</span><span style="padding:4px 6px">Archive</span></div></div>`, '#f4f4f5');
+      const x = s.querySelector('.x'), c = s.querySelector('.c'), [l1, l2, beam, pill] = G(s, 'hl', 'hl', 'beam', 'pill');
+      // where each shadow reaches below its surface: two lines a hair apart, then a clear step
+      return { labels: ['a step too close', 'shadow-popover'], guides: four([l1, l2, beam, pill]),
+        at: (p) => { x.style.boxShadow = p ? far : near; },
+        track: () => { const C = box(c, s), X = box(x, s), yc = C.b + shadowReach(c).bottom, yx = X.b + shadowReach(x).bottom; lineH(l1, yc, C.l, X.r + 10); lineH(l2, yx, X.l, X.r + 10); at(beam, `left:${X.r + 14}px;top:${Math.min(yc, yx)}px;height:${Math.abs(yx - yc)}px`); at(pill, `left:${X.r + 24}px;top:${(yc + yx) / 2}px;translate:0 -50%`); } };
     },
   },
   'craft/optical-centre': {
@@ -543,19 +632,25 @@ Object.assign(CRAFT, {
     code: ['overflow-x-auto, cut between cards', 'a faded edge, the next card peeking'],
     note: ['The row is cut cleanly between two cards: it looks like that’s all there is.', 'The next card peeks in under a fade: there is more to the side.'],
     scene: (s) => {
-      scene(s, `<div class="bx" style="width:236px;overflow:hidden"><div class="x" style="display:flex;gap:10px;translate:0 0">${['#fde68a', '#bfdbfe', '#fbcfe8', '#bbf7d0'].map((c) => `<i style="flex:none;width:108px;height:90px;border-radius:12px;background:${c}"></i>`).join('')}</div></div>`);
-      const x = s.querySelector('.x'), bx = s.querySelector('.bx');
-      return { ...ringed(s, bx, ['cut clean', 'a peek and a fade'], 8, 20), at: (p) => { bx.style.width = p ? '270px' : '236px'; bx.style.maskImage = p ? 'linear-gradient(to right, #000 78%, transparent)' : 'none'; } };
+      scene(s, `<div class="bx" style="width:236px;overflow:hidden"><div class="x" style="display:flex;gap:10px">${['#fde68a', '#bfdbfe', '#fbcfe8', '#bbf7d0'].map((c) => `<i class="cd" style="flex:none;width:108px;height:90px;border-radius:12px;background:${c}"></i>`).join('')}</div></div>`);
+      const bx = s.querySelector('.bx'), cards = [...s.querySelectorAll('.cd')], [clip, seam, pill] = G(s, 'vl', 'vl', 'pill');
+      // the edge that cuts the row, and the end of the last card: cut right on the gap, the row looks finished
+      return { labels: ['cut on the gap', 'a card crosses the edge'], guides: [{ el: clip, kind: 'v' }, { el: seam, kind: 'v' }, { el: pill, kind: 'pill' }],
+        at: (p) => { bx.style.width = p ? '270px' : '236px'; bx.style.maskImage = p ? 'linear-gradient(to right, #000 78%, transparent)' : 'none'; },
+        track: () => { const B = box(bx, s), c = box(cards[1], s); lineV(clip, B.r, B.t - 12, B.b + 12); lineV(seam, c.r, B.t - 12, B.b + 12); at(pill, `left:${B.r}px;top:${B.b + 26}px`); } };
     },
   },
   'craft/row-lines': {
     code: ['button after the list', 'mt-auto on the button'],
     note: ['A shorter list lifts one plan’s button: you can’t read across the row.', 'Buttons pinned to the bottom: the plans line up.'],
     scene: (s) => {
-      scene(s, `<div style="display:flex;gap:10px;align-items:stretch">${[3, 1].map((n, i) => `<div style="width:104px;padding:10px;border-radius:12px;background:#fff;box-shadow:inset 0 0 0 1px #e5e7eb;display:flex;flex-direction:column;gap:5px;font:500 11px system-ui;color:#4b5563"><b style="font:700 13px system-ui;color:#111827">${i ? 'Free' : 'Pro'}</b>${'<span>✓ feature</span>'.repeat(n)}<span class="btn2 ${i ? 'x' : ''}" style="height:26px;justify-content:center;padding:0;font-size:11px;background:#4f46e5;margin-top:${i ? 6 : 'auto'}px">Choose</span></div>`).join('')}</div>`);
-      const x = s.querySelector('.x');
+      scene(s, `<div style="display:flex;gap:10px;align-items:stretch">${[3, 1].map((n, i) => `<div class="cd" style="width:104px;padding:10px;border-radius:12px;background:#fff;box-shadow:inset 0 0 0 1px #e5e7eb;display:flex;flex-direction:column;gap:5px;font:500 11px system-ui;color:#4b5563"><b style="font:700 13px system-ui;color:#111827">${i ? 'Free' : 'Pro'}</b>${'<span>✓ feature</span>'.repeat(n)}<span class="btn2 ${i ? 'x' : 'o'}" style="height:26px;justify-content:center;padding:0;font-size:11px;background:#4f46e5;margin-top:${i ? 6 : 'auto'}px">Choose</span></div>`).join('')}</div>`);
+      const x = s.querySelector('.x'), o = s.querySelector('.o'), [l1, l2, beam, pill] = G(s, 'hl', 'hl', 'beam', 'pill');
       let drop = 0;
-      return { ...ringed(s, x, ['after the list', 'mt-auto'], 5, 20, true), at: (p) => { if (!drop) { const o = s.querySelector('.btn2:not(.x)'); drop = box(o, s).t - box(x, s).t + 6; } x.style.marginTop = p ? `${drop}px` : '6px'; } };
+      // a line along each button's top: two lines, one apart, until they are one
+      return { labels: ['after the list', 'mt-auto'], guides: four([l1, l2, beam, pill]),
+        at: (p) => { if (!drop) drop = box(o, s).t - box(x, s).t + 6; x.style.marginTop = p ? `${drop}px` : '6px'; },
+        track: () => { const a = box(o, s), b = box(x, s); lineH(l1, a.t, a.l - 10, b.r + 10); lineH(l2, b.t, a.l - 10, b.r + 10); at(beam, `left:${b.r + 8}px;top:${Math.min(a.t, b.t)}px;height:${Math.abs(a.t - b.t)}px`); at(pill, `left:${b.r + 18}px;top:${(a.t + b.t) / 2}px;translate:0 -50%`); } };
     },
   },
   'craft/shared-edges': {
@@ -572,9 +667,12 @@ Object.assign(CRAFT, {
     code: ['two looks for “Choose”', 'one <Button> for both'],
     note: ['The same choice, drawn two ways: one plan looks like the lesser option.', 'One button for one action: the row reads as equal choices.'],
     scene: (s) => {
-      scene(s, `<div style="display:flex;gap:10px">${['Starter', 'Team'].map((w, i) => `<div style="width:104px;padding:12px;border-radius:12px;background:#fff;box-shadow:inset 0 0 0 1px #e5e7eb;display:grid;gap:10px;font:700 13px system-ui;color:#111827">${w}<span class="btn2 ${i ? 'x' : ''}" style="height:30px;justify-content:center;padding:0;font-size:12px;${i ? 'background:transparent;color:#4f46e5;box-shadow:inset 0 0 0 1px #c7d2fe;border-radius:99px' : 'background:#4f46e5'}">Choose</span></div>`).join('')}</div>`);
-      const x = s.querySelector('.x');
-      return { ...ringed(s, x, ['two looks', 'one Button'], 5, 20, true), at: (p) => { x.style.background = p ? '#4f46e5' : 'transparent'; x.style.color = p ? '#fff' : '#4f46e5'; x.style.boxShadow = p ? 'inset 0 0 0 1px rgb(199 210 254 / 0)' : 'inset 0 0 0 1px #c7d2fe'; x.style.borderRadius = p ? '9px' : '99px'; } };
+      scene(s, `<div style="display:flex;gap:10px">${['Starter', 'Team'].map((w, i) => `<div style="width:104px;padding:12px;border-radius:12px;background:#fff;box-shadow:inset 0 0 0 1px #e5e7eb;display:grid;gap:10px;font:700 13px system-ui;color:#111827">${w}<span class="btn2 ${i ? 'x' : 'o'}" style="height:30px;justify-content:center;padding:0;font-size:12px;${i ? 'background:transparent;color:#4f46e5;box-shadow:inset 0 0 0 1px #c7d2fe;border-radius:99px' : 'background:#4f46e5'}">Choose</span></div>`).join('')}</div>`);
+      const x = s.querySelector('.x'), o = s.querySelector('.o'), [a, b, pill] = G(s, 'sq', 'sq', 'pill');
+      // a box on each plan's “Choose”: the same action, two looks, until it is one
+      return { labels: ['two looks', 'one Button'], guides: [{ el: a, kind: 'beam' }, { el: b, kind: 'beam' }, { el: pill, kind: 'pill' }],
+        at: (p) => { x.style.background = p ? '#4f46e5' : 'transparent'; x.style.color = p ? '#fff' : '#4f46e5'; x.style.boxShadow = p ? 'inset 0 0 0 1px rgb(199 210 254 / 0)' : 'inset 0 0 0 1px #c7d2fe'; x.style.borderRadius = p ? '9px' : '99px'; },
+        track: () => { for (const [el, n] of [[a, o], [b, x]]) { const B = box(n, s); at(el, `left:${B.l - 4}px;top:${B.t - 4}px;width:${B.w + 8}px;height:${B.h + 8}px;border-radius:${parseFloat(getComputedStyle(n).borderTopLeftRadius) + 4}px;border-style:dashed`); } const A = box(o, s), B = box(x, s); at(pill, `left:${(A.l + B.r) / 2}px;top:${A.b + 30}px`); } };
     },
   },
   'craft/column-edge': {
@@ -602,8 +700,11 @@ Object.assign(CRAFT, {
     note: ['On a dark page, a black shadow vanishes: the card doesn’t rise.', 'A lighter surface and a faint light edge on top: it rises, in the dark.'],
     scene: (s) => {
       scene(s, '<div class="x" style="width:160px;height:92px;border-radius:14px;background:#111827;box-shadow:0 12px 24px -6px rgb(0 0 0 / .6), inset 0 1px 0 rgb(255 255 255 / 0);display:grid;place-items:center;font:600 13px system-ui;color:#e5e7eb">Usage</div>', '#0b1120');
-      const x = s.querySelector('.x');
-      return { ...ringed(s, x, ['shadow only', 'lighter + top edge'], 10, 22), at: (p) => { x.style.background = p ? '#1e293b' : '#111827'; x.style.boxShadow = `0 12px 24px -6px rgb(0 0 0 / .6), inset 0 1px 0 rgb(255 255 255 / ${p ? 0.1 : 0})`; } };
+      const x = s.querySelector('.x'), [top, pill] = G(s, 'hl', 'pill');
+      // the card's top edge, where the light catches it once it rises
+      return { labels: ['shadow only', 'lighter + top edge'], chip: (i) => chip(i ? '#1e293b' : '#111827'), guides: [{ el: top, kind: 'h' }, { el: pill, kind: 'pill' }],
+        at: (p) => { x.style.background = p ? '#1e293b' : '#111827'; x.style.boxShadow = `0 12px 24px -6px rgb(0 0 0 / .6), inset 0 1px 0 rgb(255 255 255 / ${p ? 0.1 : 0})`; },
+        track: () => { const b = box(x, s); lineH(top, b.t, b.l + 10, b.r - 10); pillOver(pill, x, s, 18); } };
     },
   },
   'craft/dark-weight': {
