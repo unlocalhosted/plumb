@@ -74,7 +74,7 @@ How to read an issue, and what each one needs:
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u03-concern-list.jpg`; the notes' words come from the labels on the
   page's note shapes inside the overlay.
-- **Status:** fixed e3a74f91 (owner chose "count fixes", 2026-11-20): the bar, its list, Fix's position (notes included: "1 of 80") and the card all count fixes; the count rolls when it changes. Earlier: 20b7a36e made each design-system note say what is wrong
+- **Status:** fixed e3a74f91 (owner chose "count fixes", 2026-11-20): the bar, its list, Fix's position (notes included: "1 of 80") and the card all count fixes; the count rolls when it changes. Earlier: 20b7a36e made each design-system note say what is wrong · verified (tester, 07:10): the bar says 80 and the list's four rows add up to 80 (46 + 6 + 8 + 20); Fix counts "1 of 80". `docs/qa/shots/2026-11-20/u04-verified.jpg`
 
 ### U5 · The Blueprint bar covers the page's main heading
 - **Where:** Blueprint bar at rest, 1280×800.
@@ -84,7 +84,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding (the page I'm judging is partly hidden).
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u01-bar-at-rest.jpg`
-- **Status:** fixed bf325f80 (owner chose "room under the page"): while the bar shows, <html> gets as much padding at its foot as the bar takes; on the Ledger screen the last words end at 686px above the bar at 730; closing leaves no style attribute
+- **Status:** fixed bf325f80 and 633cc7f3 (owner: "Yes, take them"): room under the page while the bar shows, drawn as a band of butter dots, the margin pattern; gone on close · verified (tester, 07:10): scrolled to the bottom with Blueprint on, a band of butter dots sits under the page and the last table row ("Lin · Editor · Today") ends above the bar. `docs/qa/shots/2026-11-20/u05-verified.jpg`
 
 ### U6 · The card shows another element's note
 - **Where:** Blueprint, All concerns, the X-ray card on the "Get started" button.
@@ -238,7 +238,7 @@ How to read an issue, and what each one needs:
 - **Evidence:** `docs/qa/shots/2026-11-20/u03-concern-list.jpg` (200), `docs/qa/shots/2026-11-20/u18-counts-182.png`,
   `docs/qa/shots/2026-11-20/u18-counts-197.png`; `fixtures/.tells-app/src` files were last written 04:29, before
   the walk.
-- **Status:** open, not yet traced: while checking it the page reloaded on its own (writes to the shared test copy reload it), which may be part of it. To check next: the same page, no writes, counts at open, after a scroll, after a reload; notes that depend on what is on screen (pairs, words that run into each other) would explain a scroll changing the count · tester (06:00), more cases: on the plumber site in dark mode the bar said "All concerns 256" and the list opened a second later said 264 (Accessible 82 in the list, 83 on the bar after picking it); on Ledger, Fix said "1 of 49", then "1 of 50", then "1 of 51" at phone width. `docs/qa/shots/2026-11-20/u18-site-dark-264.png` · tester (06:12): after the 4340 restart the bar on Ledger says "All concerns 80" (it said 197 before). Probably a fix to how notes are counted landed, but nothing on screen says why the number fell.
+- **Status:** fixed ed803fc5. Cause: the bar showed a count 0.2 s after opening and let it climb as the page was read (47, 54, 73, 82 in a second on Ledger), and the page only counted as read after 10 s (the reader waited for React on `<div id="root">`, which React never draws). Now the bar says "Checking this page…" until the page is read through (about 1 s), shows one number, and keeps it while the page is read again; rule questions still out hold it back too. Checked: 5 openings in a row on Ledger each showed one number and kept it; scrolling and stepping through 20 fixes left the count unchanged. The old 200/182/197 differences were partly the count's unit changing (places, now fixes) · was: open, not yet traced: while checking it the page reloaded on its own (writes to the shared test copy reload it), which may be part of it. To check next: the same page, no writes, counts at open, after a scroll, after a reload; notes that depend on what is on screen (pairs, words that run into each other) would explain a scroll changing the count · tester (06:00), more cases: on the plumber site in dark mode the bar said "All concerns 256" and the list opened a second later said 264 (Accessible 82 in the list, 83 on the bar after picking it); on Ledger, Fix said "1 of 49", then "1 of 50", then "1 of 51" at phone width. `docs/qa/shots/2026-11-20/u18-site-dark-264.png` · tester (06:12): after the 4340 restart the bar on Ledger says "All concerns 80" (it said 197 before). Probably a fix to how notes are counted landed, but nothing on screen says why the number fell. · tester (tester, 07:10): seen again: the bar said 80 when Blueprint opened; after opening one fix and closing it, Fix said "26 of 79" and the bar 79, with no change to the code.
 
 ### U19 · The Blueprint bar covers the bottom of the setup panel
 - **Where:** ··· → Setup steps, 1280×800.
@@ -455,7 +455,7 @@ How to read an issue, and what each one needs:
 - **Evidence:** `node dist/cli.js craft --url http://127.0.0.1:4340/ --json --no-probe --no-pairs --root
   fixtures/.tells-app` → keys `schemaVersion, tool, root, spec, routes, findings`; first finding has
   `"because"` = `"why"` and `"action"` = `"fix"`.
-- **Status:** needs owner: dropping the repeated fields (because/why, action/fix) and the second copy of the findings changes `--json`'s published shape (schemaVersion 1) for anyone reading it. Options: (a) keep both until a schemaVersion 2 and mark the old names deprecated in the docs; costs nothing now, the file stays big. (b) drop them now; costs a break for any script reading why/fix or routes[].findings. I'd pick (a)
+- **Status:** fixed 34ecd175 (owner chose to keep both until schemaVersion 2): docs/MESSAGES.md marks why, fix and routes[].findings deprecated and says which to read · verified (tester, 07:10): docs/MESSAGES.md says `why` and `fix` are deprecated, which fields to read instead, and that `routes[].findings` goes in schemaVersion 2.
 
 ### U37 · The README describes a Blueprint bar that has changed
 - **Where:** README, "Blueprint: fixing" and "Inspect".
@@ -479,7 +479,7 @@ How to read an issue, and what each one needs:
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u38-system-json.jpg`; `overlay/src/project-page.js` header says "The CLI
   serves it".
-- **Status:** needs owner: a new way in, not a fix. Options: (a) a "Your design system" row in ··· that opens the project page, with the dev server serving it at /__plumb/; costs: the page is built for `npx plumber` and would need the overlay's server to serve it. (b) /__plumb/system answers a browser with a short page that says what it is and the command that opens the project page; costs little, still a terminal step. I'd pick (b) now and (a) when the project page is ready to ship in the overlay
+- **Status:** fixed 7d2afc0b (owner chose the short page now, a ··· row later): /__plumb/system opened in a browser says what it is and how to open the project page; JSON requests unchanged · verified (tester, 07:10): /__plumb/system asked for as a web page says "This is React Plumber's reading of your design system" and how to open the project page; asked for as JSON it still returns the data.
 
 ### U39 · On crafting-ui, picking "Design system check" pins nothing
 - **Where:** Blueprint on the owner's crafting-ui home page (localhost:5180), 1280×800.
@@ -528,7 +528,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** trust. One concern's fix is another concern's problem.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u41-crafting-fix-under-header.jpg`
-- **Status:** needs owner: the heavy-line check's fix is h-[0.5px], which the design-system check then calls hard-coded. Options: (a) offer a named hairline (add `--spacing-hairline: 0.5px` to the theme, then h-hairline), through the same "add to theme" flow; costs: one more token in the person's theme. (b) the design-system check leaves values under 1px alone (a device pixel is not a step of a scale, as the verdict already does); costs: hard-coded half pixels never get a note. I'd pick (b): it matches how the verdict already treats them
+- **Status:** fixed 3b58289a (owner chose: values under 1px left alone): pt-[3px] is still off the spacing scale, pt-[0.5px] is not reported · verified (tester, 07:10): `plumber try` on tailwind-min with `pt-[3px]` and `pt-[0.5px]` reports only pt-[3px] ("off your spacing scale → pt-s1 (4px)").
 
 ### U43 · The site's first sentence has two grammar slips
 - **Where:** the plumber site's home page (localhost:4330), under "A design engineer on every screen."
@@ -586,7 +586,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding. I lose my place and can't tell how much is left.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u47-note-31-of-31.jpg`
-- **Status:** fixed c2ba8519 (← stays on the first) and e3a74f91 (one counter for fixes and notes, the bar's: "26 of 80")
+- **Status:** fixed c2ba8519 (← stays on the first) and e3a74f91 (one counter for fixes and notes, the bar's: "26 of 80") · verified (tester, 07:10): Fix, then ← on the first fix, stays on "1 of 80". `docs/qa/shots/2026-11-20/u47-verified.jpg`
 
 ### U48 · "Contrast 45 at 12px. Small text needs 60." gives a number with no scale
 - **Where:** Fix, Note 31 of 31, "1 paragraph: hard to read".
@@ -597,7 +597,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u47-note-31-of-31.jpg`
-- **Status:** fixed f37902a7: "Contrast is 45 on the APCA scale at 12px. Small text needs 60." (checked from the words file; not walked to Note 31 in Fix)
+- **Status:** fixed f37902a7: "Contrast is 45 on the APCA scale at 12px. Small text needs 60." (checked from the words file; not walked to Note 31 in Fix) · verified (tester, 07:10): stepped in Fix to 79 of 80, it reads "Contrast is 52 on the APCA scale at 16px. Small text needs 60." A small doubt for the fixer: 16px is body size, so "small text" reads oddly there. `docs/qa/shots/2026-11-20/u48-verified.jpg`
 
 ### U49 · Closing Blueprint leaves the page where Fix scrolled it
 - **Where:** Fix, then Escape twice to leave Fix and Blueprint.
@@ -659,7 +659,7 @@ How to read an issue, and what each one needs:
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u53-space-held.jpg` (taken while held); in the overlay the host gets
   `data-bp-pass` and `path.hit` turns `pointer-events: none`.
-- **Status:** fixed 30490ea6 (while held: "Using the page", marks fade) and 92fd816b (owner's call: the first click in a tab that lands on a note opens its fix with "To click the page itself, hold Space.")
+- **Status:** fixed 30490ea6 (while held: "Using the page", marks fade) and 92fd816b (owner's call: the first click in a tab that lands on a note opens its fix with "To click the page itself, hold Space.") · verified (tester, 07:10): in a fresh tab, the first click on "Get started" with Blueprint on opened its fix with "To click the page itself, hold Space." under it. `docs/qa/shots/2026-11-20/u53-verified.jpg`
 
 ### U54 · History's timeline doesn't say what its parts or buttons do
 - **Where:** ··· → History, after one resize and its undo.
@@ -759,7 +759,7 @@ How to read an issue, and what each one needs:
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u61-swatches-overflow.jpg`; `document.documentElement.scrollWidth` is 3108,
   `clientWidth` 1024.
-- **Status:** fixed 90720ca9: a hue's swatch row wraps inside its shelf. Checked only that the page is 1024px wide on tailwind-min (one swatch there); not re-walked on an app with a long palette · tester (tester, 06:00): no sideways scroll on this app (page 1,280px in 1,280px); like the fixer, not checked on an app with a long palette.
+- **Status:** fixed 90720ca9: a hue's swatch row wraps inside its shelf. Checked only that the page is 1024px wide on tailwind-min (one swatch there); not re-walked on an app with a long palette · tester (tester, 06:00): no sideways scroll on this app (page 1,280px in 1,280px); like the fixer, not checked on an app with a long palette. · verified (tester, 07:10): on a throwaway copy of tailwind-min with 61 colours of its own, at 1024px the swatches wrap in five rows inside the box and the page doesn't scroll sideways (1024 in 1024). `docs/qa/shots/2026-11-20/u61-verified-61-colours.jpg`
 
 ### U62 · The project page only opens with a hidden switch
 - **Where:** `npx plumber` with no command.
@@ -774,7 +774,7 @@ How to read an issue, and what each one needs:
 - **Evidence:** `node dist/cli.js --root ./fixtures/tailwind-min` prints the three lines; with
   `PLUMBER_ONBOARDING=1 PLUMBER_TERMINAL=1` it serves the page on port 7331
   (`docs/qa/shots/2026-11-20/u62-project-page-welcome.jpg`).
-- **Status:** needs owner: the project page is behind PLUMBER_ONBOARDING (src/flags.ts), likely on purpose while it is unfinished. Options: (a) `npx plumber` opens it by default; costs: the page ships as it is today. (b) keep the switch and have Setup steps and the terminal stop pointing people at it until it ships; costs: nothing to build, people don't see it yet. I'd pick (b) until the onboarding brief signs it off
+- **Status:** fixed, no change needed (owner chose to keep the switch): with PLUMBER_ONBOARDING off, `plumber --help`, the no-command run ("Next: run npx plumber init …") and the setup steps all point to plumber init, never to the page; checked on tailwind-min · verified (tester, 07:10): `plumber --help` opens with "New here? Run plumber init in your app's folder" and doesn't mention the page.
 
 ### U63 · `plumber --root <folder>` climbs to the repository when the folder has no package.json
 - **Where:** `node dist/cli.js --root fixtures/.tells-app` (no command).
@@ -786,7 +786,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** DX. I named a folder and got told about the whole repository, with a wall of paths.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u63-bare-root-ignored.txt`
-- **Status:** needs owner: climbing up from --root is a written rule (R4 in src/cli-project.ts: a --root inside an app, like src, finds the app's package.json). Options: (a) an explicit --root never climbs; a folder with no package.json is refused with "fixtures/.tells-app has no package.json"; costs: `--root src` stops working. (b) it climbs only to the nearest package.json that is a React app and says so; past a workspace root it stops and refuses; costs: one more rule. Either way the 45-path error should list a few and say how many (a separate fix). I'd pick (b)
+- **Status:** fixed 3888b1b5 (owner chose: climb only to a React app): `--root fixtures/.tells-app` is refused ("no package.json in that folder, and the nearest one above (., plumb) isn't a React app"); `--root fixtures/tailwind-min/src` climbs and says "Using the project at .. (tailwind-min, package.json)". The 45-path error: fixed a787e346, it now lists five paths from the app, "and N more", and the config line to write (checked on a scratch app with 7 entries) · verified (tester, 07:10): `--root fixtures/.tells-app` is refused in plain words with what to pass instead; `--root fixtures/tailwind-min/src` says "Using the project at .. (tailwind-min, package.json)".
 
 ### U64 · In the light card, the colour sample "Aa" is white on white
 - **Where:** X-ray card (now light in a light page), "Colour" row, on the "Get started" button.
@@ -798,7 +798,7 @@ How to read an issue, and what each one needs:
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u64-aa-white.png`; the `.xr-chip` "Aa" has colour rgb(255,255,255) and a
   transparent background.
-- **Status:** fixed 14d05782: the cause was oklch read as rgb (background became #0100115); now white "Aa" on #4f39f6, and the ratio reads 6.5, not the wrong 7.6
+- **Status:** fixed 14d05782: the cause was oklch read as rgb (background became #0100115); now white "Aa" on #4f39f6, and the ratio reads 6.5, not the wrong 7.6 · verified (tester, 07:10): hovering "Get started" in Blueprint, the Colour row shows "Aa" on the indigo button colour and 6.5 AA (the card was dark this time). `docs/qa/shots/2026-11-20/u64-verified.jpg`
 
 ### U65 · A fix with a long class pushes Skip off the screen at 1280px
 - **Where:** Fix, fix 13 of 49 "3 places: padding looks bigger than it is", 1280×800.
@@ -824,4 +824,4 @@ How to read an issue, and what each one needs:
   error from inside the browser library with no next step.
 - **Severity:** 3
 - **Evidence:** the three runs at 05:56–05:57; `fixtures/.tells-app/src/App.jsx` modified 05:56:32.
-- **Status:** fixed a84ade6d: a reload mid-read is waited for and read again (twice at most), then said in plain words. Two runs with App.jsx touched 3 seconds in both gave 70 findings; not proven that the reload hit the read itself
+- **Status:** fixed a84ade6d: a reload mid-read is waited for and read again (twice at most), then said in plain words. Two runs with App.jsx touched 3 seconds in both gave 70 findings; not proven that the reload hit the read itself · reopened (tester, 07:10): running `plumber craft` while App.jsx was touched every second for 12 seconds still died, now with a different raw error: "✗ page.evaluate: TypeError: Cannot read properties of undefined (reading 'craft')" (printed twice, exit 2). The same command with no reloads ran fine. The page seems to be read before plumber's script is back on it after the reload. `docs/qa/shots/2026-11-20/u66-reopened.txt`
