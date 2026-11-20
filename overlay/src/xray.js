@@ -130,7 +130,18 @@ function partOf(el) {
 }
 
 // a colour as the eye reads it, and the first painted background behind an element
-const rgbOf = (s) => (s.match(/[\d.]+/g) ?? []).map(Number);
+// any CSS colour as [r, g, b, a]: rgb() is read as it is; oklch(), color() and the rest are drawn on a 1px canvas and
+// read back, as the browser resolves them (Tailwind 4 writes oklch: read as rgb, it gave #0100115 and a blank sample, U64)
+let pen = null;
+const rgbOf = (s) => {
+  if (/^rgba?\(/.test(s)) return (s.match(/[\d.]+/g) ?? []).map(Number);
+  try {
+    pen ??= Object.assign(document.createElement('canvas'), { width: 1, height: 1 }).getContext('2d', { willReadFrequently: true });
+    pen.clearRect(0, 0, 1, 1); pen.fillStyle = '#000'; pen.fillStyle = s; pen.fillRect(0, 0, 1, 1);
+    const [r, g, b, a] = pen.getImageData(0, 0, 1, 1).data;
+    return [r, g, b, a / 255];
+  } catch { return []; }
+};
 const hex = ([r, g, b]) => `#${[r, g, b].map((n) => Math.round(n).toString(16).padStart(2, '0')).join('')}`;
 function backdrop(el) {
   for (let e = el; e; e = e.parentElement) { const c = rgbOf(getComputedStyle(e).backgroundColor); if (c.length >= 3 && (c[3] ?? 1) > 0.5) return c; }
