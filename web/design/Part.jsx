@@ -35,6 +35,7 @@ const LOAD = {
   'colour-ideas': () => import('./parts/colour-ideas.js'),
   space: () => import('./parts/space.js'),
   motion: () => import('./parts/motion.js'),
+  'change-motion': () => import('./parts/change-motion.js'),
   pills: () => import('./parts/pills.js'),
   inputs: () => import('./parts/inputs.js'),
   hover: () => import('./parts/hover.js'),

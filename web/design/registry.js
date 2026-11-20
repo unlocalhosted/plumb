@@ -43,6 +43,8 @@ export const GROUPS = [
   ['Organisms', [
     { id: 'fix-bar', hue: 'lilac', toy: 'corner', name: 'Fix bar', says: 'What is hard-coded, in one line; the whole-page clean-up in the same bar.', ready: true,
       lede: 'One line at the bottom says what is hard-coded, in plain words, and the same bar carries the whole-page clean-up. The choice itself is made on the element.' },
+    { id: 'change-motion', hue: 'mint', toy: 'motion', name: 'How a change moves', says: 'Every kind of fix landing on the page: guides, the move, the number landing. One tile each.', ready: true,
+      lede: 'When Clean up or a fix changes your page, the change is shown happening: what is measured, how it moves, where it lands. One tile for each kind of change, from text size to tap targets. Press Play.' },
     { id: 'xray', hue: 'sky', toy: 'size', name: 'X-ray', says: 'Point at anything and see what it is made of: its space, size, type, colour and source.', ready: true,
       lede: 'Point at any part of someone’s card. Its space is drawn on it in the patterns, mint on the scale and coral off it, and a card beside it says the numbers. Prototype.' },
     { id: 'marks', hue: 'lilac', toy: 'gap', name: 'Marks on the page', says: 'What Blueprint draws on your app: the three patterns, heat, a place in hand.' },
