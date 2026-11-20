@@ -2860,6 +2860,21 @@ field is empty). The table of five writes, before and after. The Next table: eig
   it was added (8816fc27). Both are fixed; the tester was told so it wouldn't be logged as a product issue.
 - **Left for the owner:** the homepage's first sentence (U43) is in an uncommitted edit that looks like the
   owner's own words; a corrected version is in the issue file.
+
+### The fourth batch of fixes from the Blueprint walk (2026-11-20)
+
+- **Modes that showed nothing** (U51, U53): holding Space now says "Using the page" in the bar and fades the marks;
+  Inspect an element says "Click an element to inspect it. Esc stops."
+- **Words that promised the wrong thing** (U32, U37, U34, U35): Help and the README describe Alt+click and the bar as
+  they are; the weight note no longer says "use one of those" and then "add a step" (a theme that names no weights
+  leaves Tailwind's as the system); `plumber craft` says its count leaves the design-system check out.
+- **Setup steps** (U20, U21, U22): one step where two ran the same command; no `package.json:1` for things that
+  aren't in package.json; a step not yet confirmed still says what to do, with its command and Copy.
+- **History** (U28, U54, in part): where a change came from and what each Undo undoes, in plain words.
+- **Left for the owner, each with options in the issue file:** what the concern count counts (U4), the bar over the
+  page's first heading (U5), the JSON output's repeated fields (U36), the homepage's first sentence (U43), a way from
+  the overlay to the project page (U38), the hairline fix that is itself hard-coded (U42).
+- **Not traced yet:** counts that change with no edit (U18).
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
 - Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".
