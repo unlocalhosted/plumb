@@ -3711,6 +3711,27 @@ routes to the class system, and an element nothing styles falls back to adding a
 and the site's project still can't reach the homepage's files. Padding written per side (`padding-x`) is not routed to
 rules yet.
 
+### 63. CSS rule fixes work on the Next site (2026-11-20)
+**The itch.** Sync could write a CSS rule on a Vite app ([entry 62](#62-sync-picks-a-style-system-for-each-change-2026-11-20)),
+but not on the plumber site, which runs on Next. The owner: "make it work on the Next site too".
+
+**How we found what was in the way.** Next bundles every stylesheet into one chunk, so the page can't say which file
+a rule came from the way Vite does. Next's bundler writes a source map with one section per file, and each section
+names the real path (`homepage/src/foundations/foundations.css`). The second blocker turned out not to be one: the
+site's server refused the homepage's files only because it was still running a plumber build from five hours before.
+Restarted, it reads them, because the site imports them.
+
+**What we chose.** The rule system keeps which bundle a winning rule came from, and when the change is written it finds
+that rule's line in the bundle and takes the file from the source map section that covers it. No server change.
+
+**A detour.** The first restart came up while another session was committing new docs files. Next couldn't find two
+modules at start, then reloaded every open page about four times a second, the owner's tab included. A second
+restart, with the files in place, came up clean.
+
+**The proof.** At localhost:4330, the "It sees what design engineers see" heading's text size traced to `.title` in
+the homepage's `foundations.css` through Next's bundle. Sync wrote `font-size: 44px` into that rule, the heading went
+from 48px to 44px, undo put it back to 48px, and the file was left exactly as it was.
+
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
 - Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".
@@ -5323,7 +5344,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   `generator/shots/generate-craftingattention.png` (local).
 
 ## Open gaps
-- **Plumber can't fix the homepage on the site yet.** On the homepage's own Vite server, Sync now writes a change into the CSS rule that styles an element. On the site (Next, localhost:4330) it can't: Next bundles the CSS without saying which file a rule came from, and the site's project can't reach the homepage's files ([entry](#62-sync-picks-a-style-system-for-each-change-2026-11-20)).
+- **CSS rule fixes are narrow.** They cover text size, line height, weight, gap, corners, width, height and padding per side, from rules outside `@media`. Padding set for two sides at once (`padding-x`) still goes to classes, and the change isn't checked against your token scale before it's written ([entry](#63-css-rule-fixes-work-on-the-next-site-2026-11-20)).
 - **The owner's slop checks are untuned on real apps.** Tight letters fire on every heading that sets them (28 on our homepage), the shade count reads greys mixed by opacity as separate shades, and none of the eleven has been run through a full plumber read or the docs' recordings yet ([entry](#56-the-owners-slop-list-becomes-eleven-anti-slop-checks-2026-11-20)).
 - **The mark was never tried among real neighbours** (a row of browser tabs, an npm page, a README header), only on empty tiles. Nobody outside has been asked whether the round leg reads as an R or leans towards a B.
 - Resizing: a size between your steps always lands on the nearest one; there is no way yet to keep an exact size as
@@ -5372,6 +5393,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- The same CSS rule fixes work on a Next site: the rule's file is read from Next's CSS source map; the plumber homepage at localhost:4330 can now be fixed with plumber ([entry](#63-css-rule-fixes-work-on-the-next-site-2026-11-20)).
 - On a Vite app with plain CSS, the X-ray's Sync writes a change into the stylesheet rule that styles the element (a shorthand gets the property added after it), with undo; every change goes through one style-system interface, so more ways of styling can be added ([entry](#62-sync-picks-a-style-system-for-each-change-2026-11-20)).
 - The States and Access pages play every check (170): what a screen reader says is drawn as a caption that changes with the fix, where Tab goes as numbered stops that move, loading as bars on a time axis, and markup with the part that matters boxed ([entry](#55-every-check-plays-its-fix-on-a-card-that-stays-still-2026-11-20)).
 - The homepage drops its five section eyebrows; each section opens on its heading ([entry](#60-eyebrows-without-capitals-2026-11-20)).

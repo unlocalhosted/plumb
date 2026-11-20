@@ -76,16 +76,24 @@ function specificity(sel) {
   return [(s.match(/#[\w-]+/g) ?? []).length, (s.match(/\.[\w-]+|\[[^\]]*\]|:(?!:)[\w-]+/g) ?? []).length, (s.match(/(^|[\s>+~])[a-z][\w-]*/gi) ?? []).length];
 }
 const heavier = (a, b) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
-// The rule that wins for el's prop among the page's stylesheets that came from a file of yours (Vite says which file
-// each <style> is: data-vite-dev-id). Only rules outside @media and the like: a conditional rule is said, not written.
+// The rule that wins for el's prop among the page's stylesheets, and where it lives: a sheet Vite serves says its file
+// (data-vite-dev-id); a sheet a bundler serves (Next's chunks) is traced through its source map when the change is
+// written (fileOfBundled). Only rules outside @media and the like: a conditional rule is said, not written. A winner in
+// a sheet that is nobody's file (a package, an inline <style>) is nobody's to write: null.
 export function winningRule(el, prop) {
   const carriers = CARRIERS[prop];
   if (!carriers) return null;
-  let best = null, order = 0;
-  const walk = (rules, file) => {
+  let best = null;
+  for (const sheet of document.styleSheets) {
+    let rules; try { rules = sheet.cssRules; } catch { continue; }
+    if (!rules) continue;
+    const dev = sheet.ownerNode?.dataset?.viteDevId;
+    const file = dev && /\.css$/.test(dev) && !/node_modules/.test(dev) ? dev : null;
+    const bundle = !file && sheet.href && new URL(sheet.href).origin === location.origin ? sheet.href : null;
+    const seen = new Map(); // selectorText → how many top-level rules with it so far: the nth is found again in the text
     for (const r of rules) {
-      order++;
-      if (r.constructor?.name !== 'CSSStyleRule' && !(r.selectorText && r.style)) continue;
+      if (!(r.selectorText && r.style)) continue;
+      const nth = seen.get(r.selectorText) ?? 0; seen.set(r.selectorText, nth + 1);
       // a stylesheet's own text keeps a shorthand that reads a variable: the CSSOM answers '' for its longhands
       const sets = carriers.some((c) => r.style.getPropertyValue(c) !== '' || new RegExp(`(^|[;\\s])${c}\\s*:`).test(r.style.cssText));
       if (!sets) continue;
@@ -93,18 +101,36 @@ export function winningRule(el, prop) {
         let hit = false; try { hit = el.matches(part); } catch { /* a selector the browser won't match */ }
         if (!hit) continue;
         const w = specificity(part);
-        if (!best || heavier(w, best.w) >= 0) best = { file, selector: part, w, order, important: r.style.getPropertyPriority(carriers[0]) === 'important' };
+        if (!best || heavier(w, best.w) >= 0) best = { file, bundle, selectorText: r.selectorText, nth, selector: part, w };
       }
     }
-  };
-  for (const sheet of document.styleSheets) {
-    const file = sheet.ownerNode?.dataset?.viteDevId;
-    let rules; try { rules = sheet.cssRules; } catch { continue; }
-    if (!rules) continue;
-    // a sheet that is not one of your files still takes part in the cascade: its winner is nobody's to write
-    walk(rules, file && /\.css$/.test(file) && !/node_modules/.test(file) ? file : null);
   }
-  return best?.file ? { file: best.file, selector: best.selector } : null;
+  if (!best) return null;
+  if (best.file) return { file: best.file, selector: best.selector };
+  return best.bundle ? { bundle: best.bundle, selectorText: best.selectorText, nth: best.nth, selector: best.selector } : null;
+}
+// A bundled sheet's rule, traced to the file it was written in: the nth top-level rule with that selector in the
+// served text, then the source map section (or mapping) that covers its line. Turbopack writes one section per file.
+const bundles = new Map();
+async function fileOfBundled({ bundle, selectorText, nth }) {
+  if (!bundles.has(bundle)) bundles.set(bundle, (async () => {
+    const text = await (await fetch(bundle, { cache: 'no-store' })).text();
+    const ref = [...text.matchAll(/\/\*#\s*sourceMappingURL=([^\s*]+)/g)].at(-1)?.[1];
+    const map = ref ? await (await fetch(new URL(ref, bundle), { cache: 'no-store' })).json() : null;
+    return { text, map };
+  })());
+  const { text, map } = await bundles.get(bundle);
+  if (!map) return null;
+  const esc = selectorText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/,\s*/g, ',\\s*');
+  const at = [...text.matchAll(new RegExp(`(?:^|\\n)${esc}\\s*\\{`, 'g'))][nth];
+  if (!at) return null;
+  const line = text.slice(0, at.index + (at[0].startsWith('\n') ? 1 : 0)).split('\n').length - 1;
+  const section = (map.sections ?? []).filter((x) => x.offset.line <= line).at(-1);
+  const sources = section?.map?.sources ?? map.sources ?? [];
+  const source = sources.length === 1 ? sources[0] : null;
+  if (!source) return null;
+  const path = decodeURI(source.replace(/^file:\/\//, ''));
+  return /node_modules/.test(path) || !/\.css$/.test(path) ? null : path;
 }
 // the value a rule is given: your token's variable when the page has it, else the value itself
 const VAR = { 'font-size': (t) => [`--text-${t}`], 'line-height': (t) => [`--leading-${t}`], gap: (t) => [`--spacing-${t}`], 'border-radius': (t) => [`--radius-${t}`],
@@ -123,8 +149,10 @@ export const cssRules = {
   async write(changes, ctx) {
     const out = [];
     for (const g of changes) {
-      const claim = g.claim;
+      let claim = g.claim;
       try {
+        // a rule in a bundle: its file comes from the bundle's source map
+        if (!claim.file && claim.bundle) { const file = await fileOfBundled(claim); if (!file) throw new Error(`${claim.selector} comes from a stylesheet Plumber can't trace to a file of yours.`); claim = { ...claim, file }; }
         const now = await ctx.request('rule', { file: claim.file, selector: claim.selector, prop: g.prop });
         const hash = now?.hash;
         if (!hash) throw new Error(`${claim.selector} couldn't be read in ${claim.file}.`);
