@@ -3602,6 +3602,31 @@ Only the shades finding is left.
 
 **Media hooks.** The homepage hero before and after, with the heading at normal spacing; the install list without its lines.
 
+### 58. The homepage's drawings take the site's greys (2026-11-20)
+**The itch.** After [entry 57](#57-our-own-site-loses-the-slop-marks-2026-11-20) the homepage still used 16 greys and 4
+opacities. The owner chose to recolour the drawings over loosening the check.
+
+**How we found it.** We listed every grey on the homepage that is not one of the site's own steps. There were 11, all
+set by hand: a translucent top bar, a translucent switch, white tiles at 90%, a play button at 94%, a progress track at
+35%, quiet words at 72%, a near-black video ground, and a cream pin card with its own text and tag greys.
+
+**What we chose.** Each one now points at a site step: the bar, the switch, the play button, the track and the video
+take the page, surface, inset and quiet-ink steps, solid and without blur. The tiles on the sky video take the sky's
+`-on` colour, and the quiet words on the pink card take the card's own ink. Two fixed opacities went too. One
+exception: the pin card shows "a pale photo bleeds into a pale card", so it stays pale in both schemes. It now uses the
+light scheme's paper, ink and inset values, noted in the CSS, instead of its own creams.
+
+**A dead end.** Our first pass gave the pin card the scheme's surface. In dark mode the card turned dark and the demo
+stopped showing its point. We caught it on screen and put the light values back.
+
+**The check, tuned.** The shades check counted spinners caught mid-fade as opacities. A fade that is moving is
+motion, so it is skipped now.
+
+**The proof.** Light mode: 7 greys, the site's own set, and no opacities. Dark mode: 10, the site's set plus the pin
+card's pale values. The check still flags both, because its limit is 7 and the site's own set is that size.
+
+**Media hooks.** The pin demo in dark mode, pale card on a dark page.
+
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
 - Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".
@@ -5262,6 +5287,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- The homepage's app drawings use the site's own greys, solid, with no one-off creams or see-through whites; light mode is down to the site's 7 greys ([entry](#58-the-homepages-drawings-take-the-sites-greys-2026-11-20)).
 - Plumber's own site drops the slop marks its new checks found: headings at normal letter spacing (the brand's tokens too), no outlines on surfaces, no lines between list rows ([entry](#57-our-own-site-loses-the-slop-marks-2026-11-20)).
 - Anti-slop finds the owner's own list of generated-page marks: capitals under a heading, italic accent words, Instrument Serif, squeezed letters, divider lines, outlined boxes, busy diagrams, file paths as decoration, rows of tags, boxes with too many text styles, and too many shades of one colour; each plays its fix ([entry](#56-the-owners-slop-list-becomes-eleven-anti-slop-checks-2026-11-20)).
 - The Anti-slop and Words pages play every check too: the mark or the words are boxed where they sit, then fold away, change in place or settle (a label over a heading, numbers with no order, a stock phrase, a path cut at the wrong end) ([entry](#55-every-check-plays-its-fix-on-a-card-that-stays-still-2026-11-20)).

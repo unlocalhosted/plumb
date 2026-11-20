@@ -104,7 +104,7 @@
 @keyframes ins-swap-in { from { opacity: 0; translate: 0 8px; filter: blur(3px); } }
 /* the switch: our segmented control, a paper thumb on a well, overshooting a touch */
 .ins-switch { position: relative; display: grid; grid-template-columns: 1fr 1fr; padding: 3px; border-radius: 11px;
-  background: color-mix(in oklab, var(--pl-bg-inset) 88%, transparent); box-shadow: var(--pl-shadow-well); backdrop-filter: blur(6px); }
+  background: var(--pl-bg-inset); box-shadow: var(--pl-shadow-well); }
 .ins-switch button { position: relative; z-index: 1; height: 24px; padding: 0 10px; border: 0; border-radius: 8px; background: transparent; color: var(--ink-2); font: var(--pl-round-w, 700) 11.5px/1 var(--pl-round); cursor: pointer;
   transition: color 200ms var(--ins-ease); }
 .ins-switch button[aria-pressed='true'] { color: var(--ink-1); }
@@ -175,10 +175,10 @@
 .sc-video::before { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgb(0 0 0 / .25), transparent 35%, transparent 60%, rgb(0 0 0 / .55)); }
 .sc-vid-title { position: absolute; left: 12px; top: 10px; font: 600 12px/1 var(--font); color: #fff; text-shadow: 0 1px 2px rgb(0 0 0 / .4); }
 .sc-vid-bar { position: absolute; left: 12px; right: 12px; bottom: 10px; display: flex; align-items: center; gap: 8px; color: #fff; }
-.sc-vid-bar small { font: 600 10px/1 var(--pl-mono); opacity: .9; }
-.sc-vid-bar i { flex: 1; height: 3px; border-radius: 2px; background: rgb(255 255 255 / .35); } .sc-vid-bar i b { display: block; width: 34%; height: 100%; border-radius: inherit; background: #fff; }
-.sc-play-btn { display: grid; place-items: center; width: 58px; height: 58px; border-radius: 50%; background: rgb(255 255 255 / .94); backdrop-filter: blur(8px); box-shadow: 0 10px 24px -8px rgb(0 0 0 / .5); }
-.sc-play-btn svg { width: 26px; height: 26px; fill: #1d1b17; translate: -1.08px 0; transition: translate var(--t-fix) var(--t-fix-ease); } /* the triangle's box (7–19 of 24) on the circle's centre */
+.sc-vid-bar small { font: 600 10px/1 var(--pl-mono); }
+.sc-vid-bar i { flex: 1; height: 3px; border-radius: 2px; background: var(--ink-3); } .sc-vid-bar i b { display: block; width: 34%; height: 100%; border-radius: inherit; background: #fff; }
+.sc-play-btn { display: grid; place-items: center; width: 58px; height: 58px; border-radius: 50%; background: var(--g1); box-shadow: 0 10px 24px -8px rgb(0 0 0 / .5); }
+.sc-play-btn svg { width: 26px; height: 26px; fill: var(--ink-1); translate: -1.08px 0; transition: translate var(--t-fix) var(--t-fix-ease); } /* the triangle's box (7–19 of 24) on the circle's centre */
 .sc-play[data-fixed='true'] .sc-play-btn svg { translate: 1.08px 0; } /* its weight (x 11 of 24) on the circle's centre */
 
 /* the big tile: the video drawn larger, to fill it */
@@ -251,15 +251,16 @@
 .sc-forecast[data-fixed='true'] .sc-day b em { opacity: 1; filter: blur(0); }
 
 /* #39 image outline: a pale glaze photo (a white vase on a white table, Unsplash) on a pale pin; the principle needs the pale */
-.sc-pin { display: grid; grid-template-columns: 128px 1fr; gap: 12px; align-items: center; width: 280px; padding: 8px 12px 8px 8px; border-radius: 16px; background: #fbfaf7; color: #2a2723;
+/* the pin card stays the light scheme's paper, ink and inset in both schemes: the demo is a pale photo on a pale card */
+.sc-pin { display: grid; grid-template-columns: 128px 1fr; gap: 12px; align-items: center; width: 280px; padding: 8px 12px 8px 8px; border-radius: 16px; background: #ffffff; color: #1d1b17;
   box-shadow: 0 0 0 1px rgb(0 0 0 / .04), 0 18px 30px -16px rgb(60 50 40 / .4); }
-.sc-glaze { position: relative; aspect-ratio: 1; border-radius: 10px; background: #f1eee8 url('https://images.unsplash.com/photo-1687191883721-257d8cad5b54?w=500&q=80&auto=format&fit=crop') center / cover; }
+.sc-glaze { position: relative; aspect-ratio: 1; border-radius: 10px; background: #f6f6f4 url('https://images.unsplash.com/photo-1687191883721-257d8cad5b54?w=500&q=80&auto=format&fit=crop') center / cover; }
 .sc-glaze::after { content: ''; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.1); opacity: 0; transition: opacity var(--t-fix) var(--t-fix-ease); }
 .sc-photo[data-fixed='true'] .sc-glaze::after { opacity: 1; }
 .sc-pin-meta { display: grid; gap: 5px; }
 .sc-pin b { display: block; font: var(--pl-round-w, 700) 14px/1.15 var(--pl-round); }
-.sc-pin small { font-size: 10.5px; color: #8a847a; }
-.sc-pin-tags { display: flex; gap: 4px; margin-top: 6px; } .sc-pin-tags i { padding: 2px 6px; border-radius: 99px; background: #efece6; font: 600 9.5px/1.3 var(--font); font-style: normal; color: #6f6a60; }
+.sc-pin small { font-size: 10.5px; color: #6b665c; }
+.sc-pin-tags { display: flex; gap: 4px; margin-top: 6px; } .sc-pin-tags i { padding: 2px 6px; border-radius: 99px; background: #f6f6f4; font: 600 9.5px/1.3 var(--font); font-style: normal; color: #6b665c; }
 
 /* #42 bold on hover: a project's tabs over its board */
 .sc-tabs { align-content: center; justify-items: center; gap: 0; }

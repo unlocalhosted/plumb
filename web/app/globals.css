@@ -26,7 +26,7 @@ a { color: inherit; }
 .s-btn { font: inherit; }
 
 /* ── the bar ── */
-.bar { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 18px; height: 64px; padding: 0 28px; background: color-mix(in oklab, var(--pl-desk) 88%, transparent); backdrop-filter: blur(12px); }
+.bar { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 18px; height: 64px; padding: 0 28px; background: var(--pl-desk); }
 .bar .name { display: inline-flex; align-items: center; gap: 10px; font: var(--pl-round-w, 600) 21px/1 var(--pl-round); letter-spacing: normal; text-decoration: none; }
 .bar .name .toy { transition: rotate 420ms var(--pl-spring-pop), scale 420ms var(--pl-spring-pop); transform-origin: 50% 50%; }
 .bar .name:hover .toy { rotate: -7deg; scale: 1.06; } /* the P tips from its centre (the bob it replaced swung from its line) */

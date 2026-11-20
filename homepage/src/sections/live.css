@@ -13,7 +13,7 @@
 .live-bar { position: relative; display: flex; gap: 6px; align-items: center; height: 38px; padding: 0 14px; border-bottom: 1px solid var(--line); }
 .live-bar > i { width: 10px; height: 10px; border-radius: 50%; background: var(--g3); }
 .live-bar > span { position: absolute; left: 50%; translate: -50% 0; padding: 4px 10px; border-radius: var(--r-xs); background: var(--g2); font: 400 12px/1 var(--mono); color: var(--ink-3); }
-.live-video { display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: cover; background: #08090a; }
+.live-video { display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: cover; background: var(--g0); }
 .live-caption { margin: var(--s-4) 0 0; text-align: center; font: var(--t-small); font-size: 13px; color: var(--ink-3); }
 .live-caption code { color: var(--ink-2); }
 

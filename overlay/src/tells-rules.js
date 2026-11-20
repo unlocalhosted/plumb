@@ -510,7 +510,8 @@ export const manyShades = rule('many-shades', 'colour', null, function (el, fact
     add(s.backgroundColor, s);
     if (px(s.borderTopWidth) > 0 && s.borderTopStyle !== 'none') add(s.borderTopColor, s);
     const o = parseFloat(s.opacity);
-    if (o > 0 && o < 1 && (ownText(k) || (rgb(s.backgroundColor)?.[3] ?? 0) > 0.05)) alphas.add(Math.round(o * 100));
+    // a fade that is moving (a spinner, a pulse) is motion, not a shade
+    if (o > 0 && o < 1 && s.animationName === 'none' && (ownText(k) || (rgb(s.backgroundColor)?.[3] ?? 0) > 0.05)) alphas.add(Math.round(o * 100));
   }
   let worst = null;
   for (const [bucket, set] of hues) if (!worst || set.size > worst.n) worst = { bucket, n: set.size };
