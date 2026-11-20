@@ -237,6 +237,38 @@ All free under the Unsplash License, hotlinked from images.unsplash.com as Unspl
 - **What:** https://github.com/oaustegard/claude-skills/releases/tag/declauding-v0.13.0, by oaustegard. It lists the constructions that mark prose as model-written (staged reveals, verdict headers, aphoristic closers, "it's not X, it's Y", forced triads, noun stacks) and rewrites them as plain prose. It comes with a linter and a diff that checks no claim was lost.
 - **Why the owner shared it:** after the film words read like a robot ("fills 78.5% of its box"): "fucking use this for anytime you are asked to write".
 - **What it changed:** it is installed globally (~/.claude/skills/declauding, without its stop hook, which needs subagents), and ~/.claude/CLAUDE.md now says every written piece goes through it, film scripts and on-screen words included.
+## 2026-11-18 · landmines, lint rules against AI-written test shortcuts (shared by the owner)
+- What: [interfere-inc/landmines](https://github.com/interfere-inc/landmines) (MIT, by Interfere): ten rules for the
+  oxlint linter aimed at code written by coding agents. Five are about tests (no mocks or stubs, no fixed sleeps, no
+  retries or raised time limits, no polling a spy, strict network mocking), one bans prose comments, three are about
+  where tests live and what they are called, and one bans written return types. Installed with npm into a scratch
+  folder (oxlint 1.81.0 and the package at its published 0.0.0; the repository says 0.1.0), nothing added to the
+  project, and run on the roast branch at 022a5b5b.
+- Why: the owner's words: "install this and see what trash we have".
+- What it found: 12,068 findings over 1,016 files in 3 seconds. Almost all is a clash of house style, not trash:
+  10,183 are comments (prose explaining why; a grep found no commented-out code) and 1,416 are written return types
+  in the engine. 415 are per-test time limits in 144 end-to-end files; Node's test runner has no limit by default,
+  so these are caps against a hung browser, not raised limits, though 32 tests allow ten minutes. The useful part is
+  small: 45 fixed sleeps in end-to-end tests (about ten are waits with no signal behind them, such as sleeping 2.2
+  seconds because the overlay keeps an index for two), a hand-written retry loop in five clean-up tests that swallows
+  navigation errors up to four times, and one real fake (a test replaces `fs.watch`). Full sorting in the journey entry "landmines and anti-slop on our code".
+- Used in: journey entry "landmines and anti-slop on our code". Nothing fixed yet.
+
+## 2026-11-18 · anti-slop, lint rules against weak TypeScript evidence (shared by the owner)
+- What: [dmmulroy/anti-slop](https://github.com/dmmulroy/anti-slop) (MIT, by Dillon Mulroy, read at 13909c9):
+  eighteen oxlint rules plus five for the Effect library, which plumber does not use. They reject types that claim
+  more than the code knows (`as unknown as X`, `unknown` in and out of functions, open `Record<string, unknown>`),
+  `typeof` checks in place of parsing at the edge, mocked modules, filter-then-map, and missing blank lines. It ships
+  no npm package and asks to be copied into the project; we did not copy it. We cloned it into a scratch folder,
+  installed oxlint 1.81.0 and its plugin API beside it, and pointed oxlint at the clone, with the README's rule list.
+- Why: the owner's words: "also this as well", after landmines.
+- What it found: 26,214 findings over 1,016 files in 3 seconds. 23,528 are blank-line spacing, which conflicts with
+  our dense one-line style. Then 828 type assertions without a written reason, 596 `typeof` checks, 468 conditional
+  `{}` spreads (our usual way to leave out an optional field), 181 names containing "shape". The real part: 75
+  double casts through `unknown` in 37 engine files, most of them to read a syntax tree node as an open record;
+  one passes `undefined` as a whole project report (guarded at runtime, but the type lies); 28 functions that return
+  `unknown`; 3 lists rebuilt by spreading inside a loop. Sorted in the same journey entry.
+- Used in: journey entry "landmines and anti-slop on our code". Nothing fixed yet.
 
 ## 2026-11-19 · unslop-ui, rules for the marks of a generated interface (shared by the owner)
 - What: [felipebasurto/unslop-ui](https://github.com/felipebasurto/unslop-ui) (MIT, by Felipe Basurto, read at main
@@ -293,3 +325,16 @@ All free under the Unsplash License, hotlinked from images.unsplash.com as Unspl
 - **What:** the Design Critique method in the interface-craft skill (Josh Puckett), `~/.claude/skills/interface-craft/design-critique.md`.
 - **Why:** the owner asked for it on Blueprint's open UX calls ("please ask /interface-craft about the ux thing").
 - **What it changed:** its read put one count first: the bar counted places (197) while Fix stepped through fixes (49), so the number could not be worked through and did not drop. The owner chose its ranked list: count fixes, roll the count as fixes land, room under the page for the bar, a Space hint at the moment a click lands on a note. Used in [the fifth batch](journey.md#the-fifth-batch-one-count-room-for-the-bar-2026-11-20).
+
+## 2026-11-20 · libraries.dev effects, by Jakub Antalik (shared by the owner)
+- **What:** [libraries.dev/metal](https://libraries.dev/metal) and its siblings: Metal (liquid chrome on buttons, icons,
+  text; a cursor that bends it; reflections on neighbours), Border beam (a glow riding the border, rotate or pulse),
+  Gooey (pieces that merge like goo and morph like jelly, text stays crisp), Distortion waves (a wave that carries one
+  screen into the next from the touched button), Thinking orbs (nine waiting states), Image FX (a pixel mosaic that
+  dissolves into the result), Magnetic UI (a phone's magnetometer as input). All on npm under MIT: `metal-fx`,
+  `border-beam`, `liquid-gooey`, `distortion-waves`, `thinking-orbs`, `img-fx`.
+- **Why:** the owner: "we can also inherit a lot of primitives which we can apply to a different buttons from here …
+  metal, distortion, magnetic ui, gooey, border beam … applied and composed in variety of ways and can also be used
+  individually but again the taste lies where you put it with what motion and all".
+- **What it changed:** the recommendations get effects as primitives with a meaning each (a material, an edge, a
+  response, a hand-off, a wait), composed by rules of where they belong: [docs/briefs/effect-primitives.md](briefs/effect-primitives.md).
