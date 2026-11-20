@@ -559,7 +559,10 @@ export class Cleanup {
     this.#marks ??= new Marks(this.#el.getRootNode());
     this.#guides ??= new PageGuides(this.#el.getRootNode());
     const chips = [...this.#el.querySelectorAll('.sh-chip')];
-    const steps = this.#steps().map((x, i) => ({ ...x, chip: chips[i] }));
+    // each step keeps its value before (the chip's) and the look of its pass: the guides it is drawn with (show-motion.js)
+    const LOOK = { colour: 'ring', icons: 'square', radius: 'arc', sizes: 'height', shadows: 'ring', speeds: 'ring', states: 'ring' };
+    const look = LOOK[PASSES[this.#pass]], unit = { states: '%', speeds: 'ms' }[PASSES[this.#pass]];
+    const steps = this.#steps().map((x, i) => ({ ...x, from: x.from ?? x.chip?.from, ...(look && !x.look ? { look } : {}), ...(unit ? { unit } : {}), name: x.name ?? x.chip?.name?.split(' ')[0], chip: chips[i] }));
     await (this.#sw?.beat === 'all' ? playAll : play)(steps, { marks: this.#marks, guides: this.#guides, signal: stop.signal });
     if (run !== this.#run) return;
     if (this.#show === stop) this.#show = null;

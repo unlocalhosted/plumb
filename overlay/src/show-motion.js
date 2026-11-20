@@ -340,61 +340,97 @@ export function mountMotionBoard(board, { tokensCss = '', autoplay = false } = {
 }
 
 // ── on the page: Clean up's show ───────────────────────────────
-// The same guides drawn over your own elements while Clean up plays a step (show.js play), so what the docs page
-// shows is what your page does. A step hands its places (bands: rect() each, a kind), its value before and after, and
-// the name it lands on. For text: a cap line and a baseline at every place, an I-beam and the pill at the first; the
-// pill rolls while the page moves, turns sky and names the style when it lands, and the guides go.
+// The same guides drawn over your own elements while Clean up plays (show.js play, playAll), so what the docs page
+// shows is what your page does. A step hands its places (bands: rect() each, a kind; padding also its element), its
+// value before and after, the name it lands on, and its look (the pass it belongs to). Each look is its tile's:
+//   text     a cap line and a baseline at every place
+//   pad      the box's edge and its padding's inner edge, at every place
+//   measure  the two sides of a space between two blocks (a margin or a gap)
+//   height   a control's top and bottom
+//   ring     a dashed ring round each place (colour, shadow, timing, disabled)
+//   square   a square round each icon
+//   arc      an arc on each corner
+// The first place of each step carries the I-beam (where there is a length to measure) and the pill: it rolls while
+// the page moves, turns sky and names the step when it lands, and the guides go.
 const P = (n) => `.mo-page .mo-${n}`;
 const PAGE_CSS = `
   .mo-page { position: fixed; inset: 0; pointer-events: none; z-index: 1; --c: var(--pl-coral); }
   .mo-page[data-landed] { --c: var(--pl-sky); }
   ${guideRules(P)}
 `;
+const isNum = (v) => typeof v === 'number' && Number.isFinite(v);
 export class PageGuides {
-  #layer; #frame = 0; #parts = []; #pill = null; #spec = null;
+  #layer; #frame = 0; #groups = [];
   constructor(root) {
     if (!root.querySelector('style[data-mo-page]')) { const st = Object.assign(document.createElement('style'), { textContent: PAGE_CSS }); st.setAttribute('data-mo-page', ''); root.append(st); }
     this.#layer = Object.assign(document.createElement('div'), { className: 'mo-page' });
     this.#layer.setAttribute('aria-hidden', 'true');
     root.append(this.#layer);
   }
-  // the kinds drawn here; the rest stay with the show's own marks
-  can(step) { const b = step?.bands?.() ?? []; return b.length > 0 && b.every((x) => x.kind === 'line'); }
-  async in(step, signal) {
+  can(step) { return (step?.bands?.() ?? []).length > 0; }
+  #lookOf(step, band) { return step.look ?? (band.kind === 'line' ? 'text' : band.kind === 'pad' ? 'pad' : band.kind === 'measure' ? 'measure' : 'ring'); }
+  // one step or several (spacing measures all its steps at once)
+  async in(steps, signal) {
     this.clear();
-    const bands = step.bands().slice(0, 12), make = (n) => { const el = document.createElement('i'); el.className = `mo-g mo-${n}`; this.#layer.append(el); return el; };
-    this.#layer.removeAttribute('data-landed');
-    this.#parts = bands.map((b) => ({ b, cap: make('hl'), base: make('hl') }));
-    const beam = make('beam'), pill = make('pill');
-    const from = Math.round(step.chip?.from ?? step.from ?? 0), to = Math.round(step.to ?? from);
-    this.#spec = { from, to, name: step.name ?? '', beam, vals: roll(from, to) };
-    this.#pill = pill; pill.innerHTML = pillHtml(this.#spec.vals, 'px');
-    const draw = () => {
-      let first = null;
-      for (const p of this.#parts) {
-        const r = p.b.rect?.(), off = !r || r.width < 0.5 || r.height < 0.5 || r.bottom < 0 || r.top > innerHeight;
-        for (const el of [p.cap, p.base]) el.style.display = off ? 'none' : '';
-        if (off) continue;
-        const cap = r.top + r.height * 0.24, base = r.top + r.height * 0.8, l = r.left - 10, w = r.width + 20;
-        p.cap.style.cssText = `left:${l}px;top:${cap}px;width:${w}px;display:${p.cap.style.display}`; p.base.style.cssText = `left:${l}px;top:${base}px;width:${w}px;display:${p.base.style.display}`;
-        first ??= { l, cap, base };
-      }
-      const show = !!first;
-      beam.style.display = pill.style.display = show ? '' : 'none';
-      if (first) { beam.style.cssText = `left:${first.l - 14}px;top:${first.cap}px;height:${first.base - first.cap}px`; pill.style.cssText = `left:${Math.max(30, first.l - 44)}px;top:${(first.cap + first.base) / 2}px`; }
-      this.#frame = requestAnimationFrame(draw);
-    };
+    const list = Array.isArray(steps) ? steps : [steps];
+    const make = (n) => { const el = document.createElement('i'); el.className = `mo-g mo-${n}`; this.#layer.append(el); return el; };
+    for (const step of list) {
+      const bands = step.bands().slice(0, 12); if (!bands.length) continue;
+      const look = this.#lookOf(step, bands[0]), lengthy = ['text', 'pad', 'measure', 'height'].includes(look);
+      const piece = { ring: 'ring', square: 'sq', arc: 'arc' }[look];
+      const places = bands.map((b) => ({ b, a: make(piece ?? 'hl'), z: piece ? null : make('hl') }));
+      const from = step.from ?? step.chip?.from, to = step.to, num = isNum(from) && isNum(to);
+      const unit = step.unit ?? (look === 'text' || look === 'pad' || look === 'measure' || look === 'height' || look === 'arc' ? 'px' : '');
+      const g = { step, look, places, beam: lengthy ? make('beam') : null, pill: make('pill'), num, from, to, unit, name: step.name ?? '', vals: num ? roll(Math.round(from), Math.round(to)) : null };
+      g.pill.innerHTML = num ? pillHtml(g.vals, unit) : `${from ?? ''}${isNum(from) ? unit : ''}`;
+      this.#groups.push(g);
+    }
+    const draw = () => { for (const g of this.#groups) this.#place(g); this.#frame = requestAnimationFrame(draw); };
     draw();
-    const quick = signal?.aborted || matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (quick) return;
-    await Promise.all([...this.#parts.flatMap((p, i) => [p.cap, p.base].map((el) => animate(el, [{ transform: 'scaleX(0)', opacity: 0 }, { transform: 'scaleX(1)', opacity: 1 }], { duration: T.guides, delay: Math.min(i, 6) * 40, easing: 'cubic-bezier(.2,.8,.2,1)' }))),
-      ...[beam, pill].map((el) => animate(el, [{ opacity: 0, scale: 0.85 }, { opacity: 1, scale: 1 }], { duration: T.guides * 0.8, delay: 120, easing: 'cubic-bezier(.34,1.56,.64,1)' }))]);
+    if (signal?.aborted || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const anims = [];
+    for (const g of this.#groups) {
+      g.places.forEach((p, i) => { for (const el of [p.a, p.z].filter(Boolean)) anims.push(el.classList.contains('mo-hl')
+        ? animate(el, [{ transform: 'scaleX(0)', opacity: 0 }, { transform: 'scaleX(1)', opacity: 1 }], { duration: T.guides, delay: Math.min(i, 6) * 40, easing: 'cubic-bezier(.2,.8,.2,1)' })
+        : animate(el, [{ opacity: 0, scale: 0.92 }, { opacity: 1, scale: 1 }], { duration: T.guides, delay: Math.min(i, 6) * 40, easing: 'cubic-bezier(.34,1.56,.64,1)' })); });
+      for (const el of [g.beam, g.pill].filter(Boolean)) anims.push(animate(el, [{ opacity: 0, scale: 0.85 }, { opacity: 1, scale: 1 }], { duration: T.guides * 0.8, delay: 120, easing: 'cubic-bezier(.34,1.56,.64,1)' }));
+    }
+    await Promise.all(anims).catch(() => {});
   }
-  // the page is moving: the number rolls with it
-  move() { const s = this.#spec; this.#pill?.querySelector('.roll > span')?.animate([{ transform: 'translateY(0)' }, { transform: `translateY(${-(s.vals.length - 1) * 22}px)` }], { duration: BEAT.move, easing: SPRING, fill: 'both' }); }
-  // it landed: the pill turns to the scale's colour, names the style, settles
-  land() { const s = this.#spec; if (!this.#pill) return; this.#layer.setAttribute('data-landed', ''); this.#pill.innerHTML = pillHtml([s.to], 'px', s.name); this.#pill.animate([{ scale: 1 }, { scale: 1.08 }, { scale: 1 }], { duration: 360, easing: 'cubic-bezier(.34,1.56,.64,1)' }); }
-  async out(signal) { if (!(signal?.aborted)) await Promise.all([...this.#layer.children].map((el) => animate(el, [{ opacity: 1 }, { opacity: 0 }], { duration: T.out, easing: 'ease-out' }))); this.clear(); }
-  clear() { cancelAnimationFrame(this.#frame); this.#frame = 0; this.#parts = []; this.#pill = null; this.#layer.replaceChildren(); this.#layer.removeAttribute('data-landed'); }
+  // where each piece sits now, from the live places (the page moves under the show)
+  #place(g) {
+    let first = null;
+    for (const p of g.places) {
+      const r = p.b.rect?.(), off = !r || r.width < 0.5 || r.bottom < 0 || r.top > innerHeight || (g.look !== 'measure' && r.height < 0.5);
+      for (const el of [p.a, p.z].filter(Boolean)) el.style.visibility = off ? 'hidden' : '';
+      if (off) continue;
+      let y1, y2, x = r.left, w = r.width;
+      if (g.look === 'text') { y1 = r.top + r.height * 0.24; y2 = r.top + r.height * 0.8; x -= 10; w += 20; }
+      else if (g.look === 'pad') { const el = p.b.el, pt = el ? parseFloat(getComputedStyle(el).paddingTop) || 0 : 0; y1 = r.top; y2 = r.top + pt; x -= 6; w += 12; }
+      else if (g.look === 'measure' || g.look === 'height') { y1 = r.top; y2 = r.bottom; x -= 6; w += 12; }
+      const at = (el, css) => { el.style.cssText = css + (el.style.visibility ? `;visibility:${el.style.visibility}` : ''); };
+      if (g.look === 'ring') at(p.a, `left:${r.left - 6}px;top:${r.top - 6}px;width:${r.width + 12}px;height:${r.height + 12}px;border-radius:${(parseFloat(getComputedStyle(p.b.el ?? document.body).borderTopLeftRadius) || 6) + 6}px`);
+      else if (g.look === 'square') at(p.a, `left:${r.left - 3}px;top:${r.top - 3}px;width:${r.width + 6}px;height:${r.height + 6}px`);
+      else if (g.look === 'arc') { const rad = Math.max(6, Math.min(r.width, r.height) * 0.25); at(p.a, `left:${r.left - 5}px;top:${r.top - 5}px;width:${rad * 2 + 10}px;height:${rad * 2 + 10}px;border-top-left-radius:${rad + 5}px`); }
+      else { at(p.a, `left:${x}px;top:${y1}px;width:${w}px`); at(p.z, `left:${x}px;top:${y2}px;width:${w}px`); }
+      first ??= { r, y1, y2, x };
+    }
+    for (const el of [g.beam, g.pill].filter(Boolean)) el.style.visibility = first ? '' : 'hidden';
+    if (!first) return;
+    if (g.beam) { g.beam.style.left = `${first.x - 14}px`; g.beam.style.top = `${first.y1}px`; g.beam.style.height = `${Math.max(1.5, first.y2 - first.y1)}px`; }
+    const py = g.beam ? (first.y1 + first.y2) / 2 : first.r.top - 18, px = g.beam ? Math.max(34, first.x - 46) : first.r.left + first.r.width / 2;
+    g.pill.style.left = `${px}px`; g.pill.style.top = `${py}px`;
+  }
+  // the page is moving: each number rolls with it; a name crosses over halfway
+  move() {
+    for (const g of this.#groups) {
+      if (g.num) g.pill.querySelector('.roll > span')?.animate([{ transform: 'translateY(0)' }, { transform: `translateY(${-(g.vals.length - 1) * 22}px)` }], { duration: BEAT.move, easing: SPRING, fill: 'both' });
+      else setTimeout(() => { if (g.pill.isConnected) g.pill.textContent = `${g.to ?? ''}`; }, BEAT.move * 0.35);
+    }
+  }
+  // it landed: the pills turn to the scale's colour, name the step, settle
+  land() { this.#layer.setAttribute('data-landed', ''); for (const g of this.#groups) { g.pill.innerHTML = g.num ? pillHtml([Math.round(g.to)], g.unit, g.name) : `${g.to ?? ''}`; g.pill.animate([{ scale: 1 }, { scale: 1.08 }, { scale: 1 }], { duration: 360, easing: 'cubic-bezier(.34,1.56,.64,1)' }); } }
+  async out(signal) { if (!signal?.aborted) await Promise.all([...this.#layer.children].map((el) => animate(el, [{ opacity: 1 }, { opacity: 0 }], { duration: T.out, easing: 'ease-out' }))).catch(() => {}); this.clear(); }
+  clear() { cancelAnimationFrame(this.#frame); this.#frame = 0; this.#groups = []; this.#layer.replaceChildren(); this.#layer.removeAttribute('data-landed'); }
   remove() { this.clear(); this.#layer.remove(); }
 }

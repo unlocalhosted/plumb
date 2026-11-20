@@ -172,10 +172,19 @@ export function ease(el, set, { props = ['font-size', 'line-height', 'letter-spa
 // The reference's beat: every place of a pass measured at once, a hold to read them, then every place eased together
 // while the measures follow the page live, a hold on the landed values, and the marks lift. One pass, one beat
 export const SWEEP = { read: 1100, land: 900 };
-export async function playAll(steps, { marks, signal } = {}) {
+export async function playAll(steps, { marks, guides, signal } = {}) {
   await bringIntoView(steps.flatMap((s) => s.bands?.() ?? []), signal);
   const quick = signal?.aborted || still();
   for (const s of steps) s.chip?.setAttribute('data-on', '');
+  // every step's places measured at once with the motion module's guides (show-motion.js), one pill a step
+  if (guides && steps.some((s) => guides.can(s))) {
+    if (!quick) { await guides.in(steps, signal); await wait(SWEEP.read - BEAT.in, signal); }
+    steps.forEach((s) => { roll(s.chip, s.to); s.morph(!(signal?.aborted || still())); });
+    if (!signal?.aborted && !still()) { guides.move(); await wait(BEAT.move, signal); guides.land(); await wait(SWEEP.land, signal); await guides.out(signal); }
+    guides.clear();
+    for (const s of steps) { s.chip?.removeAttribute('data-on'); s.chip?.setAttribute('data-done', ''); }
+    return;
+  }
   if (!quick) { marks?.show(steps.flatMap((s) => s.bands()), 'sky'); await wait(SWEEP.read, signal); }
   steps.forEach((s) => { roll(s.chip, s.to); s.morph(!(signal?.aborted || still())); });
   if (!signal?.aborted && !still()) { await wait(BEAT.move, signal); await wait(SWEEP.land, signal); marks?.lift(); await wait(BEAT.out, signal); }

@@ -110,7 +110,7 @@ export class SpacingPass {
       return {
         chip: { label: `${word}: ${from}px to ${to}px`, name: `${word} ${from}px → ${to}px`, icon: BLOCK_ICONS[inset === 'pad' ? 'p' : 'g'], from },
         to,
-        bands: () => els.map((el) => ({ kind: 'pad', rect: () => el.getBoundingClientRect() })),
+        bands: () => els.map((el) => ({ kind: 'pad', el, rect: () => el.getBoundingClientRect() })),
         morph: (animate) => { for (const w of ws) for (const el of w.els) for (const prop of w.props) this.#set(el, prop, `${to}px`, animate); },
       };
     });
