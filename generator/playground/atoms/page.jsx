@@ -26,6 +26,26 @@ function Verdict({ v }) {
     </p>);
 }
 
+// the owner's pick on one of our suggestions: keep or drop, and one line of why, saved as a training label
+function OwnerPick({ product, atom, form }) {
+  const [v, setV] = useState(null), [why, setWhy] = useState(''), [saved, setSaved] = useState(false);
+  useEffect(() => { fetch('/__owner-verdict').then((r) => r.json()).then((all) => {
+    const last = all.filter((x) => x.product === product && x.atom === atom && x.form === form).at(-1);
+    if (last) { setV(last.keep ? 'keep' : 'drop'); setWhy(last.why ?? ''); setSaved(true); } }).catch(() => {}); }, [form]);
+  const save = (choice) => { const c = choice ?? v; if (!c) return; setV(c);
+    fetch('/__owner-verdict', { method: 'POST', body: JSON.stringify({ product, atom, form, keep: c === 'keep', why }) }).then(() => setSaved(true)); };
+  return (
+    <div className="owner-pick pl-light">
+      <p className="owner-q">Would you ship this?</p>
+      <div className="owner-row">
+        <button type="button" className="owner-keep" aria-pressed={v === 'keep'} onClick={() => { setSaved(false); save('keep'); }}>Keep</button>
+        <button type="button" className="owner-drop" aria-pressed={v === 'drop'} onClick={() => { setSaved(false); save('drop'); }}>Drop</button>
+        <input aria-label="Why, in a line" placeholder="Why, in a line" value={why} onChange={(e) => { setWhy(e.target.value); setSaved(false); }} onKeyDown={(e) => { if (e.key === 'Enter') save(); }} onBlur={() => { if (v && !saved) save(); }} />
+      </div>
+      <p className="owner-saved" aria-live="polite">{saved && v ? `Saved: ${v}${why ? `, “${why}”` : ''}` : ''}</p>
+    </div>);
+}
+
 function Choose({ data, forms }) {
   if (!data) return null;
   const { choose, moment } = data;
@@ -81,6 +101,7 @@ function Page({ Shipped, product, atom }) {
             <div className="atom-stage" data-atom style={{ ...vars, ...f.roles }}>{f.render(a)}</div>
             <div><h3>{f.name}</h3><p>{f.why}</p><code>{f.id}</code></div>
             <Verdict v={verdictOf(f.id)} />
+            {f.id.startsWith('native/') && <OwnerPick product={product.id} atom={atom.id} form={f.id} />}
           </section>))}
       </div>
     </main>

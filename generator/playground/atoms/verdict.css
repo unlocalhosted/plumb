@@ -22,3 +22,13 @@
 .choose h2 { margin: 0 0 6px; font: 700 22px/1.2 var(--pl-sans); }
 .choose p { margin: 0 0 8px; font: 400 14px/1.5 var(--pl-sans); max-width: 72ch; }
 .choose .choose-how { font-size: 12.5px; color: var(--pl-ink-2); margin: 10px 0 0; }
+/* the owner's pick: two solid choices and a line of why; the chosen one keeps its hue, the other goes quiet */
+.owner-pick { display: grid; gap: 6px; padding-top: 12px; border-top: 1px solid color-mix(in oklab, currentColor 10%, transparent); font-family: var(--pl-sans); color: var(--pl-ink); }
+.atom .owner-pick .owner-q { margin: 0; font: 600 13px/1.3 var(--pl-sans); opacity: 1; }
+.owner-row { display: flex; gap: 8px; align-items: center; }
+.owner-row button { font: 700 12.5px/1 var(--pl-sans); border: 0; border-radius: var(--pl-radius-pill, 999px); padding: 8px 14px; min-height: 32px; cursor: pointer; background: var(--pl-paper-2); color: var(--pl-ink); }
+.owner-row .owner-keep[aria-pressed="true"] { background: var(--pl-mint); color: var(--pl-mint-on); }
+.owner-row .owner-drop[aria-pressed="true"] { background: var(--pl-coral); color: var(--pl-coral-on); }
+.owner-row button:focus-visible, .owner-row input:focus-visible { outline: 2px solid var(--pl-ink); outline-offset: 2px; }
+.owner-row input { flex: 1; min-width: 0; font: 400 13px/1.3 var(--pl-sans); padding: 8px 10px; border: 0; border-radius: 8px; background: var(--pl-paper-2); color: var(--pl-ink); }
+.atom .owner-pick .owner-saved { margin: 0; min-height: 1.2em; font: 400 12px/1.3 var(--pl-sans); color: var(--pl-ink-2); opacity: 1; }
