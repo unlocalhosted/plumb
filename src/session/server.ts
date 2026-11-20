@@ -117,6 +117,11 @@ async function dispatchRequest(session: Session, method: string, raw: unknown, o
   if (idempotencyKey !== undefined && isWriteEndpoint(method)) return idempotent(session, method, params, idempotencyKey, () => dispatchOnce(session, method, params, options, json));
   return dispatchOnce(session, method, params, options, json);
 }
+
+// one census at a time for the whole server: the overlay starts it and asks how far it has got
+interface CensusRun { running: boolean; read: number; route: string | null; routes: number; elements: number; left: number; error: string | null }
+let censusRun: CensusRun | null = null;
+
 async function dispatchOnce(session: Session, method: string, params: Record<string, unknown>, options: Pick<HandlerOptions, 'servedRoot' | 'readiness' | 'readinessProject'>, json: boolean): Promise<unknown> {
   // one request, one group: every write it makes is traced, under the caller's tag when it sends one
   session = tracing(session, params.trace);
@@ -287,6 +292,18 @@ async function dispatchOnce(session: Session, method: string, params: Record<str
       throw new UsageError('pairs must be a list of up to 64 { heading, line } strings.');
     return judgePairs(pairs as { heading: string; line: string }[]);
   }
+  if (method === 'census') {
+    const url = text(params, 'url');
+    try { if (!/^https?:$/.test(new URL(url!).protocol)) throw new Error(); } catch { throw new UsageError('url must be the dev server address, like http://localhost:5173/.'); }
+    if (censusRun?.running) return censusRun;
+    const run: CensusRun = { running: true, read: 0, route: null, routes: 0, elements: 0, left: 0, error: null };
+    censusRun = run;
+    void import('../census.js').then(({ takeCensus }) => takeCensus({ url: url!, root: session.root, max: 60, onRoute: (route, read) => { run.route = route; run.read = read; } }))
+      .then((c) => { run.routes = c.routes.length; run.elements = c.entries.length; run.left = c.left; }, (error) => { run.error = error instanceof Error ? error.message : String(error); })
+      .finally(() => { run.running = false; });
+    return run;
+  }
+  if (method === 'census-status') return censusRun ?? { running: false, read: 0, route: null, routes: 0, elements: 0, left: 0, error: null };
   if (method === 'system-page') return session.projectSystem();
   if (method === 'health') return session.health();
   if (method === 'refresh') return session.refresh();

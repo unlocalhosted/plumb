@@ -957,7 +957,12 @@ export const CLEANUP = {
   notYet: 'Spacing, colour and icons come to Plumber next.',
   noCensus: 'Plumber hasn’t read your whole site yet.',
   // the text pass on this page alone, while the site hasn't been read
-  pageOnly: 'From this page’s text alone. Run plumber census once and every page gets the same styles.',
+  pageOnly: 'From this page’s text alone. Read the whole site once and every page gets the same styles.',
+  readSite: 'Read the whole site',
+  siteBusy: 'Reading the site…',
+  siteReading: (n, route) => `Reading your site: ${n} ${n === 1 ? 'page' : 'pages'} so far${route ? `, last ${route}` : ''}.`,
+  siteDone: (n) => `Read ${n} ${n === 1 ? 'page' : 'pages'} of your site. Text styles now come from all of them.`,
+  siteFailed: 'Couldn’t read the whole site.',
   noCensusWhy: 'Text styles are worked out from every page, so each page ends up the same. Run this once in your project, then try again.',
   copy: 'Copy',
   copied: 'Copied',

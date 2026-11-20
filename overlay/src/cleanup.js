@@ -322,6 +322,22 @@ export class Cleanup {
   }
   #savedLine(saved) { return (saved?.pass ? W[PASSES[saved.pass]] : W).saved(saved.places, saved.files); }
   #pageOnly = false; // the text pass read this page alone: there is no census of the site yet
+  // the whole site being read from here (POST census, then its progress every second): null, or { running, read, route, error }
+  #site = null;
+  async #readSite() {
+    if (this.#site?.running) return;
+    this.#site = { running: true, read: 0, route: null, error: null }; this.#host.render();
+    try { this.#site = { ...this.#site, ...(await post('census', { url: this.#host.url?.() ?? `${location.origin}/` })) }; }
+    catch (error) { this.#site = { running: false, error: error?.message ?? 'The site could not be read.' }; this.#host.render(); return; }
+    const poll = async () => {
+      let st; try { st = await request('census-status', {}); } catch { st = null; }
+      if (st) this.#site = st;
+      this.#host.render();
+      if (st?.running) { this.#life.timeout(poll, 1000); return; }
+      if (st && !st.error) { this.#pageOnly = false; this.#host.announce?.(W.siteDone(st.routes)); if (this.#sw) this.#readPass(this.#pass); else this.#read(); }
+    };
+    this.#life.timeout(poll, 1000);
+  }
   #moves() { return this.#sw ? this.#sw.page?.places ?? 0 : this.#page?.moves ?? 0; }
 
   html() {
@@ -372,8 +388,8 @@ export class Cleanup {
       acts = (more_ ? b(W2.next, 'next', { key: '→' }) : '') + (this.#saved ? b(W2.undo, 'undo', { quiet: true }) : '') + b(more_ ? W2.close : W2.done, 'close', { quiet: true, key: 'Esc' });
     } else if (s === 'ready') {
       say = sw ? S.head(p.before, p.after, p.places) : W2.head(this.#p?.cost?.sizesBefore ?? p.before, this.#p?.roles?.length ?? 0);
-      more = sw ? S.sub(p) : this.#pageOnly ? W.pageOnly : W2.why;
-      acts = b(W2.preview, 'preview', { quiet: true, key: 'P' }) + b('Apply', 'apply', { key: '↵' }) + b('Skip', 'skip', { quiet: true, key: '→' });
+      more = sw ? S.sub(p) : this.#pageOnly ? (this.#site?.running ? W.siteReading(this.#site.read, this.#site.route) : this.#site?.error ? `${W.siteFailed} ${this.#site.error}` : W.pageOnly) : W2.why;
+      acts = (!sw && this.#pageOnly ? b(this.#site?.running ? W.siteBusy : W.readSite, 'site', { quiet: true }) : '') + b(W2.preview, 'preview', { quiet: true, key: 'P' }) + b('Apply', 'apply', { key: '↵' }) + b('Skip', 'skip', { quiet: true, key: '→' });
     }
     // in preview the detail is what changes: the styles as chips, rolling to their values, and how to compare
     const detail = s === 'preview' ? `<span class="roles">${chipsHtml(this.#steps().map((x) => x.chip))}</span><span class="cmp">${W2.holdSpace}</span>` : esc(more);
@@ -386,7 +402,8 @@ export class Cleanup {
     const close = `<button type="button" class="cu-btn quiet" data-cu="close">${esc(W.close)}<kbd>esc</kbd></button>`;
     if (s === 'reading') return `<div class="body"><div class="sub" role="status">${esc(this.#words.reading)}</div></div>`;
     if (s === 'noCensus') return `<div class="body"><div class="head">${esc(W.noCensus)}</div><div class="sub">${esc(W.noCensusWhy)}</div>`
-      + `<div class="cmd"><code>plumber census --url ${esc(this.#host.url?.() ?? location.origin + '/')}</code><button type="button" class="cu-btn quiet" data-cu="copy">${esc(W.copy)}</button></div></div>${acts(`<button type="button" class="cu-btn" data-cu="retry">${esc(W.retry)}</button><span class="grow"></span>${close}`)}`;
+      + (this.#site?.running ? `<div class="sub" role="status">${esc(W.siteReading(this.#site.read, this.#site.route))}</div>` : this.#site?.error ? `<div class="sub">${esc(W.siteFailed)} ${esc(this.#site.error)}</div>` : '')
+      + `<div class="cmd"><code>plumber census --url ${esc(this.#host.url?.() ?? location.origin + '/')}</code><button type="button" class="cu-btn quiet" data-cu="copy">${esc(W.copy)}</button></div></div>${acts(`<button type="button" class="cu-btn" data-cu="site"${this.#site?.running ? ' aria-busy="true"' : ''}>${esc(this.#site?.running ? W.siteBusy : W.readSite)}</button><button type="button" class="cu-btn quiet" data-cu="retry">${esc(W.retry)}</button><span class="grow"></span>${close}`)}`;
     if (s === 'error') return `<div class="body"><div class="head">${esc(this.#words.couldNot)}</div><div class="error">${esc(this.#err ?? '')}</div></div>${acts(`<button type="button" class="cu-btn" data-cu="retry">${esc(W.retry)}</button><span class="grow"></span>${close}`)}`;
     if (s === 'writing') return `<div class="body"><div class="sub" role="status">${esc(W.writing(this.#moves()))}</div></div>`;
     if (s === 'done' && this.#pass === 0) {
@@ -507,6 +524,7 @@ export class Cleanup {
     else if (act === 'names-close') { this.#rn.open = false; this.#rn.err = null; this.#host.render(); }
     else if (act === 'names-go') this.#rename();
     else if (act === 'names-undo') this.#renameUndo();
+    else if (act === 'site') this.#readSite();
     else if (act === 'retry') { if (this.#sw) this.#readPass(this.#pass); else this.#read(); }
     else if (act === 'copy') { const t = this.#el?.querySelector?.('.cmd code')?.textContent ?? ''; navigator.clipboard?.writeText(t).catch(() => {}); this.#host.announce?.(W.copied); }
     else if (act === 'close') this.#host.close();

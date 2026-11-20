@@ -27,7 +27,7 @@ export interface CensusColour { stamp: string; prop: 'text' | 'bg' | 'border'; o
 /** One icon place on one route (overlay/src/icons.js iconRows): an svg's origin, size, stroke, gap and the class that sizes it, or an emoji standing in for one */
 export interface CensusIcon { stamp: string | null; kind: 'svg' | 'emoji'; origin?: string; variant?: string | null; name?: string | null; size: number; textSize: number | null; band?: 'regular' | 'bold'; stroke?: number | null; cap?: string | null; join?: string | null; style?: string | null; grid?: number | null; gap?: number | null; cls?: string | null; hasLabel?: boolean; emoji?: string; key?: string; route?: string }
 export interface ProjectCensus { schemaVersion: 1; at: string; url: string; viewport: { width: number; height: number }; routes: CensusRoute[]; entries: (CensusEntry & { route?: string })[]; gaps?: CensusGap[]; colours?: CensusColour[]; icons?: CensusIcon[]; /** routes found but not read: the cap was reached */ left: number }
-export interface CensusOptions { url: string; root: string; routes?: string[]; max?: number; timeout?: number }
+export interface CensusOptions { url: string; root: string; routes?: string[]; max?: number; timeout?: number; /** each route as it is read, for a progress line */ onRoute?: (route: string, read: number) => void }
 
 export const censusPath = (root: string) => resolve(cacheDirectory(root), 'census.json');
 
@@ -76,6 +76,7 @@ export async function takeCensus(options: CensusOptions): Promise<ProjectCensus>
         const controlled = await page.evaluate(readControlled) as string[] | null;
         if (controlled) { const inside = new Set(controlled); for (const entry of census) entry.control = inside.has(entry.stamp); }
         routes.push({ route, elements: census.length });
+        options.onRoute?.(route, routes.length);
         entries.push(...census.map(entry => ({ ...entry, route })));
         gaps.push(...(await page.evaluate(readGaps) as CensusGap[]).map(gap => ({ ...gap, route })));
         colours.push(...(await page.evaluate(readColourRows) as CensusColour[]).map(row => ({ ...row, route })));

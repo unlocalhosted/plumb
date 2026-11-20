@@ -77,6 +77,10 @@ export const methods = [
   { engine: 'traced', patient: true },
   // does the line under a heading say what the heading says (src/meaning.ts): asked of the model the project points at
   { http: 'meaning', post: true, read: true, rpc: false },
+  // the whole site read once, from the overlay (Clean up's "Read the whole site"): started in the background, its
+  // progress asked for with a GET; it never holds the queue (src/census.ts)
+  { http: 'census', post: true, read: true, rpc: false },
+  { http: 'census-status', read: true, rpc: false },
   { http: 'health' },
 ] as const satisfies readonly Row[];
 
