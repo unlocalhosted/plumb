@@ -3523,6 +3523,14 @@ uses the 500 ms number on its own; it belongs to the session working on the judg
 - **Media hooks:** before and after of the Alt-click card on the same heading: the old card with its box diagram and pink note, then the new one.
 
 
+### 55. Every check plays its fix on a card that stays still (2026-11-20)
+**The itch.** The docs' "What it checks" pages listed checks as words, and the first examples were wrong in two ways. "The layout is fucking trash, I click on something the cards slide", and the motion was "dumb and rushed" next to the change-motion tiles.
+**How we found it.** The owner opened the cards in the docs and compared them with How a change moves on the design site.
+**The system behind it.** The examples had a player of their own, built frame by frame. It copied how the tiles look but not how they move. And a card grew in the grid when opened, so every row below it jumped.
+**What we tried, what we chose.** A side drawer kept the grid still, but the owner turned it down. Now each card is its own example. It holds the scene, a Broken / Fixed toggle, the code line and a note, and the two notes share one cell, so flipping the toggle never moves the grid. The scenes run on the tiles' own player: the guides draw in, the spring or the ease moves the scene, the pill rolls and lands. A flip in mid-move turns the scene round at once. Each concern's examples live in one file (`overlay/src/checks/<concern>.js`), drawn with a shared kit.
+**The fix and the proof.** All 15 design-system checks and all 62 Craft checks play. Each was looked at in the browser, broken and then fixed. Six were redrawn after that look because the fix didn't read at card size: layer order, timing, a badge, an undefined variable, Tailwind's grey and proportional figures.
+**Media hooks.** The Craft page at /docs/checks-craft: flip any card. A before/after: the old drawer next to the still grid.
+
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
 - Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".
@@ -5182,6 +5190,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- Every design-system and Craft check in the docs plays its fix on its own card: flip Broken / Fixed and the change moves the way How a change moves does, and nothing else on the page moves ([entry](#55-every-check-plays-its-fix-on-a-card-that-stays-still-2026-11-20)).
 - The plumber site has the recommendations page for crafting attention's buy button: the shipped button and four recommendations, each live in its own colours and type, with the idea it came from, its measured numbers and the standards it passed (`/research/buy-recommendations.html`).
 - Plumber judges a motion by what it is for and whether it harms anyone, not by its length: a bounce the design meant is said as meant, with its source, and you can Keep a fault with a reason ([entry](#54-judging-what-a-motion-is-for-not-how-long-it-takes-2026-11-20)).
 - Crafting attention's buy button now has four suggestions built by us (pours, arrow leads, says what's happening, a sheen once), each passing every interaction standard; the judge now tells progress from slow motion and ignores the page's own tools ([entry](#47-three-more-suggestions-and-a-judge-that-tells-a-button-from-the-tools-around-it-2026-11-20)).
