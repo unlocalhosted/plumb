@@ -3190,6 +3190,33 @@ corrections change what the verdicts say, not what they find. The recommendation
 **Media hooks.** A fault on the atoms page before (the note saying the source wasn't checked) and after (the linked
 sources).
 
+### 46. Prototype B: heat on the button while you hold it (2026-11-20)
+
+**The itch.** Prototype A shows a fault only after the gesture, on a strip under the button you have to scrub. The
+second of the three ideas the owner chose was to show it while it happens, on the button itself, like a thermal camera.
+
+**What it does.** Open the atoms page with `?proto=thermal`. While a button is pressed, held or slid, plumber judges
+what is drawn every tenth of a second, and each fault warms the part of the button it is on. A fault that lasts glows
+hotter, going from butter to coral, the colours plumber uses elsewhere for "weakens" and "breaks". One that passes cools
+off in about half a second. After you let go, the heat fades and one line under the button names the hottest moment
+and what was wrong then. If nothing was found, the line says so in mint.
+
+**What we chose and why.** Only faults you can see on the button's face make heat: words losing their ground,
+contrast, words running into each other, a target too small. The first try let every note through, and a note about
+focus spread an even brown haze over the whole button that said nothing.
+
+**The proof.** On crafting attention's buy button:
+- Slide to commit: halfway through the slide, the words under the thumb's trail glow coral. After letting go, the
+  line reads "Hottest while you held it, at 1.7 s: where the fill passes under these words (65% of them), they read
+  at Lc 0".
+- Hold to commit: it stays cool and says so. That matches its verdict, where its words stay readable.
+
+**Still open.** The glow sits on top of the words it is about, so the words get harder to read while it shows them.
+A real version might glow around the words instead of over them.
+
+**Media hooks.** The slide mid-gesture with its words glowing, then the same card after with its line
+(`node generator/data/proto-shot.mjs thermal beui/slide-action-button` writes both).
+
 ### 38. Alt and the X-ray card (2026-11-20)
 
 - **The itch:** holding Alt showed the old name tag outside Blueprint, and Alt-click opened the old element card with its heat and a dark spacing slider. Once the X-ray card took over, its pink note looked wrong. The owner on the note: "why is this black on muddy pink". On three new tints of it: "all of them look so ugly".
@@ -4860,6 +4887,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- Prototype B on the atoms page (?proto=thermal): while you hold or slide a button, plumber's faults glow on the button itself, butter when brief and coral when they last, and one line after names the hottest moment ([entry](#46-prototype-b-heat-on-the-button-while-you-hold-it-2026-11-20)).
 - The eight standards behind each form's verdict were checked against Apple's, Material's, Nielsen's and WCAG's published pages; each source is now a link, two claims were corrected (Apple's 44 pt is its default size, not a minimum; Material's longest suggested motion is 500 ms), and no verdict changed ([entry](#45-checking-the-standards-against-their-published-pages-2026-11-20)).
 - Each form of a button now gets a verdict (works, needs work, breaks for some people), why it matters to the person using it, what to do, and which form to choose, judged against Apple's, Google's and WCAG's published standards by using each form for real four ways ([entry](#44-good-or-bad-and-which-to-choose-the-forms-judged-against-published-standards-2026-11-20)).
 - Holding Alt shows the X-ray on any element, and Alt-click pins its card. The card names the element, lists what is wrong with it (each note with its concern's toy and one thing to do) and holds one control for the part under your hand; the box drawing and the measurements stay on the page ([entry](#38-alt-and-the-x-ray-card-2026-11-20)).
