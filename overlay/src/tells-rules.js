@@ -340,5 +340,185 @@ export const heavyWeight = rule('heavy-weight', 'font-weight', 'h1,h2,h3,h4,h5,h
   return found(this, el, { weight }, { value: `font-weight: ${weight}`, confidence: 0.8, advice: 'Use 600, and let size and colour carry the order.' });
 });
 
+// ── the owner's list (2026-11-20) ───────────────────────────
+// Marks the owner found on generated pages, beside unslop-ui's: docs/references.md, "Design slop indicators".
+
+// all capitals on the line under a heading: the subtitle shouts what the heading said
+export const capsSubtitle = rule('caps-subtitle', 'case', 'p,div,span,small,h3,h4,h5,h6', function (el, facts) {
+  const s = facts.style(el);
+  if (s.textTransform !== 'uppercase' && !(ownText(el) && ownText(el) === ownText(el).toUpperCase() && /\p{Lu}{3}/u.test(ownText(el)))) return;
+  const text = trimmed(el.textContent);
+  if (!text || wordsIn(text) < 2 || text.length > 120 || el.closest(`th, ${CONTROL}, ${CODE}, nav, table`)) return;
+  let prev = el.previousElementSibling;
+  while (prev && !drawn(prev, facts)) prev = prev.previousElementSibling;
+  if (!prev?.matches(HEADING) || px(facts.style(prev).fontSize) <= px(s.fontSize) || !shown(el, facts)) return;
+  return found(this, el, { text: quote(text) }, { value: quote(text), confidence: 0.8, advice: 'Set the line in normal case, or delete it if the heading says enough.' });
+});
+
+// italic words set inside a line that is not italic: the "Build *faster*" accent
+const italic = (el, facts) => /italic|oblique/.test(facts.style(el).fontStyle);
+export const italicWords = rule('italic-words', 'font-style', 'em,i,span,strong,b,mark,h1,h2,h3,h4,h5,h6,p', function (el, facts) {
+  if (!italic(el, facts) || !ownText(el) || el.closest(`blockquote, q, cite, ${CODE}, address, var, dfn`)) return;
+  const up = el.parentElement;
+  // said where the italic starts: inside an italic line it is the line's own voice
+  if (up && italic(up, facts)) return;
+  const big = px(facts.style(el).fontSize) >= 20 || !!el.closest(HEADING);
+  // a whole paragraph in italics is a voice, not an accent; a whole heading in italics is the display trick
+  if (!big && !trimmed(up?.textContent ?? '').replace(trimmed(el.textContent), '').trim()) return;
+  if (!shown(el, facts)) return;
+  return found(this, el, { text: quote(trimmed(el.textContent), 30), big }, { value: quote(trimmed(el.textContent)), confidence: big ? 0.85 : 0.8, advice: big ? 'Set the words upright, like the rest of the heading.' : 'Set the words upright. If they matter, say why in the sentence.' });
+});
+
+// Instrument Serif, the display face generated pages reach for
+export const displaySerif = rule('display-serif', 'font-family', null, function (el, facts) {
+  const fam = facts.style(el).fontFamily;
+  if (!/instrument serif/i.test(fam.split(',')[0]) || !ownText(el) || el.closest(CODE)) return;
+  if (el.parentElement && facts.style(el.parentElement).fontFamily === fam && ownText(el.parentElement)) return;
+  if (!shown(el, facts)) return;
+  return found(this, el, { family: 'Instrument Serif' }, { value: 'font-family: Instrument Serif', confidence: 0.85, advice: 'Use the page\'s own text face, set larger and bolder for the heading.' });
+});
+
+// letters pulled together: negative letter spacing on words
+export const negativeTracking = rule('negative-tracking', 'letter-spacing', null, function (el, facts) {
+  const s = facts.style(el);
+  if (s.letterSpacing === 'normal' || !ownText(el) || el.closest(CODE)) return;
+  const size = px(s.fontSize), ls = px(s.letterSpacing);
+  if (!(ls < 0) || -ls < size * 0.015) return;
+  if (el.parentElement && facts.style(el.parentElement).letterSpacing === s.letterSpacing && ownText(el.parentElement)) return;
+  if (!shown(el, facts)) return;
+  const em = Math.round((ls / size) * 1000) / 1000;
+  return found(this, el, { em }, { value: `letter-spacing: ${em}em`, confidence: 0.8, advice: 'Leave letter spacing at normal. The face was spaced for its sizes.' });
+});
+
+// dividers: a rule line, or a border on one side of each row
+const lineLike = (el, facts) => {
+  if (el.localName === 'hr') return true;
+  if (el.childElementCount || trimmed(el.textContent)) return false;
+  const r = facts.rect(el), s = facts.style(el);
+  const thin = Math.min(r.width, r.height), long = Math.max(r.width, r.height);
+  return thin > 0 && thin <= 2 && long >= 24 && ((rgb(s.backgroundColor)?.[3] ?? 0) > 0.05 || px(s.borderTopWidth) > 0 || px(s.borderLeftWidth) > 0);
+};
+const oneSide = (el, facts) => {
+  const s = facts.style(el), w = (k) => (s[`border${k}Style`] !== 'none' && (rgb(s[`border${k}Color`])?.[3] ?? 0) > 0.05 ? px(s[`border${k}Width`]) : 0);
+  const [t, r, b, l] = ['Top', 'Right', 'Bottom', 'Left'].map(w);
+  return (t > 0 && t <= 2 && !r && !b && !l) || (b > 0 && b <= 2 && !t && !r && !l);
+};
+export const divider = rule('divider', 'divider', 'hr,div,span,li,section,article,header,footer,ul,ol,dl,main,aside', function (el, facts) {
+  if (el.closest(`${CODE}, table, ${CONTROL}, [role="tablist"], [role="menu"], [role="separator"][aria-orientation]`)) return;
+  if (lineLike(el, facts)) {
+    if (!shown(el, facts) && el.localName !== 'hr') return;
+    return found(this, el, { count: 1 }, { value: el.localName === 'hr' ? '<hr>' : 'a 1px line', confidence: 0.8, advice: 'Delete the line. Space between the parts separates them.' });
+  }
+  // rows split by borders: said once, on what holds them
+  const rows = [...el.children].filter((k) => drawn(k, facts) && oneSide(k, facts));
+  if (rows.length < 2 || !shown(el, facts)) return;
+  return found(this, el, { count: rows.length }, { value: `${rows.length} borders between rows`, confidence: 0.8, advice: 'Drop the borders and let space separate the rows.' });
+});
+
+// a box drawn with a border on every side: the outlined card
+const ringed = (s) => {
+  const sides = ['Top', 'Right', 'Bottom', 'Left'].map((k) => (s[`border${k}Style`] !== 'none' && (rgb(s[`border${k}Color`])?.[3] ?? 0) > 0.05 ? px(s[`border${k}Width`]) : 0));
+  if (sides.every((w) => w > 0)) return true;
+  // a 1px ring drawn with an inset shadow is the same border
+  return /inset/.test(s.boxShadow) && s.boxShadow.split(/,(?![^()]*\))/).some((p) => /inset/.test(p) && /(^|\s)0(px)? 0(px)? 0(px)? [0-9.]+px/.test(p.replace(/(?:rgba?|oklch|oklab|color)\([^()]*\)/g, '').trim()));
+};
+export const borderedBox = rule('bordered-box', 'border', 'div,section,article,aside,li,a,figure,form,header,footer', function (el, facts) {
+  const r = facts.rect(el);
+  if (r.width < 120 || r.height < 56 || wordsIn(trimmed(el.textContent)) < 2) return;
+  if (el.closest(`${CODE}, table`) || el.matches('fieldset, [role="dialog"], [role="alertdialog"]') || !ringed(facts.style(el)) || !shown(el, facts)) return;
+  return found(this, el, {}, { value: 'border', confidence: 0.8, advice: 'Drop the border. A quiet fill or space around the part holds it together.' });
+});
+
+// a drawing made of many parts: the more detail, the less it says
+const PARTS = 'path,rect,circle,ellipse,line,polyline,polygon,text,image';
+export const detailedDiagram = rule('detailed-diagram', 'drawing', 'div,figure,section,span,a,p,li,article', function (el, facts) {
+  for (const svg of el.children) {
+    if (svg.localName !== 'svg') continue;
+    const r = facts.rect(svg);
+    if (r.width < 120 || r.height < 80) continue;
+    const parts = [...svg.querySelectorAll(PARTS)].filter((p) => !p.closest('defs, symbol, mask, clipPath, pattern, marker')).length;
+    if (parts < 24 || !shown(el, facts)) continue;
+    return found(this, el, { parts }, { value: `${parts} drawn parts`, confidence: 0.8, advice: 'Cut it to the one thing it shows, or replace it with a sentence.' });
+  }
+});
+
+// a file path, a prompt or a chain of folders set in a code face as decoration
+const MONO = /mono|courier|menlo|consolas|monaco|sfmono|jetbrains|fira code|ibm plex mono|source code/i;
+const PATHY = /^(?:~\/|\.\/|\$\s|>\s|\/\/\s)|(?:^|\s)\/?[\w.-]+\/[\w.-]+\.(?:tsx?|jsx?|mdx?|json|css|py|rs|go|sh|ya?ml)\b|^\/?[\w-]+(?:\s*[\/›»>]\s*[\w.-]+){2,}\/?$/;
+export const codeBreadcrumb = rule('code-breadcrumb', 'text', 'p,div,span,small,code,a,li,h1,h2,h3,h4,h5,h6,figcaption', function (el, facts) {
+  const text = trimmed(el.textContent);
+  if (!text || text.length > 64 || !PATHY.test(text) || el.closest('pre, textarea, input, [contenteditable="true"], kbd, samp')) return;
+  if (!MONO.test(facts.style(el).fontFamily)) return;
+  // said once, on the innermost element that holds the whole path
+  if ([...el.children].some((k) => trimmed(k.textContent) === text)) return;
+  // a path inside a sentence is documentation; one standing alone is a breadcrumb
+  const line = el.closest('p, li, dd, td');
+  if (line && line !== el && wordsIn(trimmed(line.textContent)) > wordsIn(text) + 4) return;
+  if (!shown(el, facts)) return;
+  return found(this, el, { text: quote(text) }, { value: quote(text), confidence: 0.8, advice: 'Delete the path. Name the part in plain words, if it needs a name.' });
+});
+
+// a row of tags: three or more small pills of words that do nothing
+export const tagRow = rule('tag-row', 'badge', 'div,ul,p,span,li,footer', function (el, facts) {
+  if (el.closest(`${CONTROL}, ${CODE}, nav, [role="tablist"], [role="listbox"], form`)) return;
+  const pill = (k) => { const b = k.matches('li') && k.childElementCount === 1 ? k.firstElementChild : k; const t = trimmed(b.textContent); return t && wordsIn(t) <= 3 && t.length <= 28 && !b.matches(CONTROL) && !b.querySelector(CONTROL) && badgeShaped(b, facts); };
+  const tags = [...el.children].filter((k) => drawn(k, facts) && pill(k));
+  if (tags.length < 3 || !shown(el, facts)) return;
+  return found(this, el, { count: tags.length, text: quote(tags.map((t) => trimmed(t.textContent)).join(', '), 40) }, { value: `${tags.length} tags`, confidence: 0.8, advice: 'Delete the tags. If one fact in them matters, say it in the sentence.' });
+});
+
+// a card that talks in too many voices: six or more text styles in one box
+const surface = (s) => (rgb(s.backgroundColor)?.[3] ?? 0) > 0.05 || s.boxShadow !== 'none' || ringed(s);
+const voices = (el, facts) => {
+  const set = new Set();
+  for (const k of el.querySelectorAll('*')) {
+    if (!ownText(k) || k.closest(CODE)) continue;
+    const s = facts.style(k);
+    set.add(`${Math.round(px(s.fontSize))}|${s.fontWeight}|${s.color}|${s.fontStyle}|${s.textTransform}`);
+  }
+  if (ownText(el)) { const s = facts.style(el); set.add(`${Math.round(px(s.fontSize))}|${s.fontWeight}|${s.color}|${s.fontStyle}|${s.textTransform}`); }
+  return set.size;
+};
+export const busyCard = rule('busy-card', 'detail', 'div,section,article,li,aside,a', function (el, facts) {
+  const r = facts.rect(el);
+  if (r.width < 160 || r.width > 560 || r.height < 80 || r.height > 720 || el.closest(CODE) || !surface(facts.style(el))) return;
+  const n = voices(el, facts);
+  if (n < 6) return;
+  // said on the innermost card that is this busy
+  for (const k of el.querySelectorAll('div,section,article,li,aside,a')) if (k !== el && surface(facts.style(k)) && voices(k, facts) >= 6) return;
+  if (!shown(el, facts)) return;
+  return found(this, el, { styles: n }, { value: `${n} text styles`, confidence: 0.8, advice: 'Keep three: a title, the body, one quiet note. Cut what does not fit them.' });
+});
+
+// many shades and see-through layers of the same colours, across the page: said once, on the page's first part
+export const manyShades = rule('many-shades', 'colour', null, function (el, facts) {
+  if (el.parentElement !== document.body || [...document.body.children].find((k) => drawn(k, facts) && !k.closest('plumb-overlay')) !== el) return;
+  const hues = new Map(), alphas = new Set();
+  const add = (c, s) => {
+    const v = rgb(c);
+    if (!v || (v[3] ?? 1) < 0.03) return;
+    const o = lch(c, 0.03);
+    const bucket = o.C < 0.03 ? 'grey' : Math.round(o.h / 30) % 12;
+    if (!hues.has(bucket)) hues.set(bucket, new Set());
+    hues.get(bucket).add(`${Math.round(o.L * 25)}|${Math.round((v[3] ?? 1) * 10)}`);
+  };
+  const all = [...document.body.querySelectorAll('*')].filter((k) => !k.closest('plumb-overlay, svg, script, style')).slice(0, 4000);
+  for (const k of all) {
+    if (!drawn(k, facts)) continue;
+    const s = facts.style(k);
+    if (ownText(k)) add(s.color, s);
+    add(s.backgroundColor, s);
+    if (px(s.borderTopWidth) > 0 && s.borderTopStyle !== 'none') add(s.borderTopColor, s);
+    const o = parseFloat(s.opacity);
+    if (o > 0 && o < 1 && (ownText(k) || (rgb(s.backgroundColor)?.[3] ?? 0) > 0.05)) alphas.add(Math.round(o * 100));
+  }
+  let worst = null;
+  for (const [bucket, set] of hues) if (!worst || set.size > worst.n) worst = { bucket, n: set.size };
+  if ((!worst || worst.n < 7) && alphas.size < 4) return;
+  const grey = worst?.bucket === 'grey';
+  return found(this, el, { shades: worst?.n ?? 0, grey, opacities: alphas.size }, { value: `${worst?.n ?? 0} shades of one colour, ${alphas.size} opacities`, confidence: 0.8, advice: 'Pick three steps of each colour, text, quiet text and a line, and use only those.' });
+});
+
 export const TELLS_RULES = [eyebrow, numbering, statusChain, flavourBadge, statusDot, emoji, iconTile, chartTypeTitle, readingInstructions, narrating, subtitleEcho, emDash, stockWords,
-  hueGradient, glow, transitionAll, hoverGrow, heavyWeight];
+  hueGradient, glow, transitionAll, hoverGrow, heavyWeight,
+  capsSubtitle, italicWords, displaySerif, negativeTracking, divider, borderedBox, detailedDiagram, codeBreadcrumb, tagRow, busyCard, manyShades];

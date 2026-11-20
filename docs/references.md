@@ -338,3 +338,12 @@ All free under the Unsplash License, hotlinked from images.unsplash.com as Unspl
   individually but again the taste lies where you put it with what motion and all".
 - **What it changed:** the recommendations get effects as primitives with a meaning each (a material, an edge, a
   response, a hand-off, a wait), composed by rules of where they belong: [docs/briefs/effect-primitives.md](briefs/effect-primitives.md).
+
+## 2026-11-20 · Design slop indicators (shared by the owner)
+- **What:** the owner's own list of marks on generated pages: tags, italicized words, Instrument Serif and negative
+  kerning, over-the-top detailed UI, dividers, many colour shades and opacities, containers with borders, diagrams
+  (the more detailed, the worse), code breadcrumbs, section numbering, all caps on subtitles, eyebrows.
+- **Why:** "this a list of ai slop item i found"; then "see if we have them anywhere or we can put them in anti ai slop".
+- **What it changed:** three were already checked (eyebrows, section numbering, flavour badges); eleven new
+  Anti-slop checks cover the rest, with this list as their source. Used in
+  [entry 56](journey.md#56-the-owners-slop-list-becomes-eleven-anti-slop-checks-2026-11-20).

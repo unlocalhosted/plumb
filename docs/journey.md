@@ -3550,6 +3550,35 @@ uses the 500 ms number on its own; it belongs to the session working on the judg
 **The fix and the proof.** All 15 design-system checks and all 62 Craft checks play. Each was looked at in the browser, broken and then fixed. Six were redrawn after that look because the fix didn't read at card size: layer order, timing, a badge, an undefined variable, Tailwind's grey and proportional figures.
 **Media hooks.** The Craft page at /docs/checks-craft: flip any card. A before/after: the old drawer next to the still grid.
 
+### 56. The owner's slop list becomes eleven Anti-slop checks (2026-11-20)
+**The itch.** The owner listed the marks they keep finding on generated pages: "tags, italicized words, instrument
+serif, negative kerning, over the top detailed UI, dividers, multiple color shades and opacities, containers with
+borders, diagrams. the more detailed, the worse, code breadcrumbs, section numbering, all caps on subtitles, eyebrows".
+They asked whether plumber already finds them and, if not, to add them to Anti-slop.
+
+**How we found the gap.** We read the Anti-slop checks against the list. Three were already there: the label over a
+heading (eyebrows), numbers on parts with no order (section numbering), and a "New" or "Beta" badge (one kind of tag).
+Capitals were caught only above a heading, not under it. The other eight had no check at all.
+
+**The system behind it.** Anti-slop took its marks from one outside list (unslop-ui). The owner's own eye was never
+a source, so the marks they see most had no way in.
+
+**What we chose.** Eleven new checks, each read off the drawn page, with the owner's list as their source:
+capitals under a heading, italic accent words, Instrument Serif, letters spaced tighter than normal, divider lines
+(a rule line, or a border under each row), boxes outlined on every side, drawings of 24 or more parts, a file path
+set in a code face as decoration, a row of three or more tags, a box with six or more text styles, and a page with
+seven or more shades of one colour or four or more opacities. All are advisory except capitals under a heading,
+since the page alone can't tell when a border or a tight heading was meant. Each one plays its fix on the
+Anti-slop page, like the others.
+
+**The proof.** On a test section with one of each mark, each of the eleven checks fired once on its mark. On the
+messy ledger example they found the 11 outlined KPI boxes and nothing else, in 13 ms. On plumber's own homepage they
+found 28 headings with tightened letters, 16 shades of grey, 3 lists split by lines and 2 outlined boxes: by the
+owner's list, our own site carries these marks.
+
+**Media hooks.** The Anti-slop page's new cards (each flips from broken to fixed); a before/after of the homepage
+headings at normal spacing.
+
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
 - Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".
@@ -5162,6 +5191,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   `generator/shots/generate-craftingattention.png` (local).
 
 ## Open gaps
+- **The owner's slop checks are untuned on real apps.** Tight letters fire on every heading that sets them (28 on our homepage), the shade count reads greys mixed by opacity as separate shades, and none of the eleven has been run through a full plumber read or the docs' recordings yet ([entry](#56-the-owners-slop-list-becomes-eleven-anti-slop-checks-2026-11-20)).
 - **The mark was never tried among real neighbours** (a row of browser tabs, an npm page, a README header), only on empty tiles. Nobody outside has been asked whether the round leg reads as an R or leans towards a B.
 - Resizing: a size between your steps always lands on the nearest one; there is no way yet to keep an exact size as
   a new token through the naming flow. The site's homepage is plain CSS, so its cards can't take a size class.
@@ -5209,6 +5239,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- Anti-slop finds the owner's own list of generated-page marks: capitals under a heading, italic accent words, Instrument Serif, squeezed letters, divider lines, outlined boxes, busy diagrams, file paths as decoration, rows of tags, boxes with too many text styles, and too many shades of one colour; each plays its fix ([entry](#56-the-owners-slop-list-becomes-eleven-anti-slop-checks-2026-11-20)).
 - The Anti-slop and Words pages play every check too: the mark or the words are boxed where they sit, then fold away, change in place or settle (a label over a heading, numbers with no order, a stock phrase, a path cut at the wrong end) ([entry](#55-every-check-plays-its-fix-on-a-card-that-stays-still-2026-11-20)).
 - The buy-button recommendations gain a dark-page section: a beam while checkout opens and lifetime in metal, live in crafting attention's dark skin; the pour now stays readable in dark mode ([entry](#49-metal-and-the-beam-find-their-surface-crafting-attentions-dark-page-2026-11-20)).
 - Every design-system and Craft check in the docs plays its fix on its own card: flip Broken / Fixed and the change moves the way How a change moves does, and nothing else on the page moves ([entry](#55-every-check-plays-its-fix-on-a-card-that-stays-still-2026-11-20)).

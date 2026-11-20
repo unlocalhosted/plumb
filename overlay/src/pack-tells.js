@@ -18,6 +18,8 @@
 const U = (n, name) => ({ id: `unslop-ui-u${n}`, name: `unslop-ui U${n} ${name}` });
 const UNSLOP = (n, name) => ({ id: `pstack-unslop-${n}`, name: `pstack unslop ${n} ${name}` });
 const ADVISORY = { tier: 'advisory' };
+// the owner's list of slop marks (2026-11-20, docs/references.md)
+const OWN = (name) => ({ id: `owner-slop-${name.toLowerCase().replace(/[^a-z]+/g, '-')}`, name: `Owner's slop list: ${name}` });
 
 // rule short name → [the rule it comes from, its spec entry, its words]
 const TABLE = {
@@ -39,13 +41,24 @@ const TABLE = {
   'transition-all': [U(20, 'Decorative motion'), ADVISORY, () => ({ label: 'Animates everything', line: 'Every property here animates when it changes.', reason: 'Size and layout changes slide when they should snap, and the browser does extra work. Name the properties that should move.' })],
   'hover-grow': [U(20, 'Decorative motion'), ADVISORY, ({ scale }) => ({ label: 'Card grows on hover', line: `This grows to ${scale}× when the pointer is over it.`, reason: 'A card that jumps at the pointer feels busy. A colour or shadow change is enough to say it can be clicked.' })],
   'heavy-weight': [U(19, 'Extra-heavy weights'), ADVISORY, ({ weight }) => ({ label: 'Extra-heavy weight', line: `Set at weight ${weight}.`, reason: 'Size and colour carry the order better. Weights of 800 and 900 shout.' })],
+  'caps-subtitle': [OWN('All caps on subtitles'), {}, ({ text }) => ({ label: 'Subtitle in capitals', line: `"${text}" is set in capitals under the heading.`, reason: 'Capitals make the second line louder than the first. The heading should lead.' })],
+  'italic-words': [OWN('Italicized words'), ADVISORY, ({ text, big }) => ({ label: big ? 'Italic accent in a heading' : 'Italic accent', line: `"${text}" is set in italics.`, reason: 'Slanting a word for flavour is a template habit. The words should carry the weight on their own.' })],
+  'display-serif': [OWN('Instrument Serif'), ADVISORY, () => ({ label: 'Borrowed display serif', line: 'This is set in Instrument Serif.', reason: 'It is the face generated pages pick for a quick dose of taste, so it reads as a template.' })],
+  'negative-tracking': [OWN('Negative kerning'), ADVISORY, ({ em }) => ({ label: 'Letters squeezed', line: `The letters are pulled ${Math.abs(em)}em closer together.`, reason: 'Squeezed headings are a template look. The type was spaced by the people who drew it.' })],
+  divider: [OWN('Dividers'), ADVISORY, ({ count }) => ({ label: count > 1 ? 'Lines between rows' : 'Divider line', line: count > 1 ? `${count} rows are split by lines.` : 'A line splits these parts.', reason: 'Lines cut the page into strips. Space does the same job and keeps it calm.' })],
+  'bordered-box': [OWN('Containers with borders'), ADVISORY, () => ({ label: 'Outlined box', line: 'A border runs round this box.', reason: 'Boxes inside boxes make every part shout "card". A quiet fill or space groups it.' })],
+  'detailed-diagram': [OWN('Diagrams'), ADVISORY, ({ parts }) => ({ label: 'Busy diagram', line: `This drawing has ${parts} parts.`, reason: 'The more a diagram draws, the less anyone reads it. One idea needs few marks.' })],
+  'code-breadcrumb': [OWN('Code breadcrumbs'), ADVISORY, ({ text }) => ({ label: 'Path as decoration', line: `"${text}" is set like code.`, reason: 'A file path on a page dresses it up as a terminal. People need the name of the thing, not where it lives.' })],
+  'tag-row': [OWN('Tags'), ADVISORY, ({ count, text }) => ({ label: 'Row of tags', line: `${count} tags: ${text}.`, reason: 'Tags that do nothing when pressed are labels pretending to be data.' })],
+  'busy-card': [OWN('Over-the-top detailed UI'), ADVISORY, ({ styles }) => ({ label: 'Too many voices', line: `This box uses ${styles} text styles.`, reason: 'Each style is another voice. Past three, nothing leads and the box reads as noise.' })],
+  'many-shades': [OWN('Multiple colour shades and opacities'), ADVISORY, ({ shades, grey, opacities }) => ({ label: 'Too many shades', line: shades >= 7 ? `The page uses ${shades} shades of one ${grey ? 'grey' : 'colour'}${opacities >= 4 ? ` and ${opacities} opacities` : ''}.` : `The page fades things to ${opacities} different opacities.`, reason: 'Each near-same shade asks people to tell it apart. A few steps, used the same way everywhere, read as a system.' })],
 };
 
 export const TELLS = {
   id: 'tells',
   title: 'Tells',
   ground: 'unslop-ui (MIT): the marks of a generated screen that the drawn page shows',
-  source: { package: 'unslop-ui', version: 'main 2026-11-19', guide: 'U1–U4, U6, U9–U13, U17, U19, U20; pstack unslop 7, 13' },
+  source: { package: 'unslop-ui', version: 'main 2026-11-19', guide: 'U1–U4, U6, U9–U13, U17, U19, U20; pstack unslop 7, 13; the owner\'s slop list (2026-11-20)' },
   runs: 'page',
   guides: Object.fromEntries(Object.entries(TABLE).map(([short, [law]]) => [short, law.id])),
   spec: { access: Object.fromEntries(Object.entries(TABLE).map(([short, [, entry]]) => [short, entry])) },

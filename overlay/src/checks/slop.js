@@ -116,4 +116,112 @@ export const SLOP = {
         track: () => { const b = box(x, s); at(sq, `left:${b.l - 6}px;top:${b.t - 4}px;width:${b.w + 12}px;height:${b.h + 8}px;border-style:dashed`); at(pill, `left:${b.l + b.w / 2}px;top:${b.b + 24}px`); } };
     },
   },
+  'tells/caps-subtitle': {
+    code: ['<p class="uppercase tracking-wide">EVERYTHING YOU NEED</p>', '<p>Everything you need</p>'],
+    note: ['The line under the heading shouts louder than the heading.', 'In normal case the heading leads again.'],
+    scene: (s) => {
+      scene(s, card(`<h3 style="margin:0 0 4px;font:700 18px system-ui;color:#111827">Pricing</h3><p class="x" style="margin:0;font:600 11px/1.4 system-ui;color:#6b7280">${phrase('<span style="letter-spacing:.12em">SIMPLE PLANS FOR EVERY TEAM</span>', 'Simple plans for every team')}</p>`, 230));
+      const x = s.querySelector('.x .ph'), set = wirePhrase(x);
+      return { ...marked(s, [x], ['capitals', 'normal case']), at: set };
+    },
+  },
+  'tells/italic-words': {
+    code: ['Ship <em>faster</em> than ever', 'Ship faster than ever'],
+    note: ['One word slanted for flavour: the template accent.', 'Upright, the sentence carries itself.'],
+    scene: (s) => {
+      scene(s, '<h3 style="margin:0;font:700 26px/1.2 system-ui;color:#111827">Ship <span class="x" style="display:inline-block;font-style:italic;font-weight:500;transition:none">faster</span> than ever</h3>');
+      const x = s.querySelector('.x');
+      return { ...marked(s, [x], ['italic accent', 'upright']), at: (p) => { x.style.fontStyle = p ? 'normal' : 'italic'; x.style.fontWeight = p ? 700 : 500; } };
+    },
+  },
+  'tells/display-serif': {
+    code: ['font-family: "Instrument Serif"', 'font-family: var(--font-sans)'],
+    note: ['The serif every generated landing page borrows.', 'The page’s own face, bigger and bolder.'],
+    scene: (s) => {
+      scene(s, '<h3 class="x" style="margin:0;font:400 30px/1.15 \'Instrument Serif\', Georgia, serif;color:#111827">Notes that think with you</h3>');
+      const x = s.querySelector('.x');
+      return { ...marked(s, [x], ['Instrument Serif', 'your face']), at: (p) => { x.style.font = p ? '700 26px/1.15 system-ui' : "400 30px/1.15 'Instrument Serif', Georgia, serif"; } };
+    },
+  },
+  'tells/negative-tracking': {
+    code: ['tracking-tighter (-0.05em)', 'tracking-normal'],
+    note: ['Letters pulled into each other: the squeezed-headline look.', 'The spacing the type was drawn with.'],
+    scene: (s) => {
+      scene(s, '<h3 class="x" style="margin:0;font:700 30px/1.1 system-ui;letter-spacing:-0.06em;color:#111827">Build the future</h3>');
+      const x = s.querySelector('.x'), [sq, pill] = [make(s, 'sq'), make(s, 'pill')];
+      return { from: -0.06, to: 0, step: 0.01, unit: 'em', name: 'normal', guides: [{ el: sq, kind: 'beam' }, { el: pill, kind: 'pill' }],
+        at: (p) => { x.style.letterSpacing = `${-0.06 * (1 - p)}em`; },
+        track: () => { const b = box(x, s); at(sq, `left:${b.l - 6}px;top:${b.t - 4}px;width:${b.w + 12}px;height:${b.h + 8}px;border-style:dashed`); at(pill, `left:${b.l + b.w / 2}px;top:${b.b + 24}px`); } };
+    },
+  },
+  'tells/divider': {
+    code: ['<li class="border-b">', '<li> with gap-3'],
+    note: ['A line under every row cuts the list into strips.', 'Space alone tells the rows apart.'],
+    scene: (s) => {
+      scene(s, card(['Invoices', 'Payment method', 'Tax details'].map((w) => `<div class="r" style="padding:7px 0;border-bottom:1px solid #e5e7eb;font:500 13px system-ui;color:#111827">${w}</div>`).join(''), 200));
+      const rows = [...s.querySelectorAll('.r')];
+      return { ...marked(s, [rows[0].parentElement], ['lines between rows', 'space']), at: (p) => rows.forEach((r) => { r.style.borderBottomColor = p ? 'transparent' : '#e5e7eb'; r.style.padding = p ? '9px 0' : '7px 0'; }) };
+    },
+  },
+  'tells/bordered-box': {
+    code: ['border border-gray-200 rounded-xl', 'bg-gray-50 rounded-xl'],
+    note: ['A border round every box makes each part say “card”.', 'A quiet fill holds it together without a line.'],
+    scene: (s) => {
+      scene(s, '<div class="x" style="width:200px;padding:14px;border-radius:12px;background:#fff;border:1px solid #d1d5db;font:400 12.5px/1.45 system-ui;color:#4b5563"><b style="display:block;margin-bottom:4px;font:700 14px system-ui;color:#111827">Team plan</b>Up to ten people, one bill.</div>');
+      const x = s.querySelector('.x');
+      return { ...marked(s, [x], ['outlined', 'quiet fill'], { round: 14 }), at: (p) => { x.style.borderColor = p ? 'transparent' : '#d1d5db'; x.style.background = p ? '#f3f4f6' : '#fff'; } };
+    },
+  },
+  'tells/detailed-diagram': {
+    code: ['<svg> with 40 parts', 'one line and a label'],
+    note: ['Forty marks to say one thing: nobody reads it.', 'The one idea, drawn with a few marks.'],
+    scene: (s) => {
+      const bits = Array.from({ length: 28 }, (_, i) => `<circle class="bit" cx="${20 + (i % 7) * 26}" cy="${18 + Math.floor(i / 7) * 22}" r="${3 + (i % 3)}" fill="${['#6366f1', '#ec4899', '#10b981', '#f59e0b'][i % 4]}"/>`).join('');
+      scene(s, `<svg class="x" viewBox="0 0 200 110" width="200" height="110">${bits}<path class="bit" d="M20 18 L176 84 M46 40 L150 18 M72 84 L124 40" stroke="#9ca3af" fill="none"/><path class="keep" d="M20 90 C70 90 110 30 180 24" stroke="#111827" stroke-width="3" fill="none" opacity="0"/></svg>`);
+      const x = s.querySelector('.x'), bitsEls = [...s.querySelectorAll('.bit')], keep = s.querySelector('.keep');
+      return { ...marked(s, [x], ['40 parts', 'one line']), at: (p) => { bitsEls.forEach((b) => { b.style.opacity = 1 - p; }); keep.style.opacity = p; } };
+    },
+  },
+  'tells/code-breadcrumb': {
+    code: ['<code>~/app/billing/page.tsx</code>', '(no path)'],
+    note: ['A file path dresses the page up as a terminal.', 'The heading names the part; no path needed.'],
+    scene: (s) => {
+      scene(s, card('<p class="x" style="margin:0 0 6px;font:500 11px/1.4 ui-monospace,Menlo,monospace;color:#6b7280">~/app/billing/page.tsx</p><h3 style="margin:0 0 4px;font:700 18px system-ui;color:#111827">Billing</h3>Your plan and invoices.', 220));
+      const x = s.querySelector('.x'), go = fold(x);
+      return { ...marked(s, [x], ['path as decoration', 'cut']), at: go };
+    },
+  },
+  'tells/tag-row': {
+    code: ['<Tag>Fast</Tag><Tag>Secure</Tag><Tag>Scalable</Tag>', '(no tags)'],
+    note: ['Three pills that do nothing: labels dressed as data.', 'The sentence says what matters.'],
+    scene: (s) => {
+      scene(s, card(`<b style="display:block;margin-bottom:4px;font:700 14px system-ui;color:#111827">Storage</b>Files sync in under a second.<div class="x" style="display:flex;gap:6px;margin-top:8px">${['Fast', 'Secure', 'Scalable'].map((t) => `<span style="padding:2px 8px;border-radius:99px;background:#eef2ff;color:#3730a3;font:600 11px system-ui">${t}</span>`).join('')}</div>`, 220));
+      const x = s.querySelector('.x'), go = fold(x);
+      return { ...marked(s, [x], ['tags', 'cut'], { round: 99 }), at: (p) => { go(p); x.style.marginTop = p ? '0px' : '8px'; } };
+    },
+  },
+  'tells/busy-card': {
+    code: ['7 text styles in one card', 'title, body, one note'],
+    note: ['Seven voices in one box: nothing leads.', 'Three styles; the title leads.'],
+    scene: (s) => {
+      const busy = [['10px', 700, '#6366f1', 'uppercase', '.1em'], ['17px', 800, '#111827', 'none', '0'], ['12px', 500, '#9ca3af', 'none', '0'], ['13px', 400, '#374151', 'none', '0'], ['11px', 600, '#059669', 'none', '0'], ['12px', 400, '#6b7280', 'none', '0'], ['11px', 700, '#dc2626', 'uppercase', '.05em']];
+      const calm = [['10px', 400, '#6b7280', 'none', '0'], ['17px', 700, '#111827', 'none', '0'], ['12px', 400, '#6b7280', 'none', '0'], ['13px', 400, '#374151', 'none', '0'], ['12px', 400, '#6b7280', 'none', '0'], ['12px', 400, '#6b7280', 'none', '0'], ['12px', 400, '#6b7280', 'none', '0']];
+      const words = ['Monthly', 'Pro plan', 'Billed yearly', 'Everything in Free, plus history.', '+12% this month', 'Renews 3 March', 'Save 20%'];
+      scene(s, `<div class="x" style="width:210px;padding:14px;border-radius:12px;background:#fff;box-shadow:0 1px 3px rgb(0 0 0 / .12)">${words.map((w) => `<div class="v" style="margin:1px 0;font-family:system-ui">${w}</div>`).join('')}</div>`);
+      const x = s.querySelector('.x'), vs = [...s.querySelectorAll('.v')];
+      const set = (list) => vs.forEach((v, i) => { const [size, weight, color, tt, ls] = list[i]; Object.assign(v.style, { fontSize: size, fontWeight: weight, color, textTransform: tt, letterSpacing: ls }); });
+      set(busy);
+      return { ...marked(s, [x], ['7 voices', '3 voices'], { round: 14 }), at: (p) => set(p ? calm : busy) };
+    },
+  },
+  'tells/many-shades': {
+    code: ['violet-50 … violet-900, /10 /20 /40 /60', 'three steps: ink, quiet, line'],
+    note: ['Nine near-same violets and four opacities: no one can tell which means what.', 'Three steps, each with one job.'],
+    scene: (s) => {
+      const many = ['#f5f3ff', '#ede9fe', '#ddd6fe', '#c4b5fd', '#a78bfa', '#8b5cf6', '#7c3aed', '#6d28d9', '#5b21b6'], few = ['#ede9fe', '#ede9fe', '#ede9fe', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#4c1d95', '#4c1d95', '#4c1d95'];
+      scene(s, `<div class="x" style="display:flex;gap:4px">${many.map((c) => `<i class="sw" style="display:block;width:20px;height:44px;border-radius:6px;background:${c}"></i>`).join('')}</div>`);
+      const x = s.querySelector('.x'), sw = [...s.querySelectorAll('.sw')];
+      return { ...marked(s, [x], ['9 shades', '3 steps'], { round: 8 }), at: (p) => sw.forEach((e, i) => { e.style.background = p ? few[i] : many[i]; }) };
+    },
+  },
 };
