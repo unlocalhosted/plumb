@@ -1167,7 +1167,8 @@ class PlumbOverlay extends HTMLElement {
     if (this.#ours(event)) return;
     const under = reachable(document.elementFromPoint(event.clientX, event.clientY));
     // Walking the tree (two-finger scroll) holds its level while the pointer stays on the element it started from.
-    if (this.#walk && under === this.#walk.chain[0]) return;
+    this.#pt = { x: event.clientX, y: event.clientY };
+    if (this.#walk && (under === this.#walk.anchor || this.#walk.chain.includes(under))) return;
     this.#walk = null; this.removeAttribute('data-walking'); // the hand moved on: the X-ray takes the pointer back
     this.#walkBox(null);
     this.#hoverOn(under);
@@ -1197,7 +1198,8 @@ class PlumbOverlay extends HTMLElement {
    * The page doesn't scroll meanwhile. Scroll adds up and moves one level per STEP of travel, so one swipe of a
    * trackpad doesn't fly ten levels; a pause resets the travel. The tag shows the path while walked. A click pins
    * the walked level. */
-  #walk = null; // { chain: [element under the pointer, parent, …], at, travel, last }
+  #walk = null; // { chain: [element under the pointer, parent, …], at, travel, last, anchor }
+  #pt = null; // where the pointer is, for the child a walk goes into
   #onWheel = event => {
     if (!this.#armed || this.#ours(event) || event.ctrlKey) return; // ctrl+wheel is the page's pinch zoom
     const base = this.#walk?.chain[0] ?? this.#hover?.element;
@@ -1206,23 +1208,35 @@ class PlumbOverlay extends HTMLElement {
     if (!this.#walk) {
       const chain = [];
       for (let el = base; el && el !== document.body && el !== document.documentElement; el = el.parentElement) chain.push(el);
-      this.#walk = { chain, at: 0, travel: 0, last: 0 };
+      // anchor: the element under the pointer when the walk began; the walk lasts while the pointer stays on it
+      this.#walk = { chain, at: 0, travel: 0, last: 0, anchor: base };
+      // the walk is the job from its first stroke: the X-ray's card and drawing step aside at once, not a level later
+      this.toggleAttribute('data-walking', true); this.#xray?.hide(); this.#walkBox(base);
     }
     const w = this.#walk, now = performance.now();
     if (now - w.last > WALK.pause) w.travel = 0;
     w.last = now;
     // a mouse wheel reports lines or pages; a trackpad reports pixels
     const dy = event.deltaMode === 1 ? event.deltaY * 16 : event.deltaMode === 2 ? event.deltaY * innerHeight : event.deltaY;
+    if (Math.sign(dy) !== Math.sign(w.travel)) w.travel = 0; // turning round starts fresh: what was left going one way doesn't hold back the other
     w.travel += dy;
     let moved = false;
     while (Math.abs(w.travel) >= WALK.step) {
       const up = w.travel > 0, next = w.at + (up ? 1 : -1); // fingers up on a trackpad (natural scrolling) = parent
       w.travel -= Math.sign(w.travel) * WALK.step;
-      if (next < 0 || next >= w.chain.length) { w.travel = 0; break; }
+      if (next >= w.chain.length) { w.travel = 0; break; }
+      // in, past where the walk began (owner, 2026-11-20: "you can jump out but you can't go in"): into the child under
+      // the pointer, else the first one, one level at a time, until there is nothing inside
+      if (next < 0) {
+        const at = w.chain[0], p = this.#pt, kids = [...at.children].filter((k) => k.getClientRects().length);
+        const kid = (p && kids.find((k) => { const r = k.getBoundingClientRect(); return p.x >= r.left && p.x <= r.right && p.y >= r.top && p.y <= r.bottom; })) ?? kids[0];
+        if (!kid) { w.travel = 0; break; }
+        w.chain.unshift(kid); w.at = 0; moved = true; continue;
+      }
       w.at = next; moved = true;
     }
-    // walking: the X-ray's card and drawing step aside (they jumped from level to level); the corners and the path lead
-    if (moved) { this.#hover?.controller.abort(); this.#hover = null; this.toggleAttribute('data-walking', w.at > 0); if (w.at > 0) this.#xray?.hide(); this.#hoverOn(w.chain[w.at]); this.#walkBox(w.at > 0 ? w.chain[w.at] : null); }
+    // walking: the X-ray's card and drawing stay aside; the outline, the corners and the path lead
+    if (moved) { this.#hover?.controller.abort(); this.#hover = null; this.#xray?.hide(); this.#hoverOn(w.chain[w.at]); this.#walkBox(w.chain[w.at]); }
   };
 
   // where the walk is: a soft outline round the level in hand, gliding to the next on the overlay's spring (owner,
@@ -1237,7 +1251,7 @@ class PlumbOverlay extends HTMLElement {
   }
   #crumbs() {
     const w = this.#walk;
-    if (!w || w.at === 0) return '';
+    if (!w || w.chain.length < 2) return ''; // the path shows at every level of a walk, the one it began on and below it too
     const tag = el => el.localName + (el.id ? `#${el.id}` : '');
     // two levels above the current one, the current one, and one back toward the element under the pointer
     const from = Math.min(w.chain.length - 1, w.at + 2), to = Math.max(0, w.at - 1), parts = [];
