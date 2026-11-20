@@ -22,6 +22,18 @@ import { atomicWrite } from '../atomic-write.js';
 import { pageShell } from '../project-page/shell.js';
 import { readDiscovery } from './discovery.js';
 import type { ServeInfo } from './discovery.js';
+// What /__plumb/system says to a browser: what this address is, and how the page it feeds is opened.
+const SYSTEM_PAGE = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>React Plumber · your design system</title>
+<style>:root{color-scheme:light dark}body{margin:0;font:16px/1.55 system-ui,sans-serif;background:Canvas;color:CanvasText}
+main{max-width:34rem;margin:12vh auto;padding:0 20px}h1{font-size:1.5rem;line-height:1.25;margin:0 0 .75rem}
+p{margin:.5rem 0}code{font:.95em ui-monospace,monospace;padding:.15em .4em;border-radius:6px;background:color-mix(in srgb,CanvasText 8%,Canvas)}</style></head>
+<body><main><h1>This is React Plumber's reading of your design system.</h1>
+<p>It is the data behind the project page, which shows your spacing, colours, text and corners and helps you set your rules.</p>
+<p>That page is still being finished. To open it now, run this in your app's folder:</p>
+<p><code>PLUMBER_ONBOARDING=1 npx plumber</code></p>
+<p>To read the same findings in your terminal, run <code>npx plumber check</code>.</p></main></body></html>`;
+
 export type { ServeInfo } from './discovery.js';
 export interface HandlerOptions {
   readiness?: Runtime;
@@ -328,12 +340,19 @@ function createRoute(session: Session | Promise<Session>, options: HandlerOption
   return async (request: TransportRequest): Promise<TransportResponse | undefined> => {
     const url = request.url;
     if (!url.pathname.startsWith(prefix)) return;
+
     const headers: Record<string, string> = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'Cross-Origin-Resource-Policy': 'same-origin' };
     const respond = (status: number, value: unknown): TransportResponse => ({ status, headers, body: JSON.stringify(value) });
     const refuse = (status: number, error: string, code: ErrorCode) => respond(status, { error, code });
     // GET system is the project page's data; the POST of that name is the engine's proposal (methods.ts)
     const named = url.pathname.slice(prefix.length);
     const method = named === 'system' && request.method === 'GET' ? 'system-page' : named;
+    // a person who opens this address in a browser gets a short page saying what it is, not a wall of JSON; the project
+    // page and scripts ask for JSON and get it (owner, 2026-11-20, U38)
+    const accept = request.header('accept') ?? '';
+    if (method === 'system-page' && /text\/html/.test(accept) && !/application\/json/.test(accept)) {
+      return { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' }, body: SYSTEM_PAGE };
+    }
     const client = options.client === true && isOverlayModule(method);
     if (client) headers['Cross-Origin-Embedder-Policy'] = 'require-corp';
     const expected = verbOf(method);
