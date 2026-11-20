@@ -3092,6 +3092,42 @@ field is empty). The table of five writes, before and after. The Next table: eig
   the stateful button). Only the six commit forms are recorded, on one product. The feel scores are one rater's.
   Extraction from the wider registries hasn't started.
 
+### 43. Plumber becomes the judge, and learns that words follow their ground (2026-11-20)
+
+- **The itch:** the owner, on the atom quality bar: "you dont understand the relationship b/w color and text for
+  example in slide to buy the text remain black when the thing become dark blue, also the final outcome can also
+  utilise plumber itself to do some sort of judgement rather than like dumb way to judge".
+- **The system behind it:**
+  - The quality bar was a home-made checker beside plumber. It read one average colour per word, so a fill passing
+    under part of the words never registered.
+  - Plumber had the same blindness. Its contrast rule finds the ground by walking up a text's own parents, so a
+    sibling layer like a slide's trail or a hold's fill is invisible to it.
+  - Plumber's engine also skips anything moving, which is right for a live page and wrong for judging a gesture held
+    halfway.
+- **What we chose (confirmed by the owner):** plumber is the one judge, and it learns a new rule.
+  - `craft/words-on-layers` reads what is painted at each 4px strip of the words: the visible layers (clip and
+    transform taken into account) below them or covering them. It fails a run at least 8px wide under contrast's floor.
+  - A layer that carries the same words passes: that's the second-copy technique, where the words are redrawn in the
+    layer's own ink and clipped by it.
+  - Words clipped out of sight are left alone.
+  - The engine gains a `now` mode that judges what is drawn this moment.
+  - Stage 3's recorder runs plumber at rest, pointed at, mid-gesture and done.
+- **Dead ends along the way:**
+  - The rule first read `facts.items`, which only the headless runner fills.
+  - It skipped aria-hidden words, but beUI hides its visible label from screen readers, and sighted people still read
+    it.
+  - It called `.trim()` on `facts.text(el)`, which is a yes or no rather than the words. Plumber swallowed the error.
+- **The proof** (`node generator/data/judge-probe.mjs <form>` on crafting attention's atoms page, held mid-gesture):
+  - beUI's slide fails: "Where the fill passes under these words (57% of them), they read at Lc 13; they need 60.
+    They fade to 25% on the rest too, so for a moment nothing reads."
+  - Arc's hold-to-confirm passes: its words flip at the fill's edge.
+  - In the sandbox, glint's slide fails when done (its confirmed label is Lc 49 on the fill).
+- **Also found:** stage 3's first run rendered only 70 of 304 parts. 168 were lost to the sandbox's dev server, which
+  discovered packages one part at a time and reloaded pages mid-test. Packages are now bundled at startup, and the rerun
+  is on vm-agent.
+- **Still open:** the bar's other checks (progress shows, fits where the original sat, keeps its weight) aren't
+  plumber rules yet.
+
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
 - Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".
