@@ -2893,6 +2893,26 @@ field is empty). The table of five writes, before and after. The Next table: eig
   settled); counts that change with no edit (U18) are still not traced.
 - **Media hooks:** the bar before (197, `docs/qa/shots/2026-11-20/u03-concern-list.jpg`) and now (80); the roll as a
   fix lands.
+
+### The owner's seven calls, built (2026-11-20)
+
+- **The itch:** seven issues from the walk waited on a choice. The owner took the recommended pick on all of them
+  ("Yes, take them").
+- **What was built:**
+  1. The count is in fixes (built earlier the same day, e3a74f91).
+  2. The room under the page is drawn as plumber's margin: a band of butter dots where the room is, under the bar.
+  3. `--json`'s repeated fields stay until a schemaVersion 2; the docs say which names to read and that the others go.
+  4. A spacing or radius under a pixel is left alone by the design-system check, as the verdict already treats it,
+     so a hairline fix (h-[0.5px]) is no longer then called hard-coded. Checked: pt-[3px] flagged, pt-[0.5px] not.
+  5. /__plumb/system opened in a browser says what it is and how to open the project page; JSON requests are
+     unchanged.
+  6. The project page stays behind its switch, and with it off nothing in the terminal or the setup steps points at
+     it. This was already so; checked.
+  7. An explicit `--root` climbs only to a React app and says so, and refuses otherwise. "React app" is the project
+     facts' own reading of React, minus a package that lists React as a peer (a library): that is what tells the
+     plumb repository apart from an app.
+- **Left:** the homepage's first sentence, in the owner's own uncommitted edit; the `--root` error that lists 45
+  paths, as its own fix.
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
 - Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".
