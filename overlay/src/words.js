@@ -185,10 +185,11 @@ export const CRAFT = {
     line: `A solid ${color} border on a raised surface.`,
     reason: 'A see-through border blends with what’s behind it.',
   }),
-  contrast: ({ lc, size, need, large }) => ({
+  contrast: ({ lc, size, need }) => ({
     label: 'Hard to read',
     // the scale said once: a bare 45 read as "45 of what?" next to the 4.5:1 people know (U48)
-    line: `Contrast is ${lc} on the APCA scale at ${px(size)}. ${large ? 'Large' : 'Small'} text needs ${need}.`,
+    // the need is for this size, not a class of text: 16px body text called "small text" read oddly (U48)
+    line: `Contrast is ${lc} on the APCA scale at ${px(size)}. Text this size needs ${need}.`,
     reason: 'Measured with APCA, which tracks what people can actually read.',
   }),
   'disabled-contrast': ({ o, lc }) => ({
