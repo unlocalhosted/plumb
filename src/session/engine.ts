@@ -53,7 +53,7 @@ import { loadConfig } from '../config.js';
 import { readSource, stale, staleFile, withEol, withRollback, writeSource } from '../write/source-file.js';
 import type { SourceText, Written } from '../write/source-file.js';
 import { isTypeProp, proposeTypeRoles, px } from '../rules/type-roles.js';
-import { renameInText, validRenameMap } from '../rules/colour-rename.js';
+import { renameInText, renamesVariables, validRenameMap } from '../rules/colour-rename.js';
 import type { RoleOverride, TypeBundle, TypeClass, TypeMember, TypeProposal } from '../rules/type-roles.js';
 import { classEdit } from '../messages.js';
 import { useFor } from '../rules/provenance.js';
@@ -1259,9 +1259,16 @@ export class Session extends EventEmitter {
     if (invalid) throw new UsageError(invalid);
     const spec = await this.request<ProjectSpec>('spec');
     const theme = spec.tokens.file ? this.file(spec.tokens.file) : undefined;
-    const paths = [...new Set([...this.sourceFiles, ...(theme ? [theme] : [])])].filter(p => /\.(?:[cm]?[jt]sx?|css)$/.test(p)).sort();
+    const variables = renamesVariables(map);
+    const paths = [...new Set([...this.sourceFiles, ...(theme ? [theme] : []), ...(variables ? await this.stylesheetFiles() : [])])].filter(p => /\.(?:[cm]?[jt]sx?|css|s[ac]ss)$/.test(p)).sort();
     // a new name that is already a token would merge two colours: refuse before writing anything
-    if (theme) {
+    // a whole custom property renamed onto one that is declared already would merge two tokens
+    if (variables) for (const path of paths.filter(p => /\.(?:css|s[ac]ss)$/.test(p))) {
+      const text = await readFile(path, 'utf8').catch(() => '');
+      const clash = Object.values(map).find(to => new RegExp(`(?<![\\w-])${to.replace(/-/g, '\\-')}\\s*:`).test(text) && !(to in map));
+      if (clash) throw new UsageError(`${clash} is already declared in ${relative(this.root, path)}; renaming onto it would merge two tokens.`);
+    }
+    if (theme && !variables) {
       const text = await readFile(theme, 'utf8').catch(() => '');
       const clash = Object.values(map).find(to => new RegExp(`--color-${to.replace(/-/g, '\\-')}\\s*:`).test(text) && !(to in map));
       if (clash) throw new UsageError(`--color-${clash} is already in ${spec.tokens.file}; renaming onto it would merge two colours.`);
@@ -1282,7 +1289,7 @@ export class Session extends EventEmitter {
             const current = await this.readForWrite(path);
             if (current.text !== before) throw stale();
             const committed = await this.commit(path, current, after);
-            return this.record(path, before, committed.hash, 1, `${count.uses} colour ${count.uses === 1 ? 'name' : 'names'} renamed`);
+            return this.record(path, before, committed.hash, 1, `${count.uses} ${variables ? 'token' : 'colour'} ${count.uses === 1 ? 'name' : 'names'} renamed`);
           });
           result.undo.push(written); result.labels.push(written.label);
           result.files.push({ file, ok: true, uses: count.uses });
@@ -1471,6 +1478,23 @@ export class Session extends EventEmitter {
     if (!placed) return null;
     const { system, origin } = placed;
     return { system: system.id, says: system.says, said: origin.said, file: origin.file, value: origin.value, hash: origin.hash, conditions: origin.conditions, writable: origin.writable };
+  }
+  /** Every stylesheet of the project's own (`.css`, `.scss`, `.sass`): its folders walked, never node_modules, build
+   * output or plumber's own files; at most two thousand. */
+  private async stylesheetFiles(): Promise<string[]> {
+    const out: string[] = [], skip = /^(node_modules|\.git|dist|build|out|coverage|\.next|\.nuxt|\.svelte-kit|\.turbo|\.vite|\.vite-cache|\.plumb|\.plumber)$/;
+    const walk = async (dir: string, depth: number): Promise<void> => {
+      if (depth > 8 || out.length >= 2000) return;
+      const entries = await readdir(dir, { withFileTypes: true }).catch(() => []);
+      for (const e of entries) {
+        if (e.isSymbolicLink()) continue;
+        const path = join(dir, e.name);
+        if (e.isDirectory()) { if (!skip.test(e.name)) await walk(path, depth + 1); }
+        else if (/\.(?:css|s[ac]ss)$/.test(e.name)) out.push(path);
+      }
+    };
+    await walk(this.root, 0);
+    return out;
   }
   /** The properties a style change can be about, and the declarations that carry each (src/styles/properties.ts). */
   async styleProperties(): Promise<typeof PROPERTIES> { return PROPERTIES; }

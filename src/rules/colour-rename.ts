@@ -7,11 +7,17 @@
  *                     kept, the token part renamed (`text-text-primary`, `hover:bg-background-primary-hover` …)
  *   the CSS variable  `--color-fg` (the theme's declaration, and any `var(--color-fg)`) → `--color-text-primary`
  * A name is matched whole: `line` never touches `line-strong` or `outline`, and a longer old name is tried first.
+ *
+ * Any other token is renamed by its whole custom property name (`--ink-2` → `--ink-quiet`): its declaration and every
+ * `var(--ink-2)`, in stylesheets, Sass and code alike (docs/briefs/css-parity.md: a plain-CSS project's tokens).
  */
 
 /** the utility prefixes that take a colour token */
 const PREFIX = '(?:text|bg|border(?:-[trblxyse])?|fill|stroke|ring|ring-offset|outline|divide|from|to|via|decoration|caret|placeholder|accent|shadow|inset-shadow|inset-ring)';
 const NAME = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
+const VARIABLE = /^--[a-zA-Z][\w-]*$/;
+/** A map of whole custom property names (`--ink-2`), not colour names. */
+export const renamesVariables = (map: Record<string, string>) => Object.keys(map).every(k => k.startsWith('--'));
 
 export interface RenameCount { uses: number; byName: Record<string, number> }
 
@@ -19,8 +25,10 @@ export function validRenameMap(map: unknown): string | null {
   if (!map || typeof map !== 'object' || Array.isArray(map)) return 'A rename is a map of old names to new names.';
   const entries = Object.entries(map as Record<string, unknown>);
   if (!entries.length || entries.length > 200) return 'A rename has between one and two hundred names.';
+  const variables = entries.every(([from]) => from.startsWith('--'));
+  if (!variables && entries.some(([from]) => from.startsWith('--'))) return 'Rename colour names or whole custom properties (--name), not both at once.';
   for (const [from, to] of entries) {
-    if (!NAME.test(from) || typeof to !== 'string' || !NAME.test(to)) return `${from} → ${String(to)}: names are lowercase words joined by hyphens.`;
+    if (variables ? !VARIABLE.test(from) || typeof to !== 'string' || !VARIABLE.test(to) : !NAME.test(from) || typeof to !== 'string' || !NAME.test(to)) return `${from} → ${String(to)}: ${variables ? 'a custom property is -- and a name, like --ink-quiet' : 'names are lowercase words joined by hyphens'}.`;
     if (from === to) return `${from} is renamed to itself.`;
   }
   const targets = entries.map(([, to]) => to as string);
@@ -33,6 +41,10 @@ export function renameInText(text: string, map: Record<string, string>): { text:
   const alt = olds.map(o => o.replace(/-/g, '\\-')).join('|');
   const byName: Record<string, number> = {};
   const hit = (old: string) => { byName[old] = (byName[old] ?? 0) + 1; };
+  if (renamesVariables(map)) {
+    const next = text.replace(new RegExp(`(?<![\\w-])(${alt})(?![\\w-])`, 'g'), (old: string) => { hit(old); return map[old]!; });
+    return { text: next, count: { uses: Object.values(byName).reduce((n, v) => n + v, 0), byName } };
+  }
   let next = text.replace(new RegExp(`(?<![\\w-])(${PREFIX})-(${alt})(?![\\w-])`, 'g'), (_m, pre: string, old: string) => { hit(old); return `${pre}-${map[old]}`; });
   next = next.replace(new RegExp(`--color-(${alt})(?![\\w-])`, 'g'), (_m, old: string) => { hit(old); return `--color-${map[old]}`; });
   return { text: next, count: { uses: Object.values(byName).reduce((n, v) => n + v, 0), byName } };
