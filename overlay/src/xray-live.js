@@ -194,10 +194,11 @@ export const XRAY_LIVE_CSS = `
   .xr-hand .say span[data-on] { color: var(--pl-text-primary); }
   .xr-hand .say .how { margin-left: auto; font-weight: 500; }
   /* the changes, collected at the foot of the card: how many, Sync, and the way back */
-  .xr-pend { display: flex; align-items: center; gap: 4px; white-space: nowrap; margin: 10px -2px -2px; padding: 8px 8px 8px 12px; border-radius: 12px; background: var(--pl-pink-soft); color: var(--pl-pink-ink); font: 600 12px/1 var(--pl-sans); animation: pl-pop 260ms var(--pl-spring-pop) both; }
-  .xr-pend .sp { flex: 1; }
-  .xr-pend button { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 9px; white-space: nowrap; border: 0; border-radius: 9px; font: 700 12px/1 var(--pl-sans); cursor: pointer; }
-  .xr-pend .sync { background: var(--pl-pink); color: #fff; box-shadow: 0 2px 0 color-mix(in oklab, var(--pl-pink) 60%, #000); }
+  .xr-pend { display: flex; align-items: center; gap: 4px; white-space: nowrap; margin: 10px 0 0; padding: 6px 6px 6px 12px; border-radius: 12px; background: var(--pl-pink-soft); color: var(--pl-pink-ink); font: 600 12px/1 var(--pl-sans); animation: pl-pop 260ms var(--pl-spring-pop) both; }
+  .xr-pend > span:first-child { min-width: 0; white-space: normal; line-height: 1.25; }
+  .xr-pend .sp { flex: 1; min-width: 4px; }
+  .xr-pend button { flex: none; display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 9px; white-space: nowrap; border: 0; border-radius: 9px; font: 700 12px/1 var(--pl-sans); cursor: pointer; }
+  .xr-pend .sync { background: var(--pl-pink); color: var(--pl-pink-on); box-shadow: 0 2px 0 color-mix(in oklab, var(--pl-pink) 60%, #000); }
   .xr-pend .sync[disabled] { opacity: .6; cursor: progress; }
   .xr-pend .back { background: none; color: var(--pl-pink-ink); }
   .xr-pend kbd { font: 600 11px/1 var(--pl-sans); opacity: .8; }
