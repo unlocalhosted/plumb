@@ -735,7 +735,7 @@ export const FIX = {
   // a fix in hand: what is wrong, in a few words
   what(mark) {
     if (mark.family === 'craft') return mark.what ?? 'Doesn’t follow the craft rules';
-    if (/framework/.test(mark.rule)) return 'Tailwind’s default, not yours';
+    if (/framework/.test(mark.rule)) return 'From Tailwind, not your theme';
     if (/by-value|matches/.test(mark.rule)) return 'Same value as a token, hard-coded';
     if (/tier/.test(mark.rule)) return 'A raw token where a named one fits';
     if (/dead-class/.test(mark.rule)) return 'Class does nothing';
@@ -780,7 +780,12 @@ export const FIX = {
   unreachable: 'Can’t reach this in your code, so it can’t be checked.',
   elementClear: 'Nothing to fix on this element.',
   shadowColour: 'The colour is part of this shadow. Use a shadow token for the whole value, or change the colour by hand.',
-  tailwinds: (cls, value) => `${cls} is ${value}, Tailwind’s default. ${FIX.frameworkWhy}`,
+  // a length is said in pixels, the way you see it; a colour or a font stack is not read out (oklch(55.4% …) and
+  // "ui-monospace, SFMono-Regular, …" are noise in a sentence)
+  tailwinds: (cls, value) => {
+    const m = /^(-?[\d.]+)(rem|px)$/.exec(String(value).trim()), px = m ? Math.round(parseFloat(m[1]) * (m[2] === 'rem' ? 16 : 1) * 10) / 10 : null;
+    return `${cls}${px != null ? ` (${px}px)` : ''} won’t change when your theme does. Swap it for one of your own.`;
+  },
   // why a Tailwind default is worth a note: it won't follow your theme
   frameworkWhy: 'Your theme has no token for it, so it won’t change when your theme does.',
   // buttons
