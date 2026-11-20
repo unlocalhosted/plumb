@@ -16,9 +16,10 @@ export default function Design() {
     <main className="wrap">
       <div className="page-title"><Toy name="grid" size={56} /><h1>Design</h1></div>
       <p className="lede">React Plumber’s design system, one box per part. <b>This site is drawn with it</b>: the same tokens, the same toys, the same buttons the product ships.</p>
-      {GROUPS.map(([title, parts]) => (
+      {GROUPS.map(([title, parts, says]) => (
         <section key={title}>
           <h2 className="shelf">{title}<small>{parts.filter((p) => p.ready).length} of {parts.length} drawn</small></h2>
+          {says ? <p className="level">{says}</p> : null}
           <div className="boxes">{parts.map((p) => <Box key={p.id} part={p} />)}</div>
         </section>
       ))}

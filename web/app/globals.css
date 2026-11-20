@@ -48,6 +48,8 @@ h1 { margin: 0; font: var(--pl-round-w, 600) 54px/56px var(--pl-round); letter-s
 .lede b { color: var(--pl-ink); font-weight: 800; }
 h2.shelf { display: flex; align-items: baseline; gap: 10px; margin: 52px 0 18px; font: var(--pl-round-w, 600) 28px/32px var(--pl-round); letter-spacing: -0.01em; }
 h2.shelf small { font: var(--pl-round-w, 600) 14px/1 var(--pl-round); color: var(--pl-ink-2); }
+/* what the level is (atoms, molecules…), one line under its name */
+p.level { margin: -10px 0 18px; max-width: 640px; font: 500 15px/23px var(--pl-sans); color: var(--pl-ink-2); }
 
 /* ── the shelf: each part is a box you can pick up. Drawn parts are solid in their hue, on a base; a part that isn't
    drawn yet is pale and flat, because pale is for what is not there ── */

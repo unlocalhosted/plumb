@@ -43,9 +43,19 @@ export function mount(host, root, css) {
     .switch { display: flex; gap: 8px; margin: 18px 0 0; }
     .switch .tb:not(.on) { --hue: var(--pl-bg-surface); }
     .live { margin-top: 14px; display: flex; gap: 14px; }
+    .atoms .stage { min-height: 88px; }
+    figcaption a { color: var(--pl-text-primary); text-underline-offset: 2px; }
     .live .stage { min-width: 260px; }
     @media (max-width: 860px) { .three { grid-template-columns: 1fr; } }
   </style>
+  <h2>Made of</h2>
+  <p>The price is a molecule: three atoms doing one job together. Each atom is set by a foundation, and nothing here sets a size or a colour of its own.</p>
+  <div class="row three atoms">
+    ${cell(`<span class="mol-price" data-on="paper" style="--step:40px;--unit:14px;--gap:4px;--ink:var(--pl-text-primary);--ink-2:var(--pl-text-secondary)"><span class="unit"><span class="fig"><span class="now">$25</span></span></span></span>`, 'The figure', 'A number in the toy face, heavy, with tabular digits so prices in a row line up. Its size is a step from <a href="/design/type">Type</a>.')}
+    ${cell(`<span class="mol-price" data-on="paper" style="--step:40px;--unit:16px;--gap:4px;--ink:var(--pl-text-primary);--ink-2:var(--pl-text-secondary)"><span class="per">/ month</span></span>`, 'The words', 'What the figure counts per: a period, “once”, “forever”. The reading face, at the size of supporting words, in the second ink (<a href="/design/color">Colour</a>).')}
+    ${cell(`<span class="mol-price" data-on="paper" style="--step:40px;--unit:16px;--gap:4px;--ink:var(--pl-text-primary);--ink-2:var(--pl-text-secondary)"><s class="was"><span class="sr">was </span>€149</s></span>`, 'The old price', 'A price that no longer applies, struck through in the second ink. Only ever beside a figure.')}
+  </div>
+
   <h2>Three forms</h2>
   <p>A price says what a plan costs, at the loudness the card asks for. Three ways to say it, each for a different kind of plan.</p>
   <div class="row three">${FORMS.map((f) => cell(f.form === 'quiet' ? withName(price(f.record, { form: 'quiet', rank: 3 })) : price(f.record, { form: f.form, rank: 1, lead: 'clear', density: 'balanced' }), f.name, `${f.says}<br><code>needs ${f.needs}</code>`)).join('')}</div>

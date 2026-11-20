@@ -4404,6 +4404,14 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   they go bold. Switching monthly to yearly rolls the number as one piece in the direction of travel, landing by
   260ms (checked headless at 60, 140 and 260ms, since the app's pane freezes motion when hidden). Page:
   `/design/price`. Not checked yet: the dark scheme.
+- **The design site by atomic level.** The owner: "you should put it inside like atoms, molecules and that kind of
+  way". The design index had two shelves (Foundations, Parts) and the price had been added as a third. It now reads
+  foundations, atoms (buttons, pills, inputs), molecules (price, words on hover, token pickers, messages, states),
+  organisms (fix bar, x-ray, marks, and the pricing card still to draw), templates (the pricing section still to
+  draw) and explorations, each with a line saying what the level is. The price page opens with what it is made of:
+  three atoms (the figure, the words, the old price), each set by a foundation. The index was looked at; the price
+  page's new section wasn't, because plumber's build folder, which the site loads, was being rebuilt by another
+  session at the time.
 
 ## Open gaps
 - **The mark was never tried among real neighbours** (a row of browser tabs, an npm page, a README header), only on empty tiles. Nobody outside has been asked whether the round leg reads as an R or leans towards a B.
