@@ -1,6 +1,7 @@
 /* A neutral page in shadcn's default tokens (new-york, neutral), so every part renders as its author meant it */
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "./themes.generated.css";
 @source "./parts";
 @custom-variant dark (&:is(.dark *));
 :root {

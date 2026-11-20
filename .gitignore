@@ -48,3 +48,7 @@ docs/films/*-draft/
 /generator/data/traces/
 /generator/sandbox/node_modules/
 /generator/sandbox/parts/
+/generator/sandbox/themes.generated.css
+/generator/sandbox/installed.json
+/generator/sandbox/results.jsonl
+/generator/sandbox/shots/
