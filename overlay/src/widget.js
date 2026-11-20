@@ -49,9 +49,8 @@ import { CONCERNS, concernOf } from './concerns.js';
 import { noteOfMark } from './blueprint-marks.js';
 import { PICKER_CSS } from './picker.js';
 import { TOY_DEFS } from './toys.js';
-import { elementEdit } from './inplace.js';
-import { activeVariants, swapInForce } from './variants.js';
-import { classEditsOf, classSiteOf, siteMatesOf } from './locate.js';
+import { classSiteOf, siteMatesOf } from './locate.js';
+import { route as routeStyles } from './style-systems.js';
 import { utility } from './craft-read.js';
 
 const tokensCss = await (await fetch(new URL('./tokens.css', import.meta.url))).text();
@@ -626,38 +625,21 @@ class PlumbOverlay extends HTMLElement {
       tokenOf: (f, n) => steps(f).find(([px]) => Math.abs(px - n) <= 0.5)?.[1] ?? null,
       scale: steps,
       isPage: (r) => !r.target.closest?.('plumb-overlay'),
-      // Sync: each change as the class edit that shows it, in the class showing now; located in your code; written
-      // with one Undo group per change
+      // Sync: each change written where the element's value comes from, by the style system that owns it
+      // (style-systems.js: a utility class on the element, a rule in your stylesheet, else a class added); one Undo
+      // group per change
       write: async (groups) => {
-        // the class family each property is written in (a text size is never a text colour)
-        const FAMILY = { gap: (c) => /^gap(-[xy])?-/.test(c), 'border-radius': (c) => /^rounded(-[\w[\].]+)?$/.test(c) && !/^rounded-[trblse]{1,2}(-|$)/.test(c),
-          width: (c) => /^w-/.test(c), height: (c) => /^h-/.test(c), 'font-size': (c) => /^text-(xs|sm|base|lg|\d?xl|\[[\d.]+(px|rem)\])$/.test(c), flex: (c) => /^flex-(1|none|auto|initial)$/.test(c) };
-        // one edit per element: every change to it at once (two writes to one line would trip over each other)
+        const group = () => `xray.${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+        // a write may reload the page: what it wrote is kept so the X-ray can say it when the page is back
+        const keepFor = (list) => (state) => { try { const x = JSON.parse(sessionStorage.getItem('plumb:xray') ?? 'null') ?? { results: [] }; x.at = Date.now(); x.results = [...(x.results ?? []).filter((r) => !list.some((g) => g.id === r.id)), ...list.map((g) => ({ id: g.id, name: g.name, prop: g.prop, keys: g.keys, ...state }))]; sessionStorage.setItem('plumb:xray', JSON.stringify(x)); } catch { /* storage may be off */ } };
+        // one write per element and scope, per system: two writes to one line would trip over each other
         const byPart = new Map();
         for (const g of groups) { const k = `${g.part}|${g.scope}`; (byPart.get(k) ?? byPart.set(k, []).get(k)).push(g); }
         const out = [];
         for (const list of byPart.values()) {
-          const el = list[0].els[0];
-          const fail = (why) => { for (const g of list) out.push({ id: g.id, state: 'failed', why }); };
-          if (!el) { fail("That element isn't on the page any more, so its line can't be found."); continue; }
-          try {
-            const classes = [...el.classList], active = activeVariants(el);
-            const box = list.filter((g) => /^(padding|margin)-/.test(g.prop)).map((g) => ({ prop: g.prop, to: { token: g.cls.replace(/^-?[a-z]+-/, '') } }));
-            const swaps = list.filter((g) => !/^(padding|margin)-/.test(g.prop)).map((g) => swapInForce(classes, FAMILY[g.prop] ?? (() => false), g.cls, active)).filter(Boolean);
-            const edit = elementEdit(classes, swaps, box, active);
-            if (!edit) { for (const g of list) out.push({ id: g.id, state: 'ok', where: 'already written that way' }); continue; }
-            const edits = await classEditsOf(el, edit.from, edit.to);
-            const group = `xray.${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-            const files = new Map();
-            for (const e of edits) (files.get(e.file) ?? files.set(e.file, { hash: e.hash, edits: [] }).get(e.file)).edits.push(e.edit);
-            // a write may reload the page: what it wrote is kept so the X-ray can say it when the page is back
-            const keep = (state) => { try { const x = JSON.parse(sessionStorage.getItem('plumb:xray') ?? 'null') ?? { results: [] }; x.at = Date.now(); x.results = [...(x.results ?? []).filter((r) => !list.some((g) => g.id === r.id)), ...list.map((g) => ({ id: g.id, name: g.name, prop: g.prop, keys: g.keys, ...state }))]; sessionStorage.setItem('plumb:xray', JSON.stringify(x)); } catch {} };
-            const at0 = edits[0] ? `${edits[0].file}:${edits[0].edit.line}` : '';
-            keep({ state: 'ok', cls: edit.to, where: at0, group });
-            for (const [file, f] of files) await post('swaps', { file, hash: f.hash, edits: f.edits, trace: { group, meta: { step: 'X-ray', laws: [] } } });
-            const first = edits[0], at = first ? `${first.file}:${first.edit.line}` : '';
-            for (const g of list) out.push({ id: g.id, state: 'ok', cls: edit.to, where: at, group });
-          } catch (error) { fail(error?.message ?? String(error)); }
+          for (const [system, changes] of routeStyles(list)) {
+            out.push(...await system.write(changes, { post, request, group, keep: keepFor(changes) }));
+          }
         }
         return out;
       },

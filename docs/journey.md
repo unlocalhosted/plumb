@@ -3685,6 +3685,32 @@ value that tries to leave the rule (`red; } body { … }`), and a selector the f
 
 **Media hooks.** The one-line diff of `.lead`, and the undo.
 
+### 62. Sync picks a style system for each change (2026-11-20)
+**The itch.** With plumber able to write a CSS rule ([entry 61](#61-plumber-starts-writing-plain-css-rules-2026-11-20)),
+the X-ray's Sync still only knew how to write classes. The owner: "make sure the change is run through interface so we
+can bring more css system later".
+
+**What we chose.** One interface for the ways a page writes its look. Each style system says whether it sets a
+property on an element now, and how to write a change there. Sync asks them in the page's own order: a utility class
+on the element wins, then a rule in one of your stylesheets, and adding a class is the fallback when nothing sets it.
+Utility classes moved out of the widget into this interface whole, with no special case left. CSS modules,
+styled-components or a design system's props would each be one more system on the list.
+
+**How the rule system finds its rule.** The page asks the browser which rule wins for the element and property:
+it matches every rule's selectors, weighs them, and keeps the heaviest and latest. Vite tags each stylesheet with its
+file, so the rule comes with the file it lives in. Rules from packages and rules inside `@media` are never written. When the
+rule sets the property only through a shorthand (`.title` sets `font`, not `font-size`), the change is added as the
+rule's last declaration, where it wins. The value is your token's variable when the page has one, else the value.
+
+**The proof.** On the homepage's own Vite server, the "It sees what design engineers see" heading's text size was
+traced to `.title` in `foundations/foundations.css`. Sync wrote `font-size: 44px` into that rule, the heading went from
+48px to 44px without a reload, and undo put the file back as it was. An element with `gap-4 rounded-lg text-sm` still
+routes to the class system, and an element nothing styles falls back to adding a class.
+
+**Not done.** The site at localhost:4330 is Next, which bundles its CSS and doesn't say which file a rule came from,
+and the site's project still can't reach the homepage's files. Padding written per side (`padding-x`) is not routed to
+rules yet.
+
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
 - Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".
@@ -5297,7 +5323,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   `generator/shots/generate-craftingattention.png` (local).
 
 ## Open gaps
-- **Plumber can't fix the homepage on the site yet.** It can now write a value into a plain CSS rule, but the card doesn't yet know which rule styles an element, and the site's project can't reach the homepage's files, which sit beside it ([entry](#61-plumber-starts-writing-plain-css-rules-2026-11-20)).
+- **Plumber can't fix the homepage on the site yet.** On the homepage's own Vite server, Sync now writes a change into the CSS rule that styles an element. On the site (Next, localhost:4330) it can't: Next bundles the CSS without saying which file a rule came from, and the site's project can't reach the homepage's files ([entry](#62-sync-picks-a-style-system-for-each-change-2026-11-20)).
 - **The owner's slop checks are untuned on real apps.** Tight letters fire on every heading that sets them (28 on our homepage), the shade count reads greys mixed by opacity as separate shades, and none of the eleven has been run through a full plumber read or the docs' recordings yet ([entry](#56-the-owners-slop-list-becomes-eleven-anti-slop-checks-2026-11-20)).
 - **The mark was never tried among real neighbours** (a row of browser tabs, an npm page, a README header), only on empty tiles. Nobody outside has been asked whether the round leg reads as an R or leans towards a B.
 - Resizing: a size between your steps always lands on the nearest one; there is no way yet to keep an exact size as
@@ -5346,6 +5372,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- On a Vite app with plain CSS, the X-ray's Sync writes a change into the stylesheet rule that styles the element (a shorthand gets the property added after it), with undo; every change goes through one style-system interface, so more ways of styling can be added ([entry](#62-sync-picks-a-style-system-for-each-change-2026-11-20)).
 - The States and Access pages play every check (170): what a screen reader says is drawn as a caption that changes with the fix, where Tab goes as numbered stops that move, loading as bars on a time axis, and markup with the part that matters boxed ([entry](#55-every-check-plays-its-fix-on-a-card-that-stays-still-2026-11-20)).
 - The homepage drops its five section eyebrows; each section opens on its heading ([entry](#60-eyebrows-without-capitals-2026-11-20)).
 - Anti-slop catches eyebrows that aren't in capitals: a small coloured label over a heading twice its size ([entry](#60-eyebrows-without-capitals-2026-11-20)).

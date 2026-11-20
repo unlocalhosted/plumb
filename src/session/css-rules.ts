@@ -75,6 +75,13 @@ export function findDeclaration(text: string, selector: string, prop: string): R
   return hits[hits.length - 1] ?? null;
 }
 
+/** The last declaration of the unconditional rule for `selector`, where a new declaration goes; null when there is none. */
+export function lastDeclaration(text: string, selector: string): RuleDeclaration | null {
+  const want = squash(selector);
+  const hits = declarations(text).filter(d => !d.conditional && selectorsOf(d.selector).includes(want));
+  return hits[hits.length - 1] ?? null;
+}
+
 /** A value that may stand in a declaration: no way out of it (`;`, braces, a comment), nothing fetched, not empty. */
 export function plainValue(value: string): boolean {
   return typeof value === 'string' && value.trim().length > 0 && value.length <= 200 && !/[;{}<>]|\/\*|\*\/|url\(|@import|expression\(/i.test(value);
