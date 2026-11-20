@@ -25,15 +25,15 @@ export const BUTTON_CSS = `
     /* shown pressed, for a page of states: the pose a held button has */
     .tb[data-show="pressed"] .top { transform: translateY(-0.5px) scale(1.031, 0.948); }
     .tb:focus-visible, .tb[data-show="focus"] { outline: 2.5px solid var(--pl-sky); outline-offset: 3px; }
-    /* a key on a button is a small key cap: the same top-and-base, pressed in by default so it reads as part of the top */
-    .tb kbd { display: inline-grid; place-items: center; min-width: 19px; height: 19px; padding: 0 5px; margin: 0 -4px 0 1px; box-sizing: border-box; border-radius: 6px;
-      font: 600 11px/1 var(--pl-mono); background: color-mix(in oklab, var(--on) 22%, transparent); color: var(--on); box-shadow: 0 1.5px 0 0 color-mix(in oklab, var(--base) 70%, transparent); }
+    /* a key on a button is its glyph, drawn on the top in the button's own ink, a little quieter than the words: a
+       key cap on a raised button was a raised thing on a raised thing (owner, 2026-11-20: "too much layer") */
+    .tb kbd { display: inline-block; margin: 0 -2px 0 2px; padding: 0; font: 600 13px/1 var(--pl-mono); color: var(--on); opacity: .8; background: none; box-shadow: none; }
     .tb .ic { display: block; width: 16px; height: 16px; margin-left: -3px; flex: none; }
     .tb .ic svg { display: block; width: 100%; height: 100%; }
     /* kinds: what the button is, by hue (the language's table): pink acts, mint is done, coral is wrong, paper is quiet */
     .tb.quiet { --hue: var(--pl-bg-surface); --base: var(--pl-border-default); --on: var(--pl-icon-primary); box-shadow: 0 9px 12px -9px rgb(0 0 0 / .28); }
     .tb.quiet .top { background: linear-gradient(180deg, var(--pl-bg-surface), var(--pl-bg-inset)); box-shadow: inset 0 0 0 1.5px var(--pl-border-default); }
-    .tb.quiet kbd { background: var(--pl-bg-inset); color: var(--pl-text-secondary); box-shadow: 0 1.5px 0 0 var(--pl-border-default); }
+    .tb.quiet kbd { color: var(--pl-text-secondary); opacity: 1; }
     .tb.done { --on: var(--pl-mint-block-on); --hue: var(--pl-mint-block); --base: color-mix(in oklab, var(--pl-mint-block) 70%, #000); }
     .tb.wrong { --on: var(--pl-coral-block-on); --hue: var(--pl-coral-block); --base: color-mix(in oklab, var(--pl-coral-block) 70%, #000); }
     /* not there: pale, flat on its base, nothing to press (the language: pale is for what is not there) */
