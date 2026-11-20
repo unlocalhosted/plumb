@@ -40,7 +40,8 @@ const ABOUT_WORDS = new Set([...TELLS_RULES, ...CRAFT_RULES].filter((r) => r?.ow
 // no token for it…"), never the reader's raw title, which is written for the command line ("`text-lg` uses Tailwind's
 // default type scale (`--text-lg`), not your theme"); a craft rule says what is wrong here (its line, about this
 // element's own words), then what to do
-export const noteOfMark = (m) => ({ name: FIX.what(m), advice: String((m.family === 'craft' ? [m.title, m.craft?.suggest?.text].filter(Boolean).join(' ') : FIX.line(m)) ?? '').replace(/`/g, ''), rule: m.rule ?? '', words: ABOUT_WORDS.has(m.rule), concern: concernOf(m) });
+export const noteOfMark = (m) => ({ name: FIX.what(m), advice: String((m.family === 'craft' ? [m.title, m.craft?.suggest?.text].filter(Boolean).join(' ') : FIX.line(m)) ?? '').replace(/`/g, ''),
+  wrong: String((m.family === 'craft' ? m.title ?? '' : FIX.line(m)) ?? '').replace(/`/g, ''), todo: m.family === 'craft' ? String(m.craft?.suggest?.text ?? '').replace(/`/g, '') : '', rule: m.rule ?? '', words: ABOUT_WORDS.has(m.rule), concern: concernOf(m) });
 
 const TAG_H = 18; // a label's height: the code face's line and a pixel each side
 

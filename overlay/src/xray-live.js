@@ -86,6 +86,13 @@ export const XRAY_LIVE_CSS = `
   .xr-said .xn[aria-current] { background: var(--pl-bg-inset); color: var(--pl-text-primary); font-weight: 600; }
   @media (hover: hover) and (pointer: fine) { .xr-said .xn:not([aria-current]):hover { color: var(--pl-text-primary); background: color-mix(in oklab, var(--pl-bg-inset) 60%, transparent); } }
   .xr-said .xn:focus-visible { box-shadow: 0 0 0 2px var(--pl-border-focus); }
+  /* An issue reads as one (owner, 2026-11-20: "it appears inside the card like its a note or info but not some issue"):
+     coral, the language's only colour for "this is wrong", heads them with the count; each says what is wrong in the
+     ink of the card, then what to do, quieter */
+  .xr-said .xh { display: flex; align-items: center; gap: 6px; margin: 0 0 10px; font: 650 12px/1 var(--pl-sans); color: var(--pl-coral); }
+  .xr-said .xh i { width: 16px; height: 16px; } .xr-said .xh i svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .xr-said .wr { display: block; font-style: normal; color: var(--pl-text-primary); }
+  .xr-said .td { display: block; margin-top: 4px; font-style: normal; color: var(--pl-text-secondary); }
   /* the open note in a list: its row, then its sentence and what to do, under its name (no second copy above) */
   .xr-said .xi[data-open] { background: var(--pl-bg-inset); border-radius: 12px; padding-bottom: 10px; }
   .xr-said .xi[data-open] .xn { color: var(--pl-text-primary); font: 650 14px/1.3 var(--pl-round, var(--pl-sans)); background: none; }
@@ -243,10 +250,12 @@ export function mountXray(o) {
       + (main[0] === 'edit' ? button('Ask your agent', { cls: 'sm quiet na', attrs: 'data-act="agent"' }) : '')
       + (o.keepNote ? button('', { cls: 'sm quiet only na', icon: KEEP_ICON, attrs: 'data-act="keep" aria-label="Keep as is" data-tip="Keep as is"' }) : '');
   };
+  // what is wrong, then what to do (an older note without the two parts says its advice)
+  const sentence = (n) => n.wrong ? `<i class="wr">${esc(n.wrong)}</i>${n.todo ? `<i class="td">${esc(n.todo)}</i>` : ''}` : esc(n.advice);
   const toyOfConcern = (id) => toyOf(CONCERNS.find((c) => c.id === id)?.toy ?? '');
   function listHtml() {
     return '<div class="xa">' + notes.map((n, i) => `<div class="xi"${i === notePick ? ' data-open' : ''}><button type="button" class="xn" data-i="${i}" title="${esc(n.concernName)}" aria-expanded="${i === notePick}"><i aria-hidden="true">${toyOfConcern(n.concern)}</i>${esc(n.name)}</button>`
-      + (i === notePick ? `<div class="xd"><span>${esc(n.advice)}</span><div class="nas">${actsFor(n)}</div></div>` : '') + '</div>').join('') + '</div>';
+      + (i === notePick ? `<div class="xd"><span>${sentence(n)}</span><div class="nas">${actsFor(n)}</div></div>` : '') + '</div>').join('') + '</div>';
   }
   function noteHtml(el) {
     // the element's own note, asked of the page's marks; never the pill's words, which may be about the element the
@@ -258,8 +267,9 @@ export function mountXray(o) {
     // Edit the words leads only a note about the words (an em dash, a stock word); a padding note is your agent's (U30)
     const words = n.words && [...el.childNodes].some((t) => t.nodeType === 3 && t.data.trim());
     curNote = { ...n, words };
-    if (all && all.length > 1) return listHtml();
-    return `<div class="nt" data-rule="${esc(rule)}"><i aria-hidden="true">${toyOfConcern(n.concern)}</i><div><b>${esc(name)}</b><span>${esc(advice)}</span></div></div><div class="nas">${actsFor(curNote)}</div>`;
+    const k = all ? all.length : 1, head = `<div class="xh"><i aria-hidden="true">${toyOf('error')}</i>${k === 1 ? '1 issue' : `${k} issues`}</div>`;
+    if (all && all.length > 1) return head + listHtml();
+    return `${head}<div class="nt" data-rule="${esc(rule)}"><i aria-hidden="true">${toyOfConcern(n.concern)}</i><div><b>${esc(name)}</b><span>${sentence(n)}</span></div></div><div class="nas">${actsFor(curNote)}</div>`;
   }
   // The note belongs to the element the card is on. The page's pill goes away as the hand leaves the element for the card;
   // that must not empty the card: a card that lost its note got shorter, was placed again (above, then below), and put
