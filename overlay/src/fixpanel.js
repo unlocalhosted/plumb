@@ -408,6 +408,7 @@ const nameOf = (g) => {
 // of no size
 // a place is a spot in your code (file, line, column); the elements that render it are drawn, but counted once
 const fileOf = (m) => m.mark.file ?? m.item?.site?.file ?? m.item?.file;
+const FIRST_WAIT = 4000; // the first reading of a page longer than this shows its count so far
 const BRIEF = 600; // a check again this short keeps the last settled line as it was
 // the fixes written in this tab a moment ago, by cause key: kept out of the list across a reload, while the readings
 // after a theme write may still have them (sessionStorage, a few minutes; a convenience, so every access may fail)
@@ -496,6 +497,7 @@ export class FixPanel {
   get phase() { return this.#phase; }
   #el; #host; #groups = []; #code = 0; #at = 0; #held = null; #pending = null; #error = null; #progress = null; #taken = new Map(); #tokens = new Map(); #done = false; #previewed = null; #fixed = []; #fixedCount = 0;
   #unsettledAt = 0; #unsettledTimer = 0;
+  #steadyGroups = null; #countFrom = null;   // the fixes as last settled { groups, path }: the picker counts these while the page is read again (U18)
   #steady = null; #doneText = null; #notice = null; #noticeTimer = 0;   // the last settled count { places, causes, notes }: said while the page is checked again
   #foldTimer = 0;
   #keeps = new Map(); // cause key → { rule, sites, why }: kept as intended, written on Apply
@@ -680,7 +682,7 @@ export class FixPanel {
   #handOver(card) { const el = card.target; card.close(); if (!el || !this.holdEl(el, 'none')) this.hold(0); }
 
   // each opening starts unread: the last one's count and its settled mark never stand in for this reading
-  show(on) { if (on) { const rest = undoing_(); if (rest) queueMicrotask(() => this.#undo(rest)); this.#el.dataset.scheme = darkGround() ? 'dark' : 'light'; this.#el.classList.toggle('pl-dark', this.#el.dataset.scheme === 'dark'); this.#el.classList.toggle('pl-light', this.#el.dataset.scheme !== 'dark'); this.#choice.dataset.scheme = this.#el.dataset.scheme; this.#choice.className = `fx fx-on ${this.#el.dataset.scheme === 'dark' ? 'pl-dark' : 'pl-light'}`; for (const w of written_()) if (!this.#taken.has(w.key)) this.#taken.set(w.key, { key: w.key, members: [] }); } if (on !== this.#on) { this.#groups = []; this.#progress = null; this.#steady = null; this.#notice = null; clearTimeout(this.#noticeTimer); this.#el.removeAttribute('data-settled'); this.#send(on ? (this.#flight?.kind === 'undoing' ? 'openUndoing' : this.#flight?.kind === 'writing' ? 'openWriting' : 'open') : 'close'); } this.#el.hidden = !on; if (!on) { this.#scrollHome(); this.#choice.hidden = true; this.#onHtml = ""; this.#editor.close(); this.#card.close(); this.#letGo(false); this.#done = false; const last = this.#last; if (last?.undo?.length || last?.group) this.#host.handOff?.({ undo: last.undo ?? [], trace: { group: last.group ?? null } }, last.text); this.#last = null; this.#resumeAt = null; if (this.#cleanup.running) this.#cleanup.stop(); } else this.#cleanup.resume(); this.render(); }
+  show(on) { if (on) { const rest = undoing_(); if (rest) queueMicrotask(() => this.#undo(rest)); this.#el.dataset.scheme = darkGround() ? 'dark' : 'light'; this.#el.classList.toggle('pl-dark', this.#el.dataset.scheme === 'dark'); this.#el.classList.toggle('pl-light', this.#el.dataset.scheme !== 'dark'); this.#choice.dataset.scheme = this.#el.dataset.scheme; this.#choice.className = `fx fx-on ${this.#el.dataset.scheme === 'dark' ? 'pl-dark' : 'pl-light'}`; for (const w of written_()) if (!this.#taken.has(w.key)) this.#taken.set(w.key, { key: w.key, members: [] }); } if (on !== this.#on) { this.#groups = []; this.#progress = null; this.#steady = null; this.#steadyGroups = null; this.#notice = null; clearTimeout(this.#noticeTimer); this.#el.removeAttribute('data-settled'); this.#send(on ? (this.#flight?.kind === 'undoing' ? 'openUndoing' : this.#flight?.kind === 'writing' ? 'openWriting' : 'open') : 'close'); } this.#el.hidden = !on; if (!on) { this.#scrollHome(); this.#choice.hidden = true; this.#onHtml = ""; this.#editor.close(); this.#card.close(); this.#letGo(false); this.#done = false; const last = this.#last; if (last?.undo?.length || last?.group) this.#host.handOff?.({ undo: last.undo ?? [], trace: { group: last.group ?? null } }, last.text); this.#last = null; this.#resumeAt = null; if (this.#cleanup.running) this.#cleanup.stop(); } else this.#cleanup.resume(); this.render(); }
   // the reader handed on the page: causes, most places first; a cause taken stays taken until it is written
   // While a cause is in hand the page is read as previewed (its fix, and what that fix also mends, gone from it): the
   // causes stay as they were read before, and the new reading is taken when the cause is put down
@@ -698,7 +700,7 @@ export class FixPanel {
     // the page changing for a moment (a tooltip, a ticking clock) is checked again without the line saying so; only a
     // check that takes longer says it is checking
     if (done) { this.#unsettledAt = 0; clearTimeout(this.#unsettledTimer); }
-    else if (!this.#unsettledAt) { this.#unsettledAt = performance.now(); this.#unsettledTimer = setTimeout(() => this.render(), BRIEF + 20); }
+    else if (!this.#unsettledAt) { this.#unsettledAt = performance.now(); this.#unsettledTimer = setTimeout(() => this.render(), BRIEF + 20); this.#life.timeout(() => this.render(), FIRST_WAIT + 20); }
     this.#settled(done);
     // the page a write reloaded is read again: the panel moves on as it would have, to the fix after the one written
     // (a first reading may still have the fix just written: the theme is read again a moment later; never longer than a few seconds)
@@ -724,7 +726,9 @@ export class FixPanel {
   // 2026-11-20: places can't be worked through and didn't drop when one fix took 11 of them, U4)
   #concernCounts() {
     const n = new Map();
-    for (const g of this.#open()) { const c = concernOf(g.members[0].mark); n.set(c, (n.get(c) ?? 0) + 1); }
+    // while the page is read again, the fixes as last settled (less any taken since): a half-read page never counts (U18)
+    const from = (this.#countFrom ?? this.#groups).filter((g) => !this.#taken.has(g.key));
+    for (const g of from) { const c = concernOf(g.members[0].mark); n.set(c, (n.get(c) ?? 0) + 1); }
     return n;
   }
   // the bar's one count, and what it shows: the picked concern and how many, opening the list of concerns
@@ -1215,6 +1219,12 @@ export class FixPanel {
       // checking again (after an apply, a page change): the last settled count stands until the new one settles
       if (settledNow) this.#steady = { places, causes, notes, path: location.pathname };
       else if (this.#steady?.path === location.pathname) ({ places, causes, notes } = this.#steady);
+      // the picker's count is the settled one: on the first reading the line says it is checking (the count climbed
+      // 47, 54, 73, 82 in a second with nothing saying so, U18); a page that never settles shows what is read so far
+      if (settledNow) this.#steadyGroups = { groups: this.#groups, path: location.pathname };
+      const steadyHere = this.#steadyGroups?.path === location.pathname;
+      this.#countFrom = settledNow || !steadyHere ? null : this.#steadyGroups.groups;
+      const firstReading = !settledNow && !steadyHere && !!this.#unsettledAt && performance.now() - this.#unsettledAt < FIRST_WAIT;
       const unchecked = this.#progress?.notChecked ? ` · <span title="${esc(FIX.uncheckedTitle)}">${esc(FIX.unchecked(this.#progress.notChecked))}</span>` : '';
       // one count in the line; the rest of it is one point away, in the count's readout (never in the line)
       const rest = [places && causes ? FIX.fixes(causes) : null, notes && places ? FIX.notes(notes) : null, this.#progress?.notChecked ? FIX.unchecked(this.#progress.notChecked) : null, settled ? null : FIX.stillChecking].filter(Boolean).join(' · ');
@@ -1222,7 +1232,7 @@ export class FixPanel {
       void unchecked;
       // the line's count is the concern picker: what it shows and how many (a problem's places and a note's elements)
       void status; void tidy;
-      html = (places || notes
+      html = ((places || notes) && !firstReading
         ? `<div class="line bar${notice ? ' has-notice' : ''}">${this.#error ? `<span class="quiet-line err">${esc(this.#error)}</span>` : this.#concernPick()}${notice}<span class="using" role="status">${esc(FIX.bar.using)}</span><span class="grow"></span>${button(esc(FIX.start), { cls: 'sm start', key: '↵', attrs: 'aria-keyshortcuts="Enter"' })}${end}</div>`
         : `<div class="line bar${notice ? ' has-notice' : ''}"><span class="quiet-line">${esc(this.#error ?? (!settled ? (this.#host.scope?.() ? FIX.checkingElement : FIX.checking) : this.#progress?.notChecked ? FIX.clearChecked(this.#progress.notChecked) : this.#host.scope?.() ? FIX.elementClear : FIX.clear))}</span>${notice}${end}</div>`);
     } else {

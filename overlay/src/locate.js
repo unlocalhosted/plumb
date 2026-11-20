@@ -340,7 +340,10 @@ export async function locate(element, options = {}) {
   // The page counts as hydrated once any part of it has a fiber, but React hydrates a page a part at a time (Next's
   // boundaries): the part with this element can still be waiting. Read it once React has reached it, bounded; reading it
   // earlier found no props and no stamp, and answered from the owner stack instead (e2e/hydration, webpack, 1 run in 3).
-  if (!fiber && element?.nodeType === 1 && element.isConnected) fiber = await fiberOf(element, { timeout: 10000, signal: options.signal });
+  // React's own container (createRoot's <div id="root">) is never drawn by React, so it never gets a fiber: waiting on it
+  // held every Blueprint reading unsettled for the full 10 s (U18, the counts that seemed to change on their own)
+  const container = element?.nodeType === 1 && Object.keys(element).some(key => key.startsWith('__reactContainer$'));
+  if (!fiber && !container && element?.nodeType === 1 && element.isConnected) fiber = await fiberOf(element, { timeout: 10000, signal: options.signal });
   const stamp = fiber?.memoizedProps?.[STAMP_ATTRIBUTE];
   const parsed = parseStamp(stamp);
   // the request's fields, as the stamp writes them

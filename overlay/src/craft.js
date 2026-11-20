@@ -42,7 +42,7 @@ const letters = (s) => /\S/.test(s);
 // forty times is rasterised once). Until it lands a rule reads null and says nothing; when it lands, every Craft that
 // asked is told, and judges the page again.
 const INK_SCALE = 4;
-const INK = { done: new Map(), queue: new Map(), timer: 0, crafts: new Set() };
+const INK = { done: new Map(), queue: new Map(), timer: 0, crafts: new Set(), flying: 0 };
 const PAINT = ['fill', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'stroke-dasharray', 'opacity', 'fill-opacity', 'stroke-opacity', 'fill-rule', 'display', 'visibility'];
 function inkMarkup(svg, r) {
   const clone = svg.cloneNode(true);
@@ -81,8 +81,9 @@ async function inkOf({ markup, W, H }) {
 function inkFlush() {
   INK.timer = 0;
   const batch = [...INK.queue]; INK.queue.clear();
+  INK.flying += batch.length;
   Promise.all(batch.map(([key, job]) => inkOf(job).then((v) => INK.done.set(key, v), () => INK.done.set(key, false))))
-    .then(() => { for (const c of INK.crafts) c.inked(); });
+    .then(() => { INK.flying -= batch.length; for (const c of INK.crafts) c.inked(); });
 }
 function inkWant(key, job) {
   if (INK.queue.has(key)) return;
@@ -92,16 +93,17 @@ function inkWant(key, job) {
 // What a line under a heading means, asked of the dev server (POST /__plumb/meaning, src/meaning.ts), which asks the
 // model the project points at. The pairs a pass asks about go as one question when it ends; the answers land like an
 // icon's ink: the elements that asked are judged again. `off` (no model, or no server) is an answer too: nothing is said.
-const MEANING = { done: new Map(), queue: new Map(), timer: 0 };
+const MEANING = { done: new Map(), queue: new Map(), timer: 0, flying: 0 };
 function meaningFlush() {
   MEANING.timer = 0;
   const batch = [...MEANING.queue].slice(0, 64);
   for (const [key] of batch) MEANING.queue.delete(key);
   if (MEANING.queue.size) MEANING.timer = setTimeout(meaningFlush, 0);
+  MEANING.flying += batch.length;
   post('meaning', { pairs: batch.map(([, pair]) => pair) })
     .then((a) => batch.forEach(([key], i) => MEANING.done.set(key, a?.off === false ? { said: !!a.said[i], model: a.model, similarity: a.similarity[i], stock: a.stock[i] } : 'off')),
       () => batch.forEach(([key]) => MEANING.done.set(key, 'off')))
-    .then(() => { for (const c of INK.crafts) c.inked(); });
+    .then(() => { MEANING.flying -= batch.length; for (const c of INK.crafts) c.inked(); });
 }
 
 // The measuring layer: every read the rules make, memoised for one pass. Reads only.
@@ -298,6 +300,9 @@ function loadSpec() {
     for (const c of LOAD.crafts) c.specChanged();
   }).catch(() => { LOAD.loading = null; });
 }
+// a question the rules asked is still out (an icon's ink, what a line means): its answer judges elements again, so a
+// page is not read until it lands (U18: the count moved 75, 81, 82 after the page was called read)
+export const asking = () => INK.queue.size + INK.flying + MEANING.queue.size + MEANING.flying > 0;
 export const spec = { get loaded() { return SPEC.loaded; }, get value() { return SPEC.value; }, load: loadSpec };
 
 // The theme as the rules see it: the overlay's decisions, each measured on the page once (a token written as

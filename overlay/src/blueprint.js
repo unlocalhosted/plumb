@@ -27,7 +27,7 @@ import { Reader } from './blueprint-reader.js';
 import { MarkLayer, MARKS_CSS } from './blueprint-marks.js';
 import { Glass, GLASS_CSS } from './blueprint-glass.js';
 import { PANEL_CSS } from './blueprint-panel.js';
-import { Craft, spec } from './craft.js'; // craft: the mentor's rules, read on the page and joined to the reader's items
+import { Craft, spec, asking } from './craft.js'; // craft: the mentor's rules, read on the page and joined to the reader's items
 import { Selection, SELECT_CSS } from './select.js'; // the element is the target: a click anywhere on it selects it
 import { Changes, CHANGES_CSS } from './changes.js'; // what was changed on the page, per element, until it is applied
 import { activeVariants } from './variants.js';
@@ -128,7 +128,7 @@ export class Blueprint {
     });
     // the fix panel counts every place in the code the page renders, on the page or not; what is drawn, listed and
     // selected is what the page shows
-    this.#reader = new Reader(host, { unrendered: true, onChange: (all) => { const items = all.filter((i) => i.el); this.#items = items; this.#marks.set(items); this.#fix.set(all); this.#selection.refresh(this.#itemOf(this.#selection.el)); if (this.#want) this.#holdWanted(this.#settled); }, onProgress: (p) => { this.#fix.progress(p); this.#onProgress?.(p); this.#clearAfterWrite(p); this.#settled = p.done ?? (!!p.total && p.read === p.total); if (this.#want && this.#settled) { const want = this.#want; setTimeout(() => { if (this.#want === want) this.#holdWanted(true); }, 300); } }, enrich: (items) => this.#craft.enrich(items) });
+    this.#reader = new Reader(host, { unrendered: true, onChange: (all) => { const items = all.filter((i) => i.el); this.#items = items; this.#marks.set(items); this.#fix.set(all); this.#selection.refresh(this.#itemOf(this.#selection.el)); if (this.#want) this.#holdWanted(this.#settled); }, onProgress: (p) => { this.#fix.progress(p); this.#onProgress?.(p); this.#clearAfterWrite(p); this.#settled = p.done ?? (!!p.total && p.read === p.total); if (this.#want && this.#settled) { const want = this.#want; setTimeout(() => { if (this.#want === want) this.#holdWanted(true); }, 300); } }, enrich: (items) => this.#craft.enrich(items), busy: () => asking() || this.#craft.busy || !!this.#host.asking });
   }
 
   // A key while blueprint is on (the widget asks only when nothing is pinned or being typed): true when used.

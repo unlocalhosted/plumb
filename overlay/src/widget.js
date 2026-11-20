@@ -741,6 +741,8 @@ class PlumbOverlay extends HTMLElement {
       this.#tellSourced();
     });
   }
+  // a source question still out, or landed and not yet told (Blueprint's reader waits for it before a page is read)
+  get asking() { return this.#asking + this.#landed.size; }
   get health() { return this.#health; }
   get blueprintReader() { return this.#blueprint; } // the headless craft run (craft-run.js)
   get progress() { return this.#bp.progress; }

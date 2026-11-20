@@ -54,7 +54,7 @@ const QUIET = 300; // the page must have stopped changing for this long before i
 const FIRST = 1000; // and for this long after the reader starts (the app may still be mounting)
 
 export class Reader {
-  #host; #onChange; #onProgress; #unrendered;
+  #host; #onChange; #onProgress; #unrendered; #busy;
   #scope = null; // one element and what's inside it (an Alt+click): only it is read, and the page's code is not asked
   #items = new Map(); // id → { id, el, stamp, tag, classes, sig, state, marks, dims, file, checked, outsideSource }
   #ids = new WeakMap(); // element → id
@@ -74,7 +74,8 @@ export class Reader {
 
   // craft: enrich(items) → items, appends each read element's craft findings (craft.js) before the hand-off
   #enrich;
-  constructor(host, { onChange, onProgress, enrich, unrendered = false }) {
+  constructor(host, { onChange, onProgress, enrich, busy, unrendered = false }) {
+    this.#busy = busy;
     this.#host = host;
     this.#onChange = onChange;
     this.#onProgress = onProgress;
@@ -131,6 +132,7 @@ export class Reader {
   get settled() {
     if (this.#inflight || this.#codeInflight || !this.#running || this.#pending || this.#throttle) return false;
     if (performance.now() < this.#quietUntil()) return false;
+    if (this.#busy?.()) return false; // a rule's question still out: its answer can add or drop a note
     for (const item of this.#items.values()) if (item.state !== 'ready') return false;
     return true;
   }
