@@ -72,6 +72,14 @@ export function isLive(el) {
   return false;
 }
 
+/** When el (and what holds it) stops churning: 0 when it isn't. An animation's end is told by the animation itself. */
+export function restAt(el) {
+  const now = performance.now();
+  let at = 0;
+  for (let e = el; e && e !== document.body; e = e.parentElement) { const c = churn.get(e); if (c && c.until > now && c.until > at) at = c.until; }
+  return at;
+}
+
 /** The records that are not motion: a change inside something moving is not a reason to read the page again. */
 export function quiet(records) {
   watch();

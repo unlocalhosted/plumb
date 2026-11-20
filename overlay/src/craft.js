@@ -20,7 +20,7 @@
  *  cache      an element's findings are kept by its signature (its class and its parent's) until invalidate(); a
  *             page-wide rule's also by the page's signature; a late fact (an icon's ink) re-judges only who asked
  * ───────────────────────────────────────────────────────── */
-import { isLive } from './live.js'; // what is moving right now, shared
+import { isLive, restAt } from './live.js'; // what is moving right now, shared
 import { PACK_RULES, packOf } from './packs.js';
 import { rulesFor } from './kinds.js';
 import { verdicts } from './verdict.js';
@@ -461,7 +461,7 @@ const stillStyle = (style) => style.replace(MOTION, '').trim();
 const sigOf = (el) => `${el.getAttribute('class') ?? ''}|${el.parentElement?.getAttribute('class') ?? ''}|${stillStyle(el.getAttribute('style') ?? '')}|${el.textContent?.length ?? 0}`;
 
 export class Craft {
-  #again = null; #waiting = false;
+  #again = null; #waiting = false; #restTimer = 0;
   #rules; #theme; #cache = new WeakMap(); // el → { sig, marks, page, wide }
   #late = new Set(); // elements judged while a fact they asked for was still on its way
   #askers = new WeakMap(); #judging = null; // x → the elements whose rules asked what the source says of x
@@ -535,6 +535,14 @@ export class Craft {
       }
       const t1 = performance.now();
       const still = items.map((item) => item.checked !== false && !moving(item.el));
+      // an element JavaScript just rewrote (a preview's styles put on and taken off) is moving for a moment with no
+      // animation to wait on: the page is judged again once it has been still, or its notes stay away (U18: a fix
+      // opened and closed took the count from 80 to 78, its elements' notes skipped and never judged again)
+      if (this.#again && !this.#restTimer) {
+        let rest = 0;
+        for (const [i, item] of items.entries()) if (!still[i] && item.checked !== false) rest = Math.max(rest, restAt(item.el));
+        if (rest) this.#restTimer = setTimeout(() => { this.#restTimer = 0; this.#again?.(); }, rest - performance.now() + 20);
+      }
       const t2 = performance.now();
       // the page's signature: every judged element's own, in order. A page-wide rule (one that reads the census, or
       // looks across the page) is judged again only when this changes, not on every hand-off of the same page.
@@ -612,7 +620,7 @@ export class Craft {
   // The elements still to be judged, a slice at a time. A newer hand-over replaces the queue (its facts are the
   // page as it is now); when the queue empties the page is handed over again, and that pass finds everything kept.
   #queue = []; #pumping = 0;
-  get busy() { return this.#queue.length > 0; }
+  get busy() { return this.#queue.length > 0 || !!this.#restTimer; }
   #pump(queue, facts, page) {
     const run = ++this.#pumping;
     this.#queue = queue;
