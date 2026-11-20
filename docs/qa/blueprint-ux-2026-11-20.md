@@ -142,7 +142,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u10-section-card.jpg`
-- **Status:** fixed 838eb9f2: each side shows its px (12, 24); the token's name is on hover ("12px · 3")
+- **Status:** fixed 838eb9f2: each side shows its px (12, 24); the token's name is on hover ("12px · 3") · verified (tester, 06:00): each side shows one number (32, 12, 24). `docs/qa/shots/2026-11-20/u10-u11-verified-u64-aa.jpg`
 
 ### U11 · The padding stripes cover the button's words
 - **Where:** X-ray card on the "Get started" button.
@@ -152,7 +152,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u07-craft-button-no-note.jpg`
-- **Status:** fixed 16f6103a: the "blue stripes" over the words were the text-size highlight, a tinted box over the label; it is an outline now. The padding hatch stays on the padding bands only
+- **Status:** fixed 16f6103a: the "blue stripes" over the words were the text-size highlight, a tinted box over the label; it is an outline now. The padding hatch stays on the padding bands only · verified (tester, 06:00): "Get started" is outlined, its words readable; the hatch is on the padding bands only.
 
 ### U12 · The card jumps up as I reach for its buttons, so my click lands on something else
 - **Where:** Blueprint, X-ray card on the "Get started" button, with the pink note on top.
@@ -260,7 +260,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding and DX. I run init twice, or wonder what the second one does differently.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u19-setup-panel.jpg`; panel text read from the page.
-- **Status:** fixed cc44f3ec: with no config, one step ("Choose your rules"), which says it records today's problems too (seen in `plumber doctor --verbose`; the test server on 4340 shows it after a restart)
+- **Status:** fixed cc44f3ec: with no config, one step ("Choose your rules"), which says it records today's problems too (seen in `plumber doctor --verbose`; the test server on 4340 shows it after a restart) · tester (06:00): not visible yet. The setup panel on port 4340 still lists two `npx plumber init` steps, as the fixer expected, because that server has not been restarted. Re-check after a restart.
 
 ### U21 · Setup steps point at package.json line 1 for things that aren't in package.json
 - **Where:** Setup steps, "Turn on React Fast Refresh", "Plugin order needs a check", "Check that saving updates the
@@ -272,7 +272,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** DX. I open package.json and find nothing to change.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u19-setup-panel.jpg`; panel text read from the page.
-- **Status:** fixed 5bf095fd: with no dev server config found, those steps carry no place and say "your dev server config" (seen in `plumber doctor`; the running test server still shows package.json:1 until it restarts)
+- **Status:** fixed 5bf095fd: with no dev server config found, those steps carry no place and say "your dev server config" (seen in `plumber doctor`; the running test server still shows package.json:1 until it restarts) · tester (06:00): not visible yet, for the same reason as U20 (the 4340 server still says package.json:1).
 
 ### U22 · "Plugin order needs a check" gives me nothing to do
 - **Where:** Setup steps, under NOT CONFIRMED YET.
@@ -283,7 +283,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** acting. A worry with no way to act on it.
 - **Severity:** 3
 - **Evidence:** panel text read from the page (see U19 shot).
-- **Status:** fixed 1c0a5221: an unconfirmed step shows its instruction and command with Copy ("Move plumb() before the plugins that transform JSX or TSX…")
+- **Status:** fixed 1c0a5221: an unconfirmed step shows its instruction and command with Copy ("Move plumb() before the plugins that transform JSX or TSX…") · verified (tester, 06:00): the step now says "Move plumb() before the plugins that transform JSX or TSX…" with a Copy button. Its "Check package.json" part is U21.
 
 ### U23 · The C key on "Clean up page" is squashed
 - **Where:** ··· list.
@@ -358,7 +358,7 @@ How to read an issue, and what each one needs:
 - **Severity:** 3
 - **Evidence:** strip text read from the page; `fixtures/.tells-app/src/*.jsx` modified at 04:29, History opened
   about 04:51.
-- **Status:** partly fixed 9669774c: the entry reads "A file was changed outside React Plumber after this, in your editor or by git. Undo it there." Still open: no file name or real time ("Now" for an old change)
+- **Status:** partly fixed 9669774c: the entry reads "A file was changed outside React Plumber after this, in your editor or by git. Undo it there." Still open: no file name or real time ("Now" for an old change) · tester (06:00): History now reads "Changed in your editor" and similar; the time and file are still missing, as the fixer noted.
 
 ### U29 · Help: the last shortcut is under the bar, and one row's keys run into its words
 - **Where:** ··· → Help (Keyboard shortcuts).
@@ -404,7 +404,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** intent. I expect to read problems and get a panel that can write to my code with Enter.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u31-alt-click.jpg`, `docs/qa/shots/2026-11-20/u28-help.jpg`
-- **Status:** fixed fafa775d: Help reads "Alt + click · Open its editor, with its notes in the bar". The README line is U37
+- **Status:** fixed fafa775d: Help reads "Alt + click · Open its editor, with its notes in the bar". The README line is U37 · verified (tester, 06:00): Help reads "Alt + click · Open its editor, with its notes in the bar".
 
 ### U33 · Every "Read more" link in the CLI goes to a site that doesn't exist
 - **Where:** `plumber craft` text output.
@@ -430,7 +430,7 @@ How to read an issue, and what each one needs:
   asked to make.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u33-craft-output.txt`, the finding at `src/App.jsx:156:9`.
-- **Status:** fixed cfa7cb6e: `plumber craft` now says "→ Change `font-semibold` to `font-medium`: 500, one the page already uses." under the weight note
+- **Status:** fixed cfa7cb6e: `plumber craft` now says "→ Change `font-semibold` to `font-medium`: 500, one the page already uses." under the weight note · verified (tester, 05:57): `plumber craft` prints "→ Change `font-semibold` to `font-medium`: 500, one the page already uses." under the weight note.
 
 ### U35 · The page and the CLI count the same page differently
 - **Where:** Blueprint on the Ledger screen vs `plumber craft` on the same URL.
@@ -442,7 +442,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** trust and DX. A developer who checks one against the other finds two numbers and no reason.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u33-craft-output.txt` (first line), `docs/qa/shots/2026-11-20/u18-counts-197.png`.
-- **Status:** partly fixed c6e79518: the first line reads "70 findings from the craft, accessibility and generated-look checks. For your tokens, run npx plumber check." Still open: 70 here against 72 in Blueprint without the design system (the two read the page differently)
+- **Status:** partly fixed c6e79518: the first line reads "70 findings from the craft, accessibility and generated-look checks. For your tokens, run npx plumber check." Still open: 70 here against 72 in Blueprint without the design system (the two read the page differently) · tester (05:57): the first line now reads "70 findings from the craft, accessibility and generated-look checks. For your tokens, run npx plumber check." That part is good.
 
 ### U36 · The JSON output says everything twice
 - **Where:** `plumber craft --json`.
@@ -607,7 +607,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** intent. I was reading the top of my page and closing a tool moved me.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u49-scroll-after-close.jpg`; README line 92.
-- **Status:** fixed 29fffc4f: Fix scrolled to 80px, Escape brought the page back to 0
+- **Status:** fixed 29fffc4f: Fix scrolled to 80px, Escape brought the page back to 0 · verified (tester, 06:00): Fix stepped to a fix 1,815px down; Escape twice brought the page back to 0.
 
 ### U50 · After Alt+click, "All concerns" means only that element, and one card gets three counts
 - **Where:** outside Blueprint, Alt+click on a card, then ··· → Inspect an element on the "Active users" card.
@@ -622,7 +622,7 @@ How to read an issue, and what each one needs:
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u50-scoped-all-concerns-7.jpg`,
   `docs/qa/shots/2026-11-20/u50-hover-2-problems.jpg`, `docs/qa/shots/2026-11-20/u50-editor-7-bar-11.jpg`
-- **Status:** partly fixed 5068ff8a: after an Alt+click the picker's first row says "This element", not "All concerns". Still open: the hover label, the editor and the bar count one element three ways (own notes, notes inside it, places), and there is no way back to the whole page but Esc then Alt+B · partly (tester, 05:38): the list now says "This element 11" (Design system 7, Craft 1, Anti-slop 3), so the label is right. Two parts remain: (1) Inspect's hover label on the same "Active users" card still says "Card div 2 problems"; (2) after picking the card, the bar opens on "Craft and polish 1" rather than the element's 11, so the bar's number is the smallest of the three. `docs/qa/shots/2026-11-20/u50-this-element-11.jpg`, `docs/qa/shots/2026-11-20/u50-hover-still-2.png`
+- **Status:** partly fixed 5068ff8a: after an Alt+click the picker's first row says "This element", not "All concerns". Still open: the hover label, the editor and the bar count one element three ways (own notes, notes inside it, places), and there is no way back to the whole page but Esc then Alt+B · partly (tester, 05:38): the list now says "This element 11" (Design system 7, Craft 1, Anti-slop 3), so the label is right. Two parts remain: (1) Inspect's hover label on the same "Active users" card still says "Card div 2 problems"; (2) after picking the card, the bar opens on "Craft and polish 1" rather than the element's 11, so the bar's number is the smallest of the three. `docs/qa/shots/2026-11-20/u50-this-element-11.jpg`, `docs/qa/shots/2026-11-20/u50-hover-still-2.png` · tester (tester, 06:00): on the Churn card the editor says "6 fixes here" and the bar "This element 6": they agree now. The Inspect hover label was not re-checked.
 
 ### U51 · "Inspect an element" gives no sign that anything started
 - **Where:** ··· → Inspect an element.
@@ -632,7 +632,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding. I can't tell whether my click on the menu did anything.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u51-inspect-no-sign.jpg`
-- **Status:** fixed 30490ea6: the bar says "Click an element to inspect it. Esc stops." (for 4 seconds; the pointer is unchanged)
+- **Status:** fixed 30490ea6: the bar says "Click an element to inspect it. Esc stops." (for 4 seconds; the pointer is unchanged) · verified (tester, 06:00): "Click an element to inspect it. Esc stops." shows in the bar. `docs/qa/shots/2026-11-20/u51-verified.jpg`
 
 ### U52 · After Undo, the message offers "Undo" again
 - **Where:** element editor, after resizing the Churn card by its right edge (it wrote `w-xs` to 3 places) and
@@ -645,7 +645,7 @@ How to read an issue, and what each one needs:
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u52-resize-written.jpg` (after the write),
   `docs/qa/shots/2026-11-20/u52-undone-undo.jpg` (after Undo).
-- **Status:** fixed 61ef203e, not walked by the fixer in the element editor (cause: an undo was remembered with its undo handles left to find after a reload, and the newest write found was the undo itself). Tester: please re-check the resize-then-Undo path · reopened (tester, 05:55): resized the Churn card (wrote w-xs to 3 places), pressed Undo, no reload: the message still reads "Undone. Your code is back as it was." with a button "Undo". The fix covers the message shown after a reload; the one shown right after Undo still offers Undo. The test copy was restored (no w-xs in App.jsx). `docs/qa/shots/2026-11-20/u52-reopened.jpg` · fixed again 1683a206: undoing a step handed History the undo's own handles; it is now said with nothing to undo. Walked by the fixer: Churn card resized (w-3xs, 3 places), Undo, the message reads "Undone. Your code is back as it was." with no button; App.jsx has no w-3xs left
+- **Status:** fixed 61ef203e, not walked by the fixer in the element editor (cause: an undo was remembered with its undo handles left to find after a reload, and the newest write found was the undo itself). Tester: please re-check the resize-then-Undo path · reopened (tester, 05:55): resized the Churn card (wrote w-xs to 3 places), pressed Undo, no reload: the message still reads "Undone. Your code is back as it was." with a button "Undo". The fix covers the message shown after a reload; the one shown right after Undo still offers Undo. The test copy was restored (no w-xs in App.jsx). `docs/qa/shots/2026-11-20/u52-reopened.jpg` · fixed again 1683a206: undoing a step handed History the undo's own handles; it is now said with nothing to undo. Walked by the fixer: Churn card resized (w-3xs, 3 places), Undo, the message reads "Undone. Your code is back as it was." with no button; App.jsx has no w-3xs left · verified (tester, 06:00): after resizing the Churn card and pressing Undo, the message reads "Undone. Your code is back as it was." with no button. `docs/qa/shots/2026-11-20/u52-verified.jpg`
 
 ### U53 · Holding Space shows nothing, so nobody finds it
 - **Where:** Blueprint at rest, holding Space.
@@ -659,7 +659,7 @@ How to read an issue, and what each one needs:
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u53-space-held.jpg` (taken while held); in the overlay the host gets
   `data-bp-pass` and `path.hit` turns `pointer-events: none`.
-- **Status:** partly fixed 30490ea6: while Space is held the bar says "Using the page" and the marks and pins fade to 20%. Still open: no hint at rest that Space exists
+- **Status:** partly fixed 30490ea6: while Space is held the bar says "Using the page" and the marks and pins fade to 20%. Still open: no hint at rest that Space exists · tester (tester, 06:00): while Space is held the bar says "Using the page". `docs/qa/shots/2026-11-20/u53-using-the-page.jpg`
 
 ### U54 · History's timeline doesn't say what its parts or buttons do
 - **Where:** ··· → History, after one resize and its undo.
@@ -673,7 +673,7 @@ How to read an issue, and what each one needs:
   its buttons will do to my code.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u27-verified-u54-history.jpg`
-- **Status:** partly fixed 9669774c: "Changed in your editor", "Changed again later", buttons "Undo this change" and "Undo its whole step", "nothing" for an empty value. Still open: a change's tooltip prints a whole chunk of JSX as its "from", and opening History scrolls the page
+- **Status:** partly fixed 9669774c: "Changed in your editor", "Changed again later", buttons "Undo this change" and "Undo its whole step", "nothing" for an empty value. Still open: a change's tooltip prints a whole chunk of JSX as its "from", and opening History scrolls the page · tester (tester, 06:00): the buttons now read "Undo this change" and "Undo its whole step", and a tooltip "Undo w-3xs → nothing". Still: opening History scrolls the page, and the last column label is cut to "Ur". `docs/qa/shots/2026-11-20/u54-history-now.jpg`
 
 ### U55 · A selected card's outline and grips are drawn over the concern list
 - **Where:** element editor with the "Active users" card selected, then the concern list opened from the bar.
@@ -683,7 +683,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding. Lines cross the words I'm trying to read and pick from.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u50-this-element-11.jpg`
-- **Status:** fixed 6fbec11d: the open list stands above the X-ray layer; with the Active users card selected, every row is the topmost thing under its centre
+- **Status:** fixed 6fbec11d: the open list stands above the X-ray layer; with the Active users card selected, every row is the topmost thing under its centre · verified (tester, 06:00): with the Churn card selected, the open list sits above everything. `docs/qa/shots/2026-11-20/u55-verified.jpg`
 
 ### U56 · In the card, a hard-coded value is coral on blue, 1.8:1
 - **Where:** X-ray card on the plumber site (dark mode), the "Read the docs" label: "text size 15px hard-coded".
@@ -696,7 +696,7 @@ How to read an issue, and what each one needs:
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u56-dark-value.png`, `docs/qa/shots/2026-11-20/u56-dark-card.jpg`;
   colours read from the card's `.thumb` and the value's computed colour.
-- **Status:** fixed 45c2c3e1: on its highlight the value is lettered in sky's ink (night: white on #1d77c8, 4.6:1; `npm run contrast` 74/74). Checked on a value on the site at night; not on a hard-coded one
+- **Status:** fixed 45c2c3e1: on its highlight the value is lettered in sky's ink (night: white on #1d77c8, 4.6:1; `npm run contrast` 74/74). Checked on a value on the site at night; not on a hard-coded one · verified (tester, 06:00): on the site at night, the hard-coded "15px" on its highlight is dark on light blue and readable. `docs/qa/shots/2026-11-20/u56-verified.jpg`
 
 ### U57 · At phone width the ··· button is gone, and with it setup, Clean up, History and Help
 - **Where:** Blueprint bar, window 375px wide (the browser pane's phone size, which also sets a touch device).
@@ -708,7 +708,7 @@ How to read an issue, and what each one needs:
   purpose for touch, the items still need a way in.
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u57-phone-no-more.jpg`
-- **Status:** fixed 6020a422: at 375px the bar shows the count, Fix, ··· and Close
+- **Status:** fixed 6020a422: at 375px the bar shows the count, Fix, ··· and Close · verified (tester, 06:00): at 375px the bar shows the count, Fix, ··· and Close. `docs/qa/shots/2026-11-20/u57-verified.jpg`
 
 ### U58 · At phone width the Fix bar squeezes its words into a column, and the choice row runs off screen
 - **Where:** Fix, window 375px wide, fix 1 of 51.
@@ -721,7 +721,7 @@ How to read an issue, and what each one needs:
   (U44) wraps well; this is the next width down.
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u58-phone-fix-bar.jpg`
-- **Status:** fixed 6020a422: at 375px fix 1 reads in full (words on top, arrows and Clean up below, 158px tall); the choice row wraps inside the window with Skip in reach
+- **Status:** fixed 6020a422: at 375px fix 1 reads in full (words on top, arrows and Clean up below, 158px tall); the choice row wraps inside the window with Skip in reach · verified (tester, 06:00): at 375px fix 1 reads in full (words on top, arrows and Clean up below) and the choice row wraps with Skip in reach. `docs/qa/shots/2026-11-20/u58-verified.jpg`
 
 ### U59 · The project page's spacing step draws nothing, though the app has four spacing steps
 - **Where:** project page (`npx plumber`), step 1 "Spacing", on a copy of `fixtures/tailwind-min`.
@@ -735,7 +735,7 @@ How to read an issue, and what each one needs:
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u59-spacing-empty.jpg`; `fixtures/tailwind-min/src/styles.css` defines
   `--spacing-s1: 4px` to `--spacing-s4: 16px`.
-- **Status:** open
+- **Status:** fixed 90720ca9: on a copy of tailwind-min the Spacing step draws 4, 8, 12 and 16 and says "All of … already use your steps" (sizes used under three times were cut, which on a small app is all of them) · verified (tester, 06:00): the Spacing step draws 4, 8, 12 and 16. `docs/qa/shots/2026-11-20/u59-verified.jpg`
 
 ### U60 · The project page calls Tailwind's 289 default colours "Your palette"
 - **Where:** project page, step 2 "Colours", same app.
@@ -747,7 +747,7 @@ How to read an issue, and what each one needs:
   their app. Same family as U4 (Tailwind's defaults counted as the person's).
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u60-palette-289.jpg`
-- **Status:** open
+- **Status:** fixed 90720ca9: "Your palette, 1 colour" with "Tailwind’s 288 default colours are left out: they are Tailwind’s, not yours." (the reading now carries which tokens are Tailwind's) · verified (tester, 06:00): "Your palette, 1 colour · Tailwind's 288 default colours are left out: they are Tailwind's, not yours." `docs/qa/shots/2026-11-20/u60-verified.jpg`
 
 ### U61 · The palette's swatch rows run out of their box and across the "Your rules" column
 - **Where:** project page, step 2, 1024px wide.
@@ -759,7 +759,7 @@ How to read an issue, and what each one needs:
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u61-swatches-overflow.jpg`; `document.documentElement.scrollWidth` is 3108,
   `clientWidth` 1024.
-- **Status:** open
+- **Status:** fixed 90720ca9: a hue's swatch row wraps inside its shelf. Checked only that the page is 1024px wide on tailwind-min (one swatch there); not re-walked on an app with a long palette · tester (tester, 06:00): no sideways scroll on this app (page 1,280px in 1,280px); like the fixer, not checked on an app with a long palette.
 
 ### U62 · The project page only opens with a hidden switch
 - **Where:** `npx plumber` with no command.
@@ -774,7 +774,7 @@ How to read an issue, and what each one needs:
 - **Evidence:** `node dist/cli.js --root ./fixtures/tailwind-min` prints the three lines; with
   `PLUMBER_ONBOARDING=1 PLUMBER_TERMINAL=1` it serves the page on port 7331
   (`docs/qa/shots/2026-11-20/u62-project-page-welcome.jpg`).
-- **Status:** open
+- **Status:** needs owner: the project page is behind PLUMBER_ONBOARDING (src/flags.ts), likely on purpose while it is unfinished. Options: (a) `npx plumber` opens it by default; costs: the page ships as it is today. (b) keep the switch and have Setup steps and the terminal stop pointing people at it until it ships; costs: nothing to build, people don't see it yet. I'd pick (b) until the onboarding brief signs it off
 
 ### U63 · `plumber --root <folder>` climbs to the repository when the folder has no package.json
 - **Where:** `node dist/cli.js --root fixtures/.tells-app` (no command).
@@ -786,4 +786,42 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** DX. I named a folder and got told about the whole repository, with a wall of paths.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u63-bare-root-ignored.txt`
+- **Status:** needs owner: climbing up from --root is a written rule (R4 in src/cli-project.ts: a --root inside an app, like src, finds the app's package.json). Options: (a) an explicit --root never climbs; a folder with no package.json is refused with "fixtures/.tells-app has no package.json"; costs: `--root src` stops working. (b) it climbs only to the nearest package.json that is a React app and says so; past a workspace root it stops and refuses; costs: one more rule. Either way the 45-path error should list a few and say how many (a separate fix). I'd pick (b)
+
+### U64 · In the light card, the colour sample "Aa" is white on white
+- **Where:** X-ray card (now light in a light page), "Colour" row, on the "Get started" button.
+- **What I saw:** the row reads "Colour [empty box] 7.6 AA". The sample "Aa" is drawn in the button's text colour
+  (white) on no background, so on the white card it can't be seen. In the dark card it showed.
+- **What I expected:** the sample on the element's own background (here the indigo button), so I see the pair
+  the 7.6 is about.
+- **Why it hurts:** understanding. The one picture of the colour pair is blank.
+- **Severity:** 3
+- **Evidence:** `docs/qa/shots/2026-11-20/u64-aa-white.png`; the `.xr-chip` "Aa" has colour rgb(255,255,255) and a
+  transparent background.
+- **Status:** open
+
+### U65 · A fix with a long class pushes Skip off the screen at 1280px
+- **Where:** Fix, fix 13 of 49 "3 places: padding looks bigger than it is", 1280×800.
+- **What I saw:** the option chip shows `[text-box:trim-both_cap_alphabetic]` broken over two lines and spilling out
+  of its chip, the main button reads "Use [text-box:trim-both_cap_alphabetic]", and the row is so wide that Skip
+  ends at 1,317px in a 1,280px window. The row starts next to the Get started button, mid-page.
+- **What I expected:** the row placed where it fits (or wrapping, as it does at phone width), and a short name for
+  the fix ("Trim the line's extra space") with the class on hover.
+- **Why it hurts:** acting (Skip is cut off) and understanding (the label is raw CSS syntax).
+- **Severity:** 2
+- **Evidence:** `docs/qa/shots/2026-11-20/u65-choice-row-off-edge.png`, `docs/qa/shots/2026-11-20/u65-fix-13.jpg`;
+  in the overlay, Skip spans x 1246–1317 with a 1280px window.
+- **Status:** open
+
+### U66 · `plumber craft` dies with a raw Playwright error when the page reloads while it reads
+- **Where:** `node dist/cli.js craft --url http://127.0.0.1:4340/ --no-probe --no-pairs --root fixtures/.tells-app`.
+- **What I saw:** two runs out of three ended with only "✗ page.evaluate: Execution context was destroyed, most
+  likely because of a navigation." and exit code 2. The third gave 70 findings. App.jsx had been written 8 seconds
+  before one failing run, so the dev server reloaded the page under the reader.
+- **What I expected:** plumber waits for the reload and reads again, or says it in plain words ("Your page reloaded
+  while Plumber was reading it, because a file changed. Run it again.").
+- **Why it hurts:** DX. A developer who saves a file while craft runs, or runs it in CI next to a watcher, gets an
+  error from inside the browser library with no next step.
+- **Severity:** 3
+- **Evidence:** the three runs at 05:56–05:57; `fixtures/.tells-app/src/App.jsx` modified 05:56:32.
 - **Status:** open
