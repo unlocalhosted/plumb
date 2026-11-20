@@ -3275,6 +3275,39 @@ shape, so the hatch is a dot in the corner rather than on the words you read.
 **Media hooks.** The slide's dial turned to mid-gesture, the knob and the hatched words side by side
 (`node generator/data/proto-shot.mjs dial beui/slide-action-button`).
 
+### 48. Prototype A tells the story of the gesture (2026-11-20)
+
+**The itch.** Of the three prototypes, the owner liked A, the strip under the button you scrub through, "but we need
+a better and more insightful way to show interactions". The strip plotted one number over time: how much plumber found
+wrong. It didn't show what the person did, how the button answered, or which standard broke when.
+
+**What we chose.** Asked what the view should mainly show, the owner picked "the story of one gesture", with the
+button freezing wherever you scrub, as before. The strip became four lanes on one time line. Each lane answers one
+question and is read against the standard behind it:
+- *Your hand:* pressed, held for how long, let go.
+- *Its answer:* how soon anything on the button changed, against Nielsen's 0.1 s that feels instant.
+- *Its movement:* how much is moving moment by moment, and how long it keeps moving after you let go, against the
+  500 ms Material gives its longest transitions. Anything past the limit is hatched coral.
+- *Its words:* mint while they read, coral while the fill takes them, with a tick each time they change.
+
+The press, the let-go and the scrub line run through every lane, and the line under them says what the button says at
+that moment and what is wrong then.
+
+**Dead ends.** The first version said every form answered in about 100 to 190 ms, while the judge measured about 30.
+Plumber's first check runs slow, and it ran inside the press, so it held up the answer it was timing. The at-rest
+check now runs when the pointer arrives, and the engine warms up once when the page loads. After that the answers read
+13 to 15 ms. A part sliding to a new position didn't count as movement at first; it does now, as it does for the judge.
+
+**The proof** (crafting attention's buy button):
+- Slide to commit: the words are unreadable for 2.2 s, up to 65% of them.
+- Hold to commit: still moving 1.1 s after you let go, past the hatched limit. Its words are readable the whole way.
+- Press, then confirm: answers in 14 ms. The words go unreadable just after you let go and stay that way.
+
+Each of these matches the form's verdict.
+
+**Media hooks.** The hold's lanes with the hatched overrun, and the slide's with the long coral stretch of words
+(`node generator/data/proto-shot.mjs scrub <form>`).
+
 ### 38. Alt and the X-ray card (2026-11-20)
 
 - **The itch:** holding Alt showed the old name tag outside Blueprint, and Alt-click opened the old element card with its heat and a dark spacing slider. Once the X-ray card took over, its pink note looked wrong. The owner on the note: "why is this black on muddy pink". On three new tints of it: "all of them look so ugly".
@@ -4945,6 +4978,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- Prototype A (?proto=scrub) now tells the story of a gesture: four lanes on one time line (your hand, its first answer, its movement, its words), each drawn against its standard's limit, and the button freezes wherever you scrub ([entry](#48-prototype-a-tells-the-story-of-the-gesture-2026-11-20)).
 - The button ideas page runs every button live (press, hold, slide them), and keeps only the 70 that load without an error and visibly do what they claim; error screens and frozen parts are gone ([entry](#45-the-ideas-page-was-pictures-of-broken-buttons-now-it-runs-the-ones-that-work-2026-11-20)).
 - Prototype C on the atoms page (?proto=dial): a knob under each button with a pip per state (at rest, pointed at, pressed, mid-gesture, done), mint or coral by what plumber finds; turning it freezes the button in that state with its fault hatched on it ([entry](#47-prototype-c-a-dial-through-the-buttons-states-2026-11-20)).
 - Prototype B on the atoms page (?proto=thermal): while you hold or slide a button, plumber's faults glow on the button itself, butter when brief and coral when they last, and one line after names the hottest moment ([entry](#46-prototype-b-heat-on-the-button-while-you-hold-it-2026-11-20)).

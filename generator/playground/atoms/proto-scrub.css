@@ -8,19 +8,37 @@
   background: repeating-linear-gradient(135deg, color-mix(in oklab, var(--pl-coral, #bf3a1e) 55%, transparent) 0 3px, transparent 3px 7px); }
 .scrub-box { position: absolute; border: 1.5px dashed var(--pl-coral, #bf3a1e); border-radius: 4px; }
 
-.scrub { display: grid; gap: 8px; margin: 18px 0 6px; font-family: var(--pl-sans); color: var(--pl-ink);
+.scrub { display: grid; gap: 22px; margin: 18px 0 6px; font-family: var(--pl-sans); color: var(--pl-ink);
   opacity: 0; transform: translateY(-6px); transition: opacity var(--pl-dur-arrive, 220ms) var(--pl-ease-out, ease-out), transform var(--pl-dur-arrive, 220ms) var(--pl-spring, ease-out); }
 .scrub.open { opacity: 1; transform: none; }
-.scrub-track { position: relative; height: 44px; border-radius: var(--pl-radius-row, 8px); background: var(--pl-paper-2, #f6f6f4); cursor: ew-resize; touch-action: none; outline: none; }
-.scrub-track:focus-visible { box-shadow: 0 0 0 2px var(--pl-ink); }
-.scrub-track svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.scrub-sev { fill: color-mix(in oklab, var(--pl-coral, #bf3a1e) 26%, transparent); stroke: var(--pl-coral, #bf3a1e); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
-.scrub-base { stroke: var(--pl-mint, #1a9460); stroke-width: 2; vector-effect: non-scaling-stroke; }
-.scrub-event { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1px dashed color-mix(in oklab, var(--pl-ink) 45%, transparent); }
-.scrub-event.low span { top: auto; bottom: -16px; }
-.scrub-event span { position: absolute; top: -17px; left: -2px; font: 600 10.5px/1 var(--pl-sans); color: var(--pl-ink-2, #5b574f); white-space: nowrap; }
-/* the head: a small soft block that rides the strip */
-.scrub-head { position: absolute; top: -3px; bottom: -3px; width: 10px; margin-left: -5px; border-radius: 4px; background: var(--pl-ink); box-shadow: 0 2px 0 color-mix(in oklab, var(--pl-ink) 60%, black); transition: left 60ms linear; }
+/* the lanes: one time line, four rows, each read against its standard. A row's name and its finding sit above it;
+   the row itself is the time it covers. Mint holds, coral breaks, sky is a measurement (the movement), and a pale
+   band is the limit the standard allows. */
+.scrub-track { position: relative; display: grid; gap: 8px; padding: 2px 0; cursor: ew-resize; touch-action: none; outline: none; }
+.scrub-track:focus-visible { box-shadow: 0 0 0 2px var(--pl-ink); border-radius: var(--pl-radius-row, 8px); }
+.atom .scrub .lane-head { margin: 0 0 3px; font: 400 11.5px/1.3 var(--pl-sans); color: var(--pl-ink-2); opacity: 1; }
+.atom .scrub .lane-head b { font-weight: 700; color: var(--pl-ink); }
+.atom .scrub .lane-head .ok { color: var(--pl-mint); }
+.atom .scrub .lane-head .bad { color: var(--pl-coral); font-weight: 600; }
+.lane-body { position: relative; height: 14px; border-radius: 4px; background: var(--pl-paper-2, #f6f6f4); overflow: hidden; }
+.lane-body svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.lane-body .seg { position: absolute; top: 0; bottom: 0; }
+.seg.hand { background: var(--pl-ink); border-radius: 4px; }
+.seg.limit { background: color-mix(in oklab, var(--pl-mint) 18%, transparent); box-shadow: inset -1.5px 0 0 color-mix(in oklab, var(--pl-mint) 70%, transparent); }
+.seg.over { background: repeating-linear-gradient(135deg, color-mix(in oklab, var(--pl-coral) 60%, transparent) 0 3px, transparent 3px 6px); }
+.seg.read { background: color-mix(in oklab, var(--pl-mint) 55%, transparent); }
+.seg.lost { background: var(--pl-coral); }
+.lane-body .tick { position: absolute; top: -1px; bottom: -1px; width: 3px; margin-left: -1.5px; border-radius: 2px; }
+.tick.ok { background: var(--pl-mint); } .tick.bad { background: var(--pl-coral); }
+.say-tick { position: absolute; top: 0; bottom: 0; width: 1.5px; background: color-mix(in oklab, var(--pl-ink) 55%, transparent); }
+.motion { fill: color-mix(in oklab, var(--pl-sky, #2f7fd8) 35%, transparent); stroke: var(--pl-sky, #2f7fd8); stroke-width: 1.25; vector-effect: non-scaling-stroke; }
+.scrub-event { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1px dashed color-mix(in oklab, var(--pl-ink) 55%, transparent); pointer-events: none; }
+.atom .scrub .lane-head i { font-style: normal; color: var(--pl-ink-2); font-weight: 400; }
+.scrub-when { position: relative; height: 12px; margin-top: -4px; }
+.scrub-when span { position: absolute; font: 600 10.5px/1 var(--pl-sans); color: var(--pl-ink-2); white-space: nowrap; }
+.scrub-when .end { transform: translateX(-100%); padding-right: 3px; }
+/* the head: a thin ink line through every lane's row */
+.scrub-head { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--pl-ink); transition: left 60ms linear; pointer-events: none; z-index: 2; }
 @media (prefers-reduced-motion: reduce) { .scrub, .scrub-head { transition: none; } }
 .scrub-note { display: flex; align-items: baseline; gap: 10px; justify-content: space-between; }
 .scrub-note p { margin: 0; font: 400 12.5px/1.45 var(--pl-sans); }
