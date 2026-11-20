@@ -3732,6 +3732,22 @@ restart, with the files in place, came up clean.
 the homepage's `foundations.css` through Next's bundle. Sync wrote `font-size: 44px` into that rule, the heading went
 from 48px to 44px, undo put it back to 48px, and the file was left exactly as it was.
 
+### 64. Fable reviews the parity plan (2026-11-20)
+**The itch.** The owner asked for "full parit support" between plain CSS and utility classes, and asked Fable to review
+the plan "for correctness and adaptability first".
+
+**What the review found.** The direction held: every reader and writer asks one question. The foundation didn't. The
+page computed the cascade by hand and got it wrong (rules inside `@media` and `@layer` skipped, Tailwind v4's layered
+utilities assumed to win, `!important` and inline style ignored). The add-a-class fallback writes a class that does
+nothing on a plain-CSS page and reports success. A rule is named by a selector string, which CSS modules break. The
+plan also missed that shadow recipes and finding fixes already write plain CSS on the server. We checked four of these
+claims in the code before changing the plan.
+
+**What we chose.** The page gathers evidence and proves the winning declaration by effect (change it for a moment, see
+if the computed value moves); the style systems move to the server as one object each, return edits instead of
+writing, and name a place by its range in a file. A new layer 0 builds that interface before anything else.
+The brief is [docs/briefs/css-parity.md](briefs/css-parity.md).
+
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
 - Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".
