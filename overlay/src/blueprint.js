@@ -78,6 +78,17 @@ export class Blueprint {
     this.#craft = new Craft({ theme, again: () => this.#reader?.refresh() });
     this.#craft.onFacts = () => { if (this.active) this.#reader.refresh(); }; // an icon's ink landed
     onReleased((els) => this.#craft.again(els)); // a preview ended: what was judged under it is judged again, on the page's own values
+    // A gesture held on the page (a slide dragged halfway, a hold held): plumber judges what is drawn while it is held,
+    // moving parts included, and keeps judging as it changes; letting go hands the page back to judging things at rest.
+    // Without this the marks came only after the hand let go, which is exactly when the fault is gone.
+    let holdTimer = 0, holdTick = 0;
+    const release = () => { clearTimeout(holdTimer); clearInterval(holdTick); holdTimer = holdTick = 0; if (this.#craft.now) { this.#craft.now = false; if (this.active) this.#reader?.refresh(); } };
+    addEventListener('pointerdown', (e) => {
+      if (!this.active || e.button !== 0 || e.composedPath().includes(this.#host)) return;
+      release();
+      holdTimer = setTimeout(() => { this.#craft.now = true; this.#reader?.refresh(); holdTick = setInterval(() => this.#reader?.refresh(), 250); }, 250);
+    }, { capture: true });
+    for (const type of ['pointerup', 'pointercancel', 'blur']) addEventListener(type, release, { capture: true });
     this.#layer = Object.assign(document.createElement('div'), { className: 'bp', hidden: true });
     root.appendChild(this.#layer);
     this.#glass = new Glass(root, host);

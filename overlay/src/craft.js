@@ -471,6 +471,11 @@ export class Craft {
   // now: judge what is drawn this moment, moving or not (the generator holds a gesture mid-way and asks what plumber
   // sees there); the overlay leaves it off and judges what moves once it comes to rest
   #now = false;
+  // switched on by the overlay while a person holds a gesture, off when they let go
+  get now() { return this.#now; }
+  // switching it on forgets the notes kept per element: they are keyed on everything but motion (an animation library
+  // rewrites opacity and transform every frame), so a label faded by a held gesture looked unchanged and kept its notes from rest
+  set now(v) { if (v && !this.#now) this.invalidate(); this.#now = !!v; }
   constructor({ rules = PACK_RULES, theme, again, now = false } = {}) {
     this.#again = again ?? null;
     this.#now = now;
@@ -568,6 +573,7 @@ export class Craft {
       // waits it shows what it last had. When the last slice lands the page is handed over again. A Craft with
       // nobody to tell (the card's own) judges everything now, as before.
       const queue = [], until = this.#again ? performance.now() + SLICE : Infinity;
+      if (this.#now) this.#cache = new WeakMap(); // judging what is drawn this moment: nothing kept from a moment before
       const judged = items.map((item, i) => {
         if (!still[i]) return { ...item, marks: [...item.marks] };
         const el = item.el, hit = this.#cache.get(el);

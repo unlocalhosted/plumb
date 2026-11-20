@@ -5,6 +5,9 @@ import { createRequire } from 'node:module';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 const PLUMB = fileURLToPath(new URL('../../', import.meta.url));
+// the playground as plumber's project: the library parts (vendor/) and the atoms pages are its own source, so plumber
+// stamps and judges them; with each product's folder as the root they were outside it, and left unjudged
+const PLAYGROUND = fileURLToPath(new URL('./', import.meta.url));
 const SPARE = ['/Users/vijaysingh/unlocalhosted/craftingattention/app', '/Users/vijaysingh/unlocalhosted/algorecall'];
 const PKGS = ['react', 'react-dom', 'motion', 'clsx', 'tailwind-merge', 'lucide-react'];
 
@@ -16,7 +19,7 @@ export async function playground({ here, root, src = 'src', aliases = [], allow 
   const { plumb } = await import(`${PLUMB}dist/hosts/vite.js`);
   const from = (p) => [root, ...SPARE].find((r) => existsSync(`${r}/node_modules/${p}`)) + '/node_modules/' + p;
   return {
-    root: here, publicDir: root + '/public', plugins: [plumb(), react(), tailwindcss()],
+    root: here, publicDir: root + '/public', plugins: [plumb({ root: PLAYGROUND }), react(), tailwindcss()],
     resolve: { alias: [
       ...aliases,
       { find: /^@\//, replacement: `${root}/${src}/` },

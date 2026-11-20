@@ -989,14 +989,18 @@ const LAYERS = new WeakMap();
 // words' own neighbourhood (their ancestor three levels up), which is where a trail, a fill or a highlight lives
 function layersOf(facts, el) {
   const scope = facts.items ? facts : (() => { let a = el; for (let i = 0; i < 3 && a.parentElement; i++) a = a.parentElement; return a; })();
-  let all = LAYERS.get(scope);
-  if (all) return all;
-  all = [];
+  // one pass over the page: the overlay's facts live for the whole visit, and layers move (a trail that was empty at rest
+  // fills while a gesture is held), so a list kept longer than a pass judged the held state with the resting layers
+  const kept = LAYERS.get(scope);
+  if (kept && performance.now() - kept.at < 50) return kept.all;
+  let all = [];
+  // layers move (that is what this rule is about), so they are read live from the page, not from facts kept for the
+  // visit: the overlay's facts are cached across passes, and a trail read at rest stayed empty while a gesture was held
   // what is seen of a box: cut by every clipping box above it and by its own and its parents' clip-path insets
   const seen = (e) => {
-    const r0 = facts.rect(e); let b = { l: r0.left, r: r0.right, t: r0.top, b: r0.bottom };
+    const r0 = e.getBoundingClientRect(); let b = { l: r0.left, r: r0.right, t: r0.top, b: r0.bottom };
     for (let n = e; n && n !== document.body; n = n.parentElement) {
-      const cs = facts.style(n), c = facts.rect(n);
+      const cs = getComputedStyle(n), c = n.getBoundingClientRect();
       if (n !== e && cs.overflow !== 'visible') b = { l: Math.max(b.l, c.left), r: Math.min(b.r, c.right), t: Math.max(b.t, c.top), b: Math.min(b.b, c.bottom) };
       const m = /^inset\(([^)]*)\)/.exec(cs.clipPath);
       if (m) { const v = m[1].replace(/round.*/, '').trim().split(/\s+/), [T, R, B, L] = [v[0], v[1] ?? v[0], v[2] ?? v[0], v[3] ?? v[1] ?? v[0]];
@@ -1007,28 +1011,28 @@ function layersOf(facts, el) {
   };
   for (const e of facts.items ?? scope.querySelectorAll('*')) {
     if (!e.isConnected) continue;
-    const cs = facts.style(e), bg = rgb(cs.backgroundColor);
+    const cs = getComputedStyle(e), bg = rgb(cs.backgroundColor);
     if (!bg || bg[3] * (parseFloat(cs.opacity) || 0) < 0.5) continue;
     // a layer is placed or moved, not laid out in the flow beside the words
     if (!/^(absolute|fixed|sticky)$/.test(cs.position) && cs.transform === 'none' && cs.clipPath === 'none') continue;
     const v = seen(e); if (v) all.push({ el: e, v, bg, z: zOf(e, facts), pos: cs.position !== 'static' });
   }
-  LAYERS.set(scope, all);
+  LAYERS.set(scope, { all, at: performance.now() });
   return all;
 }
 // stacking, roughly: a positioned box's z-index (auto counts as 0), else its nearest positioned parent's
-function zOf(e, facts) { for (let n = e; n && n !== document.body; n = n.parentElement) { const cs = facts.style(n); if (cs.position !== 'static') return parseInt(cs.zIndex, 10) || 0; } return -Infinity; }
+function zOf(e, facts) { for (let n = e; n && n !== document.body; n = n.parentElement) { const cs = getComputedStyle(n); if (cs.position !== 'static') return parseInt(cs.zIndex, 10) || 0; } return -Infinity; }
 export const wordsOnLayers = {
   id: 'craft/words-on-layers', family: 'craft', number: [], owns: ['color'], once: 'element', refines: ['craft/contrast'], reads: ['style', 'text', 'rect'],
   check({ el, facts }, theme) {
     // words hidden from a screen reader are still read by everyone who sees them (a slide's label, its name on the thumb)
     const own = [...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.nodeValue).join(' ').trim();
     if (!facts.text(el) || !/\p{L}{2}/u.test(own)) return [];
-    const s = facts.style(el), c = rgb(s.color); if (!c) return [];
-    let fade = 1; for (let n = el; n && n !== document.documentElement; n = n.parentElement) fade *= parseFloat(facts.style(n).opacity) || 0;
+    const s = getComputedStyle(el), c = rgb(s.color); if (!c) return [];
+    let fade = 1; for (let n = el; n && n !== document.documentElement; n = n.parentElement) fade *= parseFloat(getComputedStyle(n).opacity) || 0;
     if (fade < 0.05) return []; // not shown: there is nothing to read
     // words clipped out of sight (a screen reader's hint in a 1px box) aren't drawn
-    for (let n = el; n && n !== document.body; n = n.parentElement) { const r = n.getBoundingClientRect(); if (facts.style(n).overflow !== 'visible' && (r.width <= 2 || r.height <= 2)) return []; }
+    for (let n = el; n && n !== document.body; n = n.parentElement) { const r = n.getBoundingClientRect(); if (getComputedStyle(n).overflow !== 'visible' && (r.width <= 2 || r.height <= 2)) return []; }
     const lines = [], range = document.createRange();
     for (const n of el.childNodes) { if (n.nodeType !== 3 || !n.nodeValue.trim()) continue; range.selectNodeContents(n); for (const q of range.getClientRects()) if (q.width > 2 && q.height > 2) lines.push(q); }
     if (!lines.length) return [];

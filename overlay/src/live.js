@@ -111,7 +111,12 @@ let handsAt = -Infinity, hands = false;
 function listenHands() {
   if (hands || typeof addEventListener === 'undefined') return;
   hands = true;
-  const on = () => { handsAt = performance.now(); };
+  const on = (e) => {
+    // Space held to use the page under plumber's glass, and a key's own auto-repeat, aren't typing: counted as busy hands
+    // they kept plumber from judging for as long as a gesture was held
+    if (e?.type === 'keydown' && (e.repeat || e.key === ' ')) return;
+    handsAt = performance.now();
+  };
   for (const type of ['wheel', 'scroll', 'touchmove', 'keydown']) addEventListener(type, on, { capture: true, passive: true });
 }
 export function handsBusy() { listenHands(); return performance.now() - handsAt < HANDS; }
