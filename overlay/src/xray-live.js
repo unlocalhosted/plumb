@@ -89,6 +89,9 @@ export const XRAY_LIVE_CSS = `
   .xr-hand .thumb:is([data-on="mode"], [data-on="scope"]) { background: var(--pl-lilac-soft); box-shadow: inset 0 0 0 1.5px color-mix(in oklab, var(--pl-lilac) 50%, transparent); }
   .xr-hand .thumb[data-pulled] { transition: transform 60ms linear, width 60ms linear; }
   .xr-hand .row[data-seg="mode"] [data-s="mode"], .xr-hand .row[data-seg="scope"] [data-s="scope"] { color: var(--pl-lilac-ink); }
+  /* the value on its sky thumb is lettered in sky's ink, a pair the contrast check holds (pairs.js); coral on the thumb
+     was 1.8:1 at night. "hard-coded" is said by the word beside it (U56) */
+  .xr-hand .row[data-seg="value"] .val b, .xr-hand .row:not([data-seg]) .val b { color: var(--pl-sky-ink); }
   .xr-hand [data-s="scope"] { max-width: 92px; overflow: hidden; text-overflow: ellipsis; }
   /* the token picker's own secondary words (the side, the px beside a token) follow the X-ray's label colour */
   .xr-hand :is(.side, .slot span) { color: var(--xr-label); }
