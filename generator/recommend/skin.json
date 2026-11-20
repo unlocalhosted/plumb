@@ -1,0 +1,7 @@
+{
+ "--atom-fill": "oklch(0.55 0.22 295)", "--atom-on-fill": "oklch(0.99 0.005 260)", "--atom-edge": "oklab(0.446875 0.0640413 -0.14548)",
+ "--atom-deep": "color-mix(in oklab, oklch(0.55 0.22 295) 45%, black)", "--atom-on-deep": "oklch(0.99 0.005 260)",
+ "--atom-lip": "oklab(0.446875 0.0640413 -0.14548) 0px 3px 0px 0px, oklab(0.55 0.092976 -0.199388 / 0.15) 0px 6px 0px 0px",
+ "--atom-radius": "5px", "--atom-height": "48px", "--atom-font": "Geist, -apple-system, system-ui, 'Segoe UI', Roboto, sans-serif",
+ "--atom-size": "14px", "--atom-weight": "550", "--atom-width": "420px"
+}

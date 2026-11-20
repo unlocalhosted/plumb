@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Buy Button Recommendations</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap">
+<style>
+:root { --paper:#fff; --ink:#121212; --gray:#5a5a5a; --rule:#e2e2e2; --faint:#f5f4f1; --ok:#2f8a57; --mark:#6b3fd1;
+  --serif:"Source Serif 4",Georgia,serif; --sans:"Libre Franklin","Helvetica Neue",Arial,sans-serif; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --paper:#121212; --ink:#ececec; --gray:#a3a3a3; --rule:#333; --faint:#1c1c1c; --ok:#6cc08d; --mark:#a88cf0; color-scheme:dark; } }
+:root[data-theme="dark"] { --paper:#121212; --ink:#ececec; --gray:#a3a3a3; --rule:#333; --faint:#1c1c1c; --ok:#6cc08d; --mark:#a88cf0; color-scheme:dark; }
+* { box-sizing:border-box; } body { margin:0; background:var(--paper); color:var(--ink); font-family:var(--serif); padding:0 16px 80px; }
+main { max-width:980px; margin:0 auto; }
+.kicker { font:700 12px/1 var(--sans); letter-spacing:.08em; text-transform:uppercase; color:var(--gray); margin:56px 0 14px; }
+h1 { font:700 clamp(32px,6vw,48px)/1.08 var(--serif); margin:0; max-width:780px; text-wrap:balance; }
+.dek { font:400 19px/1.5 var(--serif); color:var(--gray); max-width:700px; margin:16px 0 22px; text-wrap:pretty; }
+.byline { font:500 13px/1.4 var(--sans); border-top:1px solid var(--rule); padding-top:12px; margin-bottom:28px; color:var(--gray); }
+.baseline { background:var(--faint); border-radius:10px; padding:18px 20px; margin:0 0 36px; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:18px; align-items:center; }
+.baseline p { margin:0; font:400 16px/1.5 var(--serif); }
+.baseline b { font-family:var(--sans); font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--gray); display:block; margin-bottom:6px; }
+.rec { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.1fr); gap:28px; padding:30px 0; border-top:1px solid var(--rule); align-items:start; }
+/* each button on crafting attention's own page colour, light in either theme, as it ships */
+.live { background:#fff; border-radius:10px; overflow:hidden; box-shadow:inset 0 0 0 1px rgba(0,0,0,.06); color-scheme:light; }
+.live iframe { display:block; width:100%; height:130px; border:0; }
+.rec .live p, .baseline .live p { margin:0; padding:0 14px 12px; font:500 12px/1.3 var(--sans); color:#6b6b6b; text-align:center; }
+.num { font:700 12px/1 var(--sans); letter-spacing:.06em; text-transform:uppercase; color:var(--mark); }
+.rec h2 { font:700 26px/1.2 var(--serif); margin:6px 0 10px; }
+.rec p { font:400 17px/1.55 var(--serif); margin:0 0 12px; text-wrap:pretty; }
+.facts { display:grid; grid-template-columns:auto minmax(0,1fr); gap:6px 14px; margin:14px 0 0; font:400 13.5px/1.45 var(--sans); }
+.facts dt { color:var(--gray); font-weight:600; } .facts dd { margin:0; }
+.pass { color:var(--ok); font-weight:600; }
+.note { font:400 14px/1.5 var(--sans); color:var(--gray); border-top:1px solid var(--rule); padding-top:18px; margin-top:12px; }
+@media (max-width:720px) { .rec, .baseline { grid-template-columns:minmax(0,1fr); } }
+</style></head>
+<body><main>
+<p class="kicker">React Plumber · Recommendations</p>
+<h1>Four ways to make crafting attention’s buy button answer the press</h1>
+<p class="dek">Each one is built in crafting attention’s own colours, type and corner, grounded in an idea that ships in public button libraries, and checked in a real browser before it reached this page. Press them; they are live.</p>
+<p class="byline">The moment: a first-time visitor on the pricing page, buying lifetime access. Judged 20 November 2026.</p>
+
+<section class="baseline">
+  <div class="live"><iframe title="The buy button as shipped" src="buy-recommendations/app/index.html?r=shipped" loading="lazy"></iframe><p>As shipped</p></div>
+  <div><b>Start here</b><p>The button already does the right thing for this moment: one press. It only opens checkout, and checkout is where the payment is confirmed, so a slide or a hold here would make people commit twice. The recommendations keep the single press and make the press itself feel answered.</p></div>
+</section>
+
+<section class="rec">
+  <div class="live"><iframe title="Press, and it pours, live" src="buy-recommendations/app/index.html?r=pour" loading="lazy"></iframe><p>Press and hold to watch it; slide off to drain it</p></div>
+  <div><span class="num">1 · Press, and it pours</span><h2>The press lands where your finger did</h2>
+    <p>A deeper purple floods out from the exact point you pressed. The words are drawn twice, so they stay readable on both sides of the edge. Sliding off before letting go drains it back, and nothing is bought.</p>
+    <p>Pick it when the brand wants the press to feel physical without adding a step.</p>
+    <dl class="facts"><dt>From the idea</dt><dd>Press with a ripple and a liquid fill (Magic UI’s ripple button, 23,380 stars; Devl’s droplet button)</dd>
+      <dt>Measured</dt><dd>Answers in under 5 ms; the pour settles in 0.37 s</dd>
+      <dt>Checked</dt><dd class="pass">Passes all five standards it is held to</dd></dl></div>
+</section>
+
+<section class="rec">
+  <div class="live"><iframe title="Press, and the arrow leads, live" src="buy-recommendations/app/index.html?r=lead" loading="lazy"></iframe><p>Press it and watch the arrow while checkout opens</p></div>
+  <div><span class="num">2 · Press, and the arrow leads</span><h2>The wait moves the way you’re going</h2>
+    <p>The button’s own pixel arrow sets off when you press, and while checkout opens it keeps dashing out to the right and back in, a progress mark made of something the button already had.</p>
+    <p>Pick it when checkout takes a beat to open and the brand’s arrow is worth keeping in view.</p>
+    <dl class="facts"><dt>From the idea</dt><dd>Press whose icon reshapes (Spectrum UI’s follow button, 1,543 stars; beUI’s expanding arrow button, 1,990 stars)</dd>
+      <dt>Measured</dt><dd>Answers in 35 ms; the arrow stops for anyone who asks for reduced motion</dd>
+      <dt>Checked</dt><dd class="pass">Passes all five standards it is held to</dd></dl></div>
+</section>
+
+<section class="rec">
+  <div class="live"><iframe title="Press, and it says what’s happening, live" src="buy-recommendations/app/index.html?r=answer" loading="lazy"></iframe><p>Press it: the words roll over</p></div>
+  <div><span class="num">3 · Press, and it says what’s happening</span><h2>The moment before checkout has a voice</h2>
+    <p>The label rolls up to “Opening checkout”, and a thin line grows along the bottom edge while it does. The words move but never fade, which is the fault that broke the library version of this idea: its label dropped to half strength mid-change.</p>
+    <p>Pick it when people press twice because nothing seems to happen.</p>
+    <dl class="facts"><dt>From the idea</dt><dd>Press that answers in words (beUI’s stateful button; Velora’s stateful button)</dd>
+      <dt>Measured</dt><dd>Answers in 47 ms; the words stay at full strength throughout</dd>
+      <dt>Checked</dt><dd class="pass">Passes all five standards it is held to</dd></dl></div>
+</section>
+
+<section class="rec">
+  <div class="live"><iframe title="A sheen, once, live" src="buy-recommendations/app/index.html?r=sheen" loading="lazy"></iframe><p>Point at it to see the light pass</p></div>
+  <div><span class="num">4 · A sheen, once</span><h2>The eye finds it, and it doesn’t nag</h2>
+    <p>A soft band of light crosses the button when it comes into view and again when the pointer arrives. It never loops, it passes under the words, and it doesn’t appear at all for people who ask for reduced motion.</p>
+    <p>Pick it when the card is busy and the button needs a moment of attention, not a permanent one.</p>
+    <dl class="facts"><dt>From the idea</dt><dd>Press with a shimmer (Magic UI’s shiny button, 23,380 stars; AffectUI’s button)</dd>
+      <dt>Measured</dt><dd>One pass of 0.46 s; nothing moves with reduced motion</dd>
+      <dt>Checked</dt><dd class="pass">Passes all five standards it is held to</dd></dl></div>
+</section>
+
+<p class="note">How they were checked: each was pressed to the end, started and abandoned, used from the keyboard alone, and used again with reduced motion turned on, while plumber read the words on it every tenth of a second. The five standards come from Nielsen’s heuristics, Apple’s and Google’s design guidelines and WCAG 2.2. The ideas come from 81 working buttons out of 335 recorded from public libraries.</p>
+</main></body></html>
