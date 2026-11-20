@@ -3837,8 +3837,11 @@ gap proven under `@media (min-width: 900px)` was written inside that block; with
 → back), `.lead`'s colour wrote `.lead` and was undone, a gap on the heading was refused with a reason. The ledger
 (Vite, Tailwind): a `gap-2` row wrote `gap-6` in `src/App.jsx` (8px → 24px → back). Every test file was left clean.
 
-**Not done.** The element card's layout and spacing buttons carry only classes, so on a plain-CSS page they still write
-classes. Clean up's system pass (apply-all) is class-based. Recipes keep their own rule finder, and rename knows only
+**Then the element card.** Its spacing, size and layout handles pass only class swaps; each new class is now read back
+as the property and value it sets (`gap-`, `p-`, `px-`, `w-`… with the token's size from the card's own scale), and
+when a rule of yours owns them they are written in that rule, in one undo step. Not driven by hand.
+
+**Not done.** Clean up's system pass (apply-all) is class-based. Recipes keep their own rule finder, and rename knows only
 `--color-*` names. The card's buttons were not driven by hand in this pass: its Alt-held card closes under synthetic
 clicks, so the writes were run through the same code from the console.
 
@@ -5454,7 +5457,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   `generator/shots/generate-craftingattention.png` (local).
 
 ## Open gaps
-- **CSS parity gaps:** the element card's layout and spacing buttons, Clean up's system pass, recipes' own rule finder, rename beyond `--color-*`, and Sass not yet run against a real `sass` install ([entry](#68-layers-2-to-9-parity-end-to-end-2026-11-20)).
+- **CSS parity gaps:** Clean up's system pass, recipes' own rule finder, rename beyond `--color-*`, and Sass not yet run against a real `sass` install ([entry](#68-layers-2-to-9-parity-end-to-end-2026-11-20)).
 - **CSS rule fixes are narrow.** They cover text size, line height, weight, gap, corners, width, height and padding per side, from rules outside `@media`. Padding set for two sides at once (`padding-x`) still goes to classes, and the change isn't checked against your token scale before it's written ([entry](#63-css-rule-fixes-work-on-the-next-site-2026-11-20)).
 - **The owner's slop checks are untuned on real apps.** Tight letters fire on every heading that sets them (28 on our homepage), the shade count reads greys mixed by opacity as separate shades, and none of the eleven has been run through a full plumber read or the docs' recordings yet ([entry](#56-the-owners-slop-list-becomes-eleven-anti-slop-checks-2026-11-20)).
 - **The mark was never tried among real neighbours** (a row of browser tabs, an npm page, a README header), only on empty tiles. Nobody outside has been asked whether the round leg reads as an R or leans towards a B.

@@ -29,6 +29,7 @@
  *            positions only, no loops, no plays
  * ───────────────────────────────────────────────────────── */
 import { request, post } from './api.js';
+import { ruleChanges } from './style-systems.js';
 import { locate, componentOf, classSiteOf, classEditsOf, siteMates } from './locate.js';
 import { esc } from './choices.js';
 import { FIX } from './words.js';
@@ -407,8 +408,42 @@ export class ElementCard {
   // class changes (layout, spacing: [{ el, from, to }]) written where each element's classes are written, in one go
   // with one Undo, said in the fix panel: a swap on its own line, or the usage's className string rewritten (the classes
   // replaced where the first of them was). A change written nowhere is refused before anything is written.
+  // A class change read back as the properties and values it sets, when every class in it is one of the card's own
+  // (spacing from the scale, size from the size steps, or an arbitrary [value]); null when any class isn't.
+  #asValues(edit) {
+    const SIDES = { '': ['top', 'right', 'bottom', 'left'], x: ['left', 'right'], y: ['top', 'bottom'], t: ['top'], r: ['right'], b: ['bottom'], l: ['left'] };
+    const out = [];
+    for (const cls of String(edit.to ?? '').split(/\s+/).filter(Boolean)) {
+      const bare = cls.split(':').pop();
+      let m, props, token;
+      if ((m = /^gap(?:-([xy]))?-(.+)$/.exec(bare))) { props = [m[1] === 'x' ? 'column-gap' : m[1] === 'y' ? 'row-gap' : 'gap']; token = m[2]; }
+      else if ((m = /^(-?)([pm])([xytrbl]?)-(.+)$/.exec(bare))) { props = SIDES[m[3]].map((side) => `${m[2] === 'p' ? 'padding' : 'margin'}-${side}`); token = m[4]; }
+      else if ((m = /^([wh])-(.+)$/.exec(bare))) { props = [m[1] === 'w' ? 'width' : 'height']; token = m[2]; }
+      else return null;
+      const arbitrary = /^\[(.+)\]$/.exec(token)?.[1];
+      const size = props[0] === 'width' || props[0] === 'height' ? this.#props?.props?.find((p) => p.key === props[0])?.steps?.find((x) => x.token === token)?.value : null;
+      const px = this.#scale().find((x) => x.token === token)?.px;
+      const value = arbitrary ?? size ?? (Number.isFinite(px) ? `${px}px` : null);
+      if (!value) return null;
+      out.push({ props, value });
+    }
+    return out.length ? out : null;
+  }
   async #classWrite(edits, said, meta) {
     this.#wrong = null;
+    // an element whose values a rule of yours sets: the change is written in that rule (style-systems.js), not as a class
+    const styled = [];
+    for (const e of edits) {
+      const values = this.#asValues(e);
+      if (!values) { styled.length = 0; break; }
+      for (const v of values) { const r = await ruleChanges(e.el, v.props, v.value, request).catch(() => null); if (!r) { styled.length = 0; break; } styled.push(...r); }
+      if (!styled.length) break;
+    }
+    if (styled.length) {
+      const result = await this.#host.batch([{ kind: 'style', changes: styled }], said, meta);
+      this.#host.said?.(said, result?.undo ?? [], result?.group ?? null);
+      return result;
+    }
     // each change in the string its classes are written in (locate.js classEditsOf, the server's class site): a class
     // in a ternary's branch is changed in that branch, a class from a variable in the variable, an added class where the
     // server says; a change written nowhere is refused before anything is written

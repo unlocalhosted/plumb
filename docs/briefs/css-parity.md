@@ -121,7 +121,7 @@ One at a time, each shown working before the next, on a real plain-CSS app as we
 ## Progress
 
 - **Layers 0 to 9 (2026-11-20):** built and shown end to end on the plumber site (Next, plain CSS) and the ledger
-  (Vite, Tailwind); journey 65 to 68. Open: the element card's layout and spacing buttons, Clean up's system pass,
+  (Vite, Tailwind); journey 65 to 68. Open: Clean up's system pass,
   recipes and rename on the shared rule system, and Sass run against a real `sass` install.
 
 ## Decisions still open
