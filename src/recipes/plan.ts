@@ -278,8 +278,7 @@ export function planShadow(i: PlanInput): Plan {
     if (!rule) return refuse(verdict, nearest, 'No rule of yours styles this element by its classes, so there is nowhere to put the shadow.');
     const css = edits.text(rule.file), fresh = scanStylesheet(css), block = fresh.blocks.find(b => b.header === rule.selector && b.depth === 1)!;
     const decl = block.decls.find(d => d.name === 'box-shadow');
-    const next = decl ? css.slice(0, decl.start) + `box-shadow: var(${token});` + css.slice(decl.end)
-      : css.slice(0, lineStartOf(css, block.close)) + `${blockIndent(css, block)}box-shadow: var(${token});\n` + css.slice(lineStartOf(css, block.close));
+    const next = setInBlock(css, block.header, 'box-shadow', `var(${token})`) ?? css;
     if (next === css) notes.push('The rule already uses it.');
     else edits.set(rule.file, next, 'rule', `${rule.selector} { box-shadow: var(${token}) }`);
     const users = countUsers(i, rule.cls);
@@ -349,9 +348,64 @@ export function planMotion(i: PlanInput): Plan {
   const el = i.element;
   if (isReactMotionElement(el) && i.index.idioms.motion.installed) return planMotionReact(i);
   if (m.requires === 'motion') return refuse(none, null, `${i.recipe.name} needs motion/react, and <${el.tag}> is not a motion element.`);
-  if (!i.index.idioms.tailwind) return refuse(none, null, 'This project has no Tailwind theme and this element is not a motion element, so there is no idiom to write a transition in.');
   if (m.trigger === 'layout') return refuse(none, null, `${i.recipe.name} animates layout, which needs motion/react.`);
+  // plain CSS: the motion goes into the rule that styles the element's class (docs/briefs/css-parity.md, layer 7)
+  if (!i.index.idioms.tailwind) return planMotionCss(i, m);
   return planMotionTailwind(i, m, exit);
+}
+
+const PSEUDO: Record<string, string> = { hover: ':hover', press: ':active', focus: ':focus-visible' };
+/** A motion change as CSS: opacity as itself; x, y and scale as one transform. */
+function changesCss(changes: MotionChange[], side: 'from' | 'to'): string[] {
+  const t: string[] = [], rest: string[] = [];
+  for (const c of changes) {
+    const v = c[side], n = typeof v === 'number' ? v : Number.parseFloat(String(v));
+    if (c.property === 'opacity') rest.push(`opacity: ${v}`);
+    else if (c.property === 'x' || c.property === 'y') t.push(`translate${c.property.toUpperCase()}(${Number.isFinite(n) && typeof v === 'number' ? px(n) : v})`);
+    else if (c.property === 'scale') t.push(`scale(${v})`);
+  }
+  return [...rest, ...(t.length ? [`transform: ${t.join(' ')}`] : [])];
+}
+/** Set a declaration in one block of a stylesheet: its value replaced, or a line added before the block closes. */
+function setInBlock(css: string, selector: string, name: string, value: string): string | null {
+  const block = scanStylesheet(css).blocks.find(b => b.header === selector && b.depth === 1);
+  if (!block) return null;
+  const decl = block.decls.find(d => d.name === name);
+  if (decl) return css.slice(0, decl.start) + `${name}: ${value};` + css.slice(decl.end);
+  // a rule on one line (`.a { x: 1; }`): the declaration goes before its brace, on that line
+  const line = lineStartOf(css, block.close);
+  if (css.slice(line, block.close).trim()) { const before = css.slice(0, block.close).replace(/\s*$/, ''); return `${before}${before.endsWith(';') || before.endsWith('{') ? '' : ';'} ${name}: ${value}; ` + css.slice(block.close); }
+  return css.slice(0, line) + `${blockIndent(css, block)}${name}: ${value};\n` + css.slice(line);
+}
+function planMotionCss(i: PlanInput, m: MotionModel): Plan {
+  const css = timingToCss(m.timing), info = wornBy(i), note = credit(i.recipe), notes: string[] = [];
+  if (info.kind !== 'static') return refuse(none(), null, info.reason ?? 'This element has no static class to find its rule by.');
+  const rule = findRule(i.index, i.read, info.classes, m.trigger === 'enter' || m.trigger === 'exit' ? 'animation' : 'transition');
+  if (!rule) return refuse(none(), null, 'No rule of yours styles this element by its classes, so there is nowhere to put the motion.');
+  const edits = new Edits(i.read);
+  let text = edits.text(rule.file);
+  const timing = `${formatDuration(css.duration)} ${css.easing}`;
+  if (m.trigger === 'enter' || m.trigger === 'exit') {
+    const base = slug(i.name ?? i.recipe.id);
+    const frames = `@keyframes ${base} {\n  from { ${changesCss(m.changes, 'from').join('; ')}; }\n  to { ${changesCss(m.changes, 'to').join('; ')}; }\n}\n`;
+    if (!new RegExp(`@keyframes\\s+${base}\\b`).test(text)) text = `${text.replace(/\s*$/, '\n')}\n${note ? `/* ${note} */\n` : ''}${frames}`;
+    else notes.push(`@keyframes ${base} is already in ${rule.file}; it is used as it is.`);
+    text = setInBlock(text, rule.selector, 'animation', `${base} ${timing} both`) ?? text;
+    if (m.trigger === 'enter') notes.push('Entrance only: a plain stylesheet has nothing that says when it leaves, so no exit is written.');
+  } else {
+    const props = [...new Set(m.changes.map(c => c.property === 'opacity' ? 'opacity' : 'transform'))];
+    text = setInBlock(text, rule.selector, 'transition', props.map(p => `${p} ${timing}`).join(', ')) ?? text;
+    const state = `${rule.selector}${PSEUDO[m.trigger] ?? ':hover'}`, decls = changesCss(m.changes, 'to');
+    if (decls.length) {
+      const has = scanStylesheet(text).blocks.find(b => b.header === state && b.depth === 1);
+      if (has) for (const d of decls) { const [name, ...v] = d.split(':'); text = setInBlock(text, state, name!.trim(), v.join(':').trim()) ?? text; }
+      else { const block = scanStylesheet(text).blocks.find(b => b.header === rule.selector && b.depth === 1)!; const after = text.indexOf('\n', block.close) + 1 || text.length; text = text.slice(0, after) + `${state} { ${decls.join('; ')}; }\n` + text.slice(after); }
+    }
+  }
+  edits.set(rule.file, text, 'rule', `${rule.selector}: ${i.recipe.name}`);
+  const users = countUsers(i, rule.cls);
+  if (users > 1) notes.push(`${rule.selector} is used by ${users} elements; they all change.`);
+  return { ok: true, choice: 'add', verdict: none(), nearest: null, writes: edits.writes(), notes, uses: { class: rule.cls } };
 }
 
 function planMotionTailwind(i: PlanInput, m: MotionModel, exit: MotionModel | undefined): Plan {
