@@ -161,7 +161,10 @@ export async function readiness(options: ReadinessOptions): Promise<ReadinessRep
     baseline === 'unknown' ? step(`Fix ${relative(root, statePath(root, 'ledger.jsonl'))}, then run plumber doctor.`, 'plumber doctor') : config ? step('Look over today’s problems, then record them.', 'plumber baseline')
       // with no config, the page plumber opens records them along with the rules: one first step, the same everywhere
       : onboardingPage() ? step('Run this, answer four questions on the page it opens, and press Set it up: it records them with your rules. (plumber init asks the same in the terminal.)', 'plumber')
-        : step('Run this and answer its questions: it writes your rules and records today’s problems with them.', 'plumber init'));
+        : step('Run this and answer its questions: it writes your rules and records today’s problems with them.', 'plumber init'),
+    // with no config, choosing your rules records today's problems too: one step in the list, not the same command
+    // twice (U20, 2026-11-20)
+    !config && baseline === 'missing' ? { derived: true, cause: 'fast.config' } : {});
   const plain = config ? await dataConfig(config) : undefined;
   let eligible = false, cacheUnknown = false;
   try { eligible = plain ? !!await CheckCache.create({ root, ...(config ? { config } : {}) }) : false; } catch { cacheUnknown = true; }
@@ -169,8 +172,8 @@ export async function readiness(options: ReadinessOptions): Promise<ReadinessRep
   add('fast.config', 'fast', configError || cacheUnknown ? 'unknown' : eligible ? 'ok' : 'missing', eligible ? 'Checks reuse the last result' : config ? 'Make checks faster' : 'Choose your rules', configEvidence,
     config ? 'Without a config file, every check starts from scratch.' : 'Without them, Plumber can’t tell a choice from a slip, and every check reads your app from scratch.',
     config ? step(plain ? 'Take executable presets and CSS plugins out of the config, or accept the slower checks.' : `Export plain data from ${configFile}: no imports, calls or functions.`, 'plumber doctor')
-      : onboardingPage() ? step('Run this, answer four questions on the page it opens, and press Set it up. (plumber init asks the same in the terminal.)', 'plumber')
-        : step('Run this and answer its questions about your spacing, colours, text and corners: your answers become your rules.', 'plumber init'));
+      : onboardingPage() ? step('Run this, answer four questions on the page it opens, and press Set it up: your answers become your rules, and today’s problems are recorded with them. (plumber init asks the same in the terminal.)', 'plumber')
+        : step('Run this and answer its questions about your spacing, colours, text and corners: your answers become your rules, and today’s problems are recorded with them.', 'plumber init'));
 
   let host: Awaited<ReturnType<typeof hostConfig>>;
   try { host = await hostConfig(root, facts.host.value); } catch { /* An unreadable host config is unknown. */ }
