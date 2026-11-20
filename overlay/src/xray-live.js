@@ -135,8 +135,13 @@ export const XRAY_LIVE_CSS = `
   .xr-card .xr-head code.none { background: none; padding: 0; }
   /* the part in hand: its control, and the words about its keys only while the hand is on it */
   .xr-card .xr-hand { order: 2; margin: 4px -2px 0; }
-  .xr-card .xr-hand .say { opacity: 0; transition: opacity 160ms var(--pl-ease-out); }
-  .xr-card .xr-hand:is(:hover, :focus-within) .say { opacity: 1; }
+  /* the words about its keys slide in under the control while the hand is on it, and take no room when it isn't */
+  .xr-card .xr-hand .say { max-height: 0; margin-top: 0; opacity: 0; translate: 0 -4px; overflow: hidden;
+    transition: max-height 220ms var(--pl-ease-out), margin-top 220ms var(--pl-ease-out), opacity 160ms var(--pl-ease-out), translate 220ms var(--pl-ease-out); }
+  .xr-card .xr-hand:is(:hover, :focus-within) .say { max-height: 22px; margin-top: 6px; opacity: 1; translate: 0 0; }
+  @media (prefers-reduced-motion: reduce) { .xr-card .xr-hand .say { transition: opacity 120ms linear; translate: none; } }
+  /* the value holds still while it changes: the step's name in a column of its own, the number in even figures */
+  .xr-hand .slot b { min-width: 5.4ch; } .xr-hand .slot span { font-variant-numeric: tabular-nums; }
   .xr-card .xr-said { order: 1; }
   .xr-card .xr-said .xa { margin-top: 0; }
   .xr-many { display: inline-flex; align-items: center; height: 18px; padding: 0 6px; margin-left: 4px; border-radius: 99px; vertical-align: 2px; background: var(--pl-sky-soft); color: var(--pl-sky-ink); font: 600 11px/1 var(--pl-sans); letter-spacing: 0; }
@@ -751,7 +756,10 @@ export function mountXray(o) {
     const from = box1(h.seg), to = next ? box1(next) : from;
     const k = next ? Math.min(1, Math.max(0, pull)) : 0, lean = next ? 0 : dir * Math.min(6, pull * 18);
     t.style.transition = still ? 'none' : '';
-    t.style.transform = `translateX(${(from.x + (to.x - from.x) * k + lean).toFixed(1)}px)`; t.style.width = `${(from.w + (to.w - from.w) * k).toFixed(1)}px`;
+    // inside the row's ring, always: the value reaches the row's end, and its thumb (3px wider on each side) ran past it
+    let tx = from.x + (to.x - from.x) * k + lean, tw = from.w + (to.w - from.w) * k;
+    const lo = 3, hi = row.clientWidth - 3; if (tx < lo) { tw -= lo - tx; tx = lo; } if (tx + tw > hi) tw = hi - tx;
+    t.style.transform = `translateX(${tx.toFixed(1)}px)`; t.style.width = `${Math.max(0, tw).toFixed(1)}px`;
     t.dataset.on = h.seg; t.toggleAttribute('data-pulled', pull !== 0);
   };
   function resync() { if (!inHand) return; const i = inHand.S.indexOf(nearest(inHand.S, read(inHand.el, inHand.prop))); if (i !== inHand.p.at()) inHand.p.set(i); }
