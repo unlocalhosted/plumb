@@ -1,7 +1,10 @@
 // Where questions go: the server this client was loaded from. On Next that is the route's sidecar (hosts/next-dev.ts),
 // another loopback origin; the page's own /__plumb/ (the route) is the door that always answers. When the sidecar stops
 // answering (its process gone, the port closed), every question moves to the door, once, and stays there.
-let base = new URL('../', import.meta.url).href;
+// the parent of this module's folder, read at run time: a bundler (Next's, when the design site imports a piece that reaches
+// this module) took the literal '../' for a file to bundle and failed the whole site's build
+const UP = ['..', ''].join('/');
+let base = new URL(UP, import.meta.url).href;
 const door = new URL('/__plumb/', location.href).href;
 // The page's own tag for this client carries the token. It names the client on the page's origin, so it is found by
 // its path, whichever origin the module itself came from.
