@@ -3128,6 +3128,23 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **Still open:** the bar's other checks (progress shows, fits where the original sat, keeps its weight) aren't
   plumber rules yet.
 
+### 48. Metal, beam and wave on the buy button: built, and none good enough to show (2026-11-20)
+
+**The itch.** The owner shared libraries.dev ("metal, distortion, magnetic ui, gooey, border beam … the taste lies
+where you put it with what motion") and asked for the three proposed builds.
+
+**What we did.** The effects became primitives with five jobs and rules for where they go
+([brief](briefs/effect-primitives.md)); the real packages (`metal-fx`, `border-beam`, `distortion-waves`, MIT) were
+installed into the playground and wrapped around crafting attention's own button.
+
+**What we found.** On a light page with a saturated purple button, all three failed the look check: metal-fx strips
+the button's lip and its silver ring barely shows; the beam vanishes into the purple and, blooming outward, is a faint
+smudge; the distortion wave at button size pictures the markup badly, and its job is a whole view anyway. The library
+is tuned for dark surfaces. That became rule 7 of the brief: the surface decides whether these effects belong.
+
+**Proof.** Filmstrips of real clicks in `docs/films/pour/effects-strip.png`. Nothing was added to the recommendations
+page.
+
 ### 47. Three more suggestions, and a judge that tells a button from the tools around it (2026-11-20)
 
 **The itch.** The owner: "build more suggestions like the pour".

@@ -1,0 +1,7 @@
+.wave { position: relative; width: min(100%, var(--atom-width, 100%)); border-radius: var(--atom-radius); }
+/* the faces are pictures under the wave: the same face as the button, the done one a step deeper */
+.wave-face { width: 100%; cursor: default; }
+.wave-done { background: color-mix(in oklch, var(--atom-fill) 66%, black); }
+/* the control: the whole face, transparent, above the wave */
+.wave-hit { position: absolute; inset: 0; z-index: 2; border: 0; padding: 0; background: transparent; cursor: pointer; border-radius: var(--atom-radius); }
+.wave-hit:focus-visible { outline: 2px solid var(--atom-fill); outline-offset: 3px; }

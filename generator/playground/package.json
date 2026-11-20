@@ -1,0 +1,6 @@
+{
+  "name": "plumb-generator-playground",
+  "private": true,
+  "description": "Packages the playground's own suggestions use (the effects from libraries.dev, docs/briefs/effect-primitives.md); react and motion come from each product's install (vite.base.mjs)",
+  "dependencies": { "metal-fx": "2.0.11", "border-beam": "1.4.1", "distortion-waves": "0.1.0" }
+}

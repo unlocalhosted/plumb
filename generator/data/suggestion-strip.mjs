@@ -2,7 +2,7 @@
 // a second on, side by side, one row per suggestion.
 //   node generator/data/suggestion-strip.mjs <out.png>   (the playground on 4399)
 import { chromium } from 'playwright';
-const FORMS = ['native/pour', 'native/lead', 'native/answer', 'native/sheen'];
+const FORMS = process.argv[3] ? process.argv[3].split(',') : ['native/pour', 'native/lead', 'native/answer', 'native/sheen'];
 const b = await chromium.launch(); const rows = [];
 for (const f of FORMS) {
   const p = await b.newPage({ viewport: { width: 1000, height: 900 }, deviceScaleFactor: 2 });

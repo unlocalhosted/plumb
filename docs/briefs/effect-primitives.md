@@ -50,7 +50,11 @@ web cousin, a button that leans toward the pointer, is a response.
 5. **The product's colour.** Metal is tinted toward the brand or left neutral, and a beam uses the brand's hues, not
    the rainbow, unless the brand is the rainbow.
 6. **A still twin.** With reduced motion every effect has a still version that says the same thing.
-7. **Cost.** At most one WebGL effect per view, with a flat fallback when it can't run.
+7. **The surface.** The libraries.dev effects are tuned for dark surfaces (they are sold as effects for AI
+   interfaces). On a light page against a saturated fill they vanish or go muddy: tried on crafting attention's buy
+   button on 2026-11-20, the silver ring barely showed and the library stripped the button's lip to make room for it,
+   and the beam was a faint smudge. They belong on dark, tool-like surfaces unless retuned.
+8. **Cost.** At most one WebGL effect per view, with a flat fallback when it can't run.
 
 ## First builds: crafting attention's buy button
 
@@ -64,3 +68,10 @@ The moment: a first-time visitor buys lifetime access, once; the press opens che
 
 Each is judged like the four before it (pressed, abandoned, keyboard only, reduced motion, plumber reading the words)
 and joins the recommendations page only if it passes.
+
+## What happened when we built them (2026-11-20)
+
+None of the three passed the look check on crafting attention's light pricing page, so none was shown. The wave also
+belongs to the card, not the button: at button size its picture of the markup came out mangled, and its job is carrying
+a whole view into the next. The builds are kept in `generator/playground/atoms/native/` (metal.jsx, beam.jsx,
+wave.jsx) for a dark surface or a card-level hand-off.
