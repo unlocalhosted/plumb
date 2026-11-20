@@ -155,6 +155,24 @@ const FIX_CSS_BASE = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   .fx.fx-on .chip[aria-pressed="true"] { color: var(--pl-sky-ink); background: var(--pl-sky-soft); box-shadow: inset 0 0 0 1.5px var(--pl-instrument); }
   .fx.fx-on .acts { display: inline-flex; flex-wrap: nowrap; align-items: center; gap: 6px; margin: 0; padding: 0; border: 0; }
   .fx.fx-on .say, .fx.fx-on .note, .fx.fx-on .hint { flex-basis: 100%; padding: 2px 6px; }
+  /* The choice row is a grid of fixed zones every kind of fix fills the same way (owner, 2026-11-20: "sub zones which
+     dont break and like standard layouts for differnt properties"): the choice (the property's toy and its steps,
+     swatches or corners; the token being added; a name to type) on the left, the actions on the right, and any
+     sentence on a full-width line under them. Nothing in one zone can push into another: the choice shrinks and cuts,
+     the actions keep their size, the sentence wraps. */
+  .fx.fx-on { display: grid; grid-template-columns: minmax(0, max-content) max-content; align-items: center; gap: 6px 14px; }
+  .fx.fx-on > :is(.pick, .chips, .specimens, .field) { grid-column: 1; grid-row: 1; min-width: 0; max-width: 100%; }
+  .fx.fx-on > .acts { grid-column: 2; grid-row: 1; margin: 0; }
+  .fx.fx-on > :is(.say, .note, .hint, .cant) { grid-column: 1 / -1; max-width: none; contain: inline-size; padding: 0 6px 2px; font: 500 12.5px/1.4 var(--pl-sans); color: var(--pl-text-secondary); }
+  /* with nothing to choose, the sentence is the choice zone: it sits beside the actions */
+  .fx.fx-on:not(:has(> :is(.pick, .chips, .specimens, .field))) > :is(.say, .note):first-of-type { grid-column: 1; grid-row: 1; contain: none; max-width: 340px; color: var(--pl-text-primary); }
+  .fx.fx-on > .pick { overflow: hidden; }
+  .fx.fx-on > .pick .ctl { min-width: 0; overflow: hidden; }
+  /* a token to add: its swatch (a colour) or its toy, its real name, and the file it goes into */
+  .fx.fx-on .pick.adds { gap: 8px; padding: 4px 10px 4px 6px; }
+  .fx.fx-on .pick.adds .chipc { width: 22px; height: 22px; flex: none; border-radius: 7px; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .1); }
+  .fx.fx-on .pick.adds code { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 12px/1 var(--pl-mono); color: var(--pl-text-primary); }
+  .fx.fx-on .pick.adds .in { flex: none; font: 500 11px/1 var(--pl-sans); color: var(--pl-text-secondary); }
   .fx.fx-on[hidden] { display: none; }
   .fx-on .acts { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .fx-on .say, .fx-on .note { color: var(--pl-ink-2); }
@@ -1275,7 +1293,8 @@ export class FixPanel {
           + `<div class="specimens"><button class="sp" data-kind="${kind}" aria-pressed="true">${specimen(kind, mark, parseFloat(value), value)}<span class="v">${esc(value)}</span><span class="tk">new</span></button></div>`;
         canTake = true;
       } else if (a?.kind === 'adopt') {
-        middle = `<div class="note">${esc(FIX.adopt)}</div>${adds(a.name, a.value, a.file)}`;
+        const colour = /^(#|rgb|hsl|oklch|oklab|lab|lch|color\()/i.test(String(a.value).trim());
+        middle = `<span class="pick adds" title="${esc(a.name)}: ${esc(a.value)}">${colour ? `<i class="chipc" style="background:${esc(a.value)}"></i>` : `<span class="ic sm" aria-hidden="true">${toyFor(mark, kind)}</span>`}<code>${esc(a.name)}</code><span class="in">→ ${esc(String(a.file ?? '').split('/').pop())}</span></span><div class="say">${esc(FIX.adopt)}</div>`;
         canTake = true;
       } else if (a?.kind === 'new') {
         middle = `<div class="note">${esc(FIX.newStep(FIX.what(mark).replace(/ not in your theme$/, ''), a.value))}</div>`

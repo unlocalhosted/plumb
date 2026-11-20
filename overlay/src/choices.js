@@ -182,8 +182,10 @@ export const CHOICES_CSS = `
   .swatches .opt[aria-pressed="true"]::before { display: none; }
   .swatches .opt b { margin: 0; }
   .swatches .you { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px 3px 3px; border-radius: 6px; box-shadow: inset 0 0 0 1px var(--pl-off); font: var(--pl-card-label); color: var(--pl-off); }
-  .sw { width: 18px; height: 18px; border-radius: 4px; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .1); }
-  .sw.plate { width: 22px; height: 14px; border-radius: 3px; box-shadow: none; }
-  .note { padding: 8px 10px; border-radius: 6px; background: var(--pl-bg-inset); font: var(--pl-card-body); color: var(--pl-text-primary); }
-  .note code { font: var(--pl-card-meta); overflow-wrap: anywhere; }
+  /* the swatch is a span; the fix bar's colour picker (div.ep.sw) shares the name and was squeezed to 18px */
+  span.sw { width: 18px; height: 18px; border-radius: 4px; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .1); }
+  span.sw.plate { width: 22px; height: 14px; border-radius: 3px; box-shadow: none; }
+  /* the old card's note, not the fix bar's words (they sat in a grey box) */
+  :not(.fx) > .note { padding: 8px 10px; border-radius: 6px; background: var(--pl-bg-inset); font: var(--pl-card-body); color: var(--pl-text-primary); }
+  :not(.fx) > .note code { font: var(--pl-card-meta); overflow-wrap: anywhere; }
 `;
