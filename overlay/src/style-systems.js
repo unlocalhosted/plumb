@@ -287,7 +287,9 @@ export const cssRules = {
       const answer = await ctx.post('style', { changes: sent.map((x) => x.change), trace: { group, meta: { step: 'X-ray', laws: [] } } });
       for (const [i, x] of sent.entries()) {
         const r = answer?.results?.[i] ?? {};
-        if (r.state === 'ok') out.push({ id: x.g.id, state: 'ok', cls: `${r.said?.split(' in ')[0] ?? x.change.evidence.selector} { ${x.g.prop}: ${r.to} }`, where: r.said ?? '', group });
+        // a Sass variable is said as its own line (`$gap: 20px`); a rule as the rule with the property
+        const name = r.said?.split(' in ')[0] ?? x.change.evidence.selector;
+        if (r.state === 'ok') out.push({ id: x.g.id, state: 'ok', cls: name.startsWith('$') ? `${name}: ${r.to}` : `${name} { ${x.g.prop}: ${r.to} }`, where: r.said ?? '', group });
         else out.push({ id: x.g.id, state: 'failed', why: r.why ?? "This change couldn't be placed." });
       }
     } catch (error) { for (const x of sent) out.push({ id: x.g.id, state: 'failed', why: error?.message ?? String(error) }); }

@@ -3860,7 +3860,11 @@ and a nested `@media`:
 - **Fixed:** undo put a `.scss` file back but then failed, because it asked the analysis for the file's new hash and the
   analysis doesn't read `.scss`. Such files are now checked on their bytes.
 
-**Not checked:** a `.scss` page in a browser (Vite's tag for `.scss` styles, or Next's map to a `.scss` source).
+**Then in a browser.** A small Vite + React page styled by one `.scss` file (run once, not kept): the page traced the
+title's size, the row's gap and the body's colour to `app.scss` by their compiled selectors (`.card .card-title`).
+Sync from the page wrote the title 28px → 32px in its nested rule and the row's gap 12px → 20px through `$gap`, refused
+the colour from `@include muted` with the mixin's name, and undo put both back. Said results now read `$gap: 20px`
+for a variable. Not tried: a `.scss` file on Next.
 
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
@@ -5474,7 +5478,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   `generator/shots/generate-craftingattention.png` (local).
 
 ## Open gaps
-- **CSS parity gaps:** Clean up's system pass, recipes' own rule finder, rename beyond `--color-*`, and a `.scss` page not yet tried in a browser ([entry](#69-sass-run-for-real-2026-11-20)).
+- **CSS parity gaps:** Clean up's system pass, recipes' own rule finder, rename beyond `--color-*`, and a `.scss` file on Next ([entry](#69-sass-run-for-real-2026-11-20)).
 - **CSS rule fixes are narrow.** They cover text size, line height, weight, gap, corners, width, height and padding per side, from rules outside `@media`. Padding set for two sides at once (`padding-x`) still goes to classes, and the change isn't checked against your token scale before it's written ([entry](#63-css-rule-fixes-work-on-the-next-site-2026-11-20)).
 - **The owner's slop checks are untuned on real apps.** Tight letters fire on every heading that sets them (28 on our homepage), the shade count reads greys mixed by opacity as separate shades, and none of the eleven has been run through a full plumber read or the docs' recordings yet ([entry](#56-the-owners-slop-list-becomes-eleven-anti-slop-checks-2026-11-20)).
 - **The mark was never tried among real neighbours** (a row of browser tabs, an npm page, a README header), only on empty tiles. Nobody outside has been asked whether the round leg reads as an R or leans towards a B.
