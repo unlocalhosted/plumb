@@ -3354,6 +3354,26 @@ rests on it. The fix belongs in plumber's engine, which was outside this piece o
 **Media hooks.** The hold's single lane with its hatched overrun and fix; the slide's two lanes (words, then
 movement); the leaning press's one mint line (`node generator/data/proto-shot.mjs scrub <form>`).
 
+### 50. Words hidden for screen readers are no longer judged for contrast (2026-11-20)
+
+**The itch.** Press-then-confirm was "breaks for some people" because its words couldn't be read just after you let
+go. On the frozen button they read fine, and the fault pointed at a dot in the corner.
+
+**The system behind it.** Arc's confirm keeps a copy of its question ("Pay ₹8,619 once?") for screen readers, in a
+1×1 px box hidden with `clip-path: inset(50%)`. Plumber already left such text alone, but only when the box clipped it
+with `overflow: hidden`. Hidden with `clip-path`, it was judged as if it were drawn, and a 1 px copy has no contrast
+at all.
+
+**The fix and the proof.** Words in a box of 2 px or less, clipped by `overflow` or by `clip-path`, aren't drawn, so
+the contrast check, the words-on-layers check and the line reader all skip them. On the confirm, opened, plumber
+found one contrast fault before the fix and none after. Rerun with the fix, the judge moved press-then-confirm from
+"breaks" to "needs work".
+
+**Still open.** That rerun isn't kept. Another session was changing the judge and adding forms to the same page while
+it ran, and its slide reading failed (it measured the whole page). The verdicts are rerun with both changes in.
+Also handed over, not committed here: in the judge, lost words count only when they last 150 ms or more, as in
+prototype A. A single reading as the hold's label swaps had marked the hold's words unreadable.
+
 ### 38. Alt and the X-ray card (2026-11-20)
 
 - **The itch:** holding Alt showed the old name tag outside Blueprint, and Alt-click opened the old element card with its heat and a dark spacing slider. Once the X-ray card took over, its pink note looked wrong. The owner on the note: "why is this black on muddy pink". On three new tints of it: "all of them look so ugly".
@@ -5024,6 +5044,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- Plumber no longer flags contrast on words kept only for screen readers and hidden with clip-path; press-then-confirm's "breaks" verdict came from one ([entry](#50-words-hidden-for-screen-readers-are-no-longer-judged-for-contrast-2026-11-20)).
 - Prototype A shows only what is wrong in a gesture, each fault as a plain problem, the time it happened and its fix in real CSS names; a clean gesture is one mint line ([entry](#49-only-whats-wrong-each-with-its-fix-2026-11-20)).
 - Crafting attention's buy button has its first suggestion built by us: a press whose shade pours from where you touched, readable throughout, and passing every interaction standard ([entry](#46-the-first-suggestion-we-built-ourselves-a-press-that-pours-2026-11-20)).
 - Prototype A (?proto=scrub) now tells the story of a gesture: four lanes on one time line (your hand, its first answer, its movement, its words), each drawn against its standard's limit, and the button freezes wherever you scrub ([entry](#48-prototype-a-tells-the-story-of-the-gesture-2026-11-20)).

@@ -931,6 +931,9 @@ export const contrast = {
     const T = theme.spec(this.id);
     if (!facts.text(el) || el.closest('[aria-hidden="true"]')) return [];
     const s = facts.style(el);
+    // words kept for a screen reader and cut out of sight (sr-only: a box of a pixel or two, clipped by overflow or by
+    // clip-path) are not drawn, so there is nothing to read
+    { const r = el.getBoundingClientRect(); if (r.width <= 2 && r.height <= 2 && (s.overflow !== 'visible' || s.clipPath !== 'none')) return []; }
     // words on a picture: a background image on the way up, or a photo laid under them (an <img> the words sit over, as
     // on a card with a scrim). What the eye reads them against isn't a colour plumber knows, so it says nothing. A picture
     // counts when it is drawn, visible, and covers most of the words' box
@@ -1032,7 +1035,7 @@ export const wordsOnLayers = {
     let fade = 1; for (let n = el; n && n !== document.documentElement; n = n.parentElement) fade *= parseFloat(getComputedStyle(n).opacity) || 0;
     if (fade < 0.05) return []; // not shown: there is nothing to read
     // words clipped out of sight (a screen reader's hint in a 1px box) aren't drawn
-    for (let n = el; n && n !== document.body; n = n.parentElement) { const r = n.getBoundingClientRect(); if (getComputedStyle(n).overflow !== 'visible' && (r.width <= 2 || r.height <= 2)) return []; }
+    for (let n = el; n && n !== document.body; n = n.parentElement) { const r = n.getBoundingClientRect(), ns = getComputedStyle(n); if ((ns.overflow !== 'visible' || ns.clipPath !== 'none') && (r.width <= 2 || r.height <= 2)) return []; }
     const lines = [], range = document.createRange();
     for (const n of el.childNodes) { if (n.nodeType !== 3 || !n.nodeValue.trim()) continue; range.selectNodeContents(n); for (const q of range.getClientRects()) if (q.width > 2 && q.height > 2) lines.push(q); }
     if (!lines.length) return [];
@@ -2424,7 +2427,7 @@ function textLines(facts) {
   const ctx = (textLines.ctx ??= document.createElement('canvas').getContext('2d'));
   const seen = new Map();
   // words kept for a screen reader and cut out of sight (sr-only: a 1px box that clips what is in it) are not drawn
-  const clipped = (el, st) => st.overflow !== 'visible' && (() => { const r = facts.rect(el); return r.width <= 2 || r.height <= 2; })();
+  const clipped = (el, st) => (st.overflow !== 'visible' || st.clipPath !== 'none') && (() => { const r = facts.rect(el); return r.width <= 2 || r.height <= 2; })();
   const shown = (el) => { if (!el || el === document.body) return true; let v = seen.get(el); if (v === undefined) { const st = facts.style(el); v = st.display !== 'none' && st.visibility !== 'hidden' && parseFloat(st.opacity) >= 0.05 && !clipped(el, st) && shown(el.parentElement); seen.set(el, v); } return v; };
   const blockOf = (el) => { for (let n = el; n; n = n.parentElement) { const d = facts.style(n).display; if (!/^inline/.test(d) && d !== 'contents') return n; } return document.body; };
   // the painted thing the words are drawn on: the nearest box with a fill of its own
