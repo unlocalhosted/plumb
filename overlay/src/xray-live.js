@@ -83,9 +83,17 @@ export const XRAY_LIVE_CSS = `
   .xr-said .xa { margin: 14px 0 0; display: grid; gap: 2px; max-height: 180px; overflow: auto; }
   .xr-said .xn { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 20px 1fr; gap: 10px; align-items: center; min-height: 32px; padding: 4px 6px 4px 3px; border-radius: 10px; cursor: pointer; font: 500 13px/1.3 var(--pl-sans); color: var(--pl-text-secondary); }
   .xr-said .xn > i { width: 20px; height: 20px; } .xr-said .xn > i svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  /* a folded issue is still an issue (owner, 2026-11-20: "the card says 2 issues… i only see 1"): its name in the card's
+     ink, and the arrow that says it opens */
+  .xr-said .xn { width: 100%; grid-template-columns: 20px 1fr 10px; color: var(--pl-text-primary); }
+  .xr-said .xn::after { content: ''; width: 6px; height: 6px; border-right: 1.75px solid var(--pl-text-secondary); border-bottom: 1.75px solid var(--pl-text-secondary); rotate: -45deg; }
+  .xr-said .xi[data-open] .xn::after { rotate: 45deg; translate: 0 -2px; }
   .xr-said .xn[aria-current] { background: var(--pl-bg-inset); color: var(--pl-text-primary); font-weight: 600; }
   @media (hover: hover) and (pointer: fine) { .xr-said .xn:not([aria-current]):hover { color: var(--pl-text-primary); background: color-mix(in oklab, var(--pl-bg-inset) 60%, transparent); } }
   .xr-said .xn:focus-visible { box-shadow: 0 0 0 2px var(--pl-border-focus); }
+  /* the open issue is one block: its focus ring goes round the whole of it, inside, never round its title alone */
+  .xr-said .xi[data-open] .xn:focus-visible { box-shadow: none; }
+  .xr-said .xi[data-open]:has(.xn:focus-visible) { box-shadow: inset 0 0 0 2px var(--pl-border-focus); }
   /* An issue reads as one (owner, 2026-11-20: "it appears inside the card like its a note or info but not some issue"):
      coral, the language's only colour for "this is wrong", heads them with the count; each says what is wrong in the
      ink of the card, then what to do, quieter */

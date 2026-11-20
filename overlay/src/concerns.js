@@ -14,7 +14,7 @@ export const ALL_TOY = 'layer';
 export const CONCERNS = [
   { id: 'system', name: 'Design system check', short: 'Design system', toy: 'grid' },
   { id: 'craft', name: 'Craft and polish', short: 'Craft', toy: 'alignment' },
-  { id: 'access', name: 'Accessible and correct', short: 'Accessible', toy: 'cursor' },
+  { id: 'access', name: 'Accessible and correct', short: 'Accessible', toy: 'access' },
   { id: 'slop', name: 'Anti-slop check', short: 'Anti-slop', toy: 'shadow' },
   { id: 'words', name: 'Words and clarity', short: 'Words', toy: 'type' },
   { id: 'states', name: 'States and behaviour', short: 'States', toy: 'switch' },

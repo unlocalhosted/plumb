@@ -108,6 +108,8 @@ export const PARTS = [
   ['progress', 'three quarters round', svg(`<circle cx="12" cy="12" r="8" fill="none" stroke="${soft('mint')}" stroke-width="4.200"/><path d="M12 4a8 8 0 1 1-8 8" fill="none" stroke="${h('mint')}" stroke-width="4.200" stroke-linecap="round"/>`), 1],
   ['loading', 'going round', svg(turning), 1],
   ['empty', 'nobody home', svg(`<path d="M12 2.600a7.400 7.400 0 0 1 7.400 7.400v11l-2.470-1.900-2.470 1.900L12 19.100 9.540 21l-2.470-1.900L4.600 21V10A7.400 7.400 0 0 1 12 2.600z" fill="${h('lilac')}" stroke="${h('lilac')}" stroke-width=".8" stroke-linejoin="round"/>${dot(9.3, 10.4, 1.4, on('lilac'))}${dot(14.7, 10.4, 1.4, on('lilac'))}${dot(12, 14.4, 1.150, on('lilac'))}`), 1],
+  // anyone can use it: the figure everyone knows for access, cut out of a sky tile (head, arms, body and legs)
+  ['access', 'anyone can use it', svg(tile('sky', dot(12, 6.9, 1.9, W) + line('M6.8 10.3h10.4', W) + line('M12 10.3v4.1l-2.7 4.4M12 14.4l2.7 4.4', W)))],
   ['error', 'something went wrong', svg(`<path d="M12 2.800c.900 0 1.700.500 2.200 1.300l7.300 12.600a2.500 2.500 0 0 1-2.200 3.800H4.700a2.500 2.500 0 0 1-2.200-3.800L9.800 4.100c.500-.800 1.300-1.300 2.200-1.300z" fill="${h('coral')}"/>${box(10.8, 8, 2.4, 6.4, 1.2, W)}${dot(12, 17.1, 1.4, W)}`), 1],
 ].map(([name, note, icon, fresh]) => ({ name, note, icon, fresh }));
 
