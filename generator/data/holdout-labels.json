@@ -1,0 +1,78 @@
+[
+ {
+  "id": "@cult-ui/cosmic-button",
+  "kind": "button",
+  "driver": "press",
+  "commitRule": "press",
+  "words": "kept",
+  "reducedMotion": false,
+  "tricks": [
+   "gradient-border"
+  ]
+ },
+ {
+  "id": "@minidev/shimmer-button",
+  "kind": "button",
+  "driver": "press",
+  "commitRule": "press",
+  "words": "kept",
+  "reducedMotion": true,
+  "tricks": [
+   "shimmer"
+  ]
+ },
+ {
+  "id": "@registrydirectory/shadcnuikit/button11",
+  "kind": "button",
+  "driver": "press",
+  "commitRule": "press",
+  "words": "kept",
+  "reducedMotion": false,
+  "tricks": []
+ },
+ {
+  "id": "@registrydirectory/shadcnuikit/dropdown-menu3",
+  "kind": "contains"
+ },
+ {
+  "id": "@shadcn-dashboard/card-02",
+  "kind": "contains"
+ },
+ {
+  "id": "@glint-ui/slingshot",
+  "kind": "button",
+  "driver": "position",
+  "commitRule": "threshold",
+  "reducedMotion": true
+ },
+ {
+  "id": "@motion-lexicon/primitive-swipe-to-dismiss",
+  "kind": "not"
+ },
+ {
+  "id": "@watermelon/family-receive-button",
+  "kind": "button",
+  "driver": "state",
+  "commitRule": "confirm",
+  "words": "replaced",
+  "reducedMotion": false,
+  "tricks": [
+   "blur"
+  ]
+ },
+ {
+  "id": "@tweenly/expand-input",
+  "kind": "button",
+  "driver": "state",
+  "commitRule": "press",
+  "words": "replaced",
+  "reducedMotion": true,
+  "tricks": [
+   "icon-morph"
+  ]
+ },
+ {
+  "id": "@shadcn-space/input-22",
+  "kind": "contains"
+ }
+]

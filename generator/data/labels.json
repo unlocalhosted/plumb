@@ -1,0 +1,166 @@
+[
+ {
+  "id": "@spaceui/demo-p-button-27",
+  "kind": "button",
+  "driver": "press",
+  "commitRule": "press",
+  "words": "kept",
+  "reducedMotion": false,
+  "tricks": [
+   "icon-morph"
+  ]
+ },
+ {
+  "id": "@chamaac/premium-button",
+  "kind": "button",
+  "driver": "press",
+  "commitRule": "press",
+  "words": "kept",
+  "reducedMotion": false,
+  "tricks": []
+ },
+ {
+  "id": "@01orbital/sphere-button-cobalt",
+  "kind": "example",
+  "driver": "press",
+  "commitRule": "press",
+  "words": "kept",
+  "reducedMotion": false,
+  "tricks": []
+ },
+ {
+  "id": "@kaui/async-button",
+  "kind": "button",
+  "driver": "state",
+  "commitRule": "press",
+  "words": "replaced",
+  "reducedMotion": false,
+  "tricks": []
+ },
+ {
+  "id": "@keyline-ui/button",
+  "kind": "button",
+  "driver": "state",
+  "commitRule": "press",
+  "words": "kept",
+  "reducedMotion": null,
+  "tricks": []
+ },
+ {
+  "id": "@ikas/confirm-button",
+  "kind": "button",
+  "driver": "state",
+  "commitRule": "confirm",
+  "words": "replaced",
+  "reducedMotion": true,
+  "tricks": [
+   "blur"
+  ]
+ },
+ {
+  "id": "@ndeko/button-58",
+  "kind": "button",
+  "driver": "time-held",
+  "commitRule": "held-time",
+  "secs": 2.0,
+  "words": "replaced",
+  "reducedMotion": true,
+  "tricks": [
+   "blur"
+  ]
+ },
+ {
+  "id": "@tweenly/hold-button",
+  "kind": "button",
+  "driver": "time-held",
+  "commitRule": "held-time",
+  "secs": 1.2,
+  "words": "replaced",
+  "reducedMotion": true,
+  "tricks": [
+   "icon-morph"
+  ]
+ },
+ {
+  "id": "@asanshay/long-press-button",
+  "kind": "button",
+  "driver": "time-held",
+  "commitRule": "held-time",
+  "secs": null,
+  "words": null,
+  "reducedMotion": true,
+  "tricks": []
+ },
+ {
+  "id": "@registrydirectory/shadcn-space/button-29",
+  "kind": "button",
+  "driver": "time-held",
+  "commitRule": "held-time",
+  "secs": 1.5,
+  "words": "replaced",
+  "reducedMotion": false,
+  "tricks": []
+ },
+ {
+  "id": "@hirael/confirm",
+  "kind": "contains",
+  "driver": null,
+  "commitRule": "confirm",
+  "words": null,
+  "reducedMotion": null,
+  "tricks": null
+ },
+ {
+  "id": "@registrydirectory/termcn/ink/confirm",
+  "kind": "group",
+  "driver": null,
+  "commitRule": "confirm",
+  "words": null,
+  "reducedMotion": null,
+  "tricks": null
+ },
+ {
+  "id": "@lema-ds/ds-confirm-dialog",
+  "kind": "contains",
+  "driver": null,
+  "commitRule": "confirm",
+  "words": null,
+  "reducedMotion": null,
+  "tricks": null
+ },
+ {
+  "id": "@glint-ui/fling-confirm",
+  "kind": "button",
+  "driver": "position",
+  "commitRule": "threshold",
+  "secs": 0.8,
+  "words": "fade",
+  "reducedMotion": true,
+  "tricks": [
+   "shimmer"
+  ]
+ },
+ {
+  "id": "@tweenly/slide-button",
+  "kind": "button",
+  "driver": "position",
+  "commitRule": "threshold",
+  "secs": 0.8,
+  "words": "fade",
+  "reducedMotion": true,
+  "tricks": [
+   "icon-morph",
+   "shimmer"
+  ]
+ },
+ {
+  "id": "@registrydirectory/shadcn-space/button-28",
+  "kind": "button",
+  "driver": "position",
+  "commitRule": "threshold",
+  "secs": 0.8,
+  "words": "fade",
+  "reducedMotion": false,
+  "tricks": []
+ }
+]
