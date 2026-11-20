@@ -19,8 +19,9 @@
  * ───────────────────────────────────────────────────────── */
 
 export const HUES = ['sky', 'lilac', 'mint', 'butter', 'pink']; // coral is "off the scale": never a role's hue
-// a little slower than a flick, so each change can be watched (and filmed): marked, moved, held to be seen, let go
-export const BEAT = { in: 300, move: 640, hold: 460, out: 200, travel: 560 };
+import { BEAT, SPRING } from './motion-beats.js';
+import { PageGuides } from './show-motion.js';
+export { BEAT, SPRING, PageGuides };
 const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 const wait = (ms, signal) => new Promise((done) => { if (signal?.aborted) return done(); const t = setTimeout(done, ms); signal?.addEventListener('abort', () => { clearTimeout(t); done(); }, { once: true }); });
 
@@ -153,7 +154,6 @@ export class Marks {
 
 // The page's own elements ease on the overlay's spring (the page can't read the overlay's tokens: the curve is written
 // out). `blur`: a text change passes through a light blur, so the old and new words read as one change, not a jump
-export const SPRING = 'linear(0, 0.21 6%, 0.62 15%, 0.9 25%, 1.01 36%, 1.02 46%, 1 60%, 1)';
 const easing = new WeakMap();
 export function ease(el, set, { props = ['font-size', 'line-height', 'letter-spacing', 'font-weight', 'padding', 'margin', 'gap', 'row-gap', 'column-gap'], blur = false } = {}) {
   if (still()) return set();
@@ -199,13 +199,25 @@ async function bringIntoView(bands, signal) {
   scrollBy({ top: by, behavior: smooth ? 'smooth' : 'instant' });
   if (smooth) await wait(BEAT.travel, signal);
 }
-export async function play(steps, { marks, signal, onStep } = {}) {
+export async function play(steps, { marks, guides, signal, onStep } = {}) {
   for (let i = 0; i < steps.length; i++) {
     const s = steps[i];
     await bringIntoView(s.bands?.(), signal);
     const quick = signal?.aborted || still();
     onStep?.(i);
     s.chip?.setAttribute('data-on', '');
+    // the kinds the motion module draws (show-motion.js, the design site's "How a change moves") play its beats:
+    // guides draw in, the page moves and the number rolls, it lands named, the guides go
+    const g = guides?.can(s) ? guides : null;
+    if (g) {
+      if (!quick) await g.in(s, signal);
+      roll(s.chip, s.to);
+      s.morph(!(signal?.aborted || still()));
+      if (!signal?.aborted && !still()) { g.move(); await wait(BEAT.move, signal); g.land(); await wait(BEAT.hold, signal); await g.out(signal); }
+      g.clear();
+      s.chip?.removeAttribute('data-on'); s.chip?.setAttribute('data-done', '');
+      continue;
+    }
     if (!quick) { marks?.show(s.bands(), s.chip?.dataset.tone ?? HUES[i % HUES.length]); await wait(BEAT.in, signal); }
     roll(s.chip, s.to);
     s.morph(!(signal?.aborted || still()));

@@ -25,7 +25,7 @@ import { inControl } from './roles.js';
 import { esc } from './choices.js';
 import { glide } from './inplace.js';
 import { namesOf, rolesInOrder, StylePreview } from './typesystem.js';
-import { SHOW_CSS, chipsHtml, Marks, play, playAll, ease } from './show.js';
+import { SHOW_CSS, chipsHtml, Marks, PageGuides, play, playAll, ease } from './show.js';
 import { SpacingPass } from './spacing-pass.js';
 import { ColourPass } from './colour-pass.js';
 import { RadiusPass } from './radius-pass.js';
@@ -544,7 +544,7 @@ export class Cleanup {
       const from = drawn(els()), to = fluidPx(role.bundle) ?? from;
       return {
         // its icon: "Ag" in the style's own weight, sized by its rank (every text role is one property, so the drawing is the style)
-        role, chip: { label: `${names.get(role.name)}: ${shown(from)} to ${shown(to)}`, icon: `<span class="ag" style="font-size:${Math.max(9, Math.min(15, 6 + (to ?? 14) / 4))}px;font-weight:${role.bundle.weight ?? 400};text-transform:${role.bundle.transform === 'uppercase' ? 'uppercase' : 'none'}">${role.bundle.transform === 'uppercase' ? 'AG' : 'Ag'}</span>`, from },
+        role, name: names.get(role.name), from, chip: { label: `${names.get(role.name)}: ${shown(from)} to ${shown(to)}`, icon: `<span class="ag" style="font-size:${Math.max(9, Math.min(15, 6 + (to ?? 14) / 4))}px;font-weight:${role.bundle.weight ?? 400};text-transform:${role.bundle.transform === 'uppercase' ? 'uppercase' : 'none'}">${role.bundle.transform === 'uppercase' ? 'AG' : 'Ag'}</span>`, from },
         to,
         bands: () => els().map((el) => ({ rect: () => el.getBoundingClientRect(), kind: 'line' })),
         morph: (animate) => this.#preview.setRole(role, animate ? (el, set) => ease(el, set, { blur: true }) : null, this.#p?.prose?.lineHeight),
@@ -557,13 +557,15 @@ export class Cleanup {
     const stop = (this.#show = new AbortController());
     const run = this.#run; // the show belongs to the move that started it; a later move settles it itself
     this.#marks ??= new Marks(this.#el.getRootNode());
+    this.#guides ??= new PageGuides(this.#el.getRootNode());
     const chips = [...this.#el.querySelectorAll('.sh-chip')];
     const steps = this.#steps().map((x, i) => ({ ...x, chip: chips[i] }));
-    await (this.#sw?.beat === 'all' ? playAll : play)(steps, { marks: this.#marks, signal: stop.signal });
+    await (this.#sw?.beat === 'all' ? playAll : play)(steps, { marks: this.#marks, guides: this.#guides, signal: stop.signal });
     if (run !== this.#run) return;
     if (this.#show === stop) this.#show = null;
   }
-  #settle() { this.#show?.abort(); this.#show = null; this.#marks?.clear(); }
+  #guides = null; // the motion module's guides on the page (show-motion.js)
+  #settle() { this.#show?.abort(); this.#show = null; this.#marks?.clear(); this.#guides?.clear(); }
   #togglePreview(on) {
     if (on && this.#state === 'ready') {
       this.#send('preview'); this.#listen(true); this.#host.render(); this.#host.announce?.(W.previewing(this.#moves()));

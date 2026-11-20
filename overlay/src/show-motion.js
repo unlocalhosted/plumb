@@ -17,7 +17,7 @@
  *  playTile(stage, spec)              one change, its four beats
  *  mountMotionBoard(board, opts)      every tile with its own Play; { playAll, runs }
  * ───────────────────────────────────────────────────────── */
-import { SPRING, BEAT } from './show.js';
+import { SPRING, BEAT } from './motion-beats.js';
 
 // the beats of one change, from show.js's: guides draw in, a hold to read them, the move, the landing, the guides go
 const T = { guides: BEAT.in + 120, hold: Math.max(200, BEAT.hold - 200), move: BEAT.move + 80, land: 520, out: BEAT.out + 120 };
@@ -38,34 +38,40 @@ export const BOARD_CSS = `
   @media (max-width: 560px) { .mo-board { grid-template-columns: 1fr; } }
 `;
 
+// The guides, as one family (hairlines, an I-beam, the value in a pill, a ring, a square, an arc): one set of rules
+// for a tile's stage and for the page under Clean up's show. \`c(name)\` is how each piece is selected where it is drawn
+// (on the page every piece is prefixed and scoped, so no other rule of the overlay's can reach it)
+const guideRules = (c) => `
+    ${c('g')} { position: absolute; pointer-events: none; }
+    ${c('hl')} { height: 1px; background: color-mix(in oklab, var(--c) 60%, transparent); transform-origin: left; }
+    ${c('vl')} { width: 1px; background: color-mix(in oklab, var(--c) 60%, transparent); transform-origin: top; }
+    ${c('beam')} { width: 9px; } ${c('beam')}::before { content: ''; position: absolute; left: 4px; top: 0; bottom: 0; width: 1.5px; background: var(--c); }
+    ${c('beam')}::after { content: ''; position: absolute; inset: 0; border-top: 1.5px solid var(--c); border-bottom: 1.5px solid var(--c); }
+    ${c('hbeam')} { height: 9px; } ${c('hbeam')}::before { content: ''; position: absolute; top: 4px; left: 0; right: 0; height: 1.5px; background: var(--c); }
+    ${c('hbeam')}::after { content: ''; position: absolute; inset: 0; border-left: 1.5px solid var(--c); border-right: 1.5px solid var(--c); }
+    ${c('pill')} { height: 22px; padding: 0 8px; border-radius: 11px; background: var(--c); color: #fff; font: 600 12px/22px system-ui; font-variant-numeric: tabular-nums; white-space: nowrap;
+      translate: -50% -50%; box-shadow: 0 1px 2px rgb(0 0 0 / .25); display: inline-flex; gap: 4px; transition: background-color 280ms ease-out; }
+    ${c('pill')} .roll { display: inline-block; height: 22px; overflow: hidden; } ${c('pill')} .roll > span { display: flex; flex-direction: column; }
+    ${c('pill')} .roll b { height: 22px; font-weight: inherit; } ${c('pill')} i { font-style: normal; opacity: .85; font-weight: 500; }
+    ${c('ring')} { border: 1.5px dashed var(--c); border-radius: 12px; }
+    ${c('sq')} { border: 1.5px solid color-mix(in oklab, var(--c) 70%, transparent); border-radius: 4px; }
+    ${c('arc')} { border-top: 2px solid var(--c); border-left: 2px solid var(--c); }
+    ${c('pill')} .chip { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin: 6px 2px 0 -2px; box-shadow: 0 0 0 1.5px #fff; }`;
+
 export const MOTION_CSS = `
     :host { display: block; }
     /* the stage is someone's page, light in either scheme: its words are the page's ink, never the docs' (white on
        white in the dark scheme) */
     .stage { position: relative; height: 240px; border-radius: 16px; background: #fff; color: #1c1b19; color-scheme: light; overflow: hidden; font-family: system-ui; }
     .pg { position: absolute; inset: 0; padding: 40px 72px 40px 96px; }
-    /* the guides, as one family: hairlines across, an I-beam in the gutter, the value in a pill */
-    .g { position: absolute; pointer-events: none; }
-    .hl { left: 0; right: 0; height: 1px; background: color-mix(in oklab, var(--c) 60%, transparent); transform-origin: left; }
-    .vl { top: 0; bottom: 0; width: 1px; background: color-mix(in oklab, var(--c) 60%, transparent); transform-origin: top; }
-    .beam { width: 9px; } .beam::before { content: ''; position: absolute; left: 4px; top: 0; bottom: 0; width: 1.5px; background: var(--c); }
-    .beam::after { content: ''; position: absolute; inset: 0; border-top: 1.5px solid var(--c); border-bottom: 1.5px solid var(--c); }
-    .hbeam { height: 9px; } .hbeam::before { content: ''; position: absolute; top: 4px; left: 0; right: 0; height: 1.5px; background: var(--c); }
-    .hbeam::after { content: ''; position: absolute; inset: 0; border-left: 1.5px solid var(--c); border-right: 1.5px solid var(--c); }
-    .pill { height: 22px; padding: 0 8px; border-radius: 11px; background: var(--c); color: #fff; font: 600 12px/22px system-ui; font-variant-numeric: tabular-nums; white-space: nowrap;
-      translate: -50% -50%; box-shadow: 0 1px 2px rgb(0 0 0 / .25); display: inline-flex; gap: 4px; transition: background-color 280ms ease-out; }
-    .pill .roll { display: inline-block; height: 22px; overflow: hidden; } .pill .roll > span { display: flex; flex-direction: column; }
-    .pill .roll b { height: 22px; font-weight: inherit; } .pill i { font-style: normal; opacity: .85; font-weight: 500; }
+    ${guideRules((n) => '.' + n)}
+    .hl { left: 0; right: 0; } .vl { top: 0; bottom: 0; }
     .stage { --c: var(--pl-coral); } .stage[data-landed] { --c: var(--pl-sky); }
     /* the space patterns: hatch for padding, dither for margin, stripes for a gap */
     .hatch { background: repeating-linear-gradient(45deg, color-mix(in oklab, var(--pl-mint) 55%, transparent) 0 1px, transparent 1px 6px), color-mix(in oklab, var(--pl-mint) 10%, transparent); }
     .dither { background: radial-gradient(color-mix(in oklab, var(--pl-butter) 85%, transparent) 0.8px, transparent 1px) 0 0 / 4px 4px; }
     .stripes { background: repeating-linear-gradient(90deg, color-mix(in oklab, var(--pl-lilac) 60%, transparent) 0 1px, transparent 1px 4px), color-mix(in oklab, var(--pl-lilac) 12%, transparent); }
     .card { background: #f3f4f6; border-radius: 12px; }
-    .ring { border: 1.5px dashed var(--c); border-radius: 12px; }
-    .sq { border: 1.5px solid color-mix(in oklab, var(--c) 70%, transparent); border-radius: 4px; }
-    .arc { border-top: 2px solid var(--c); border-left: 2px solid var(--c); }
-    .pill .chip { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin: 6px 2px 0 -2px; box-shadow: 0 0 0 1.5px #fff; }
     .btn { display: inline-flex; align-items: center; justify-content: center; padding: 0 18px; border-radius: 10px; background: #4f46e5; color: #fff; font: 600 14px/1 system-ui; }
     .track { height: 6px; border-radius: 3px; background: #eef0f3; overflow: hidden; } .track i { display: block; height: 100%; width: 0; background: var(--c); border-radius: 3px; }
     .meter { position: relative; height: 8px; border-radius: 4px; background: linear-gradient(90deg, var(--pl-coral) 0 60%, var(--pl-mint) 60% 100%); opacity: .35; }
@@ -331,4 +337,64 @@ export function mountMotionBoard(board, { tokensCss = '', autoplay = false } = {
   const all = () => runs.forEach((r, i) => setTimeout(r, i * 260));
   if (autoplay) all();
   return { playAll: all, runs };
+}
+
+// ── on the page: Clean up's show ───────────────────────────────
+// The same guides drawn over your own elements while Clean up plays a step (show.js play), so what the docs page
+// shows is what your page does. A step hands its places (bands: rect() each, a kind), its value before and after, and
+// the name it lands on. For text: a cap line and a baseline at every place, an I-beam and the pill at the first; the
+// pill rolls while the page moves, turns sky and names the style when it lands, and the guides go.
+const P = (n) => `.mo-page .mo-${n}`;
+const PAGE_CSS = `
+  .mo-page { position: fixed; inset: 0; pointer-events: none; z-index: 1; --c: var(--pl-coral); }
+  .mo-page[data-landed] { --c: var(--pl-sky); }
+  ${guideRules(P)}
+`;
+export class PageGuides {
+  #layer; #frame = 0; #parts = []; #pill = null; #spec = null;
+  constructor(root) {
+    if (!root.querySelector('style[data-mo-page]')) { const st = Object.assign(document.createElement('style'), { textContent: PAGE_CSS }); st.setAttribute('data-mo-page', ''); root.append(st); }
+    this.#layer = Object.assign(document.createElement('div'), { className: 'mo-page' });
+    this.#layer.setAttribute('aria-hidden', 'true');
+    root.append(this.#layer);
+  }
+  // the kinds drawn here; the rest stay with the show's own marks
+  can(step) { const b = step?.bands?.() ?? []; return b.length > 0 && b.every((x) => x.kind === 'line'); }
+  async in(step, signal) {
+    this.clear();
+    const bands = step.bands().slice(0, 12), make = (n) => { const el = document.createElement('i'); el.className = `mo-g mo-${n}`; this.#layer.append(el); return el; };
+    this.#layer.removeAttribute('data-landed');
+    this.#parts = bands.map((b) => ({ b, cap: make('hl'), base: make('hl') }));
+    const beam = make('beam'), pill = make('pill');
+    const from = Math.round(step.chip?.from ?? step.from ?? 0), to = Math.round(step.to ?? from);
+    this.#spec = { from, to, name: step.name ?? '', beam, vals: roll(from, to) };
+    this.#pill = pill; pill.innerHTML = pillHtml(this.#spec.vals, 'px');
+    const draw = () => {
+      let first = null;
+      for (const p of this.#parts) {
+        const r = p.b.rect?.(), off = !r || r.width < 0.5 || r.height < 0.5 || r.bottom < 0 || r.top > innerHeight;
+        for (const el of [p.cap, p.base]) el.style.display = off ? 'none' : '';
+        if (off) continue;
+        const cap = r.top + r.height * 0.24, base = r.top + r.height * 0.8, l = r.left - 10, w = r.width + 20;
+        p.cap.style.cssText = `left:${l}px;top:${cap}px;width:${w}px;display:${p.cap.style.display}`; p.base.style.cssText = `left:${l}px;top:${base}px;width:${w}px;display:${p.base.style.display}`;
+        first ??= { l, cap, base };
+      }
+      const show = !!first;
+      beam.style.display = pill.style.display = show ? '' : 'none';
+      if (first) { beam.style.cssText = `left:${first.l - 14}px;top:${first.cap}px;height:${first.base - first.cap}px`; pill.style.cssText = `left:${Math.max(30, first.l - 44)}px;top:${(first.cap + first.base) / 2}px`; }
+      this.#frame = requestAnimationFrame(draw);
+    };
+    draw();
+    const quick = signal?.aborted || matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (quick) return;
+    await Promise.all([...this.#parts.flatMap((p, i) => [p.cap, p.base].map((el) => animate(el, [{ transform: 'scaleX(0)', opacity: 0 }, { transform: 'scaleX(1)', opacity: 1 }], { duration: T.guides, delay: Math.min(i, 6) * 40, easing: 'cubic-bezier(.2,.8,.2,1)' }))),
+      ...[beam, pill].map((el) => animate(el, [{ opacity: 0, scale: 0.85 }, { opacity: 1, scale: 1 }], { duration: T.guides * 0.8, delay: 120, easing: 'cubic-bezier(.34,1.56,.64,1)' }))]);
+  }
+  // the page is moving: the number rolls with it
+  move() { const s = this.#spec; this.#pill?.querySelector('.roll > span')?.animate([{ transform: 'translateY(0)' }, { transform: `translateY(${-(s.vals.length - 1) * 22}px)` }], { duration: BEAT.move, easing: SPRING, fill: 'both' }); }
+  // it landed: the pill turns to the scale's colour, names the style, settles
+  land() { const s = this.#spec; if (!this.#pill) return; this.#layer.setAttribute('data-landed', ''); this.#pill.innerHTML = pillHtml([s.to], 'px', s.name); this.#pill.animate([{ scale: 1 }, { scale: 1.08 }, { scale: 1 }], { duration: 360, easing: 'cubic-bezier(.34,1.56,.64,1)' }); }
+  async out(signal) { if (!(signal?.aborted)) await Promise.all([...this.#layer.children].map((el) => animate(el, [{ opacity: 1 }, { opacity: 0 }], { duration: T.out, easing: 'ease-out' }))); this.clear(); }
+  clear() { cancelAnimationFrame(this.#frame); this.#frame = 0; this.#parts = []; this.#pill = null; this.#layer.replaceChildren(); this.#layer.removeAttribute('data-landed'); }
+  remove() { this.clear(); this.#layer.remove(); }
 }
