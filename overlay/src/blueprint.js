@@ -656,7 +656,8 @@ export class Blueprint {
   async #undoGroup(group, said = FIX.undone) {
     const result = await post('undo-group', { group });
     for (const file of Object.keys(result?.files ?? {})) this.invalidate({ file });
-    this.#host.wrote?.(result, said);
+    // said with nothing to undo: the undo's own handles would put an Undo on 'Undone', which redoes it (U52)
+    this.#host.wrote?.({ ...result, undo: [], trace: null }, said);
     return result;
   }
   // an element card is open (it comes back open after a reload a write causes)
