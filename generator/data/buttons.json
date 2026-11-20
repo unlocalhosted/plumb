@@ -1062,7 +1062,22 @@
   "stars": 148,
   "repo": "8starlabs/ui",
   "weight": 0.578,
-  "renderRank": 236
+  "renderRank": 236,
+  "rendered": {
+   "renders": false,
+   "drewShape": true,
+   "painted": 1,
+   "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation",
+   "target": "button",
+   "size": [
+    106,
+    36
+   ],
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@affectui/button",
@@ -1152,7 +1167,22 @@
   "stars": 904,
   "repo": "flohoeller/affectui",
   "weight": 0.66,
-  "renderRank": 96
+  "renderRank": 96,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.661,
+   "error": null,
+   "target": "button",
+   "size": [
+    112,
+    40
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@affectui/button-clean",
@@ -1243,7 +1273,22 @@
   "stars": 904,
   "repo": "flohoeller/affectui",
   "weight": 0.66,
-  "renderRank": 97
+  "renderRank": 97,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.547,
+   "error": null,
+   "target": "button",
+   "size": [
+    94,
+    28
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@affectui/color-picker",
@@ -1328,7 +1373,19 @@
   "stars": 904,
   "repo": "flohoeller/affectui",
   "weight": 0.81,
-  "renderRank": 24
+  "renderRank": 24,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation.",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@affectui/color-picker-clean",
@@ -1413,7 +1470,19 @@
   "stars": 904,
   "repo": "flohoeller/affectui",
   "weight": 0.81,
-  "renderRank": 25
+  "renderRank": 25,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@affectui/context-menu",
@@ -2012,7 +2081,22 @@
   "stars": 904,
   "repo": "flohoeller/affectui",
   "weight": 0.66,
-  "renderRank": 98
+  "renderRank": 98,
+  "rendered": {
+   "renders": true,
+   "drewShape": false,
+   "painted": 0,
+   "error": null,
+   "target": "button",
+   "size": [
+    40,
+    40
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": null,
+   "movements": []
+  }
  },
  {
   "id": "@affectui/icon-button-clean",
@@ -2090,7 +2174,22 @@
   "stars": 904,
   "repo": "flohoeller/affectui",
   "weight": 0.66,
-  "renderRank": 99
+  "renderRank": 99,
+  "rendered": {
+   "renders": true,
+   "drewShape": false,
+   "painted": 0,
+   "error": null,
+   "target": "button",
+   "size": [
+    28,
+    28
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": null,
+   "movements": []
+  }
  },
  {
   "id": "@affectui/popover",
@@ -7890,7 +7989,19 @@
   "stars": 22299,
   "repo": "livekit/livekit",
   "weight": 0.657,
-  "renderRank": 107
+  "renderRank": 107,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@agents-ui/agent-track-toggle",
@@ -7954,7 +8065,19 @@
   "stars": 22299,
   "repo": "livekit/livekit",
   "weight": 0.657,
-  "renderRank": 108
+  "renderRank": 108,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@agents-ui/start-audio-button",
@@ -8012,7 +8135,19 @@
   "stars": 22299,
   "repo": "livekit/livekit",
   "weight": 0.657,
-  "renderRank": 109
+  "renderRank": 109,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@alexandrejoly/dialog-drawer",
@@ -8622,7 +8757,19 @@
   "stars": null,
   "repo": null,
   "weight": 0.649,
-  "renderRank": 153
+  "renderRank": 153,
+  "rendered": {
+   "renders": false,
+   "drewShape": false,
+   "painted": null,
+   "error": "Cannot read properties of undefined (reading 'reduce')",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@afterglowui/metal-button",
@@ -10545,7 +10692,19 @@
   "stars": 6,
   "repo": "hiteshbandhu/bevel",
   "weight": 0.587,
-  "renderRank": 230
+  "renderRank": 230,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@bevel/approval",
@@ -18103,7 +18262,22 @@
   "stars": 34,
   "repo": "krutikkkkkkkkk/creative-ui",
   "weight": 0.66,
-  "renderRank": 100
+  "renderRank": 100,
+  "rendered": {
+   "renders": true,
+   "drewShape": false,
+   "painted": 0,
+   "error": null,
+   "target": "button",
+   "size": [
+    104,
+    127
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 0,
+   "movements": []
+  }
  },
  {
   "id": "@cuelark/burst",
@@ -19410,7 +19584,22 @@
   "stars": null,
   "repo": null,
   "weight": 0.655,
-  "renderRank": 120
+  "renderRank": 120,
+  "rendered": {
+   "renders": false,
+   "drewShape": true,
+   "painted": 0.36,
+   "error": "page.evaluate: TypeError: Cannot set properties of undefined (setting 'on')\n    at eval (eval at evaluate (:370:30), <anonymous>:1:25)\n    at UtilityScript.eval",
+   "target": "button",
+   "size": [
+    56,
+    56
+   ],
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@crucible/escapement",
@@ -20024,7 +20213,22 @@
   "stars": null,
   "repo": null,
   "weight": 0.655,
-  "renderRank": 121
+  "renderRank": 121,
+  "rendered": {
+   "renders": false,
+   "drewShape": true,
+   "painted": 0.408,
+   "error": "page.evaluate: TypeError: Cannot read properties of undefined (reading 'marks')\n    at eval (eval at evaluate (:370:30), <anonymous>:1:24)\n    at UtilityScript.",
+   "target": "button",
+   "size": [
+    164,
+    56
+   ],
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@crucible/ripple",
@@ -20399,7 +20603,22 @@
   "stars": null,
   "repo": null,
   "weight": 0.655,
-  "renderRank": 122
+  "renderRank": 122,
+  "rendered": {
+   "renders": false,
+   "drewShape": true,
+   "painted": 1,
+   "error": "page.evaluate: TypeError: Cannot read properties of null (reading 'getBoundingClientRect')\n    at eval (eval at evaluate (:370:30), <anonymous>:2:61)\n    at Uti",
+   "target": "button",
+   "size": [
+    32,
+    32
+   ],
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@crucible/throw",
@@ -20519,7 +20738,22 @@
   "stars": null,
   "repo": null,
   "weight": 0.655,
-  "renderRank": 123
+  "renderRank": 123,
+  "rendered": {
+   "renders": false,
+   "drewShape": false,
+   "painted": 0,
+   "error": "page.evaluate: TypeError: Cannot read properties of undefined (reading 'marks')\n    at eval (eval at evaluate (:370:30), <anonymous>:1:24)\n    at UtilityScript.",
+   "target": "div",
+   "size": [
+    48,
+    48
+   ],
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@animate-ui/backgrounds-topography",
@@ -20688,7 +20922,19 @@
   "stars": 5095,
   "repo": "imskyleen/animate-ui",
   "weight": 0.59,
-  "renderRank": 217
+  "renderRank": 217,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@animate-ui/buttons-github-stars",
@@ -20751,7 +20997,19 @@
   "stars": 5095,
   "repo": "imskyleen/animate-ui",
   "weight": 0.59,
-  "renderRank": 218
+  "renderRank": 218,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@animate-ui/buttons-liquid",
@@ -20824,7 +21082,19 @@
   "stars": 5095,
   "repo": "imskyleen/animate-ui",
   "weight": 0.59,
-  "renderRank": 219
+  "renderRank": 219,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@animate-ui/buttons-theme-toggler",
@@ -20887,7 +21157,19 @@
   "stars": 5095,
   "repo": "imskyleen/animate-ui",
   "weight": 0.59,
-  "renderRank": 220
+  "renderRank": 220,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n    - waiting for \"http://localhost:4410/?part=animate-ui__buttons-the",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@dashral/alert-dialog",
@@ -21510,7 +21792,19 @@
   "stars": 12,
   "repo": "hasral/dashral",
   "weight": 0.615,
-  "renderRank": 202
+  "renderRank": 202,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n    - waiting for \"http://localhost:4410/?part=dashral__motion-button\"",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@dashral/motion-avatar",
@@ -22386,7 +22680,19 @@
   "stars": 13346,
   "repo": "assistant-ui/assistant-ui",
   "weight": 0.635,
-  "renderRank": 176
+  "renderRank": 176,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n    - waiting for \"http://localhost:4410/?part=assistant-ui__tooltip-i",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@assistant-ui/file",
@@ -23737,7 +24043,19 @@
   "stars": null,
   "repo": null,
   "weight": 0.65,
-  "renderRank": 152
+  "renderRank": 152,
+  "rendered": {
+   "renders": false,
+   "drewShape": false,
+   "painted": null,
+   "error": "Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.\n\nCheck the render method of `Demo`.",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@asanshay/loader",
@@ -24307,7 +24625,22 @@
   "stars": 1990,
   "repo": "starc007/ui-components",
   "weight": 0.697,
-  "renderRank": 67
+  "renderRank": 67,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.415,
+   "error": null,
+   "target": "button",
+   "size": [
+    114,
+    40
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@beui/button-base",
@@ -24434,7 +24767,22 @@
   "stars": 1990,
   "repo": "starc007/ui-components",
   "weight": 0.697,
-  "renderRank": 68
+  "renderRank": 68,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.435,
+   "error": null,
+   "target": "button",
+   "size": [
+    114,
+    40
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@beui/button-stateful",
@@ -24570,7 +24918,22 @@
   "stars": 1990,
   "repo": "starc007/ui-components",
   "weight": 0.697,
-  "renderRank": 69
+  "renderRank": 69,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 1,
+   "error": null,
+   "target": "button",
+   "size": [
+    114,
+    40
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@beui/button-magnetic",
@@ -24825,7 +25188,22 @@
   "stars": 1990,
   "repo": "starc007/ui-components",
   "weight": 0.697,
-  "renderRank": 70
+  "renderRank": 70,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 1,
+   "error": null,
+   "target": "button",
+   "size": [
+    288,
+    64
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@beui/hold-action-button",
@@ -24958,7 +25336,133 @@
   "stars": 1990,
   "repo": "starc007/ui-components",
   "weight": 0.847,
-  "renderRank": 12
+  "renderRank": 12,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.494,
+   "error": null,
+   "target": "button",
+   "size": [
+    288,
+    64
+   ],
+   "longestMovementMs": 1596,
+   "maxOvershootPct": 0,
+   "faintestWords": 0,
+   "movements": [
+    {
+     "after": "gesture",
+     "does": "moves across",
+     "elements": 3,
+     "firstMs": 17,
+     "lastMs": 147,
+     "longestMs": 130,
+     "biggest": 2.7,
+     "overshootPct": null
+    },
+    {
+     "after": "let go",
+     "does": "moves across",
+     "elements": 3,
+     "firstMs": 9,
+     "lastMs": 137,
+     "longestMs": 128,
+     "biggest": 2.7,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "changes width",
+     "elements": 8,
+     "firstMs": 17,
+     "lastMs": 180,
+     "longestMs": 163,
+     "biggest": 11.4,
+     "overshootPct": 0
+    },
+    {
+     "after": "let go",
+     "does": "changes width",
+     "elements": 8,
+     "firstMs": 9,
+     "lastMs": 204,
+     "longestMs": 195,
+     "biggest": 11.5,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "changes height",
+     "elements": 3,
+     "firstMs": 17,
+     "lastMs": 147,
+     "longestMs": 130,
+     "biggest": 1.2,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "scales",
+     "elements": 1,
+     "firstMs": 17,
+     "lastMs": 147,
+     "longestMs": 130,
+     "biggest": 0.02,
+     "overshootPct": null
+    },
+    {
+     "after": "let go",
+     "does": "scales",
+     "elements": 1,
+     "firstMs": 9,
+     "lastMs": 170,
+     "longestMs": 161,
+     "biggest": 0.02,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "moves up or down",
+     "elements": 3,
+     "firstMs": 17,
+     "lastMs": 1613,
+     "longestMs": 1596,
+     "biggest": 73,
+     "overshootPct": 0
+    },
+    {
+     "after": "let go",
+     "does": "moves up or down",
+     "elements": 3,
+     "firstMs": 9,
+     "lastMs": 204,
+     "longestMs": 195,
+     "biggest": 72.9,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "fades",
+     "elements": 4,
+     "firstMs": 17,
+     "lastMs": 1746,
+     "longestMs": 100,
+     "biggest": 1,
+     "overshootPct": 0
+    },
+    {
+     "after": "let go",
+     "does": "fades",
+     "elements": 2,
+     "firstMs": 9,
+     "lastMs": 103,
+     "longestMs": 94,
+     "biggest": 1,
+     "overshootPct": 0
+    }
+   ]
+  }
  },
  {
   "id": "@beui/slide-action-button",
@@ -25083,7 +25587,143 @@
   "stars": 1990,
   "repo": "starc007/ui-components",
   "weight": 0.847,
-  "renderRank": 13
+  "renderRank": 13,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.481,
+   "error": null,
+   "target": "button",
+   "size": [
+    56,
+    56
+   ],
+   "longestMovementMs": 361,
+   "maxOvershootPct": 0,
+   "faintestWords": null,
+   "movements": [
+    {
+     "after": "gesture",
+     "does": "fades",
+     "elements": 1,
+     "firstMs": 26,
+     "lastMs": 192,
+     "longestMs": 166,
+     "biggest": 1,
+     "overshootPct": 0
+    },
+    {
+     "after": "let go",
+     "does": "fades",
+     "elements": 3,
+     "firstMs": 9,
+     "lastMs": 1570,
+     "longestMs": 294,
+     "biggest": 1,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "moves across",
+     "elements": 3,
+     "firstMs": 26,
+     "lastMs": 259,
+     "longestMs": 233,
+     "biggest": 225.7,
+     "overshootPct": 0
+    },
+    {
+     "after": "let go",
+     "does": "moves across",
+     "elements": 4,
+     "firstMs": 9,
+     "lastMs": 1570,
+     "longestMs": 361,
+     "biggest": 219.7,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "moves up or down",
+     "elements": 2,
+     "firstMs": 26,
+     "lastMs": 259,
+     "longestMs": 233,
+     "biggest": 1.9,
+     "overshootPct": null
+    },
+    {
+     "after": "let go",
+     "does": "moves up or down",
+     "elements": 2,
+     "firstMs": 9,
+     "lastMs": 1410,
+     "longestMs": 201,
+     "biggest": 1.6,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "changes width",
+     "elements": 4,
+     "firstMs": 26,
+     "lastMs": 259,
+     "longestMs": 233,
+     "biggest": 244.6,
+     "overshootPct": 0
+    },
+    {
+     "after": "let go",
+     "does": "changes width",
+     "elements": 3,
+     "firstMs": 9,
+     "lastMs": 1570,
+     "longestMs": 361,
+     "biggest": 282.5,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "changes height",
+     "elements": 3,
+     "firstMs": 26,
+     "lastMs": 259,
+     "longestMs": 233,
+     "biggest": 3.9,
+     "overshootPct": null
+    },
+    {
+     "after": "let go",
+     "does": "changes height",
+     "elements": 2,
+     "firstMs": 9,
+     "lastMs": 1570,
+     "longestMs": 361,
+     "biggest": 3.4,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "scales",
+     "elements": 2,
+     "firstMs": 26,
+     "lastMs": 259,
+     "longestMs": 201,
+     "biggest": 0.85,
+     "overshootPct": 0
+    },
+    {
+     "after": "let go",
+     "does": "scales",
+     "elements": 2,
+     "firstMs": 9,
+     "lastMs": 1570,
+     "longestMs": 361,
+     "biggest": 0.98,
+     "overshootPct": 0
+    }
+   ]
+  }
  },
  {
   "id": "@beui/expandable-control",
@@ -25160,7 +25800,22 @@
   "stars": 1990,
   "repo": "starc007/ui-components",
   "weight": 0.697,
-  "renderRank": 71
+  "renderRank": 71,
+  "rendered": {
+   "renders": false,
+   "drewShape": false,
+   "painted": 0.042,
+   "error": "page.evaluate: TypeError: Cannot read properties of undefined (reading 'marks')\n    at eval (eval at evaluate (:370:30), <anonymous>:1:24)\n    at UtilityScript.",
+   "target": "button",
+   "size": [
+    46,
+    44
+   ],
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@beui/switch",
@@ -25615,7 +26270,19 @@
   "stars": 1990,
   "repo": "starc007/ui-components",
   "weight": 0.697,
-  "renderRank": 72
+  "renderRank": 72,
+  "rendered": {
+   "renders": false,
+   "drewShape": false,
+   "painted": null,
+   "error": "Cannot read properties of undefined (reading '0')",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@beui/scroll-to",
@@ -25678,7 +26345,19 @@
   "stars": 1990,
   "repo": "starc007/ui-components",
   "weight": 0.697,
-  "renderRank": 73
+  "renderRank": 73,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n    - waiting for \"http://localhost:4410/?part=beui__scroll-to\" naviga",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@beui/message-bubble",
@@ -30521,7 +31200,43 @@
   "stars": 48,
   "repo": "amarnathdhumal/chamaacui",
   "weight": 0.376,
-  "renderRank": 730
+  "renderRank": 730,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.539,
+   "error": null,
+   "target": "button",
+   "size": [
+    150,
+    44
+   ],
+   "longestMovementMs": 100,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": [
+    {
+     "after": "point",
+     "does": "moves across",
+     "elements": 12,
+     "firstMs": 95,
+     "lastMs": 195,
+     "longestMs": 100,
+     "biggest": 1.3,
+     "overshootPct": null
+    },
+    {
+     "after": "point",
+     "does": "changes width",
+     "elements": 2,
+     "firstMs": 95,
+     "lastMs": 195,
+     "longestMs": 100,
+     "biggest": 2.8,
+     "overshootPct": null
+    }
+   ]
+  }
  },
  {
   "id": "@chamaac/shimmer-button",
@@ -31147,7 +31862,19 @@
   "stars": 10878,
   "repo": "cosscom/ui",
   "weight": 0.62,
-  "renderRank": 193
+  "renderRank": 193,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@corr/animated-copy-button",
@@ -32667,7 +33394,19 @@
   "stars": 5,
   "repo": "SriSomanaath/crafterui",
   "weight": 0.579,
-  "renderRank": 235
+  "renderRank": 235,
+  "rendered": {
+   "renders": false,
+   "drewShape": false,
+   "painted": null,
+   "error": "Cannot read properties of undefined (reading 'length')",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@delego/button",
@@ -32811,7 +33550,63 @@
   "stars": 7574,
   "repo": "nolly-studio/cult-ui",
   "weight": 0.589,
-  "renderRank": 221
+  "renderRank": 221,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.507,
+   "error": null,
+   "target": "a",
+   "size": [
+    135,
+    49
+   ],
+   "longestMovementMs": 300,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": [
+    {
+     "after": "point",
+     "does": "moves across",
+     "elements": 4,
+     "firstMs": 56,
+     "lastMs": 322,
+     "longestMs": 266,
+     "biggest": 14.8,
+     "overshootPct": 0
+    },
+    {
+     "after": "point",
+     "does": "moves up or down",
+     "elements": 4,
+     "firstMs": 56,
+     "lastMs": 322,
+     "longestMs": 266,
+     "biggest": 14.8,
+     "overshootPct": 0
+    },
+    {
+     "after": "point",
+     "does": "changes width",
+     "elements": 4,
+     "firstMs": 56,
+     "lastMs": 356,
+     "longestMs": 300,
+     "biggest": 29.9,
+     "overshootPct": 0
+    },
+    {
+     "after": "point",
+     "does": "changes height",
+     "elements": 4,
+     "firstMs": 56,
+     "lastMs": 356,
+     "longestMs": 300,
+     "biggest": 29.8,
+     "overshootPct": 0
+    }
+   ]
+  }
  },
  {
   "id": "@cult-ui/texture-button",
@@ -32892,7 +33687,19 @@
   "stars": 7574,
   "repo": "nolly-studio/cult-ui",
   "weight": 0.589,
-  "renderRank": 222
+  "renderRank": 222,
+  "rendered": {
+   "renders": false,
+   "drewShape": false,
+   "painted": null,
+   "error": "Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.\n\nCheck the render method of `Demo`.",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@cult-ui/bg-animate-button",
@@ -32973,7 +33780,22 @@
   "stars": 7574,
   "repo": "nolly-studio/cult-ui",
   "weight": 0.589,
-  "renderRank": 223
+  "renderRank": 223,
+  "rendered": {
+   "renders": true,
+   "drewShape": false,
+   "painted": 0.111,
+   "error": null,
+   "target": "button",
+   "size": [
+    122,
+    35
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@cult-ui/border-beam-button",
@@ -33034,7 +33856,19 @@
   "stars": 7574,
   "repo": "nolly-studio/cult-ui",
   "weight": 0.589,
-  "renderRank": 224
+  "renderRank": 224,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@cult-ui/family-button",
@@ -33126,7 +33960,22 @@
   "stars": 7574,
   "repo": "nolly-studio/cult-ui",
   "weight": 0.589,
-  "renderRank": 225
+  "renderRank": 225,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.405,
+   "error": null,
+   "target": "div",
+   "size": [
+    72,
+    72
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": null,
+   "movements": []
+  }
  },
  {
   "id": "@cult-ui/neumorph-button",
@@ -33218,7 +34067,22 @@
   "stars": 7574,
   "repo": "nolly-studio/cult-ui",
   "weight": 0.589,
-  "renderRank": 226
+  "renderRank": 226,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.947,
+   "error": null,
+   "target": "button",
+   "size": [
+    121,
+    44
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@cult-ui/metal-button",
@@ -33282,7 +34146,19 @@
   "stars": 7574,
   "repo": "nolly-studio/cult-ui",
   "weight": 0.589,
-  "renderRank": 227
+  "renderRank": 227,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@cult-ui/gradient-button-group",
@@ -33404,7 +34280,19 @@
   "representative": true,
   "stars": 7574,
   "repo": "nolly-studio/cult-ui",
-  "weight": 0.589
+  "weight": 0.589,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n    2 × waiting for \"http://localhost:4410/?part=cult-ui__gradient-but",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@cult-ui/organic-card",
@@ -33542,7 +34430,22 @@
   "representative": true,
   "stars": 7574,
   "repo": "nolly-studio/cult-ui",
-  "weight": 0.589
+  "weight": 0.589,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.527,
+   "error": null,
+   "target": "div",
+   "size": [
+    185,
+    44
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@cult-ui/apple-watch-ultra",
@@ -33745,7 +34648,22 @@
   "stars": 7574,
   "repo": "nolly-studio/cult-ui",
   "weight": 0.739,
-  "renderRank": 37
+  "renderRank": 37,
+  "rendered": {
+   "renders": false,
+   "drewShape": true,
+   "painted": 0.375,
+   "error": "page.evaluate: TypeError: Cannot read properties of undefined (reading 'marks')\n    at eval (eval at evaluate (:370:30), <anonymous>:1:24)\n    at UtilityScript.",
+   "target": "button",
+   "size": [
+    120,
+    44
+   ],
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@cult-ui/copy-button",
@@ -33825,7 +34743,22 @@
   "stars": 7574,
   "repo": "nolly-studio/cult-ui",
   "weight": 0.739,
-  "renderRank": 38
+  "renderRank": 38,
+  "rendered": {
+   "renders": false,
+   "drewShape": false,
+   "painted": 0,
+   "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation",
+   "target": "button",
+   "size": [
+    36,
+    36
+   ],
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@cult-ui/halo-card",
@@ -34008,7 +34941,19 @@
   "stars": 7574,
   "repo": "nolly-studio/cult-ui",
   "weight": 0.739,
-  "renderRank": 39
+  "renderRank": 39,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@cult-ui/halo-badge",
@@ -34156,7 +35101,22 @@
   "representative": true,
   "stars": 7574,
   "repo": "nolly-studio/cult-ui",
-  "weight": 0.589
+  "weight": 0.589,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.551,
+   "error": null,
+   "target": "button",
+   "size": [
+    236,
+    49
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@cult-ui/texture-button-demo",
@@ -34213,7 +35173,19 @@
   "representative": true,
   "stars": 7574,
   "repo": "nolly-studio/cult-ui",
-  "weight": 0.589
+  "weight": 0.589,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@cult-ui/bg-animate-button-demo",
@@ -34272,7 +35244,19 @@
   "representative": true,
   "stars": 7574,
   "repo": "nolly-studio/cult-ui",
-  "weight": 0.589
+  "weight": 0.589,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@cult-ui/border-beam-button-demo",
@@ -34339,7 +35323,19 @@
   "stars": 7574,
   "repo": "nolly-studio/cult-ui",
   "weight": 0.739,
-  "renderRank": 40
+  "renderRank": 40,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n    - waiting for \"http://localhost:4410/?part=cult-ui__border-beam-bu",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@cult-ui/family-button-demo",
@@ -34418,7 +35414,19 @@
   "representative": true,
   "stars": 7574,
   "repo": "nolly-studio/cult-ui",
-  "weight": 0.589
+  "weight": 0.589,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@cult-ui/neumorph-button-demo",
@@ -34480,7 +35488,19 @@
   "representative": true,
   "stars": 7574,
   "repo": "nolly-studio/cult-ui",
-  "weight": 0.589
+  "weight": 0.589,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@cult-ui/metal-button-demo",
@@ -34548,7 +35568,19 @@
   "stars": 7574,
   "repo": "nolly-studio/cult-ui",
   "weight": 0.739,
-  "renderRank": 41
+  "renderRank": 41,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@cult-ui/gradient-button-group-demo",
@@ -34607,7 +35639,19 @@
   "representative": true,
   "stars": 7574,
   "repo": "nolly-studio/cult-ui",
-  "weight": 0.589
+  "weight": 0.589,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@cult-ui/organic-button-demo",
@@ -34664,7 +35708,22 @@
   "representative": true,
   "stars": 7574,
   "repo": "nolly-studio/cult-ui",
-  "weight": 0.589
+  "weight": 0.589,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.513,
+   "error": null,
+   "target": "a",
+   "size": [
+    185,
+    44
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@cult-ui/halo-button-demo",
@@ -34725,7 +35784,53 @@
   "representative": true,
   "stars": 7574,
   "repo": "nolly-studio/cult-ui",
-  "weight": 0.589
+  "weight": 0.589,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.336,
+   "error": null,
+   "target": "button",
+   "size": [
+    106,
+    44
+   ],
+   "longestMovementMs": 2714,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": [
+    {
+     "after": "start",
+     "does": "moves across",
+     "elements": 15,
+     "firstMs": 1,
+     "lastMs": 2715,
+     "longestMs": 2714,
+     "biggest": 105.9,
+     "overshootPct": 0
+    },
+    {
+     "after": "let go",
+     "does": "moves across",
+     "elements": 5,
+     "firstMs": 569,
+     "lastMs": 1503,
+     "longestMs": 934,
+     "biggest": 28.9,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "moves across",
+     "elements": 6,
+     "firstMs": 144,
+     "lastMs": 1878,
+     "longestMs": 1734,
+     "biggest": 39.4,
+     "overshootPct": 0
+    }
+   ]
+  }
  },
  {
   "id": "@cult-ui/copy-button-demo",
@@ -34795,7 +35900,22 @@
   "representative": true,
   "stars": 7574,
   "repo": "nolly-studio/cult-ui",
-  "weight": 0.589
+  "weight": 0.589,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.174,
+   "error": null,
+   "target": "button",
+   "size": [
+    16,
+    16
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@dgit/button",
@@ -35821,7 +36941,19 @@
   "stars": 657,
   "repo": "harshjdhv/componentry",
   "weight": 0.646,
-  "renderRank": 154
+  "renderRank": 154,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@componentry/ripple-transition",
@@ -37011,7 +38143,19 @@
   "stars": 250,
   "repo": "sean-brydon/devl.dev",
   "weight": 0.746,
-  "renderRank": 32
+  "renderRank": 32,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@devl/fill-in-prompts",
@@ -37363,7 +38507,19 @@
   "stars": 250,
   "repo": "sean-brydon/devl.dev",
   "weight": 0.746,
-  "renderRank": 33
+  "renderRank": 33,
+  "rendered": {
+   "renders": false,
+   "drewShape": false,
+   "painted": null,
+   "error": "actions is not iterable",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@devl/liquid-cursor",
@@ -37578,7 +38734,19 @@
   "stars": 250,
   "repo": "sean-brydon/devl.dev",
   "weight": 0.746,
-  "renderRank": 34
+  "renderRank": 34,
+  "rendered": {
+   "renders": false,
+   "drewShape": false,
+   "painted": null,
+   "error": "Cannot read properties of undefined (reading 'length')",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@devl/magnetic",
@@ -37646,7 +38814,19 @@
   "stars": 250,
   "repo": "sean-brydon/devl.dev",
   "weight": 0.596,
-  "renderRank": 215
+  "renderRank": 215,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@devl/pour-progress",
@@ -37888,7 +39068,63 @@
   "stars": 250,
   "repo": "sean-brydon/devl.dev",
   "weight": 0.746,
-  "renderRank": 35
+  "renderRank": 35,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.147,
+   "error": null,
+   "target": "button",
+   "size": [
+    32,
+    32
+   ],
+   "longestMovementMs": 150,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": [
+    {
+     "after": "gesture",
+     "does": "moves across",
+     "elements": 2,
+     "firstMs": 16,
+     "lastMs": 199,
+     "longestMs": 150,
+     "biggest": 3.3,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "moves up or down",
+     "elements": 2,
+     "firstMs": 16,
+     "lastMs": 233,
+     "longestMs": 134,
+     "biggest": 3,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "changes width",
+     "elements": 3,
+     "firstMs": 16,
+     "lastMs": 233,
+     "longestMs": 150,
+     "biggest": 6.5,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "changes height",
+     "elements": 3,
+     "firstMs": 16,
+     "lastMs": 233,
+     "longestMs": 150,
+     "biggest": 6.5,
+     "overshootPct": null
+    }
+   ]
+  }
  },
  {
   "id": "@devl/reaction-picker",
@@ -38171,7 +39407,19 @@
   "stars": 250,
   "repo": "sean-brydon/devl.dev",
   "weight": 0.596,
-  "renderRank": 216
+  "renderRank": 216,
+  "rendered": {
+   "renders": false,
+   "drewShape": false,
+   "painted": null,
+   "error": "Cannot read properties of undefined (reading '0')",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@devl/swatch-card",
@@ -41380,7 +42628,22 @@
   "stars": 22,
   "repo": "rjcuff/easeui",
   "weight": 0.641,
-  "renderRank": 167
+  "renderRank": 167,
+  "rendered": {
+   "renders": false,
+   "drewShape": false,
+   "painted": 0,
+   "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation",
+   "target": "button",
+   "size": [
+    114,
+    40
+   ],
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@easeui/morphing-search",
@@ -42435,7 +43698,22 @@
   "stars": 7,
   "repo": "EricTsai83/ericts-ui",
   "weight": 0.588,
-  "renderRank": 228
+  "renderRank": 228,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.232,
+   "error": null,
+   "target": "button",
+   "size": [
+    56,
+    56
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@ericts/floating-select",
@@ -42515,7 +43793,19 @@
   "stars": 7,
   "repo": "EricTsai83/ericts-ui",
   "weight": 0.588,
-  "renderRank": 229
+  "renderRank": 229,
+  "rendered": {
+   "renders": false,
+   "drewShape": false,
+   "painted": null,
+   "error": "Cannot read properties of undefined (reading '0')",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@ericts/expandable-slider",
@@ -48017,7 +49307,22 @@
   "stars": null,
   "repo": null,
   "weight": 0.654,
-  "renderRank": 129
+  "renderRank": 129,
+  "rendered": {
+   "renders": false,
+   "drewShape": false,
+   "painted": 0,
+   "error": "page.evaluate: TypeError: Cannot read properties of null (reading 'getBoundingClientRect')\n    at eval (eval at evaluate (:370:30), <anonymous>:2:61)\n    at Uti",
+   "target": "button",
+   "size": [
+    96,
+    96
+   ],
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@furin/magnetic-letters",
@@ -48408,7 +49713,22 @@
   "stars": null,
   "repo": null,
   "weight": 0.654,
-  "renderRank": 130
+  "renderRank": 130,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.512,
+   "error": null,
+   "target": "div",
+   "size": [
+    89,
+    66
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": null,
+   "movements": []
+  }
  },
  {
   "id": "@fluent2-react-kit/button",
@@ -50674,7 +51994,19 @@
   "stars": null,
   "repo": "geturui/geturui",
   "weight": 0.655,
-  "renderRank": 124
+  "renderRank": 124,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n    2 × waiting for \"http://localhost:4410/?part=geturui__dropdown\" na",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@geturui/input",
@@ -51966,7 +53298,19 @@
   "stars": null,
   "repo": null,
   "weight": 0.652,
-  "renderRank": 140
+  "renderRank": 140,
+  "rendered": {
+   "renders": false,
+   "drewShape": false,
+   "painted": null,
+   "error": "Cannot read properties of undefined (reading 'filter')",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@goodui/floating-label-input",
@@ -52108,7 +53452,22 @@
   "stars": null,
   "repo": null,
   "weight": 0.652,
-  "renderRank": 141
+  "renderRank": 141,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.606,
+   "error": null,
+   "target": "button",
+   "size": [
+    106,
+    40
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@goodui/rainbow-button",
@@ -52551,7 +53910,22 @@
   "stars": null,
   "repo": null,
   "weight": 0.652,
-  "renderRank": 142
+  "renderRank": 142,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.529,
+   "error": null,
+   "target": "button",
+   "size": [
+    108,
+    40
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@goodui/liquid-glass-button",
@@ -52632,7 +54006,22 @@
   "stars": null,
   "repo": null,
   "weight": 0.652,
-  "renderRank": 143
+  "renderRank": 143,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.156,
+   "error": null,
+   "target": "button",
+   "size": [
+    114,
+    40
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@goodui/shiny-text",
@@ -53106,7 +54495,19 @@
   "stars": null,
   "repo": null,
   "weight": 0.652,
-  "renderRank": 144
+  "renderRank": 144,
+  "rendered": {
+   "renders": false,
+   "drewShape": false,
+   "painted": null,
+   "error": "items is not iterable",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@goodui/number-input",
@@ -53261,7 +54662,22 @@
   "stars": null,
   "repo": null,
   "weight": 0.652,
-  "renderRank": 145
+  "renderRank": 145,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.424,
+   "error": null,
+   "target": "button",
+   "size": [
+    32,
+    32
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@glassyui-native/glass-button",
@@ -53575,7 +54991,63 @@
   "stars": 13,
   "repo": "gabbygab18/glint-ui",
   "weight": 0.619,
-  "renderRank": 194
+  "renderRank": 194,
+  "rendered": {
+   "renders": true,
+   "drewShape": false,
+   "painted": 0.001,
+   "error": null,
+   "target": "button",
+   "size": [
+    36,
+    36
+   ],
+   "longestMovementMs": 267,
+   "maxOvershootPct": 3.2,
+   "faintestWords": 1,
+   "movements": [
+    {
+     "after": "point",
+     "does": "moves across",
+     "elements": 3,
+     "firstMs": 94,
+     "lastMs": 261,
+     "longestMs": 167,
+     "biggest": 4.9,
+     "overshootPct": null
+    },
+    {
+     "after": "point",
+     "does": "moves up or down",
+     "elements": 3,
+     "firstMs": 94,
+     "lastMs": 261,
+     "longestMs": 167,
+     "biggest": 4.9,
+     "overshootPct": null
+    },
+    {
+     "after": "point",
+     "does": "changes width",
+     "elements": 3,
+     "firstMs": 94,
+     "lastMs": 361,
+     "longestMs": 267,
+     "biggest": 9.5,
+     "overshootPct": 3.2
+    },
+    {
+     "after": "point",
+     "does": "changes height",
+     "elements": 3,
+     "firstMs": 94,
+     "lastMs": 361,
+     "longestMs": 267,
+     "biggest": 9.5,
+     "overshootPct": 3.2
+    }
+   ]
+  }
  },
  {
   "id": "@glint-ui/bloom-menu",
@@ -53711,7 +55183,53 @@
   "stars": 13,
   "repo": "gabbygab18/glint-ui",
   "weight": 0.619,
-  "renderRank": 195
+  "renderRank": 195,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.385,
+   "error": null,
+   "target": "button",
+   "size": [
+    138,
+    48
+   ],
+   "longestMovementMs": 165,
+   "maxOvershootPct": 317.2,
+   "faintestWords": 1,
+   "movements": [
+    {
+     "after": "gesture",
+     "does": "moves across",
+     "elements": 9,
+     "firstMs": 3,
+     "lastMs": 135,
+     "longestMs": 132,
+     "biggest": 75.3,
+     "overshootPct": 63.2
+    },
+    {
+     "after": "gesture",
+     "does": "moves up or down",
+     "elements": 9,
+     "firstMs": 3,
+     "lastMs": 168,
+     "longestMs": 165,
+     "biggest": 5.6,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "fades",
+     "elements": 5,
+     "firstMs": 3,
+     "lastMs": 135,
+     "longestMs": 132,
+     "biggest": 0.74,
+     "overshootPct": 317.2
+    }
+   ]
+  }
  },
  {
   "id": "@glint-ui/button",
@@ -53922,7 +55440,19 @@
   "stars": 13,
   "repo": "gabbygab18/glint-ui",
   "weight": 0.619,
-  "renderRank": 196
+  "renderRank": 196,
+  "rendered": {
+   "renders": false,
+   "drewShape": false,
+   "painted": null,
+   "error": "nothing to use",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@glint-ui/duration-picker",
@@ -54202,7 +55732,143 @@
   "stars": 13,
   "repo": "gabbygab18/glint-ui",
   "weight": 0.619,
-  "renderRank": 197
+  "renderRank": 197,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.637,
+   "error": null,
+   "target": "div",
+   "size": [
+    48,
+    48
+   ],
+   "longestMovementMs": 733,
+   "maxOvershootPct": 97.7,
+   "faintestWords": 1,
+   "movements": [
+    {
+     "after": "gesture",
+     "does": "changes width",
+     "elements": 10,
+     "firstMs": 22,
+     "lastMs": 755,
+     "longestMs": 733,
+     "biggest": 265.6,
+     "overshootPct": 0
+    },
+    {
+     "after": "let go",
+     "does": "changes width",
+     "elements": 6,
+     "firstMs": 0,
+     "lastMs": 533,
+     "longestMs": 500,
+     "biggest": 57.6,
+     "overshootPct": 97.7
+    },
+    {
+     "after": "gesture",
+     "does": "fades",
+     "elements": 2,
+     "firstMs": 22,
+     "lastMs": 255,
+     "longestMs": 233,
+     "biggest": 1,
+     "overshootPct": 0
+    },
+    {
+     "after": "let go",
+     "does": "moves across",
+     "elements": 5,
+     "firstMs": 0,
+     "lastMs": 533,
+     "longestMs": 500,
+     "biggest": 41.2,
+     "overshootPct": 20.2
+    },
+    {
+     "after": "let go",
+     "does": "moves up or down",
+     "elements": 5,
+     "firstMs": 33,
+     "lastMs": 499,
+     "longestMs": 466,
+     "biggest": 6.3,
+     "overshootPct": null
+    },
+    {
+     "after": "let go",
+     "does": "changes height",
+     "elements": 5,
+     "firstMs": 0,
+     "lastMs": 533,
+     "longestMs": 500,
+     "biggest": 12.7,
+     "overshootPct": 83.5
+    },
+    {
+     "after": "let go",
+     "does": "scales",
+     "elements": 3,
+     "firstMs": 0,
+     "lastMs": 766,
+     "longestMs": 733,
+     "biggest": 0.7,
+     "overshootPct": 33.1
+    },
+    {
+     "after": "let go",
+     "does": "fades",
+     "elements": 1,
+     "firstMs": 33,
+     "lastMs": 133,
+     "longestMs": 100,
+     "biggest": 1,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "moves across",
+     "elements": 5,
+     "firstMs": 22,
+     "lastMs": 755,
+     "longestMs": 733,
+     "biggest": 267.5,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "moves up or down",
+     "elements": 1,
+     "firstMs": 22,
+     "lastMs": 156,
+     "longestMs": 134,
+     "biggest": 1.9,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "changes height",
+     "elements": 5,
+     "firstMs": 22,
+     "lastMs": 557,
+     "longestMs": 134,
+     "biggest": 3.8,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "scales",
+     "elements": 1,
+     "firstMs": 22,
+     "lastMs": 156,
+     "longestMs": 134,
+     "biggest": 0.08,
+     "overshootPct": null
+    }
+   ]
+  }
  },
  {
   "id": "@glint-ui/hold-to-confirm",
@@ -55053,7 +56719,19 @@
   "stars": 13,
   "repo": "gabbygab18/glint-ui",
   "weight": 0.619,
-  "renderRank": 198
+  "renderRank": 198,
+  "rendered": {
+   "renders": false,
+   "drewShape": false,
+   "painted": null,
+   "error": "Cannot read properties of undefined (reading 'length')",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@glint-ui/radio-group",
@@ -56393,7 +58071,93 @@
   "stars": 200,
   "repo": "alexburlis/glassyui",
   "weight": 0.741,
-  "renderRank": 36
+  "renderRank": 36,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.297,
+   "error": null,
+   "target": "button",
+   "size": [
+    129,
+    45
+   ],
+   "longestMovementMs": 634,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": [
+    {
+     "after": "point",
+     "does": "fades",
+     "elements": 1,
+     "firstMs": 60,
+     "lastMs": 259,
+     "longestMs": 199,
+     "biggest": 1,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "moves across",
+     "elements": 1,
+     "firstMs": 22,
+     "lastMs": 622,
+     "longestMs": 600,
+     "biggest": 114.5,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "moves up or down",
+     "elements": 1,
+     "firstMs": 22,
+     "lastMs": 656,
+     "longestMs": 634,
+     "biggest": 114.7,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "changes width",
+     "elements": 1,
+     "firstMs": 22,
+     "lastMs": 656,
+     "longestMs": 634,
+     "biggest": 229.6,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "changes height",
+     "elements": 1,
+     "firstMs": 22,
+     "lastMs": 656,
+     "longestMs": 634,
+     "biggest": 229.6,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "scales",
+     "elements": 1,
+     "firstMs": 22,
+     "lastMs": 622,
+     "longestMs": 600,
+     "biggest": 0.74,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "fades",
+     "elements": 1,
+     "firstMs": 22,
+     "lastMs": 589,
+     "longestMs": 567,
+     "biggest": 0.51,
+     "overshootPct": 0
+    }
+   ]
+  }
  },
  {
   "id": "@glassyui/glass-dialog",
@@ -57748,7 +59512,19 @@
   "stars": 167,
   "repo": "preetsuthar17/hextaui",
   "weight": 0.583,
-  "renderRank": 232
+  "renderRank": 232,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@hextaui/button-group",
@@ -58001,7 +59777,19 @@
   "stars": 167,
   "repo": "preetsuthar17/hextaui",
   "weight": 0.583,
-  "renderRank": 233
+  "renderRank": 233,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@hextaui/kbd",
@@ -58336,7 +60124,19 @@
   "stars": 167,
   "repo": "preetsuthar17/hextaui",
   "weight": 0.583,
-  "renderRank": 234
+  "renderRank": 234,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n    - waiting for \"http://localhost:4410/?part=hextaui__toggle\" naviga",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@iandefined/button",
@@ -58936,7 +60736,19 @@
   "stars": 21,
   "repo": "Hairline-UI/inrond",
   "weight": 0.64,
-  "renderRank": 168
+  "renderRank": 168,
+  "rendered": {
+   "renders": false,
+   "drewShape": false,
+   "painted": null,
+   "error": "Cannot read properties of undefined (reading 'name')",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@hairline/pay-button",
@@ -59762,7 +61574,22 @@
   "stars": 21,
   "repo": "Hairline-UI/inrond",
   "weight": 0.64,
-  "renderRank": 169
+  "renderRank": 169,
+  "rendered": {
+   "renders": false,
+   "drewShape": true,
+   "painted": 1,
+   "error": "page.evaluate: TypeError: Cannot read properties of null (reading 'getBoundingClientRect')\n    at eval (eval at evaluate (:370:30), <anonymous>:2:61)\n    at Uti",
+   "target": "button",
+   "size": [
+    132,
+    50
+   ],
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@hairline/scene-mixer",
@@ -60033,7 +61860,19 @@
   "stars": 21,
   "repo": "Hairline-UI/inrond",
   "weight": 0.64,
-  "renderRank": 170
+  "renderRank": 170,
+  "rendered": {
+   "renders": false,
+   "drewShape": false,
+   "painted": null,
+   "error": "Cannot read properties of undefined (reading 'find')",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@hairline/split-button",
@@ -60126,7 +61965,19 @@
   "stars": 21,
   "repo": "Hairline-UI/inrond",
   "weight": 0.64,
-  "renderRank": 171
+  "renderRank": 171,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@hairline/copy-button",
@@ -60401,7 +62252,19 @@
   "stars": 21,
   "repo": "Hairline-UI/inrond",
   "weight": 0.64,
-  "renderRank": 172
+  "renderRank": 172,
+  "rendered": {
+   "renders": false,
+   "drewShape": false,
+   "painted": null,
+   "error": "Cannot read properties of undefined (reading 'find')",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@hairline/floating-button-group",
@@ -60489,7 +62352,19 @@
   "stars": 21,
   "repo": "Hairline-UI/inrond",
   "weight": 0.64,
-  "renderRank": 173
+  "renderRank": 173,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 29974.456000000006ms exceeded.\nCall log:\n  - taking element screenshot\n  - waiting for fonts to load...\n  - fonts loaded\n  - attempt",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@hairline/input",
@@ -60913,7 +62788,19 @@
   "stars": 21,
   "repo": "Hairline-UI/inrond",
   "weight": 0.64,
-  "renderRank": 174
+  "renderRank": 174,
+  "rendered": {
+   "renders": false,
+   "drewShape": false,
+   "painted": null,
+   "error": "Cannot read properties of undefined (reading 'props')",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@hairline/context-menu",
@@ -61392,7 +63279,19 @@
   "stars": 21,
   "repo": "Hairline-UI/inrond",
   "weight": 0.64,
-  "renderRank": 175
+  "renderRank": 175,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "page.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - taking page screenshot\n  - waiting for fonts to load...\n  - fonts loaded\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@hairline/stepper-input",
@@ -62715,7 +64614,63 @@
   "stars": null,
   "repo": null,
   "weight": 0.505,
-  "renderRank": 374
+  "renderRank": 374,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.152,
+   "error": null,
+   "target": "button",
+   "size": [
+    108,
+    36
+   ],
+   "longestMovementMs": 417,
+   "maxOvershootPct": 0,
+   "faintestWords": 6.9734e-06,
+   "movements": [
+    {
+     "after": "gesture",
+     "does": "moves across",
+     "elements": 2,
+     "firstMs": 86,
+     "lastMs": 287,
+     "longestMs": 34,
+     "biggest": 7.7,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "changes width",
+     "elements": 2,
+     "firstMs": 86,
+     "lastMs": 287,
+     "longestMs": 34,
+     "biggest": 15.3,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "moves up or down",
+     "elements": 2,
+     "firstMs": 86,
+     "lastMs": 353,
+     "longestMs": 233,
+     "biggest": 7.6,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "fades",
+     "elements": 2,
+     "firstMs": 86,
+     "lastMs": 537,
+     "longestMs": 417,
+     "biggest": 1,
+     "overshootPct": 0
+    }
+   ]
+  }
  },
  {
   "id": "@ikas/date-picker",
@@ -63533,7 +65488,19 @@
   "stars": 102,
   "repo": "edwinvakayil/iconiq",
   "weight": 0.706,
-  "renderRank": 42
+  "renderRank": 42,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@iconiq/b-checkbox",
@@ -66003,7 +67970,22 @@
   "stars": 1261,
   "repo": "ddoemonn/interior",
   "weight": 0.676,
-  "renderRank": 81
+  "renderRank": 81,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.129,
+   "error": null,
+   "target": "button",
+   "size": [
+    122,
+    36
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 0,
+   "movements": []
+  }
  },
  {
   "id": "@interior/loading-button",
@@ -66114,7 +68096,22 @@
   "stars": 1261,
   "repo": "ddoemonn/interior",
   "weight": 0.676,
-  "renderRank": 82
+  "renderRank": 82,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.129,
+   "error": null,
+   "target": "button",
+   "size": [
+    122,
+    36
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 0,
+   "movements": []
+  }
  },
  {
   "id": "@interior/hold-to-confirm",
@@ -66202,7 +68199,22 @@
   "stars": 1261,
   "repo": "ddoemonn/interior",
   "weight": 0.826,
-  "renderRank": 17
+  "renderRank": 17,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.124,
+   "error": null,
+   "target": "button",
+   "size": [
+    120,
+    40
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 0,
+   "movements": []
+  }
  },
  {
   "id": "@interior/ripple",
@@ -67081,7 +69093,22 @@
   "stars": 4,
   "repo": "kamisama-v0/Karaui",
   "weight": 0.571,
-  "renderRank": 250
+  "renderRank": 250,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 1,
+   "error": null,
+   "target": "button",
+   "size": [
+    288,
+    64
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@karaui/slide-action-button",
@@ -67203,7 +69230,22 @@
   "stars": 4,
   "repo": "kamisama-v0/Karaui",
   "weight": 0.571,
-  "renderRank": 251
+  "renderRank": 251,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.927,
+   "error": null,
+   "target": "button",
+   "size": [
+    56,
+    56
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": null,
+   "movements": []
+  }
  },
  {
   "id": "@karaui/select",
@@ -71614,7 +73656,19 @@
   "stars": 2388,
   "repo": "kokonut-labs/kokonutui",
   "weight": 0.7,
-  "renderRank": 44
+  "renderRank": 44,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "page.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - taking page screenshot\n  - waiting for fonts to load...\n  - fonts loaded\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@kokonutui/tear-button",
@@ -71697,7 +73751,22 @@
   "stars": 2388,
   "repo": "kokonut-labs/kokonutui",
   "weight": 0.85,
-  "renderRank": 7
+  "renderRank": 7,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.528,
+   "error": null,
+   "target": "button",
+   "size": [
+    76,
+    68
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@kokonutui/bell-button",
@@ -71782,7 +73851,19 @@
   "stars": 2388,
   "repo": "kokonut-labs/kokonutui",
   "weight": 0.7,
-  "renderRank": 45
+  "renderRank": 45,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "page.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - taking page screenshot\n  - waiting for fonts to load...\n  - fonts loaded\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@kokonutui/hold-button",
@@ -71875,7 +73956,103 @@
   "stars": 2388,
   "repo": "kokonut-labs/kokonutui",
   "weight": 0.85,
-  "renderRank": 8
+  "renderRank": 8,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.143,
+   "error": null,
+   "target": "button",
+   "size": [
+    176,
+    40
+   ],
+   "longestMovementMs": 167,
+   "maxOvershootPct": 0,
+   "faintestWords": 0,
+   "movements": [
+    {
+     "after": "gesture",
+     "does": "fades",
+     "elements": 5,
+     "firstMs": 148,
+     "lastMs": 1398,
+     "longestMs": 167,
+     "biggest": 1,
+     "overshootPct": 0
+    },
+    {
+     "after": "let go",
+     "does": "fades",
+     "elements": 3,
+     "firstMs": 377,
+     "lastMs": 544,
+     "longestMs": 167,
+     "biggest": 1,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "moves across",
+     "elements": 10,
+     "firstMs": 148,
+     "lastMs": 1231,
+     "longestMs": 33,
+     "biggest": 16.7,
+     "overshootPct": 0
+    },
+    {
+     "after": "let go",
+     "does": "moves across",
+     "elements": 4,
+     "firstMs": 344,
+     "lastMs": 377,
+     "longestMs": 33,
+     "biggest": 11.4,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "changes width",
+     "elements": 2,
+     "firstMs": 148,
+     "lastMs": 1231,
+     "longestMs": 33,
+     "biggest": 33.4,
+     "overshootPct": 0
+    },
+    {
+     "after": "let go",
+     "does": "changes width",
+     "elements": 1,
+     "firstMs": 344,
+     "lastMs": 377,
+     "longestMs": 33,
+     "biggest": 22.8,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "moves up or down",
+     "elements": 15,
+     "firstMs": 148,
+     "lastMs": 1364,
+     "longestMs": 133,
+     "biggest": 9.9,
+     "overshootPct": 0
+    },
+    {
+     "after": "let go",
+     "does": "moves up or down",
+     "elements": 7,
+     "firstMs": 377,
+     "lastMs": 510,
+     "longestMs": 133,
+     "biggest": 9.9,
+     "overshootPct": 0
+    }
+   ]
+  }
  },
  {
   "id": "@kokonutui/attract-button",
@@ -71953,7 +74130,22 @@
   "stars": 2388,
   "repo": "kokonut-labs/kokonutui",
   "weight": 0.7,
-  "renderRank": 46
+  "renderRank": 46,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.538,
+   "error": null,
+   "target": "button",
+   "size": [
+    144,
+    40
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@kokonutui/gradient-button",
@@ -72036,7 +74228,22 @@
   "stars": 2388,
   "repo": "kokonut-labs/kokonutui",
   "weight": 0.7,
-  "renderRank": 47
+  "renderRank": 47,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.539,
+   "error": null,
+   "target": "button",
+   "size": [
+    119,
+    48
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@kokonutui/v0-button",
@@ -72107,7 +74314,22 @@
   "stars": 2388,
   "repo": "kokonut-labs/kokonutui",
   "weight": 0.7,
-  "renderRank": 48
+  "renderRank": 48,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 1,
+   "error": null,
+   "target": "a",
+   "size": [
+    87,
+    36
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@kokonutui/ai-tool-approval",
@@ -72354,7 +74576,22 @@
   "stars": 2388,
   "repo": "kokonut-labs/kokonutui",
   "weight": 0.7,
-  "renderRank": 49
+  "renderRank": 49,
+  "rendered": {
+   "renders": false,
+   "drewShape": false,
+   "painted": 0,
+   "error": "page.evaluate: TypeError: Cannot read properties of undefined (reading 'marks')\n    at eval (eval at evaluate (:370:30), <anonymous>:1:24)\n    at UtilityScript.",
+   "target": "button",
+   "size": [
+    106,
+    36
+   ],
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@kokonutui/profile-dropdown",
@@ -72532,7 +74769,19 @@
   "stars": 2388,
   "repo": "kokonut-labs/kokonutui",
   "weight": 0.7,
-  "renderRank": 50
+  "renderRank": 50,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@kokonutui/undo-button",
@@ -72625,7 +74874,73 @@
   "stars": 2388,
   "repo": "kokonut-labs/kokonutui",
   "weight": 0.85,
-  "renderRank": 9
+  "renderRank": 9,
+  "rendered": {
+   "renders": true,
+   "drewShape": false,
+   "painted": 0.101,
+   "error": null,
+   "target": "button",
+   "size": [
+    132,
+    40
+   ],
+   "longestMovementMs": 200,
+   "maxOvershootPct": 0,
+   "faintestWords": 3.46075e-06,
+   "movements": [
+    {
+     "after": "gesture",
+     "does": "moves across",
+     "elements": 11,
+     "firstMs": 88,
+     "lastMs": 321,
+     "longestMs": 191,
+     "biggest": 49.5,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "changes width",
+     "elements": 6,
+     "firstMs": 88,
+     "lastMs": 321,
+     "longestMs": 191,
+     "biggest": 99,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "changes height",
+     "elements": 1,
+     "firstMs": 88,
+     "lastMs": 130,
+     "longestMs": 42,
+     "biggest": 1.4,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "moves up or down",
+     "elements": 13,
+     "firstMs": 88,
+     "lastMs": 255,
+     "longestMs": 167,
+     "biggest": 7.6,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "fades",
+     "elements": 3,
+     "firstMs": 88,
+     "lastMs": 288,
+     "longestMs": 200,
+     "biggest": 1,
+     "overshootPct": 0
+    }
+   ]
+  }
  },
  {
   "id": "@kokonutui/ai-checkout",
@@ -72836,7 +75151,22 @@
   "stars": 2388,
   "repo": "kokonut-labs/kokonutui",
   "weight": 0.7,
-  "renderRank": 51
+  "renderRank": 51,
+  "rendered": {
+   "renders": true,
+   "drewShape": false,
+   "painted": 0.041,
+   "error": null,
+   "target": "button",
+   "size": [
+    48,
+    48
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@kokonutui/save-button",
@@ -72932,7 +75262,22 @@
   "stars": 2388,
   "repo": "kokonut-labs/kokonutui",
   "weight": 0.7,
-  "renderRank": 52
+  "renderRank": 52,
+  "rendered": {
+   "renders": true,
+   "drewShape": false,
+   "painted": 0.088,
+   "error": null,
+   "target": "button",
+   "size": [
+    88,
+    40
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@kokonutui/cart-button",
@@ -73020,7 +75365,22 @@
   "representative": true,
   "stars": 2388,
   "repo": "kokonut-labs/kokonutui",
-  "weight": 0.7
+  "weight": 0.7,
+  "rendered": {
+   "renders": true,
+   "drewShape": false,
+   "painted": 0.1,
+   "error": null,
+   "target": "button",
+   "size": [
+    80,
+    36
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@launchui/button",
@@ -76359,7 +78719,22 @@
   "stars": 71,
   "repo": "LocalMode-AI/LocalMode",
   "weight": 0.694,
-  "renderRank": 74
+  "renderRank": 74,
+  "rendered": {
+   "renders": true,
+   "drewShape": false,
+   "painted": 0,
+   "error": null,
+   "target": "button",
+   "size": [
+    56,
+    56
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@localmode/ui/conversation/scroll-to-bottom-button",
@@ -77020,7 +79395,103 @@
   "stars": 23380,
   "repo": "magicuidesign/magicui",
   "weight": 0.66,
-  "renderRank": 101
+  "renderRank": 101,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.397,
+   "error": null,
+   "target": "button",
+   "size": [
+    141,
+    50
+   ],
+   "longestMovementMs": 2821,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": [
+    {
+     "after": "start",
+     "does": "moves across",
+     "elements": 2,
+     "firstMs": 12,
+     "lastMs": 2833,
+     "longestMs": 2821,
+     "biggest": 55.4,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "moves across",
+     "elements": 1,
+     "firstMs": 18,
+     "lastMs": 2089,
+     "longestMs": 2071,
+     "biggest": 77.1,
+     "overshootPct": 0
+    },
+    {
+     "after": "start",
+     "does": "moves up or down",
+     "elements": 1,
+     "firstMs": 12,
+     "lastMs": 1528,
+     "longestMs": 1516,
+     "biggest": 25.5,
+     "overshootPct": 0
+    },
+    {
+     "after": "let go",
+     "does": "moves up or down",
+     "elements": 1,
+     "firstMs": 1458,
+     "lastMs": 1562,
+     "longestMs": 104,
+     "biggest": 11.4,
+     "overshootPct": 0
+    },
+    {
+     "after": "start",
+     "does": "changes width",
+     "elements": 1,
+     "firstMs": 12,
+     "lastMs": 1528,
+     "longestMs": 1516,
+     "biggest": 51.1,
+     "overshootPct": 0
+    },
+    {
+     "after": "let go",
+     "does": "changes width",
+     "elements": 1,
+     "firstMs": 1458,
+     "lastMs": 1562,
+     "longestMs": 104,
+     "biggest": 22.8,
+     "overshootPct": 0
+    },
+    {
+     "after": "start",
+     "does": "changes height",
+     "elements": 1,
+     "firstMs": 12,
+     "lastMs": 1528,
+     "longestMs": 1516,
+     "biggest": 51.1,
+     "overshootPct": 0
+    },
+    {
+     "after": "let go",
+     "does": "changes height",
+     "elements": 1,
+     "firstMs": 1458,
+     "lastMs": 1562,
+     "longestMs": 104,
+     "biggest": 22.8,
+     "overshootPct": 0
+    }
+   ]
+  }
  },
  {
   "id": "@magicui/ripple",
@@ -77247,7 +79718,22 @@
   "stars": 23380,
   "repo": "magicuidesign/magicui",
   "weight": 0.66,
-  "renderRank": 102
+  "renderRank": 102,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.153,
+   "error": null,
+   "target": "button",
+   "size": [
+    142,
+    37
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@magicui/pulsating-button",
@@ -77307,7 +79793,22 @@
   "stars": 23380,
   "repo": "magicuidesign/magicui",
   "weight": 0.66,
-  "renderRank": 103
+  "renderRank": 103,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.521,
+   "error": null,
+   "target": "button",
+   "size": [
+    123,
+    40
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@magicui/ripple-button",
@@ -77374,7 +79875,22 @@
   "stars": 23380,
   "repo": "magicuidesign/magicui",
   "weight": 0.66,
-  "renderRank": 104
+  "renderRank": 104,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.286,
+   "error": null,
+   "target": "button",
+   "size": [
+    127,
+    44
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@magicui/rainbow-button",
@@ -77447,7 +79963,19 @@
   "stars": 23380,
   "repo": "magicuidesign/magicui",
   "weight": 0.66,
-  "renderRank": 105
+  "renderRank": 105,
+  "rendered": {
+   "renders": false,
+   "drewShape": false,
+   "painted": null,
+   "error": "nothing to use",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@magicui/interactive-hover-button",
@@ -77510,7 +80038,22 @@
   "stars": 23380,
   "repo": "magicuidesign/magicui",
   "weight": 0.66,
-  "renderRank": 106
+  "renderRank": 106,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.146,
+   "error": null,
+   "target": "button",
+   "size": [
+    169,
+    42
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 0.824601,
+   "movements": []
+  }
  },
  {
   "id": "@materialcn/button",
@@ -78758,7 +81301,22 @@
   "stars": 14,
   "repo": "juandinella/microinteractions.dev",
   "weight": 0.621,
-  "renderRank": 192
+  "renderRank": 192,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 1,
+   "error": null,
+   "target": "button",
+   "size": [
+    208,
+    48
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@microkit/cursor-edge-glow-button",
@@ -78835,7 +81393,22 @@
   "stars": 107,
   "repo": "henriquegpb/microkit",
   "weight": 0.562,
-  "renderRank": 252
+  "renderRank": 252,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.777,
+   "error": null,
+   "target": "button",
+   "size": [
+    206,
+    40
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@microkit/cursor-follow-share-button",
@@ -78914,7 +81487,33 @@
   "stars": 107,
   "repo": "henriquegpb/microkit",
   "weight": 0.562,
-  "renderRank": 253
+  "renderRank": 253,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 1,
+   "error": null,
+   "target": "button",
+   "size": [
+    200,
+    66
+   ],
+   "longestMovementMs": 188,
+   "maxOvershootPct": 36.2,
+   "faintestWords": 0.278759,
+   "movements": [
+    {
+     "after": "gesture",
+     "does": "moves up or down",
+     "elements": 4,
+     "firstMs": 594,
+     "lastMs": 782,
+     "longestMs": 188,
+     "biggest": 14.4,
+     "overshootPct": 36.2
+    }
+   ]
+  }
  },
  {
   "id": "@microkit/fuse-undo-button",
@@ -78994,7 +81593,22 @@
   "stars": 107,
   "repo": "henriquegpb/microkit",
   "weight": 0.562,
-  "renderRank": 254
+  "renderRank": 254,
+  "rendered": {
+   "renders": true,
+   "drewShape": false,
+   "painted": 0.102,
+   "error": null,
+   "target": "button",
+   "size": [
+    148,
+    52
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 0,
+   "movements": []
+  }
  },
  {
   "id": "@microkit/rolling-number-stepper",
@@ -79140,7 +81754,22 @@
   "stars": 107,
   "repo": "henriquegpb/microkit",
   "weight": 0.562,
-  "renderRank": 255
+  "renderRank": 255,
+  "rendered": {
+   "renders": true,
+   "drewShape": false,
+   "painted": 0.11,
+   "error": null,
+   "target": "button",
+   "size": [
+    132,
+    50
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 0.653977,
+   "movements": []
+  }
  },
  {
   "id": "@microkit/secure-purchase-button",
@@ -82846,7 +85475,22 @@
   "stars": 6,
   "repo": "Tinkerers-Labs/mischief-ui",
   "weight": 0.587,
-  "renderRank": 231
+  "renderRank": 231,
+  "rendered": {
+   "renders": false,
+   "drewShape": true,
+   "painted": 1,
+   "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation",
+   "target": "button",
+   "size": [
+    120,
+    44
+   ],
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@motion-lexicon/copy-button",
@@ -83164,7 +85808,22 @@
   "stars": 64,
   "repo": "Ryan-yang125/motion-lexicon",
   "weight": 0.69,
-  "renderRank": 75
+  "renderRank": 75,
+  "rendered": {
+   "renders": true,
+   "drewShape": false,
+   "painted": 0.05,
+   "error": null,
+   "target": "button",
+   "size": [
+    91,
+    24
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@motion-lexicon/primitive-swipe-to-dismiss",
@@ -83648,7 +86307,22 @@
   "stars": null,
   "repo": null,
   "weight": 0.61,
-  "renderRank": 203
+  "renderRank": 203,
+  "rendered": {
+   "renders": false,
+   "drewShape": true,
+   "painted": 1,
+   "error": "page.evaluate: TypeError: Cannot read properties of null (reading 'getBoundingClientRect')\n    at eval (eval at evaluate (:370:30), <anonymous>:2:61)\n    at Uti",
+   "target": "button",
+   "size": [
+    123,
+    32
+   ],
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@mizzle/like-button",
@@ -89302,7 +91976,22 @@
   "stars": 2,
   "repo": "amankaushik481/minidev-ui",
   "weight": 0.393,
-  "renderRank": 697
+  "renderRank": 697,
+  "rendered": {
+   "renders": true,
+   "drewShape": false,
+   "painted": 0,
+   "error": null,
+   "target": "button",
+   "size": [
+    133,
+    48
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@minidev/terminal",
@@ -89933,7 +92622,19 @@
   "stars": 40,
   "repo": "RMahammad/motiq",
   "weight": 0.668,
-  "renderRank": 93
+  "renderRank": 93,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Element is not attached to the DOM\nCall log:\n  - taking element screenshot\n  - waiting for fonts to load...\n  - fonts loaded\n  - attempting ",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@ncdai/slide-to-unlock",
@@ -90349,7 +93050,19 @@
   "stars": 2435,
   "repo": "ncdai/chanhdai.com",
   "weight": 0.706,
-  "renderRank": 43
+  "renderRank": 43,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n    - waiting for \"http://localhost:4410/?part=ncdai__status-button\" n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@moumenlab/morphing-checkout",
@@ -95269,7 +97982,19 @@
   "stars": 9,
   "repo": "NdekoCode/ndekoui",
   "weight": 0.597,
-  "renderRank": 212
+  "renderRank": 212,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@ndeko/button-59",
@@ -95658,7 +98383,19 @@
   "stars": 9,
   "repo": "NdekoCode/ndekoui",
   "weight": 0.597,
-  "renderRank": 213
+  "renderRank": 213,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@ndeko/button-65",
@@ -95794,7 +98531,19 @@
   "stars": 9,
   "repo": "NdekoCode/ndekoui",
   "weight": 0.597,
-  "renderRank": 214
+  "renderRank": 214,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@ndeko/calendar-date-picker-14",
@@ -105421,7 +108170,22 @@
   "stars": null,
   "repo": null,
   "weight": 0.654,
-  "renderRank": 131
+  "renderRank": 131,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.127,
+   "error": null,
+   "target": "button",
+   "size": [
+    116,
+    41
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@ns-ui/confirm-slide-shatter",
@@ -105501,7 +108265,22 @@
   "stars": null,
   "repo": null,
   "weight": 0.654,
-  "renderRank": 132
+  "renderRank": 132,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.213,
+   "error": null,
+   "target": "button",
+   "size": [
+    48,
+    48
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@ns-ui/copy-button-travel",
@@ -105697,7 +108476,22 @@
   "stars": null,
   "repo": null,
   "weight": 0.654,
-  "renderRank": 133
+  "renderRank": 133,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.134,
+   "error": null,
+   "target": "button",
+   "size": [
+    224,
+    56
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@ns-ui/crimp-barrel-set",
@@ -106712,7 +109506,183 @@
   "stars": null,
   "repo": null,
   "weight": 0.654,
-  "renderRank": 134
+  "renderRank": 134,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.312,
+   "error": null,
+   "target": "button",
+   "size": [
+    101,
+    30
+   ],
+   "longestMovementMs": 134,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": [
+    {
+     "after": "let go",
+     "does": "changes height",
+     "elements": 23,
+     "firstMs": 137,
+     "lastMs": 1437,
+     "longestMs": 134,
+     "biggest": 4,
+     "overshootPct": null
+    },
+    {
+     "after": "start",
+     "does": "moves across",
+     "elements": 6,
+     "firstMs": 65,
+     "lastMs": 98,
+     "longestMs": 33,
+     "biggest": 1,
+     "overshootPct": null
+    },
+    {
+     "after": "point",
+     "does": "moves across",
+     "elements": 18,
+     "firstMs": 45,
+     "lastMs": 645,
+     "longestMs": 134,
+     "biggest": 2,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "moves across",
+     "elements": 12,
+     "firstMs": 168,
+     "lastMs": 535,
+     "longestMs": 134,
+     "biggest": 2,
+     "overshootPct": null
+    },
+    {
+     "after": "let go",
+     "does": "moves across",
+     "elements": 36,
+     "firstMs": 137,
+     "lastMs": 1437,
+     "longestMs": 134,
+     "biggest": 2,
+     "overshootPct": null
+    },
+    {
+     "after": "start",
+     "does": "moves up or down",
+     "elements": 6,
+     "firstMs": 65,
+     "lastMs": 98,
+     "longestMs": 33,
+     "biggest": 1,
+     "overshootPct": null
+    },
+    {
+     "after": "point",
+     "does": "moves up or down",
+     "elements": 18,
+     "firstMs": 45,
+     "lastMs": 645,
+     "longestMs": 134,
+     "biggest": 2,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "moves up or down",
+     "elements": 12,
+     "firstMs": 168,
+     "lastMs": 535,
+     "longestMs": 134,
+     "biggest": 2,
+     "overshootPct": null
+    },
+    {
+     "after": "let go",
+     "does": "moves up or down",
+     "elements": 24,
+     "firstMs": 137,
+     "lastMs": 1437,
+     "longestMs": 134,
+     "biggest": 4,
+     "overshootPct": null
+    },
+    {
+     "after": "start",
+     "does": "changes width",
+     "elements": 4,
+     "firstMs": 65,
+     "lastMs": 98,
+     "longestMs": 33,
+     "biggest": 2,
+     "overshootPct": null
+    },
+    {
+     "after": "point",
+     "does": "changes width",
+     "elements": 12,
+     "firstMs": 45,
+     "lastMs": 645,
+     "longestMs": 134,
+     "biggest": 4,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "changes width",
+     "elements": 8,
+     "firstMs": 168,
+     "lastMs": 535,
+     "longestMs": 134,
+     "biggest": 4,
+     "overshootPct": null
+    },
+    {
+     "after": "let go",
+     "does": "changes width",
+     "elements": 24,
+     "firstMs": 137,
+     "lastMs": 1437,
+     "longestMs": 134,
+     "biggest": 4,
+     "overshootPct": null
+    },
+    {
+     "after": "start",
+     "does": "changes height",
+     "elements": 3,
+     "firstMs": 65,
+     "lastMs": 98,
+     "longestMs": 33,
+     "biggest": 2,
+     "overshootPct": null
+    },
+    {
+     "after": "point",
+     "does": "changes height",
+     "elements": 9,
+     "firstMs": 45,
+     "lastMs": 645,
+     "longestMs": 134,
+     "biggest": 4,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "changes height",
+     "elements": 6,
+     "firstMs": 168,
+     "lastMs": 535,
+     "longestMs": 134,
+     "biggest": 4,
+     "overshootPct": null
+    }
+   ]
+  }
  },
  {
   "id": "@ns-ui/slug-field-mirror",
@@ -106996,7 +109966,22 @@
   "stars": null,
   "repo": null,
   "weight": 0.654,
-  "renderRank": 135
+  "renderRank": 135,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.121,
+   "error": null,
+   "target": "button",
+   "size": [
+    70,
+    37
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@ns-ui/hero-isobar-contours",
@@ -110294,7 +113279,19 @@
   "stars": 1005,
   "repo": "panel-ui/PanelUI",
   "weight": 0.665,
-  "renderRank": 94
+  "renderRank": 94,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n    - waiting for \"http://localhost:4410/?part=panelui__button\" naviga",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@panelui/button-group",
@@ -110424,7 +113421,19 @@
   "stars": 1005,
   "repo": "panel-ui/PanelUI",
   "weight": 0.815,
-  "renderRank": 23
+  "renderRank": 23,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@panelui/exchange",
@@ -110623,7 +113632,19 @@
   "stars": 1005,
   "repo": "panel-ui/PanelUI",
   "weight": 0.665,
-  "renderRank": 95
+  "renderRank": 95,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n    2 × waiting for \"http://localhost:4410/?part=panelui__select\" navi",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@paddle/pricing-cards",
@@ -112751,7 +115772,19 @@
   "stars": 16712,
   "repo": "udecode/plate",
   "weight": 0.645,
-  "renderRank": 155
+  "renderRank": 155,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@plate/align-toolbar-button",
@@ -112809,7 +115842,19 @@
   "stars": 16712,
   "repo": "udecode/plate",
   "weight": 0.645,
-  "renderRank": 156
+  "renderRank": 156,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@plate/import-toolbar-button",
@@ -112867,7 +115912,19 @@
   "stars": 16712,
   "repo": "udecode/plate",
   "weight": 0.645,
-  "renderRank": 157
+  "renderRank": 157,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@plate/export-toolbar-button",
@@ -112925,7 +115982,19 @@
   "stars": 16712,
   "repo": "udecode/plate",
   "weight": 0.645,
-  "renderRank": 158
+  "renderRank": 158,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@plate/font-color-toolbar-button",
@@ -113001,7 +116070,19 @@
   "stars": 16712,
   "repo": "udecode/plate",
   "weight": 0.645,
-  "renderRank": 159
+  "renderRank": 159,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@plate/comment-toolbar-button",
@@ -113059,7 +116140,19 @@
   "stars": 16712,
   "repo": "udecode/plate",
   "weight": 0.645,
-  "renderRank": 160
+  "renderRank": 160,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@plate/emoji-toolbar-button",
@@ -113124,7 +116217,19 @@
   "stars": 16712,
   "repo": "udecode/plate",
   "weight": 0.645,
-  "renderRank": 161
+  "renderRank": 161,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@plate/history-toolbar-button",
@@ -113185,7 +116290,19 @@
   "stars": 16712,
   "repo": "udecode/plate",
   "weight": 0.645,
-  "renderRank": 162
+  "renderRank": 162,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@plate/list-toolbar-button",
@@ -113243,7 +116360,19 @@
   "stars": 16712,
   "repo": "udecode/plate",
   "weight": 0.645,
-  "renderRank": 163
+  "renderRank": 163,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@plate/insert-toolbar-button",
@@ -113301,7 +116430,19 @@
   "stars": 16712,
   "repo": "udecode/plate",
   "weight": 0.645,
-  "renderRank": 164
+  "renderRank": 164,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@plate/insert-toolbar-classic-button",
@@ -113358,7 +116499,19 @@
   "representative": true,
   "stars": 16712,
   "repo": "udecode/plate",
-  "weight": 0.645
+  "weight": 0.645,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@plate/line-height-toolbar-button",
@@ -113418,7 +116571,19 @@
   "representative": true,
   "stars": 16712,
   "repo": "udecode/plate",
-  "weight": 0.645
+  "weight": 0.645,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@plate/link-toolbar-button",
@@ -113475,7 +116640,19 @@
   "representative": true,
   "stars": 16712,
   "repo": "udecode/plate",
-  "weight": 0.645
+  "weight": 0.645,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@plate/list-classic-toolbar-button",
@@ -113532,7 +116709,19 @@
   "representative": true,
   "stars": 16712,
   "repo": "udecode/plate",
-  "weight": 0.645
+  "weight": 0.645,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@plate/mark-toolbar-button",
@@ -113589,7 +116778,19 @@
   "representative": true,
   "stars": 16712,
   "repo": "udecode/plate",
-  "weight": 0.645
+  "weight": 0.645,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@plate/media-toolbar-button",
@@ -113649,7 +116850,19 @@
   "stars": 16712,
   "repo": "udecode/plate",
   "weight": 0.795,
-  "renderRank": 26
+  "renderRank": 26,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@plate/mode-toolbar-button",
@@ -113709,7 +116922,19 @@
   "representative": true,
   "stars": 16712,
   "repo": "udecode/plate",
-  "weight": 0.645
+  "weight": 0.645,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@plate/more-toolbar-button",
@@ -113766,7 +116991,19 @@
   "representative": true,
   "stars": 16712,
   "repo": "udecode/plate",
-  "weight": 0.645
+  "weight": 0.645,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@plate/toggle-toolbar-button",
@@ -113823,7 +117060,19 @@
   "representative": true,
   "stars": 16712,
   "repo": "udecode/plate",
-  "weight": 0.645
+  "weight": 0.645,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@plate/toolbar",
@@ -113884,7 +117133,19 @@
   "representative": true,
   "stars": 16712,
   "repo": "udecode/plate",
-  "weight": 0.645
+  "weight": 0.645,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@plate/suggestion-toolbar-button",
@@ -113946,7 +117207,19 @@
   "representative": true,
   "stars": 16712,
   "repo": "udecode/plate",
-  "weight": 0.645
+  "weight": 0.645,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n    - waiting for \"http://localhost:4410/?part=plate__suggestion-toolb",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@plate/equation-toolbar-button",
@@ -114003,7 +117276,19 @@
   "representative": true,
   "stars": 16712,
   "repo": "udecode/plate",
-  "weight": 0.645
+  "weight": 0.645,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@plate/font-size-toolbar-button",
@@ -114065,7 +117350,19 @@
   "stars": 16712,
   "repo": "udecode/plate",
   "weight": 0.795,
-  "renderRank": 27
+  "renderRank": 27,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@pluginui/core-drawbar-strip",
@@ -114341,7 +117638,19 @@
   "stars": null,
   "repo": null,
   "weight": 0.656,
-  "renderRank": 110
+  "renderRank": 110,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@pluginui/core-module-power-button",
@@ -116379,7 +119688,19 @@
   "stars": 41,
   "repo": "vora-aryan/Prestige-UI",
   "weight": 0.622,
-  "renderRank": 188
+  "renderRank": 188,
+  "rendered": {
+   "renders": false,
+   "drewShape": false,
+   "painted": null,
+   "error": "Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.\n\nCheck the render method of `Demo`.",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@prestige/hold-to-confirm",
@@ -116483,7 +119804,19 @@
   "stars": 41,
   "repo": "vora-aryan/Prestige-UI",
   "weight": 0.622,
-  "renderRank": 189
+  "renderRank": 189,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@prestige/slide-to-confirm",
@@ -116594,7 +119927,22 @@
   "stars": 41,
   "repo": "vora-aryan/Prestige-UI",
   "weight": 0.622,
-  "renderRank": 190
+  "renderRank": 190,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.212,
+   "error": null,
+   "target": "button",
+   "size": [
+    40,
+    38
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@prestige/star-button",
@@ -116856,7 +120204,22 @@
   "stars": 41,
   "repo": "vora-aryan/Prestige-UI",
   "weight": 0.622,
-  "renderRank": 191
+  "renderRank": 191,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.692,
+   "error": null,
+   "target": "button",
+   "size": [
+    168,
+    36
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@prestige/add-to-cart",
@@ -118866,7 +122229,22 @@
   "stars": 52349,
   "repo": "DavidHDev/react-bits",
   "weight": 0.848,
-  "renderRank": 10
+  "renderRank": 10,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.279,
+   "error": null,
+   "target": "button",
+   "size": [
+    180,
+    54
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@react-bits/ElasticMesh-JS-CSS",
@@ -121493,7 +124871,123 @@
   "stars": 52349,
   "repo": "DavidHDev/react-bits",
   "weight": 0.998,
-  "renderRank": 1
+  "renderRank": 1,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.495,
+   "error": null,
+   "target": "button",
+   "size": [
+    131,
+    44
+   ],
+   "longestMovementMs": 200,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": [
+    {
+     "after": "point",
+     "does": "moves across",
+     "elements": 11,
+     "firstMs": 580,
+     "lastMs": 642,
+     "longestMs": 62,
+     "biggest": 1.7,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "moves across",
+     "elements": 11,
+     "firstMs": 2027,
+     "lastMs": 2093,
+     "longestMs": 66,
+     "biggest": 1.8,
+     "overshootPct": null
+    },
+    {
+     "after": "point",
+     "does": "changes width",
+     "elements": 14,
+     "firstMs": 580,
+     "lastMs": 675,
+     "longestMs": 95,
+     "biggest": 3.8,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "changes width",
+     "elements": 14,
+     "firstMs": 2027,
+     "lastMs": 2127,
+     "longestMs": 100,
+     "biggest": 3.9,
+     "overshootPct": null
+    },
+    {
+     "after": "point",
+     "does": "changes height",
+     "elements": 5,
+     "firstMs": 580,
+     "lastMs": 642,
+     "longestMs": 62,
+     "biggest": 1.1,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "changes height",
+     "elements": 5,
+     "firstMs": 2027,
+     "lastMs": 2093,
+     "longestMs": 66,
+     "biggest": 1.2,
+     "overshootPct": null
+    },
+    {
+     "after": "point",
+     "does": "scales",
+     "elements": 1,
+     "firstMs": 580,
+     "lastMs": 675,
+     "longestMs": 95,
+     "biggest": 0.03,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "scales",
+     "elements": 1,
+     "firstMs": 2027,
+     "lastMs": 2127,
+     "longestMs": 100,
+     "biggest": 0.03,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "fades",
+     "elements": 6,
+     "firstMs": 2027,
+     "lastMs": 2227,
+     "longestMs": 200,
+     "biggest": 1,
+     "overshootPct": 0
+    },
+    {
+     "after": "let go",
+     "does": "fades",
+     "elements": 6,
+     "firstMs": 600,
+     "lastMs": 800,
+     "longestMs": 200,
+     "biggest": 1,
+     "overshootPct": 0
+    }
+   ]
+  }
  },
  {
   "id": "@react-bits/PulseHeart-JS-CSS",
@@ -121786,7 +125280,63 @@
   "stars": 52349,
   "repo": "DavidHDev/react-bits",
   "weight": 0.998,
-  "renderRank": 2
+  "renderRank": 2,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.29,
+   "error": null,
+   "target": "button",
+   "size": [
+    92,
+    64
+   ],
+   "longestMovementMs": 233,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": [
+    {
+     "after": "gesture",
+     "does": "moves across",
+     "elements": 2,
+     "firstMs": 5,
+     "lastMs": 466,
+     "longestMs": 200,
+     "biggest": 1.2,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "changes height",
+     "elements": 4,
+     "firstMs": 5,
+     "lastMs": 472,
+     "longestMs": 233,
+     "biggest": 2,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "changes width",
+     "elements": 2,
+     "firstMs": 5,
+     "lastMs": 205,
+     "longestMs": 200,
+     "biggest": 1,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "moves up or down",
+     "elements": 3,
+     "firstMs": 339,
+     "lastMs": 571,
+     "longestMs": 232,
+     "biggest": 20.2,
+     "overshootPct": 0
+    }
+   ]
+  }
  },
  {
   "id": "@react-bits/SlideCommit-JS-CSS",
@@ -122175,7 +125725,22 @@
   "stars": 52349,
   "repo": "DavidHDev/react-bits",
   "weight": 0.998,
-  "renderRank": 3
+  "renderRank": 3,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.859,
+   "error": null,
+   "target": "div",
+   "size": [
+    272,
+    48
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 0,
+   "movements": []
+  }
  },
  {
   "id": "@react-bits/FuseButton-JS-CSS",
@@ -122494,7 +126059,73 @@
   "stars": 52349,
   "repo": "DavidHDev/react-bits",
   "weight": 0.998,
-  "renderRank": 4
+  "renderRank": 4,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.426,
+   "error": null,
+   "target": "button",
+   "size": [
+    144,
+    44
+   ],
+   "longestMovementMs": 234,
+   "maxOvershootPct": 0,
+   "faintestWords": 0,
+   "movements": [
+    {
+     "after": "gesture",
+     "does": "fades",
+     "elements": 3,
+     "firstMs": 90,
+     "lastMs": 290,
+     "longestMs": 200,
+     "biggest": 1,
+     "overshootPct": 0
+    },
+    {
+     "after": "point",
+     "does": "moves across",
+     "elements": 4,
+     "firstMs": 586,
+     "lastMs": 812,
+     "longestMs": 226,
+     "biggest": 2,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "moves up or down",
+     "elements": 4,
+     "firstMs": 90,
+     "lastMs": 224,
+     "longestMs": 134,
+     "biggest": 5.3,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "changes width",
+     "elements": 3,
+     "firstMs": 23,
+     "lastMs": 257,
+     "longestMs": 234,
+     "biggest": 4,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "changes height",
+     "elements": 4,
+     "firstMs": 23,
+     "lastMs": 257,
+     "longestMs": 234,
+     "biggest": 4,
+     "overshootPct": null
+    }
+   ]
+  }
  },
  {
   "id": "@react-bits/BellToggle-JS-CSS",
@@ -123213,7 +126844,43 @@
   "stars": 52349,
   "repo": "DavidHDev/react-bits",
   "weight": 0.998,
-  "renderRank": 5
+  "renderRank": 5,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.649,
+   "error": null,
+   "target": "button",
+   "size": [
+    56,
+    56
+   ],
+   "longestMovementMs": 35,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": [
+    {
+     "after": "point",
+     "does": "changes width",
+     "elements": 2,
+     "firstMs": 27,
+     "lastMs": 62,
+     "longestMs": 35,
+     "biggest": 1.1,
+     "overshootPct": null
+    },
+    {
+     "after": "point",
+     "does": "changes height",
+     "elements": 2,
+     "firstMs": 27,
+     "lastMs": 62,
+     "longestMs": 35,
+     "biggest": 1.1,
+     "overshootPct": null
+    }
+   ]
+  }
  },
  {
   "id": "@react-bits/VoicePill-JS-CSS",
@@ -123520,7 +127187,83 @@
   "stars": 52349,
   "repo": "DavidHDev/react-bits",
   "weight": 0.998,
-  "renderRank": 6
+  "renderRank": 6,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.315,
+   "error": null,
+   "target": "button",
+   "size": [
+    28,
+    28
+   ],
+   "longestMovementMs": 200,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": [
+    {
+     "after": "point",
+     "does": "fades",
+     "elements": 4,
+     "firstMs": 695,
+     "lastMs": 895,
+     "longestMs": 200,
+     "biggest": 1,
+     "overshootPct": 0
+    },
+    {
+     "after": "point",
+     "does": "moves across",
+     "elements": 4,
+     "firstMs": 695,
+     "lastMs": 795,
+     "longestMs": 100,
+     "biggest": 2.4,
+     "overshootPct": null
+    },
+    {
+     "after": "point",
+     "does": "moves up or down",
+     "elements": 4,
+     "firstMs": 695,
+     "lastMs": 828,
+     "longestMs": 133,
+     "biggest": 2.3,
+     "overshootPct": null
+    },
+    {
+     "after": "point",
+     "does": "changes width",
+     "elements": 5,
+     "firstMs": 695,
+     "lastMs": 828,
+     "longestMs": 133,
+     "biggest": 4.7,
+     "overshootPct": null
+    },
+    {
+     "after": "point",
+     "does": "changes height",
+     "elements": 5,
+     "firstMs": 695,
+     "lastMs": 828,
+     "longestMs": 133,
+     "biggest": 4.7,
+     "overshootPct": null
+    },
+    {
+     "after": "point",
+     "does": "scales",
+     "elements": 2,
+     "firstMs": 695,
+     "lastMs": 862,
+     "longestMs": 167,
+     "biggest": 0.4,
+     "overshootPct": 0
+    }
+   ]
+  }
  },
  {
   "id": "@react-bits/FolderFloat-JS-CSS",
@@ -124169,7 +127912,22 @@
   "stars": 52349,
   "repo": "DavidHDev/react-bits",
   "weight": 0.848,
-  "renderRank": 11
+  "renderRank": 11,
+  "rendered": {
+   "renders": true,
+   "drewShape": false,
+   "painted": 0,
+   "error": null,
+   "target": "button",
+   "size": [
+    125,
+    44
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@react-bits/SoundFelt-JS",
@@ -124412,7 +128170,19 @@
   "stars": 52349,
   "repo": "DavidHDev/react-bits",
   "weight": 0.698,
-  "renderRank": 53
+  "renderRank": 53,
+  "rendered": {
+   "renders": false,
+   "drewShape": false,
+   "painted": null,
+   "error": "Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: object.\n\nCheck the render method of `Demo`.",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@react-bits/SoundPlush-JS",
@@ -125023,7 +128793,19 @@
   "stars": 52349,
   "repo": "DavidHDev/react-bits",
   "weight": 0.698,
-  "renderRank": 54
+  "renderRank": 54,
+  "rendered": {
+   "renders": false,
+   "drewShape": false,
+   "painted": null,
+   "error": "Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: object.\n\nCheck the render method of `Demo`.",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@rawkitui/button",
@@ -131686,7 +135468,19 @@
   "stars": 16051,
   "repo": "adobe/react-spectrum",
   "weight": 0.643,
-  "renderRank": 165
+  "renderRank": 165,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@react-aria/css-button",
@@ -131847,7 +135641,19 @@
   "stars": 16051,
   "repo": "adobe/react-spectrum",
   "weight": 0.643,
-  "renderRank": 166
+  "renderRank": 166,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@prosekit/react-ui-button",
@@ -131922,7 +135728,19 @@
   "stars": 1232,
   "repo": "ocavue/prosekit",
   "weight": 0.675,
-  "renderRank": 83
+  "renderRank": 83,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@prosekit/preact-ui-button",
@@ -131997,7 +135815,19 @@
   "stars": 1232,
   "repo": "ocavue/prosekit",
   "weight": 0.675,
-  "renderRank": 84
+  "renderRank": 84,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@prosekit/vue-ui-button",
@@ -132070,7 +135900,19 @@
   "stars": 1232,
   "repo": "ocavue/prosekit",
   "weight": 0.675,
-  "renderRank": 85
+  "renderRank": 85,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@prosekit/lit-ui-button",
@@ -132143,7 +135985,19 @@
   "stars": 1232,
   "repo": "ocavue/prosekit",
   "weight": 0.675,
-  "renderRank": 86
+  "renderRank": 86,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@prosekit/svelte-ui-button",
@@ -132216,7 +136070,19 @@
   "stars": 1232,
   "repo": "ocavue/prosekit",
   "weight": 0.675,
-  "renderRank": 87
+  "renderRank": 87,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@prosekit/solid-ui-button",
@@ -132291,7 +136157,19 @@
   "stars": 1232,
   "repo": "ocavue/prosekit",
   "weight": 0.675,
-  "renderRank": 88
+  "renderRank": 88,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n    - waiting for \"http://localhost:4410/?part=prosekit__solid-ui-butt",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@rescript-shadcn/Button",
@@ -142073,7 +145951,19 @@
   "stars": 78,
   "repo": "rbadillap/registry.directory",
   "weight": 0.698,
-  "renderRank": 55
+  "renderRank": 55,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n    - waiting for \"http://localhost:4410/?part=registrydirectory__uitr",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@registrydirectory/uitripled/native-morphing-button-carbon",
@@ -158936,7 +162826,19 @@
   "stars": 78,
   "repo": "rbadillap/registry.directory",
   "weight": 0.698,
-  "renderRank": 56
+  "renderRank": 56,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@registrydirectory/sureui/confirm-menu-item",
@@ -159017,7 +162919,19 @@
   "stars": 78,
   "repo": "rbadillap/registry.directory",
   "weight": 0.698,
-  "renderRank": 57
+  "renderRank": 57,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@registrydirectory/sureui/confirm-switch",
@@ -159100,7 +163014,19 @@
   "stars": 78,
   "repo": "rbadillap/registry.directory",
   "weight": 0.698,
-  "renderRank": 58
+  "renderRank": 58,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@registrydirectory/sureui/confirm-dialog",
@@ -159605,7 +163531,19 @@
   "stars": 78,
   "repo": "rbadillap/registry.directory",
   "weight": 0.698,
-  "renderRank": 59
+  "renderRank": 59,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@registrydirectory/viberdy/confetti-button",
@@ -159880,7 +163818,19 @@
   "stars": 78,
   "repo": "rbadillap/registry.directory",
   "weight": 0.698,
-  "renderRank": 60
+  "renderRank": 60,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@registrydirectory/viberdy/image-comparison-slider",
@@ -160370,7 +164320,19 @@
   "stars": 78,
   "repo": "rbadillap/registry.directory",
   "weight": 0.698,
-  "renderRank": 61
+  "renderRank": 61,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@registrydirectory/viberdy/cursor-label-follower",
@@ -160695,7 +164657,19 @@
   "stars": 78,
   "repo": "rbadillap/registry.directory",
   "weight": 0.698,
-  "renderRank": 62
+  "renderRank": 62,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@registrydirectory/viberdy/fuzzy-match-input",
@@ -161049,7 +165023,19 @@
   "stars": 78,
   "repo": "rbadillap/registry.directory",
   "weight": 0.698,
-  "renderRank": 63
+  "renderRank": 63,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@registrydirectory/viberdy/pushed-shadow-button",
@@ -161127,7 +165113,19 @@
   "stars": 78,
   "repo": "rbadillap/registry.directory",
   "weight": 0.698,
-  "renderRank": 64
+  "renderRank": 64,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@registrydirectory/viberdy/warning-tape-footer",
@@ -161291,7 +165289,19 @@
   "stars": 78,
   "repo": "rbadillap/registry.directory",
   "weight": 0.698,
-  "renderRank": 65
+  "renderRank": 65,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@registrydirectory/viberdy/chrome-pill-button",
@@ -161640,7 +165650,19 @@
   "stars": 78,
   "repo": "rbadillap/registry.directory",
   "weight": 0.698,
-  "renderRank": 66
+  "renderRank": 66,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@registrydirectory/viberdy/keycap-button",
@@ -161725,7 +165747,19 @@
   "representative": true,
   "stars": 78,
   "repo": "rbadillap/registry.directory",
-  "weight": 0.698
+  "weight": 0.698,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@registrydirectory/viberdy/bayer-fill-button",
@@ -161803,7 +165837,19 @@
   "representative": true,
   "stars": 78,
   "repo": "rbadillap/registry.directory",
-  "weight": 0.698
+  "weight": 0.698,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@registrydirectory/viberdy/weight-press-button",
@@ -161885,7 +165931,19 @@
   "representative": true,
   "stars": 78,
   "repo": "rbadillap/registry.directory",
-  "weight": 0.698
+  "weight": 0.698,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@registrydirectory/viberdy/squash-press-button",
@@ -161964,7 +166022,19 @@
   "representative": true,
   "stars": 78,
   "repo": "rbadillap/registry.directory",
-  "weight": 0.698
+  "weight": 0.698,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@registrydirectory/viberdy/wobble-drop-card",
@@ -162124,7 +166194,19 @@
   "representative": true,
   "stars": 78,
   "repo": "rbadillap/registry.directory",
-  "weight": 0.698
+  "weight": 0.698,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@registrydirectory/viberdy/bead-button",
@@ -162201,7 +166283,19 @@
   "representative": true,
   "stars": 78,
   "repo": "rbadillap/registry.directory",
-  "weight": 0.698
+  "weight": 0.698,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@registrydirectory/viberdy/hold-to-ignite-button",
@@ -162279,7 +166373,19 @@
   "representative": true,
   "stars": 78,
   "repo": "rbadillap/registry.directory",
-  "weight": 0.698
+  "weight": 0.698,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@registrydirectory/viberdy/hi-vis-nav",
@@ -163172,7 +167278,19 @@
   "representative": true,
   "stars": 78,
   "repo": "rbadillap/registry.directory",
-  "weight": 0.698
+  "weight": 0.698,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@registrydirectory/lukemeno/copy-button",
@@ -163683,7 +167801,19 @@
   "representative": true,
   "stars": 78,
   "repo": "rbadillap/registry.directory",
-  "weight": 0.698
+  "weight": 0.698,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@registrydirectory/uibrik/bookmark-button",
@@ -164314,7 +168444,19 @@
   "representative": true,
   "stars": 78,
   "repo": "rbadillap/registry.directory",
-  "weight": 0.698
+  "weight": 0.698,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@registrydirectory/uibrik/hold-to-confirm",
@@ -164780,7 +168922,19 @@
   "representative": true,
   "stars": 78,
   "repo": "rbadillap/registry.directory",
-  "weight": 0.698
+  "weight": 0.698,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@registrydirectory/uibrik/ripple-to-still",
@@ -165823,7 +169977,19 @@
   "representative": true,
   "stars": 78,
   "repo": "rbadillap/registry.directory",
-  "weight": 0.698
+  "weight": 0.698,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@pulld/kbd",
@@ -166620,7 +170786,22 @@
   "stars": 146,
   "repo": "persianlabs/ui",
   "weight": 0.577,
-  "renderRank": 249
+  "renderRank": 249,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.546,
+   "error": null,
+   "target": "button",
+   "size": [
+    106,
+    36
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@remocn/shader-grain-gradient-tide",
@@ -171257,7 +175438,19 @@
   "stars": 311,
   "repo": "Adityakishore0/ScrollX-UI",
   "weight": 0.607,
-  "renderRank": 204
+  "renderRank": 204,
+  "rendered": {
+   "renders": false,
+   "drewShape": false,
+   "painted": null,
+   "error": "nothing to use",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@scrollxui/stripe-button",
@@ -172134,7 +176327,19 @@
   "stars": 822,
   "repo": "shadcnspace/shadcnspace",
   "weight": 0.627,
-  "renderRank": 177
+  "renderRank": 177,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@shadcn-space/button-35",
@@ -172209,7 +176414,22 @@
   "stars": 822,
   "repo": "shadcnspace/shadcnspace",
   "weight": 0.627,
-  "renderRank": 178
+  "renderRank": 178,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.491,
+   "error": null,
+   "target": "button",
+   "size": [
+    196,
+    57
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@shadcn-space/button-36",
@@ -172276,7 +176496,22 @@
   "stars": 822,
   "repo": "shadcnspace/shadcnspace",
   "weight": 0.627,
-  "renderRank": 179
+  "renderRank": 179,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.516,
+   "error": null,
+   "target": "button",
+   "size": [
+    181,
+    59
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@shadcn-space/calendar-12",
@@ -172771,7 +177006,19 @@
   "stars": 822,
   "repo": "shadcnspace/shadcnspace",
   "weight": 0.627,
-  "renderRank": 180
+  "renderRank": 180,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@shadcn-space/textarea-12",
@@ -172971,7 +177218,19 @@
   "stars": 822,
   "repo": "shadcnspace/shadcnspace",
   "weight": 0.627,
-  "renderRank": 181
+  "renderRank": 181,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n    - waiting for \"http://localhost:4410/?part=shadcn-space__switch-13",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@shadcn-space/tabs-11",
@@ -173723,7 +177982,22 @@
   "stars": 822,
   "repo": "shadcnspace/shadcnspace",
   "weight": 0.627,
-  "renderRank": 182
+  "renderRank": 182,
+  "rendered": {
+   "renders": true,
+   "drewShape": false,
+   "painted": 0.033,
+   "error": null,
+   "target": "button",
+   "size": [
+    16,
+    16
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 0.5,
+   "movements": []
+  }
  },
  {
   "id": "@shadcn-space/toggle-06",
@@ -174369,7 +178643,22 @@
   "stars": 822,
   "repo": "shadcnspace/shadcnspace",
   "weight": 0.627,
-  "renderRank": 183
+  "renderRank": 183,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.413,
+   "error": null,
+   "target": "button",
+   "size": [
+    128,
+    44
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@shadcn-space/button-38",
@@ -174524,7 +178813,22 @@
   "stars": 822,
   "repo": "shadcnspace/shadcnspace",
   "weight": 0.627,
-  "renderRank": 184
+  "renderRank": 184,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.391,
+   "error": null,
+   "target": "button",
+   "size": [
+    109,
+    44
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@scrimui/prompt-input",
@@ -177832,7 +182136,19 @@
   "stars": 12,
   "repo": "LukasvanUden/siteplane-ui",
   "weight": 0.616,
-  "renderRank": 199
+  "renderRank": 199,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Protocol error (DOM.scrollIntoViewIfNeeded): Cannot find context with specified id\nCall log:\n  - taking element screenshot\n  - waiting for f",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@siteplane/date-picker",
@@ -179523,7 +183839,19 @@
   "stars": 1543,
   "repo": "arihantcodes/spectrum-ui",
   "weight": 0.685,
-  "renderRank": 76
+  "renderRank": 76,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "page.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - taking page screenshot\n  - waiting for fonts to load...\n  - fonts loaded\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@spectrumui/like-button-demo",
@@ -179700,7 +184028,43 @@
   "stars": 1543,
   "repo": "arihantcodes/spectrum-ui",
   "weight": 0.835,
-  "renderRank": 14
+  "renderRank": 14,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.126,
+   "error": null,
+   "target": "button",
+   "size": [
+    134,
+    40
+   ],
+   "longestMovementMs": 100,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": [
+    {
+     "after": "point",
+     "does": "fades",
+     "elements": 1,
+     "firstMs": 574,
+     "lastMs": 661,
+     "longestMs": 87,
+     "biggest": 1,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "fades",
+     "elements": 1,
+     "firstMs": 185,
+     "lastMs": 285,
+     "longestMs": 100,
+     "biggest": 1,
+     "overshootPct": 0
+    }
+   ]
+  }
  },
  {
   "id": "@spectrumui/hold-to-confirm-demo",
@@ -179971,7 +184335,22 @@
   "stars": 1543,
   "repo": "arihantcodes/spectrum-ui",
   "weight": 0.685,
-  "renderRank": 77
+  "renderRank": 77,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.402,
+   "error": null,
+   "target": "button",
+   "size": [
+    99,
+    40
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@spectrumui/follow-button-demo",
@@ -180148,7 +184527,19 @@
   "stars": 1543,
   "repo": "arihantcodes/spectrum-ui",
   "weight": 0.685,
-  "renderRank": 78
+  "renderRank": 78,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "page.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - taking page screenshot\n  - waiting for fonts to load...\n  - fonts loaded\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@spectrumui/swipe-to-delete",
@@ -180274,7 +184665,153 @@
   "stars": 1543,
   "repo": "arihantcodes/spectrum-ui",
   "weight": 0.835,
-  "renderRank": 15
+  "renderRank": 15,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.15,
+   "error": null,
+   "target": "div",
+   "size": [
+    93,
+    26
+   ],
+   "longestMovementMs": 1183,
+   "maxOvershootPct": 2,
+   "faintestWords": 1,
+   "movements": [
+    {
+     "after": "point",
+     "does": "moves across",
+     "elements": 6,
+     "firstMs": 95,
+     "lastMs": 461,
+     "longestMs": 366,
+     "biggest": 55.9,
+     "overshootPct": 0.4
+    },
+    {
+     "after": "gesture",
+     "does": "moves across",
+     "elements": 7,
+     "firstMs": 5,
+     "lastMs": 1155,
+     "longestMs": 1117,
+     "biggest": 56,
+     "overshootPct": 0
+    },
+    {
+     "after": "let go",
+     "does": "moves across",
+     "elements": 5,
+     "firstMs": 32,
+     "lastMs": 399,
+     "longestMs": 367,
+     "biggest": 56,
+     "overshootPct": 0.4
+    },
+    {
+     "after": "point",
+     "does": "moves up or down",
+     "elements": 3,
+     "firstMs": 295,
+     "lastMs": 428,
+     "longestMs": 133,
+     "biggest": 1.3,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "moves up or down",
+     "elements": 3,
+     "firstMs": 38,
+     "lastMs": 171,
+     "longestMs": 102,
+     "biggest": 1.3,
+     "overshootPct": null
+    },
+    {
+     "after": "let go",
+     "does": "moves up or down",
+     "elements": 3,
+     "firstMs": 233,
+     "lastMs": 365,
+     "longestMs": 132,
+     "biggest": 1.3,
+     "overshootPct": null
+    },
+    {
+     "after": "point",
+     "does": "changes width",
+     "elements": 4,
+     "firstMs": 128,
+     "lastMs": 461,
+     "longestMs": 233,
+     "biggest": 45.9,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "changes width",
+     "elements": 6,
+     "firstMs": 5,
+     "lastMs": 1221,
+     "longestMs": 1183,
+     "biggest": 33.7,
+     "overshootPct": 0.6
+    },
+    {
+     "after": "let go",
+     "does": "changes width",
+     "elements": 4,
+     "firstMs": 233,
+     "lastMs": 399,
+     "longestMs": 166,
+     "biggest": 3.5,
+     "overshootPct": null
+    },
+    {
+     "after": "point",
+     "does": "changes height",
+     "elements": 3,
+     "firstMs": 295,
+     "lastMs": 461,
+     "longestMs": 166,
+     "biggest": 3.4,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "changes height",
+     "elements": 3,
+     "firstMs": 38,
+     "lastMs": 204,
+     "longestMs": 166,
+     "biggest": 3.5,
+     "overshootPct": null
+    },
+    {
+     "after": "let go",
+     "does": "changes height",
+     "elements": 3,
+     "firstMs": 233,
+     "lastMs": 399,
+     "longestMs": 166,
+     "biggest": 3.5,
+     "overshootPct": null
+    },
+    {
+     "after": "let go",
+     "does": "scales",
+     "elements": 1,
+     "firstMs": 233,
+     "lastMs": 565,
+     "longestMs": 332,
+     "biggest": 0.2,
+     "overshootPct": 2
+    }
+   ]
+  }
  },
  {
   "id": "@spectrumui/swipe-to-delete-demo",
@@ -180445,7 +184982,19 @@
   "stars": 1543,
   "repo": "arihantcodes/spectrum-ui",
   "weight": 0.685,
-  "renderRank": 79
+  "renderRank": 79,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@spectrumui/morph-button-demo",
@@ -180695,7 +185244,73 @@
   "stars": 1543,
   "repo": "arihantcodes/spectrum-ui",
   "weight": 0.835,
-  "renderRank": 16
+  "renderRank": 16,
+  "rendered": {
+   "renders": true,
+   "drewShape": false,
+   "painted": 0.061,
+   "error": null,
+   "target": "button",
+   "size": [
+    40,
+    40
+   ],
+   "longestMovementMs": 316,
+   "maxOvershootPct": 2,
+   "faintestWords": null,
+   "movements": [
+    {
+     "after": "gesture",
+     "does": "fades",
+     "elements": 2,
+     "firstMs": 114,
+     "lastMs": 264,
+     "longestMs": 150,
+     "biggest": 1,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "moves up or down",
+     "elements": 5,
+     "firstMs": 63,
+     "lastMs": 364,
+     "longestMs": 234,
+     "biggest": 9.8,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "moves across",
+     "elements": 6,
+     "firstMs": 63,
+     "lastMs": 364,
+     "longestMs": 250,
+     "biggest": 10,
+     "overshootPct": 2
+    },
+    {
+     "after": "gesture",
+     "does": "changes width",
+     "elements": 4,
+     "firstMs": 114,
+     "lastMs": 430,
+     "longestMs": 316,
+     "biggest": 1.5,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "changes height",
+     "elements": 4,
+     "firstMs": 114,
+     "lastMs": 430,
+     "longestMs": 316,
+     "biggest": 2.6,
+     "overshootPct": null
+    }
+   ]
+  }
  },
  {
   "id": "@spectrumui/share-button-demo",
@@ -180958,7 +185573,19 @@
   "stars": 1543,
   "repo": "arihantcodes/spectrum-ui",
   "weight": 0.685,
-  "renderRank": 80
+  "renderRank": 80,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@spectrumui/toast-stack",
@@ -182178,7 +186805,22 @@
   "stars": null,
   "repo": null,
   "weight": 0.655,
-  "renderRank": 125
+  "renderRank": 125,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.44,
+   "error": null,
+   "target": "button",
+   "size": [
+    192,
+    48
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 0,
+   "movements": []
+  }
  },
  {
   "id": "@starseam/copy-button",
@@ -189390,7 +194032,22 @@
   "stars": null,
   "repo": null,
   "weight": 0.654,
-  "renderRank": 136
+  "renderRank": 136,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.152,
+   "error": null,
+   "target": "button",
+   "size": [
+    164,
+    32
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@stealth/icon-button",
@@ -189830,7 +194487,22 @@
   "stars": null,
   "repo": null,
   "weight": 0.654,
-  "renderRank": 137
+  "renderRank": 137,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.156,
+   "error": null,
+   "target": "button",
+   "size": [
+    96,
+    32
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@stealth/otp-field",
@@ -190287,7 +194959,19 @@
   "stars": null,
   "repo": null,
   "weight": 0.654,
-  "renderRank": 138
+  "renderRank": 138,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@stealth/kbd",
@@ -190652,7 +195336,22 @@
   "stars": null,
   "repo": null,
   "weight": 0.654,
-  "renderRank": 139
+  "renderRank": 139,
+  "rendered": {
+   "renders": true,
+   "drewShape": false,
+   "painted": 0.05,
+   "error": null,
+   "target": "div",
+   "size": [
+    91,
+    24
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@stealth/reorder-list",
@@ -193077,7 +197776,22 @@
   "stars": 8,
   "repo": "mirukullacode/tweenly",
   "weight": 0.598,
-  "renderRank": 207
+  "renderRank": 207,
+  "rendered": {
+   "renders": false,
+   "drewShape": true,
+   "painted": 0.422,
+   "error": "page.evaluate: TypeError: Cannot read properties of null (reading 'getBoundingClientRect')\n    at eval (eval at evaluate (:370:30), <anonymous>:2:61)\n    at Uti",
+   "target": "button",
+   "size": [
+    122,
+    44
+   ],
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@tweenly/hold-button",
@@ -193173,7 +197887,123 @@
   "stars": 8,
   "repo": "mirukullacode/tweenly",
   "weight": 0.598,
-  "renderRank": 208
+  "renderRank": 208,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.144,
+   "error": null,
+   "target": "button",
+   "size": [
+    192,
+    44
+   ],
+   "longestMovementMs": 1167,
+   "maxOvershootPct": 2.6,
+   "faintestWords": 0,
+   "movements": [
+    {
+     "after": "gesture",
+     "does": "moves across",
+     "elements": 2,
+     "firstMs": 23,
+     "lastMs": 124,
+     "longestMs": 101,
+     "biggest": 1.8,
+     "overshootPct": null
+    },
+    {
+     "after": "let go",
+     "does": "moves across",
+     "elements": 2,
+     "firstMs": 33,
+     "lastMs": 99,
+     "longestMs": 66,
+     "biggest": 1.6,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "changes width",
+     "elements": 4,
+     "firstMs": 23,
+     "lastMs": 1224,
+     "longestMs": 1167,
+     "biggest": 180.1,
+     "overshootPct": 0
+    },
+    {
+     "after": "let go",
+     "does": "changes width",
+     "elements": 5,
+     "firstMs": 33,
+     "lastMs": 733,
+     "longestMs": 334,
+     "biggest": 186.8,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "moves up or down",
+     "elements": 5,
+     "firstMs": 1190,
+     "lastMs": 1490,
+     "longestMs": 300,
+     "biggest": 12,
+     "overshootPct": 2.6
+    },
+    {
+     "after": "gesture",
+     "does": "fades",
+     "elements": 2,
+     "firstMs": 1224,
+     "lastMs": 1390,
+     "longestMs": 166,
+     "biggest": 1,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "scales",
+     "elements": 1,
+     "firstMs": 57,
+     "lastMs": 1224,
+     "longestMs": 1167,
+     "biggest": 0.97,
+     "overshootPct": 0
+    },
+    {
+     "after": "let go",
+     "does": "scales",
+     "elements": 1,
+     "firstMs": 399,
+     "lastMs": 733,
+     "longestMs": 334,
+     "biggest": 0.98,
+     "overshootPct": 0
+    },
+    {
+     "after": "let go",
+     "does": "moves up or down",
+     "elements": 5,
+     "firstMs": 366,
+     "lastMs": 666,
+     "longestMs": 300,
+     "biggest": 12.2,
+     "overshootPct": 2.6
+    },
+    {
+     "after": "let go",
+     "does": "fades",
+     "elements": 2,
+     "firstMs": 399,
+     "lastMs": 566,
+     "longestMs": 167,
+     "biggest": 1,
+     "overshootPct": 0
+    }
+   ]
+  }
  },
  {
   "id": "@tweenly/slide-button",
@@ -193267,7 +198097,143 @@
   "stars": 8,
   "repo": "mirukullacode/tweenly",
   "weight": 0.598,
-  "renderRank": 209
+  "renderRank": 209,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.68,
+   "error": null,
+   "target": "div",
+   "size": [
+    44,
+    44
+   ],
+   "longestMovementMs": 800,
+   "maxOvershootPct": 6,
+   "faintestWords": 0.0624608,
+   "movements": [
+    {
+     "after": "gesture",
+     "does": "changes width",
+     "elements": 2,
+     "firstMs": 27,
+     "lastMs": 827,
+     "longestMs": 800,
+     "biggest": 245.9,
+     "overshootPct": 0
+    },
+    {
+     "after": "let go",
+     "does": "changes width",
+     "elements": 8,
+     "firstMs": 15,
+     "lastMs": 315,
+     "longestMs": 267,
+     "biggest": 17.9,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "moves across",
+     "elements": 7,
+     "firstMs": 27,
+     "lastMs": 827,
+     "longestMs": 800,
+     "biggest": 247.2,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "fades",
+     "elements": 1,
+     "firstMs": 27,
+     "lastMs": 227,
+     "longestMs": 200,
+     "biggest": 1,
+     "overshootPct": 0
+    },
+    {
+     "after": "let go",
+     "does": "moves across",
+     "elements": 7,
+     "firstMs": 15,
+     "lastMs": 282,
+     "longestMs": 267,
+     "biggest": 20.7,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "moves up or down",
+     "elements": 1,
+     "firstMs": 27,
+     "lastMs": 160,
+     "longestMs": 133,
+     "biggest": 1.3,
+     "overshootPct": null
+    },
+    {
+     "after": "let go",
+     "does": "moves up or down",
+     "elements": 8,
+     "firstMs": 15,
+     "lastMs": 315,
+     "longestMs": 266,
+     "biggest": 7.9,
+     "overshootPct": null
+    },
+    {
+     "after": "gesture",
+     "does": "changes height",
+     "elements": 1,
+     "firstMs": 27,
+     "lastMs": 160,
+     "longestMs": 133,
+     "biggest": 2.6,
+     "overshootPct": null
+    },
+    {
+     "after": "let go",
+     "does": "changes height",
+     "elements": 7,
+     "firstMs": 15,
+     "lastMs": 315,
+     "longestMs": 266,
+     "biggest": 8.7,
+     "overshootPct": 0
+    },
+    {
+     "after": "gesture",
+     "does": "scales",
+     "elements": 1,
+     "firstMs": 27,
+     "lastMs": 160,
+     "longestMs": 133,
+     "biggest": 0.06,
+     "overshootPct": null
+    },
+    {
+     "after": "let go",
+     "does": "scales",
+     "elements": 3,
+     "firstMs": 15,
+     "lastMs": 382,
+     "longestMs": 367,
+     "biggest": 0.5,
+     "overshootPct": 6
+    },
+    {
+     "after": "let go",
+     "does": "fades",
+     "elements": 3,
+     "firstMs": 15,
+     "lastMs": 315,
+     "longestMs": 266,
+     "biggest": 1,
+     "overshootPct": 0
+    }
+   ]
+  }
  },
  {
   "id": "@tweenly/like-button",
@@ -193530,7 +198496,19 @@
   "stars": 8,
   "repo": "mirukullacode/tweenly",
   "weight": 0.598,
-  "renderRank": 210
+  "renderRank": 210,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@tweenly/footer",
@@ -193835,7 +198813,19 @@
   "stars": 8,
   "repo": "mirukullacode/tweenly",
   "weight": 0.598,
-  "renderRank": 211
+  "renderRank": 211,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@tokenui/button",
@@ -194040,7 +199030,22 @@
   "stars": 1331,
   "repo": "kuratlielia/arc-library",
   "weight": 0.674,
-  "renderRank": 89
+  "renderRank": 89,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.609,
+   "error": null,
+   "target": "button",
+   "size": [
+    76,
+    22
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@uiarc/action-button",
@@ -194117,7 +199122,22 @@
   "stars": 1331,
   "repo": "kuratlielia/arc-library",
   "weight": 0.674,
-  "renderRank": 90
+  "renderRank": 90,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.541,
+   "error": null,
+   "target": "button",
+   "size": [
+    93,
+    22
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@uiarc/split-button",
@@ -194190,7 +199210,19 @@
   "stars": 1331,
   "repo": "kuratlielia/arc-library",
   "weight": 0.674,
-  "renderRank": 91
+  "renderRank": 91,
+  "rendered": {
+   "renders": false,
+   "drewShape": false,
+   "painted": null,
+   "error": "Cannot read properties of undefined (reading 'map')",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@uiarc/button-group",
@@ -194262,7 +199294,19 @@
   "stars": 1331,
   "repo": "kuratlielia/arc-library",
   "weight": 0.824,
-  "renderRank": 18
+  "renderRank": 18,
+  "rendered": {
+   "renders": false,
+   "drewShape": false,
+   "painted": null,
+   "error": "Cannot read properties of undefined (reading 'map')",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@uiarc/floating-button-group",
@@ -194329,7 +199373,19 @@
   "stars": 1331,
   "repo": "kuratlielia/arc-library",
   "weight": 0.824,
-  "renderRank": 19
+  "renderRank": 19,
+  "rendered": {
+   "renders": false,
+   "drewShape": false,
+   "painted": null,
+   "error": "Cannot read properties of undefined (reading 'filter')",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@uiarc/expanding-button-group",
@@ -194402,7 +199458,19 @@
   "stars": 1331,
   "repo": "kuratlielia/arc-library",
   "weight": 0.824,
-  "renderRank": 20
+  "renderRank": 20,
+  "rendered": {
+   "renders": false,
+   "drewShape": false,
+   "painted": null,
+   "error": "Cannot read properties of undefined (reading 'find')",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@uiarc/copy-button",
@@ -194470,7 +199538,19 @@
   "stars": 1331,
   "repo": "kuratlielia/arc-library",
   "weight": 0.674,
-  "renderRank": 92
+  "renderRank": 92,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "page.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - taking page screenshot\n  - waiting for fonts to load...\n  - fonts loaded\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@uiarc/hold-to-confirm",
@@ -194544,7 +199624,22 @@
   "stars": 1331,
   "repo": "kuratlielia/arc-library",
   "weight": 0.824,
-  "renderRank": 21
+  "renderRank": 21,
+  "rendered": {
+   "renders": false,
+   "drewShape": false,
+   "painted": 0,
+   "error": "page.evaluate: TypeError: Cannot set properties of undefined (setting 'on')\n    at eval (eval at evaluate (:370:30), <anonymous>:1:25)\n    at UtilityScript.eval",
+   "target": "button",
+   "size": [
+    92,
+    20
+   ],
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@uiarc/cookie-consent",
@@ -194716,7 +199811,19 @@
   "stars": 1331,
   "repo": "kuratlielia/arc-library",
   "weight": 0.824,
-  "renderRank": 22
+  "renderRank": 22,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@ui-shrushank/primary-button",
@@ -196005,7 +201112,22 @@
   "stars": 3864,
   "repo": "ui-layouts/uilayouts",
   "weight": 0.578,
-  "renderRank": 237
+  "renderRank": 237,
+  "rendered": {
+   "renders": false,
+   "drewShape": true,
+   "painted": 1,
+   "error": "page.evaluate: TypeError: Cannot read properties of null (reading 'getBoundingClientRect')\n    at eval (eval at evaluate (:370:30), <anonymous>:2:61)\n    at Uti",
+   "target": "button",
+   "size": [
+    119,
+    48
+   ],
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@ui-layouts/btn-animated-gradient",
@@ -196077,7 +201199,22 @@
   "stars": 3864,
   "repo": "ui-layouts/uilayouts",
   "weight": 0.578,
-  "renderRank": 238
+  "renderRank": 238,
+  "rendered": {
+   "renders": false,
+   "drewShape": true,
+   "painted": 1,
+   "error": "page.evaluate: TypeError: Cannot read properties of null (reading 'getBoundingClientRect')\n    at eval (eval at evaluate (:370:30), <anonymous>:2:61)\n    at Uti",
+   "target": "button",
+   "size": [
+    119,
+    48
+   ],
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@ui-layouts/button-active",
@@ -196146,7 +201283,19 @@
   "stars": 3864,
   "repo": "ui-layouts/uilayouts",
   "weight": 0.578,
-  "renderRank": 239
+  "renderRank": 239,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@ui-layouts/button-hover-right",
@@ -196214,7 +201363,22 @@
   "stars": 3864,
   "repo": "ui-layouts/uilayouts",
   "weight": 0.578,
-  "renderRank": 240
+  "renderRank": 240,
+  "rendered": {
+   "renders": false,
+   "drewShape": true,
+   "painted": 1,
+   "error": "page.evaluate: TypeError: Cannot read properties of null (reading 'getBoundingClientRect')\n    at eval (eval at evaluate (:370:30), <anonymous>:2:61)\n    at Uti",
+   "target": "button",
+   "size": [
+    48,
+    48
+   ],
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@ui-layouts/btn-creative-right",
@@ -196277,7 +201441,22 @@
   "stars": 3864,
   "repo": "ui-layouts/uilayouts",
   "weight": 0.578,
-  "renderRank": 241
+  "renderRank": 241,
+  "rendered": {
+   "renders": false,
+   "drewShape": true,
+   "painted": 1,
+   "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation",
+   "target": "div",
+   "size": [
+    128,
+    42
+   ],
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@ui-layouts/btn-creative-top",
@@ -196339,7 +201518,22 @@
   "stars": 3864,
   "repo": "ui-layouts/uilayouts",
   "weight": 0.578,
-  "renderRank": 242
+  "renderRank": 242,
+  "rendered": {
+   "renders": false,
+   "drewShape": true,
+   "painted": 1,
+   "error": "page.evaluate: TypeError: Cannot read properties of null (reading 'getBoundingClientRect')\n    at eval (eval at evaluate (:370:30), <anonymous>:2:61)\n    at Uti",
+   "target": "div",
+   "size": [
+    128,
+    42
+   ],
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@ui-layouts/btn-click-down",
@@ -196406,7 +201600,19 @@
   "stars": 3864,
   "repo": "ui-layouts/uilayouts",
   "weight": 0.578,
-  "renderRank": 243
+  "renderRank": 243,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation.",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@ui-layouts/btn-hover-down",
@@ -196473,7 +201679,22 @@
   "stars": 3864,
   "repo": "ui-layouts/uilayouts",
   "weight": 0.578,
-  "renderRank": 244
+  "renderRank": 244,
+  "rendered": {
+   "renders": false,
+   "drewShape": true,
+   "painted": 1,
+   "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation",
+   "target": "button",
+   "size": [
+    145,
+    48
+   ],
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@ui-layouts/btn-hover-multiple",
@@ -196544,7 +201765,22 @@
   "stars": 3864,
   "repo": "ui-layouts/uilayouts",
   "weight": 0.578,
-  "renderRank": 245
+  "renderRank": 245,
+  "rendered": {
+   "renders": false,
+   "drewShape": true,
+   "painted": 1,
+   "error": "page.evaluate: TypeError: Cannot read properties of null (reading 'getBoundingClientRect')\n    at eval (eval at evaluate (:370:30), <anonymous>:2:61)\n    at Uti",
+   "target": "button",
+   "size": [
+    145,
+    48
+   ],
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@ui-layouts/btn-hover-underline",
@@ -196606,7 +201842,19 @@
   "stars": 3864,
   "repo": "ui-layouts/uilayouts",
   "weight": 0.578,
-  "renderRank": 246
+  "renderRank": 246,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@ui-layouts/btn-hover-top-flip",
@@ -196674,7 +201922,22 @@
   "stars": 3864,
   "repo": "ui-layouts/uilayouts",
   "weight": 0.578,
-  "renderRank": 247
+  "renderRank": 247,
+  "rendered": {
+   "renders": false,
+   "drewShape": true,
+   "painted": 1,
+   "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation",
+   "target": "button",
+   "size": [
+    145,
+    48
+   ],
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@ui-layouts/btn-hover-left-flip",
@@ -196741,7 +202004,19 @@
   "stars": 3864,
   "repo": "ui-layouts/uilayouts",
   "weight": 0.578,
-  "renderRank": 248
+  "renderRank": 248,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@ui-layouts/btn-hover-top-slowflip",
@@ -196806,7 +202081,63 @@
   "representative": true,
   "stars": 3864,
   "repo": "ui-layouts/uilayouts",
-  "weight": 0.578
+  "weight": 0.578,
+  "rendered": {
+   "renders": true,
+   "drewShape": false,
+   "painted": 0,
+   "error": null,
+   "target": "button",
+   "size": [
+    130,
+    48
+   ],
+   "longestMovementMs": 466,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": [
+    {
+     "after": "point",
+     "does": "moves up or down",
+     "elements": 4,
+     "firstMs": 96,
+     "lastMs": 562,
+     "longestMs": 466,
+     "biggest": 148.1,
+     "overshootPct": 0
+    },
+    {
+     "after": "point",
+     "does": "moves across",
+     "elements": 1,
+     "firstMs": 129,
+     "lastMs": 529,
+     "longestMs": 400,
+     "biggest": 30.6,
+     "overshootPct": 0
+    },
+    {
+     "after": "point",
+     "does": "changes width",
+     "elements": 1,
+     "firstMs": 129,
+     "lastMs": 562,
+     "longestMs": 433,
+     "biggest": 61.4,
+     "overshootPct": 0
+    },
+    {
+     "after": "point",
+     "does": "changes height",
+     "elements": 1,
+     "firstMs": 129,
+     "lastMs": 562,
+     "longestMs": 433,
+     "biggest": 109.3,
+     "overshootPct": 0
+    }
+   ]
+  }
  },
  {
   "id": "@ui-layouts/btn-text-change",
@@ -196873,7 +202204,53 @@
   "representative": true,
   "stars": 3864,
   "repo": "ui-layouts/uilayouts",
-  "weight": 0.578
+  "weight": 0.578,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.239,
+   "error": null,
+   "target": "button",
+   "size": [
+    137,
+    48
+   ],
+   "longestMovementMs": 433,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": [
+    {
+     "after": "point",
+     "does": "moves up or down",
+     "elements": 2,
+     "firstMs": 96,
+     "lastMs": 529,
+     "longestMs": 433,
+     "biggest": 36,
+     "overshootPct": 0
+    },
+    {
+     "after": "point",
+     "does": "changes height",
+     "elements": 2,
+     "firstMs": 96,
+     "lastMs": 529,
+     "longestMs": 433,
+     "biggest": 19.6,
+     "overshootPct": 0
+    },
+    {
+     "after": "point",
+     "does": "scales",
+     "elements": 2,
+     "firstMs": 129,
+     "lastMs": 429,
+     "longestMs": 234,
+     "biggest": 0.02,
+     "overshootPct": null
+    }
+   ]
+  }
  },
  {
   "id": "@ui-layouts/btn-cross-arrow",
@@ -196940,7 +202317,43 @@
   "representative": true,
   "stars": 3864,
   "repo": "ui-layouts/uilayouts",
-  "weight": 0.578
+  "weight": 0.578,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.246,
+   "error": null,
+   "target": "button",
+   "size": [
+    170,
+    48
+   ],
+   "longestMovementMs": 200,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": [
+    {
+     "after": "point",
+     "does": "moves across",
+     "elements": 5,
+     "firstMs": 60,
+     "lastMs": 260,
+     "longestMs": 200,
+     "biggest": 15.9,
+     "overshootPct": 0
+    },
+    {
+     "after": "point",
+     "does": "moves up or down",
+     "elements": 5,
+     "firstMs": 60,
+     "lastMs": 260,
+     "longestMs": 200,
+     "biggest": 19.9,
+     "overshootPct": 0
+    }
+   ]
+  }
  },
  {
   "id": "@ui-layouts/btn-black-shadow",
@@ -197012,7 +202425,22 @@
   "representative": true,
   "stars": 3864,
   "repo": "ui-layouts/uilayouts",
-  "weight": 0.578
+  "weight": 0.578,
+  "rendered": {
+   "renders": true,
+   "drewShape": false,
+   "painted": 0.054,
+   "error": null,
+   "target": "button",
+   "size": [
+    80,
+    32
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@ui-layouts/btn-hover-outline",
@@ -197069,7 +202497,22 @@
   "representative": true,
   "stars": 3864,
   "repo": "ui-layouts/uilayouts",
-  "weight": 0.578
+  "weight": 0.578,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.417,
+   "error": null,
+   "target": "a",
+   "size": [
+    169,
+    52
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@ui-layouts/btn-arrow-right",
@@ -197135,7 +202578,19 @@
   "representative": true,
   "stars": 3864,
   "repo": "ui-layouts/uilayouts",
-  "weight": 0.578
+  "weight": 0.578,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@ui-layouts/btn-rotating-gradient",
@@ -197199,7 +202654,19 @@
   "representative": true,
   "stars": 3864,
   "repo": "ui-layouts/uilayouts",
-  "weight": 0.578
+  "weight": 0.578,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "page.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - taking page screenshot\n  - waiting for fonts to load...\n  - fonts loaded\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@ui-layouts/img-ripple-effect",
@@ -197343,7 +202810,19 @@
   "representative": true,
   "stars": 3864,
   "repo": "ui-layouts/uilayouts",
-  "weight": 0.578
+  "weight": 0.578,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@ui-layouts/confirm-pass-check",
@@ -197413,7 +202892,19 @@
   "representative": true,
   "stars": 3864,
   "repo": "ui-layouts/uilayouts",
-  "weight": 0.578
+  "weight": 0.578,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@ui-layouts/btn-hover14",
@@ -197470,7 +202961,22 @@
   "representative": true,
   "stars": 3864,
   "repo": "ui-layouts/uilayouts",
-  "weight": 0.578
+  "weight": 0.578,
+  "rendered": {
+   "renders": true,
+   "drewShape": false,
+   "painted": 0.036,
+   "error": null,
+   "target": "button",
+   "size": [
+    180,
+    72
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@uiset/button",
@@ -202402,7 +207908,19 @@
   "stars": 234,
   "repo": "WatermelonCorp/watermelon-platform",
   "weight": 0.599,
-  "renderRank": 205
+  "renderRank": 205,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n    - waiting for \"http://localhost:4410/?part=watermelon__morphing-bu",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@watermelon/morphing-button-base",
@@ -202478,7 +207996,19 @@
   "stars": 234,
   "repo": "WatermelonCorp/watermelon-platform",
   "weight": 0.599,
-  "renderRank": 206
+  "renderRank": 206,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@watermelon/quick-feedback",
@@ -211852,7 +217382,19 @@
   "stars": null,
   "repo": null,
   "weight": 0.656,
-  "renderRank": 111
+  "renderRank": 111,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@visant/cta-surface",
@@ -212083,7 +217625,22 @@
   "stars": null,
   "repo": null,
   "weight": 0.656,
-  "renderRank": 112
+  "renderRank": 112,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.144,
+   "error": null,
+   "target": "button",
+   "size": [
+    104,
+    36
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@visant/hold-to-confirm",
@@ -212179,7 +217736,22 @@
   "stars": null,
   "repo": null,
   "weight": 0.656,
-  "renderRank": 113
+  "renderRank": 113,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.144,
+   "error": null,
+   "target": "button",
+   "size": [
+    142,
+    40
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@visant/magnetic-select",
@@ -212337,7 +217909,22 @@
   "stars": null,
   "repo": null,
   "weight": 0.656,
-  "renderRank": 114
+  "renderRank": 114,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.818,
+   "error": null,
+   "target": "div",
+   "size": [
+    48,
+    48
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": null,
+   "movements": []
+  }
  },
  {
   "id": "@visant/glass-button",
@@ -214189,7 +219776,19 @@
   "stars": null,
   "repo": null,
   "weight": 0.655,
-  "renderRank": 126
+  "renderRank": 126,
+  "rendered": {
+   "renders": false,
+   "drewShape": false,
+   "painted": null,
+   "error": "nothing to use",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@weinc/react-toast-notification-system-with-undo-stacking-and-swipe-to-dismiss",
@@ -214288,7 +219887,63 @@
   "stars": null,
   "repo": null,
   "weight": 0.655,
-  "renderRank": 127
+  "renderRank": 127,
+  "rendered": {
+   "renders": true,
+   "drewShape": false,
+   "painted": 0,
+   "error": null,
+   "target": "button",
+   "size": [
+    91,
+    40
+   ],
+   "longestMovementMs": 67,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": [
+    {
+     "after": "start",
+     "does": "moves across",
+     "elements": 3,
+     "firstMs": 15,
+     "lastMs": 82,
+     "longestMs": 67,
+     "biggest": 3.7,
+     "overshootPct": null
+    },
+    {
+     "after": "start",
+     "does": "moves up or down",
+     "elements": 3,
+     "firstMs": 15,
+     "lastMs": 82,
+     "longestMs": 67,
+     "biggest": 3.7,
+     "overshootPct": null
+    },
+    {
+     "after": "start",
+     "does": "changes width",
+     "elements": 3,
+     "firstMs": 15,
+     "lastMs": 82,
+     "longestMs": 67,
+     "biggest": 7.3,
+     "overshootPct": null
+    },
+    {
+     "after": "start",
+     "does": "changes height",
+     "elements": 3,
+     "firstMs": 15,
+     "lastMs": 82,
+     "longestMs": 67,
+     "biggest": 7.3,
+     "overshootPct": null
+    }
+   ]
+  }
  },
  {
   "id": "@weinc/rubber-drum-pad-step-sequencer-with-backlit-silicone-pads-that-squash-and-a-running-step-light",
@@ -214516,7 +220171,83 @@
   "stars": null,
   "repo": null,
   "weight": 0.655,
-  "renderRank": 128
+  "renderRank": 128,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.955,
+   "error": null,
+   "target": "button",
+   "size": [
+    269,
+    75
+   ],
+   "longestMovementMs": 371,
+   "maxOvershootPct": 22.9,
+   "faintestWords": 1,
+   "movements": [
+    {
+     "after": "start",
+     "does": "moves across",
+     "elements": 7,
+     "firstMs": 9,
+     "lastMs": 380,
+     "longestMs": 371,
+     "biggest": 5.9,
+     "overshootPct": null
+    },
+    {
+     "after": "start",
+     "does": "moves up or down",
+     "elements": 7,
+     "firstMs": 9,
+     "lastMs": 380,
+     "longestMs": 371,
+     "biggest": 5.9,
+     "overshootPct": null
+    },
+    {
+     "after": "start",
+     "does": "changes width",
+     "elements": 5,
+     "firstMs": 9,
+     "lastMs": 380,
+     "longestMs": 371,
+     "biggest": 11.8,
+     "overshootPct": 22.9
+    },
+    {
+     "after": "start",
+     "does": "changes height",
+     "elements": 6,
+     "firstMs": 9,
+     "lastMs": 347,
+     "longestMs": 338,
+     "biggest": 6.6,
+     "overshootPct": null
+    },
+    {
+     "after": "start",
+     "does": "scales",
+     "elements": 2,
+     "firstMs": 9,
+     "lastMs": 347,
+     "longestMs": 338,
+     "biggest": 0.05,
+     "overshootPct": null
+    },
+    {
+     "after": "start",
+     "does": "fades",
+     "elements": 1,
+     "firstMs": 9,
+     "lastMs": 211,
+     "longestMs": 202,
+     "biggest": 0.51,
+     "overshootPct": 0
+    }
+   ]
+  }
  },
  {
   "id": "@weinc/thread-spool-rack-colour-filter-with-cross-wound-cotton-reels-that-pay-out-thread-and-drop-a-swinging-button",
@@ -214819,7 +220550,22 @@
   "stars": null,
   "repo": null,
   "weight": 0.651,
-  "renderRank": 146
+  "renderRank": 146,
+  "rendered": {
+   "renders": true,
+   "drewShape": false,
+   "painted": 0.063,
+   "error": null,
+   "target": "button",
+   "size": [
+    148,
+    40
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 0,
+   "movements": []
+  }
  },
  {
   "id": "@xevrion/magnetic-button",
@@ -215174,7 +220920,22 @@
   "stars": null,
   "repo": null,
   "weight": 0.651,
-  "renderRank": 147
+  "renderRank": 147,
+  "rendered": {
+   "renders": true,
+   "drewShape": false,
+   "painted": 0.05,
+   "error": null,
+   "target": "div",
+   "size": [
+    91,
+    24
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@xevrion/dropdown-menu",
@@ -215522,7 +221283,19 @@
   "stars": null,
   "repo": null,
   "weight": 0.651,
-  "renderRank": 148
+  "renderRank": 148,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@xevrion/select-menu",
@@ -215708,7 +221481,19 @@
   "stars": null,
   "repo": null,
   "weight": 0.651,
-  "renderRank": 149
+  "renderRank": 149,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@xevrion/story-progress",
@@ -216531,7 +222316,19 @@
   "stars": null,
   "repo": null,
   "weight": 0.651,
-  "renderRank": 150
+  "renderRank": 150,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n    - waiting for \"http://localhost:4410/?part=xevrion__share-button\" ",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@xevrion/shortcut-recorder",
@@ -217123,7 +222920,113 @@
   "stars": null,
   "repo": null,
   "weight": 0.651,
-  "renderRank": 151
+  "renderRank": 151,
+  "rendered": {
+   "renders": true,
+   "drewShape": false,
+   "painted": 0.02,
+   "error": null,
+   "target": "button",
+   "size": [
+    40,
+    40
+   ],
+   "longestMovementMs": 513,
+   "maxOvershootPct": 8.1,
+   "faintestWords": 1,
+   "movements": [
+    {
+     "after": "gesture",
+     "does": "moves across",
+     "elements": 1,
+     "firstMs": 605,
+     "lastMs": 1017,
+     "longestMs": 412,
+     "biggest": 56.7,
+     "overshootPct": 8.1
+    },
+    {
+     "after": "gesture",
+     "does": "moves up or down",
+     "elements": 1,
+     "firstMs": 605,
+     "lastMs": 1017,
+     "longestMs": 412,
+     "biggest": 135.3,
+     "overshootPct": 8.1
+    },
+    {
+     "after": "gesture",
+     "does": "changes width",
+     "elements": 1,
+     "firstMs": 605,
+     "lastMs": 1017,
+     "longestMs": 412,
+     "biggest": 113.4,
+     "overshootPct": 8.1
+    },
+    {
+     "after": "gesture",
+     "does": "changes height",
+     "elements": 1,
+     "firstMs": 605,
+     "lastMs": 1118,
+     "longestMs": 513,
+     "biggest": 79.8,
+     "overshootPct": 7.8
+    },
+    {
+     "after": "let go",
+     "does": "moves across",
+     "elements": 3,
+     "firstMs": 17,
+     "lastMs": 144,
+     "longestMs": 127,
+     "biggest": 3.2,
+     "overshootPct": null
+    },
+    {
+     "after": "let go",
+     "does": "moves up or down",
+     "elements": 15,
+     "firstMs": 17,
+     "lastMs": 278,
+     "longestMs": 127,
+     "biggest": 3.8,
+     "overshootPct": null
+    },
+    {
+     "after": "let go",
+     "does": "changes width",
+     "elements": 3,
+     "firstMs": 17,
+     "lastMs": 144,
+     "longestMs": 127,
+     "biggest": 6.5,
+     "overshootPct": null
+    },
+    {
+     "after": "let go",
+     "does": "changes height",
+     "elements": 3,
+     "firstMs": 17,
+     "lastMs": 144,
+     "longestMs": 127,
+     "biggest": 6.5,
+     "overshootPct": null
+    },
+    {
+     "after": "let go",
+     "does": "fades",
+     "elements": 3,
+     "firstMs": 77,
+     "lastMs": 345,
+     "longestMs": 201,
+     "biggest": 1,
+     "overshootPct": 0
+    }
+   ]
+  }
  },
  {
   "id": "@yiui/ripple",
@@ -219073,7 +224976,19 @@
   "stars": null,
   "repo": null,
   "weight": 0.656,
-  "renderRank": 115
+  "renderRank": 115,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@vue-bits/HoldButton",
@@ -219152,7 +225067,19 @@
   "stars": null,
   "repo": null,
   "weight": 0.656,
-  "renderRank": 116
+  "renderRank": 116,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@vue-bits/LiquidChrome",
@@ -219516,7 +225443,19 @@
   "stars": null,
   "repo": null,
   "weight": 0.656,
-  "renderRank": 117
+  "renderRank": 117,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@vue-bits/SlingButton",
@@ -219597,7 +225536,19 @@
   "stars": null,
   "repo": null,
   "weight": 0.656,
-  "renderRank": 118
+  "renderRank": 118,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@vue-bits/SpecularButton",
@@ -219814,7 +225765,19 @@
   "stars": null,
   "repo": null,
   "weight": 0.656,
-  "renderRank": 119
+  "renderRank": 119,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@svelte-bits/cubes",
@@ -220703,7 +226666,19 @@
   "stars": 409,
   "repo": "DavidHDev/svelte-bits",
   "weight": 0.624,
-  "renderRank": 185
+  "renderRank": 185,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@svelte-bits/bell-toggle",
@@ -220938,7 +226913,19 @@
   "stars": 409,
   "repo": "DavidHDev/svelte-bits",
   "weight": 0.774,
-  "renderRank": 28
+  "renderRank": 28,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@svelte-bits/hold-button",
@@ -221017,7 +227004,19 @@
   "stars": 409,
   "repo": "DavidHDev/svelte-bits",
   "weight": 0.774,
-  "renderRank": 29
+  "renderRank": 29,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@svelte-bits/pulse-heart",
@@ -221084,7 +227083,19 @@
   "stars": 409,
   "repo": "DavidHDev/svelte-bits",
   "weight": 0.624,
-  "renderRank": 186
+  "renderRank": 186,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@svelte-bits/slide-commit",
@@ -221178,7 +227189,19 @@
   "stars": 409,
   "repo": "DavidHDev/svelte-bits",
   "weight": 0.774,
-  "renderRank": 30
+  "renderRank": 30,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@svelte-bits/sling-button",
@@ -221258,7 +227281,19 @@
   "stars": 409,
   "repo": "DavidHDev/svelte-bits",
   "weight": 0.624,
-  "renderRank": 187
+  "renderRank": 187,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@svelte-bits/spring-check",
@@ -221396,7 +227431,19 @@
   "stars": 409,
   "repo": "DavidHDev/svelte-bits",
   "weight": 0.774,
-  "renderRank": 31
+  "renderRank": 31,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "locator.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#stage')\n    2 × waiting for \"http://localhost:4410/?part=svelte-bits__voice-pi",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@svelte-bits/shiny-text",
@@ -221604,7 +227651,22 @@
   "stars": 4,
   "repo": "diontr00/kaui-shadcn-registry",
   "weight": 0.266,
-  "renderRank": 1056
+  "renderRank": 1056,
+  "rendered": {
+   "renders": true,
+   "drewShape": true,
+   "painted": 0.55,
+   "error": null,
+   "target": "button",
+   "size": [
+    130,
+    36
+   ],
+   "longestMovementMs": 0,
+   "maxOvershootPct": 0,
+   "faintestWords": 1,
+   "movements": []
+  }
  },
  {
   "id": "@kaui/confirm-action",
@@ -225950,7 +232012,19 @@
   "stars": 526,
   "repo": "shadcndashboard/shadcndashboard",
   "weight": 0.616,
-  "renderRank": 200
+  "renderRank": 200,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "page.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - taking page screenshot\n  - waiting for fonts to load...\n  - fonts loaded\n",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@shadcn-dashboard/button-21",
@@ -226105,7 +232179,19 @@
   "stars": 526,
   "repo": "shadcndashboard/shadcndashboard",
   "weight": 0.616,
-  "renderRank": 201
+  "renderRank": 201,
+  "rendered": {
+   "renders": false,
+   "drewShape": null,
+   "painted": null,
+   "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation.",
+   "target": null,
+   "size": null,
+   "longestMovementMs": null,
+   "maxOvershootPct": null,
+   "faintestWords": null,
+   "movements": null
+  }
  },
  {
   "id": "@shadcn-dashboard/card-02",

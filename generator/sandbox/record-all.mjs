@@ -48,6 +48,9 @@ const JUDGE = () => {
   return craft.enrich(els.map((el, i) => ({ id: i, el, marks: [], dims: {}, file: 'part', line: 1, column: 1 })))
     .flatMap((i) => i.marks.filter((m) => m.family === 'craft' && !/^experience\/font|^a11y\/(skip|lang)|heading-missing/.test(m.rule)).map((m) => ({ rule: m.rule, says: m.title ?? m.what, on: (i.el.textContent || i.el.tagName).trim().slice(0, 30) })));
 };
+// a picture of the stage, cropped from the page: an element shot waits for motion to stop, and a part that shimmers or
+// spins forever never stops (107 parts timed out that way); a slow picture is skipped, never the part
+const shoot = async (page, path) => { try { const r = await page.locator('#stage').boundingBox({ timeout: 3000 }); if (!r) return null; return await page.screenshot({ path, clip: r, timeout: 8000, animations: 'allow' }); } catch { return null; } };
 const MARK = (name) => window.__rec.marks.push({ name, t: Math.round(performance.now() - window.__rec.t0) });
 const STOP = () => { window.__rec.on = false; const r = window.__rec; return { ...r, frames: r.frames.filter((_, i) => i % 2 === 0) }; };
 // what the part draws: painted (non-background) pixels on the stage at rest, and the thing to use
@@ -67,12 +70,13 @@ async function one(browser, x) {
     await page.waitForTimeout(1500);
     if (ENGINE) await page.addScriptTag({ content: ENGINE }).catch(() => {});
     const s = await page.evaluate(() => window.__sandbox ?? null);
-    const rest = await page.locator('#stage').screenshot({ path: `${here}shots/${x.key}-rest.png` });
+    await shoot(page, `${here}shots/${x.key}-rest.png`);
     const t = await page.evaluate(TARGET);
     // drew a shape: around the edge of the thing to use, a drawn button has a border or a fill; words alone don't
     if (t) {
       const pad = 3, clip = { x: Math.max(0, t.l - pad), y: Math.max(0, t.y - t.h / 2 - pad), width: t.w + pad * 2, height: t.h + pad * 2 };
-      const shot = await page.screenshot({ clip });
+      const shot = await page.screenshot({ clip, timeout: 8000, animations: 'allow' }).catch(() => null);
+      if (shot)
       out.painted = await page.evaluate(async (b64) => { const img = new Image(); img.src = `data:image/png;base64,${b64}`; await img.decode(); const c = document.createElement('canvas'); c.width = img.width; c.height = img.height; const g = c.getContext('2d'); g.drawImage(img, 0, 0); const d = g.getImageData(0, 0, c.width, c.height).data, W = c.width, H = c.height; let n = 0, all = 0;
         for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const edge = x < 7 || x >= W - 7 || y < 7 || y >= H - 7; if (!edge) continue; all++; const k = (y * W + x) * 4; if (d[k] < 236 || d[k + 1] < 236 || d[k + 2] < 236) n++; } return +(n / all).toFixed(3); }, shot.toString('base64'));
     }
@@ -87,10 +91,10 @@ async function one(browser, x) {
     await page.evaluate(MARK, 'point'); await page.mouse.move(t.x, t.y, { steps: 5 }); await page.waitForTimeout(450);
     out.plumber['pointed at'] = await page.evaluate(JUDGE).catch(() => null);
     await page.evaluate(MARK, 'gesture');
-    if (r.driver === 'position') { await page.mouse.move(t.l + 8, t.y); await page.mouse.down(); for (let i = 1; i <= 20; i++) { await page.mouse.move(t.l + 8 + (t.stageW * 0.75 * i) / 20, t.y); await page.waitForTimeout(25); } await page.locator('#stage').screenshot({ path: `${here}shots/${x.key}-mid.png` }); out.plumber.mid = await page.evaluate(JUDGE).catch(() => null); await page.evaluate(MARK, 'let go'); await page.mouse.up(); }
-    else if (r.driver === 'time-held') { await page.mouse.down(); await page.waitForTimeout(700); await page.locator('#stage').screenshot({ path: `${here}shots/${x.key}-mid.png` }); out.plumber.mid = await page.evaluate(JUDGE).catch(() => null); await page.waitForTimeout(1800); await page.evaluate(MARK, 'let go'); await page.mouse.up(); }
-    else if (r.driver === 'pointer-distance') { await page.mouse.move(t.x + t.w * 0.45, t.y - t.h, { steps: 8 }); await page.waitForTimeout(300); await page.locator('#stage').screenshot({ path: `${here}shots/${x.key}-mid.png` }); out.plumber.mid = await page.evaluate(JUDGE).catch(() => null); await page.evaluate(MARK, 'let go'); await page.mouse.click(t.x, t.y); }
-    else { await page.mouse.down(); await page.waitForTimeout(90); await page.mouse.up(); await page.waitForTimeout(250); await page.locator('#stage').screenshot({ path: `${here}shots/${x.key}-mid.png` }); out.plumber.mid = await page.evaluate(JUDGE).catch(() => null); await page.evaluate(MARK, 'let go'); }
+    if (r.driver === 'position') { await page.mouse.move(t.l + 8, t.y); await page.mouse.down(); for (let i = 1; i <= 20; i++) { await page.mouse.move(t.l + 8 + (t.stageW * 0.75 * i) / 20, t.y); await page.waitForTimeout(25); } await shoot(page, `${here}shots/${x.key}-mid.png`); out.plumber.mid = await page.evaluate(JUDGE).catch(() => null); await page.evaluate(MARK, 'let go'); await page.mouse.up(); }
+    else if (r.driver === 'time-held') { await page.mouse.down(); await page.waitForTimeout(700); await shoot(page, `${here}shots/${x.key}-mid.png`); out.plumber.mid = await page.evaluate(JUDGE).catch(() => null); await page.waitForTimeout(1800); await page.evaluate(MARK, 'let go'); await page.mouse.up(); }
+    else if (r.driver === 'pointer-distance') { await page.mouse.move(t.x + t.w * 0.45, t.y - t.h, { steps: 8 }); await page.waitForTimeout(300); await shoot(page, `${here}shots/${x.key}-mid.png`); out.plumber.mid = await page.evaluate(JUDGE).catch(() => null); await page.evaluate(MARK, 'let go'); await page.mouse.click(t.x, t.y); }
+    else { await page.mouse.down(); await page.waitForTimeout(90); await page.mouse.up(); await page.waitForTimeout(250); await shoot(page, `${here}shots/${x.key}-mid.png`); out.plumber.mid = await page.evaluate(JUDGE).catch(() => null); await page.evaluate(MARK, 'let go'); }
     await page.waitForTimeout(1500);
     out.plumber.done = await page.evaluate(JUDGE).catch(() => null);
     const rec = await page.evaluate(STOP);
