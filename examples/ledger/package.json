@@ -1,0 +1,9 @@
+{
+  "name": "plumber-example-ledger",
+  "private": true,
+  "type": "module",
+  "description": "A deliberately sloppy app to try React Plumber on: hard-coded values, Tailwind defaults and the marks of a generated screen.",
+  "scripts": {
+    "dev": "vite --config vite.config.js"
+  }
+}
