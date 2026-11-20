@@ -72,6 +72,10 @@ const TOOL_TOY = { history: 'progress', help: 'tooltip', pick: 'search' };
 const FIX_CSS_BASE = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   /* the old pieces this panel replaces stay out of sight */
   .bpp, .cg, .sel { display: none !important; }
+  /* the room under the page, drawn as margin: butter dots, 1.25 radius every 6px, as the X-ray draws margin */
+  .fx-room { position: fixed; left: 0; right: 0; z-index: 1; pointer-events: none;
+    background-image: radial-gradient(circle, color-mix(in oklab, var(--pl-butter) 85%, var(--pl-butter-ink)) 1.25px, transparent 1.6px); background-size: 6px 6px; }
+  .fx-room[hidden] { display: none; }
   .fx { position: fixed; left: 50%; bottom: 72px; translate: -50% 0; width: 520px; max-width: calc(100vw - 32px); box-sizing: border-box; pointer-events: auto; z-index: 2;
     background: color-mix(in oklab, var(--pl-bg-surface) 82%, transparent); -webkit-backdrop-filter: blur(22px) saturate(1.6); backdrop-filter: blur(22px) saturate(1.6);
     border-radius: 18px; color: var(--pl-text-primary); font: 13px/1.35 var(--pl-sans, system-ui), sans-serif; overflow: hidden;
@@ -517,8 +521,22 @@ export class FixPanel {
     // The same measure is room under the page: <html> gets that much more padding at its foot while the bar shows, so
     // anything can be scrolled out from under it (owner, 2026-11-20, U5: the bar sat on the page's first heading). The
     // page inside <body>, which is what is read, doesn't move; closing puts <html>'s own style back exactly.
-    let kept = null, base = '0px';
+    let kept = null, base = '0px', roomPx = 0;
+    // the room drawn as plumber's margin (butter dots, as margin is drawn everywhere): a band in the overlay that sits
+    // where the room is, so the space under the page reads as the tool's, not the page's (owner, 2026-11-20)
+    const band = Object.assign(document.createElement('div'), { className: 'fx-room', hidden: true });
+    band.setAttribute('aria-hidden', 'true');
+    root.append(band);
+    const placeBand = () => {
+      if (!roomPx) { band.hidden = true; return; }
+      const top = document.documentElement.scrollHeight - roomPx - scrollY;
+      band.hidden = top >= innerHeight;
+      band.style.top = `${Math.round(top)}px`; band.style.height = `${roomPx}px`;
+    };
+    this.#life.listen(window, 'scroll', placeBand, { passive: true });
+    this.#life.listen(window, 'resize', placeBand);
     const room = (px) => {
+      roomPx = px; this.#life.frame(placeBand);
       const html = document.documentElement;
       if (px && kept === null) { kept = html.style.getPropertyValue('padding-bottom'); base = kept || getComputedStyle(html).paddingBottom || '0px'; }
       if (px) html.style.setProperty('padding-bottom', `calc(${base} + ${px}px)`);
