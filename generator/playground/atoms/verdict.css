@@ -1,0 +1,22 @@
+/* The verdict under each form, and which to choose: plumber's own hues (overlay/src/tokens.css), words on a hue in its
+   -on colour, mint for what holds, butter for what weakens, coral for what breaks. */
+@import '../../../overlay/src/tokens.css';
+.verdict { display: grid; gap: 10px; border-top: 1px solid color-mix(in oklab, currentColor 10%, transparent); padding-top: 14px; font-family: var(--pl-sans); color: var(--pl-ink); }
+.verdict-chip { justify-self: start; font: 700 12px/1 var(--pl-sans); padding: 6px 10px; border-radius: var(--pl-radius-pill, 999px); }
+.verdict-chip.works { background: var(--pl-mint); color: var(--pl-mint-on); }
+.verdict-chip.needs-work { background: var(--pl-butter); color: var(--pl-butter-on); }
+.verdict-chip.breaks { background: var(--pl-coral); color: var(--pl-coral-on); }
+.verdict-off { padding: 10px 12px; border-radius: 8px; background: var(--pl-paper-2); box-shadow: inset 3px 0 0 var(--pl-butter-line); }
+.verdict-off.breaks { box-shadow: inset 3px 0 0 var(--pl-coral); }
+.atom .verdict h4 { margin: 0 0 3px; font: 600 13px/1.35 var(--pl-sans); }
+.atom .verdict p { margin: 0 0 4px; font: 400 13px/1.45 var(--pl-sans); opacity: 1; }
+.atom .verdict .verdict-fix b { font-weight: 600; }
+.atom .verdict .verdict-src { font-size: 11.5px; color: var(--pl-ink-2); margin: 0; }
+.verdict-on summary { font: 600 12.5px/1.4 var(--pl-sans); color: var(--pl-ink-2); cursor: pointer; }
+.verdict-on ul { margin: 6px 0 0; padding-left: 18px; font: 400 12.5px/1.5 var(--pl-sans); color: var(--pl-ink-2); }
+.verdict-on li b { color: var(--pl-ink); font-weight: 600; }
+.choose { width: calc(100% - 64px); max-width: 1136px; margin: 0 auto 24px; padding: 20px 24px; border-radius: 12px; background: var(--pl-paper-2); font-family: var(--pl-sans); color: var(--pl-ink); box-sizing: border-box; }
+.choose-kicker { margin: 0 0 6px; font: 700 11.5px/1 var(--pl-sans); letter-spacing: .06em; text-transform: uppercase; color: var(--pl-ink-2); }
+.choose h2 { margin: 0 0 6px; font: 700 22px/1.2 var(--pl-sans); }
+.choose p { margin: 0 0 8px; font: 400 14px/1.5 var(--pl-sans); max-width: 72ch; }
+.choose .choose-how { font-size: 12.5px; color: var(--pl-ink-2); margin: 10px 0 0; }

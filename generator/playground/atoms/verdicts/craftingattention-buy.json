@@ -1,0 +1,811 @@
+{
+ "moment": {
+  "name": "buying lifetime access",
+  "stakes": "low",
+  "confirmedLater": "checkout asks for the payment itself, so a slip here costs nothing",
+  "frequency": "once",
+  "who": "a first-time visitor on the pricing page"
+ },
+ "choose": {
+  "form": "house",
+  "name": "As shipped",
+  "why": "For buying lifetime access, as shipped meets every standard it is held to. One press is right here: checkout asks for the payment itself, so a slip here costs nothing.",
+  "instead": {
+   "form": "beui/button-magnetic",
+   "name": "Press, and it leans in",
+   "why": "It meets every standard too."
+  }
+ },
+ "forms": [
+  {
+   "form": "house",
+   "name": "As shipped",
+   "kind": "press",
+   "target": [
+    307,
+    56
+   ],
+   "firstMs": 39,
+   "motionMs": 100,
+   "commits": true,
+   "words": null,
+   "backsOut": true,
+   "keyboard": true,
+   "focusable": true,
+   "reducedMotionMs": 0,
+   "verdict": "works",
+   "results": [
+    {
+     "id": "answers-at-once",
+     "name": "Answers the press at once",
+     "severity": "weakens",
+     "ok": true,
+     "says": "It answers the moment it is pressed, so the customer knows the button heard them.",
+     "fix": null,
+     "principle": "People need to know their action registered: the interface answers within about a tenth of a second, or the press feels lost.",
+     "sources": [
+      "Nielsen Norman Group, 10 usability heuristics: #1 Visibility of system status",
+      "Apple Human Interface Guidelines: Feedback",
+      "Response time limits (Nielsen, 0.1 s feels instantaneous)"
+     ],
+     "checked": false
+    },
+    {
+     "id": "words-stay-readable",
+     "name": "Its words stay readable in every state",
+     "severity": "breaks",
+     "ok": true,
+     "says": "Its words read clearly at every moment, including mid-gesture.",
+     "fix": null,
+     "principle": "What a button says must be readable in every state it passes through, not only at rest: mid-gesture is when people check what they are committing to.",
+     "sources": [
+      "WCAG 2.2, 1.4.3 Contrast (Minimum)",
+      "Plumber: craft/words-on-layers (words follow their ground)"
+     ],
+     "checked": true
+    },
+    {
+     "id": "big-enough",
+     "name": "It is big enough to hit",
+     "severity": "weakens",
+     "ok": true,
+     "says": "Its target is comfortably big for a finger.",
+     "fix": null,
+     "principle": "The thing you press needs room for a finger: small targets cause missed and mistaken presses.",
+     "sources": [
+      "Apple Human Interface Guidelines: 44×44 pt minimum hit target",
+      "Material Design: 48×48 dp touch target",
+      "WCAG 2.2, 2.5.8 Target Size (Minimum), 24×24 CSS px"
+     ],
+     "checked": false
+    },
+    {
+     "id": "motion-purposeful",
+     "name": "Its motion is quick and respects reduced motion",
+     "severity": "weakens",
+     "ok": true,
+     "says": "Its motion is brief, and it calms down for people who ask for reduced motion.",
+     "fix": null,
+     "principle": "Interface motion should be brief and say something; people who ask for reduced motion should get the same states without the travel.",
+     "sources": [
+      "Material Design: motion duration and easing",
+      "Apple Human Interface Guidelines: Motion; Reduce Motion",
+      "WCAG 2.2, 2.3.3 Animation from Interactions (AAA)"
+     ],
+     "checked": false
+    },
+    {
+     "id": "friction-fits-stakes",
+     "name": "The effort fits the stakes",
+     "severity": "weakens",
+     "ok": true,
+     "says": "One press is right here: checkout asks for the payment itself, so a slip here costs nothing.",
+     "fix": null,
+     "principle": "Consequential, hard-to-undo actions deserve a deliberate step; everyday ones should not make people work. Both too little and too much friction cost trust.",
+     "sources": [
+      "Apple Human Interface Guidelines: confirm destructive or consequential actions, sparingly",
+      "Material Design: dialogs and confirmation for consequential actions",
+      "Nielsen Norman Group heuristic #5: Error prevention"
+     ],
+     "checked": false
+    }
+   ],
+   "score": 0
+  },
+  {
+   "form": "beui/slide-action-button",
+   "name": "Slide to commit",
+   "kind": "slide",
+   "target": [
+    48,
+    48
+   ],
+   "firstMs": 38,
+   "motionMs": 1598,
+   "commits": true,
+   "words": null,
+   "backsOut": true,
+   "keyboard": true,
+   "focusable": true,
+   "reducedMotionMs": 1242,
+   "progressRatio": 3.1,
+   "verdict": "needs-work",
+   "results": [
+    {
+     "id": "answers-at-once",
+     "name": "Answers the press at once",
+     "severity": "weakens",
+     "ok": true,
+     "says": "It answers the moment it is pressed, so the customer knows the button heard them.",
+     "fix": null,
+     "principle": "People need to know their action registered: the interface answers within about a tenth of a second, or the press feels lost.",
+     "sources": [
+      "Nielsen Norman Group, 10 usability heuristics: #1 Visibility of system status",
+      "Apple Human Interface Guidelines: Feedback",
+      "Response time limits (Nielsen, 0.1 s feels instantaneous)"
+     ],
+     "checked": false
+    },
+    {
+     "id": "words-stay-readable",
+     "name": "Its words stay readable in every state",
+     "severity": "breaks",
+     "ok": true,
+     "says": "Its words read clearly at every moment, including mid-gesture.",
+     "fix": null,
+     "principle": "What a button says must be readable in every state it passes through, not only at rest: mid-gesture is when people check what they are committing to.",
+     "sources": [
+      "WCAG 2.2, 1.4.3 Contrast (Minimum)",
+      "Plumber: craft/words-on-layers (words follow their ground)"
+     ],
+     "checked": true
+    },
+    {
+     "id": "progress-shows",
+     "name": "You can see your progress",
+     "severity": "breaks",
+     "ok": true,
+     "says": "The fill stands out from the track, so it is always clear how far there is to go.",
+     "fix": null,
+     "principle": "A hold or a drag commits only at the end; the part done has to stand clearly apart from the part to go, or people let go too early or hold on not knowing.",
+     "sources": [
+      "WCAG 2.2, 1.4.11 Non-text Contrast (3:1 for the states of a control)"
+     ],
+     "checked": true
+    },
+    {
+     "id": "can-back-out",
+     "name": "You can back out mid-gesture",
+     "severity": "breaks",
+     "ok": true,
+     "says": "Letting go early takes it back, so a half-meant gesture never commits.",
+     "fix": null,
+     "principle": "Starting a gesture must not commit you: letting go early, or sliding away, has to undo it.",
+     "sources": [
+      "WCAG 2.2, 2.5.2 Pointer Cancellation",
+      "Nielsen Norman Group heuristic #3: User control and freedom"
+     ],
+     "checked": true
+    },
+    {
+     "id": "no-drag-needed",
+     "name": "There is a way that needs no drag",
+     "severity": "breaks",
+     "ok": true,
+     "says": "It also works from the keyboard, so nobody is shut out by the drag.",
+     "fix": null,
+     "principle": "Anything done by dragging must also be doable with a single press or the keyboard, for people who can’t drag precisely.",
+     "sources": [
+      "WCAG 2.2, 2.5.7 Dragging Movements (AA)",
+      "WCAG 2.2, 2.5.1 Pointer Gestures (A)"
+     ],
+     "checked": true
+    },
+    {
+     "id": "big-enough",
+     "name": "It is big enough to hit",
+     "severity": "weakens",
+     "ok": true,
+     "says": "Its target is comfortably big for a finger.",
+     "fix": null,
+     "principle": "The thing you press needs room for a finger: small targets cause missed and mistaken presses.",
+     "sources": [
+      "Apple Human Interface Guidelines: 44×44 pt minimum hit target",
+      "Material Design: 48×48 dp touch target",
+      "WCAG 2.2, 2.5.8 Target Size (Minimum), 24×24 CSS px"
+     ],
+     "checked": false
+    },
+    {
+     "id": "motion-purposeful",
+     "name": "Its motion is quick and respects reduced motion",
+     "severity": "weakens",
+     "ok": false,
+     "says": "It plays its motion even for people who ask their device to reduce motion.",
+     "fix": "Honour reduced motion (states change at once) and keep a control’s own motion short.",
+     "principle": "Interface motion should be brief and say something; people who ask for reduced motion should get the same states without the travel.",
+     "sources": [
+      "Material Design: motion duration and easing",
+      "Apple Human Interface Guidelines: Motion; Reduce Motion",
+      "WCAG 2.2, 2.3.3 Animation from Interactions (AAA)"
+     ],
+     "checked": false
+    },
+    {
+     "id": "friction-fits-stakes",
+     "name": "The effort fits the stakes",
+     "severity": "weakens",
+     "ok": false,
+     "says": "It asks for a deliberate gesture before a step that asks again: checkout asks for the payment itself, so a slip here costs nothing, so the customer is made to commit twice.",
+     "fix": "Let one press open the next step; keep the ceremony for where the commitment really happens.",
+     "principle": "Consequential, hard-to-undo actions deserve a deliberate step; everyday ones should not make people work. Both too little and too much friction cost trust.",
+     "sources": [
+      "Apple Human Interface Guidelines: confirm destructive or consequential actions, sparingly",
+      "Material Design: dialogs and confirmation for consequential actions",
+      "Nielsen Norman Group heuristic #5: Error prevention"
+     ],
+     "checked": false
+    }
+   ],
+   "score": 2
+  },
+  {
+   "form": "beui/hold-action-button",
+   "name": "Hold to commit",
+   "kind": "hold",
+   "target": [
+    307,
+    48
+   ],
+   "firstMs": 35,
+   "motionMs": 1122,
+   "commits": true,
+   "words": null,
+   "backsOut": true,
+   "keyboard": true,
+   "focusable": true,
+   "reducedMotionMs": 0,
+   "progressRatio": 3.1,
+   "verdict": "needs-work",
+   "results": [
+    {
+     "id": "answers-at-once",
+     "name": "Answers the press at once",
+     "severity": "weakens",
+     "ok": true,
+     "says": "It answers the moment it is pressed, so the customer knows the button heard them.",
+     "fix": null,
+     "principle": "People need to know their action registered: the interface answers within about a tenth of a second, or the press feels lost.",
+     "sources": [
+      "Nielsen Norman Group, 10 usability heuristics: #1 Visibility of system status",
+      "Apple Human Interface Guidelines: Feedback",
+      "Response time limits (Nielsen, 0.1 s feels instantaneous)"
+     ],
+     "checked": false
+    },
+    {
+     "id": "words-stay-readable",
+     "name": "Its words stay readable in every state",
+     "severity": "breaks",
+     "ok": true,
+     "says": "Its words read clearly at every moment, including mid-gesture.",
+     "fix": null,
+     "principle": "What a button says must be readable in every state it passes through, not only at rest: mid-gesture is when people check what they are committing to.",
+     "sources": [
+      "WCAG 2.2, 1.4.3 Contrast (Minimum)",
+      "Plumber: craft/words-on-layers (words follow their ground)"
+     ],
+     "checked": true
+    },
+    {
+     "id": "progress-shows",
+     "name": "You can see your progress",
+     "severity": "breaks",
+     "ok": true,
+     "says": "The fill stands out from the track, so it is always clear how far there is to go.",
+     "fix": null,
+     "principle": "A hold or a drag commits only at the end; the part done has to stand clearly apart from the part to go, or people let go too early or hold on not knowing.",
+     "sources": [
+      "WCAG 2.2, 1.4.11 Non-text Contrast (3:1 for the states of a control)"
+     ],
+     "checked": true
+    },
+    {
+     "id": "can-back-out",
+     "name": "You can back out mid-gesture",
+     "severity": "breaks",
+     "ok": true,
+     "says": "Letting go early takes it back, so a half-meant gesture never commits.",
+     "fix": null,
+     "principle": "Starting a gesture must not commit you: letting go early, or sliding away, has to undo it.",
+     "sources": [
+      "WCAG 2.2, 2.5.2 Pointer Cancellation",
+      "Nielsen Norman Group heuristic #3: User control and freedom"
+     ],
+     "checked": true
+    },
+    {
+     "id": "big-enough",
+     "name": "It is big enough to hit",
+     "severity": "weakens",
+     "ok": true,
+     "says": "Its target is comfortably big for a finger.",
+     "fix": null,
+     "principle": "The thing you press needs room for a finger: small targets cause missed and mistaken presses.",
+     "sources": [
+      "Apple Human Interface Guidelines: 44×44 pt minimum hit target",
+      "Material Design: 48×48 dp touch target",
+      "WCAG 2.2, 2.5.8 Target Size (Minimum), 24×24 CSS px"
+     ],
+     "checked": false
+    },
+    {
+     "id": "motion-purposeful",
+     "name": "Its motion is quick and respects reduced motion",
+     "severity": "weakens",
+     "ok": false,
+     "says": "Its movements run 1122 ms, longer than a control’s motion should.",
+     "fix": "Honour reduced motion (states change at once) and keep a control’s own motion short.",
+     "principle": "Interface motion should be brief and say something; people who ask for reduced motion should get the same states without the travel.",
+     "sources": [
+      "Material Design: motion duration and easing",
+      "Apple Human Interface Guidelines: Motion; Reduce Motion",
+      "WCAG 2.2, 2.3.3 Animation from Interactions (AAA)"
+     ],
+     "checked": false
+    },
+    {
+     "id": "friction-fits-stakes",
+     "name": "The effort fits the stakes",
+     "severity": "weakens",
+     "ok": false,
+     "says": "It asks for a deliberate gesture before a step that asks again: checkout asks for the payment itself, so a slip here costs nothing, so the customer is made to commit twice.",
+     "fix": "Let one press open the next step; keep the ceremony for where the commitment really happens.",
+     "principle": "Consequential, hard-to-undo actions deserve a deliberate step; everyday ones should not make people work. Both too little and too much friction cost trust.",
+     "sources": [
+      "Apple Human Interface Guidelines: confirm destructive or consequential actions, sparingly",
+      "Material Design: dialogs and confirmation for consequential actions",
+      "Nielsen Norman Group heuristic #5: Error prevention"
+     ],
+     "checked": false
+    }
+   ],
+   "score": 2
+  },
+  {
+   "form": "arc/hold-to-confirm",
+   "name": "Hold to confirm",
+   "kind": "hold",
+   "target": [
+    307,
+    48
+   ],
+   "firstMs": 31,
+   "motionMs": 0,
+   "commits": true,
+   "words": null,
+   "backsOut": true,
+   "keyboard": true,
+   "focusable": true,
+   "reducedMotionMs": 0,
+   "progressRatio": 3.1,
+   "verdict": "needs-work",
+   "results": [
+    {
+     "id": "answers-at-once",
+     "name": "Answers the press at once",
+     "severity": "weakens",
+     "ok": true,
+     "says": "It answers the moment it is pressed, so the customer knows the button heard them.",
+     "fix": null,
+     "principle": "People need to know their action registered: the interface answers within about a tenth of a second, or the press feels lost.",
+     "sources": [
+      "Nielsen Norman Group, 10 usability heuristics: #1 Visibility of system status",
+      "Apple Human Interface Guidelines: Feedback",
+      "Response time limits (Nielsen, 0.1 s feels instantaneous)"
+     ],
+     "checked": false
+    },
+    {
+     "id": "words-stay-readable",
+     "name": "Its words stay readable in every state",
+     "severity": "breaks",
+     "ok": true,
+     "says": "Its words read clearly at every moment, including mid-gesture.",
+     "fix": null,
+     "principle": "What a button says must be readable in every state it passes through, not only at rest: mid-gesture is when people check what they are committing to.",
+     "sources": [
+      "WCAG 2.2, 1.4.3 Contrast (Minimum)",
+      "Plumber: craft/words-on-layers (words follow their ground)"
+     ],
+     "checked": true
+    },
+    {
+     "id": "progress-shows",
+     "name": "You can see your progress",
+     "severity": "breaks",
+     "ok": true,
+     "says": "The fill stands out from the track, so it is always clear how far there is to go.",
+     "fix": null,
+     "principle": "A hold or a drag commits only at the end; the part done has to stand clearly apart from the part to go, or people let go too early or hold on not knowing.",
+     "sources": [
+      "WCAG 2.2, 1.4.11 Non-text Contrast (3:1 for the states of a control)"
+     ],
+     "checked": true
+    },
+    {
+     "id": "can-back-out",
+     "name": "You can back out mid-gesture",
+     "severity": "breaks",
+     "ok": true,
+     "says": "Letting go early takes it back, so a half-meant gesture never commits.",
+     "fix": null,
+     "principle": "Starting a gesture must not commit you: letting go early, or sliding away, has to undo it.",
+     "sources": [
+      "WCAG 2.2, 2.5.2 Pointer Cancellation",
+      "Nielsen Norman Group heuristic #3: User control and freedom"
+     ],
+     "checked": true
+    },
+    {
+     "id": "big-enough",
+     "name": "It is big enough to hit",
+     "severity": "weakens",
+     "ok": true,
+     "says": "Its target is comfortably big for a finger.",
+     "fix": null,
+     "principle": "The thing you press needs room for a finger: small targets cause missed and mistaken presses.",
+     "sources": [
+      "Apple Human Interface Guidelines: 44×44 pt minimum hit target",
+      "Material Design: 48×48 dp touch target",
+      "WCAG 2.2, 2.5.8 Target Size (Minimum), 24×24 CSS px"
+     ],
+     "checked": false
+    },
+    {
+     "id": "motion-purposeful",
+     "name": "Its motion is quick and respects reduced motion",
+     "severity": "weakens",
+     "ok": true,
+     "says": "Its motion is brief, and it calms down for people who ask for reduced motion.",
+     "fix": null,
+     "principle": "Interface motion should be brief and say something; people who ask for reduced motion should get the same states without the travel.",
+     "sources": [
+      "Material Design: motion duration and easing",
+      "Apple Human Interface Guidelines: Motion; Reduce Motion",
+      "WCAG 2.2, 2.3.3 Animation from Interactions (AAA)"
+     ],
+     "checked": false
+    },
+    {
+     "id": "friction-fits-stakes",
+     "name": "The effort fits the stakes",
+     "severity": "weakens",
+     "ok": false,
+     "says": "It asks for a deliberate gesture before a step that asks again: checkout asks for the payment itself, so a slip here costs nothing, so the customer is made to commit twice.",
+     "fix": "Let one press open the next step; keep the ceremony for where the commitment really happens.",
+     "principle": "Consequential, hard-to-undo actions deserve a deliberate step; everyday ones should not make people work. Both too little and too much friction cost trust.",
+     "sources": [
+      "Apple Human Interface Guidelines: confirm destructive or consequential actions, sparingly",
+      "Material Design: dialogs and confirmation for consequential actions",
+      "Nielsen Norman Group heuristic #5: Error prevention"
+     ],
+     "checked": false
+    }
+   ],
+   "score": 1
+  },
+  {
+   "form": "arc/confirm-morph",
+   "name": "Press, then confirm",
+   "kind": "confirm",
+   "target": [
+    195,
+    48
+   ],
+   "firstMs": 45,
+   "motionMs": 1261,
+   "commits": true,
+   "words": {
+    "when": "Just after letting go",
+    "says": "Contrast is 0 on the APCA scale at 14px. Text this size needs 60.",
+    "rule": "craft/contrast",
+    "at": 111,
+    "moments": 2
+   },
+   "backsOut": true,
+   "keyboard": true,
+   "focusable": true,
+   "reducedMotionMs": 1013,
+   "verdict": "breaks",
+   "results": [
+    {
+     "id": "answers-at-once",
+     "name": "Answers the press at once",
+     "severity": "weakens",
+     "ok": true,
+     "says": "It answers the moment it is pressed, so the customer knows the button heard them.",
+     "fix": null,
+     "principle": "People need to know their action registered: the interface answers within about a tenth of a second, or the press feels lost.",
+     "sources": [
+      "Nielsen Norman Group, 10 usability heuristics: #1 Visibility of system status",
+      "Apple Human Interface Guidelines: Feedback",
+      "Response time limits (Nielsen, 0.1 s feels instantaneous)"
+     ],
+     "checked": false
+    },
+    {
+     "id": "words-stay-readable",
+     "name": "Its words stay readable in every state",
+     "severity": "breaks",
+     "ok": false,
+     "says": "Just after letting go, contrast is 0 on the APCA scale at 14px. Text this size needs 60.",
+     "fix": "Keep the words on their ground: redraw them in the fill’s own ink, clipped at the fill’s edge (as hold-to-confirm does), or move them out of the fill’s path.",
+     "principle": "What a button says must be readable in every state it passes through, not only at rest: mid-gesture is when people check what they are committing to.",
+     "sources": [
+      "WCAG 2.2, 1.4.3 Contrast (Minimum)",
+      "Plumber: craft/words-on-layers (words follow their ground)"
+     ],
+     "checked": true
+    },
+    {
+     "id": "can-back-out",
+     "name": "You can back out mid-gesture",
+     "severity": "breaks",
+     "ok": true,
+     "says": "Letting go early takes it back, so a half-meant gesture never commits.",
+     "fix": null,
+     "principle": "Starting a gesture must not commit you: letting go early, or sliding away, has to undo it.",
+     "sources": [
+      "WCAG 2.2, 2.5.2 Pointer Cancellation",
+      "Nielsen Norman Group heuristic #3: User control and freedom"
+     ],
+     "checked": true
+    },
+    {
+     "id": "big-enough",
+     "name": "It is big enough to hit",
+     "severity": "weakens",
+     "ok": true,
+     "says": "Its target is comfortably big for a finger.",
+     "fix": null,
+     "principle": "The thing you press needs room for a finger: small targets cause missed and mistaken presses.",
+     "sources": [
+      "Apple Human Interface Guidelines: 44×44 pt minimum hit target",
+      "Material Design: 48×48 dp touch target",
+      "WCAG 2.2, 2.5.8 Target Size (Minimum), 24×24 CSS px"
+     ],
+     "checked": false
+    },
+    {
+     "id": "motion-purposeful",
+     "name": "Its motion is quick and respects reduced motion",
+     "severity": "weakens",
+     "ok": false,
+     "says": "It plays its motion even for people who ask their device to reduce motion.",
+     "fix": "Honour reduced motion (states change at once) and keep a control’s own motion short.",
+     "principle": "Interface motion should be brief and say something; people who ask for reduced motion should get the same states without the travel.",
+     "sources": [
+      "Material Design: motion duration and easing",
+      "Apple Human Interface Guidelines: Motion; Reduce Motion",
+      "WCAG 2.2, 2.3.3 Animation from Interactions (AAA)"
+     ],
+     "checked": false
+    },
+    {
+     "id": "friction-fits-stakes",
+     "name": "The effort fits the stakes",
+     "severity": "weakens",
+     "ok": false,
+     "says": "It asks for a second press before a step that asks again: checkout asks for the payment itself, so a slip here costs nothing, so the customer is made to commit twice.",
+     "fix": "Let one press open the next step; keep the ceremony for where the commitment really happens.",
+     "principle": "Consequential, hard-to-undo actions deserve a deliberate step; everyday ones should not make people work. Both too little and too much friction cost trust.",
+     "sources": [
+      "Apple Human Interface Guidelines: confirm destructive or consequential actions, sparingly",
+      "Material Design: dialogs and confirmation for consequential actions",
+      "Nielsen Norman Group heuristic #5: Error prevention"
+     ],
+     "checked": false
+    }
+   ],
+   "score": 12
+  },
+  {
+   "form": "beui/button-stateful",
+   "name": "Press, and it answers",
+   "kind": "answer",
+   "target": [
+    307,
+    48
+   ],
+   "firstMs": 36,
+   "motionMs": 1600,
+   "commits": true,
+   "words": {
+    "when": "Just after letting go",
+    "says": "Faded to 0.5, the words drop to contrast 42.",
+    "rule": "craft/disabled-contrast",
+    "at": 113,
+    "moments": 1
+   },
+   "backsOut": true,
+   "keyboard": true,
+   "focusable": true,
+   "reducedMotionMs": 1285,
+   "verdict": "breaks",
+   "results": [
+    {
+     "id": "answers-at-once",
+     "name": "Answers the press at once",
+     "severity": "weakens",
+     "ok": true,
+     "says": "It answers the moment it is pressed, so the customer knows the button heard them.",
+     "fix": null,
+     "principle": "People need to know their action registered: the interface answers within about a tenth of a second, or the press feels lost.",
+     "sources": [
+      "Nielsen Norman Group, 10 usability heuristics: #1 Visibility of system status",
+      "Apple Human Interface Guidelines: Feedback",
+      "Response time limits (Nielsen, 0.1 s feels instantaneous)"
+     ],
+     "checked": false
+    },
+    {
+     "id": "words-stay-readable",
+     "name": "Its words stay readable in every state",
+     "severity": "breaks",
+     "ok": false,
+     "says": "Just after letting go, faded to 0.5, the words drop to contrast 42.",
+     "fix": "Keep the words on their ground: redraw them in the fill’s own ink, clipped at the fill’s edge (as hold-to-confirm does), or move them out of the fill’s path.",
+     "principle": "What a button says must be readable in every state it passes through, not only at rest: mid-gesture is when people check what they are committing to.",
+     "sources": [
+      "WCAG 2.2, 1.4.3 Contrast (Minimum)",
+      "Plumber: craft/words-on-layers (words follow their ground)"
+     ],
+     "checked": true
+    },
+    {
+     "id": "big-enough",
+     "name": "It is big enough to hit",
+     "severity": "weakens",
+     "ok": true,
+     "says": "Its target is comfortably big for a finger.",
+     "fix": null,
+     "principle": "The thing you press needs room for a finger: small targets cause missed and mistaken presses.",
+     "sources": [
+      "Apple Human Interface Guidelines: 44×44 pt minimum hit target",
+      "Material Design: 48×48 dp touch target",
+      "WCAG 2.2, 2.5.8 Target Size (Minimum), 24×24 CSS px"
+     ],
+     "checked": false
+    },
+    {
+     "id": "motion-purposeful",
+     "name": "Its motion is quick and respects reduced motion",
+     "severity": "weakens",
+     "ok": false,
+     "says": "It plays its motion even for people who ask their device to reduce motion.",
+     "fix": "Honour reduced motion (states change at once) and keep a control’s own motion short.",
+     "principle": "Interface motion should be brief and say something; people who ask for reduced motion should get the same states without the travel.",
+     "sources": [
+      "Material Design: motion duration and easing",
+      "Apple Human Interface Guidelines: Motion; Reduce Motion",
+      "WCAG 2.2, 2.3.3 Animation from Interactions (AAA)"
+     ],
+     "checked": false
+    },
+    {
+     "id": "friction-fits-stakes",
+     "name": "The effort fits the stakes",
+     "severity": "weakens",
+     "ok": true,
+     "says": "One press is right here: checkout asks for the payment itself, so a slip here costs nothing.",
+     "fix": null,
+     "principle": "Consequential, hard-to-undo actions deserve a deliberate step; everyday ones should not make people work. Both too little and too much friction cost trust.",
+     "sources": [
+      "Apple Human Interface Guidelines: confirm destructive or consequential actions, sparingly",
+      "Material Design: dialogs and confirmation for consequential actions",
+      "Nielsen Norman Group heuristic #5: Error prevention"
+     ],
+     "checked": false
+    }
+   ],
+   "score": 11
+  },
+  {
+   "form": "beui/button-magnetic",
+   "name": "Press, and it leans in",
+   "kind": "lean",
+   "target": [
+    307,
+    48
+   ],
+   "firstMs": 41,
+   "motionMs": 237,
+   "commits": true,
+   "words": null,
+   "backsOut": true,
+   "keyboard": true,
+   "focusable": true,
+   "reducedMotionMs": 0,
+   "verdict": "works",
+   "results": [
+    {
+     "id": "answers-at-once",
+     "name": "Answers the press at once",
+     "severity": "weakens",
+     "ok": true,
+     "says": "It answers the moment it is pressed, so the customer knows the button heard them.",
+     "fix": null,
+     "principle": "People need to know their action registered: the interface answers within about a tenth of a second, or the press feels lost.",
+     "sources": [
+      "Nielsen Norman Group, 10 usability heuristics: #1 Visibility of system status",
+      "Apple Human Interface Guidelines: Feedback",
+      "Response time limits (Nielsen, 0.1 s feels instantaneous)"
+     ],
+     "checked": false
+    },
+    {
+     "id": "words-stay-readable",
+     "name": "Its words stay readable in every state",
+     "severity": "breaks",
+     "ok": true,
+     "says": "Its words read clearly at every moment, including mid-gesture.",
+     "fix": null,
+     "principle": "What a button says must be readable in every state it passes through, not only at rest: mid-gesture is when people check what they are committing to.",
+     "sources": [
+      "WCAG 2.2, 1.4.3 Contrast (Minimum)",
+      "Plumber: craft/words-on-layers (words follow their ground)"
+     ],
+     "checked": true
+    },
+    {
+     "id": "big-enough",
+     "name": "It is big enough to hit",
+     "severity": "weakens",
+     "ok": true,
+     "says": "Its target is comfortably big for a finger.",
+     "fix": null,
+     "principle": "The thing you press needs room for a finger: small targets cause missed and mistaken presses.",
+     "sources": [
+      "Apple Human Interface Guidelines: 44×44 pt minimum hit target",
+      "Material Design: 48×48 dp touch target",
+      "WCAG 2.2, 2.5.8 Target Size (Minimum), 24×24 CSS px"
+     ],
+     "checked": false
+    },
+    {
+     "id": "motion-purposeful",
+     "name": "Its motion is quick and respects reduced motion",
+     "severity": "weakens",
+     "ok": true,
+     "says": "Its motion is brief, and it calms down for people who ask for reduced motion.",
+     "fix": null,
+     "principle": "Interface motion should be brief and say something; people who ask for reduced motion should get the same states without the travel.",
+     "sources": [
+      "Material Design: motion duration and easing",
+      "Apple Human Interface Guidelines: Motion; Reduce Motion",
+      "WCAG 2.2, 2.3.3 Animation from Interactions (AAA)"
+     ],
+     "checked": false
+    },
+    {
+     "id": "friction-fits-stakes",
+     "name": "The effort fits the stakes",
+     "severity": "weakens",
+     "ok": true,
+     "says": "One press is right here: checkout asks for the payment itself, so a slip here costs nothing.",
+     "fix": null,
+     "principle": "Consequential, hard-to-undo actions deserve a deliberate step; everyday ones should not make people work. Both too little and too much friction cost trust.",
+     "sources": [
+      "Apple Human Interface Guidelines: confirm destructive or consequential actions, sparingly",
+      "Material Design: dialogs and confirmation for consequential actions",
+      "Nielsen Norman Group heuristic #5: Error prevention"
+     ],
+     "checked": false
+    }
+   ],
+   "score": 0
+  }
+ ],
+ "judged": "2026-11-20"
+}

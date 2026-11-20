@@ -3128,6 +3128,36 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **Still open:** the bar's other checks (progress shows, fits where the original sat, keeps its weight) aren't
   plumber rules yet.
 
+### 44. Good or bad, and which to choose: the forms judged against published standards (2026-11-20)
+
+**The itch.** The owner, after the scrub prototype: "i am not getting anything from interaction whether they are good
+or bad, like what to get from them?" Plumber reported rule readings (a contrast number, a faded label) but never said
+whether a form works for the person using it, what to do about it, or which form to pick. The owner asked for all four,
+judged "against some good standards like apples approach, googles approach".
+
+**The system behind it.** Plumber judged elements, not interactions. Nothing measured whether you can back out of a
+gesture, whether a drag has a keyboard way, or whether the effort suits what is at stake. Those are what decide a form.
+
+**What we chose.** Eight interaction standards, each with its principle and sources (Nielsen's heuristics; Apple's
+guidelines on feedback, hit targets and Reduce Motion; Material's touch targets and motion; WCAG 2.2 on contrast,
+pointer cancellation, dragging and target size), written as data in `generator/data/standards.mjs`. Sources not yet
+checked against the published page say so on screen. Each form is then used for real in a browser four ways: the whole
+gesture recorded frame by frame with plumber reading it every tenth of a second; started and abandoned; done from the
+keyboard alone; done again with reduced motion turned on. What was measured decides each standard.
+
+**Dead ends.** The first runs said the slide and the hold never finished, so "you can back out" proved nothing. The
+cause: one hold form keeps its "done" words on the page from the start, faded out. Finishing now means those words can
+be seen.
+
+**The fix and the proof.** Crafting attention's buy button, seven forms. The shipped plain press and the leaning press
+work. The slide and both holds need work. Press-then-confirm and the answering press break: their words drop out of
+reach just after you let go. The recommendation is to keep the plain press, because checkout asks for the payment
+anyway, so any extra ceremony on this button makes the customer commit twice. Every form answered the press within
+30–60 ms.
+
+**Media hooks.** The atoms page with the recommendation on top and a verdict under each form
+(`/atoms.html?atom=buy` on the playground); before/after: the same page without verdicts (commit da297bbe).
+
 ### 38. Alt and the X-ray card (2026-11-20)
 
 - **The itch:** holding Alt showed the old name tag outside Blueprint, and Alt-click opened the old element card with its heat and a dark spacing slider. Once the X-ray card took over, its pink note looked wrong. The owner on the note: "why is this black on muddy pink". On three new tints of it: "all of them look so ugly".
@@ -4798,6 +4828,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- Each form of a button now gets a verdict (works, needs work, breaks for some people), why it matters to the person using it, what to do, and which form to choose, judged against Apple's, Google's and WCAG's published standards by using each form for real four ways ([entry](#44-good-or-bad-and-which-to-choose-the-forms-judged-against-published-standards-2026-11-20)).
 - Holding Alt shows the X-ray on any element, and Alt-click pins its card. The card names the element, lists what is wrong with it (each note with its concern's toy and one thing to do) and holds one control for the part under your hand; the box drawing and the measurements stay on the page ([entry](#38-alt-and-the-x-ray-card-2026-11-20)).
 - Blueprint's count appears once the page is read, in about a second, and holds still; it used to climb for a second and the page took 10 s to count as read ([entry](#the-count-that-seemed-to-change-on-its-own-2026-11-20)).
 - Blueprint counts what you work through: one number in fixes, the same in the bar, Fix and the card, rolling down as fixes land; the page gets room under the bar ([entry](#the-fifth-batch-one-count-room-for-the-bar-2026-11-20)).
