@@ -2310,6 +2310,11 @@ export const cardOpticalPadding = {
 // Two texts are only judged against each other when they sit on the same painted surface (a card stacked on another
 // hides the words under it: a pile of toasts is not a collision), and two pieces that share a parent are one text the
 // author set side by side ("0:00" and ".00", a unit beside its value): those are the row's business, not this check's.
+// So is a word set a glyph at a time: a rolling number draws each digit in its own clipped slot, placed by hand
+// (beUI's digit swap), and its digits touch because they are one number. Two pieces that are each a glyph or two,
+// touching side by side inside one box a single line tall, are the letters of one text, not two texts meeting
+// (found on React Plumber's shares, 2026-11-20; the box can't be told by its display, since an inline box inside a
+// grid or flex layout computes as a block). A badge drawn over a label is 'over', not touching, and still collides.
 // (Found on crafting-ui's hero, 2026-11-12: a readout touching the hint beside it, two guide labels 9px apart.)
 const LINES = new WeakMap();
 function textLines(facts) {
@@ -2349,6 +2354,13 @@ function textLines(facts) {
   LINES.set(facts, all);
   return all;
 }
+// two glyphs of one text: each a character or two, and their nearest shared box is one line tall
+function oneWord(a, b, facts) {
+  if (a.words.length > 2 || b.words.length > 2) return false;
+  let n = a.el.parentElement;
+  while (n && !n.contains(b.el)) n = n.parentElement;
+  return !!n && n !== document.body && facts.rect(n).height <= 1.6 * Math.max(a.size, b.size);
+}
 export const textCollision = {
   id: 'craft/text-collision', family: 'craft', number: [], owns: [], once: 'element', reads: ['rect', 'style', 'text', 'metrics', 'census'],
   check({ el, facts }) {
@@ -2361,6 +2373,7 @@ export const textCollision = {
       const across = Math.min(a.right, b.right) - Math.max(a.left, b.left), ink = Math.min(a.base, b.base) - Math.max(a.capTop, b.capTop);
       const how = across > 1 && ink > 1 ? 'over' : ink > 1 && across <= 1 && across > -Math.min(a.space, b.space) ? 'run' : across > 1 && Math.abs(a.base - b.base) < Math.min(a.size, b.size) ? 'tight' : null;
       if (!how) continue;
+      if (how === 'run' && oneWord(a, b, facts)) continue;
       const other = b.words.length > 28 ? `${b.words.slice(0, 27)}…` : b.words;
       return [{
         ...say(this.id, { how, other }),
