@@ -67,6 +67,9 @@ const BAR_ICON = {
   x: '<svg class="x" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg>',
 };
 
+// Keep as is: a mint block, its tick cut out. Skip: a paper block, the arrow to the next cut out
+const KEEP_ICON = '<svg viewBox="0 0 18 18" aria-hidden="true"><rect x="1.5" y="1.5" width="15" height="15" rx="4.5" fill="var(--pl-mint)"/><path d="M5.4 9.3 7.8 11.6 12.6 6.6" fill="none" stroke="var(--pl-cut)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const SKIP_ICON = '<svg viewBox="0 0 18 18" aria-hidden="true"><rect x="1.5" y="1.5" width="15" height="15" rx="4.5" fill="var(--pl-sky)"/><path d="M5.5 9h6.4M9.3 6.1 12.2 9l-2.9 2.9" fill="none" stroke="var(--pl-cut)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const TOOL_TOY = { history: 'progress', help: 'tooltip', pick: 'search' };
 
 const FIX_CSS_BASE = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
@@ -138,7 +141,7 @@ const FIX_CSS_BASE = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   /* the property and its steps are one thing (owner, 2026-11-20: "A and option should be close to each other so they
      feel like they are an option for A"): one well holds the toy and the steps, each step named under its bar; the
      actions sit apart from it, and only taking the change is a raised button */
-  .fx.fx-on .pick { display: inline-flex; align-items: center; gap: 6px; flex: none; padding: 2px 8px 2px 6px; border-radius: 12px; background: var(--pl-bg-inset); }
+  .fx.fx-on .pick { display: inline-flex; align-items: center; gap: 10px; flex: none; padding: 3px 10px 3px 7px; border-radius: 12px; background: var(--pl-bg-inset); }
   .fx.fx-on .pick .ic.sm { display: block; width: 22px; height: 22px; margin: 0; flex: none; } .fx.fx-on .pick .ic.sm svg { display: block; width: 100%; height: 100%; overflow: visible; }
   .fx.fx-on .pick .ep.st .opt, .fx.fx-on .pick .ep.st .notch { height: 36px; }
   .fx.fx-on .pick .ep.st .lab { position: static; translate: none; opacity: 1; margin-top: 3px; padding: 0; background: none; font: 500 9.5px/1 var(--pl-mono); color: var(--pl-text-secondary); }
@@ -146,11 +149,8 @@ const FIX_CSS_BASE = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   .fx.fx-on .pick .ep.st .notch .lab { color: var(--pl-coral-ink); }
   .fx.fx-on .pick .ep .page:disabled { display: none; } /* no more steps that way: no room kept for the arrow */
   .fx.fx-on .pick .ep.st .opt[data-picked]::after { display: none; }
-  .fx.fx-on .pick + .acts, .fx.fx-on .pick ~ .acts { margin-left: 8px; gap: 2px; }
-  .fx.fx-on .acts .tb.quiet { --lift: 0px; height: 28px; padding-top: 0; background: none; box-shadow: none; }
-  .fx.fx-on .acts .tb.quiet .top { height: 28px; background: none; box-shadow: none; color: var(--pl-text-secondary); transform: none; font-weight: 600; }
-  .fx.fx-on .acts .tb.quiet kbd { box-shadow: none; }
-  @media (hover: hover) and (pointer: fine) { .fx.fx-on .acts .tb.quiet:hover .top { background: var(--pl-bg-inset); color: var(--pl-text-primary); } }
+  .fx.fx-on .pick ~ .acts { margin-left: 14px; gap: 8px; }
+  .fx.fx-on { gap: 0; padding: 6px 8px 6px 6px; }
   .fx.fx-on .ctl { display: inline-flex; align-items: center; flex: none; }
   .fx.fx-on .ctl .ep { flex: none; }
   .fx.fx-on .chip { height: 26px; min-width: 34px; padding: 0 8px; border-radius: 8px; font: 500 12px/26px var(--pl-mono); color: var(--pl-ink-2); background: var(--pl-paper-2); }
@@ -1329,9 +1329,10 @@ export class FixPanel {
       const soft = acts
         .replace(/<button class="primary take"\s*(disabled)?\s*>([\s\S]*?) <kbd>↵<\/kbd><\/button>/, (m, dis, l) => button(l, { cls: 'sm take', key: '↵', attrs: dis ? 'disabled' : '' }))
         .replace(/<button class="primary keep-yes"\s*(disabled)?\s*>([\s\S]*?) <kbd>↵<\/kbd><\/button>/, (m, dis, l) => button(l, { cls: 'sm keep-yes', key: '↵', attrs: dis ? 'disabled' : '' }))
-        .replace(/<button class="ghost keep">([\s\S]*?) <kbd>K<\/kbd><\/button>/, (m, l) => button(l, { cls: 'sm quiet keep', key: 'K' }))
+        // Keep and Skip are pictures, their names one hover away: the one raised word in the row is taking the change
+        .replace(/<button class="ghost keep">([\s\S]*?) <kbd>K<\/kbd><\/button>/, (m, l) => button('', { cls: 'sm quiet only keep', icon: KEEP_ICON, attrs: `aria-label="${l.trim()}" data-tip="${l.trim()} · K"` }))
         .replace(/<button class="ghost keep-no">([\s\S]*?) <kbd>esc<\/kbd><\/button>/, (m, l) => button(l, { cls: 'sm quiet keep-no', key: 'Esc' }))
-        .replace(/<button class="ghost skip">([\s\S]*?)<\/button>/, (m, l) => button(l.replace(/<kbd>.*?<\/kbd>/, '').trim(), { cls: 'sm quiet skip', key: '→' }));
+        .replace(/<button class="ghost skip">([\s\S]*?)<\/button>/, (m, l) => { const w = l.replace(/<kbd>.*?<\/kbd>/, '').trim(); return button('', { cls: 'sm quiet only skip', icon: SKIP_ICON, attrs: `aria-label="${w}" data-tip="${w} · →"` }); });
       // the choice is one row on the element (the comp's): the values as small chips, then Use, Keep, Skip. A field
       // (naming a new token, a reason to keep) stays as it is
       // the property's own control (design site: Pickers, editor-primitives.js): corners drawn as corners, colours as

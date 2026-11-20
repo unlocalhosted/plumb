@@ -177,7 +177,7 @@ const css = `
   .card :focus-visible { outline: 2px solid var(--pl-instrument); outline-offset: 2px; }
 
   /* head: one line, as before: the element, its count, where it's written, the drawing scale, close */
-  .top { display: flex; align-items: center; gap: 6px; height: 32px; padding-inline: 12px 6px; border-bottom: 1px solid var(--pl-border-default); font: var(--pl-card-label); white-space: nowrap; }
+  div.top { display: flex; align-items: center; gap: 6px; height: 32px; padding-inline: 12px 6px; border-bottom: 1px solid var(--pl-border-default); font: var(--pl-card-label); white-space: nowrap; }
   .top .el { font-weight: 600; color: var(--pl-text-primary); }
   .top .file { all: unset; flex: 0 1 auto; min-width: 0; font: var(--pl-card-meta); color: var(--pl-text-secondary); margin-inline-start: auto; padding-inline-start: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: copy; }
   @media (hover: hover) and (pointer: fine) { .top .file:hover { color: var(--pl-text-primary); } }
