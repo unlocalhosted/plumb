@@ -4479,6 +4479,17 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   ("the source is yours"), Arc's 121-component core is free and open source, Bencho's source is paid. The brief now
   takes parts from those libraries too, installed into the product and set in its own tokens. Sheet:
   `generator/shots/arrange-sheet.png` (local).
+- **Library parts in a real product, set in its own tokens.** A playground renders crafting attention's own pricing
+  component from its source, with its own stylesheets, fonts, home-page wrapper and light mode; only checkout and the
+  router are stood in for, and every package resolves from the product's own install. Three library parts were
+  installed from their registries (Arc's animated counter and stepper, beUI's expanding-arrow button), and dropped in
+  as they came, they made the card worse: the counter lost the pixel type, the stepper showed bare numbers, the
+  button brought a foreign lime and a rounder corner. The fix was a bridge: each variable the parts read (foreground,
+  accent, surface, spaces, fonts) answered by the crafting attention token that does the same job. After it, Arc's
+  stepper shows the product's own founder ladder (first 500 at ₹8,619, next 500 at ₹17,319, after 1,000 at ₹21,749,
+  worked out by the product's own pricing tiers) where the shipped card says it in one sentence, and the price rolls
+  in. beUI's button still read as beUI and was dropped for the product's own. Sheet:
+  `generator/shots/playground-sheet.png` (local).
 
 ## Open gaps
 - **The mark was never tried among real neighbours** (a row of browser tabs, an npm page, a README header), only on empty tiles. Nobody outside has been asked whether the round leg reads as an R or leans towards a B.

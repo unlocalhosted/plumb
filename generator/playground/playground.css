@@ -1,0 +1,33 @@
+/* the product's own stylesheets, as its home page loads them, plus Tailwind told to read the playground and the parts */
+@import "/Users/vijaysingh/unlocalhosted/craftingattention/app/src/index.css";
+@import "/Users/vijaysingh/unlocalhosted/craftingattention/app/src/components/home/homepage.css";
+@import "/Users/vijaysingh/unlocalhosted/craftingattention/app/src/components/home/home-system.css";
+@import "/Users/vijaysingh/unlocalhosted/craftingattention/app/src/components/home/discovery.css";
+@source "./";
+@source "/Users/vijaysingh/unlocalhosted/craftingattention/app/src/components/home";
+.pg { padding: 24px 0 80px; }
+.pg-label { max-width: 1200px; margin: 32px auto 0; padding: 0 32px; font: 600 13px/1 ui-monospace, monospace; color: #888; }
+/* the buy button in the product's one purple */
+.next-buy { width: 100%; background: var(--ca-violet, #7c3aed); color: white; }
+
+/* ── the bridge: the library parts' variables, answered by the product's own tokens (index.css, home-system.css) ──
+   Arc's parts read a generic set (--foreground, --accent, --surface, --space-*, --font-*); here each one is set to the
+   crafting attention token that does the same job, so the parts read as the product's, not as Arc's. */
+[data-variant="next"] {
+  --foreground: var(--ca-ink); --text-secondary: var(--ca-muted-strong); --text-muted: var(--ca-muted);
+  --accent: var(--ca-violet); --accent-strong: var(--ca-violet-light); --accent-subtle: var(--ca-violet-soft); --accent-foreground: white;
+  --surface: var(--ca-paper); --border: var(--ca-line); --border-strong: var(--ca-line-strong); --danger: oklch(0.55 0.2 25);
+  --radius-pill: 999px;
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 20px; --space-6: 24px;
+  --text-xs: 12px; --text-sm: 14px; --leading-body: 1.45; --tracking-body: 0;
+  --font-body: var(--font-sans);
+  --ease-standard: cubic-bezier(.22, 1, .36, 1); --duration-standard: 200ms; --ease-spring: cubic-bezier(.34, 1.4, .64, 1); --duration-spring: 360ms;
+}
+/* the counter takes the price's own pixel face and size, so only its motion is new */
+[data-variant="next"] .lifetime-current-price { --font-display: var(--home-font-display); --text-3xl: 68px; --tracking-display: 0; }
+[data-variant="next"] .lifetime-current-price > * { font-weight: inherit; line-height: 1.05; }
+/* the price keeps the product's violet, the ladder sits apart from the button, and the button's plate follows its
+   corner (inner radius = outer minus the inset, craft/concentric-radius) */
+[data-variant="next"] .lifetime-current-price { --foreground: var(--ca-violet); }
+[data-variant="next"] .next-buy { margin-top: 8px; }
+[data-variant="next"] .next-buy > [class*="inset-y-1.5"] { border-radius: max(2px, calc(var(--home-radius-control, 10px) - 6px)) !important; }
