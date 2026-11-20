@@ -201,6 +201,17 @@ changes before any shelf is built on it.
 
 ## Molecules
 
+**Taste first, top-down; parts after, bottom-up (2026-11-20).** The first price molecule was designed from this
+contract downwards: a rank picks a size, so every combination the rules allow was drawn, alone, in a grey box. The
+owner: "most of the examples were ugly ... no one would implement or write anything like that in a real world
+example"; the bar is that it "should feel like it's part of an actual product and like somebody real designer would
+ship". So molecules are never designed from the contract. Whole pricing sections are designed first, for real
+products in their own design systems (React Plumber, algorecall, crafting-ui, crafting attention), each through a
+design pass: a studied reference, a comp in the product, a written critique, the owner's sign-off. Molecules are then
+pulled out of the signed-off sections: a molecule exists because a good section uses it, in the forms those sections
+use, and nothing else. A molecule's page shows it at work in those sections, with its rules as a note underneath. The
+generator mixes only within what was designed well; a combination no good section needed doesn't exist.
+
 - **Molecules are real components in the app's codebase**, the house's own parts (for plumber, components in
   `web/`). The off-screen build in step 7 renders those components, so a variant is made of code the app already
   ships, not of generated markup.
@@ -433,7 +444,8 @@ One layer at a time, each seen working before the next.
 | 0 | Sign-off on this brief | This page, agreed |
 | 1 | The specimen format and validator; 5 pricing cards written by hand, with sidecars, chosen to differ in structure (not five stacks) | Five specimens that pass validation, with their structure distances to each other |
 | 1b | **The designer's read:** the three new alignment checks as craft rules; the read of each of the five reference rows; reasons pointed at it | Each reference's row with its observations drawn on it; the owner confirms or rewrites each kept reason against them |
-| 2 | Molecules for the pricing jobs, by hand (3 price, 3 proof, 2 identity, 2 action, 2 status) | The molecules on one sheet at each rank and density |
+| 2a | **Real sections, one product at a time:** a pricing section for React Plumber, algorecall, crafting-ui and crafting attention, each in the product's own design system and components, each through the design pass (reference, comp, written critique, owner sign-off) | Four sections a real designer would ship, each signed off by the owner before the next starts |
+| 2b | Molecules pulled out of the signed-off sections, per product: only the parts and forms those sections use | Each molecule shown at work in its sections, its rules as a note |
 | 3 | **The dialect trip by hand, with a control:** the 5 built strictly from specimen, molecules and table as static HTML, no generator, no off-screen build. Every decision none of them supplied is written down. A sixth card, the **control**, uses the same molecules with only the placement rules and no specimen. The first taste ladder is set up and all six are placed on it | Six cards in toys side by side, unlabelled, and the list of missing decisions. If the owner can't tell the specimen cards from the control, or the control ranks as high, the shelf isn't earning its cost and the product is a molecule combinator: layers 4–5 are dropped or rethought. If the five aren't distinct and good, the thesis fails here |
 | 4 | The round trip on the 5, each captured twice | Per-slot diffs within tolerance for at least 4 of 5, and the same ranks from both captures |
 | 5 | Capture from a live page; 20 pricing specimens and 5 generic ones | The 20 and the 5 plotted by grammar distance. If the generic ones sit inside the cloud of kept ones, structure doesn't carry taste and F5 has to change before going on |
@@ -463,6 +475,8 @@ Layer 7 needs the off-screen build (engine-foundations layer 6). Layers 1–6 do
   and taste is kept by the same checks and ladder whatever the source.
 - **Reasons come from facts only.** Page facts, measured features and the owner's own `kept` line. A model may
   phrase them but not add claims, so no reason is a rationalisation.
+- **Sections before parts.** Parts designed from the rules came out as combinations nobody would ship. A whole
+  section, designed and signed off, is where taste is judged; parts are what it is made of.
 - **Molecules are the app's real components.** A variant is made of code the app already ships, and content binds
   to them through content records, so a molecule never shows a field the card doesn't have.
 - **Taste is a ladder of comparisons, used offline.** Comparisons against fixed anchors are what people are

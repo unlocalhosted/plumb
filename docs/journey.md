@@ -4412,6 +4412,16 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   three atoms (the figure, the words, the old price), each set by a foundation. The index was looked at; the price
   page's new section wasn't, because plumber's build folder, which the site loads, was being rebuilt by another
   session at the time.
+- **"Random pieces of shit."** Shown the price page, the owner: "most of the examples were ugly and they look like
+  just random pieces of shit, like no one would implement or write anything like that in a real world example". The
+  system behind it: the price was designed bottom-up from the generator's contract (a rank picks a size), and every
+  combination the rules allowed was drawn alone in a grey box, with no card, no product and no reference behind it,
+  the same way the first showcase screens became wireframes. The owner's bar: it "should feel like it's part of an
+  actual product and like somebody real designer would ship". The brief now goes top-down first: whole sections for
+  real products, each in its own design system, through a design pass, signed off; parts are pulled out of those
+  afterwards. The price grid page is off the site until then. Looking at the four products turned up a catch: only
+  crafting attention charges money (it ships a crafted lifetime pricing section); algorecall is free by design,
+  React Plumber is MIT, crafting-ui is lessons. Pricing sections for the other three would be invented.
 
 ## Open gaps
 - **The mark was never tried among real neighbours** (a row of browser tabs, an npm page, a README header), only on empty tiles. Nobody outside has been asked whether the round leg reads as an R or leans towards a B.

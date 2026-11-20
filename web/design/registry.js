@@ -30,7 +30,7 @@ export const GROUPS = [
       lede: 'Plumber asks you to type only twice: a name for a new token, and a reason for keeping a value. Each is a sentence with one blank, live here with the fix bar’s own styles and words.' },
   ], 'The smallest pieces you can point at. Each is one thing with one job.'],
   ['Molecules', [
-    { id: 'price', hue: 'butter', toy: 'card', name: 'Price', says: 'What a plan costs: as a figure, as a deal, or as a quiet word. At every loudness a card asks for.', ready: true,
+    { id: 'price', hue: 'butter', toy: 'card', name: 'Price', says: 'What a plan costs. Redrawn from real pricing sections once they are signed off; the first version was a grid of settings, not a design.',
       lede: 'The first of the parts the organism generator builds pricing cards from. A card says how loud its price should be; the price says it in our look, in one of three forms.' },
     { id: 'hover', hue: 'butter', toy: 'tooltip', name: 'Words on hover', says: 'The name tag, the hint, the key: what appears when you point, live on a real card.', ready: true,
       lede: 'Three kinds of words appear when you point: the name tag says what something is and whether it’s right, the hint says what it becomes, the key says what to press. Point at the card.' },
