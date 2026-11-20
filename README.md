@@ -1,6 +1,6 @@
 <h1 align="center">React Plumber</h1>
 
-<p align="center"><strong>Find where your React + Tailwind UI drifts from its design system, and fix it on the running page.</strong></p>
+<p align="center"><strong>Find where your React UI drifts from its design system, in Tailwind, plain CSS or Sass, and fix it on the running page.</strong></p>
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@unlocalhosted/react-plumber"><img src="https://img.shields.io/npm/v/@unlocalhosted/react-plumber?label=npm&color=cb3837" alt="npm version"></a>
@@ -26,14 +26,14 @@ npm install -D @unlocalhosted/react-plumber
 
 ## Why
 
-Design systems drift one `p-[13px]` at a time. Linters see strings; React Plumber sees the page. It compiles your classes with your own Tailwind, measures the rendered result against your tokens, and checks the craft a good designer would: button sides, nested corners, faded text, line length, tap targets.
+Design systems drift one `p-[13px]` at a time. Linters see strings; React Plumber sees the page. It compiles your classes and stylesheets with your own Tailwind and Sass, measures the rendered result against your tokens, and checks the craft a good designer would: button sides, nested corners, faded text, line length, tap targets. About 150 more checks come from Chrome's web guides, for accessibility, forms, components and HTML, and an Anti-slop set finds the marks of a generated screen.
 
 - **On the page.** Press **Alt+B**: Plumber counts what is off on the page and takes it one cause at a time. You choose on the element itself, with its options drawn as what they are, try them live, and take one: one guarded write fixes every place of that cause.
-- **In the source.** Every fix is the exact class edit in the exact JSX that made the element, checked against the file's hash so it never writes over your work.
+- **In the source.** Every fix is the exact edit where the value lives: the class in the JSX that made the element, or the CSS or Sass rule that sets it. A file that changed after Plumber read it is refused, not overwritten.
 - **In CI.** `plumber check` fails only on new drift; a ledger keeps accepted debt and reasoned exceptions. `plumber craft` reads your routes headlessly and emits text, JSON or SARIF.
 - **Yours to tune.** One spec sets what "good" means: presets (strict, balanced, relaxed), per-rule values, and how new tokens are named.
 
-Works with Vite and Next.js, Tailwind v4 or plain CSS. Node 22.18+. The command is `plumber`.
+Works with Vite and Next.js, with Tailwind v4, plain CSS, CSS modules or Sass. Node 22.18+. The command is `plumber`.
 
 <details>
 <summary><strong>What it reads, in detail</strong></summary>
@@ -81,6 +81,7 @@ Start your dev server as usual. The overlay lives only in development: productio
 | Hold **Alt** | The element under the pointer is outlined, with its component and how many of its values are off your tokens. |
 | **Alt + click** | Opens that element's editor, with its notes in Blueprint's bar. |
 | **Alt + two-finger scroll** | Up to the parent, down to the child. |
+| **Alt + S** | Break it: stretch what can change on the page (longer words, a narrower window, bigger text, lists at none, one and a hundred, a slow or failing action) and see what breaks. **F** on a note shows its fix on your page. |
 | **Double-click** words | Edit them in place; **Enter** or clicking away writes them to the source string, **Esc** puts them back. **Alt + double-click** reaches words in a button, card or link. |
 
 #### Blueprint: fixing
@@ -97,6 +98,8 @@ Press **Alt+B**. The bar at the bottom says which concern you are looking at and
 | Hold **Space** | Use the page underneath (scroll, open a menu) without leaving Blueprint. |
 
 When your theme has no token that fits, the option is a new one, named and valued from the craft spec; taking it adds the token to your theme file and uses it in every place of the cause, with Undo. **Clean up** runs the passes (text, spacing, colour, icons) over the whole page at once.
+
+On plain CSS and Sass the same fixes write the rule that sets the value: the X-ray card names that rule, its file and every element it reaches, and a change goes into it with your token's variable (inside the `@media` in force, when there is one). Sass is written through your project's own `sass` and its source map; a value that comes from a mixin is described, never written.
 
 Every write is checked against the file on disk: the file's hash, that it still parses, that the class is still there as written. A stale file is refused with "This file changed after we checked it", never overwritten. Writes land in place, so the dev server's hot reload picks them up, and each one returns an undo handle.
 
@@ -128,7 +131,7 @@ npx plumber craft --url http://localhost:5173/ --routes / /settings --json
 npx plumber craft --url http://localhost:5173/ --sarif craft.sarif
 ```
 
-`craft` opens each route in headless Chromium (Playwright, installed separately: `npm i -D playwright && npx playwright install chromium`, or set `PLUMBER_CHROMIUM` to a Chrome you have), reads every element the way the overlay does, and reports what is off with the same words and the same fix. It also tries the states a person reaches: dark mode, touch, hover and press, a toggle, a menu, a tooltip, the keyboard, a spinner. `--no-pairs` and `--no-probe` leave those out; `--probe drag` adds the one gesture that can move things; `--probe-budget` caps how many elements each gesture tries. `--judge` asks a vision model (Anthropic's API, with `ANTHROPIC_API_KEY`; never when `CI` is set) about the findings a rule measured but would not stand behind, sending it a crop of each; every answer is kept under `.plumber/judge` to commit with the project, so a run without the flag reuses them. Advisory findings (matters of taste) are notes and never fail the run; every other finding exits 1. `--json` prints the spec, each route and the findings; `--sarif` writes SARIF 2.1.0 for code scanning.
+`craft` opens each route in headless Chromium (Playwright, installed separately: `npm i -D playwright && npx playwright install chromium`, or set `PLUMBER_CHROMIUM` to a Chrome you have), reads every element the way the overlay does, and reports what is off with the same words and the same fix. It also tries the states a person reaches: dark mode, touch, hover and press, a toggle, a menu, a tooltip, the keyboard, a spinner. `--no-pairs` and `--no-probe` leave those out; `--probe drag` adds the one gesture that can move things; `--probe-budget` caps how many elements each gesture tries. `--judge` asks a vision model (Anthropic's API, with `ANTHROPIC_API_KEY`; never when `CI` is set) about the findings a rule measured but would not stand behind, sending it a crop of each; every answer is kept under `.plumber/judge` to commit with the project, so a run without the flag reuses them. One Anti-slop check, a subtitle that only repeats its heading, needs a model to read the words: Jev with your key in `PLUMBER_JEV_KEY`, or a sentence-embedding service you run at `PLUMBER_MEANING_URL`. With neither, that check is off; the key stays on the dev server. Advisory findings (matters of taste) are notes and never fail the run; every other finding exits 1. `--json` prints the spec, each route and the findings; `--sarif` writes SARIF 2.1.0 for code scanning.
 
 The spec is the standard every rule reads its numbers from. `plumber spec` prints it; the `craft` key in your config changes it:
 
@@ -397,7 +400,7 @@ using the route.
   from disk and stale positions are refused, so this costs a retry, never a wrong line.
 - Undo history lives in the running dev server; after a restart, older writes can't be undone from the overlay.
 
-## Layer 9 surfaces
+## Reports for code scanning, pull requests and agents
 
 ```sh
 plumber check --sarif > plumb.sarif
@@ -448,7 +451,7 @@ Inputs: `base` defaults to the PR base SHA; `working-directory` defaults to `.`;
 
 Fetch the base history (`fetch-depth: 0`). Review events rerun the gate after approval or dismissal. Fork PRs have read-only default tokens, so posting comments requires a separately designed trusted workflow; this example needs a writable token. Use a reviewed Action SHA. Avoid running this dependency/compiler pipeline with privileged tokens on untrusted code through `pull_request_target`. Non-PR runs need an explicit `base` and produce annotations/summary without a PR comment.
 
-Verification and limits: [Layer 9 notes](https://github.com/unlocalhosted/plumb/blob/main/docs/layers/9-surfaces.md). The Action runner and approval script are tested over disposable fixture PRs and GitHub API response fixtures, with a local REST server. This verifies create/update, approval failure/success and CLI execution; it is not a hosted GitHub run.
+Verification and limits: [notes on these reports](https://github.com/unlocalhosted/plumb/blob/main/docs/layers/9-surfaces.md). The Action runner and approval script are tested over disposable fixture PRs and GitHub API response fixtures, with a local REST server. This verifies create/update, approval failure/success and CLI execution; it is not a hosted GitHub run.
 
 ### Migrating older projects
 

@@ -3933,6 +3933,12 @@ Break it) went into commits and this journey only. So each release starts with a
 **Media hooks.** The X-ray card on Ledger from the packed build, and the "Added --spacing-gutter…" line with its Undo.
 
 ## Open gaps
+- **Fixes on Relay that are offered, then refused (2026-11-20).** Found while recording the README's hero on Relay.
+  The Backlog column's corner fix ("Use rounded-lg") says "Writing it to your code…", then "This change can't be
+  written as classes here": the class sits in a condition (`status.id === 'review' && 'rounded-[10px]'`) on a line
+  every column shares. The ring is drawn on Backlog, though the class only reaches In review. After that refusal the
+  red due date's fix changed from "Use text-destructive" to "nothing close", and its ring sits on "Oct 28" while the
+  red date is "Oct 21". A fix that can't be written should never be offered as one.
 - **Tests that check wording, layout and time.** 769 tests are left (by `test(` lines). Many still check sentences, exact counts, pixels,
   fixed waits (55 `waitForTimeout` calls, 69 sleeps) and timings (about 67 asserts). Next: rewrite them to check
   behaviour, or delete them, and consider Playwright's own test runner. ([71](#71-preparing-060-2026-11-20))
