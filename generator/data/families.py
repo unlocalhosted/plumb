@@ -33,10 +33,17 @@ for reg, rs in by.items():
             b = S[ids[j]]
             if not b: continue
             if len(a & b) / len(a | b) >= 0.8: parent[find(ids[j])] = find(ids[i])
+# the same part shipped in several flavours (react-bits: JS or TS, CSS or Tailwind) is one family, whatever its code
+stem = lambda r: re.sub(r'-(js|ts)-(css|tw)$', '', r['id'].lower())
+first = {}
+for r in d:
+    k = stem(r)
+    if k != r['id'].lower(): parent[find(r['id'])] = find(first.setdefault(k, r['id']))
 fam = collections.defaultdict(list)
 for r in d: fam[find(r['id'])].append(r)
 for root, members in fam.items():
-    rep = max(members, key=lambda r: r['lines'])
+    # the TypeScript-and-Tailwind flavour when there is one (closest to the products), else the longest
+    rep = next((r for r in members if r['id'].endswith('-TS-TW')), None) or max(members, key=lambda r: r['lines'])
     for r in members: r['family'] = root; r['familySize'] = len(members); r['representative'] = r is rep
 json.dump(d, open('data/buttons.json', 'w'), indent=1, ensure_ascii=False)
 big = sorted(fam.values(), key=len, reverse=True)

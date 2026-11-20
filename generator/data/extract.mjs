@@ -130,6 +130,11 @@ for (const p of parts) {
 }
 await writeFile(`${here}${atom}s.json`, JSON.stringify(out, null, 1));
 const count = (f) => { const c = {}; for (const r of out) for (const v of [].concat(f(r))) c[v] = (c[v] ?? 0) + 1; return Object.entries(c).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${k} ${n}`).join(' · '); };
+// how far each field can be trusted, from the hand-labelled samples (data/labels.json tuned on, data/holdout-labels.json
+// never tuned on; Claude's labels, 2026-11-20). high: right on every held-out part; low: under 90% held out.
+const CONFIDENCE = { kind: 'high (9/10 held out)', driver: 'high (6/6)', commitRule: 'high (6/6)', reducedMotion: 'high (6/6)', secondsToCommit: 'high on 6/6 tuned; holds only',
+  wordsDuringAction: 'low (3/5 held out)', tricks: 'low (3/5 held out)', springs: 'read exactly from code', hardcodedColours: 'not measured', keyboard: 'not measured', feel: 'estimated by rules, not a rating' };
+for (const r of out) r.confidence = CONFIDENCE;
 console.log(`${examples} examples set aside for rendering; ${dupes} duplicates of another registry's part folded in`);
 console.log(`${out.length} ${atom}s from ${new Set(out.map((r) => r.registry)).size} registries → data/${atom}s.json`);
 console.log(`kind        ${count((r) => r.kind)} · found ${count((r) => r.found)}`);
