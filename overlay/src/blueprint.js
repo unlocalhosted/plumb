@@ -528,7 +528,7 @@ export class Blueprint {
     if (mark && this.#fix.holdMark(el, mark)) this.#fix.keep();
   }
   choose(el, mark, group) {
-    if (this.#fix.holdMark(el, mark)) return;
+    if (this.#fix.holdMark(el, mark)) { this.#fix.spaceHint(); return; }
     this.#selection.select(el, this.#itemOf(el), { key: mark?.key, rule: mark?.rule, group: (group ?? []).filter((g) => g.el !== el).map((g) => ({ el: g.el, item: this.#itemOf(g.el), key: g.mark?.key })) });
   }
   // Alt+click: blueprint opens on that element, and its own cause is put in hand as soon as one is read (not an

@@ -89,6 +89,7 @@ const FIX_CSS_BASE = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   .fx .one .hl { display: block; white-space: normal; font: 650 14.5px/1.25 var(--pl-sans); color: var(--pl-ink); text-wrap: pretty; }
   .fx .one .dt { display: block; white-space: normal; font: 500 13px/1.35 var(--pl-sans); color: var(--pl-ink-2); text-wrap: pretty; }
   .fx .one .dt .pl-pill { margin: 0; }
+  .fx .one .dt.hint { color: var(--pl-text-secondary); font-weight: 600; }
   .fx .one .sep { width: 1px; height: 22px; margin: 0 2px; background: var(--pl-rule); flex: none; }
   .fx .one .onav { display: inline-flex; align-items: center; gap: 2px; font: 500 12px/1 var(--pl-mono); color: var(--pl-ink-2); flex: none; }
   .fx .one .onav button { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; font-size: 16px; color: var(--pl-ink-2); } /* big enough to hit (U46) */
@@ -1275,7 +1276,7 @@ export class FixPanel {
           // no property word: say the value against your steps, never the headline again
           : /by-value|matches/.test(mark.rule ?? '') ? 'is hard-coded. Your theme has a token with this value.' : tokens.length ? `isn’t one of your steps: ${listOf(tokens)}.` : 'isn’t in your theme.')}`;
       const nav = `<span class="onav"><button class="prev" aria-label="Previous fix"${this.#at > 0 ? '' : ' disabled'}>‹</button><span>${esc(FIX.position(g, live, noteOf))}</span><button class="next" aria-label="Next fix">›</button></span>`;
-      html = `<div class="one"${slide ? '' : ' style="animation:none"'}><i class="ic big">${toyFor(mark, kindNow)}</i><span class="lines"><span class="hl">${esc(sayLine)}${info}</span><span class="dt">${moreLine}</span></span>`
+      html = `<div class="one"${slide ? '' : ' style="animation:none"'}><i class="ic big">${toyFor(mark, kindNow)}</i><span class="lines"><span class="hl">${esc(sayLine)}${info}</span><span class="dt">${moreLine}</span>${this.#hint ? `<span class="dt hint">${esc(this.#hint)}</span>` : ''}</span>`
         + `<span class="sep"></span>${nav}${button(CLEANUP.bar, { cls: 'sm quiet cleanup', attrs: 'aria-keyshortcuts="c"', icon: toyOf('icon') })}</div>`;
       // the soft buttons replace the old ones in the choice: Use (pink, ↵), Keep and Skip (quiet)
       const soft = acts
@@ -1360,6 +1361,14 @@ export class FixPanel {
   // burst still play.)
   // every Apply that lands says so: the ✓ and "n changes applied", the fixed places click, then the panel folds back
   // a line said for a moment at rest: why the element pointed at has nothing in hand
+  // A click on the page that lands on a note opens its fix; once per tab the fix says how to reach the page instead
+  // (owner, 2026-11-20, U53: nothing on screen said Space exists, and a click meant for a link hit a note)
+  #hint = null; #hintTimer = 0;
+  spaceHint() {
+    try { if (sessionStorage.getItem('plumb:space-hint')) return; sessionStorage.setItem('plumb:space-hint', '1'); } catch { return; }
+    this.#hint = FIX.bar.spaceHint; this.#html = ''; this.render();
+    clearTimeout(this.#hintTimer); this.#hintTimer = setTimeout(() => { this.#hint = null; this.#html = ''; this.render(); }, 5000);
+  }
   notice(text) { this.#notice = text; this.#html = ''; this.render(); clearTimeout(this.#noticeTimer); this.#noticeTimer = setTimeout(() => { this.#notice = null; this.#html = ''; this.render(); }, 4000); }
   // after a reload: what the write before it applied, said as if it had just landed
   resumed(text, undo = [], place = null, group = null) { this.#last = { text, undo, group, key: place?.key ?? null }; if (place?.key) this.#taken.set(place.key, { key: place.key, members: [] }); this.#resumeAt = Number.isInteger(place?.at) ? { at: place.at, key: place.key ?? null, since: performance.now() } : null; if (this.#resumeAt) this.#life.timeout(() => { if (this.#resumeAt && this.#progress) this.progress(this.#progress); }, RESUME_WAIT + 50); this.#html = ''; this.render(); this.#host.announce?.(text); }
