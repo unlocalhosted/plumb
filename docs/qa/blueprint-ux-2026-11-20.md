@@ -238,7 +238,7 @@ How to read an issue, and what each one needs:
 - **Evidence:** `docs/qa/shots/2026-11-20/u03-concern-list.jpg` (200), `docs/qa/shots/2026-11-20/u18-counts-182.png`,
   `docs/qa/shots/2026-11-20/u18-counts-197.png`; `fixtures/.tells-app/src` files were last written 04:29, before
   the walk.
-- **Status:** open, not yet traced: while checking it the page reloaded on its own (writes to the shared test copy reload it), which may be part of it. To check next: the same page, no writes, counts at open, after a scroll, after a reload; notes that depend on what is on screen (pairs, words that run into each other) would explain a scroll changing the count
+- **Status:** open, not yet traced: while checking it the page reloaded on its own (writes to the shared test copy reload it), which may be part of it. To check next: the same page, no writes, counts at open, after a scroll, after a reload; notes that depend on what is on screen (pairs, words that run into each other) would explain a scroll changing the count · tester (06:00), more cases: on the plumber site in dark mode the bar said "All concerns 256" and the list opened a second later said 264 (Accessible 82 in the list, 83 on the bar after picking it); on Ledger, Fix said "1 of 49", then "1 of 50", then "1 of 51" at phone width. `docs/qa/shots/2026-11-20/u18-site-dark-264.png`
 
 ### U19 · The Blueprint bar covers the bottom of the setup panel
 - **Where:** ··· → Setup steps, 1280×800.
@@ -645,7 +645,7 @@ How to read an issue, and what each one needs:
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u52-resize-written.jpg` (after the write),
   `docs/qa/shots/2026-11-20/u52-undone-undo.jpg` (after Undo).
-- **Status:** fixed 61ef203e, not walked by the fixer in the element editor (cause: an undo was remembered with its undo handles left to find after a reload, and the newest write found was the undo itself). Tester: please re-check the resize-then-Undo path · reopened (tester, 05:55): resized the Churn card (wrote w-xs to 3 places), pressed Undo, no reload: the message still reads "Undone. Your code is back as it was." with a button "Undo". The fix covers the message shown after a reload; the one shown right after Undo still offers Undo. The test copy was restored (no w-xs in App.jsx). `docs/qa/shots/2026-11-20/u52-reopened.jpg`
+- **Status:** fixed 61ef203e, not walked by the fixer in the element editor (cause: an undo was remembered with its undo handles left to find after a reload, and the newest write found was the undo itself). Tester: please re-check the resize-then-Undo path · reopened (tester, 05:55): resized the Churn card (wrote w-xs to 3 places), pressed Undo, no reload: the message still reads "Undone. Your code is back as it was." with a button "Undo". The fix covers the message shown after a reload; the one shown right after Undo still offers Undo. The test copy was restored (no w-xs in App.jsx). `docs/qa/shots/2026-11-20/u52-reopened.jpg` · fixed again 1683a206: undoing a step handed History the undo's own handles; it is now said with nothing to undo. Walked by the fixer: Churn card resized (w-3xs, 3 places), Undo, the message reads "Undone. Your code is back as it was." with no button; App.jsx has no w-3xs left
 
 ### U53 · Holding Space shows nothing, so nobody finds it
 - **Where:** Blueprint at rest, holding Space.
@@ -684,3 +684,41 @@ How to read an issue, and what each one needs:
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u50-this-element-11.jpg`
 - **Status:** fixed 6fbec11d: the open list stands above the X-ray layer; with the Active users card selected, every row is the topmost thing under its centre
+
+### U56 · In the card, a hard-coded value is coral on blue, 1.8:1
+- **Where:** X-ray card on the plumber site (dark mode), the "Read the docs" label: "text size 15px hard-coded".
+- **What I saw:** the value "15px" is coral (rgb 255,122,107) on the blue highlight (rgb 29,119,200). That is a
+  contrast of 1.82:1, so the number is hard to read, at 13px. The coral marks it as hard-coded, which is the one
+  thing I need to read.
+- **What I expected:** the value readable on its highlight (at least 4.5:1), with "hard-coded" said by the word
+  beside it or a mark that isn't the text colour.
+- **Why it hurts:** understanding, and trust: a tool that checks contrast fails it in its own card.
+- **Severity:** 2
+- **Evidence:** `docs/qa/shots/2026-11-20/u56-dark-value.png`, `docs/qa/shots/2026-11-20/u56-dark-card.jpg`;
+  colours read from the card's `.thumb` and the value's computed colour.
+- **Status:** open
+
+### U57 · At phone width the ··· button is gone, and with it setup, Clean up, History and Help
+- **Where:** Blueprint bar, window 375px wide (the browser pane's phone size, which also sets a touch device).
+- **What I saw:** the bar shows "All concerns 202", Fix and Close. The ··· button is there in the page but hidden
+  (`display: none`). There's no other way to reach setup steps, Clean up, History, Help or Inspect.
+- **What I expected:** ··· kept (it's 32px), or its items moved somewhere reachable.
+- **Why it hurts:** acting. On a narrow window half the tool can't be reached, History (the way to undo) included.
+  I couldn't test a narrow window without touch: below 768px the pane always sets a phone. If ··· is hidden on
+  purpose for touch, the items still need a way in.
+- **Severity:** 2
+- **Evidence:** `docs/qa/shots/2026-11-20/u57-phone-no-more.jpg`
+- **Status:** open
+
+### U58 · At phone width the Fix bar squeezes its words into a column, and the choice row runs off screen
+- **Where:** Fix, window 375px wide, fix 1 of 51.
+- **What I saw:** the bar keeps the A icon, the ‹ 1 of 51 › arrows and Clean up in one row, so the title and
+  explanation get a column about 60px wide, one word per line: the bar is about 560px tall and covers most of the
+  screen. The choice row above it runs past the right edge: "Keep" is cut and Skip is off screen.
+- **What I expected:** on a narrow window the bar stacks (words on top, arrows and Clean up below), and the choice
+  row wraps or shrinks to fit.
+- **Why it hurts:** acting and understanding. Skip can't be reached, and the bar hides the page. The 700px case
+  (U44) wraps well; this is the next width down.
+- **Severity:** 2
+- **Evidence:** `docs/qa/shots/2026-11-20/u58-phone-fix-bar.jpg`
+- **Status:** open
