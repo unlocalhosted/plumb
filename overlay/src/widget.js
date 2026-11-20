@@ -505,7 +505,7 @@ class PlumbOverlay extends HTMLElement {
   // design site's X-ray page runs). This adapter tells it what your page is: names from your components, places from
   // the stamps, your theme's steps, and writes through the engine (the class showing now, variants.js; located in your
   // code, locate.js; written by the server's swaps, one Undo group per change).
-  #xray = null; #xrayResults = null; // results said again after a write's reload
+  #xray = null; #xrayByAlt = false; #xrayResults = null; // results said again after a write's reload
   #barSeen = null; // the bar the X-ray card keeps clear of, watched while the X-ray is on
   #toggleXray() {
     if (this.#xray) { this.#barSeen?.disconnect(); this.#barSeen = null; this.#xray.destroy(); this.#xray = null; this.#root.querySelector('.xr-host')?.remove(); this.removeAttribute('data-xray'); return; }
@@ -520,6 +520,8 @@ class PlumbOverlay extends HTMLElement {
          selection's old box drawing gives way to the X-ray's */
       :host([data-xray]) .bp .heat { opacity: 0 !important; }
       :host([data-xray]) .sel .bm { display: none; }
+      /* held Alt: the X-ray's card says the element, so the old name tag and corner ticks step aside */
+      :host([data-xray][data-armed]) :is(.tag, .tick[data-c]) { display: none !important; }
       /* one pill by the pointer: a note's pill (blueprint-marks) outranks the part's */
       :host([data-hinting]) .xr-say { display: none; }
       /* the card grown from the pill: the pill is inside it now */
@@ -788,6 +790,7 @@ class PlumbOverlay extends HTMLElement {
     // the X-ray is blueprint's way of showing an element (Alt+B), for the whole page; it leaves with it
     if ((state === 'leaving' || state === 'off') && this.#xray) this.#toggleXray();
     if (state === 'on' && !this.#xray && !this.#blueprint?.scope) this.#toggleXray();
+    if (state === 'on') this.#xrayByAlt = false;
     if (state === 'entering') this.#bp.progress = null;
     // blueprint is the person's own page, dimmed: the overlay's cards keep the scheme they have everywhere else
     // one owner of the screen: the setup callout steps aside for Blueprint; the hint only when no card is open (the card
@@ -1061,6 +1064,9 @@ class PlumbOverlay extends HTMLElement {
     this.#ready?.dismiss();
     if (this.#armed) { if (sticky) { this.#sticky = true; this.#dock(); } return; }
     this.#armed = true; this.#sticky = sticky; this.#byPointer = false;
+    // Alt is the X-ray outside Blueprint too: held, the element under the pointer is drawn on and said, the same card
+    // Blueprint shows; let go, it leaves (Blueprint's own X-ray stays)
+    if (!this.#xray && !this.#blueprint?.active) { this.#toggleXray(); this.#xrayByAlt = true; }
     this.toggleAttribute('data-armed', true); // the drawings on the page step out of the pointer's way
     this.#help?.hint('inspect');
     this.#blueprint?.yieldInput(true);
@@ -1080,6 +1086,7 @@ class PlumbOverlay extends HTMLElement {
   #disarm = () => {
     if (!this.#armed) return;
     this.#armed = false; this.#sticky = false; this.#byPointer = false; clearTimeout(this.#hoverTimer);
+    if (this.#xrayByAlt) { this.#xrayByAlt = false; if (this.#xray && !this.#blueprint?.active) this.#toggleXray(); }
     this.removeAttribute('data-armed');
     this.#blueprint?.yieldInput(false);
     this.#hover?.controller.abort();
