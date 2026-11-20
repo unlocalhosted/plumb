@@ -26,19 +26,21 @@ const READ = 200, CHURN = 5, WINDOW = 1000, REST = 1500, HANDS = 400, IDLE = 120
 let readAt = -Infinity;
 let moves = new Set();   // targets of running animations: they and everything inside them move
 let holds = new Set();   // ancestors of an animation that will end: they wait for it, judged at rest
+let loops = new Set();   // targets of animations that never end (a spinner, a pulsing dot): never at rest
 const churn = new Map(); // element → { times: [ms], until: ms }
 let watching = false;
 
 function readAnimations(now) {
   if (now - readAt < READ) return;
   readAt = now;
-  moves = new Set(); holds = new Set();
+  moves = new Set(); holds = new Set(); loops = new Set();
   for (const a of document.getAnimations()) {
     if (a.playState !== 'running') continue;
     const t = a.effect?.target;
     if (!(t instanceof Element)) continue;
     moves.add(t);
-    if (a.effect.getComputedTiming?.().iterations !== Infinity) for (let p = t.parentElement; p; p = p.parentElement) holds.add(p);
+    if (a.effect.getComputedTiming?.().iterations === Infinity) loops.add(t);
+    else for (let p = t.parentElement; p; p = p.parentElement) holds.add(p);
   }
 }
 
@@ -72,11 +74,19 @@ export function isLive(el) {
   return false;
 }
 
-/** When el (and what holds it) stops churning: 0 when it isn't. An animation's end is told by the animation itself. */
+/** When el is worth looking at again: 0 when it isn't moving, Infinity inside a loop (it never comes to rest),
+ *  else when its churn ends, or, moved by an animation that will end, just after the next read of the animations
+ *  (what moves is read every READ ms, so an animation that just ended still counts for up to READ ms: U18). */
 export function restAt(el) {
   const now = performance.now();
+  readAnimations(now);
   let at = 0;
-  for (let e = el; e && e !== document.body; e = e.parentElement) { const c = churn.get(e); if (c && c.until > now && c.until > at) at = c.until; }
+  for (let e = el; e && e !== document.body; e = e.parentElement) {
+    if (loops.has(e)) return Infinity;
+    const c = churn.get(e);
+    if (c && c.until > now && c.until > at) at = c.until;
+    if (moves.has(e) || (e === el && holds.has(e))) at = Math.max(at, readAt + READ + 20);
+  }
   return at;
 }
 

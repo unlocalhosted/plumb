@@ -535,13 +535,14 @@ export class Craft {
       }
       const t1 = performance.now();
       const still = items.map((item) => item.checked !== false && !moving(item.el));
-      // an element JavaScript just rewrote (a preview's styles put on and taken off) is moving for a moment with no
-      // animation to wait on: the page is judged again once it has been still, or its notes stay away (U18: a fix
-      // opened and closed took the count from 80 to 78, its elements' notes skipped and never judged again)
+      // an element skipped as moving is judged again once it is still, whatever moved it: JavaScript rewriting it (a
+      // preview's styles put on and taken off) or an animation that just ended, which counts for a moment after; else
+      // its notes stay away (U18: a fix opened and closed took the count from 80 to 78, then 79 after a click on a
+      // note). An element inside a loop never comes to rest and is not waited for.
       if (this.#again && !this.#restTimer) {
         let rest = 0;
-        for (const [i, item] of items.entries()) if (!still[i] && item.checked !== false) rest = Math.max(rest, restAt(item.el));
-        if (rest) this.#restTimer = setTimeout(() => { this.#restTimer = 0; this.#again?.(); }, rest - performance.now() + 20);
+        for (const [i, item] of items.entries()) if (!still[i] && item.checked !== false) { const at = restAt(item.el); if (at !== Infinity) rest = Math.max(rest, at); }
+        if (rest) this.#restTimer = setTimeout(() => { this.#restTimer = 0; this.#again?.(); }, Math.max(0, rest - performance.now()) + 20);
       }
       const t2 = performance.now();
       // the page's signature: every judged element's own, in order. A page-wide rule (one that reads the census, or
