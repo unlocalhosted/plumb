@@ -140,7 +140,7 @@ export function mountCheck(host, id, { tokensCss = '', onMove } = {}) {
   const build = CHECK_SPECS[id];
   if (!build) return null;
   const root = host.shadowRoot ?? host.attachShadow({ mode: 'open' });
-  root.innerHTML = `<style>${tokensCss}${MOTION_CSS}${CSS} .stage { height: 250px; } .ring, .arc { pointer-events: none; }
+  root.innerHTML = `<style>${tokensCss}${MOTION_CSS}${CSS} .stage { height: 220px; } .ring, .arc { pointer-events: none; }
     .stage[data-moving] .ck-scene, .stage[data-moving] .ck-scene * { transition: all ${T.move}ms var(--ck-curve); }
     .stage[data-back][data-landed] { --c: var(--pl-coral); }</style><div class="stage"></div>`;
   const stage = root.querySelector('.stage'), spec = build(stage);

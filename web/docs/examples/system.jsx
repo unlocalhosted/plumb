@@ -91,53 +91,45 @@ export const hasExample = (id) => !!EXAMPLES[id];
 // crosses over when the scene starts to move.
 const textOf = (node) => (node == null ? '' : typeof node === 'string' || typeof node === 'number' ? String(node) : Array.isArray(node) ? node.map(textOf).join('') : textOf(node.props?.children));
 
-export function Specimen({ id, css = '' }) {
+export function Specimen({ id, css = '', head = null }) {
   const ex = EXAMPLES[id], host = useRef(null), ctl = useRef(null), [fixed, setFixed] = useState(false), [moved, setMoved] = useState(false);
   useEffect(() => {
-    let gone = false, first = 0;
+    let gone = false;
     setFixed(false); setMoved(false);
     import('../../../overlay/src/check-motion.js').then(({ mountCheck }) => {
-      if (gone || !host.current) return;
-      ctl.current = mountCheck(host.current, id, { tokensCss: css, onMove: (f) => { if (!gone) setMoved(f); } });
-      // opened, it shows the fix once: the toggle flips to Fixed and the fix plays
-      first = setTimeout(() => { if (!gone) { setFixed(true); ctl.current?.set(true); } }, 500);
+      if (!gone && host.current) ctl.current = mountCheck(host.current, id, { tokensCss: css, onMove: (f) => { if (!gone) setMoved(f); } });
     });
-    return () => { gone = true; clearTimeout(first); };
+    return () => { gone = true; };
   }, [id, css]);
   const flip = (to) => { if (to === fixed || !ctl.current) return; setFixed(to); ctl.current.set(to); };
   if (!ex) return null;
   const before = ex.show(false, 0, THEME[0]), after = ex.show(true, 0, THEME[0]);
+  // four rows of the card's grid: the stage, the toggle and the code, the name, the note. Both notes sit in one cell,
+  // so the card is as tall as the longer one and nothing moves when the toggle flips
   return (
-    <div className="sp">
+    <>
       <style>{CSS}</style>
       <div className="sp-stage" ref={host} />
       <div className="sp-ctl">
-        <div className="sp-seg" role="radiogroup" aria-label="Show the code broken or fixed" data-fixed={fixed || undefined}
-          onKeyDown={(e) => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); e.stopPropagation(); flip(e.key === 'ArrowRight'); } }}>
+        <div className="sp-seg" role="radiogroup" aria-label={`${textOf(before.code)}, broken or fixed`} data-fixed={fixed || undefined}
+          onKeyDown={(e) => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); flip(e.key === 'ArrowRight'); } }}>
           <i aria-hidden="true" />
           <button type="button" role="radio" aria-checked={!fixed} tabIndex={fixed ? -1 : 0} onClick={() => flip(false)}>Broken</button>
           <button type="button" role="radio" aria-checked={fixed} tabIndex={fixed ? 0 : -1} onClick={() => flip(true)}>Fixed</button>
         </div>
-        <span className="sp-diff" data-fixed={moved || undefined}><s>{textOf(before.code)}</s><i aria-hidden="true">→</i><b>{textOf(after.code)}</b></span>
+        <span className="sp-diff" data-fixed={moved || undefined}><s title={textOf(before.code)}>{textOf(before.code)}</s><i aria-hidden="true">→</i><b title={textOf(after.code)}>{textOf(after.code)}</b></span>
       </div>
-      <p className="sp-note">{moved ? after.note : before.note}</p>
-    </div>
+      {head}
+      <div className="sp-notes" aria-live="polite"><p data-on={!moved || undefined}>{before.note}</p><p data-on={moved || undefined}>{after.note}</p></div>
+    </>
   );
 }
 export const Example = Specimen;
 
-// a closed card: the check's own scene, still, at broken
-export function Thumb({ id, css = '' }) {
-  const host = useRef(null);
-  useEffect(() => { let gone = false; import('../../../overlay/src/check-motion.js').then(({ mountCheck }) => { if (!gone && host.current) mountCheck(host.current, id, { tokensCss: css })?.still(0); }); return () => { gone = true; }; }, [id, css]);
-  return <div className="sp-thumb" aria-hidden="true"><style>{CSS}</style><div className="sp-thumb-in" ref={host} /></div>;
-}
-
 const CSS = `
   /* the specimen: the check's own scene played by the tiles' motion, a slider that holds it, the code line, the note */
-  .sp { display: grid; gap: 12px; }
-  .sp-stage { border-radius: 16px; overflow: hidden; min-height: 250px; }
-  .sp-ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+  .sp-stage { border-radius: 14px; overflow: hidden; min-height: 220px; }
+  .sp-ctl { display: flex; flex-wrap: wrap; align-items: center; align-content: start; gap: 10px; } /* the code goes under the toggle when it doesn't fit beside it */
   /* the toggle: two sides, one thumb that travels between them on the spring */
   .sp-seg { position: relative; flex: none; display: grid; grid-template-columns: 1fr 1fr; padding: 3px; border-radius: 12px; background: var(--pl-bg-inset); }
   .sp-seg > i { position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc(50% - 3px); border-radius: 9px; background: var(--pl-coral);
@@ -153,9 +145,8 @@ const CSS = `
   .sp-diff s, .sp-diff b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 260ms; font-weight: 500; text-decoration: none; }
   .sp-diff s { color: #fca5a5; } .sp-diff b { color: #6b7280; } .sp-diff i { font-style: normal; color: #6b7280; }
   .sp-diff[data-fixed] s { color: #6b7280; text-decoration: line-through; text-decoration-thickness: 1.5px; } .sp-diff[data-fixed] b { color: #86efac; }
-  .sp-note { margin: 0; font: 400 14.5px/1.55 var(--pl-sans); color: var(--pl-text-secondary); max-width: 640px; }
-  .sp-thumb { position: relative; height: 118px; overflow: hidden; border-radius: 12px; background: #fff; pointer-events: none; }
-  .sp-thumb-in { position: absolute; left: 50%; top: 50%; width: 460px; translate: -50% -50%; scale: .5; }
+  .sp-notes { display: grid; } .sp-notes p { grid-area: 1 / 1; margin: 0; font: 400 14px/1.5 var(--pl-sans); color: var(--pl-text-secondary); opacity: 0; transition: opacity 220ms var(--pl-ease-out); }
+  .sp-notes p[data-on] { opacity: 1; }
   .ex-row { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: center; }
   .ex-row figure { margin: 0; display: grid; gap: 8px; justify-items: center; } .ex-row figcaption { font: 500 12px system-ui; color: #6b7280; }
   .ex-btn { display: inline-flex; align-items: center; height: 38px; padding: 0 16px; border-radius: 8px; color: #fff; font: 600 14px system-ui; transition: background-color 360ms ease, box-shadow 200ms; }
