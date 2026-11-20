@@ -3128,6 +3128,29 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **Still open:** the bar's other checks (progress shows, fits where the original sat, keeps its weight) aren't
   plumber rules yet.
 
+### 46. The first suggestion we built ourselves: a press that pours (2026-11-20)
+
+**The itch.** The owner, on the live ideas page: "the example which were working also looked bad and not polished",
+and then the rule for the whole pipeline: its output "shouldn't come broken and half asses".
+
+**The system behind it.** Library parts, copied out of their own site (fonts, theme, page) into a bare test page,
+always look worse than their author meant, and nothing checked polish. They are evidence that an idea exists, not
+something to hand over. So suggestions are now built by us, in the product's own skin, and nothing is shown until the
+judge passes it (pressed, abandoned, keyboard only, reduced motion; plumber reading it every tenth of a second) and it
+has been looked at.
+
+**What we chose.** For crafting attention's buy button the judge had already said a plain press is right (checkout
+asks for the payment), so the first idea is a press that answers better: the shade floods out from the exact point
+pressed, the words are drawn a second time in the shade's ink so they read on both sides of its edge, sliding off
+drains it, the keyboard pours from the centre, and reduced motion gets the shade at once. A dead end on the way: the
+skin's 3:1 "deeper" shade, right for a progress fill, poured as a near-black purple; a press only has to read as
+pressed, so the pour is a richer step of the same purple.
+
+**The fix and the proof.** The judge: it works and meets every standard it is held to; it is now the first choice
+among the new forms for the buy button.
+
+**Media hooks.** The pour, slowed down, on `/atoms.html?atom=buy` of the crafting attention playground.
+
 ### 45. The ideas page was pictures of broken buttons; now it runs the ones that work (2026-11-20)
 
 **The itch.** The owner on the first ideas catalogue: "most of the things are broken and non interactive".
@@ -4978,6 +5001,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- Crafting attention's buy button has its first suggestion built by us: a press whose shade pours from where you touched, readable throughout, and passing every interaction standard ([entry](#46-the-first-suggestion-we-built-ourselves-a-press-that-pours-2026-11-20)).
 - Prototype A (?proto=scrub) now tells the story of a gesture: four lanes on one time line (your hand, its first answer, its movement, its words), each drawn against its standard's limit, and the button freezes wherever you scrub ([entry](#48-prototype-a-tells-the-story-of-the-gesture-2026-11-20)).
 - The button ideas page runs every button live (press, hold, slide them), and keeps only the 70 that load without an error and visibly do what they claim; error screens and frozen parts are gone ([entry](#45-the-ideas-page-was-pictures-of-broken-buttons-now-it-runs-the-ones-that-work-2026-11-20)).
 - Prototype C on the atoms page (?proto=dial): a knob under each button with a pip per state (at rest, pointed at, pressed, mid-gesture, done), mint or coral by what plumber finds; turning it freezes the button in that state with its fault hatched on it ([entry](#47-prototype-c-a-dial-through-the-buttons-states-2026-11-20)).

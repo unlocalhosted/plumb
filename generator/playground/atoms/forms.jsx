@@ -9,6 +9,7 @@ import { StatefulButton } from '../vendor/beui/components/button/stateful.tsx';
 import { MagneticButton } from '../vendor/beui/components/button/magnetic.tsx';
 import { HoldToConfirm } from '../vendor/arc/hold-to-confirm/hold-to-confirm.tsx';
 import { ConfirmMorph } from '../vendor/arc/confirm-morph/confirm-morph.tsx';
+import { Pour } from './native/pour.jsx';
 
 const Icon = ({ atom }) => atom.iconHTML ? <span aria-hidden className="atom-icon" dangerouslySetInnerHTML={{ __html: atom.iconHTML }} /> : null;
 const face = 'h-[var(--atom-height)] rounded-[var(--atom-radius)] text-[length:var(--atom-size)] font-[number:var(--atom-weight)] shadow-[var(--atom-lip)]';
@@ -27,6 +28,9 @@ function Answering({ atom }) {
 
 export const FORMS = {
   commit: [
+    { id: 'native/pour', name: 'Press, and it pours', gesture: 'press',
+      why: 'The deeper shade floods out from the exact point you pressed, so the press feels like it lands where your finger did; the words stay readable on both sides of the edge, and sliding off before letting go drains it back.',
+      roles: {}, render: (a) => <Pour label={a.label} doneLabel={a.doneLabel} icon={<Icon atom={a} />} /> },
     { id: 'beui/slide-action-button', name: 'Slide to commit', gesture: 'slide',
       why: 'Committing takes a deliberate gesture: drawing the thumb across is a small ceremony, and nobody does it by accident.',
       // the track carries the action colour, so the action keeps its weight; the trail is the stronger fill; the thumb is the ink
