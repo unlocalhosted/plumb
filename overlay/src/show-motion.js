@@ -99,11 +99,13 @@ export async function playTile(stage, spec) {
   const strip = pill.querySelector('.roll > span');
   // 1. the guides draw in: lines sweep from the edge, the beam and the pill pop. A run that turns round a move already
   // under way (spec.now) keeps the guides where they are and moves at once
-  if (!spec.now) await Promise.all(g.map((x, i) => x.kind === 'h' ? animate(x.el, [{ transform: 'scaleX(0)', opacity: 0 }, { transform: 'scaleX(1)', opacity: 1 }], { duration: T.guides, delay: i * 40, easing: 'cubic-bezier(.2,.8,.2,1)' })
+  // spec.quick (a toggle the hand pressed): the move starts at once and the guides draw in alongside it, no hold
+  const drawIn = spec.now ? Promise.resolve() : Promise.all(g.map((x, i) => x.kind === 'h' ? animate(x.el, [{ transform: 'scaleX(0)', opacity: 0 }, { transform: 'scaleX(1)', opacity: 1 }], { duration: T.guides, delay: i * 40, easing: 'cubic-bezier(.2,.8,.2,1)' })
     : x.kind === 'v' ? animate(x.el, [{ transform: 'scaleY(0)', opacity: 0 }, { transform: 'scaleY(1)', opacity: 1 }], { duration: T.guides, delay: i * 40, easing: 'cubic-bezier(.2,.8,.2,1)' })
     : animate(x.el, [{ opacity: 0, scale: 0.85 }, { opacity: 1, scale: 1 }], { duration: T.guides * 0.8, delay: 120, easing: 'cubic-bezier(.34,1.56,.64,1)' })));
+  if (!spec.now && !spec.quick) await drawIn;
   if (gone()) return;
-  if (!spec.now) await wait(T.hold);
+  if (!spec.now && !spec.quick) await wait(T.hold);
   if (gone()) return;
   // 2. the page moves on the spring; the guides follow it every frame; the number rolls with it
   spec.ease(true); spec.apply(spec.to);

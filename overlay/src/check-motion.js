@@ -184,7 +184,7 @@ export function mountCheck(host, id, { tokensCss = '', onMove } = {}) {
       }
       const [from, to] = fixed ? [spec.from, spec.to] : [spec.to, spec.from];
       await playTile(stage, { from, to, step: spec.step, fmt: spec.fmt, unit: spec.unit, name: fixed ? spec.name : '', labels: spec.labels && (fixed ? spec.labels : [...spec.labels].reverse()).map(esc), chip: spec.chip && ((i) => spec.chip(fixed ? i : 1 - i)),
-        guides: kinds, stale: () => mine !== run, track: spec.track, now: turning,
+        guides: kinds, stale: () => mine !== run, track: spec.track, now: turning, quick: true,
         ease: (on) => { stage.toggleAttribute('data-moving', on); onMove?.(fixed); }, apply: () => spec.at(fixed ? 1 : 0) });
       if (mine !== run) return;
       busy = false;
