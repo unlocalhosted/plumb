@@ -17,7 +17,9 @@
  *    select    Select pressed or Alt held: the mark takes the instrument colour and the line says how to leave
  *  reduced motion: every step is instant (durations come from tokens that collapse to 0)
  * ───────────────────────────────────────────────────────── */
-const WALK = { step: 48, pause: 260 };
+// a level per 30px of two-finger travel, kept for 450ms between strokes: 48px and 260ms felt like pushing against
+// something, then snapping (owner, 2026-11-20)
+const WALK = { step: 30, pause: 450 };
 // what a pointer reaches: an icon's <path> or <text> is its <svg> (a box-shadow or a layout is the svg's, never a part's)
 const reachable = (el) => { while (el?.ownerSVGElement) el = el.ownerSVGElement; return el; }; // px of scroll per level; ms of stillness that resets the travel
 const TIMING = { hoverRead: 90, light: 120, swap: 140, reread: [250, 600, 1200, 2400], starting: 1000, maxDrawing: 160, healthStarting: 1000, healthReady: 10000, dockFold: 4000, dockCount: 3000, side: 3000 };
@@ -533,7 +535,12 @@ class PlumbOverlay extends HTMLElement {
       :host([data-xray]) .bp .heat { opacity: 0 !important; }
       :host([data-xray]) .sel .bm { display: none; }
       /* held Alt: the X-ray's card says the element, so the old name tag and corner ticks step aside */
-      :host([data-xray][data-armed]) :is(.tag, .tick[data-c]) { display: none !important; }
+      :host([data-xray][data-armed]:not([data-walking])) :is(.tag, .tick[data-c]) { display: none !important; }
+      /* walking the tree: the card steps aside; the corners glide level to level and the tag says the path */
+      .wbox { position: fixed; left: 0; top: 0; z-index: 2147482999; pointer-events: none; box-sizing: border-box; border: 1.5px solid var(--pl-sky); background: color-mix(in oklab, var(--pl-sky) 7%, transparent);
+        box-shadow: 0 0 0 4px color-mix(in oklab, var(--pl-sky) 14%, transparent); opacity: 0; transition: transform 380ms var(--pl-spring), width 380ms var(--pl-spring), height 380ms var(--pl-spring), border-radius 380ms var(--pl-spring), opacity 160ms ease-out; }
+      .wbox[data-on] { opacity: 1; }
+      @media (prefers-reduced-motion: reduce) { .wbox { transition: opacity 120ms linear; } }
       /* one pill by the pointer: a note's pill (blueprint-marks) outranks the part's */
       :host([data-hinting]) .xr-say { display: none; }
       /* the card grown from the pill: the pill is inside it now */
@@ -575,7 +582,7 @@ class PlumbOverlay extends HTMLElement {
       },
       // a card open in blueprint (an Alt+click, an element read alone, words being edited) is what's in hand: the X-ray steps aside
       // one owner of the screen (#owner): the X-ray shows only when nothing else is open or running
-      paused: () => self.#owner() !== 'idle',
+      paused: () => self.#owner() !== 'idle' || self.hasAttribute('data-walking'),
       // the card's room is the page above Plumber's own bar: it never sits on the fix panel or the dock (a card placed
       // over the panel took the click meant for its Undo)
       // The bar can change after the card is placed (the fix panel is rebuilt when a write lands, and comes back taller):
@@ -1133,7 +1140,7 @@ class PlumbOverlay extends HTMLElement {
   }
   #disarm = () => {
     if (!this.#armed) return;
-    this.#armed = false; this.#sticky = false; this.#byPointer = false; clearTimeout(this.#hoverTimer);
+    this.#armed = false; this.#sticky = false; this.#byPointer = false; clearTimeout(this.#hoverTimer); this.removeAttribute('data-walking'); this.#walkBox(null);
     if (this.#xrayByAlt) { this.#xrayByAlt = false; if (this.#xray && !this.#blueprint?.active) this.#toggleXray(); }
     this.removeAttribute('data-armed');
     this.#blueprint?.yieldInput(false);
@@ -1161,7 +1168,8 @@ class PlumbOverlay extends HTMLElement {
     const under = reachable(document.elementFromPoint(event.clientX, event.clientY));
     // Walking the tree (two-finger scroll) holds its level while the pointer stays on the element it started from.
     if (this.#walk && under === this.#walk.chain[0]) return;
-    this.#walk = null;
+    this.#walk = null; this.removeAttribute('data-walking'); // the hand moved on: the X-ray takes the pointer back
+    this.#walkBox(null);
     this.#hoverOn(under);
   };
   #hoverOn(element) {
@@ -1213,9 +1221,20 @@ class PlumbOverlay extends HTMLElement {
       if (next < 0 || next >= w.chain.length) { w.travel = 0; break; }
       w.at = next; moved = true;
     }
-    if (moved) { this.#hover?.controller.abort(); this.#hover = null; this.#hoverOn(w.chain[w.at]); this.#xray?.peek(w.chain[w.at]); } // the X-ray follows the walk
+    // walking: the X-ray's card and drawing step aside (they jumped from level to level); the corners and the path lead
+    if (moved) { this.#hover?.controller.abort(); this.#hover = null; this.toggleAttribute('data-walking', w.at > 0); if (w.at > 0) this.#xray?.hide(); this.#hoverOn(w.chain[w.at]); this.#walkBox(w.at > 0 ? w.chain[w.at] : null); }
   };
 
+  // where the walk is: a soft outline round the level in hand, gliding to the next on the overlay's spring (owner,
+  // 2026-11-20: "give me better feedback on where i am going"); the corners and the path go with it
+  #walkBox(el) {
+    let box = this.#root.querySelector('.wbox');
+    if (!el) { box?.removeAttribute('data-on'); return; }
+    if (!box) { box = Object.assign(document.createElement('div'), { className: 'wbox' }); box.setAttribute('aria-hidden', 'true'); this.#root.append(box); }
+    const r = el.getBoundingClientRect(), rad = parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0;
+    box.style.transform = `translate(${r.left - 4}px, ${r.top - 4}px)`; box.style.width = `${r.width + 8}px`; box.style.height = `${r.height + 8}px`; box.style.borderRadius = `${Math.min(rad + 4, 24)}px`;
+    box.setAttribute('data-on', '');
+  }
   #crumbs() {
     const w = this.#walk;
     if (!w || w.at === 0) return '';
