@@ -34,6 +34,8 @@ import { RULES as CRAFT_RULES } from './craft-rules.js';
 // wording): their note leads with Edit the words; any other note leads with Ask your agent (U30, 2026-11-20)
 const WORDS_OWN = new Set(['text', 'sentence', 'subtitle', 'punctuation', 'wording']);
 const ABOUT_WORDS = new Set([...TELLS_RULES, ...CRAFT_RULES].filter((r) => r?.owns?.some((o) => WORDS_OWN.has(o))).map((r) => r.id));
+// What a note says, for a card: its name, what to do, its rule, and whether it is about the words (Edit the words leads)
+export const noteOfMark = (m) => ({ name: FIX.what(m), advice: String(m.craft?.suggest?.text ?? m.title ?? '').replace(/`/g, ''), rule: m.rule ?? '', words: ABOUT_WORDS.has(m.rule) });
 
 const TAG_H = 18; // a label's height: the code face's line and a pixel each side
 
@@ -607,7 +609,7 @@ export class MarkLayer {
   // is about this element; else this element's first note, from the picked concern only when one is picked (U7).
   noteOf(el) {
     const isNote = (m) => m.craft?.suggest?.kind === 'advice' || m.family === 'craft'; // what a pin names
-    const said = (m) => ({ name: FIX.what(m), advice: String(m.craft?.suggest?.text ?? m.title ?? '').replace(/`/g, ''), rule: m.rule ?? '', words: ABOUT_WORDS.has(m.rule) });
+    const said = noteOfMark;
     const hinted = this.#hinted && this.#nodes.get(this.#hinted);
     if (hinted && hinted.el === el && isNote(hinted.mark) && (!this.#lit.length || this.#lit.includes(this.#hinted))) return said(hinted.mark);
     const lit = new Set(this.#lit);

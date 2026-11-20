@@ -43,6 +43,8 @@ import { choicesHtml, bindChoices, whyLine, toPx, fmtPx, esc, code, VALUED, CHOI
 import { placeOf, atPlace } from './stamp.js';
 import { XRAY_CSS } from './xray.js'; // the X-ray (Alt+B): the element under the pointer, drawn on and said beside it
 import { XRAY_LIVE_CSS, mountXray, familyOf } from './xray-live.js';
+import { CONCERNS, concernOf } from './concerns.js';
+import { noteOfMark } from './blueprint-marks.js';
 import { PICKER_CSS } from './picker.js';
 import { TOY_DEFS } from './toys.js';
 import { elementEdit } from './inplace.js';
@@ -562,6 +564,15 @@ class PlumbOverlay extends HTMLElement {
       editWords: (el) => { const node = [...el.childNodes].find((n) => n.nodeType === 3 && n.data.trim()); if (node) this.#blueprint?.through(() => this.#text.start(node, node.data.length)) ?? this.#text.start(node, node.data.length); },
       keepNote: (el, rule) => this.#blueprint?.keepNote(el, rule),
       noteOf: (el) => this.#blueprint?.noteOf(el) ?? null,
+      // every note on an element, for the pinned card: its reading's marks (your tokens, the craft rules), by concern
+      notesOf: async (el) => {
+        const state = await this.read(el);
+        const seen = new Set(), order = CONCERNS.map((c) => c.id);
+        return (state?.marks ?? []).map((m) => ({ ...noteOfMark(m), concern: concernOf(m) }))
+          .filter((n) => n.name && !seen.has(n.rule + n.name) && seen.add(n.rule + n.name))
+          .map((n) => ({ ...n, concernName: CONCERNS.find((c) => c.id === n.concern)?.short ?? '' }))
+          .sort((a, b) => order.indexOf(a.concern) - order.indexOf(b.concern));
+      },
       // a card open in blueprint (an Alt+click, an element read alone, words being edited) is what's in hand: the X-ray steps aside
       paused: () => !!(self.#blueprint?.scope || self.#blueprint?.cardOpen || self.#blueprint?.fixing || self.#pinned || self.#text?.editing),
       // the card's room is the page above Plumber's own bar: it never sits on the fix panel or the dock (a card placed

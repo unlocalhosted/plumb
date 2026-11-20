@@ -58,6 +58,13 @@ export const XRAY_LIVE_CSS = `
   @media (hover: hover) and (pointer: fine) { .xr-said .na:hover { background: color-mix(in oklab, currentColor 16%, transparent); } .xr-said .na.main:hover { background: color-mix(in oklab, var(--pl-cut) 88%, var(--pl-pink)); } }
   .xr-said .na:focus-visible { box-shadow: 0 0 0 2px var(--pl-border-focus); }
   .xr-said .na:active { translate: 0 1px; }
+  /* the pinned card: every note on the element, by concern; the picked one is the note above with its actions */
+  .xr-said .xa { margin: 12px -4px -2px; padding-top: 8px; border-top: 1px solid color-mix(in oklab, currentColor 14%, transparent); max-height: 180px; overflow: auto; }
+  .xr-said .xg { display: flex; justify-content: space-between; padding: 6px 4px 3px; font: 600 11px/1.2 var(--pl-sans); opacity: .7; }
+  .xr-said .xn { all: unset; box-sizing: border-box; display: block; width: 100%; cursor: pointer; padding: 5px 6px; border-radius: 8px; font: 500 12.5px/1.3 var(--pl-sans); color: inherit; }
+  .xr-said .xn[aria-current] { background: color-mix(in oklab, currentColor 12%, transparent); font-weight: 650; }
+  @media (hover: hover) and (pointer: fine) { .xr-said .xn:not([aria-current]):hover { background: color-mix(in oklab, currentColor 7%, transparent); } }
+  .xr-said .xn:focus-visible { box-shadow: 0 0 0 2px var(--pl-border-focus); }
   .xr-many { display: inline-flex; align-items: center; height: 18px; padding: 0 6px; margin-left: 4px; border-radius: 99px; vertical-align: 2px; background: var(--pl-sky-soft); color: var(--pl-sky-ink); font: 600 11px/1 var(--pl-sans); letter-spacing: 0; }
   .xr-many[data-scope="all"] { background: var(--pl-pink-soft); color: var(--pl-pink-ink); } .xr-many[data-scope="one"] { background: var(--pl-bg-inset); color: var(--xr-label); }
   /* the value in hand, beside the pointer: its number and its token, while you drag or scroll */
@@ -172,10 +179,30 @@ export function mountXray(o) {
   // The note at the head of the card (owner, 2026-11-20: "dont we show any suggestion … what could be the actionable
   // step"): on the pink face the pins wear, its name, what to do, and what you can do from here. Words are edited in
   // place; anything else goes to your agent; either way it can be kept as it is.
+  // Pinned (an Alt-click), the card says everything plumber has about the element (docs/briefs/concerns-and-two-views.md):
+  // every note, grouped by concern; one is picked, and it is the note above with what you can do about it
+  let notes = null, notesFor = null, notePick = 0;
+  function readNotes(el) {
+    notes = null; notesFor = el; notePick = 0;
+    Promise.resolve(o.notesOf?.(el)).then((list) => {
+      if (notesFor !== el || pinned !== el || !list?.length) return;
+      notes = list; syncSaid(el, true); if (shown === el) draw(el);
+    }).catch(() => {});
+  }
+  function listHtml() {
+    if (!notes || notes.length < 2) return '';
+    let html = '<div class="xa">', last = null;
+    notes.forEach((n, i) => {
+      if (n.concern !== last) { last = n.concern; const k = notes.filter((m) => m.concern === n.concern).length; html += `<div class="xg"><span>${esc(n.concernName)}</span><span>${k}</span></div>`; }
+      html += `<button type="button" class="xn" data-i="${i}"${i === notePick ? ' aria-current="true"' : ''}>${esc(n.name)}</button>`;
+    });
+    return html + '</div>';
+  }
   function noteHtml(el) {
     // the element's own note, asked of the page's marks; never the pill's words, which may be about the element the
     // hand just passed (U6)
-    const n = el && o.noteOf?.(el);
+    const all = el && pinned === el && notesFor === el && notes?.length ? notes : null;
+    const n = all ? all[notePick] : el && o.noteOf?.(el);
     if (!n?.name) return '';
     const { name, advice, rule } = n;
     // Edit the words leads only a note about the words (an em dash, a stock word); a padding note is your agent's (U30)
@@ -183,17 +210,17 @@ export function mountXray(o) {
     const b = (act, label, main) => `<button type="button" class="na${main ? ' main' : ''}" data-act="${act}">${label}</button>`;
     return `<div class="nt" data-rule="${esc(rule)}"><b>${esc(name)}</b><span>${esc(advice)}</span></div><div class="nas">`
       + (words && o.editWords ? b('edit', 'Edit the words', true) + b('agent', 'Ask your agent') : b('agent', 'Ask your agent', true))
-      + (o.keepNote ? b('keep', 'Keep as is') : '') + '</div>';
+      + (o.keepNote ? b('keep', 'Keep as is') : '') + '</div>' + (all ? listHtml() : '');
   }
   // The note belongs to the element the card is on. The page's pill goes away as the hand leaves the element for the card;
   // that must not empty the card: a card that lost its note got shorter, was placed again (above, then below), and put
   // the hand back on the element, whose pill came back: it flickered without end (owner, 2026-11-20). So the note changes
   // only when the card moves to another element, or fills in once for this one.
   let saidEl = null;
-  function syncSaid(el) {
+  function syncSaid(el, force = false) {
     watchHint();
     const html = noteHtml(el);
-    if (el === saidEl && (!html || said.dataset.for)) return;
+    if (!force && el === saidEl && (!html || said.dataset.for)) return;
     if (said.dataset.for !== html) { said.innerHTML = html; said.dataset.for = html; }
     said.hidden = !html; saidEl = el;
   }
@@ -209,6 +236,8 @@ export function mountXray(o) {
     off.push(() => mo.disconnect());
   }
   said.addEventListener('click', (e) => {
+    const row = e.target.closest?.('.xn');
+    if (row && shown) { e.stopPropagation(); notePick = +row.dataset.i; syncSaid(shown, true); draw(shown); return; }
     const act = e.target.closest?.('.na')?.dataset.act, el = shown;
     if (!act || !el) return;
     e.stopPropagation();
@@ -811,7 +840,7 @@ export function mountXray(o) {
     // what the card keeps clear of moved: placed again, once a frame at most
     follow,
     // an element chosen elsewhere (blueprint's list, or a click blueprint took): shown and held
-    hold(el) { if (!el?.isConnected || o.paused?.()) return; pinned = el; lastOn = null; const r = el.getBoundingClientRect(); zone = null; draw(el); void r; },
+    hold(el) { if (!el?.isConnected || o.paused?.()) return; pinned = el; lastOn = null; readNotes(el); const r = el.getBoundingClientRect(); zone = null; draw(el); void r; },
     // let go (a fix put down, a selection cleared): what was drawn for it goes too, unless changes wait on it
     release() { const was = pinned; pinned = null; if (was && shown === was && !changes.size && !held) { ready = false; draw(null); } },
     // something else took the screen (a card opened): out of the way at once
