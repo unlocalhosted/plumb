@@ -1,0 +1,31 @@
+/* Prototype A, "scrub the button's past": the strip under a button, and the fault painted on the frozen pose. Every
+   value is plumber's own (overlay/src/tokens.css, under .pl-light): coral for what is wrong, the line weight, radii,
+   durations and the spring. */
+.atom-stage { position: relative; }
+.scrub-paint { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
+/* the stretch of words that fails: a coral hatch with a coral edge, readable on a light ground and a dark one */
+.scrub-fail { position: absolute; border-radius: 3px; box-shadow: 0 0 0 1.5px var(--pl-coral, #bf3a1e), 0 0 0 3px color-mix(in oklab, white 70%, transparent);
+  background: repeating-linear-gradient(135deg, color-mix(in oklab, var(--pl-coral, #bf3a1e) 55%, transparent) 0 3px, transparent 3px 7px); }
+.scrub-box { position: absolute; border: 1.5px dashed var(--pl-coral, #bf3a1e); border-radius: 4px; }
+
+.scrub { display: grid; gap: 8px; margin: 18px 0 6px; font-family: var(--pl-sans); color: var(--pl-ink);
+  opacity: 0; transform: translateY(-6px); transition: opacity var(--pl-dur-arrive, 220ms) var(--pl-ease-out, ease-out), transform var(--pl-dur-arrive, 220ms) var(--pl-spring, ease-out); }
+.scrub.open { opacity: 1; transform: none; }
+.scrub-track { position: relative; height: 44px; border-radius: var(--pl-radius-row, 8px); background: var(--pl-paper-2, #f6f6f4); cursor: ew-resize; touch-action: none; outline: none; }
+.scrub-track:focus-visible { box-shadow: 0 0 0 2px var(--pl-ink); }
+.scrub-track svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.scrub-sev { fill: color-mix(in oklab, var(--pl-coral, #bf3a1e) 26%, transparent); stroke: var(--pl-coral, #bf3a1e); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.scrub-base { stroke: var(--pl-mint, #1a9460); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.scrub-event { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1px dashed color-mix(in oklab, var(--pl-ink) 45%, transparent); }
+.scrub-event.low span { top: auto; bottom: -16px; }
+.scrub-event span { position: absolute; top: -17px; left: -2px; font: 600 10.5px/1 var(--pl-sans); color: var(--pl-ink-2, #5b574f); white-space: nowrap; }
+/* the head: a small soft block that rides the strip */
+.scrub-head { position: absolute; top: -3px; bottom: -3px; width: 10px; margin-left: -5px; border-radius: 4px; background: var(--pl-ink); box-shadow: 0 2px 0 color-mix(in oklab, var(--pl-ink) 60%, black); transition: left 60ms linear; }
+@media (prefers-reduced-motion: reduce) { .scrub, .scrub-head { transition: none; } }
+.scrub-note { display: flex; align-items: baseline; gap: 10px; justify-content: space-between; }
+.scrub-note p { margin: 0; font: 400 12.5px/1.45 var(--pl-sans); }
+.scrub-note b { font-weight: 700; }
+.scrub-note span { color: var(--pl-ink-2, #5b574f); }
+.scrub-note .ok { color: var(--pl-mint, #1a9460); font-weight: 600; }
+.scrub-live { font: 600 12px var(--pl-sans); border: 0; border-radius: var(--pl-radius-pill, 999px); padding: 5px 10px; background: var(--pl-paper-2, #f6f6f4); color: var(--pl-ink); cursor: pointer; white-space: nowrap; }
+.scrub-live kbd { font: 500 10px ui-monospace, monospace; opacity: .6; margin-left: 4px; }

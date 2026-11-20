@@ -1048,6 +1048,9 @@ export const wordsOnLayers = {
     // a layer is over the words when it stacks higher, or when it is placed and the words are in the flow
     const above = (L) => (positioned ? L.z > mine || (L.z === mine && !!(el.compareDocumentPosition(L.el) & Node.DOCUMENT_POSITION_FOLLOWING)) : L.pos && L.z >= 0);
     let bad = 0, onLayer = 0, all = 0, worst = Infinity, covered = 0, what = null, run = 0, longest = 0;
+    // where the words fail, as stretches of each line on screen (merged 4px strips), for a picture of the fault
+    const spans = [];
+    const mark = (x, q) => { const last = spans.at(-1); if (last && last[1] === q.top && Math.abs(last[0] + last[2] - x) < 0.5) last[2] += 4; else spans.push([x, q.top, 4, q.height]); };
     for (const q of lines) for (let x = q.left; x < q.right; x += 4) {
       all++;
       const mid = x + 2, hit = layers.filter((L) => L.v.l <= mid && L.v.r >= mid && Math.min(L.v.b, q.bottom) - Math.max(L.v.t, q.top) >= q.height * 0.6);
@@ -1055,18 +1058,19 @@ export const wordsOnLayers = {
       let fail = false;
       if (top && above(top)) { if (!copy(top)) { fail = true; covered++; onLayer++; what ??= top.el; } }
       else { const ground = (top ? hit.filter((L) => !above(L)).at(-1)?.bg : null) ?? base; const lc = Math.abs(apca(over([c[0], c[1], c[2], alpha(c) * fade], ground), ground)); if (lc < need) { fail = true; worst = Math.min(worst, lc); if (top) { what ??= top.el; onLayer++; } } }
-      if (fail) { bad++; run += 4; longest = Math.max(longest, run); } else run = 0;
+      if (fail) { bad++; run += 4; longest = Math.max(longest, run); mark(x, q); } else run = 0;
     }
     // only a layer's doing counts here: words that fail on their own ground are the contrast rule's finding
     if (longest < 8 || !what) return [];
     // the layer's share of the words, and whether the words also fail where no layer is (faded, or wrong for their ground)
     const share = Math.round((onLayer / all) * 100), elsewhere = bad > onLayer;
     // the layer by its role, as a person would name it
-    const cls = (what.getAttribute('class') ?? '').toLowerCase(), role = /thumb|knob|handle/.test(cls) ? 'thumb' : /trail|progress/.test(cls) ? 'trail' : /highlight|sheen|shine/.test(cls) ? 'highlight' : /overlay|scrim/.test(cls) ? 'overlay' : 'fill';
+    // a pressable thing sliding over the words is the slide's thumb, whatever its class says
+    const cls = (what.getAttribute('class') ?? '').toLowerCase(), role = /thumb|knob|handle/.test(cls) || what.matches('button, [role=button], [role=slider], [draggable=true]') ? 'thumb' : /trail|progress/.test(cls) ? 'trail' : /highlight|sheen|shine/.test(cls) ? 'highlight' : /overlay|scrim/.test(cls) ? 'overlay' : 'fill';
     return [{
       ...say(this.id, { share, lc: worst === Infinity ? null : Math.floor(worst), need, covered: covered > onLayer / 2, what: role, elsewhere, fade: Math.round(fade * 100) }),
       key: this.id, text: colourClass(el, 'text', theme) ?? 'color', props: ['color'], value: `${share}%`, n: share,
-      evidence: { share, worstLc: worst === Infinity ? null : Math.floor(worst), need, covered, color: hex(c), layer: role, fade: Math.round(fade * 100), elsewhere }, confidence: 0.8,
+      evidence: { share, worstLc: worst === Infinity ? null : Math.floor(worst), need, covered, color: hex(c), layer: role, fade: Math.round(fade * 100), elsewhere, spans: spans.map((r) => r.map((n) => Math.round(n * 10) / 10)) }, confidence: 0.8,
       suggest: { kind: 'advice', text: covered > onLayer / 2 ? 'Put the words above the layer, or move the layer out from under them.' : 'Flip the words to the layer’s own ink exactly at its edge (a second copy of them, clipped by the layer), or fade them out before the layer reaches them.' },
     }];
   },

@@ -50,6 +50,9 @@ function Page({ Shipped, product, atom }) {
 }
 
 export function mountAtoms({ Shipped, product }) {
+  // the prototypes of how plumber shows faults that live in time: ?proto=scrub
+  const proto = new URLSearchParams(location.search).get('proto');
+  if (proto === 'scrub') import('./proto-scrub.js');
   const want = new URLSearchParams(location.search).get('atom');
   const atom = product.atoms.find((x) => x.id === want) ?? product.atoms[0];
   createRoot(document.getElementById('root')).render(<Page Shipped={Shipped} product={product} atom={atom} />);
