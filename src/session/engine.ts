@@ -27,7 +27,8 @@ import { ledgerPath } from '../ledger/store.js';
 import { sourceHash } from '../collect/cache.js';
 import { matchesPath } from '../collect/pattern.js';
 import { lineStarts, sourceSite } from '../collect/source.js';
-import { findDeclaration, lastDeclaration, plainValue } from './css-rules.js';
+import { cssErrors, cssValueSafe, locateStyle } from '../styles/index.js';
+import type { Edit, Evidence, ReadFile } from '../styles/index.js';
 import { parseSync } from 'oxc-parser';
 import type { ClassTraceLimit } from '../collect/computed.js';
 import type { StructuredEdit, RefusedSite } from '../surfaces/edits.js';
@@ -1406,49 +1407,49 @@ export class Session extends EventEmitter {
     }, label);
   }
   /**
-   * Where a plain stylesheet sets one property for one selector (css-rules.ts): the value as written and its place, or
-   * null. The page knows which rule wins for an element; this answers where that rule writes the value.
+   * Style changes in neutral terms (docs/briefs/css-parity.md, layer 0): each change carries what the page saw for its
+   * property, a style system (src/styles) turns that into a place in a file and the edits that set it, and the engine
+   * checks and commits every edit: the value is plain, each file still parses as it did, and a file that changed since
+   * it was read is refused. All of one call is one undo; a change no system can place is said, not guessed.
    */
-  async rule(options: { file: string; selector: string; prop: string }): Promise<{ file: string; hash: string; selector: string; prop: string; line?: number; column?: number; value: string | null }> {
-    const { file, selector, prop } = options ?? {} as { file: string; selector: string; prop: string };
-    if (typeof file !== 'string' || !file.trim() || typeof selector !== 'string' || !selector.trim() || typeof prop !== 'string' || !prop.trim()) throw new UsageError('Rule requires file, selector and prop.');
-    const path = this.file(file);
-    if (!/\.css$/.test(path)) throw new UsageError('Rules are read from a stylesheet.');
-    const text = await readFile(path, 'utf8');
-    const found = findDeclaration(text, selector, prop);
-    // the file's hash either way: a property set only through a shorthand is still written to this file
-    if (!found) return { file: path, hash: sourceHash(text), selector, prop, value: null };
-    const at = sourceSite({ file: path, text, lineStarts: lineStarts(text) }, found.start, '');
-    return { file: path, hash: sourceHash(text), line: at.line, column: at.column, selector: found.selector, prop: found.prop, value: found.value };
-  }
-  /** Change the value a plain stylesheet's rule writes for one property: one declaration, in place, with its undo. */
-  async setRule(options: { file: string; hash: string; selector: string; prop: string; value: string }): Promise<Record<string, unknown>> {
-    const { file, hash, selector, prop, value } = options ?? {} as { file: string; hash: string; selector: string; prop: string; value: string };
-    if (typeof file !== 'string' || !file.trim() || typeof hash !== 'string' || !hash.trim() || typeof selector !== 'string' || !selector.trim() || typeof prop !== 'string' || !prop.trim()) throw new UsageError('Set rule requires file, hash, selector, prop and value.');
-    if (!plainValue(value)) throw new UsageError('A value is plain CSS of at most two hundred characters, with no ; { } or url().');
-    const path = this.file(file);
-    if (!/\.css$/.test(path)) throw new UsageError('Rules are written to a stylesheet.');
-    const text = await readFile(path, 'utf8');
-    if (sourceHash(text) !== hash) throw stale();
-    if (!/^[a-z][a-z-]*$/.test(prop.trim())) throw new UsageError('A property is a plain CSS property name.');
-    const found = findDeclaration(text, selector, prop);
-    let next: string, said: string, from: string | null = null, where: string;
-    if (found) {
-      if (found.value === value.trim()) throw new UsageError('That value is already set.');
-      next = text.slice(0, found.start) + value.trim() + text.slice(found.end);
-      from = found.value; where = found.selector;
-      said = `${found.selector} { ${found.prop}: ${found.value} → ${value.trim()} }`;
-    } else {
-      // the rule sets it only through a shorthand (`font`, `padding`), or not at all: the property is added as the
-      // rule's last declaration, where it wins over the shorthand before it
-      const last = lastDeclaration(text, selector);
-      if (!last) throw new UsageError(`${selector} is not a rule in this stylesheet.`, 'not-found');
-      next = text.slice(0, last.end) + `; ${prop.trim()}: ${value.trim()}` + text.slice(last.end);
-      where = last.selector;
-      said = `${last.selector} { + ${prop.trim()}: ${value.trim()} }`;
+  async styleWrite(options: { changes: { prop: string; value: string; token?: string; evidence: Evidence }[] }): Promise<Record<string, unknown>> {
+    const changes = options?.changes;
+    if (!Array.isArray(changes) || !changes.length || changes.length > 32) throw new UsageError('Style write takes one to thirty-two changes.');
+    const read: ReadFile = async (file) => { const path = this.file(file); await this.readableSource(path); const text = await readFile(path, 'utf8'); return { text, hash: sourceHash(text) }; };
+    const results: Record<string, unknown>[] = [];
+    const byFile = new Map<string, { hash: string; edits: Edit[]; said: string[] }>();
+    for (const [index, change] of changes.entries()) {
+      const { prop, value, token, evidence } = change ?? {} as typeof change;
+      if (typeof prop !== 'string' || !/^[a-z][a-z-]*$/.test(prop) || typeof value !== 'string' || !evidence || typeof evidence !== 'object') { results.push({ index, state: 'failed', why: 'A change is a property, a value and what the page saw.' }); continue; }
+      if (!cssValueSafe(value) || token !== undefined && !/^--[\w-]+$/.test(token)) { results.push({ index, state: 'failed', why: 'A value is plain CSS: balanced brackets, no quotes, ; { } or url().' }); continue; }
+      const placed = await locateStyle(evidence, prop, read).catch(() => null);
+      if (!placed) { results.push({ index, state: 'unplaced', why: 'No style system of this project writes this value where the page found it.' }); continue; }
+      const { system, origin } = placed;
+      if (origin.writable !== true) { results.push({ index, state: 'failed', why: origin.writable, said: origin.said }); continue; }
+      if (origin.conditions.media) { results.push({ index, state: 'failed', why: `${origin.said} sets it only under ${origin.conditions.media}; that isn't written yet.`, said: origin.said }); continue; }
+      const path = this.file(origin.file);
+      const entry = byFile.get(path) ?? byFile.set(path, { hash: origin.hash, edits: [], said: [] }).get(path)!;
+      if (entry.hash !== origin.hash) { results.push({ index, state: 'failed', why: 'The file changed while the changes were read. Try again.' }); continue; }
+      const edits = system.edit(origin, { prop, value, ...(token ? { token } : {}) });
+      entry.edits.push(...edits.map(e => ({ ...e, file: path })));
+      const to = edits[0]?.replacement.replace(/^; [a-z-]+: /, '') ?? value;
+      entry.said.push(`${origin.said} { ${prop}: ${origin.value ?? '(added)'} → ${to} }`);
+      results.push({ index, state: 'ok', system: system.id, says: system.says, said: origin.said, file: path, from: origin.value, to, ...(origin.conditions.layer ? { layer: origin.conditions.layer } : {}), ...(origin.conditions.state ? { state: origin.conditions.state } : {}) });
     }
-    const written = await this.rewrite(path, hash, next, said.slice(0, 120));
-    return { revision: this.revision, file: path, hash: written.hash, applied: [`rule:${where}:${prop.trim()}`], selector: where, from, to: value.trim(), undo: written.undo };
+    const done: UndoHandle[] = [], files: Record<string, string> = {};
+    try {
+      for (const [path, { hash, edits, said }] of byFile) {
+        const { text } = await read(path);
+        const ordered = edits.toSorted((a, b) => b.start - a.start);
+        for (let i = 1; i < ordered.length; i++) if (ordered[i]!.end > ordered[i - 1]!.start) throw new UsageError('Two changes touch the same place in one file. Change them one at a time.');
+        let next = text;
+        for (const e of ordered) next = next.slice(0, e.start) + e.replacement + next.slice(e.end);
+        if (/\.css$/.test(path) && cssErrors(next, path) > cssErrors(text, path)) throw new UsageError('The change would leave the stylesheet unreadable, so nothing was written.');
+        const written = await this.rewrite(path, hash, next, said.join('; ').slice(0, 120));
+        done.push(written.undo); files[path] = written.hash;
+      }
+    } catch (error) { if (done.length) await this.putBack(done, error); throw error; }
+    return { revision: this.revision, results, files, undo: done.length ? [this.asOneWrite(done, `${done.length > 1 ? `${done.length} files` : 'style'}: ${results.filter(r => r.state === 'ok').length} change(s)`)] : [] };
   }
   /** Swap classes on an element (a craft suggestion): take `from` out of its static className, put `to` in its place. */
   async swap(options: SwapOptions): Promise<ApplyResult> {

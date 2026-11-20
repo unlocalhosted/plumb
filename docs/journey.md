@@ -3748,6 +3748,34 @@ if the computed value moves); the style systems move to the server as one object
 writing, and name a place by its range in a file. A new layer 0 builds that interface before anything else.
 The brief is [docs/briefs/css-parity.md](briefs/css-parity.md).
 
+### 65. Layer 0: the style systems move to the server (2026-11-20)
+**The itch.** Fable's review ([entry 64](#64-fable-reviews-the-parity-plan-2026-11-20)) found the CSS rule path decided
+too much on the page and wrote through a second, weaker CSS parser. The owner: "Start layer 0".
+
+**What we built.** The interface now lives on the server (`src/styles/`). A style system turns what the page saw into
+a place in a file and returns edits; it never writes. The engine checks every edit and commits them all as one undo:
+the value must be plain CSS with balanced brackets, the stylesheet must parse no worse after the change, and a file
+that changed since it was read is refused. The rule system reads through the engine's own stylesheet lowering, so
+nesting, `&`, `@layer` and `@media` are understood, and the browser's spelling of a selector is put through the same
+parser as the file's. On the page, Sync's rule path now sends only evidence (which rule wins, and its file). The old
+endpoints and the separate CSS scanner from entry 61 are gone.
+
+**The proof.** On a plain-CSS scratch project, through the engine:
+- a shorthand (`font`) gets the longhand added after it
+- `!important` is kept
+- `.a>.b` from the browser finds `.a > .b` in the file
+- a rule inside `@layer` is written, and a nested `.card { .inner {…} }` is found
+- in `.both { font-size: 40px; font: … }` the change lands after the shorthand, where it wins
+- a rule set only under `@media` is refused with its condition named
+- `calc(1px` and a file in `node_modules` are refused
+- undo puts the last write back
+
+On the site (Next, localhost:4330), Sync on the "It sees what design engineers see" heading wrote `.title` in
+`foundations.css`: 34px → 44px on screen, and the X-ray's undo group brought it back to 34px.
+
+**Not done in layer 0.** Utility classes still decide and write on the page; they move behind the server interface
+next. The page still keeps its own short property table instead of the server's.
+
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
 - Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".

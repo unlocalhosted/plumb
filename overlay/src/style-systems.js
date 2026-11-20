@@ -135,34 +135,41 @@ async function fileOfBundled({ bundle, selectorText, nth }) {
 // the value a rule is given: your token's variable when the page has it, else the value itself
 const VAR = { 'font-size': (t) => [`--text-${t}`], 'line-height': (t) => [`--leading-${t}`], gap: (t) => [`--spacing-${t}`], 'border-radius': (t) => [`--radius-${t}`],
   width: (t) => [`--spacing-${t}`, `--container-${t}`], height: (t) => [`--spacing-${t}`] };
-function cssValue(change) {
+// your token's variable for a change, when the page has it: the server's rule system spells it (`var(--x)`)
+function tokenOf(change) {
   const token = change.cls?.match(/^-?[a-z]+(?:-[xytrbl])?-(?!\[)(.+)$/)?.[1];
   const names = token ? (VAR[change.prop] ?? (BOX.test(change.prop) ? (t) => [`--spacing-${t}`] : () => []))(token) : [];
   const root = getComputedStyle(document.documentElement);
-  const name = names.find((n) => root.getPropertyValue(n).trim());
-  return name ? `var(${name})` : change.value;
+  return names.find((n) => root.getPropertyValue(n).trim()) ?? null;
 }
 
+// The page's half of the rule system: evidence only (which rule wins, and its file). Where the value is written, and
+// how, is decided on the server by the project's style systems (src/styles, POST style), as one undo.
 export const cssRules = {
   id: 'rule',
   owns: (el, prop) => { const r = winningRule(el, prop); return r ? { system: 'rule', ...r } : null; },
   async write(changes, ctx) {
-    const out = [];
+    const out = [], sent = [];
     for (const g of changes) {
       let claim = g.claim;
       try {
         // a rule in a bundle: its file comes from the bundle's source map
         if (!claim.file && claim.bundle) { const file = await fileOfBundled(claim); if (!file) throw new Error(`${claim.selector} comes from a stylesheet Plumber can't trace to a file of yours.`); claim = { ...claim, file }; }
-        const now = await ctx.request('rule', { file: claim.file, selector: claim.selector, prop: g.prop });
-        const hash = now?.hash;
-        if (!hash) throw new Error(`${claim.selector} couldn't be read in ${claim.file}.`);
-        const group = ctx.group(), value = cssValue(g);
-        const where = `${claim.file.split('/').slice(-2).join('/')}${now?.line ? `:${now.line}` : ''}`;
-        ctx.keep({ state: 'ok', cls: `${claim.selector} { ${g.prop}: ${value} }`, where, group });
-        await ctx.post('set-rule', { file: claim.file, hash, selector: claim.selector, prop: g.prop, value, trace: { group, meta: { step: 'X-ray', laws: [] } } });
-        out.push({ id: g.id, state: 'ok', cls: `${claim.selector} { ${g.prop}: ${value} }`, where, group });
+        const token = tokenOf(g);
+        sent.push({ g, change: { prop: g.prop, value: g.value, ...(token ? { token } : {}), evidence: { file: claim.file, selector: claim.selector, carriers: CARRIERS[g.prop] } } });
       } catch (error) { out.push({ id: g.id, state: 'failed', why: error?.message ?? String(error) }); }
     }
+    if (!sent.length) return out;
+    const group = ctx.group();
+    ctx.keep({ state: 'ok', cls: sent.map((x) => `${x.change.evidence.selector} { ${x.g.prop}: ${x.change.token ? `var(${x.change.token})` : x.g.value} }`).join(', '), where: '', group });
+    try {
+      const answer = await ctx.post('style', { changes: sent.map((x) => x.change), trace: { group, meta: { step: 'X-ray', laws: [] } } });
+      for (const [i, x] of sent.entries()) {
+        const r = answer?.results?.[i] ?? {};
+        if (r.state === 'ok') out.push({ id: x.g.id, state: 'ok', cls: `${r.said?.split(' in ')[0] ?? x.change.evidence.selector} { ${x.g.prop}: ${r.to} }`, where: r.said ?? '', group });
+        else out.push({ id: x.g.id, state: 'failed', why: r.why ?? "This change couldn't be placed." });
+      }
+    } catch (error) { for (const x of sent) out.push({ id: x.g.id, state: 'failed', why: error?.message ?? String(error) }); }
     return out;
   },
 };

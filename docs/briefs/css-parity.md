@@ -112,6 +112,12 @@ One at a time, each shown working before the next, on a real plain-CSS app as we
 7. **Recipes and rename,** with the recipes' rule finder folded into the rule system.
 8. **The edges:** writing inside `@media`, two sides at once (`padding-x`), bundlers beyond Turbopack.
 
+## Progress
+
+- **Layer 0, first half (2026-11-20):** the interface and the rule system are on the server (`src/styles/`), the engine
+  commits their edits with one undo, and Sync's rule path sends evidence only (journey 65). Left in layer 0: utility
+  classes behind the same interface, and one property table.
+
 ## Decisions still open
 
 - **Preprocessors** (Sass, Less, PostCSS nesting): in or out. Today they fail the `.css` check and fall to the dead

@@ -146,8 +146,7 @@ export class Session extends EventEmitter {
   recipesApply(...args: Parameters<Engine['recipesApply']>) { return this.call('recipesApply', args); }
   set(...args: Parameters<Engine['set']>) { return this.call('set', args); }
   swap(...args: Parameters<Engine['swap']>) { return this.call('swap', args); }
-  rule(...args: Parameters<Engine['rule']>) { return this.call('rule', args); }
-  setRule(...args: Parameters<Engine['setRule']>) { return this.call('setRule', args); }
+  styleWrite(...args: Parameters<Engine['styleWrite']>) { return this.call('styleWrite', args); }
   swaps(...args: Parameters<Engine['swaps']>) { return this.call('swaps', args); }
   accept(...args: Parameters<Engine['accept']>) { return this.call('accept', args); }
   applyAll(...args: Parameters<Engine['applyAll']>) { return this.call('applyAll', args); }

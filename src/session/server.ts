@@ -170,7 +170,6 @@ async function dispatchOnce(session: Session, method: string, params: Record<str
   if (method === 'edits') return read('edits', [text(params, 'file')!, position(params, 'line')!, position(params, 'column', true)]);
   if (method === 'apply-text-at') return session.applyTextAt(params as unknown as Parameters<Session['applyTextAt']>[0]);
   if (method === 'apply-text') return session.applyText(params as unknown as Parameters<Session['applyText']>[0]);
-  if (method === 'rule') return read('rule', [{ file: text(params, 'file')!, selector: text(params, 'selector')!, prop: text(params, 'prop')! }]);
   if (method === 'props') {
     // the page's computed values for what nothing sets, as JSON in the query or an object in a body
     let computed = (params as { computed?: unknown }).computed;
@@ -223,7 +222,7 @@ async function dispatchOnce(session: Session, method: string, params: Record<str
       ...(then ? { then: { file: text(then, 'file')!, hash: text(then, 'hash')!, line: position(then, 'line')!, column: position(then, 'column')!, from: text(then, 'from', true) ?? '', to: text(then, 'to')! } } : {}) });
   }
   if (method === 'swap') return session.swap({ file: text(params, 'file')!, hash: text(params, 'hash')!, line: position(params, 'line')!, column: position(params, 'column')!, from: text(params, 'from', true) ?? '', to: text(params, 'to')!, ...pinOf(params) });
-  if (method === 'set-rule') return session.setRule({ file: text(params, 'file')!, hash: text(params, 'hash')!, selector: text(params, 'selector')!, prop: text(params, 'prop')!, value: text(params, 'value')! });
+  if (method === 'style') return session.styleWrite({ changes: (params as { changes: Parameters<Session['styleWrite']>[0]['changes'] }).changes });
   if (method === 'set') return session.set({ file: text(params, 'file')!, hash: text(params, 'hash')!, line: position(params, 'line')!, column: position(params, 'column')!, key: text(params, 'key')!, token: text(params, 'token')!, ...(object(params.at) ? { at: { line: Number(params.at.line), column: Number(params.at.column) } } : {}) });
   if (method === 'system') {
     const body = params as { files?: unknown; census?: unknown; scope?: unknown; exclude?: unknown; roles?: unknown };
