@@ -976,6 +976,98 @@ export const contrast = {
   },
 };
 
+// Words follow their ground (a plain check, no number). A layer that slides, grows or fades in behind words (a slide's
+// trail, a hold's fill, a progress bar under a label, a highlight that sweeps across) takes their contrast with it: the
+// words were chosen for the surface at rest, and where the layer passes they sit on another colour. Plumber's contrast
+// rule reads the ground up the words' own parents and can't see a sibling layer, so this one looks at what is actually
+// painted at each part of the words: the positioned, moved or clipped boxes that overlap them, cut to what is visible of
+// each (its clip-path and the clipping boxes above it), below the words or over them, in strips 4px wide. Strips that
+// read under the contrast floor, or are covered, in a run at least 8px wide, fail.
+// (Found on beUI's slide-to-commit and others, 2026-11-20: the trail passes under black words and they stay black.)
+const LAYERS = new WeakMap();
+// the layers that could pass under words: from the page's list of elements when the runner gives one, else from the
+// words' own neighbourhood (their ancestor three levels up), which is where a trail, a fill or a highlight lives
+function layersOf(facts, el) {
+  const scope = facts.items ? facts : (() => { let a = el; for (let i = 0; i < 3 && a.parentElement; i++) a = a.parentElement; return a; })();
+  let all = LAYERS.get(scope);
+  if (all) return all;
+  all = [];
+  // what is seen of a box: cut by every clipping box above it and by its own and its parents' clip-path insets
+  const seen = (e) => {
+    const r0 = facts.rect(e); let b = { l: r0.left, r: r0.right, t: r0.top, b: r0.bottom };
+    for (let n = e; n && n !== document.body; n = n.parentElement) {
+      const cs = facts.style(n), c = facts.rect(n);
+      if (n !== e && cs.overflow !== 'visible') b = { l: Math.max(b.l, c.left), r: Math.min(b.r, c.right), t: Math.max(b.t, c.top), b: Math.min(b.b, c.bottom) };
+      const m = /^inset\(([^)]*)\)/.exec(cs.clipPath);
+      if (m) { const v = m[1].replace(/round.*/, '').trim().split(/\s+/), [T, R, B, L] = [v[0], v[1] ?? v[0], v[2] ?? v[0], v[3] ?? v[1] ?? v[0]];
+        const d = (x, size) => (x.endsWith('%') ? parseFloat(x) / 100 * size : parseFloat(x) || 0);
+        b = { l: Math.max(b.l, c.left + d(L, c.width)), r: Math.min(b.r, c.right - d(R, c.width)), t: Math.max(b.t, c.top + d(T, c.height)), b: Math.min(b.b, c.bottom - d(B, c.height)) }; }
+    }
+    return b.r - b.l > 1 && b.b - b.t > 1 ? b : null;
+  };
+  for (const e of facts.items ?? scope.querySelectorAll('*')) {
+    if (!e.isConnected) continue;
+    const cs = facts.style(e), bg = rgb(cs.backgroundColor);
+    if (!bg || bg[3] * (parseFloat(cs.opacity) || 0) < 0.5) continue;
+    // a layer is placed or moved, not laid out in the flow beside the words
+    if (!/^(absolute|fixed|sticky)$/.test(cs.position) && cs.transform === 'none' && cs.clipPath === 'none') continue;
+    const v = seen(e); if (v) all.push({ el: e, v, bg, z: zOf(e, facts), pos: cs.position !== 'static' });
+  }
+  LAYERS.set(scope, all);
+  return all;
+}
+// stacking, roughly: a positioned box's z-index (auto counts as 0), else its nearest positioned parent's
+function zOf(e, facts) { for (let n = e; n && n !== document.body; n = n.parentElement) { const cs = facts.style(n); if (cs.position !== 'static') return parseInt(cs.zIndex, 10) || 0; } return -Infinity; }
+export const wordsOnLayers = {
+  id: 'craft/words-on-layers', family: 'craft', number: [], owns: ['color'], once: 'element', refines: ['craft/contrast'], reads: ['style', 'text', 'rect'],
+  check({ el, facts }, theme) {
+    // words hidden from a screen reader are still read by everyone who sees them (a slide's label, its name on the thumb)
+    const own = [...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.nodeValue).join(' ').trim();
+    if (!facts.text(el) || !/\p{L}{2}/u.test(own)) return [];
+    const s = facts.style(el), c = rgb(s.color); if (!c) return [];
+    let fade = 1; for (let n = el; n && n !== document.documentElement; n = n.parentElement) fade *= parseFloat(facts.style(n).opacity) || 0;
+    if (fade < 0.05) return []; // not shown: there is nothing to read
+    // words clipped out of sight (a screen reader's hint in a 1px box) aren't drawn
+    for (let n = el; n && n !== document.body; n = n.parentElement) { const r = n.getBoundingClientRect(); if (facts.style(n).overflow !== 'visible' && (r.width <= 2 || r.height <= 2)) return []; }
+    const lines = [], range = document.createRange();
+    for (const n of el.childNodes) { if (n.nodeType !== 3 || !n.nodeValue.trim()) continue; range.selectNodeContents(n); for (const q of range.getClientRects()) if (q.width > 2 && q.height > 2) lines.push(q); }
+    if (!lines.length) return [];
+    // a layer that carries the same words is the second-copy technique (the words redrawn in the layer's own ink and
+    // clipped by it): over it, the copy's words are what is read, and they are judged as their own element
+    const ownText = (e) => [...e.childNodes].filter((n) => n.nodeType === 3).map((n) => n.nodeValue).join(' ').trim();
+    const copy = (L) => [...L.el.querySelectorAll('*')].concat(L.el).some((e) => e !== el && ownText(e) === own);
+    const layers = layersOf(facts, el).filter((L) => L.el !== el && !L.el.contains(el) && !el.contains(L.el) && lines.some((q) => L.v.r > q.left && L.v.l < q.right && L.v.b > q.top && L.v.t < q.bottom));
+    if (!layers.length) return [];
+    const T = theme.spec('craft/contrast'), fs = px(s.fontSize), w = parseInt(s.fontWeight, 10) || 400;
+    const need = fs >= T.largeAt || fs >= T.boldLargeAt && w >= T.boldWeight ? T.large : fs >= T.boldAt && w >= T.boldWeight ? T.bold : T.small;
+    const base = facts.ground(el), mine = zOf(el, facts), positioned = mine !== -Infinity;
+    // a layer is over the words when it stacks higher, or when it is placed and the words are in the flow
+    const above = (L) => (positioned ? L.z > mine || (L.z === mine && !!(el.compareDocumentPosition(L.el) & Node.DOCUMENT_POSITION_FOLLOWING)) : L.pos && L.z >= 0);
+    let bad = 0, onLayer = 0, all = 0, worst = Infinity, covered = 0, what = null, run = 0, longest = 0;
+    for (const q of lines) for (let x = q.left; x < q.right; x += 4) {
+      all++;
+      const mid = x + 2, hit = layers.filter((L) => L.v.l <= mid && L.v.r >= mid && Math.min(L.v.b, q.bottom) - Math.max(L.v.t, q.top) >= q.height * 0.6);
+      const top = hit.sort((a, b) => a.z - b.z || (a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1)).at(-1);
+      let fail = false;
+      if (top && above(top)) { if (!copy(top)) { fail = true; covered++; onLayer++; what ??= top.el; } }
+      else { const ground = (top ? hit.filter((L) => !above(L)).at(-1)?.bg : null) ?? base; const lc = Math.abs(apca(over([c[0], c[1], c[2], alpha(c) * fade], ground), ground)); if (lc < need) { fail = true; worst = Math.min(worst, lc); if (top) { what ??= top.el; onLayer++; } } }
+      if (fail) { bad++; run += 4; longest = Math.max(longest, run); } else run = 0;
+    }
+    // only a layer's doing counts here: words that fail on their own ground are the contrast rule's finding
+    if (longest < 8 || !what) return [];
+    // the layer's share of the words, and whether the words also fail where no layer is (faded, or wrong for their ground)
+    const share = Math.round((onLayer / all) * 100), elsewhere = bad > onLayer;
+    // the layer by its role, as a person would name it
+    const cls = (what.getAttribute('class') ?? '').toLowerCase(), role = /thumb|knob|handle/.test(cls) ? 'thumb' : /trail|progress/.test(cls) ? 'trail' : /highlight|sheen|shine/.test(cls) ? 'highlight' : /overlay|scrim/.test(cls) ? 'overlay' : 'fill';
+    return [{
+      ...say(this.id, { share, lc: worst === Infinity ? null : Math.floor(worst), need, covered: covered > onLayer / 2, what: role, elsewhere, fade: Math.round(fade * 100) }),
+      key: this.id, text: colourClass(el, 'text', theme) ?? 'color', props: ['color'], value: `${share}%`, n: share,
+      evidence: { share, worstLc: worst === Infinity ? null : Math.floor(worst), need, covered, color: hex(c), layer: role, fade: Math.round(fade * 100), elsewhere }, confidence: 0.8,
+      suggest: { kind: 'advice', text: covered > onLayer / 2 ? 'Put the words above the layer, or move the layer out from under them.' : 'Flip the words to the layer’s own ink exactly at its edge (a second copy of them, clipped by the layer), or fade them out before the layer reaches them.' },
+    }];
+  },
+};
+
 // #26. Disabled is not just lower opacity: a faded coloured control loses its words.
 export const disabledContrast = {
   id: 'craft/disabled-contrast', family: 'craft', number: [26], owns: ['color'], once: 'ancestor', refines: ['craft/contrast', 'craft/text-opacity'],
@@ -2847,7 +2939,7 @@ export const actionFit = {
 };
 
 export const RULES = [concentricRadius, innerOuterSpacing, textOpacity, halfPixel, hairline, imageOutline, layeredShadow, scaleFromZero, zIndexWar, contentAlign,
-  buttonPadding, iconSide, measure, leading, tracking, tabularNums, headingWidow, oneLight, borderOnShadow, contrast, disabledContrast, hitTarget, mediaSize, imageFit, flexMin, imageGround, stickyRoom, fixedHeight, scrollOnDemand, declaredGap, listWrap, imageStretch, backgroundTile, fixedColumn,
+  buttonPadding, iconSide, measure, leading, tracking, tabularNums, headingWidow, oneLight, borderOnShadow, contrast, wordsOnLayers, disabledContrast, hitTarget, mediaSize, imageFit, flexMin, imageGround, stickyRoom, fixedHeight, scrollOnDemand, declaredGap, listWrap, imageStretch, backgroundTile, fixedColumn,
   truncateIntent, scrollbarGutter, boldHover, hangingQuote, capsCase, gradientSpace, inputZoom, anchorOffset, middleTruncate,
   textWrapRole, continuousCorners, opticalSizing, tintedShadow, easedScrim, pureBlackWhite, contentSize,
   baselineAlign, iconCap, trimLeading, headingLead, pairSpacing, cardOpticalPadding, textCollision,

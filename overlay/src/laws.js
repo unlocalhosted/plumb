@@ -52,6 +52,7 @@ const RULE_LAWS = {
   'craft/one-light': [],
   'craft/border-on-shadow': [],
   'craft/contrast': [],
+  'craft/words-on-layers': [],
   'craft/disabled-contrast': [],
   'craft/hit-target': ['fitts'],
   'craft/media-size': ['similarity'],

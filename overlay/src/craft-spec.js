@@ -47,6 +47,7 @@ export const STANDARD = {
   safety: {}, // filled by the packs (pack-security.js)
   access: {
     contrast: { small: 60, bold: 50, large: 45, largeAt: 24, boldLargeAt: 18, boldAt: 14, boldWeight: 600 }, // APCA Lc, and when text counts as large or bold
+    'words-on-layers': {}, // reads contrast's floors; 4px strips and an 8px run are the measures
     'disabled-contrast': { min: 45 },
     'hit-target': { min: 24, long: 64 },
     'input-zoom': { min: 16 },

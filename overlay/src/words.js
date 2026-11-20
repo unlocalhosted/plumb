@@ -71,6 +71,12 @@ export const CRAFT = {
     line: ((both) => touching ? `${both ?? 'These parts'} touch: nothing but left-over space keeps them apart, and there is none left.` : `${both ?? 'These parts'} are ${px(closest)} apart only because that much space is left over. A longer title closes it.`)(a && b ? `“${a}” and “${b}”` : null),
     reason: 'The distance between neighbours is a decision. Left to whatever space remains, it closes to nothing.',
   }),
+  'words-on-layers': ({ share, lc, need, covered, what, elsewhere, fade }) => ({
+    label: 'Words lose their ground',
+    line: covered ? `The ${what} covers ${share}% of these words.`
+      : `Where the ${what} passes under these words (${share}% of them), they read at Lc ${lc}; they need ${need}.${elsewhere ? ` They fade to ${fade}% on the rest too, so for a moment nothing reads.` : ''}`,
+    reason: 'Words have to change with what is under them: a fill or layer that slides beneath them takes their contrast with it.',
+  }),
   'text-collision': ({ how, other }) => ({
     label: 'Words run into other words',
     line: how === 'run' ? `This runs straight into “${other}”, with no space between them.` : how === 'tight' ? `This sits so close to “${other}” that their letters meet.` : `This is drawn on top of “${other}”.`,

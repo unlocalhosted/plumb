@@ -468,8 +468,12 @@ export class Craft {
   // told when a late fact (an icon's ink) lands: judge the page again
   onFacts = null;
   // again: asked when elements left unjudged because they were moving have come to rest (the reader reports again)
-  constructor({ rules = PACK_RULES, theme, again } = {}) {
+  // now: judge what is drawn this moment, moving or not (the generator holds a gesture mid-way and asks what plumber
+  // sees there); the overlay leaves it off and judges what moves once it comes to rest
+  #now = false;
+  constructor({ rules = PACK_RULES, theme, again, now = false } = {}) {
     this.#again = again ?? null;
+    this.#now = now;
     INK.crafts.add(this);
     LOAD.crafts.add(this);
     this.#rules = rules;
@@ -528,7 +532,7 @@ export class Craft {
       const ending = anims.filter((a) => a.effect.getComputedTiming?.().iterations !== Infinity);
       // what moves (animations, and what JavaScript rewrites frame by frame) is read once, shared (live.js): an
       // element asks its ancestors, not every animation on the page
-      const moving = (el) => isLive(el);
+      const moving = (el) => !this.#now && isLive(el);
       if (ending.length && this.#again && !this.#waiting) {
         this.#waiting = true;
         Promise.allSettled(ending.map((a) => a.finished)).then(() => { this.#waiting = false; this.#again?.(); });
