@@ -56,7 +56,8 @@ export function ConcernGrid({ css, concern, checks }) {
   const [q, setQ] = useState('');
   const shown = useMemo(() => {
     const words = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
-    return checks.filter((c) => !words.length || words.every((w) => `${c.name} ${c.why} ${c.id}`.toLowerCase().includes(w)));
+    const found = checks.filter((c) => !words.length || words.every((w) => `${c.name} ${c.why} ${c.id}`.toLowerCase().includes(w)));
+    return [...found.filter((c) => hasExample(c.id)), ...found.filter((c) => !hasExample(c.id))]; // the ones you can play first
   }, [q, checks]);
   return (
     <div className="ck">

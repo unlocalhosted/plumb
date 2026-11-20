@@ -14,13 +14,8 @@
 import { SPRING } from './motion-beats.js';
 import { MOTION_CSS, TILE_BEATS as T, playTile, pillHtml } from './show-motion.js';
 
-// the spring, sampled: the overlay's curve (motion-beats.js SPRING) as a function, so a held point and a played
-// moment are the same place on it
-const PTS = [[0, 0], [0.06, 0.21], [0.15, 0.62], [0.25, 0.9], [0.36, 1.01], [0.46, 1.02], [0.6, 1], [1, 1]];
-export const spring = (t) => { for (let i = 1; i < PTS.length; i++) { const [x0, y0] = PTS[i - 1], [x1, y1] = PTS[i]; if (t <= x1) return y0 + (y1 - y0) * ((t - x0) / (x1 - x0 || 1)); } return 1; };
-const mix = (a, b, p) => `color-mix(in oklab, ${b} ${Math.round(Math.max(0, Math.min(1, p)) * 100)}%, ${a})`;
-const lerp = (a, b, p) => a + (b - a) * p;
-const at = (el, css) => { el.style.cssText = css; };
+import { lerp, at, make, ringAround, pillOver, pillLeft } from './check-kit.js';
+import { CRAFT } from './checks/craft.js';
 const CSS = `
   .ck-scene { position: absolute; inset: 0; display: grid; place-items: center; }
   .btn2 { display: inline-flex; align-items: center; height: 40px; padding: 0 18px; border-radius: 9px; color: #fff; font: 600 14px system-ui; }
@@ -35,12 +30,6 @@ const CSS = `
   .g[data-off] { opacity: 0 !important; }
   .key { display: inline-grid; place-items: center; min-width: 30px; height: 24px; padding: 0 7px; border-radius: 6px; background: #f3f4f6; box-shadow: inset 0 -2px 0 #d1d5db; font: 600 11px system-ui; color: #374151; }
 `;
-
-// the guides a spec asks for, made in its stage
-const make = (s, cls) => { const el = document.createElement('i'); el.className = `g ${cls}`; s.append(el); return el; };
-const ringAround = (ring, el, s, pad = 7) => { const S = s.getBoundingClientRect(), r = el.getBoundingClientRect(); at(ring, `left:${r.left - S.left - pad}px;top:${r.top - S.top - pad}px;width:${r.width + pad * 2}px;height:${r.height + pad * 2}px;border-radius:${(parseFloat(getComputedStyle(el).borderTopLeftRadius) || 8) + pad}px`); };
-const pillOver = (pill, el, s, dy = 16) => { const S = s.getBoundingClientRect(), r = el.getBoundingClientRect(); at(pill, `left:${r.left - S.left + r.width / 2}px;top:${r.top - S.top - dy}px`); };
-const pillLeft = (pill, y, x) => { at(pill, `left:${x}px;top:${y}px`); };
 
 // a colour that changes on one element, its value a name (the colour checks)
 const colourCheck = ({ html, pick, from, to, prop = 'background', labels, after }) => (s) => {
@@ -148,6 +137,9 @@ export const CHECK_SPECS = {
 
 };
 
+// the other concerns' examples: each entry's scene, beside its words (checks/<concern>.js)
+for (const [id, ex] of Object.entries(CRAFT)) CHECK_SPECS[id] = ex.scene;
+
 // One player for every check: the tiles' own (playTile). The scene's elements carry a transition while it moves,
 // so at(0) or at(1) is all a spec says; a flip mid-move turns the transition round from where it is.
 export function mountCheck(host, id, { tokensCss = '', onMove } = {}) {
@@ -175,11 +167,11 @@ export function mountCheck(host, id, { tokensCss = '', onMove } = {}) {
       if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
         busy = false;
         spec.at(fixed ? 1 : 0); spec.track(); onMove?.(fixed); stage.toggleAttribute('data-landed', true);
-        if (pill) pill.innerHTML = spec.labels ? spec.labels[fixed ? 1 : 0] : pillHtml([Math.round(fixed ? spec.to : spec.from)], spec.unit, fixed ? spec.name : '');
+        if (pill) pill.innerHTML = spec.labels ? spec.labels[fixed ? 1 : 0] : pillHtml([(spec.fmt ?? Math.round)(fixed ? spec.to : spec.from)], spec.unit, fixed ? spec.name : '');
         return;
       }
       const [from, to] = fixed ? [spec.from, spec.to] : [spec.to, spec.from];
-      await playTile(stage, { from, to, step: spec.step, unit: spec.unit, name: fixed ? spec.name : '', labels: spec.labels && (fixed ? spec.labels : [...spec.labels].reverse()),
+      await playTile(stage, { from, to, step: spec.step, fmt: spec.fmt, unit: spec.unit, name: fixed ? spec.name : '', labels: spec.labels && (fixed ? spec.labels : [...spec.labels].reverse()),
         guides: kinds, stale: () => mine !== run, track: spec.track, now: turning,
         ease: (on) => { stage.toggleAttribute('data-moving', on); onMove?.(fixed); }, apply: () => spec.at(fixed ? 1 : 0) });
       if (mine !== run) return;

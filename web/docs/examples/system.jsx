@@ -3,6 +3,7 @@
 // about, not just the property it touches: a Broken / Fixed switch, the line of code it is about, and where the cost
 // shows up later (the theme changes and a hard-coded value doesn't follow), a "Change your theme" button that shows it.
 import { useEffect, useRef, useState } from 'react';
+import { CRAFT } from '../../../overlay/src/checks/craft.js';
 
 // the example app's theme, before and after "Change your theme": a rebrand from indigo to teal, softer corners,
 // a darker surface. Elements written with the token follow it; hard-coded copies keep the old look.
@@ -85,14 +86,16 @@ function Presses({ fixed }) {
   return <div className="ex-row">{['File', 'Edit', 'View'].map((w, i) => <button key={w} type="button" className="ex-menu" data-fix={i === 1 || undefined} data-on={on === i || undefined} style={{ transitionDuration: `${ms(i)}ms` }} onClick={() => press(i, ms(i) * 2)}>{w}</button>)}</div>;
 }
 
-export const hasExample = (id) => !!EXAMPLES[id];
+// the other concerns' examples carry their words beside their scene (overlay/src/checks/<concern>.js)
+const WORDS = { ...CRAFT };
+export const hasExample = (id) => !!(EXAMPLES[id] || WORDS[id]);
 // Every fix is shown as a transition (interaction principles 35b), played by the tiles of "How a change moves" own
 // player (overlay/src/check-motion.js on show-motion.js). A Broken / Fixed toggle plays it either way; the code line
 // crosses over when the scene starts to move.
 const textOf = (node) => (node == null ? '' : typeof node === 'string' || typeof node === 'number' ? String(node) : Array.isArray(node) ? node.map(textOf).join('') : textOf(node.props?.children));
 
 export function Specimen({ id, css = '', head = null }) {
-  const ex = EXAMPLES[id], host = useRef(null), ctl = useRef(null), [fixed, setFixed] = useState(false), [moved, setMoved] = useState(false);
+  const ex = EXAMPLES[id] ?? WORDS[id], host = useRef(null), ctl = useRef(null), [fixed, setFixed] = useState(false), [moved, setMoved] = useState(false);
   useEffect(() => {
     let gone = false;
     setFixed(false); setMoved(false);
@@ -103,7 +106,8 @@ export function Specimen({ id, css = '', head = null }) {
   }, [id, css]);
   const flip = (to) => { if (to === fixed || !ctl.current) return; setFixed(to); ctl.current.set(to); };
   if (!ex) return null;
-  const before = ex.show(false, 0, THEME[0]), after = ex.show(true, 0, THEME[0]);
+  const [bCode, aCode] = ex.code ?? [textOf(ex.show(false, 0, THEME[0]).code), textOf(ex.show(true, 0, THEME[0]).code)];
+  const [bNote, aNote] = ex.note ?? [ex.show(false, 0, THEME[0]).note, ex.show(true, 0, THEME[0]).note];
   // four rows of the card's grid: the stage, the toggle and the code, the name, the note. Both notes sit in one cell,
   // so the card is as tall as the longer one and nothing moves when the toggle flips
   return (
@@ -111,16 +115,16 @@ export function Specimen({ id, css = '', head = null }) {
       <style>{CSS}</style>
       <div className="sp-stage" ref={host} />
       <div className="sp-ctl">
-        <div className="sp-seg" role="radiogroup" aria-label={`${textOf(before.code)}, broken or fixed`} data-fixed={fixed || undefined}
+        <div className="sp-seg" role="radiogroup" aria-label={`${bCode}, broken or fixed`} data-fixed={fixed || undefined}
           onKeyDown={(e) => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); flip(e.key === 'ArrowRight'); } }}>
           <i aria-hidden="true" />
           <button type="button" role="radio" aria-checked={!fixed} tabIndex={fixed ? -1 : 0} onClick={() => flip(false)}>Broken</button>
           <button type="button" role="radio" aria-checked={fixed} tabIndex={fixed ? 0 : -1} onClick={() => flip(true)}>Fixed</button>
         </div>
-        <span className="sp-diff" data-fixed={moved || undefined}><s title={textOf(before.code)}>{textOf(before.code)}</s><i aria-hidden="true">→</i><b title={textOf(after.code)}>{textOf(after.code)}</b></span>
+        <span className="sp-diff" data-fixed={moved || undefined}><s title={bCode}>{bCode}</s><i aria-hidden="true">→</i><b title={aCode}>{aCode}</b></span>
       </div>
       {head}
-      <div className="sp-notes" aria-live="polite"><p data-on={!moved || undefined}>{before.note}</p><p data-on={moved || undefined}>{after.note}</p></div>
+      <div className="sp-notes" aria-live="polite"><p data-on={!moved || undefined}>{bNote}</p><p data-on={moved || undefined}>{aNote}</p></div>
     </>
   );
 }
