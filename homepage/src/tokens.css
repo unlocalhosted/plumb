@@ -202,7 +202,7 @@
   --pl-bg-page: var(--pl-desk);                     /* what a page of cards sits on */
   --pl-bg-surface: var(--pl-paper);                 /* a card, a menu, a list, a bar */
   --pl-bg-surface-hover: var(--pl-paper-2);         /* a row or a field pointed at */
-  --pl-bg-surface-pressed: color-mix(in oklab, var(--pl-ink) 8%, var(--pl-paper)); /* a row held down */
+  --pl-bg-surface-pressed: var(--pl-rule); /* a row held down: the line step, so the greys stay six */
   --pl-bg-inset: var(--pl-paper-2);                 /* a field, a strip, a track: sunk into the surface */
   --pl-bg-selected: color-mix(in oklab, var(--pl-sky) 14%, var(--pl-paper)); /* the row or option in hand */
   --pl-bg-disabled: var(--pl-paper-2);              /* a field or a button you can't use now */

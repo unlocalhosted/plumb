@@ -32,7 +32,7 @@
   --ease: var(--pl-ease-out);
   /* colour: the roles */
   --g0: var(--pl-bg-page); --g1: var(--pl-bg-surface); --g2: var(--pl-bg-inset); --g3: var(--pl-bg-surface-pressed);
-  --line: var(--pl-border-default); --line-2: color-mix(in oklab, var(--pl-ink) 16%, transparent);
+  --line: var(--pl-border-default); --line-2: var(--line);
   --ink-1: var(--pl-text-primary); --ink-2: var(--pl-text-secondary); --ink-3: var(--pl-text-disabled);
   --accent: var(--pl-pink); --accent-ink: var(--pl-pink); --accent-soft: color-mix(in oklab, var(--pl-pink) 12%, transparent);
   --off: var(--pl-coral); --off-soft: color-mix(in oklab, var(--pl-coral) 10%, transparent);

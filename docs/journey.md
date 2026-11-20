@@ -3627,6 +3627,24 @@ card's pale values. The check still flags both, because its limit is 7 and the s
 
 **Media hooks.** The pin demo in dark mode, pale card on a dark page.
 
+### 59. The brand's greys go from eight to six (2026-11-20)
+**The itch.** With the drawings on the site's greys ([entry 58](#58-the-homepages-drawings-take-the-sites-greys-2026-11-20)),
+the shades check still fired, because the set itself was seven or more. The owner chose to trim the set over raising
+the limit.
+
+**What the set was.** Three grounds (white, the inset, the line), three inks (main, quiet, faint), and two that sat
+almost on top of the line: "pressed", made of 8% ink on white, and a second line made of ink at 16% opacity.
+
+**What we chose.** Both merge into the line step. A row held down now takes the line colour, which is a hair from
+what it was, in the brand's tokens and the homepage's copy of them. The second line is the line. The pale pin demo
+drops to three values: its tags lose their fill and become quiet words, and the photo's backing matches the card.
+
+**The proof.** Light mode: the shades check finds nothing. Dark mode: 9, the six steps plus the pin card's three
+pale values, kept on purpose. All 74 colour pairings still pass contrast. On the way, a reading of 14 in light mode
+turned out to be the page caught mid-fade while switching schemes; measured after it settles, it passes.
+
+**Media hooks.** The pin demo before and after its tags lost their pills.
+
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
 - Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".
@@ -5287,6 +5305,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- The brand uses six greys, not eight: "pressed" and the see-through second line merge into the line step; the homepage passes the shades check in light mode ([entry](#59-the-brands-greys-go-from-eight-to-six-2026-11-20)).
 - The homepage's app drawings use the site's own greys, solid, with no one-off creams or see-through whites; light mode is down to the site's 7 greys ([entry](#58-the-homepages-drawings-take-the-sites-greys-2026-11-20)).
 - Plumber's own site drops the slop marks its new checks found: headings at normal letter spacing (the brand's tokens too), no outlines on surfaces, no lines between list rows ([entry](#57-our-own-site-loses-the-slop-marks-2026-11-20)).
 - Anti-slop finds the owner's own list of generated-page marks: capitals under a heading, italic accent words, Instrument Serif, squeezed letters, divider lines, outlined boxes, busy diagrams, file paths as decoration, rows of tags, boxes with too many text styles, and too many shades of one colour; each plays its fix ([entry](#56-the-owners-slop-list-becomes-eleven-anti-slop-checks-2026-11-20)).
