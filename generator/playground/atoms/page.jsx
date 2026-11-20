@@ -93,11 +93,8 @@ function Page({ Shipped, product, atom }) {
 }
 
 export function mountAtoms({ Shipped, product }) {
-  // the prototypes of how plumber shows faults that live in time: ?proto=scrub, ?proto=thermal
-  const proto = new URLSearchParams(location.search).get('proto');
-  if (proto === 'scrub') import('./proto-scrub.js');
-  if (proto === 'thermal') import('./proto-thermal.js');
-  if (proto === 'dial') import('./proto-dial.js');
+  // use any form and plumber shows what went wrong in that gesture, over time, with its fix (gesture.js)
+  import('./gesture.js');
   const want = new URLSearchParams(location.search).get('atom');
   const atom = product.atoms.find((x) => x.id === want) ?? product.atoms[0];
   createRoot(document.getElementById('root')).render(<Page Shipped={Shipped} product={product} atom={atom} />);

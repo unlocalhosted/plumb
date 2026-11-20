@@ -1,17 +1,17 @@
-// Prototype A, "scrub the button's past" (one of three ways plumber could show faults that live in time: motion,
-// micro-interactions, states). Open the atoms page with ?proto=scrub.
+// What went wrong in a gesture, over time, and how to fix it: part of the atoms page, under any form you use.
 //
 //   record   pressing a button starts a recording of it: every frame, what each of its parts looks like (transform,
-//            opacity, clip, size, colours) and what it says, and every tenth of a second plumber judges what is drawn
-//   story    letting go, the story of the gesture unfurls under the button, as lanes on one time line, each read
-//            against its standard: your hand (pressed, held, let go); its answer (how soon anything changed, against
-//            Nielsen's 0.1 s); its movement (how long it moves after you let go, against Material's 0.5 s); its words
-//            (when they stay readable, when the fill takes them). It opens parked at the worst moment
+//            opacity, clip, size, colours, where it sits) and what it says, and every tenth of a second plumber judges
+//            what is drawn
+//   faults   letting go, a lane opens under the button for each thing that went wrong, on one time line: the problem
+//            in plain words, when it happened in coral, and the fix in real CSS names. Each is read against its
+//            standard: its words (lost for 150 ms or more), its first answer (Nielsen's 0.1 s), its movement after you
+//            let go (Material's 500 ms). A gesture with nothing wrong gets one mint line
 //   scrub    dragging along the lanes (or the arrow keys) freezes the real button in its pose at that moment, the
-//            fault painted on it, one plain line saying what it says and what is wrong then; Esc or Live hands it back
+//            words fault painted on it; Esc or Live hands it back
 import { Craft, Theme } from '../../../overlay/src/craft.js';
 import '../../../overlay/src/tokens.css';
-import './proto-scrub.css';
+import './gesture.css';
 
 const PROPS = ['transform', 'opacity', 'clip-path', 'width', 'height', 'background-color', 'color', 'visibility', 'filter', 'translate', 'scale'];
 const JUDGE_EVERY = 100; // ms between plumber's verdicts while recording

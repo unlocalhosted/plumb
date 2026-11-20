@@ -1,4 +1,4 @@
-/* Prototype A, "scrub the button's past": the strip under a button, and the fault painted on the frozen pose. Every
+/* What went wrong in a gesture: the lanes under a button, and the fault painted on the frozen pose. Every
    value is plumber's own (overlay/src/tokens.css, under .pl-light): coral for what is wrong, the line weight, radii,
    durations and the spring. */
 .atom-stage { position: relative; }
