@@ -26,7 +26,7 @@
     56
    ],
    "firstMs": 39,
-   "motionMs": 100,
+   "motionMs": 95,
    "commits": true,
    "words": null,
    "backsOut": true,
@@ -44,11 +44,16 @@
      "fix": null,
      "principle": "People need to know their action registered: the interface answers within about a tenth of a second, or the press feels lost.",
      "sources": [
-      "Nielsen Norman Group, 10 usability heuristics: #1 Visibility of system status",
-      "Apple Human Interface Guidelines: Feedback",
-      "Response time limits (Nielsen, 0.1 s feels instantaneous)"
+      {
+       "says": "Nielsen Norman Group heuristic #1, Visibility of system status: keep people informed through appropriate feedback within a reasonable amount of time",
+       "url": "https://www.nngroup.com/articles/ten-usability-heuristics/"
+      },
+      {
+       "says": "Nielsen, Response Times: 0.1 second is about the limit for feeling the system reacts instantaneously",
+       "url": "https://www.nngroup.com/articles/response-times-3-important-limits/"
+      }
      ],
-     "checked": false
+     "checked": true
     },
     {
      "id": "words-stay-readable",
@@ -59,8 +64,14 @@
      "fix": null,
      "principle": "What a button says must be readable in every state it passes through, not only at rest: mid-gesture is when people check what they are committing to.",
      "sources": [
-      "WCAG 2.2, 1.4.3 Contrast (Minimum)",
-      "Plumber: craft/words-on-layers (words follow their ground)"
+      {
+       "says": "WCAG 2.2, 1.4.3 Contrast (Minimum)",
+       "url": "https://www.w3.org/TR/WCAG22/#contrast-minimum"
+      },
+      {
+       "says": "Plumber: craft/words-on-layers (words follow their ground)",
+       "url": null
+      }
      ],
      "checked": true
     },
@@ -73,11 +84,20 @@
      "fix": null,
      "principle": "The thing you press needs room for a finger: small targets cause missed and mistaken presses.",
      "sources": [
-      "Apple Human Interface Guidelines: 44×44 pt minimum hit target",
-      "Material Design: 48×48 dp touch target",
-      "WCAG 2.2, 2.5.8 Target Size (Minimum), 24×24 CSS px"
+      {
+       "says": "Apple Human Interface Guidelines, Accessibility: default control size on iOS 44×44 pt (minimum 28×28 pt)",
+       "url": "https://developer.apple.com/design/human-interface-guidelines/accessibility"
+      },
+      {
+       "says": "Material Design 3: consider making touch targets at least 48×48 dp",
+       "url": "https://m3.material.io/foundations/designing/structure"
+      },
+      {
+       "says": "WCAG 2.2, 2.5.8 Target Size (Minimum): at least 24×24 CSS px (AA)",
+       "url": "https://www.w3.org/TR/WCAG22/#target-size-minimum"
+      }
      ],
-     "checked": false
+     "checked": true
     },
     {
      "id": "motion-purposeful",
@@ -88,11 +108,20 @@
      "fix": null,
      "principle": "Interface motion should be brief and say something; people who ask for reduced motion should get the same states without the travel.",
      "sources": [
-      "Material Design: motion duration and easing",
-      "Apple Human Interface Guidelines: Motion; Reduce Motion",
-      "WCAG 2.2, 2.3.3 Animation from Interactions (AAA)"
+      {
+       "says": "Material Design 3, easing and duration: suggested transitions run 200–500 ms",
+       "url": "https://m3.material.io/styles/motion/easing-and-duration/applying-easing-and-duration"
+      },
+      {
+       "says": "Apple Human Interface Guidelines, Motion: aim for brevity and precision in feedback animations; make motion optional",
+       "url": "https://developer.apple.com/design/human-interface-guidelines/motion"
+      },
+      {
+       "says": "WCAG 2.2, 2.3.3 Animation from Interactions (AAA): motion triggered by interaction can be disabled",
+       "url": "https://www.w3.org/TR/WCAG22/#animation-from-interactions"
+      }
      ],
-     "checked": false
+     "checked": true
     },
     {
      "id": "friction-fits-stakes",
@@ -103,11 +132,20 @@
      "fix": null,
      "principle": "Consequential, hard-to-undo actions deserve a deliberate step; everyday ones should not make people work. Both too little and too much friction cost trust.",
      "sources": [
-      "Apple Human Interface Guidelines: confirm destructive or consequential actions, sparingly",
-      "Material Design: dialogs and confirmation for consequential actions",
-      "Nielsen Norman Group heuristic #5: Error prevention"
+      {
+       "says": "Apple Human Interface Guidelines, Alerts: use alerts sparingly; avoid them for common, undoable actions",
+       "url": "https://developer.apple.com/design/human-interface-guidelines/alerts"
+      },
+      {
+       "says": "Material Design 3, Dialogs: purposefully interruptive, so use them sparingly",
+       "url": "https://m3.material.io/components/dialogs/guidelines"
+      },
+      {
+       "says": "Nielsen Norman Group heuristic #5, Error prevention: a confirmation option before people commit",
+       "url": "https://www.nngroup.com/articles/ten-usability-heuristics/"
+      }
      ],
-     "checked": false
+     "checked": true
     }
    ],
    "score": 0
@@ -120,14 +158,14 @@
     48,
     48
    ],
-   "firstMs": 38,
-   "motionMs": 1598,
+   "firstMs": 36,
+   "motionMs": 1592,
    "commits": true,
    "words": null,
    "backsOut": true,
    "keyboard": true,
    "focusable": true,
-   "reducedMotionMs": 1242,
+   "reducedMotionMs": 1244,
    "progressRatio": 3.1,
    "verdict": "needs-work",
    "results": [
@@ -140,11 +178,16 @@
      "fix": null,
      "principle": "People need to know their action registered: the interface answers within about a tenth of a second, or the press feels lost.",
      "sources": [
-      "Nielsen Norman Group, 10 usability heuristics: #1 Visibility of system status",
-      "Apple Human Interface Guidelines: Feedback",
-      "Response time limits (Nielsen, 0.1 s feels instantaneous)"
+      {
+       "says": "Nielsen Norman Group heuristic #1, Visibility of system status: keep people informed through appropriate feedback within a reasonable amount of time",
+       "url": "https://www.nngroup.com/articles/ten-usability-heuristics/"
+      },
+      {
+       "says": "Nielsen, Response Times: 0.1 second is about the limit for feeling the system reacts instantaneously",
+       "url": "https://www.nngroup.com/articles/response-times-3-important-limits/"
+      }
      ],
-     "checked": false
+     "checked": true
     },
     {
      "id": "words-stay-readable",
@@ -155,8 +198,14 @@
      "fix": null,
      "principle": "What a button says must be readable in every state it passes through, not only at rest: mid-gesture is when people check what they are committing to.",
      "sources": [
-      "WCAG 2.2, 1.4.3 Contrast (Minimum)",
-      "Plumber: craft/words-on-layers (words follow their ground)"
+      {
+       "says": "WCAG 2.2, 1.4.3 Contrast (Minimum)",
+       "url": "https://www.w3.org/TR/WCAG22/#contrast-minimum"
+      },
+      {
+       "says": "Plumber: craft/words-on-layers (words follow their ground)",
+       "url": null
+      }
      ],
      "checked": true
     },
@@ -169,7 +218,10 @@
      "fix": null,
      "principle": "A hold or a drag commits only at the end; the part done has to stand clearly apart from the part to go, or people let go too early or hold on not knowing.",
      "sources": [
-      "WCAG 2.2, 1.4.11 Non-text Contrast (3:1 for the states of a control)"
+      {
+       "says": "WCAG 2.2, 1.4.11 Non-text Contrast (3:1 for the states of a control)",
+       "url": "https://www.w3.org/TR/WCAG22/#non-text-contrast"
+      }
      ],
      "checked": true
     },
@@ -182,8 +234,14 @@
      "fix": null,
      "principle": "Starting a gesture must not commit you: letting go early, or sliding away, has to undo it.",
      "sources": [
-      "WCAG 2.2, 2.5.2 Pointer Cancellation",
-      "Nielsen Norman Group heuristic #3: User control and freedom"
+      {
+       "says": "WCAG 2.2, 2.5.2 Pointer Cancellation",
+       "url": "https://www.w3.org/TR/WCAG22/#pointer-cancellation"
+      },
+      {
+       "says": "Nielsen Norman Group heuristic #3, User control and freedom: a clearly marked emergency exit",
+       "url": "https://www.nngroup.com/articles/ten-usability-heuristics/"
+      }
      ],
      "checked": true
     },
@@ -196,8 +254,14 @@
      "fix": null,
      "principle": "Anything done by dragging must also be doable with a single press or the keyboard, for people who can’t drag precisely.",
      "sources": [
-      "WCAG 2.2, 2.5.7 Dragging Movements (AA)",
-      "WCAG 2.2, 2.5.1 Pointer Gestures (A)"
+      {
+       "says": "WCAG 2.2, 2.5.7 Dragging Movements (AA)",
+       "url": "https://www.w3.org/TR/WCAG22/#dragging-movements"
+      },
+      {
+       "says": "WCAG 2.2, 2.5.1 Pointer Gestures (A)",
+       "url": "https://www.w3.org/TR/WCAG22/#pointer-gestures"
+      }
      ],
      "checked": true
     },
@@ -210,11 +274,20 @@
      "fix": null,
      "principle": "The thing you press needs room for a finger: small targets cause missed and mistaken presses.",
      "sources": [
-      "Apple Human Interface Guidelines: 44×44 pt minimum hit target",
-      "Material Design: 48×48 dp touch target",
-      "WCAG 2.2, 2.5.8 Target Size (Minimum), 24×24 CSS px"
+      {
+       "says": "Apple Human Interface Guidelines, Accessibility: default control size on iOS 44×44 pt (minimum 28×28 pt)",
+       "url": "https://developer.apple.com/design/human-interface-guidelines/accessibility"
+      },
+      {
+       "says": "Material Design 3: consider making touch targets at least 48×48 dp",
+       "url": "https://m3.material.io/foundations/designing/structure"
+      },
+      {
+       "says": "WCAG 2.2, 2.5.8 Target Size (Minimum): at least 24×24 CSS px (AA)",
+       "url": "https://www.w3.org/TR/WCAG22/#target-size-minimum"
+      }
      ],
-     "checked": false
+     "checked": true
     },
     {
      "id": "motion-purposeful",
@@ -225,11 +298,20 @@
      "fix": "Honour reduced motion (states change at once) and keep a control’s own motion short.",
      "principle": "Interface motion should be brief and say something; people who ask for reduced motion should get the same states without the travel.",
      "sources": [
-      "Material Design: motion duration and easing",
-      "Apple Human Interface Guidelines: Motion; Reduce Motion",
-      "WCAG 2.2, 2.3.3 Animation from Interactions (AAA)"
+      {
+       "says": "Material Design 3, easing and duration: suggested transitions run 200–500 ms",
+       "url": "https://m3.material.io/styles/motion/easing-and-duration/applying-easing-and-duration"
+      },
+      {
+       "says": "Apple Human Interface Guidelines, Motion: aim for brevity and precision in feedback animations; make motion optional",
+       "url": "https://developer.apple.com/design/human-interface-guidelines/motion"
+      },
+      {
+       "says": "WCAG 2.2, 2.3.3 Animation from Interactions (AAA): motion triggered by interaction can be disabled",
+       "url": "https://www.w3.org/TR/WCAG22/#animation-from-interactions"
+      }
      ],
-     "checked": false
+     "checked": true
     },
     {
      "id": "friction-fits-stakes",
@@ -240,11 +322,20 @@
      "fix": "Let one press open the next step; keep the ceremony for where the commitment really happens.",
      "principle": "Consequential, hard-to-undo actions deserve a deliberate step; everyday ones should not make people work. Both too little and too much friction cost trust.",
      "sources": [
-      "Apple Human Interface Guidelines: confirm destructive or consequential actions, sparingly",
-      "Material Design: dialogs and confirmation for consequential actions",
-      "Nielsen Norman Group heuristic #5: Error prevention"
+      {
+       "says": "Apple Human Interface Guidelines, Alerts: use alerts sparingly; avoid them for common, undoable actions",
+       "url": "https://developer.apple.com/design/human-interface-guidelines/alerts"
+      },
+      {
+       "says": "Material Design 3, Dialogs: purposefully interruptive, so use them sparingly",
+       "url": "https://m3.material.io/components/dialogs/guidelines"
+      },
+      {
+       "says": "Nielsen Norman Group heuristic #5, Error prevention: a confirmation option before people commit",
+       "url": "https://www.nngroup.com/articles/ten-usability-heuristics/"
+      }
      ],
-     "checked": false
+     "checked": true
     }
    ],
    "score": 2
@@ -257,8 +348,8 @@
     307,
     48
    ],
-   "firstMs": 35,
-   "motionMs": 1122,
+   "firstMs": 36,
+   "motionMs": 1121,
    "commits": true,
    "words": null,
    "backsOut": true,
@@ -277,11 +368,16 @@
      "fix": null,
      "principle": "People need to know their action registered: the interface answers within about a tenth of a second, or the press feels lost.",
      "sources": [
-      "Nielsen Norman Group, 10 usability heuristics: #1 Visibility of system status",
-      "Apple Human Interface Guidelines: Feedback",
-      "Response time limits (Nielsen, 0.1 s feels instantaneous)"
+      {
+       "says": "Nielsen Norman Group heuristic #1, Visibility of system status: keep people informed through appropriate feedback within a reasonable amount of time",
+       "url": "https://www.nngroup.com/articles/ten-usability-heuristics/"
+      },
+      {
+       "says": "Nielsen, Response Times: 0.1 second is about the limit for feeling the system reacts instantaneously",
+       "url": "https://www.nngroup.com/articles/response-times-3-important-limits/"
+      }
      ],
-     "checked": false
+     "checked": true
     },
     {
      "id": "words-stay-readable",
@@ -292,8 +388,14 @@
      "fix": null,
      "principle": "What a button says must be readable in every state it passes through, not only at rest: mid-gesture is when people check what they are committing to.",
      "sources": [
-      "WCAG 2.2, 1.4.3 Contrast (Minimum)",
-      "Plumber: craft/words-on-layers (words follow their ground)"
+      {
+       "says": "WCAG 2.2, 1.4.3 Contrast (Minimum)",
+       "url": "https://www.w3.org/TR/WCAG22/#contrast-minimum"
+      },
+      {
+       "says": "Plumber: craft/words-on-layers (words follow their ground)",
+       "url": null
+      }
      ],
      "checked": true
     },
@@ -306,7 +408,10 @@
      "fix": null,
      "principle": "A hold or a drag commits only at the end; the part done has to stand clearly apart from the part to go, or people let go too early or hold on not knowing.",
      "sources": [
-      "WCAG 2.2, 1.4.11 Non-text Contrast (3:1 for the states of a control)"
+      {
+       "says": "WCAG 2.2, 1.4.11 Non-text Contrast (3:1 for the states of a control)",
+       "url": "https://www.w3.org/TR/WCAG22/#non-text-contrast"
+      }
      ],
      "checked": true
     },
@@ -319,8 +424,14 @@
      "fix": null,
      "principle": "Starting a gesture must not commit you: letting go early, or sliding away, has to undo it.",
      "sources": [
-      "WCAG 2.2, 2.5.2 Pointer Cancellation",
-      "Nielsen Norman Group heuristic #3: User control and freedom"
+      {
+       "says": "WCAG 2.2, 2.5.2 Pointer Cancellation",
+       "url": "https://www.w3.org/TR/WCAG22/#pointer-cancellation"
+      },
+      {
+       "says": "Nielsen Norman Group heuristic #3, User control and freedom: a clearly marked emergency exit",
+       "url": "https://www.nngroup.com/articles/ten-usability-heuristics/"
+      }
      ],
      "checked": true
     },
@@ -333,26 +444,44 @@
      "fix": null,
      "principle": "The thing you press needs room for a finger: small targets cause missed and mistaken presses.",
      "sources": [
-      "Apple Human Interface Guidelines: 44×44 pt minimum hit target",
-      "Material Design: 48×48 dp touch target",
-      "WCAG 2.2, 2.5.8 Target Size (Minimum), 24×24 CSS px"
+      {
+       "says": "Apple Human Interface Guidelines, Accessibility: default control size on iOS 44×44 pt (minimum 28×28 pt)",
+       "url": "https://developer.apple.com/design/human-interface-guidelines/accessibility"
+      },
+      {
+       "says": "Material Design 3: consider making touch targets at least 48×48 dp",
+       "url": "https://m3.material.io/foundations/designing/structure"
+      },
+      {
+       "says": "WCAG 2.2, 2.5.8 Target Size (Minimum): at least 24×24 CSS px (AA)",
+       "url": "https://www.w3.org/TR/WCAG22/#target-size-minimum"
+      }
      ],
-     "checked": false
+     "checked": true
     },
     {
      "id": "motion-purposeful",
      "name": "Its motion is quick and respects reduced motion",
      "severity": "weakens",
      "ok": false,
-     "says": "Its movements run 1122 ms, longer than a control’s motion should.",
+     "says": "Its movements run 1121 ms, longer than a control’s motion should.",
      "fix": "Honour reduced motion (states change at once) and keep a control’s own motion short.",
      "principle": "Interface motion should be brief and say something; people who ask for reduced motion should get the same states without the travel.",
      "sources": [
-      "Material Design: motion duration and easing",
-      "Apple Human Interface Guidelines: Motion; Reduce Motion",
-      "WCAG 2.2, 2.3.3 Animation from Interactions (AAA)"
+      {
+       "says": "Material Design 3, easing and duration: suggested transitions run 200–500 ms",
+       "url": "https://m3.material.io/styles/motion/easing-and-duration/applying-easing-and-duration"
+      },
+      {
+       "says": "Apple Human Interface Guidelines, Motion: aim for brevity and precision in feedback animations; make motion optional",
+       "url": "https://developer.apple.com/design/human-interface-guidelines/motion"
+      },
+      {
+       "says": "WCAG 2.2, 2.3.3 Animation from Interactions (AAA): motion triggered by interaction can be disabled",
+       "url": "https://www.w3.org/TR/WCAG22/#animation-from-interactions"
+      }
      ],
-     "checked": false
+     "checked": true
     },
     {
      "id": "friction-fits-stakes",
@@ -363,11 +492,20 @@
      "fix": "Let one press open the next step; keep the ceremony for where the commitment really happens.",
      "principle": "Consequential, hard-to-undo actions deserve a deliberate step; everyday ones should not make people work. Both too little and too much friction cost trust.",
      "sources": [
-      "Apple Human Interface Guidelines: confirm destructive or consequential actions, sparingly",
-      "Material Design: dialogs and confirmation for consequential actions",
-      "Nielsen Norman Group heuristic #5: Error prevention"
+      {
+       "says": "Apple Human Interface Guidelines, Alerts: use alerts sparingly; avoid them for common, undoable actions",
+       "url": "https://developer.apple.com/design/human-interface-guidelines/alerts"
+      },
+      {
+       "says": "Material Design 3, Dialogs: purposefully interruptive, so use them sparingly",
+       "url": "https://m3.material.io/components/dialogs/guidelines"
+      },
+      {
+       "says": "Nielsen Norman Group heuristic #5, Error prevention: a confirmation option before people commit",
+       "url": "https://www.nngroup.com/articles/ten-usability-heuristics/"
+      }
      ],
-     "checked": false
+     "checked": true
     }
    ],
    "score": 2
@@ -380,7 +518,7 @@
     307,
     48
    ],
-   "firstMs": 31,
+   "firstMs": 34,
    "motionMs": 0,
    "commits": true,
    "words": null,
@@ -400,11 +538,16 @@
      "fix": null,
      "principle": "People need to know their action registered: the interface answers within about a tenth of a second, or the press feels lost.",
      "sources": [
-      "Nielsen Norman Group, 10 usability heuristics: #1 Visibility of system status",
-      "Apple Human Interface Guidelines: Feedback",
-      "Response time limits (Nielsen, 0.1 s feels instantaneous)"
+      {
+       "says": "Nielsen Norman Group heuristic #1, Visibility of system status: keep people informed through appropriate feedback within a reasonable amount of time",
+       "url": "https://www.nngroup.com/articles/ten-usability-heuristics/"
+      },
+      {
+       "says": "Nielsen, Response Times: 0.1 second is about the limit for feeling the system reacts instantaneously",
+       "url": "https://www.nngroup.com/articles/response-times-3-important-limits/"
+      }
      ],
-     "checked": false
+     "checked": true
     },
     {
      "id": "words-stay-readable",
@@ -415,8 +558,14 @@
      "fix": null,
      "principle": "What a button says must be readable in every state it passes through, not only at rest: mid-gesture is when people check what they are committing to.",
      "sources": [
-      "WCAG 2.2, 1.4.3 Contrast (Minimum)",
-      "Plumber: craft/words-on-layers (words follow their ground)"
+      {
+       "says": "WCAG 2.2, 1.4.3 Contrast (Minimum)",
+       "url": "https://www.w3.org/TR/WCAG22/#contrast-minimum"
+      },
+      {
+       "says": "Plumber: craft/words-on-layers (words follow their ground)",
+       "url": null
+      }
      ],
      "checked": true
     },
@@ -429,7 +578,10 @@
      "fix": null,
      "principle": "A hold or a drag commits only at the end; the part done has to stand clearly apart from the part to go, or people let go too early or hold on not knowing.",
      "sources": [
-      "WCAG 2.2, 1.4.11 Non-text Contrast (3:1 for the states of a control)"
+      {
+       "says": "WCAG 2.2, 1.4.11 Non-text Contrast (3:1 for the states of a control)",
+       "url": "https://www.w3.org/TR/WCAG22/#non-text-contrast"
+      }
      ],
      "checked": true
     },
@@ -442,8 +594,14 @@
      "fix": null,
      "principle": "Starting a gesture must not commit you: letting go early, or sliding away, has to undo it.",
      "sources": [
-      "WCAG 2.2, 2.5.2 Pointer Cancellation",
-      "Nielsen Norman Group heuristic #3: User control and freedom"
+      {
+       "says": "WCAG 2.2, 2.5.2 Pointer Cancellation",
+       "url": "https://www.w3.org/TR/WCAG22/#pointer-cancellation"
+      },
+      {
+       "says": "Nielsen Norman Group heuristic #3, User control and freedom: a clearly marked emergency exit",
+       "url": "https://www.nngroup.com/articles/ten-usability-heuristics/"
+      }
      ],
      "checked": true
     },
@@ -456,11 +614,20 @@
      "fix": null,
      "principle": "The thing you press needs room for a finger: small targets cause missed and mistaken presses.",
      "sources": [
-      "Apple Human Interface Guidelines: 44×44 pt minimum hit target",
-      "Material Design: 48×48 dp touch target",
-      "WCAG 2.2, 2.5.8 Target Size (Minimum), 24×24 CSS px"
+      {
+       "says": "Apple Human Interface Guidelines, Accessibility: default control size on iOS 44×44 pt (minimum 28×28 pt)",
+       "url": "https://developer.apple.com/design/human-interface-guidelines/accessibility"
+      },
+      {
+       "says": "Material Design 3: consider making touch targets at least 48×48 dp",
+       "url": "https://m3.material.io/foundations/designing/structure"
+      },
+      {
+       "says": "WCAG 2.2, 2.5.8 Target Size (Minimum): at least 24×24 CSS px (AA)",
+       "url": "https://www.w3.org/TR/WCAG22/#target-size-minimum"
+      }
      ],
-     "checked": false
+     "checked": true
     },
     {
      "id": "motion-purposeful",
@@ -471,11 +638,20 @@
      "fix": null,
      "principle": "Interface motion should be brief and say something; people who ask for reduced motion should get the same states without the travel.",
      "sources": [
-      "Material Design: motion duration and easing",
-      "Apple Human Interface Guidelines: Motion; Reduce Motion",
-      "WCAG 2.2, 2.3.3 Animation from Interactions (AAA)"
+      {
+       "says": "Material Design 3, easing and duration: suggested transitions run 200–500 ms",
+       "url": "https://m3.material.io/styles/motion/easing-and-duration/applying-easing-and-duration"
+      },
+      {
+       "says": "Apple Human Interface Guidelines, Motion: aim for brevity and precision in feedback animations; make motion optional",
+       "url": "https://developer.apple.com/design/human-interface-guidelines/motion"
+      },
+      {
+       "says": "WCAG 2.2, 2.3.3 Animation from Interactions (AAA): motion triggered by interaction can be disabled",
+       "url": "https://www.w3.org/TR/WCAG22/#animation-from-interactions"
+      }
      ],
-     "checked": false
+     "checked": true
     },
     {
      "id": "friction-fits-stakes",
@@ -486,11 +662,20 @@
      "fix": "Let one press open the next step; keep the ceremony for where the commitment really happens.",
      "principle": "Consequential, hard-to-undo actions deserve a deliberate step; everyday ones should not make people work. Both too little and too much friction cost trust.",
      "sources": [
-      "Apple Human Interface Guidelines: confirm destructive or consequential actions, sparingly",
-      "Material Design: dialogs and confirmation for consequential actions",
-      "Nielsen Norman Group heuristic #5: Error prevention"
+      {
+       "says": "Apple Human Interface Guidelines, Alerts: use alerts sparingly; avoid them for common, undoable actions",
+       "url": "https://developer.apple.com/design/human-interface-guidelines/alerts"
+      },
+      {
+       "says": "Material Design 3, Dialogs: purposefully interruptive, so use them sparingly",
+       "url": "https://m3.material.io/components/dialogs/guidelines"
+      },
+      {
+       "says": "Nielsen Norman Group heuristic #5, Error prevention: a confirmation option before people commit",
+       "url": "https://www.nngroup.com/articles/ten-usability-heuristics/"
+      }
      ],
-     "checked": false
+     "checked": true
     }
    ],
    "score": 1
@@ -503,20 +688,20 @@
     195,
     48
    ],
-   "firstMs": 45,
-   "motionMs": 1261,
+   "firstMs": 25,
+   "motionMs": 1262,
    "commits": true,
    "words": {
     "when": "Just after letting go",
     "says": "Contrast is 0 on the APCA scale at 14px. Text this size needs 60.",
     "rule": "craft/contrast",
-    "at": 111,
+    "at": 109,
     "moments": 2
    },
    "backsOut": true,
    "keyboard": true,
    "focusable": true,
-   "reducedMotionMs": 1013,
+   "reducedMotionMs": 1014,
    "verdict": "breaks",
    "results": [
     {
@@ -528,11 +713,16 @@
      "fix": null,
      "principle": "People need to know their action registered: the interface answers within about a tenth of a second, or the press feels lost.",
      "sources": [
-      "Nielsen Norman Group, 10 usability heuristics: #1 Visibility of system status",
-      "Apple Human Interface Guidelines: Feedback",
-      "Response time limits (Nielsen, 0.1 s feels instantaneous)"
+      {
+       "says": "Nielsen Norman Group heuristic #1, Visibility of system status: keep people informed through appropriate feedback within a reasonable amount of time",
+       "url": "https://www.nngroup.com/articles/ten-usability-heuristics/"
+      },
+      {
+       "says": "Nielsen, Response Times: 0.1 second is about the limit for feeling the system reacts instantaneously",
+       "url": "https://www.nngroup.com/articles/response-times-3-important-limits/"
+      }
      ],
-     "checked": false
+     "checked": true
     },
     {
      "id": "words-stay-readable",
@@ -543,8 +733,14 @@
      "fix": "Keep the words on their ground: redraw them in the fill’s own ink, clipped at the fill’s edge (as hold-to-confirm does), or move them out of the fill’s path.",
      "principle": "What a button says must be readable in every state it passes through, not only at rest: mid-gesture is when people check what they are committing to.",
      "sources": [
-      "WCAG 2.2, 1.4.3 Contrast (Minimum)",
-      "Plumber: craft/words-on-layers (words follow their ground)"
+      {
+       "says": "WCAG 2.2, 1.4.3 Contrast (Minimum)",
+       "url": "https://www.w3.org/TR/WCAG22/#contrast-minimum"
+      },
+      {
+       "says": "Plumber: craft/words-on-layers (words follow their ground)",
+       "url": null
+      }
      ],
      "checked": true
     },
@@ -557,8 +753,14 @@
      "fix": null,
      "principle": "Starting a gesture must not commit you: letting go early, or sliding away, has to undo it.",
      "sources": [
-      "WCAG 2.2, 2.5.2 Pointer Cancellation",
-      "Nielsen Norman Group heuristic #3: User control and freedom"
+      {
+       "says": "WCAG 2.2, 2.5.2 Pointer Cancellation",
+       "url": "https://www.w3.org/TR/WCAG22/#pointer-cancellation"
+      },
+      {
+       "says": "Nielsen Norman Group heuristic #3, User control and freedom: a clearly marked emergency exit",
+       "url": "https://www.nngroup.com/articles/ten-usability-heuristics/"
+      }
      ],
      "checked": true
     },
@@ -571,11 +773,20 @@
      "fix": null,
      "principle": "The thing you press needs room for a finger: small targets cause missed and mistaken presses.",
      "sources": [
-      "Apple Human Interface Guidelines: 44×44 pt minimum hit target",
-      "Material Design: 48×48 dp touch target",
-      "WCAG 2.2, 2.5.8 Target Size (Minimum), 24×24 CSS px"
+      {
+       "says": "Apple Human Interface Guidelines, Accessibility: default control size on iOS 44×44 pt (minimum 28×28 pt)",
+       "url": "https://developer.apple.com/design/human-interface-guidelines/accessibility"
+      },
+      {
+       "says": "Material Design 3: consider making touch targets at least 48×48 dp",
+       "url": "https://m3.material.io/foundations/designing/structure"
+      },
+      {
+       "says": "WCAG 2.2, 2.5.8 Target Size (Minimum): at least 24×24 CSS px (AA)",
+       "url": "https://www.w3.org/TR/WCAG22/#target-size-minimum"
+      }
      ],
-     "checked": false
+     "checked": true
     },
     {
      "id": "motion-purposeful",
@@ -586,11 +797,20 @@
      "fix": "Honour reduced motion (states change at once) and keep a control’s own motion short.",
      "principle": "Interface motion should be brief and say something; people who ask for reduced motion should get the same states without the travel.",
      "sources": [
-      "Material Design: motion duration and easing",
-      "Apple Human Interface Guidelines: Motion; Reduce Motion",
-      "WCAG 2.2, 2.3.3 Animation from Interactions (AAA)"
+      {
+       "says": "Material Design 3, easing and duration: suggested transitions run 200–500 ms",
+       "url": "https://m3.material.io/styles/motion/easing-and-duration/applying-easing-and-duration"
+      },
+      {
+       "says": "Apple Human Interface Guidelines, Motion: aim for brevity and precision in feedback animations; make motion optional",
+       "url": "https://developer.apple.com/design/human-interface-guidelines/motion"
+      },
+      {
+       "says": "WCAG 2.2, 2.3.3 Animation from Interactions (AAA): motion triggered by interaction can be disabled",
+       "url": "https://www.w3.org/TR/WCAG22/#animation-from-interactions"
+      }
      ],
-     "checked": false
+     "checked": true
     },
     {
      "id": "friction-fits-stakes",
@@ -601,11 +821,20 @@
      "fix": "Let one press open the next step; keep the ceremony for where the commitment really happens.",
      "principle": "Consequential, hard-to-undo actions deserve a deliberate step; everyday ones should not make people work. Both too little and too much friction cost trust.",
      "sources": [
-      "Apple Human Interface Guidelines: confirm destructive or consequential actions, sparingly",
-      "Material Design: dialogs and confirmation for consequential actions",
-      "Nielsen Norman Group heuristic #5: Error prevention"
+      {
+       "says": "Apple Human Interface Guidelines, Alerts: use alerts sparingly; avoid them for common, undoable actions",
+       "url": "https://developer.apple.com/design/human-interface-guidelines/alerts"
+      },
+      {
+       "says": "Material Design 3, Dialogs: purposefully interruptive, so use them sparingly",
+       "url": "https://m3.material.io/components/dialogs/guidelines"
+      },
+      {
+       "says": "Nielsen Norman Group heuristic #5, Error prevention: a confirmation option before people commit",
+       "url": "https://www.nngroup.com/articles/ten-usability-heuristics/"
+      }
      ],
-     "checked": false
+     "checked": true
     }
    ],
    "score": 12
@@ -618,20 +847,20 @@
     307,
     48
    ],
-   "firstMs": 36,
-   "motionMs": 1600,
+   "firstMs": 40,
+   "motionMs": 1754,
    "commits": true,
    "words": {
     "when": "Just after letting go",
     "says": "Faded to 0.5, the words drop to contrast 42.",
     "rule": "craft/disabled-contrast",
-    "at": 113,
+    "at": 115,
     "moments": 1
    },
    "backsOut": true,
    "keyboard": true,
    "focusable": true,
-   "reducedMotionMs": 1285,
+   "reducedMotionMs": 1271,
    "verdict": "breaks",
    "results": [
     {
@@ -643,11 +872,16 @@
      "fix": null,
      "principle": "People need to know their action registered: the interface answers within about a tenth of a second, or the press feels lost.",
      "sources": [
-      "Nielsen Norman Group, 10 usability heuristics: #1 Visibility of system status",
-      "Apple Human Interface Guidelines: Feedback",
-      "Response time limits (Nielsen, 0.1 s feels instantaneous)"
+      {
+       "says": "Nielsen Norman Group heuristic #1, Visibility of system status: keep people informed through appropriate feedback within a reasonable amount of time",
+       "url": "https://www.nngroup.com/articles/ten-usability-heuristics/"
+      },
+      {
+       "says": "Nielsen, Response Times: 0.1 second is about the limit for feeling the system reacts instantaneously",
+       "url": "https://www.nngroup.com/articles/response-times-3-important-limits/"
+      }
      ],
-     "checked": false
+     "checked": true
     },
     {
      "id": "words-stay-readable",
@@ -658,8 +892,14 @@
      "fix": "Keep the words on their ground: redraw them in the fill’s own ink, clipped at the fill’s edge (as hold-to-confirm does), or move them out of the fill’s path.",
      "principle": "What a button says must be readable in every state it passes through, not only at rest: mid-gesture is when people check what they are committing to.",
      "sources": [
-      "WCAG 2.2, 1.4.3 Contrast (Minimum)",
-      "Plumber: craft/words-on-layers (words follow their ground)"
+      {
+       "says": "WCAG 2.2, 1.4.3 Contrast (Minimum)",
+       "url": "https://www.w3.org/TR/WCAG22/#contrast-minimum"
+      },
+      {
+       "says": "Plumber: craft/words-on-layers (words follow their ground)",
+       "url": null
+      }
      ],
      "checked": true
     },
@@ -672,11 +912,20 @@
      "fix": null,
      "principle": "The thing you press needs room for a finger: small targets cause missed and mistaken presses.",
      "sources": [
-      "Apple Human Interface Guidelines: 44×44 pt minimum hit target",
-      "Material Design: 48×48 dp touch target",
-      "WCAG 2.2, 2.5.8 Target Size (Minimum), 24×24 CSS px"
+      {
+       "says": "Apple Human Interface Guidelines, Accessibility: default control size on iOS 44×44 pt (minimum 28×28 pt)",
+       "url": "https://developer.apple.com/design/human-interface-guidelines/accessibility"
+      },
+      {
+       "says": "Material Design 3: consider making touch targets at least 48×48 dp",
+       "url": "https://m3.material.io/foundations/designing/structure"
+      },
+      {
+       "says": "WCAG 2.2, 2.5.8 Target Size (Minimum): at least 24×24 CSS px (AA)",
+       "url": "https://www.w3.org/TR/WCAG22/#target-size-minimum"
+      }
      ],
-     "checked": false
+     "checked": true
     },
     {
      "id": "motion-purposeful",
@@ -687,11 +936,20 @@
      "fix": "Honour reduced motion (states change at once) and keep a control’s own motion short.",
      "principle": "Interface motion should be brief and say something; people who ask for reduced motion should get the same states without the travel.",
      "sources": [
-      "Material Design: motion duration and easing",
-      "Apple Human Interface Guidelines: Motion; Reduce Motion",
-      "WCAG 2.2, 2.3.3 Animation from Interactions (AAA)"
+      {
+       "says": "Material Design 3, easing and duration: suggested transitions run 200–500 ms",
+       "url": "https://m3.material.io/styles/motion/easing-and-duration/applying-easing-and-duration"
+      },
+      {
+       "says": "Apple Human Interface Guidelines, Motion: aim for brevity and precision in feedback animations; make motion optional",
+       "url": "https://developer.apple.com/design/human-interface-guidelines/motion"
+      },
+      {
+       "says": "WCAG 2.2, 2.3.3 Animation from Interactions (AAA): motion triggered by interaction can be disabled",
+       "url": "https://www.w3.org/TR/WCAG22/#animation-from-interactions"
+      }
      ],
-     "checked": false
+     "checked": true
     },
     {
      "id": "friction-fits-stakes",
@@ -702,11 +960,20 @@
      "fix": null,
      "principle": "Consequential, hard-to-undo actions deserve a deliberate step; everyday ones should not make people work. Both too little and too much friction cost trust.",
      "sources": [
-      "Apple Human Interface Guidelines: confirm destructive or consequential actions, sparingly",
-      "Material Design: dialogs and confirmation for consequential actions",
-      "Nielsen Norman Group heuristic #5: Error prevention"
+      {
+       "says": "Apple Human Interface Guidelines, Alerts: use alerts sparingly; avoid them for common, undoable actions",
+       "url": "https://developer.apple.com/design/human-interface-guidelines/alerts"
+      },
+      {
+       "says": "Material Design 3, Dialogs: purposefully interruptive, so use them sparingly",
+       "url": "https://m3.material.io/components/dialogs/guidelines"
+      },
+      {
+       "says": "Nielsen Norman Group heuristic #5, Error prevention: a confirmation option before people commit",
+       "url": "https://www.nngroup.com/articles/ten-usability-heuristics/"
+      }
      ],
-     "checked": false
+     "checked": true
     }
    ],
    "score": 11
@@ -719,8 +986,8 @@
     307,
     48
    ],
-   "firstMs": 41,
-   "motionMs": 237,
+   "firstMs": 42,
+   "motionMs": 221,
    "commits": true,
    "words": null,
    "backsOut": true,
@@ -738,11 +1005,16 @@
      "fix": null,
      "principle": "People need to know their action registered: the interface answers within about a tenth of a second, or the press feels lost.",
      "sources": [
-      "Nielsen Norman Group, 10 usability heuristics: #1 Visibility of system status",
-      "Apple Human Interface Guidelines: Feedback",
-      "Response time limits (Nielsen, 0.1 s feels instantaneous)"
+      {
+       "says": "Nielsen Norman Group heuristic #1, Visibility of system status: keep people informed through appropriate feedback within a reasonable amount of time",
+       "url": "https://www.nngroup.com/articles/ten-usability-heuristics/"
+      },
+      {
+       "says": "Nielsen, Response Times: 0.1 second is about the limit for feeling the system reacts instantaneously",
+       "url": "https://www.nngroup.com/articles/response-times-3-important-limits/"
+      }
      ],
-     "checked": false
+     "checked": true
     },
     {
      "id": "words-stay-readable",
@@ -753,8 +1025,14 @@
      "fix": null,
      "principle": "What a button says must be readable in every state it passes through, not only at rest: mid-gesture is when people check what they are committing to.",
      "sources": [
-      "WCAG 2.2, 1.4.3 Contrast (Minimum)",
-      "Plumber: craft/words-on-layers (words follow their ground)"
+      {
+       "says": "WCAG 2.2, 1.4.3 Contrast (Minimum)",
+       "url": "https://www.w3.org/TR/WCAG22/#contrast-minimum"
+      },
+      {
+       "says": "Plumber: craft/words-on-layers (words follow their ground)",
+       "url": null
+      }
      ],
      "checked": true
     },
@@ -767,11 +1045,20 @@
      "fix": null,
      "principle": "The thing you press needs room for a finger: small targets cause missed and mistaken presses.",
      "sources": [
-      "Apple Human Interface Guidelines: 44×44 pt minimum hit target",
-      "Material Design: 48×48 dp touch target",
-      "WCAG 2.2, 2.5.8 Target Size (Minimum), 24×24 CSS px"
+      {
+       "says": "Apple Human Interface Guidelines, Accessibility: default control size on iOS 44×44 pt (minimum 28×28 pt)",
+       "url": "https://developer.apple.com/design/human-interface-guidelines/accessibility"
+      },
+      {
+       "says": "Material Design 3: consider making touch targets at least 48×48 dp",
+       "url": "https://m3.material.io/foundations/designing/structure"
+      },
+      {
+       "says": "WCAG 2.2, 2.5.8 Target Size (Minimum): at least 24×24 CSS px (AA)",
+       "url": "https://www.w3.org/TR/WCAG22/#target-size-minimum"
+      }
      ],
-     "checked": false
+     "checked": true
     },
     {
      "id": "motion-purposeful",
@@ -782,11 +1069,20 @@
      "fix": null,
      "principle": "Interface motion should be brief and say something; people who ask for reduced motion should get the same states without the travel.",
      "sources": [
-      "Material Design: motion duration and easing",
-      "Apple Human Interface Guidelines: Motion; Reduce Motion",
-      "WCAG 2.2, 2.3.3 Animation from Interactions (AAA)"
+      {
+       "says": "Material Design 3, easing and duration: suggested transitions run 200–500 ms",
+       "url": "https://m3.material.io/styles/motion/easing-and-duration/applying-easing-and-duration"
+      },
+      {
+       "says": "Apple Human Interface Guidelines, Motion: aim for brevity and precision in feedback animations; make motion optional",
+       "url": "https://developer.apple.com/design/human-interface-guidelines/motion"
+      },
+      {
+       "says": "WCAG 2.2, 2.3.3 Animation from Interactions (AAA): motion triggered by interaction can be disabled",
+       "url": "https://www.w3.org/TR/WCAG22/#animation-from-interactions"
+      }
      ],
-     "checked": false
+     "checked": true
     },
     {
      "id": "friction-fits-stakes",
@@ -797,11 +1093,20 @@
      "fix": null,
      "principle": "Consequential, hard-to-undo actions deserve a deliberate step; everyday ones should not make people work. Both too little and too much friction cost trust.",
      "sources": [
-      "Apple Human Interface Guidelines: confirm destructive or consequential actions, sparingly",
-      "Material Design: dialogs and confirmation for consequential actions",
-      "Nielsen Norman Group heuristic #5: Error prevention"
+      {
+       "says": "Apple Human Interface Guidelines, Alerts: use alerts sparingly; avoid them for common, undoable actions",
+       "url": "https://developer.apple.com/design/human-interface-guidelines/alerts"
+      },
+      {
+       "says": "Material Design 3, Dialogs: purposefully interruptive, so use them sparingly",
+       "url": "https://m3.material.io/components/dialogs/guidelines"
+      },
+      {
+       "says": "Nielsen Norman Group heuristic #5, Error prevention: a confirmation option before people commit",
+       "url": "https://www.nngroup.com/articles/ten-usability-heuristics/"
+      }
      ],
-     "checked": false
+     "checked": true
     }
    ],
    "score": 0

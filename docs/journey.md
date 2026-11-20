@@ -3158,6 +3158,38 @@ anyway, so any extra ceremony on this button makes the customer commit twice. Ev
 **Media hooks.** The atoms page with the recommendation on top and a verdict under each form
 (`/atoms.html?atom=buy` on the playground); before/after: the same page without verdicts (commit da297bbe).
 
+### 45. Checking the standards against their published pages (2026-11-20)
+
+**The itch.** Four of the eight standards behind the verdicts quoted Nielsen, Apple, Material and WCAG from memory,
+and the atoms page said so under every fault they raised. A verdict that rests on remembered numbers can't be handed
+to anyone.
+
+**How we checked.** Each source page was opened and its wording and numbers read off it: Nielsen's response-time
+article and his ten heuristics, Apple's Accessibility, Motion, Feedback and Alerts pages, Material 3's accessibility
+structure, easing-and-duration and dialog pages, and WCAG 2.2.
+
+**What was wrong.**
+- Apple's 44×44 pt is the *default* size of a control on iPhone; its minimum is 28×28 pt. The fault used to say a
+  finger "needs" 44 pt. It now says 44 pt is the size Apple makes its own controls on a phone. The line stays at 44,
+  the gentler of Apple's 44 and Material's 48.
+- Material's longest suggested transition is 500 ms, its emphasised one that begins and ends on screen. The motion
+  limit was 600 ms and is now 500. (Material marks that duration table as no longer maintained, now that its
+  components move on springs. It is still its only published number.)
+- Apple's Feedback page says nothing about timing, so it no longer backs "answers at once". Nielsen's 0.1 s does.
+- Apple's Motion page doesn't name Reduce Motion. What it says is "make motion optional" and "aim for brevity and
+  precision in feedback animations", and that is what is cited now.
+- Everything else matched: Material's 48×48 dp, WCAG 2.5.8's 24×24 CSS px, Nielsen's 0.1 s, his heuristics #1, #3
+  and #5, and Apple's "use alerts sparingly" (and not for common actions that can be undone).
+
+**The fix and the proof.** Every source in `generator/data/standards.mjs` now carries what it says and a link, and all
+eight are marked checked. On the atoms page each source is a link, and the "not yet checked" note is gone.
+The judge was run again on crafting attention's buy button and no verdict changed. No form's motion falls between
+500 and 600 ms (they settle in under 250 ms or run past a second), and every target is at least 48 px, so the
+corrections change what the verdicts say, not what they find. The recommendation is still the plain press.
+
+**Media hooks.** A fault on the atoms page before (the note saying the source wasn't checked) and after (the linked
+sources).
+
 ### 38. Alt and the X-ray card (2026-11-20)
 
 - **The itch:** holding Alt showed the old name tag outside Blueprint, and Alt-click opened the old element card with its heat and a dark spacing slider. Once the X-ray card took over, its pink note looked wrong. The owner on the note: "why is this black on muddy pink". On three new tints of it: "all of them look so ugly".
@@ -4828,6 +4860,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- The eight standards behind each form's verdict were checked against Apple's, Material's, Nielsen's and WCAG's published pages; each source is now a link, two claims were corrected (Apple's 44 pt is its default size, not a minimum; Material's longest suggested motion is 500 ms), and no verdict changed ([entry](#45-checking-the-standards-against-their-published-pages-2026-11-20)).
 - Each form of a button now gets a verdict (works, needs work, breaks for some people), why it matters to the person using it, what to do, and which form to choose, judged against Apple's, Google's and WCAG's published standards by using each form for real four ways ([entry](#44-good-or-bad-and-which-to-choose-the-forms-judged-against-published-standards-2026-11-20)).
 - Holding Alt shows the X-ray on any element, and Alt-click pins its card. The card names the element, lists what is wrong with it (each note with its concern's toy and one thing to do) and holds one control for the part under your hand; the box drawing and the measurements stay on the page ([entry](#38-alt-and-the-x-ray-card-2026-11-20)).
 - Blueprint's count appears once the page is read, in about a second, and holds still; it used to climb for a second and the page took 10 s to count as read ([entry](#the-count-that-seemed-to-change-on-its-own-2026-11-20)).

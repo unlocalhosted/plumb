@@ -192,7 +192,7 @@ const check = (s, m) => {
     case 'can-back-out': return { ok: !!m.backsOut, m: {} };
     case 'no-drag-needed': return { ok: !!m.keyboard, m: {} };
     case 'big-enough': return { ok: Math.min(...m.target) >= 44, m: { size: `${m.target[0]}×${m.target[1]} px` } };
-    case 'motion-purposeful': { const reduced = m.motionMs < 150 || m.reducedMotionMs <= m.motionMs * 0.4; return { ok: reduced && m.motionMs <= 600, m: { reduced, longestMs: m.motionMs } }; }
+    case 'motion-purposeful': { const reduced = m.motionMs < 150 || m.reducedMotionMs <= m.motionMs * 0.4; return { ok: reduced && m.motionMs <= 500, m: { reduced, longestMs: m.motionMs } }; }
     case 'friction-fits-stakes': { const f = fitFor(m); return { ok: f.ok, m: f }; }
   }
 };

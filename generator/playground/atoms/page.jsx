@@ -22,7 +22,9 @@ function Verdict({ v }) {
           <h4>{r.name}</h4>
           <p>{r.says}</p>
           <p className="verdict-fix"><b>What to do:</b> {r.fix}</p>
-          <p className="verdict-src">{r.sources.join(' · ')}{r.checked ? '' : ' (source not yet checked against the page)'}</p>
+          <p className="verdict-src">{r.sources.map((s, i) => { const x = typeof s === 'string' ? { says: s } : s;
+            return <span key={i}>{i ? ' · ' : ''}{x.url ? <a href={x.url} target="_blank" rel="noreferrer">{x.says}</a> : x.says}</span>; })}
+            {r.checked ? '' : ' (source not yet checked against the page)'}</p>
         </div>))}
       {on.length > 0 && <details className="verdict-on"><summary>Meets {on.length} standard{on.length > 1 ? 's' : ''}{off.length ? '' : ', all it is held to'}</summary>
         <ul>{on.map((r) => <li key={r.id}><b>{r.name}.</b> {r.says}</li>)}</ul></details>}
