@@ -122,7 +122,7 @@ One at a time, each shown working before the next, on a real plain-CSS app as we
 
 - **Layers 0 to 9 (2026-11-20):** built and shown end to end on the plumber site (Next, plain CSS) and the ledger
   (Vite, Tailwind); journey 65 to 68. Open: Clean up's system pass,
-  recipes and rename on the shared rule system, and Sass run against a real `sass` install.
+  recipes and rename on the shared rule system, and a `.scss` page tried in a browser (Sass itself ran through the engine, journey 69).
 
 ## Decisions still open
 

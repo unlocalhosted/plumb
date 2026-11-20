@@ -1454,7 +1454,7 @@ export class Session extends EventEmitter {
         let next = text;
         for (const e of ordered) next = next.slice(0, e.start) + e.replacement + next.slice(e.end);
         if (/\.css$/.test(path) && cssErrors(next, path) > cssErrors(text, path)) throw new UsageError('The change would leave the stylesheet unreadable, so nothing was written.');
-        if (/\.scss$/.test(path)) { try { compileScss(this.root, path, next); } catch (error) { throw new UsageError(`The change would stop this .scss file compiling, so nothing was written: ${errorMessage(error).split('\n')[0]}`); } }
+        if (/\.scss$/.test(path)) { try { compileScss(this.root, path, next); } catch (error) { throw new UsageError(`The change would stop this .scss file compiling, so nothing was written: ${(error as { sassMessage?: string }).sassMessage ?? errorMessage(error).split('\n')[0]}`); } }
         const written = await this.rewrite(path, hash, next, said.join('; ').slice(0, 120));
         done.push(written.undo); files[path] = written.hash;
       }
@@ -1960,6 +1960,12 @@ export class Session extends EventEmitter {
     catch (error) { throw error instanceof UsageError && error.message === staleFile ? stale(since) : error; }
     this.written = this.written.filter(item => item.id !== id);
     try { this.log.drop(new Set([id])); } catch { /* the trace keeps them; they read as changed */ }
+    // a file the analysis doesn't read (a .scss file) is checked on its bytes: there are no findings to re-read for it
+    if (/\.s[ac]ss$/.test(file)) {
+      const back = await readFile(file, 'utf8');
+      if (sourceHash(back) !== sourceHash(entry.before)) throw stale();
+      return { revision: this.revision, file, hash: sourceHash(back), undone: id, remaining: [] };
+    }
     const snapshot = await this.request<{ hash: string; remaining: Report['findings'] }>('remaining', { file, sites: [{ line: entry.line }] });
     if (snapshot.hash !== sourceHash(entry.before) || snapshot.hash !== this.hashes.get(file)) throw stale();
     return { revision: this.revision, file, hash: snapshot.hash, undone: id, remaining: snapshot.remaining };

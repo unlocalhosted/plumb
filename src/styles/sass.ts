@@ -68,6 +68,21 @@ function scssValue(text: string, at: number): { start: number; end: number; prop
   return m && range ? { ...range, prop: m[1]! } : null;
 }
 
+/** The preludes of the blocks around `at`, outermost first (comments and strings skipped). */
+function enclosing(text: string, at: number): string[] {
+  const stack: string[] = []; let seg = 0;
+  for (let i = 0; i < at && i < text.length; i++) {
+    const c = text[i]!;
+    if (c === '/' && text[i + 1] === '*') { const e = text.indexOf('*/', i + 2); i = e < 0 ? text.length : e + 1; seg = i + 1; continue; }
+    if (c === '/' && text[i + 1] === '/') { const e = text.indexOf('\n', i); i = e < 0 ? text.length : e; seg = i + 1; continue; }
+    if (c === '"' || c === "'") { let j = i + 1; while (j < text.length && text[j] !== c) { if (text[j] === '\\') j++; j++; } i = j; continue; }
+    if (c === '{' && text[i - 1] !== '#') { stack.push(text.slice(seg, i).trim()); seg = i + 1; }
+    else if (c === '}') { stack.pop(); seg = i + 1; }
+    else if (c === ';') seg = i + 1;
+  }
+  return stack;
+}
+
 export const sass: StyleSystem = {
   id: 'sass',
   says: 'a Sass rule',
@@ -89,6 +104,9 @@ export const sass: StyleSystem = {
     const at = original(compiled.sourceMap, setting.site.line - 1, setting.site.column - 1);
     if (!at || fileURLToPath(at.source.startsWith('file:') ? at.source : pathToFileURL(at.source)) !== file) return no(`${said} gets ${prop} from a mixin, an @extend or another file; change it there.`);
     const starts = lineStarts(text), offset = (starts[at.line] ?? 0) + at.column;
+    // inside a mixin, a function or a %placeholder: shared by everything that includes or extends it, so said
+    const shared = enclosing(text, offset).find(p => /^(@mixin|@function)\b|^%/.test(p));
+    if (shared) return no(`${said} gets ${prop} from ${shared.split(/[\s({]/)[0] === '@mixin' ? `the mixin ${shared.replace(/^@mixin\s+/, '').split(/[\s({]/)[0]}` : shared.split(/\s/)[0]}, which other rules use too; change it there.`);
     const range = scssValue(text, offset);
     if (!range) return no(`${said} writes ${prop} in a way plumber can't read yet.`);
     const value = text.slice(range.start, range.end);

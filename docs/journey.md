@@ -3845,6 +3845,23 @@ when a rule of yours owns them they are written in that rule, in one undo step. 
 `--color-*` names. The card's buttons were not driven by hand in this pass: its Alt-held card closes under synthetic
 clicks, so the writes were run through the same code from the console.
 
+### 69. Sass, run for real (2026-11-20)
+**The itch.** The Sass system was built but had only been shown refusing without `sass`. The owner OK'd installing it:
+"Yes, install it" (sass 1.83.4, into the throwaway test project only).
+
+**What it showed, and what we fixed.** On a `.scss` file with nesting, a `$variable`, a mixin, `&:hover`, `!important`
+and a nested `@media`:
+- `.box .inner { gap }` 8px → 12px, written in the nested rule
+- `padding: $pad` → the change went to `$pad: 16px`, said as "$pad in x.scss (used by .box)"
+- `!important` kept on `margin-top`; the nested `@media` gap written inside its block
+- `calc(1px` refused; `$nowhere` refused because the file would stop compiling ("Undefined variable.")
+- **Fixed:** a value from `@include loud` was written inside the mixin, which would change every rule that includes
+  it. Values inside an `@mixin`, `@function` or `%placeholder` are now refused with the mixin's name.
+- **Fixed:** undo put a `.scss` file back but then failed, because it asked the analysis for the file's new hash and the
+  analysis doesn't read `.scss`. Such files are now checked on their bytes.
+
+**Not checked:** a `.scss` page in a browser (Vite's tag for `.scss` styles, or Next's map to a `.scss` source).
+
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
 - Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".
@@ -5457,7 +5474,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   `generator/shots/generate-craftingattention.png` (local).
 
 ## Open gaps
-- **CSS parity gaps:** Clean up's system pass, recipes' own rule finder, rename beyond `--color-*`, and Sass not yet run against a real `sass` install ([entry](#68-layers-2-to-9-parity-end-to-end-2026-11-20)).
+- **CSS parity gaps:** Clean up's system pass, recipes' own rule finder, rename beyond `--color-*`, and a `.scss` page not yet tried in a browser ([entry](#69-sass-run-for-real-2026-11-20)).
 - **CSS rule fixes are narrow.** They cover text size, line height, weight, gap, corners, width, height and padding per side, from rules outside `@media`. Padding set for two sides at once (`padding-x`) still goes to classes, and the change isn't checked against your token scale before it's written ([entry](#63-css-rule-fixes-work-on-the-next-site-2026-11-20)).
 - **The owner's slop checks are untuned on real apps.** Tight letters fire on every heading that sets them (28 on our homepage), the shade count reads greys mixed by opacity as separate shades, and none of the eleven has been run through a full plumber read or the docs' recordings yet ([entry](#56-the-owners-slop-list-becomes-eleven-anti-slop-checks-2026-11-20)).
 - **The mark was never tried among real neighbours** (a row of browser tabs, an npm page, a README header), only on empty tiles. Nobody outside has been asked whether the round leg reads as an R or leans towards a B.
@@ -5507,6 +5524,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- Sass works through plumber's engine: values in nested rules, `$variables` and nested `@media` are written where the `.scss` writes them, mixins are refused, and every write must still compile ([entry](#69-sass-run-for-real-2026-11-20)).
 - Plain CSS works end to end in plumber: the X-ray, the words card and Tidy write the CSS rule that styles an element (inside @media when that rule is in force), finding fixes reach stylesheets that also define tokens, and Sass is placed through its source map ([entry](#68-layers-2-to-9-parity-end-to-end-2026-11-20)).
 - Every X-ray Sync goes through one server-side interface for classes and plain CSS rules, as one undo; colour, margin, shadow and 35 other properties now reach a CSS rule ([entry](#66-layer-0-done-classes-behind-the-same-interface-2026-11-20)).
 - The same CSS rule fixes work on a Next site: the rule's file is read from Next's CSS source map; the plumber homepage at localhost:4330 can now be fixed with plumber ([entry](#63-css-rule-fixes-work-on-the-next-site-2026-11-20)).
