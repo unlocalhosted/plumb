@@ -3331,6 +3331,29 @@ Each of these matches the form's verdict.
 **Media hooks.** The hold's lanes with the hatched overrun, and the slide's with the long coral stretch of words
 (`node generator/data/proto-shot.mjs scrub <form>`).
 
+### 49. Only what's wrong, each with its fix (2026-11-20)
+
+**The itch.** The owner on the four lanes: "this needs work and thing need to be concise and we dont need to show what
+works and we also need to suggest fixes similar to how we show fixes for other stuff".
+
+**What we chose.** The same rule plumber's fix bar follows: the problem first in plain words, then the change to make,
+in real CSS names. A lane appears only when something is wrong. Its title is the problem ("It is still moving 1.1 s
+after you let go"), its row is the time it happened, in coral, and one line under it is the fix ("Settle in about
+300 ms; drop the motion under `prefers-reduced-motion`"). The hand lane went; the press and the let-go are marks on
+the time line. A gesture with nothing wrong gets one mint line. The line under the lanes says only the moment and
+what is wrong in it ("1.5 s, done · still moving"). The view opens on the first problem.
+
+A flicker of lost words shorter than 150 ms no longer counts. It is gone before anyone could read it, and it had
+given the hold a fault its verdict doesn't have.
+
+**Found on the way.** Press-then-confirm's "words can't be read" is a false finding. Plumber's contrast check judged
+a screen-reader-only copy of "Pay ₹8,619 once?": a 1×1 px box hidden with `clip-path: inset(50%)`. The engine already
+skips such text when it is hidden with `overflow: hidden`, but not with `clip-path`. That form's "breaks" verdict
+rests on it. The fix belongs in plumber's engine, which was outside this piece of work, so it is still open.
+
+**Media hooks.** The hold's single lane with its hatched overrun and fix; the slide's two lanes (words, then
+movement); the leaning press's one mint line (`node generator/data/proto-shot.mjs scrub <form>`).
+
 ### 38. Alt and the X-ray card (2026-11-20)
 
 - **The itch:** holding Alt showed the old name tag outside Blueprint, and Alt-click opened the old element card with its heat and a dark spacing slider. Once the X-ray card took over, its pink note looked wrong. The owner on the note: "why is this black on muddy pink". On three new tints of it: "all of them look so ugly".
@@ -5001,6 +5024,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- Prototype A shows only what is wrong in a gesture, each fault as a plain problem, the time it happened and its fix in real CSS names; a clean gesture is one mint line ([entry](#49-only-whats-wrong-each-with-its-fix-2026-11-20)).
 - Crafting attention's buy button has its first suggestion built by us: a press whose shade pours from where you touched, readable throughout, and passing every interaction standard ([entry](#46-the-first-suggestion-we-built-ourselves-a-press-that-pours-2026-11-20)).
 - Prototype A (?proto=scrub) now tells the story of a gesture: four lanes on one time line (your hand, its first answer, its movement, its words), each drawn against its standard's limit, and the button freezes wherever you scrub ([entry](#48-prototype-a-tells-the-story-of-the-gesture-2026-11-20)).
 - The button ideas page runs every button live (press, hold, slide them), and keeps only the 70 that load without an error and visibly do what they claim; error screens and frozen parts are gone ([entry](#45-the-ideas-page-was-pictures-of-broken-buttons-now-it-runs-the-ones-that-work-2026-11-20)).

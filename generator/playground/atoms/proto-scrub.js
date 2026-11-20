@@ -21,7 +21,6 @@ const ANSWER_LIMIT = 100; // Nielsen: 0.1 s feels instantaneous
 const SETTLE_LIMIT = 500; // Material 3: its longest suggested transition
 const WORDS = /words-on-layers|contrast/;
 const NOISE = /^experience\/font|sibling-match|^html\/|landmark|heading/;
-const WEIGHT = (rule) => (/words-on-layers/.test(rule) ? 3 : /contrast|text-collision|hit-target/.test(rule) ? 2 : 1);
 const s1 = (ms) => `${(ms / 1000).toFixed(1)} s`;
 
 let rec = null, scrub = null;
@@ -90,10 +89,13 @@ function read(r) {
   const lost = []; let cur = null;
   r.verdicts.forEach((v, i) => {
     const w = v.findings.filter((f) => WORDS.test(f.rule)), next = r.verdicts[i + 1]?.t ?? end;
-    if (w.length) { const share = Math.max(0, ...w.map((f) => f.share ?? 0));
-      if (cur) { cur.to = next; cur.share = Math.max(cur.share, share); } else lost.push(cur = { from: v.t, to: next, share }); }
+    // a layer passing under the words (a fill, a trail) is one cause; the words fading on their own ground is another
+    if (w.length) { const share = Math.max(0, ...w.map((f) => f.share ?? 0)), layer = w.some((f) => /words-on-layers/.test(f.rule));
+      if (cur) { cur.to = next; cur.share = Math.max(cur.share, share); cur.layer ||= layer; } else lost.push(cur = { from: v.t, to: next, share, layer }); }
     else cur = null;
   });
+  // a flicker shorter than a tenth and a half of a second is gone before anyone could read the words anyway
+  for (let i = lost.length - 1; i >= 0; i--) if (lost[i].to - lost[i].from < 150) lost.splice(i, 1);
   // what it says along the way: each new set of words, from when it first shows
   const says = []; for (const f of r.frames) if (f.says && f.says !== says.at(-1)?.text) says.push({ t: f.t, text: f.says });
   return { end, up, moves, first, settle, stillMoving, lost, says };
@@ -111,31 +113,38 @@ function finish() {
   for (const m of L.moves) { const i = Math.min(BINS - 1, Math.floor((m.t / end) * BINS)); bins[i] = Math.max(bins[i], m.n); }
   const maxN = Math.max(1, ...bins), bw = W / BINS;
   const motion = `M0 ${H} ${bins.map((n, i) => { const y = (H - 2 - (n / maxN) * (H - 5)).toFixed(1); return `L${(i * bw).toFixed(1)} ${y} L${((i + 1) * bw).toFixed(1)} ${y}`; }).join(' ')} L${W} ${H} Z`;
-  const held = up, answerOk = L.first != null && L.first <= ANSWER_LIMIT, settleOk = L.settle <= SETTLE_LIMIT, lostMs = L.lost.reduce((a, x) => a + x.to - x.from, 0);
+  const answerOk = L.first != null && L.first <= ANSWER_LIMIT, settleOk = L.settle <= SETTLE_LIMIT, lostMs = L.lost.reduce((a, x) => a + x.to - x.from, 0);
+  const ms = (x) => (x < 1000 ? `${Math.round(x)} ms` : s1(x));
+  const most = Math.max(0, ...L.lost.map((x) => x.share)), mostPct = Math.round(most <= 1 ? most * 100 : most);
   // the press and the let-go, and the scrub head, run through every lane's row (not over the words above it)
   const marks = r.events.map((e) => `<i class="scrub-event" style="left:${pct(e.t)}"></i>`).join('') + '<b class="scrub-head"></b>';
-  const lane = (name, say, ok, body) => `
-    <div class="lane"><p class="lane-head"><b>${name}</b> <span class="${ok == null ? '' : ok ? 'ok' : 'bad'}">${say}</span></p><div class="lane-body">${body}${marks}</div></div>`;
-  const ms = (x) => (x < 1000 ? `${Math.round(x)} ms` : s1(x));
+  // only what is wrong gets a lane: the problem in plain words, when it happened, and the fix
+  const lane = (problem, body, fix) => `
+    <div class="lane"><p class="lane-head">${problem}</p><div class="lane-body">${body}${marks}</div><p class="lane-fix"><b>Fix</b> ${fix}</p></div>`;
+  const lanes = [];
+  if (L.lost.length) lanes.push(lane(`Its words can’t be read for ${s1(lostMs)}${mostPct ? `, ${mostPct}% at worst` : ''}`,
+    `${L.lost.map((x) => `<i class="seg lost" style="left:${pct(x.from)};width:calc(${pct(x.to)} - ${pct(x.from)})"></i>`).join('')}`,
+    L.lost.some((x) => x.layer)
+      ? 'Redraw the words in the fill’s text colour and clip them to the fill with <code>clip-path</code>.'
+      : 'Keep the words at full <code>opacity</code>; swap them at once.'));
+  if (!settleOk) lanes.push(lane(`It ${L.stillMoving ? 'is still moving' : 'keeps moving'} ${ms(L.settle)} after you let go`,
+    `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><path class="motion" d="${motion}"/></svg>
+     <i class="seg over" style="left:${pct(up + SETTLE_LIMIT)};width:calc(${pct(up + L.settle)} - ${pct(up + SETTLE_LIMIT)})"></i>`,
+    `Settle in about 300 ms; drop the motion under <code>prefers-reduced-motion</code>.`));
+  if (!answerOk) lanes.push(lane(L.first == null ? 'Nothing changes when you press it' : `It takes ${ms(L.first)} to answer the press`,
+    `<i class="seg over" style="left:${pct(ANSWER_LIMIT)};width:calc(${pct(L.first ?? end)} - ${pct(ANSWER_LIMIT)})"></i>`,
+    'Answer on <code>:active</code>: sink it onto its lip, or start the fill.'));
   const el = document.createElement('div');
   el.className = 'scrub pl-light';
-  el.innerHTML = `
+  el.innerHTML = lanes.length ? `
     <div class="scrub-track" role="slider" tabindex="0" aria-label="Scrub the recorded gesture" aria-valuemin="0" aria-valuemax="${Math.round(end)}">
-      ${lane('Your hand', held > 250 ? `held for ${s1(held)}` : 'one press', null,
-        `<i class="seg hand" style="left:0;width:${pct(up)}"></i>`)}
-      ${lane('Its answer', L.first == null ? 'nothing changed' : `first answers in ${ms(L.first)} <i>(feels instant under 100 ms)</i>`, answerOk,
-        `<i class="seg limit" style="left:0;width:${pct(ANSWER_LIMIT)}"></i>${L.first != null ? `<i class="tick ${answerOk ? 'ok' : 'bad'}" style="left:${pct(L.first)}"></i>` : ''}`)}
-      ${lane('Its movement', L.settle ? `${L.stillMoving ? 'still moving' : 'moves for'} ${ms(L.settle)} after you let go <i>(a control: under 500 ms)</i>` : 'still as soon as you let go', settleOk,
-        `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><path class="motion" d="${motion}"/></svg>
-         <i class="seg limit" style="left:${pct(up)};width:calc(${pct(up + SETTLE_LIMIT)} - ${pct(up)})"></i>
-         ${!settleOk ? `<i class="seg over" style="left:${pct(up + SETTLE_LIMIT)};width:calc(${pct(up + L.settle)} - ${pct(up + SETTLE_LIMIT)})"></i>` : ''}`)}
-      ${lane('Its words', L.lost.length ? `unreadable for ${s1(lostMs)}${L.lost.some((x) => x.share) ? `, up to ${Math.round(Math.max(...L.lost.map((x) => x.share)) * (Math.max(...L.lost.map((x) => x.share)) <= 1 ? 100 : 1))}% of them` : ''}` : 'readable the whole way', !L.lost.length,
-        `<i class="seg read" style="left:0;width:100%"></i>${L.lost.map((x) => `<i class="seg lost" style="left:${pct(x.from)};width:calc(${pct(x.to)} - ${pct(x.from)})"></i>`).join('')}
-         ${L.says.map((s) => `<i class="say-tick" style="left:${pct(s.t)}"></i>`).join('')}`)}
-      <div class="scrub-when">${up / end < 0.14 ? `<span style="left:0">pressed, let go</span>` : `<span style="left:0">pressed</span><span class="end" style="left:${pct(up)}">let go</span>`}</div>
+      ${lanes.join('')}
+      <div class="scrub-when">${up / end < 0.25 ? `<span style="left:0">pressed, let go</span>` : `<span style="left:0">pressed</span><span class="end" style="left:${pct(up)}">let go</span>`}</div>
     </div>
-    <div class="scrub-note"><p></p><button type="button" class="scrub-live">Live <kbd>Esc</kbd></button></div>`;
+    <div class="scrub-note"><p></p><button type="button" class="scrub-live">Live <kbd>Esc</kbd></button></div>`
+    : '<p class="scrub-clean">Nothing wrong in this gesture.</p>';
   r.stage.insertAdjacentElement('afterend', el); // directly under the button it is about
+  if (!lanes.length) { requestAnimationFrame(() => el.classList.add('open')); return; }
   const paint = document.createElement('div'); paint.className = 'scrub-paint';
   r.stage.appendChild(paint);
   scrub = { r, L, el, paint, end, touched: new Set() };
@@ -145,11 +154,9 @@ function finish() {
   track.addEventListener('pointermove', (e) => { if (e.buttons & 1) show(at(e.clientX)); });
   track.addEventListener('keydown', (e) => { const step = e.shiftKey ? 200 : 33; if (e.key === 'ArrowRight') { show(scrub.t + step); e.preventDefault(); } if (e.key === 'ArrowLeft') { show(scrub.t - step); e.preventDefault(); } if (e.key === 'Home') show(0); if (e.key === 'End') show(end); });
   el.querySelector('.scrub-live').addEventListener('click', release);
-  // the worst moment: the most serious finding first (words losing their ground outrank a shadow's tint), then
-  // within a rule, how much of the words it takes (a trail over 57% beats a thumb over 4%)
-  const rank = (v) => [Math.max(0, ...v.findings.map((f) => WEIGHT(f.rule) * 100 + (f.share ?? 0))), v.findings.length];
-  const worstV = r.verdicts.reduce((a, v) => { const [w, n] = rank(v), [aw, an] = rank(a); return w > aw || (w === aw && n > an) ? v : a; }, r.verdicts[0]);
-  requestAnimationFrame(() => { el.classList.add('open'); show(L.lost[0] ? (L.lost[0].from + L.lost[0].to) / 2 : worstV?.findings.length ? worstV.t : end); });
+  // it opens on the first problem the lanes show: the words lost, else the movement past its limit, else the late answer
+  const opening = L.lost[0] ? (L.lost[0].from + L.lost[0].to) / 2 : !settleOk ? up + (SETTLE_LIMIT + L.settle) / 2 : !answerOk ? (ANSWER_LIMIT + (L.first ?? end)) / 2 : 0;
+  requestAnimationFrame(() => { el.classList.add('open'); show(opening); });
 }
 
 // freeze the real button in its pose at time t, the fault painted on it, the head and the note following
@@ -163,18 +170,19 @@ function show(t) {
     PROPS.forEach((p, i) => node.style.setProperty(p, values[i], 'important'));
     scrub.touched.add(node);
   }
+  // paint the words fault on the frozen button, if the words are lost at this moment
   const v = [...r.verdicts].reverse().find((x) => x.t <= t + 1) ?? r.verdicts[0];
-  const top = (v?.findings ?? []).slice().sort((a, b) => WEIGHT(b.rule) * 100 + (b.share ?? 0) - (WEIGHT(a.rule) * 100 + (a.share ?? 0)));
-  // one loud thing: only the main finding is painted on the button
-  paint.innerHTML = top.slice(0, 1).map((fd) => fd.spans.length
-    ? fd.spans.map(([x, y, w, h]) => `<i class="scrub-fail" style="left:${x}px;top:${y}px;width:${w}px;height:${h}px"></i>`).join('')
-    : `<i class="scrub-box" style="left:${fd.box[0]}px;top:${fd.box[1]}px;width:${fd.box[2]}px;height:${fd.box[3]}px"></i>`).join('');
+  // only inside a stretch the words lane shows: a flicker it left out is not painted or named either
+  const inLost = L.lost.some((x) => t >= x.from - 1 && t <= x.to);
+  const words = inLost ? (v?.findings ?? []).filter((x) => WORDS.test(x.rule)).sort((a, b) => (b.share ?? 0) - (a.share ?? 0))[0] : null;
+  paint.innerHTML = !words ? '' : words.spans.length
+    ? words.spans.map(([x, y, w, h]) => `<i class="scrub-fail" style="left:${x}px;top:${y}px;width:${w}px;height:${h}px"></i>`).join('')
+    : `<i class="scrub-box" style="left:${words.box[0]}px;top:${words.box[1]}px;width:${words.box[2]}px;height:${words.box[3]}px"></i>`;
   el.querySelectorAll('.scrub-head').forEach((h) => { h.style.left = `${(t / end) * 100}%`; });
   el.querySelector('.scrub-track').setAttribute('aria-valuenow', String(Math.round(t)));
-  const phase = r.up == null || t < r.up ? (t < 120 ? 'as you press' : 'while you hold') : t - r.up > 600 ? 'done' : 'just after you let go';
-  const said = [...L.says].reverse().find((s) => s.t <= t + 1)?.text;
-  el.querySelector('.scrub-note p').innerHTML = `<b>${s1(t)}, ${phase}.</b>${said ? ` It says “${said}”.` : ' Its words can’t be read.'} `
-    + (top.length ? `${top[0].says}${top.length > 1 ? ` <span>+${top.length - 1} more</span>` : ''}` : '<span class="ok">Plumber finds nothing wrong here.</span>');
+  const phase = r.up == null || t < r.up ? (t < 120 ? 'pressing' : 'held') : t - r.up > 600 ? 'done' : 'just let go';
+  const wrong = [words && 'words lost', r.up != null && t > r.up + SETTLE_LIMIT && t <= r.up + L.settle && 'still moving', L.first != null && L.first > ANSWER_LIMIT && t > ANSWER_LIMIT && t < L.first && 'no answer yet'].filter(Boolean);
+  el.querySelector('.scrub-note p').innerHTML = `<b>${s1(t)}, ${phase}</b> · ${wrong.length ? `<span class="bad">${wrong.join(', ')}</span>` : 'fine here'}`;
 }
 
 // hand the button back
