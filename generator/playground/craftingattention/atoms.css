@@ -1,0 +1,50 @@
+/* Crafting attention's buy button as a skin: every library form of the action wears it. The values are the shipped
+   button's own (home-system.css .home-button.primary, read off the running page): the action fill, its darker edge,
+   a 3px lip, a 5px corner, 48px tall. Library parts read them under their own names: Arc by its variables, beUI by
+   Tailwind's colour names, defined here from the same skin. */
+@import "./playground.css";
+[data-atom] {
+  --atom-fill: var(--color-action-solid);
+  --atom-fill-deep: var(--color-action-solid-hover);
+  --atom-on-fill: var(--color-on-accent);
+  --atom-edge: color-mix(in oklab, var(--color-action-solid) 70%, black);
+  --atom-lip: 0 3px 0 var(--atom-edge), 0 6px 0 color-mix(in oklab, var(--color-action-solid) 15%, transparent);
+  --atom-track: color-mix(in oklab, var(--ca-violet) 9%, var(--color-surface));
+  --atom-ink: var(--color-text-primary);
+  --atom-ground: var(--home-quiet-surface);
+  --atom-radius: 5px;
+  --atom-height: 48px;
+  /* Arc's names, inside the atom: the face at rest is the product's filled button, the fill that sweeps is deeper */
+  --surface: var(--atom-fill); --foreground: var(--atom-on-fill); --border-strong: var(--atom-edge); --border: var(--atom-edge);
+  --accent: var(--atom-fill-deep); --accent-foreground: var(--atom-on-fill); --accent-strong: var(--atom-fill-deep);
+  --background: var(--atom-ground); --text-secondary: var(--color-text-muted);
+  --radius-control: var(--atom-radius); --control-height-md: var(--atom-height); --control-height-sm: 36px;
+  --space-2: 8px; --space-5: 24px; --text-sm: 14px; --leading-body: 1.4; --radius-pill: 999px;
+  --duration-fast: 150ms; --duration-standard: 220ms; --ease-standard: cubic-bezier(.22, 1, .36, 1);
+  font-family: var(--font-sans);
+}
+/* the lip is the product's: a pressed thing sinks onto it */
+[data-atom] > button, [data-atom] > div > button:only-child { box-shadow: var(--atom-lip); }
+/* Arc's confirm morph rests as a raised pill: here it rests as the product's button and opens from it */
+[data-atom].morph { --surface-raised: var(--atom-fill); --radius-pill: var(--atom-radius); --control-height-sm: var(--atom-height);
+  --shadow-resting: var(--atom-lip); --text-secondary: var(--atom-on-fill); --border-subtle: transparent; --font-body: var(--font-sans); --tracking-body: 0; }
+[data-atom].morph > * { width: auto; }
+@theme inline {
+  --color-primary: var(--atom-fill);
+  --color-primary-foreground: var(--atom-on-fill);
+  --color-muted: var(--atom-track);
+  --color-muted-foreground: var(--color-text-muted);
+  --color-foreground: var(--atom-ink);
+  --color-background: var(--atom-ground);
+  --color-card: var(--color-surface);
+  --color-border: var(--color-border-default);
+}
+.atoms { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 20px; max-width: 1200px; margin: 0 auto; padding: 0 32px 80px; }
+.atom { background: var(--home-quiet-surface); border: 1px solid var(--home-edge); border-radius: 11px; padding: 28px 28px 20px; display: grid; gap: 18px; align-content: start; }
+.atom-stage { min-height: 96px; display: grid; place-items: center; }
+.atom-stage > * { width: 304px; }
+.atom h3 { margin: 0; font: 600 14px/1.3 var(--font-sans); color: var(--color-text-primary); }
+.atom p { margin: 4px 0 0; font: 13px/1.5 var(--font-sans); color: var(--color-text-muted); }
+.atom code { font: 11px var(--font-mono); color: var(--color-text-muted); }
+/* beUI's hold paints its liquid's wavy edge in a sky blue it doesn't expose: the skin's deeper fill instead */
+[data-atom] svg.text-sky-400 { color: var(--atom-fill-deep); }

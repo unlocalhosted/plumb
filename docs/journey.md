@@ -2991,6 +2991,28 @@ field is empty). The table of five writes, before and after. The Next table: eig
   direction's idea is written by hand per reference, not worked out from its grammar. Arc lifetime's card comes out too
   wide for the column the shipped card sits in.
 
+### 40. Atoms first: one job, many ways to do it (2026-11-20)
+
+- **The itch:** the owner, on the whole-card directions: "you are kind of finding a way to fit the existing component
+  cards into the one you've been given reference of, it doesn't really do anything novel." What they wanted: "the
+  click button become a slide to buy".
+- **The system behind it:** both earlier attempts varied the arrangement of parts the product already had. Nothing new
+  came in at the level a person touches.
+- **What we chose and why:** the owner's order. Atoms first: one atom keeps its job and takes other forms, each a
+  different way of using it. Molecules next, swapping atoms while the meaning stays. Organisms last, swapping molecules
+  with some freedom of layout. Asked and confirmed: the forms come from the libraries (Arc, beUI), re-skinned in the
+  product. The first atom is crafting attention's buy button.
+- **The fix:** the skin (generator/playground/craftingattention/atoms.css) is the shipped button read off the running
+  page: the action fill, its darker edge, a 3px lip, a 5px corner, 48px tall. Arc's parts take it through their own
+  variable names, and beUI's through Tailwind's colour names, both defined from the same skin. Two library leaks were
+  closed. beUI's hold paints its liquid edge in a hard-coded sky blue, which the skin overrides. beUI's stateful button
+  measures its label before the font loads and clips it, so it is measured again once the fonts are in.
+- **The proof:** generator/shots/atoms-craftingattention.png (local), seven forms, each shown at rest and mid-gesture:
+  press, slide to buy, hold to buy, hold to confirm, press then confirm the price, press and it answers, press and it
+  leans in. Each has one line on why a designer would choose it.
+- **Still open:** stills can't show the magnetic lean. Hold to buy shows a sliver of its liquid at rest. The forms
+  aren't judged by plumber yet, and the other products' atoms haven't been started.
+
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
 - Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".

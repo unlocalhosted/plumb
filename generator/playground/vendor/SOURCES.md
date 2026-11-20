@@ -85,3 +85,58 @@ Files:
 - https://uiarc.dev/r/gauge.json (Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing))
   - vendor/arc/gauge/gauge.tsx
   - vendor/arc/gauge/gauge.module.css
+
+- https://beui.dev/r/slide-action-button.json (beUI free components: installed with the shadcn CLI, "the source is yours"; Pro items are not in the registry (beui.dev))
+  - vendor/beui/components/slide-action-button.tsx
+  - vendor/beui/lib/ease.ts
+  - vendor/beui/lib/i18n.tsx
+  - vendor/beui/lib/touch.ts
+  - vendor/beui/lib/utils.ts
+
+- https://beui.dev/r/hold-action-button.json (beUI free components: installed with the shadcn CLI, "the source is yours"; Pro items are not in the registry (beui.dev))
+  - vendor/beui/components/hold-action-button.tsx
+  - vendor/beui/lib/ease.ts
+  - vendor/beui/lib/i18n.tsx
+  - vendor/beui/lib/touch.ts
+  - vendor/beui/lib/utils.ts
+
+- https://beui.dev/r/button-stateful.json (beUI free components: installed with the shadcn CLI, "the source is yours"; Pro items are not in the registry (beui.dev))
+  - vendor/beui/components/button/stateful.tsx
+  - vendor/beui/components/button/base.tsx
+  - vendor/beui/lib/ease.ts
+  - vendor/beui/lib/i18n.tsx
+  - vendor/beui/lib/hooks/use-hover-capable.ts
+  - vendor/beui/lib/utils.ts
+
+- https://beui.dev/r/button-magnetic.json (beUI free components: installed with the shadcn CLI, "the source is yours"; Pro items are not in the registry (beui.dev))
+  - vendor/beui/components/button/magnetic.tsx
+  - vendor/beui/components/magnetic.tsx
+  - vendor/beui/components/button/base.tsx
+  - vendor/beui/lib/ease.ts
+  - vendor/beui/lib/hooks/use-hover-capable.ts
+  - vendor/beui/lib/utils.ts
+
+- https://beui.dev/r/button-metallic.json (beUI free components: installed with the shadcn CLI, "the source is yours"; Pro items are not in the registry (beui.dev))
+  - vendor/beui/components/button/metallic.tsx
+  - vendor/beui/components/button/base.tsx
+  - vendor/beui/lib/ease.ts
+  - vendor/beui/lib/utils.ts
+  - vendor/beui/lib/hooks/use-hover-capable.ts
+
+- https://beui.dev/r/button-base.json (beUI free components: installed with the shadcn CLI, "the source is yours"; Pro items are not in the registry (beui.dev))
+  - vendor/beui/components/button/base.tsx
+  - vendor/beui/lib/ease.ts
+  - vendor/beui/lib/hooks/use-hover-capable.ts
+  - vendor/beui/lib/utils.ts
+
+- https://uiarc.dev/r/button.json (Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing))
+  - vendor/arc/button/button.tsx
+  - vendor/arc/button/button.module.css
+
+- https://uiarc.dev/r/hold-to-confirm.json (Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing))
+  - vendor/arc/hold-to-confirm/hold-to-confirm.tsx
+  - vendor/arc/hold-to-confirm/hold-to-confirm.module.css
+
+- https://uiarc.dev/r/confirm-morph.json (Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing))
+  - vendor/arc/confirm-morph/confirm-morph.tsx
+  - vendor/arc/confirm-morph/confirm-morph.module.css
