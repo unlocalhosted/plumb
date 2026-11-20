@@ -48,6 +48,18 @@ import { STAMP_ATTRIBUTE, stampOf, parseStamp } from './stamp.js';
 
 const WAVE = 128; // per-element readings in flight at once (each is batched by api.js into one round trip per tick)
 const PAGE = 1024; // stamped elements per page request; every chunk is sent at once
+// One line of code can draw several elements whose classes differ by a condition (`status.id === 'review' &&
+// 'rounded-[10px]'`, a red date only on late cards). The server answers for the line, so every element it draws hears
+// of that class. A mark about one class belongs to the elements that carry it: on one that doesn't, while another
+// element from the same line does, the mark is that one's, not this one's (it was drawn on the first column, and its
+// fix refused there, since that column's classes don't hold it).
+const classesOf = (el) => (el.getAttribute('class') ?? '').split(/\s+/).filter(Boolean);
+function siblingsClass(item, mark) {
+  const text = mark.text;
+  if (!text || /\s/.test(text) || !item.stamp || classesOf(item.el).includes(text)) return false;
+  for (const other of document.querySelectorAll(`[${STAMP_ATTRIBUTE}="${CSS.escape(item.stamp)}"]`)) if (other !== item.el && classesOf(other).includes(text)) return true;
+  return false;
+}
 const THROTTLE = 150;
 const RETRY = 5000; // a server that answered starting is asked again at most this often, if it never says ready
 const QUIET = 300; // the page must have stopped changing for this long before it is done
@@ -298,7 +310,7 @@ export class Reader {
       item.checked = true; item.outsideSource = false;
       item.file = state.file; item.line = state.line; item.column = state.column; // where its JSX opens: a craft mark's place
       if (item.file && !this.#code.has(item.file) && !this.#noCode && !this.#scope) this.#readCode();
-      item.marks = state.marks.filter((m) => m.ledger !== 'exception');
+      item.marks = state.marks.filter((m) => m.ledger !== 'exception' && !siblingsClass(item, m));
       item.dims = state.dims ?? [];
     } else if (state?.status === 'unplaced') {
       item.state = 'ready'; // nothing to draw, and nothing to retry: Plumb can't place this element

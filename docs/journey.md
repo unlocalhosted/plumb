@@ -3932,13 +3932,29 @@ Break it) went into commits and this journey only. So each release starts with a
 
 **Media hooks.** The X-ray card on Ledger from the packed build, and the "Added --spacing-gutter…" line with its Undo.
 
+### 72. A fix offered on the wrong element (2026-11-21)
+**The itch.** Recording the README's hero on Relay, the owner's pick of "a good example" after the sloppy test page
+("dont test this piece of shit page, use a good example"). Taking the In review column's corner fix said "Writing it
+to your code…", then "This change can't be written as classes here". The ring was on the Backlog column, and the red
+due date's ring sat on "Oct 28" while the red date was "Oct 21".
+
+**The system behind it.** One line of code draws all four columns, and every card's date. The class that differs
+sits in a condition (`status.id === 'review' && 'rounded-[10px]'`, `issue.overdue && 'text-[#d23a3a]'`). The server
+answers for the line, so every element the line draws heard about that class, and the fix went to the first of them.
+That element's classes don't hold the class, so its edit couldn't be built and the write was refused.
+
+**The fix and the proof.** A mark about one class now goes only to the elements that carry it, when another element
+from the same line does (`overlay/src/blueprint-reader.js`). A probe on Relay listed every cause before and after.
+Before: "Use rounded-lg" and "Use text-destructive" were offered on the wrong elements and refused. After: both rings
+are on the right elements, and both writes land, "Changed rounded-[10px] to rounded-lg at 1 place" and "Changed
+text-[#d23a3a] to text-destructive at 1 place", each changing only the conditional string in `Board.jsx`. A second
+change, reading each place's own value in a grouped colour finding, was tried and taken out again: the probe showed
+it wasn't needed.
+
+**Media hooks.** The new README hero, `docs/media/blueprint.gif`, recorded on Relay by
+`scripts/record-blueprint.mjs`: the count, the X-ray card on New issue, the corner fix on In review, and its write.
+
 ## Open gaps
-- **Fixes on Relay that are offered, then refused (2026-11-20).** Found while recording the README's hero on Relay.
-  The Backlog column's corner fix ("Use rounded-lg") says "Writing it to your code…", then "This change can't be
-  written as classes here": the class sits in a condition (`status.id === 'review' && 'rounded-[10px]'`) on a line
-  every column shares. The ring is drawn on Backlog, though the class only reaches In review. After that refusal the
-  red due date's fix changed from "Use text-destructive" to "nothing close", and its ring sits on "Oct 28" while the
-  red date is "Oct 21". A fix that can't be written should never be offered as one.
 - **Tests that check wording, layout and time.** 769 tests are left (by `test(` lines). Many still check sentences, exact counts, pixels,
   fixed waits (55 `waitForTimeout` calls, 69 sleeps) and timings (about 67 asserts). Next: rewrite them to check
   behaviour, or delete them, and consider Playwright's own test runner. ([71](#71-preparing-060-2026-11-20))
@@ -5602,6 +5618,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- A fix whose class only some of a line's elements carry (a condition on one column, a red date on late cards) is shown and written on those elements; it used to be offered on the first element and refused. The README's hero is re-recorded on Relay ([entry](#72-a-fix-offered-on-the-wrong-element-2026-11-21)).
 - React Plumber 0.6.0 is ready to release: plain CSS and Sass changed like utility classes, renaming a token by its variable, about 150 new checks from Chrome's web guides, the Anti-slop checks, Break it, and an X-ray card that says what is wrong first. The packed package was tried on a fresh app, and 179 out-of-date tests were removed ([entry](#71-preparing-060-2026-11-20)).
 - The last CSS parity gaps closed: any token renamed across CSS, Sass and code; motion recipes on plain CSS; Clean up's type roles written into each element's own rule; Sass on Next ([entry](#70-the-last-parity-gaps-2026-11-20)).
 - Sass works through plumber's engine: values in nested rules, `$variables` and nested `@media` are written where the `.scss` writes them, mixins are refused, and every write must still compile ([entry](#69-sass-run-for-real-2026-11-20)).

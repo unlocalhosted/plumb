@@ -18,7 +18,7 @@
   <a href="CHANGELOG.md">Changelog</a>
 </p>
 
-<p align="center"><img src="https://raw.githubusercontent.com/unlocalhosted/plumb/main/docs/media/blueprint.gif" width="760" alt="Blueprint mode on a demo page: heat glows where the page is off its system; the fix panel holds gap-[10px] with 8px, 10px (now) and 12px drawn as specimens; the rows glide as each is tried; Take and Apply write gap-s2 into App.jsx"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/unlocalhosted/plumb/main/docs/media/blueprint.gif" width="760" alt="Relay, an issue tracker: Alt+B counts 34 concerns on the board; pointing at New issue opens its X-ray card, with a 7px corner off the scale; Enter pages through the causes to the In review column's hard-coded 10px corner, its options drawn on the column; taking rounded-lg writes it into Board.jsx, with Undo"></p>
 
 ```sh
 npm install -D @unlocalhosted/react-plumber
