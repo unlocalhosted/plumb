@@ -11,9 +11,40 @@ export const RECORDER = fileURLToPath(new URL('../overlay/src/craft-record.js', 
 export const sleep = (ms: number) => new Promise<void>(done => setTimeout(done, ms));
 export const desktop = { width: 1280, height: 800 };
 
-/** A question for the page's craft engine (overlay/src/craft-run.js, `op`). */
-export const ask = <T>(page: Page, args: Record<string, unknown>): Promise<T> =>
-  page.evaluate((a) => (window as unknown as { __plumb: { craft(o: unknown): Promise<unknown> } }).__plumb.craft(a), args) as Promise<T>;
+/** The page reloaded under a question (a file saved, a dev server's watcher): its context went, or the new page was
+ *  asked before plumber's script was back on it ("reading 'craft'", U66). A closed page is not a reload. */
+export const reloaded = (error: unknown) => /Execution context was destroyed|navigation|plumb-not-ready|reading 'craft'/i.test(String((error as Error)?.message ?? error));
+
+/** After a reload: the page loaded again, plumber's script back on it, and the overlay's first read done (bounded). */
+export async function back(page: Page, timeout = 15000): Promise<void> {
+  await page.waitForLoadState('load', { timeout }).catch(() => {});
+  await page.waitForFunction(() => { const p = (window as unknown as { __plumb?: { craft?: unknown; overlay?: unknown } }).__plumb; return !!(p?.craft && p.overlay); }, undefined, { timeout });
+  await page.evaluate((limit) => Promise.race([(window as unknown as { __plumb: { ready?(): Promise<unknown> } }).__plumb.ready?.(),
+    new Promise((done) => setTimeout(done, limit))]), timeout).catch(() => {});
+  await settle(page, Math.min(timeout, 5000));
+}
+
+/** How long a page may keep reloading under a question before it is said: a burst of saves is waited out. */
+export const RELOADING = 30000;
+
+/** A question for the page's craft engine (overlay/src/craft-run.js, `op`). A page that reloads under it is waited
+ *  for and asked again while the reloads last, up to RELOADING ms; then the last reload's error is thrown for the
+ *  caller to say (U66: touched once a second for 12 s, a count of 4 tries gave up while the saves still came). */
+export async function ask<T>(page: Page, args: Record<string, unknown>, within = RELOADING): Promise<T> {
+  const until = Date.now() + within;
+  for (;;) {
+    try {
+      return await page.evaluate((a) => {
+        const p = (window as unknown as { __plumb?: { craft?(o: unknown): Promise<unknown> } }).__plumb;
+        if (!p?.craft) throw new Error('plumb-not-ready');
+        return p.craft(a);
+      }, args) as T;
+    } catch (error) {
+      if (!reloaded(error) || Date.now() >= until) throw error;
+      await back(page);
+    }
+  }
+}
 
 /** Open a route and wait for the overlay. `ready` also waits for the server's first read of the project. */
 export async function open(page: Page, url: string, timeout: number, ready: boolean): Promise<void> {
