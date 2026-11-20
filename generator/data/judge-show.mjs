@@ -6,6 +6,17 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 const here = fileURLToPath(new URL('./', import.meta.url));
 const [which = 'beui/slide-action-button', atom = 'buy'] = process.argv.slice(2);
+// the product's playground: used if it is already running, else started here and stopped at the end
+import { execFileSync } from 'node:child_process';
+const DEV = `${process.env.HOME}/.claude/bin/dev-server`, PG = `${here}../playground/${atom === 'start' ? 'algorecall' : 'craftingattention'}`;
+const up = async () => { try { return (await fetch('http://localhost:4399/')).ok; } catch { return false; } };
+const started = !(await up());
+if (started) {
+  const root = atom === 'start' ? '/Users/vijaysingh/unlocalhosted/algorecall' : '/Users/vijaysingh/unlocalhosted/craftingattention/app';
+  execFileSync(DEV, [PG, `${root}/node_modules/.bin/vite`, '--config', 'vite.config.mjs', '--port', '4399', '--strictPort'], { stdio: 'ignore' });
+  for (let i = 0; i < 40 && !(await up()); i++) await new Promise((r) => setTimeout(r, 750));
+}
+const stop = () => { if (started) try { execFileSync(DEV, ['--stop', PG], { stdio: 'ignore' }); } catch {} };
 const engine = (await readFile(`${here}../reads/craft.iife.js`, 'utf8')).replaceAll('{}.url', '"http://plumb.invalid/overlay/src/craft.js"');
 // plumber at this moment: each note with the box of the element it is on, relative to the stage
 const JUDGE = (form) => {
@@ -102,3 +113,4 @@ const out = `${here}../../web/public/research/${atom === 'buy' ? 'atom-judging' 
 await mkdir(`${here}../../web/public/research`, { recursive: true });
 await writeFile(out, page);
 console.log(out.replace(/.*\/web\//, 'web/'));
+stop();
