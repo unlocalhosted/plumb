@@ -333,6 +333,9 @@ function* familySteps(family: JudgedFamily, declarations: Declaration[], record:
           if (numericMultiple || numericUtility) numericSpacing.push(match.name);
         }
         if ((family === 'spacing' || family === 'radius') && length === 0) continue;
+        // under a pixel is a device pixel (a hairline's 0.5px), not a step of a scale: left alone, as the verdict already
+        // does, so a craft fix (h-[0.5px] for a line too heavy) isn't then called hard-coded (owner, 2026-11-20, U42)
+        if ((family === 'spacing' || family === 'radius') && length !== undefined && Math.abs(length) > 0 && Math.abs(length) < 1) continue;
         const frameworkTime = family === 'motion' && (declaration.origin === 'class' || declaration.origin === 'arbitrary') && value !== undefined ? decisions.find(d => d.origin === 'framework' && d.resolved !== undefined && equal(value, d.resolved, declaration.prop)) : undefined;
         if (frameworkTime && !origins.includes('framework')) { rule = 'provenance/motion/framework'; adopt = adoptable(frameworkTime.name); title = `\`${declaration.site.text}\` uses Tailwind's default timing (\`${frameworkTime.name}\`), not your theme`; because = `Your theme defines its own ${scales[family]}; Tailwind's defaults sit outside it.`; nearest = closest(value!, declaration.prop); break; }
         if (match) {
