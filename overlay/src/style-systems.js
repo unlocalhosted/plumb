@@ -319,6 +319,37 @@ export function route(changes, systems = SYSTEMS) {
   }
   return by;
 }
+/** Whether the page has utility classes (a Tailwind build: its utilities layer, or its --tw- variables). */
+export function hasUtilities() {
+  return [...document.styleSheets].some((sh) => { try { return [...sh.cssRules].some((r) => r.name === 'utilities' || /--tw-/.test(r.cssText)); } catch { return false; } });
+}
+/**
+ * Clean up's type roles on a page with no utility classes (docs/briefs/css-parity.md): a role written as Tailwind's
+ * `@utility type-x { … }` and swapped onto elements does nothing there. Each swap becomes the role's values written into
+ * the rule that styles each element it reaches; the tokens are written as before. Returns the style changes, and the
+ * swaps it couldn't turn into rule edits (left as they were).
+ */
+export async function rolesAsRules(css, swaps, request) {
+  const roles = new Map();
+  for (const block of css ?? []) for (const m of String(block.css ?? '').matchAll(/@utility\s+([\w-]+)\s*\{([^}]*)\}/g)) {
+    roles.set(m[1], m[2].split(';').map((d) => d.trim()).filter(Boolean).map((d) => { const i = d.indexOf(':'); return [d.slice(0, i).trim(), d.slice(i + 1).trim()]; }));
+  }
+  const stamped = [...document.querySelectorAll('[data-plumb-source]')];
+  const at = (file, line, column) => { const tail = String(file).replace(/^(\.\.\/)+/, '').replace(/^\/+/, ''); return stamped.filter((el) => { const s = el.getAttribute('data-plumb-source').split('#')[0]; return s.endsWith(`${tail}:${line}:${column}`) || `${tail}:${line}:${column}`.endsWith(s); }); };
+  const changes = [], left = [];
+  for (const sw of swaps ?? []) {
+    const kept = [];
+    for (const e of sw.edits ?? []) {
+      const role = String(e.to).split(/\s+/).map((c) => roles.get(c.split(':').pop())).find(Boolean);
+      const els = role ? at(sw.file, e.line, e.column) : [];
+      const made = [];
+      for (const el of els) for (const [prop, value] of role) { const r = await ruleChanges(el, [prop], value, request).catch(() => null); if (!r) { made.length = 0; break; } made.push(...r); }
+      if (made.length) changes.push(...made); else kept.push(e);
+    }
+    if (kept.length) left.push({ ...sw, edits: kept });
+  }
+  return { changes, swaps: left };
+}
 // the system that adds a value nothing sets: the utility system where the project has utilities, else a refusal in words
 function addSystem(systems) {
   const tailwind = [...document.styleSheets].some((sh) => { try { return [...sh.cssRules].some((r) => r.name === 'utilities' || /--tw-/.test(r.cssText)); } catch { return false; } });

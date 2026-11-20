@@ -37,6 +37,7 @@ import { FixPanel, FIX_CSS } from './fixpanel.js'; // the one place you act: a c
 import { FIX } from './words.js';
 import { hasText } from './texteditor.js';
 import { errorIs, post, request } from './api.js';
+import { hasUtilities, rolesAsRules } from './style-systems.js';
 import { locate, classEditsOf, classSiteOf } from './locate.js';
 
 const FADE_IN = 160, FADE_OUT = 120; // ms, the same as --pl-dur-dim and --pl-dur-undim
@@ -348,15 +349,24 @@ export class Blueprint {
           this.invalidate({ file: p.file });
         } catch (error) { propLeft.push({ file: p.file, reason: error?.message ?? FIX.couldNot }); }
       }
-      const swapsNow = (write.swaps ?? []).map((x) => (hashes.has(x.file) ? { ...x, hash: hashes.get(x.file) } : x));
-      const rest = (write.tokens ?? []).length || (write.css ?? []).length || swapsNow.length;
+      let swapsNow = (write.swaps ?? []).map((x) => (hashes.has(x.file) ? { ...x, hash: hashes.get(x.file) } : x));
+      // a page with no utility classes: the type roles go into each element's own rule, not as @utility and classes
+      let styled = [];
+      if (!hasUtilities() && ((write.css ?? []).length || swapsNow.length)) {
+        const plain = await rolesAsRules(write.css, swapsNow, request);
+        styled = plain.changes; swapsNow = plain.swaps; write = { ...write, css: [] };
+      }
+      const rest = (write.tokens ?? []).length || (write.css ?? []).length || swapsNow.length || styled.length;
       if (!rest) {
         if (!propUndo.length) { this.#host.forgetResume?.(); return { ok: false, undo: [], group: trace.group, why: propLeft[0]?.reason ?? FIX.couldNot }; }
         this.#host.remember?.(said, propUndo, null, trace.group);
         return { ok: true, undo: propUndo, group: trace.group, refused: propLeft };
       }
-      const answer = await post('apply-all', { tokens: write.tokens ?? [], css: write.css ?? [], swaps: swapsNow, trace });
-      const results = answer?.results ?? {}, undo = [...propUndo, ...(answer?.undo ?? [])];
+      const answer = (write.tokens ?? []).length || (write.css ?? []).length || swapsNow.length ? await post('apply-all', { tokens: write.tokens ?? [], css: write.css ?? [], swaps: swapsNow, trace }) : { results: {}, undo: [] };
+      // the roles' values, in the rules that style each element (after the tokens they read are written)
+      const styledAnswer = styled.length ? await post('style', { changes: styled, trace }).catch((error) => ({ results: [{ state: 'failed', why: error?.message }] })) : null;
+      const results = { ...(answer?.results ?? {}), ...(styledAnswer ? { swaps: [...(answer?.results?.swaps ?? []), ...styledAnswer.results.map((r) => ({ ok: r.state === 'ok', file: r.file, applied: r.state === 'ok' ? [r.said] : [], ...(r.state === 'ok' ? {} : { error: r.why }) }))] } : {}) };
+      const undo = [...propUndo, ...(answer?.undo ?? []), ...(styledAnswer?.undo ?? [])];
       const failed = [...(results.tokens ?? []), ...(results.css ?? []), ...(results.swaps ?? [])].filter((x) => !x.ok || x.refused?.length);
       for (const f of new Set([...(write.tokens ?? []), ...(write.css ?? []), ...(write.swaps ?? [])].map((x) => x.file))) this.invalidate({ file: f });
       // a write that partly lands is a step all the same: what it changed is kept, with its Undo, and what it left as it is
