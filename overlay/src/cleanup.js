@@ -658,6 +658,11 @@ export class Cleanup {
           all.swaps.push(...(e.swaps ?? [])); all.props.push(...(e.props ?? [])); refused.push(...(e.refused ?? [])); places += e.places ?? this.#swaps[k].page?.places ?? 0;
         }
       }
+      // one list of edits per file: two steps' edits to one file sent as two lists had the second refused (the first
+      // changed the file it was checked against), and the step said it had landed
+      const byFile = new Map();
+      for (const f of all.swaps) { const k = f.file; if (!byFile.has(k)) byFile.set(k, { ...f, edits: [] }); byFile.get(k).edits.push(...(f.edits ?? [])); }
+      all.swaps = [...byFile.values()];
       if (!all.swaps.length && !all.props.length && !all.tokens.length && !all.css.length) throw new Error(refused[0]?.why ?? W.couldNot);
       const files = new Set([...all.swaps, ...all.props, ...all.css].map((x) => x.file).filter(Boolean)).size, said = W.savedAll(passes.map((k) => W.pass[k]), places, files);
       const landed = (undo = []) => {
@@ -673,10 +678,13 @@ export class Cleanup {
       const r = await answered(this.#host.write(all, said, { step: W.pass[PASSES[i]], laws: LAWS, group }), group);
       if (r?.lost && !r.landed) throw new Error(W.lost);
       if (!r?.lost && !r?.ok) throw new Error(r?.why ?? W.couldNot);
+      // what the write left as it was is said, not counted as landed
+      const left = (r?.refused ?? []).length;
+      if (left) { refused.push(...r.refused); this.#err = W.partlyApplied(left); }
       landed(r.undo);
       // the page now draws every step from its own classes: the previews (the same values) are let go
       this.#life.frame(() => { this.#preview.clear((el, f) => f()); for (const k of passes) this.#swaps[k]?.clear(); });
-      this.#host.announce?.(said);
+      this.#host.announce?.(left ? `${said}. ${W.partlyApplied(left)}` : said);
     } catch (error) { if (run === this.#run) { keep(null); this.#send('failed'); this.#err = error?.message ?? W.couldNot; } }
     this.#host.render();
   }

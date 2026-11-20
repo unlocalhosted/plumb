@@ -962,6 +962,7 @@ export const CLEANUP = {
   keptOnPage: (names) => `Still on the page, not written: ${names.join(', ')}.`,
   applyAll: (n) => `Apply all ${n}`,
   applyThis: 'Only this',
+  partlyApplied: (n) => `${n} ${n === 1 ? 'change was' : 'changes were'} left as they were: the code had moved on. Check again to see what is left.`,
   savedAll: (names, places, files) => `${names.join(', ')}: ${places} ${places === 1 ? 'place' : 'places'} in ${files} ${files === 1 ? 'file' : 'files'} changed, as one step`,
   siteBusy: 'Reading the site…',
   siteReading: (n, route) => `Reading your site: ${n} ${n === 1 ? 'page' : 'pages'} so far${route ? `, last ${route}` : ''}.`,
