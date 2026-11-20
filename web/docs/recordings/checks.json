@@ -45,7 +45,7 @@
    "why": "Unused tokens make the theme harder to choose from.",
    "where": "code",
    "tile": null,
-   "fix": "If other apps use them, mark them published: decisions.….exported: true. Otherwise remove them."
+   "fix": "Plumber lists the tokens nothing uses: delete them, or use them where they fit."
   },
   {
    "id": "existence/dead-class",
@@ -54,7 +54,7 @@
    "why": "Tailwind never made CSS for it, so the style it was meant to apply is missing and nothing warns you.",
    "where": "code",
    "tile": null,
-   "fix": "site.opaque ? Map each value to a complete class, e.g. …a', b: '$…b' }. : alternatives.length ? Did you mean $…\\).join(' or ')}? : Remove it, or define \\.$…\\ in a stylesheet."
+   "fix": "Plumber points at the class and offers the nearest one your theme makes."
   },
   {
    "id": "existence/dead-var",
@@ -63,7 +63,7 @@
    "why": "The browser drops a declaration whose variable doesn’t exist, so the value you meant never applies.",
    "where": "code",
    "tile": null,
-   "fix": "ranked?.action?.startsWith('Did you mean') ? ranked.action : Define $…, or use a token instead."
+   "fix": "Plumber points at the line; use a variable your theme defines."
   },
   {
    "id": "habits/focus-outline",
@@ -72,7 +72,7 @@
    "why": "Keyboard users lose track of focus, and forced-colors mode shows nothing.",
    "where": "code",
    "tile": null,
-   "fix": "Restore an outline on :focus-visible."
+   "fix": "Plumber names the line and the safer way to write it; fix it in your code, or send a note to your agent."
   },
   {
    "id": "habits/hover-gate",
@@ -81,7 +81,7 @@
    "why": "Touch can leave a hover style stuck after a tap.",
    "where": "code",
    "tile": null,
-   "fix": "Use pointer-hover: (or wrap the rule in @media (hover: hover) and (pointer: fine))."
+   "fix": "Plumber names the line and the safer way to write it; fix it in your code, or send a note to your agent."
   },
   {
    "id": "habits/logical-inline",
@@ -90,7 +90,7 @@
    "why": "It doesn't mirror in right-to-left layouts.",
    "where": "code",
    "tile": null,
-   "fix": "Use …."
+   "fix": "Plumber names the line and the safer way to write it; fix it in your code, or send a note to your agent."
   },
   {
    "id": "habits/no-ease-in",
@@ -99,7 +99,7 @@
    "why": "Feedback to a person’s hand should begin immediately, without a slow start.",
    "where": "code",
    "tile": null,
-   "fix": "Use the project’s responsive easing decision instead of ease-in."
+   "fix": "Plumber names the line and the safer way to write it; fix it in your code, or send a note to your agent."
   },
   {
    "id": "habits/overflow-clip",
@@ -108,7 +108,7 @@
    "why": "It breaks position: sticky inside and still allows script scrolling.",
    "where": "code",
    "tile": null,
-   "fix": "Use overflow-clip if nothing scrolls it."
+   "fix": "Plumber names the line and the safer way to write it; fix it in your code, or send a note to your agent."
   },
   {
    "id": "habits/overscroll-contain",
@@ -117,7 +117,7 @@
    "why": "Reaching its edge scrolls the page behind it.",
    "where": "code",
    "tile": null,
-   "fix": "Add overscroll-contain."
+   "fix": "Plumber names the line and the safer way to write it; fix it in your code, or send a note to your agent."
   },
   {
    "id": "habits/safe-area-fallback",
@@ -126,7 +126,7 @@
    "why": "A safe-area environment variable needs a fallback so unavailable insets cannot invalidate the declaration.",
    "where": "code",
    "tile": null,
-   "fix": "Add a fallback: env(safe-area-inset-*, 0px), alongside the element’s own spacing."
+   "fix": "Plumber names the line and the safer way to write it; fix it in your code, or send a note to your agent."
   },
   {
    "id": "habits/transition-named",
@@ -135,7 +135,7 @@
    "why": "Name the properties that transition so an unrelated change does not start animating.",
    "where": "code",
    "tile": null,
-   "fix": "Replace all with the specific properties that should transition."
+   "fix": "Plumber names the line and the safer way to write it; fix it in your code, or send a note to your agent."
   },
   {
    "id": "habits/viewport-dynamic",
@@ -144,7 +144,7 @@
    "why": "Mobile toolbars change the viewport height.",
    "where": "code",
    "tile": null,
-   "fix": "Use dvh for a changing viewport, svh for the smallest, lvh for the largest."
+   "fix": "Plumber names the line and the safer way to write it; fix it in your code, or send a note to your agent."
   },
   {
    "id": "imitation/{Component}",
@@ -153,7 +153,7 @@
    "why": "A copy misses the component’s states, its focus ring and every fix made to it later.",
    "where": "code",
    "tile": null,
-   "fix": "Use <…> from …."
+   "fix": "Plumber names the component it copies, so you can use the real one instead."
   },
   {
    "id": "ownership/{Component}",
@@ -162,7 +162,7 @@
    "why": "The component decides this itself; a style laid over it from outside breaks when the component changes.",
    "where": "code",
    "tile": null,
-   "fix": "…. : $… has no variant for this. Ask for one, or wrap it in an element you style.} Defined in …."
+   "fix": "Plumber names the size, variant or prop that does it, instead of styles laid over the component."
   },
   {
    "id": "provenance/arbitrary",
@@ -171,7 +171,7 @@
    "why": "Off-scale spacing makes layouts drift apart and can't be changed from the theme.",
    "where": "code",
    "tile": "Padding",
-   "fix": "Plumber swaps the hard-coded value for your token, on the element and in your code, with one Undo."
+   "fix": "Plumber offers your theme’s nearest steps and swaps the hard-coded value for the one you pick, on the element and in your code, with one Undo."
   },
   {
    "id": "provenance/color",
@@ -180,7 +180,7 @@
    "why": "A raw colour won't follow theme or colour-scheme changes.",
    "where": "code",
    "tile": "Colour",
-   "fix": "Plumber swaps the hard-coded value for your token, on the element and in your code, with one Undo."
+   "fix": "Plumber offers your theme’s nearest steps and swaps the hard-coded value for the one you pick, on the element and in your code, with one Undo."
   },
   {
    "id": "provenance/color/by-value",
@@ -189,7 +189,7 @@
    "why": "If the token changes, this copy stays behind.",
    "where": "code",
    "tile": "Colour",
-   "fix": "Plumber swaps the hard-coded value for your token, on the element and in your code, with one Undo."
+   "fix": "Plumber offers your theme’s nearest steps and swaps the hard-coded value for the one you pick, on the element and in your code, with one Undo."
   },
   {
    "id": "provenance/color/framework",
@@ -198,7 +198,7 @@
    "why": "Your theme has its own steps; Tailwind’s defaults sit outside them and won’t change when your theme does.",
    "where": "code",
    "tile": "Colour",
-   "fix": "Plumber swaps the hard-coded value for your token, on the element and in your code, with one Undo."
+   "fix": "Plumber offers your theme’s nearest steps and swaps the hard-coded value for the one you pick, on the element and in your code, with one Undo."
   },
   {
    "id": "provenance/color/tier",
@@ -207,7 +207,7 @@
    "why": "A named token says what a value is for, so it changes with the design; a raw one doesn't.",
    "where": "code",
    "tile": "Colour",
-   "fix": "Plumber swaps the hard-coded value for your token, on the element and in your code, with one Undo."
+   "fix": "Plumber offers your theme’s nearest steps and swaps the hard-coded value for the one you pick, on the element and in your code, with one Undo."
   },
   {
    "id": "provenance/elevation",
@@ -216,7 +216,7 @@
    "why": "A hand-written shadow won't match the other surfaces or follow theme changes.",
    "where": "code",
    "tile": "Shadows",
-   "fix": "Plumber swaps the hard-coded value for your token, on the element and in your code, with one Undo."
+   "fix": "Plumber offers your theme’s nearest steps and swaps the hard-coded value for the one you pick, on the element and in your code, with one Undo."
   },
   {
    "id": "provenance/motion",
@@ -225,7 +225,7 @@
    "why": "A one-off duration or curve makes motion feel inconsistent and ignores the team's timing.",
    "where": "code",
    "tile": "Timing",
-   "fix": "Plumber swaps the hard-coded value for your token, on the element and in your code, with one Undo."
+   "fix": "Plumber offers your theme’s nearest steps and swaps the hard-coded value for the one you pick, on the element and in your code, with one Undo."
   },
   {
    "id": "provenance/radius",
@@ -234,7 +234,7 @@
    "why": "Off-scale corners make surfaces look unrelated and can't be changed from the theme.",
    "where": "code",
    "tile": "Corners",
-   "fix": "Plumber swaps the hard-coded value for your token, on the element and in your code, with one Undo."
+   "fix": "Plumber offers your theme’s nearest steps and swaps the hard-coded value for the one you pick, on the element and in your code, with one Undo."
   },
   {
    "id": "provenance/type",
@@ -243,7 +243,7 @@
    "why": "Sizes and weights off the type scale break the reading rhythm and can't be changed from the theme.",
    "where": "code",
    "tile": "Text size",
-   "fix": "Plumber swaps the hard-coded value for your token, on the element and in your code, with one Undo."
+   "fix": "Plumber offers your theme’s nearest steps and swaps the hard-coded value for the one you pick, on the element and in your code, with one Undo."
   },
   {
    "id": "provenance/z",
@@ -252,7 +252,7 @@
    "why": "A raw z-index competes with every other layer; named layers keep stacking predictable.",
    "where": "code",
    "tile": null,
-   "fix": "choices (nearest tokens below and above, with amount and reason), per-site edit."
+   "fix": "Plumber offers your theme’s nearest steps and swaps the hard-coded value for the one you pick, on the element and in your code, with one Undo."
   },
   {
    "id": "craft/concentric-radius",

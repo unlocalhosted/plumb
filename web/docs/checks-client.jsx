@@ -3,6 +3,7 @@
 // catches and how it is fixed, with the fix's motion tile playing in it (one tile per kind of change).
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Toy } from '../site/Toy.jsx';
+import { Example, hasExample } from './examples/system.jsx';
 
 // what each concern is about, in a sentence a person can hold on to
 const ABOUT = {
@@ -41,7 +42,7 @@ function Card({ c, css, open, onOpen }) {
     <li className="ck-card" data-open={open || undefined}>
       <button type="button" className="ck-face" aria-expanded={open} onClick={onOpen}>
         <span className="ck-name">{c.name}</span>
-        <span className="ck-meta"><span className="ck-where" data-where={c.where}>{WHERE[c.where]}</span>{c.tile && <span className="ck-plays">▶ Shows the fix</span>}</span>
+        <span className="ck-meta"><span className="ck-where" data-where={c.where}>{WHERE[c.where]}</span>{(hasExample(c.id) || c.tile) && <span className="ck-plays">▶ Try it</span>}</span>
       </button>
       {open && (
         <div className="ck-body">
@@ -50,7 +51,7 @@ function Card({ c, css, open, onOpen }) {
             <p><b>How Plumber fixes it.</b> {c.fix}</p>
             <p className="ck-id"><code>{c.id}</code></p>
           </div>
-          {c.tile && <Tile title={c.tile} css={css} />}
+          {hasExample(c.id) ? <Example id={c.id} /> : c.tile && <Tile title={c.tile} css={css} />}
         </div>
       )}
     </li>

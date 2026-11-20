@@ -56,6 +56,15 @@ const CODE_WHY = {
   'ownership/{Component}': 'The component decides this itself; a style laid over it from outside breaks when the component changes.',
   'provenance/color/framework': 'Your theme has its own steps; Tailwind’s defaults sit outside them and won’t change when your theme does.',
 };
+// how each code check is fixed, in a sentence (their own fix lines are written for the CLI)
+const CODE_FIX = {
+  'dead/color': 'Plumber lists the tokens nothing uses: delete them, or use them where they fit.',
+  'existence/dead-class': 'Plumber points at the class and offers the nearest one your theme makes.',
+  'existence/dead-var': 'Plumber points at the line; use a variable your theme defines.',
+  'imitation/{Component}': 'Plumber names the component it copies, so you can use the real one instead.',
+  'ownership/{Component}': 'Plumber names the size, variant or prop that does it, instead of styles laid over the component.',
+};
+const HABIT_FIX = 'Plumber names the line and the safer way to write it; fix it in your code, or send a note to your agent.';
 // the code checks: your theme against your code (the design system concern), read without a browser
 const FAMILY_TILE = { spacing: 'Padding', color: 'Colour', radius: 'Corners', type: 'Text size', motion: 'Timing', elevation: 'Shadows', z: null };
 const code = JSON.parse(readFileSync(at('../docs/recordings/reference/rules.json'), 'utf8')).rules.filter((r) => r.id.startsWith('provenance/') || CODE_NAMES[r.id]).map((r) => {
@@ -63,7 +72,7 @@ const code = JSON.parse(readFileSync(at('../docs/recordings/reference/rules.json
   const name = kind === 'provenance' ? (r.id === 'provenance/type' ? 'Type not in your theme' : r.id === 'provenance/arbitrary' ? 'Spacing not in your theme' : FIX.what({ family: family === 'elevation' ? 'shadow' : family, rule: r.id, props: [] })) : CODE_NAMES[r.id];
   const tile = kind === 'provenance' ? FAMILY_TILE[family] ?? null : null;
   const why = CODE_WHY[r.id] ?? clean(r.because).replace(/\{[^}]*\}/g, 'it').replace(/^site\.opaque \?.*?: /, '');
-  return { id: r.id, concern: kind === 'habits' ? (/focus|hover|safe-area|viewport|logical/.test(r.id) ? 'access' : 'states') : 'system', name: clean(name), why, where: 'code', tile, fix: tile ? 'Plumber swaps the hard-coded value for your token, on the element and in your code, with one Undo.' : clean(r.fix?.replace(/\{[^}]*\}/g, '…')) || 'Plumber says where it is and what to change.' };
+  return { id: r.id, concern: kind === 'habits' ? (/focus|hover|safe-area|viewport|logical/.test(r.id) ? 'access' : 'states') : 'system', name: clean(name), why, where: 'code', tile, fix: kind === 'provenance' ? 'Plumber offers your theme’s nearest steps and swaps the hard-coded value for the one you pick, on the element and in your code, with one Undo.' : CODE_FIX[r.id] ?? HABIT_FIX };
 });
 // one row per name within a concern: many code checks share a plain name across families
 const seen = new Set(), checks = [...code, ...page].filter((c) => { const k = c.concern + '|' + c.name; if (seen.has(k)) return false; seen.add(k); return true; });
