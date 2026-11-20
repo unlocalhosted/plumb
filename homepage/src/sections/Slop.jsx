@@ -71,7 +71,6 @@ export function Slop() {
   return (
     <section className="slop" aria-labelledby="slop-title">
       <header className="slop-head">
-        <span className="slop-eyebrow">Guardrails for agents</span>
         <h2 id="slop-title" className="title">Your agent writes the UI. Plumber keeps it yours.</h2>
         <p className="lead">Agents make up values and miss the details: a grey shadow on a coloured card, an icon centred by its box. <b>Plumber catches both, with the exact fix</b>, so the agent corrects itself before you ever see it.</p>
         <ul className="slop-facts">

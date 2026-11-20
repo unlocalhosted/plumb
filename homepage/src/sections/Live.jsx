@@ -27,7 +27,6 @@ export function Live() {
   return (
     <section className="live" aria-labelledby="live-title">
       <header className="live-head">
-        <span className="live-eyebrow">Live editing</span>
         <h2 id="live-title" className="title">Edit directly on your webpage.<br />Changes are synced to src.</h2>
         <p className="lead">Retype a heading or try a space on your running app. Plumber writes <b>the exact words or class into the exact line of JSX</b> that made it. No prompt, no hunting for the file.</p>
       </header>

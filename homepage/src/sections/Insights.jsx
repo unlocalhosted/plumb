@@ -84,7 +84,6 @@ export function Insights() {
   return (
     <section className="ins-x" aria-labelledby="insights-title">
       <header className="ins-x-head">
-        <span className="ins-x-eyebrow">77 patterns</span>
         <h2 id="insights-title" className="title">It sees what design engineers see.</h2>
         <p className="lead">Plumber checks your running app for the details experienced people catch and most interfaces ship anyway. <b>It marks them on the page and, where it can, writes the fix.</b> Nine of the 77:</p>
         <ul className="ins-x-families" aria-label="The seven families">

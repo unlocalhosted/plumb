@@ -153,7 +153,6 @@ export function Tokens() {
   return (
     <section className="tok" aria-labelledby="tok-title">
       <header className="tok-head">
-        <span className="tok-eyebrow">Save tokens</span>
         <h2 id="tok-title" className="title">A 2px change shouldn’t cost a prompt.</h2>
         <p className="lead">Ask an agent and it goes the long way: through your files, your theme, an edit, and back to you to check. <b>On the page it’s three keys and no model.</b></p>
       </header>

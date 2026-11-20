@@ -2,7 +2,6 @@
  * type. Motion only on the Alt keycap and the outline it shows. */
 .ins { max-width: 72rem; margin: 0 auto; padding: var(--s-9) var(--s-6) var(--s-10); color: var(--ink-1); }
 .ins code { font-family: var(--mono); }
-.ins-eyebrow { display: inline-block; margin-bottom: var(--s-4); font: var(--t-label); color: var(--accent-ink); }
 .ins .title { max-width: 40rem; }
 
 /* ── the three lines ── */

@@ -37,7 +37,6 @@ export function Install() {
 
   return (
     <section className="ins" aria-labelledby="ins-title">
-      <span className="ins-eyebrow">Install</span>
       <h2 id="ins-title" className="title">Three commands. Then hold Alt.</h2>
       <ol className="ins-lines">
         {LINES.map(l => (

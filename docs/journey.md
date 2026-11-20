@@ -3656,6 +3656,10 @@ hue) and the heading after it is at least twice its size. Capitals keep their ol
 and "Business", a plan name in a sample pricing card. The design page, the docs, the Anti-slop page and the demo show
 none. On the messy ledger example it finds 7, among them "Introducing Ledger" and three "Feature" labels.
 
+**Then the homepage.** The owner: "Yes, remove them". The five section labels ("77 patterns", "Guardrails for agents",
+"Live editing", "Save tokens", "Install") are gone with their styles; each section now opens on its heading, and every
+heading says what its section is without them. "Business" stays: it is a plan name inside a sample app's pricing card.
+
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
 - Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".
@@ -5316,6 +5320,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- The homepage drops its five section eyebrows; each section opens on its heading ([entry](#60-eyebrows-without-capitals-2026-11-20)).
 - Anti-slop catches eyebrows that aren't in capitals: a small coloured label over a heading twice its size ([entry](#60-eyebrows-without-capitals-2026-11-20)).
 - The brand uses six greys, not eight: "pressed" and the see-through second line merge into the line step; the homepage passes the shades check in light mode ([entry](#59-the-brands-greys-go-from-eight-to-six-2026-11-20)).
 - The homepage's app drawings use the site's own greys, solid, with no one-off creams or see-through whites; light mode is down to the site's 7 greys ([entry](#58-the-homepages-drawings-take-the-sites-greys-2026-11-20)).

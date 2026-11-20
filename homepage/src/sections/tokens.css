@@ -6,7 +6,6 @@
 
 .tok { max-width: 72rem; margin: 0 auto; padding: var(--s-9) var(--s-6) var(--s-10); color: var(--ink-1); }
 .tok-head { max-width: 40rem; margin: 0 auto; text-align: center; }
-.tok-eyebrow { display: inline-block; margin-bottom: var(--s-4); font: var(--t-label); color: var(--accent-ink); }
 .tok .title { margin-bottom: var(--s-4); }
 .tok .lead { margin: 0 auto; }
 
