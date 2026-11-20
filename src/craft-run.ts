@@ -205,7 +205,18 @@ export async function craftRun(options: CraftRunOptions): Promise<CraftPage[]> {
         }
         // the grey band is looked at only when there is an eye to ask (--judge) or answers already kept
         const asking = options.judge === true, grey = asking || await hasAnswers(options.root);
-        const result = await page.evaluate((o) => (window as unknown as { __plumb: { craft(o: unknown): Promise<unknown> } }).__plumb.craft(o), { timeout: options.timeout, grey, scope: options.scope ?? null }) as Omit<CraftPage, 'route' | 'url'> & { route: string; url: string; grey?: Grey[] };
+        // a page that reloads while it is read (a file saved, a dev server's watcher) is waited for and read again, twice
+        // at most; then it is said in plain words, not as the browser library's own error (U66, 2026-11-20)
+        const read = () => page.evaluate((o) => (window as unknown as { __plumb: { craft(o: unknown): Promise<unknown> } }).__plumb.craft(o), { timeout: options.timeout, grey, scope: options.scope ?? null }) as Promise<Omit<CraftPage, 'route' | 'url'> & { route: string; url: string; grey?: Grey[] }>;
+        const reloaded = (error: unknown) => /Execution context was destroyed|navigation|Target page, context or browser has been closed|__plumb/.test(String((error as Error)?.message ?? error));
+        let result!: Awaited<ReturnType<typeof read>>;
+        for (let tries = 0; ; tries++) {
+          try { result = await read(); break; } catch (error) {
+            if (!reloaded(error)) throw error;
+            if (tries >= 2) throw new Error(`${url} reloaded while Plumber was reading it, ${tries + 1} times (a file changed, or the dev server restarted). Run it again once the page is still.`);
+            await settle(page, Math.min(options.timeout, 30000));
+          }
+        }
         if (process.env.PLUMBER_DEBUG && result.grey) process.stderr.write(`craft: grey ${JSON.stringify(result.grey)?.slice(0, 800)}\n`);
         if (result.grey) {
           // a model is never asked when CI is set: the answers kept in the project are all there is
