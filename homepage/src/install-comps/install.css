@@ -11,20 +11,20 @@ code { font-family: var(--mono); }
 .n-lines { display: grid; gap: 4px; margin: var(--s-7) 0 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
 .n-lines > li { display: grid; grid-template-columns: 2rem auto 1fr; gap: 0 var(--s-4); align-items: baseline; padding: var(--s-5) 0; border-bottom: 1px solid var(--line); }
 .n-prompt { font: 400 22px/1 var(--mono); color: var(--ink-3); }
-.n-lines code { font-size: clamp(18px, 2.3vw, 28px); letter-spacing: -0.02em; color: var(--ink-2); white-space: nowrap; }
+.n-lines code { font-size: clamp(18px, 2.3vw, 28px); letter-spacing: normal; color: var(--ink-2); white-space: nowrap; }
 .n-lines code b { font-weight: 500; color: var(--ink-1); }
 .n-lines small { justify-self: end; max-width: 20rem; font: var(--t-small); font-size: 13px; color: var(--ink-3); text-align: right; }
 .n-copy { justify-self: end; padding: 6px 10px; border-radius: var(--r-xs); background: var(--accent); color: #fff; font: var(--t-label); }
 .n-then { margin: var(--s-8) 0 0; }
 .n-alt { display: inline-block; padding: 0 0.22em; border-radius: 0.16em; background: var(--g2); box-shadow: inset 0 0 0 1px var(--line-2), 0 0.06em 0 var(--line-2);
-  -webkit-text-fill-color: var(--ink-1); font-family: var(--mono); font-size: 0.82em; font-weight: 500; letter-spacing: -0.02em; }
+  -webkit-text-fill-color: var(--ink-1); font-family: var(--mono); font-size: 0.82em; font-weight: 500; letter-spacing: normal; }
 .n-agent { margin: var(--s-6) 0 0; font: var(--t-small); color: var(--ink-2); }
 .n-agent code { color: var(--ink-1); }
 
 /* B · four steps */
 .n-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s-5); margin: var(--s-8) 0 0; padding: 0; list-style: none; }
 .n-steps > li { display: grid; align-content: start; gap: 10px; padding-top: var(--s-5); border-top: 1px solid var(--line-2); }
-.n-num { font: 590 72px/0.9 var(--font); letter-spacing: -0.04em; background: var(--display-fill); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.n-num { font: 590 72px/0.9 var(--font); letter-spacing: normal; background: var(--display-fill); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .n-steps b { margin-top: var(--s-3); font: var(--t-heading); font-size: 18px; }
 .n-steps code { overflow-wrap: anywhere; font-size: 13px; color: var(--ink-1); }
 .n-steps small { font: var(--t-small); font-size: 13px; color: var(--ink-3); }

@@ -18,7 +18,7 @@
 .live-caption code { color: var(--ink-2); }
 
 .live-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-6); margin: var(--s-8) 0 0; padding: 0; list-style: none; }
-.live-steps li { display: grid; gap: 6px; align-content: start; padding-top: var(--s-4); border-top: 1px solid var(--line); }
+.live-steps li { display: grid; gap: 6px; align-content: start; }
 .live-steps li > span:first-child { display: flex; gap: 4px; margin-bottom: 4px; }
 .live-steps b { font: var(--t-label); font-size: 14px; }
 .live-steps li > span:last-child { font: var(--t-small); color: var(--ink-2); }

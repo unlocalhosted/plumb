@@ -19,7 +19,7 @@ code { font-family: var(--mono); }
 .hs-side a { padding: 7px 10px; border-radius: var(--r-xs); font-size: 13px; color: var(--ink-2); }
 .hs-side a.on { background: var(--g2); color: var(--ink-1); }
 .hs-main { padding: 32px 36px; min-width: 0; }
-.hs-title { width: 640px; margin: 0 0 24px; font: 590 28px/1.2 var(--font); letter-spacing: -0.02em; }
+.hs-title { width: 640px; margin: 0 0 24px; font: 590 28px/1.2 var(--font); letter-spacing: normal; }
 .hs[data-kind='clean'] .hs-title { text-wrap: pretty; } /* the fix for a widow keeps the lines above it, so a wipe across the heading still reads */
 .hs-grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 13px; }
 .hs[data-kind='clean'] .hs-grid { gap: 16px; }

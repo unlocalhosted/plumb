@@ -5,7 +5,7 @@ body { margin: 0; background: var(--pl-paper); color: var(--pl-ink); font-family
 .concept header { display: grid; grid-template-columns: auto 1fr; column-gap: 16px; align-items: baseline; margin-bottom: 28px; }
 .concept header b { grid-row: span 2; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: var(--pl-pink-soft); color: var(--pl-pink-ink);
   box-shadow: 0 0 0 2px var(--pl-ink), 3px 3px 0 var(--pl-ink); font: 820 22px/1 var(--pl-sans); }
-.concept h2 { margin: 0; font: 820 40px/1 var(--pl-sans); letter-spacing: -0.04em; }
+.concept h2 { margin: 0; font: 820 40px/1 var(--pl-sans); letter-spacing: normal; }
 .concept p { margin: 8px 0 0; max-width: 44rem; font-size: 18px; line-height: 28px; color: var(--pl-ink-2); }
 
 .art { position: relative; isolation: isolate; aspect-ratio: 16 / 9; border-radius: 36px; overflow: hidden;
@@ -54,7 +54,7 @@ body { margin: 0; background: var(--pl-paper); color: var(--pl-ink); font-family
 .b-slab i { position: absolute; width: calc(var(--s) * 1px); height: calc(var(--s) * 1px); translate: -50% -50%; border-radius: 50%;
   background: color-mix(in oklab, var(--pl-lilac-ink) 55%, var(--pl-ink-3)); opacity: calc(0.35 + var(--depth) * 0.5); filter: blur(calc((1 - var(--depth)) * 1.6px));
   scale: calc(0.7 + var(--depth) * 0.5); }
-.b-etch { position: absolute; right: 26px; bottom: 34px; font: 820 120px/0.8 var(--pl-sans); letter-spacing: -0.06em; color: color-mix(in oklab, white 70%, transparent);
+.b-etch { position: absolute; right: 26px; bottom: 34px; font: 820 120px/0.8 var(--pl-sans); letter-spacing: normal; color: color-mix(in oklab, white 70%, transparent);
   text-shadow: 0 1px 0 color-mix(in oklab, var(--pl-lilac-ink) 25%, transparent), 0 -1px 0 white; }
 .b-etch-sub { position: absolute; right: 30px; bottom: 16px; font: 600 12px/1 var(--pl-mono); color: color-mix(in oklab, var(--pl-lilac-ink) 60%, transparent); }
 .b-new { position: absolute; left: 76%; top: 44%; }

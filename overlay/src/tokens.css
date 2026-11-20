@@ -103,8 +103,8 @@
   --pl-page-meta: 400 13px/20px var(--pl-sans);         /* names on a drawing, a legend, captions */
   --pl-page-figure: 600 32px/36px var(--pl-sans);       /* a key number, tabular */
   --pl-page-display-narrow: 600 30px/36px var(--pl-sans); /* the headline below the page's one breakpoint (720px) */
-  --pl-tracking-display: -0.025em;
-  --pl-tracking-title: -0.01em;
+  --pl-tracking-display: 0;
+  --pl-tracking-title: 0;
   --pl-tracking-label: 0.02em;
   --pl-tracking-caps: 0.05em;                            /* labels set in capitals */
   /* space: one 4-based ladder (6px stays only until each component moves to the ladder) */

@@ -6,11 +6,11 @@
 .ins .title { max-width: 40rem; }
 
 /* ── the three lines ── */
-.ins-lines { margin: var(--s-7) 0 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
+.ins-lines { margin: var(--s-7) 0 0; padding: 0; list-style: none; }
 .ins-lines > li { display: grid; grid-template-columns: 2rem minmax(0, 1fr) 17rem; grid-template-rows: auto auto; column-gap: var(--s-5); row-gap: 10px; align-items: center;
-  padding: var(--s-5) 0; border-bottom: 1px solid var(--line); }
+  padding: var(--s-5) 0; }
 .ins-prompt { grid-row: 1; font: 400 22px/1 var(--mono); color: var(--ink-3); }
-.ins-cmd { grid-column: 2; grid-row: 1; min-width: 0; overflow-x: auto; font-size: clamp(17px, 2.2vw, 28px); letter-spacing: -0.02em; color: var(--ink-2); white-space: nowrap; scrollbar-width: none; }
+.ins-cmd { grid-column: 2; grid-row: 1; min-width: 0; overflow-x: auto; font-size: clamp(17px, 2.2vw, 28px); letter-spacing: normal; color: var(--ink-2); white-space: nowrap; scrollbar-width: none; }
 .ins-cmd b { font-weight: 500; color: var(--ink-1); }
 .ins-meta { grid-column: 2; grid-row: 2; display: flex; gap: 12px; align-items: center; min-width: 0; }
 .ins-what { font: var(--t-small); font-size: 13px; color: var(--ink-3); }
@@ -29,7 +29,7 @@
 .ins-then { display: grid; grid-template-columns: minmax(0, 1fr) 17rem; column-gap: var(--s-5); align-items: center; margin-top: var(--s-8); }
 .ins-then .display { margin: 0; }
 .ins-alt { display: inline-block; padding: 0 0.22em; border-radius: 0.16em; background: var(--g2); -webkit-text-fill-color: var(--ink-1);
-  box-shadow: inset 0 0 0 1px var(--line-2), 0 0.07em 0 var(--line-2); font-family: var(--mono); font-size: 0.82em; font-weight: 500; letter-spacing: -0.02em;
+  box-shadow: inset 0 0 0 1px var(--line-2), 0 0.07em 0 var(--line-2); font-family: var(--mono); font-size: 0.82em; font-weight: 500; letter-spacing: normal;
   transition: translate 120ms var(--ease), box-shadow 120ms var(--ease), background-color 120ms var(--ease); }
 .ins-alt[data-held='true'] { translate: 0 0.05em; background: var(--g3); box-shadow: inset 0 0 0 1px var(--line-2), 0 0.02em 0 var(--line-2); }
 .ins-agent { margin: var(--s-6) 0 0; font: var(--t-small); color: var(--ink-2); }

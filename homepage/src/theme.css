@@ -64,11 +64,11 @@
   /* why: NEW · the product's name at the top of the page */
   --text-heading: 20px;
   --text-heading--line-height: 28px;
-  --text-heading--letter-spacing: -0.01em;
+  --text-heading--letter-spacing: normal;
   /* why: NEW · section titles */
   --text-title: 36px;
   --text-title--line-height: 40px;
-  --text-title--letter-spacing: -0.025em;
+  --text-title--letter-spacing: normal;
   --font-weight-regular: 400;
   --font-weight-medium: 500;
   --font-weight-strong: 600;

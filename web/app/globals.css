@@ -27,7 +27,7 @@ a { color: inherit; }
 
 /* ── the bar ── */
 .bar { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 18px; height: 64px; padding: 0 28px; background: color-mix(in oklab, var(--pl-desk) 88%, transparent); backdrop-filter: blur(12px); }
-.bar .name { display: inline-flex; align-items: center; gap: 10px; font: var(--pl-round-w, 600) 21px/1 var(--pl-round); letter-spacing: -0.005em; text-decoration: none; }
+.bar .name { display: inline-flex; align-items: center; gap: 10px; font: var(--pl-round-w, 600) 21px/1 var(--pl-round); letter-spacing: normal; text-decoration: none; }
 .bar .name .toy { transition: rotate 420ms var(--pl-spring-pop), scale 420ms var(--pl-spring-pop); transform-origin: 50% 50%; }
 .bar .name:hover .toy { rotate: -7deg; scale: 1.06; } /* the P tips from its centre (the bob it replaced swung from its line) */
 .bar nav { display: flex; align-items: center; gap: 4px; margin-left: 10px; }
@@ -43,10 +43,10 @@ a { color: inherit; }
 .page-title { display: flex; align-items: center; gap: 18px; margin: 0 0 12px; }
 .page-title .toy { transition: rotate 420ms var(--pl-spring-pop), scale 420ms var(--pl-spring-pop); transform-origin: 50% 85%; }
 .page-title:hover .toy { rotate: -9deg; scale: 1.1; }
-h1 { margin: 0; font: var(--pl-round-w, 600) 54px/56px var(--pl-round); letter-spacing: -0.015em; }
+h1 { margin: 0; font: var(--pl-round-w, 600) 54px/56px var(--pl-round); letter-spacing: normal; }
 .lede { margin: 0 0 40px; font: 500 20px/31px var(--pl-sans); color: var(--pl-ink-2); max-width: 660px; }
 .lede b { color: var(--pl-ink); font-weight: 800; }
-h2.shelf { display: flex; align-items: baseline; gap: 10px; margin: 52px 0 18px; font: var(--pl-round-w, 600) 28px/32px var(--pl-round); letter-spacing: -0.01em; }
+h2.shelf { display: flex; align-items: baseline; gap: 10px; margin: 52px 0 18px; font: var(--pl-round-w, 600) 28px/32px var(--pl-round); letter-spacing: normal; }
 h2.shelf small { font: var(--pl-round-w, 600) 14px/1 var(--pl-round); color: var(--pl-ink-2); }
 /* what the level is (atoms, molecules…), one line under its name */
 p.level { margin: -10px 0 18px; max-width: 640px; font: 500 15px/23px var(--pl-sans); color: var(--pl-ink-2); }
@@ -77,8 +77,8 @@ p.level { margin: -10px 0 18px; max-width: 640px; font: 500 15px/23px var(--pl-s
 .side .planned { opacity: .5; }
 .prose { font: 500 17px/29px var(--pl-sans); color: var(--pl-ink); min-width: 0; }
 .prose .over { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font: var(--pl-round-w, 600) 15px/1 var(--pl-round); color: var(--pl-ink-2); }
-.prose h1 { margin: 0 0 22px; font: var(--pl-round-w, 600) 46px/50px var(--pl-round); letter-spacing: -0.015em; text-wrap: balance; }
-.prose h2 { margin: 52px 0 12px; font: var(--pl-round-w, 600) 28px/32px var(--pl-round); letter-spacing: -0.01em; scroll-margin-top: 88px; }
+.prose h1 { margin: 0 0 22px; font: var(--pl-round-w, 600) 46px/50px var(--pl-round); letter-spacing: normal; text-wrap: balance; }
+.prose h2 { margin: 52px 0 12px; font: var(--pl-round-w, 600) 28px/32px var(--pl-round); letter-spacing: normal; scroll-margin-top: 88px; }
 .prose h3 { margin: 34px 0 8px; font: var(--pl-round-w, 600) 20px/26px var(--pl-round); scroll-margin-top: 88px; }
 .prose h2 a, .prose h3 a { text-decoration: none; }
 .prose h2 a:hover::after, .prose h3 a:hover::after { content: ' #'; color: var(--pl-pink); }

@@ -16,9 +16,9 @@
   --round: var(--pl-round);
   --mono: var(--pl-mono);
   /* type: size / line-height / tracking / weight */
-  --t-display: var(--pl-round-w, 700) 72px/1.02 var(--round);  --tr-display: -0.025em;
-  --t-title: var(--pl-round-w, 700) 48px/1.06 var(--round);    --tr-title: -0.02em;
-  --t-heading: var(--pl-round-w, 700) 24px/1.25 var(--round);  --tr-heading: -0.01em;
+  --t-display: var(--pl-round-w, 700) 72px/1.02 var(--round);  --tr-display: 0;
+  --t-title: var(--pl-round-w, 700) 48px/1.06 var(--round);    --tr-title: 0;
+  --t-heading: var(--pl-round-w, 700) 24px/1.25 var(--round);  --tr-heading: 0;
   --t-lead: 400 20px/1.5 var(--font);       --tr-lead: 0;
   --t-body: 400 16px/1.6 var(--font);       --tr-body: 0;
   --t-small: 400 14px/1.5 var(--font);      --tr-small: 0;
@@ -54,7 +54,7 @@ html { background: var(--g0); color: var(--ink-1); font: var(--t-body); -webkit-
 .small { margin: 0; font: var(--t-small); letter-spacing: var(--tr-small); color: var(--ink-2); }
 .label { font: var(--t-label); color: var(--ink-2); }
 /* colour */
-.surface { position: relative; border-radius: var(--r-lg); background: var(--g1); border: 1px solid var(--line); box-shadow: inset 0 1px 0 var(--lip), var(--drop); }
+.surface { position: relative; border-radius: var(--r-lg); background: var(--g1); box-shadow: inset 0 1px 0 var(--lip), var(--drop); }
 /* code */
 .code { font: var(--t-code); color: var(--c-text); }
 .code header { display: flex; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--line); font: var(--t-label); color: var(--ink-2); }

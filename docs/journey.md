@@ -3579,6 +3579,29 @@ owner's list, our own site carries these marks.
 **Media hooks.** The Anti-slop page's new cards (each flips from broken to fixed); a before/after of the homepage
 headings at normal spacing.
 
+### 57. Our own site loses the slop marks (2026-11-20)
+**The itch.** The new Anti-slop checks ([entry 56](#56-the-owners-slop-list-becomes-eleven-anti-slop-checks-2026-11-20))
+found the owner's marks on plumber's own homepage. The owner: "Yes, clean our site".
+
+**How we found it.** We ran the eleven checks on the homepage, the design page, the docs and the demo. Nearly all of
+it was on the homepage: 28 headings with squeezed letters, 3 lists split by lines, 2 outlined boxes and 16 greys.
+Every other page had one squeezed heading and 7 greys.
+
+**The system behind it.** The squeezing came from tokens, not from each heading: the homepage's display, title and
+heading steps, and the brand's own display and title tracking in the overlay's tokens. Each step pulled letters in,
+so every heading built on them did too. The outlines came from one shared surface style.
+
+**What we chose.** We fixed each mark where it starts. Letter spacing is normal at all five tokens and at every
+place that set it by hand. The shared surface keeps its fill and shadow and loses its border. The three lists
+(install steps, the live steps and the timer rows in a section drawing) lose their lines and keep their spacing.
+The greys stay for now: about seven are the site's own steps (three inks, the page, the surface, the inset, the
+line), and the rest sit inside the drawings of sample apps on the homepage.
+
+**The proof.** Re-run on the homepage, the checks find nothing for squeezed letters, dividers or outlined boxes.
+Only the shades finding is left.
+
+**Media hooks.** The homepage hero before and after, with the heading at normal spacing; the install list without its lines.
+
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
 - Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".
@@ -5239,6 +5262,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- Plumber's own site drops the slop marks its new checks found: headings at normal letter spacing (the brand's tokens too), no outlines on surfaces, no lines between list rows ([entry](#57-our-own-site-loses-the-slop-marks-2026-11-20)).
 - Anti-slop finds the owner's own list of generated-page marks: capitals under a heading, italic accent words, Instrument Serif, squeezed letters, divider lines, outlined boxes, busy diagrams, file paths as decoration, rows of tags, boxes with too many text styles, and too many shades of one colour; each plays its fix ([entry](#56-the-owners-slop-list-becomes-eleven-anti-slop-checks-2026-11-20)).
 - The Anti-slop and Words pages play every check too: the mark or the words are boxed where they sit, then fold away, change in place or settle (a label over a heading, numbers with no order, a stock phrase, a path cut at the wrong end) ([entry](#55-every-check-plays-its-fix-on-a-card-that-stays-still-2026-11-20)).
 - The buy-button recommendations gain a dark-page section: a beam while checkout opens and lifetime in metal, live in crafting attention's dark skin; the pour now stays readable in dark mode ([entry](#49-metal-and-the-beam-find-their-surface-crafting-attentions-dark-page-2026-11-20)).

@@ -34,11 +34,11 @@ code { font-family: var(--mono); font-size: 0.92em; }
 .app-search { width: 15rem; padding: 7px 10px; border-radius: var(--r-sm); background: var(--g2); font-size: 12px; color: var(--ink-3); }
 .app-new { padding: 7px 12px; border-radius: var(--r-sm); background: var(--ink-1); color: var(--g0); font: 510 12px/1 var(--font); }
 .app-body { display: grid; align-content: start; padding: 24px; }
-.app-title { margin: 0; font-weight: 590; letter-spacing: -0.02em; }
+.app-title { margin: 0; font-weight: 590; letter-spacing: normal; }
 .app-stats { display: grid; grid-template-columns: repeat(3, 1fr); }
 .app-stat { display: grid; gap: 4px; border-radius: var(--r-md); background: var(--g1); border: 1px solid var(--line); }
 .app-stat small { color: var(--ink-3); }
-.app-stat b { font-weight: 590; letter-spacing: -0.02em; }
+.app-stat b { font-weight: 590; letter-spacing: normal; }
 .app-table { border-radius: var(--r-md); background: var(--g1); border: 1px solid var(--line); }
 .app-row { display: grid; grid-template-columns: 1fr 6rem 8rem 26px; align-items: center; border-top: 1px solid var(--line); }
 .app-row:first-child { border-top: 0; }
