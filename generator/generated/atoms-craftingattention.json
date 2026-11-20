@@ -1,0 +1,712 @@
+[
+ {
+  "form": "house",
+  "name": "Press",
+  "verdict": "the original fails too",
+  "fails": [
+   {
+    "check": "says",
+    "state": "pointed at",
+    "why": "At pointed at, “Get Lifetime Access” reads at 3.05:1 against what is under it (it needs 4.5:1)."
+   }
+  ],
+  "frames": [
+   {
+    "state": "rest",
+    "words": [
+     {
+      "t": "Get Lifetime Access",
+      "drawn": 0.19799498746867167,
+      "contrast": 5.23
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "pointed at",
+    "words": [
+     {
+      "t": "Get Lifetime Access",
+      "drawn": 0.19768170426065163,
+      "contrast": 3.05
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "done",
+    "words": [
+     {
+      "t": "Get Lifetime Access",
+      "drawn": 0.19768170426065163,
+      "contrast": 3.05
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   }
+  ]
+ },
+ {
+  "form": "beui/slide-action-button",
+  "name": "Slide to buy",
+  "verdict": "dropped",
+  "fails": [
+   {
+    "check": "says",
+    "state": "mid-gesture",
+    "why": "At mid-gesture it shows no words: nothing tells you what is happening."
+   },
+   {
+    "check": "weight",
+    "state": "rest",
+    "why": "At rest it carries 14% of the original’s action colour, so it is no longer the heaviest thing on the card."
+   }
+  ],
+  "frames": [
+   {
+    "state": "rest",
+    "words": [
+     {
+      "t": "Slide to get lifetime access",
+      "drawn": 0.1828638497652582,
+      "contrast": 15.05
+     }
+    ],
+    "progress": 4.54,
+    "leak": 0
+   },
+   {
+    "state": "pointed at",
+    "words": [
+     {
+      "t": "Slide to get lifetime access",
+      "drawn": 0.1828638497652582,
+      "contrast": 15.05
+     }
+    ],
+    "progress": 4.54,
+    "leak": 0
+   },
+   {
+    "state": "mid-gesture",
+    "words": [],
+    "progress": 4.54,
+    "leak": 0
+   },
+   {
+    "state": "done",
+    "words": [
+     {
+      "t": "Opening checkout",
+      "drawn": 0.18784722222222222,
+      "contrast": 5.23
+     }
+    ],
+    "progress": 4.86,
+    "leak": 0
+   }
+  ]
+ },
+ {
+  "form": "beui/hold-action-button",
+  "name": "Hold to buy",
+  "verdict": "dropped",
+  "fails": [
+   {
+    "check": "progress",
+    "state": "mid-gesture",
+    "why": "Half way through, the done part and the part to go differ at 1.72:1 (it needs 3:1), so the progress barely shows."
+   }
+  ],
+  "frames": [
+   {
+    "state": "rest",
+    "words": [
+     {
+      "t": "Hold to get lifetime access",
+      "drawn": 0.18494152046783627,
+      "contrast": 5.23
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "pointed at",
+    "words": [
+     {
+      "t": "Hold to get lifetime access",
+      "drawn": 0.18494152046783627,
+      "contrast": 5.23
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "mid-gesture",
+    "words": [
+     {
+      "t": "Keep holding",
+      "drawn": 0.19867886178861788,
+      "contrast": 5.23
+     }
+    ],
+    "progress": 1.72,
+    "leak": 0
+   },
+   {
+    "state": "done",
+    "words": [
+     {
+      "t": "Keep holding",
+      "drawn": 0.1951219512195122,
+      "contrast": 3.05
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   }
+  ]
+ },
+ {
+  "form": "arc/hold-to-confirm",
+  "name": "Hold to confirm",
+  "verdict": "dropped",
+  "fails": [
+   {
+    "check": "progress",
+    "state": "mid-gesture",
+    "why": "Half way through, the done part and the part to go differ at 1.66:1 (it needs 3:1), so the progress barely shows."
+   }
+  ],
+  "frames": [
+   {
+    "state": "rest",
+    "words": [
+     {
+      "t": "Hold to get lifetime access",
+      "drawn": 0.18206349206349207,
+      "contrast": 5.23
+     },
+     {
+      "t": "Hold to get lifetime access",
+      "drawn": 0.18206349206349207,
+      "contrast": 5.23
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "pointed at",
+    "words": [
+     {
+      "t": "Hold to get lifetime access",
+      "drawn": 0.18126984126984128,
+      "contrast": 5.06
+     },
+     {
+      "t": "Hold to get lifetime access",
+      "drawn": 0.18126984126984128,
+      "contrast": 5.06
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "mid-gesture",
+    "words": [
+     {
+      "t": "Hold to get lifetime access",
+      "drawn": 0.17407407407407408,
+      "contrast": 3.05
+     },
+     {
+      "t": "Hold to get lifetime access",
+      "drawn": 0.17407407407407408,
+      "contrast": 3.05
+     }
+    ],
+    "progress": 1.66,
+    "leak": 0
+   },
+   {
+    "state": "done",
+    "words": [
+     {
+      "t": "Opening checkout",
+      "drawn": 0.18541666666666667,
+      "contrast": 3.05
+     },
+     {
+      "t": "Opening checkout",
+      "drawn": 0.18541666666666667,
+      "contrast": 3.05
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   }
+  ]
+ },
+ {
+  "form": "arc/confirm-morph",
+  "name": "Press, then confirm the price",
+  "verdict": "dropped",
+  "fails": [
+   {
+    "check": "weight",
+    "state": "rest",
+    "why": "At rest it carries 49% of the original’s action colour, so it is no longer the heaviest thing on the card."
+   }
+  ],
+  "frames": [
+   {
+    "state": "rest",
+    "words": [
+     {
+      "t": "Get Lifetime Access",
+      "drawn": 0.18225190839694658,
+      "contrast": 5.23
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "pointed at",
+    "words": [
+     {
+      "t": "Get Lifetime Access",
+      "drawn": 0.1825699745547074,
+      "contrast": 4.8
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "mid-gesture",
+    "words": [
+     {
+      "t": "Pay ₹8,619 once?",
+      "drawn": 0.18664302600472812,
+      "contrast": 5.23
+     },
+     {
+      "t": "Not yet",
+      "drawn": 0.18585337915234823,
+      "contrast": 5.23
+     },
+     {
+      "t": "Pay",
+      "drawn": 0.19671201814058956,
+      "contrast": 3.05
+     }
+    ],
+    "progress": 1.72,
+    "leak": 0
+   },
+   {
+    "state": "done",
+    "words": [
+     {
+      "t": "Checkout ready",
+      "drawn": 0.1846484165324745,
+      "contrast": 5.23
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   }
+  ]
+ },
+ {
+  "form": "beui/button-stateful",
+  "name": "Press, and it tells you",
+  "verdict": "dropped",
+  "fails": [
+   {
+    "check": "says",
+    "state": "mid-gesture",
+    "why": "At mid-gesture, “e” reads at 2.24:1 against what is under it (it needs 4.5:1)."
+   }
+  ],
+  "frames": [
+   {
+    "state": "rest",
+    "words": [
+     {
+      "t": "G",
+      "drawn": 0.21666666666666667,
+      "contrast": 5.23
+     },
+     {
+      "t": "e",
+      "drawn": 0.1977124183006536,
+      "contrast": 5.23
+     },
+     {
+      "t": "t",
+      "drawn": 0.18287037037037038,
+      "contrast": 5.23
+     },
+     {
+      "t": "L",
+      "drawn": 0.14705882352941177,
+      "contrast": 5.23
+     },
+     {
+      "t": "i",
+      "drawn": 0.1875,
+      "contrast": 5.23
+     },
+     {
+      "t": "f",
+      "drawn": 0.18981481481481483,
+      "contrast": 5.23
+     },
+     {
+      "t": "e",
+      "drawn": 0.1830065359477124,
+      "contrast": 5.23
+     },
+     {
+      "t": "t",
+      "drawn": 0.18287037037037038,
+      "contrast": 5.23
+     },
+     {
+      "t": "i",
+      "drawn": 0.21875,
+      "contrast": 5.23
+     },
+     {
+      "t": "m",
+      "drawn": 0.17444444444444446,
+      "contrast": 5.23
+     },
+     {
+      "t": "e",
+      "drawn": 0.18137254901960784,
+      "contrast": 5.23
+     },
+     {
+      "t": "A",
+      "drawn": 0.19305555555555556,
+      "contrast": 5.23
+     },
+     {
+      "t": "c",
+      "drawn": 0.16493055555555555,
+      "contrast": 5.23
+     },
+     {
+      "t": "c",
+      "drawn": 0.16319444444444445,
+      "contrast": 5.23
+     },
+     {
+      "t": "e",
+      "drawn": 0.18137254901960784,
+      "contrast": 5.23
+     },
+     {
+      "t": "s",
+      "drawn": 0.17708333333333334,
+      "contrast": 5.23
+     },
+     {
+      "t": "s",
+      "drawn": 0.17708333333333334,
+      "contrast": 5.23
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "pointed at",
+    "words": [
+     {
+      "t": "G",
+      "drawn": 0.21666666666666667,
+      "contrast": 4.43
+     },
+     {
+      "t": "e",
+      "drawn": 0.1977124183006536,
+      "contrast": 4.43
+     },
+     {
+      "t": "t",
+      "drawn": 0.18287037037037038,
+      "contrast": 4.43
+     },
+     {
+      "t": "L",
+      "drawn": 0.14705882352941177,
+      "contrast": 4.43
+     },
+     {
+      "t": "i",
+      "drawn": 0.1875,
+      "contrast": 4.43
+     },
+     {
+      "t": "f",
+      "drawn": 0.18981481481481483,
+      "contrast": 4.43
+     },
+     {
+      "t": "e",
+      "drawn": 0.1830065359477124,
+      "contrast": 4.43
+     },
+     {
+      "t": "t",
+      "drawn": 0.18287037037037038,
+      "contrast": 4.43
+     },
+     {
+      "t": "i",
+      "drawn": 0.21875,
+      "contrast": 4.43
+     },
+     {
+      "t": "m",
+      "drawn": 0.17444444444444446,
+      "contrast": 4.43
+     },
+     {
+      "t": "e",
+      "drawn": 0.18137254901960784,
+      "contrast": 4.43
+     },
+     {
+      "t": "A",
+      "drawn": 0.19305555555555556,
+      "contrast": 4.43
+     },
+     {
+      "t": "c",
+      "drawn": 0.16493055555555555,
+      "contrast": 4.43
+     },
+     {
+      "t": "c",
+      "drawn": 0.16319444444444445,
+      "contrast": 4.43
+     },
+     {
+      "t": "e",
+      "drawn": 0.18137254901960784,
+      "contrast": 4.43
+     },
+     {
+      "t": "s",
+      "drawn": 0.17708333333333334,
+      "contrast": 4.43
+     },
+     {
+      "t": "s",
+      "drawn": 0.17708333333333334,
+      "contrast": 4.43
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "mid-gesture",
+    "words": [
+     {
+      "t": "O",
+      "drawn": 0.20202020202020202,
+      "contrast": 2.24
+     },
+     {
+      "t": "p",
+      "drawn": 0.19907407407407407,
+      "contrast": 2.24
+     },
+     {
+      "t": "e",
+      "drawn": 0.184640522875817,
+      "contrast": 2.24
+     },
+     {
+      "t": "n",
+      "drawn": 0.16339869281045752,
+      "contrast": 2.24
+     },
+     {
+      "t": "i",
+      "drawn": 0.1875,
+      "contrast": 2.24
+     },
+     {
+      "t": "n",
+      "drawn": 0.16176470588235295,
+      "contrast": 2.24
+     },
+     {
+      "t": "g",
+      "drawn": 0.22530864197530864,
+      "contrast": 2.24
+     },
+     {
+      "t": "c",
+      "drawn": 0.15104166666666666,
+      "contrast": 2.24
+     },
+     {
+      "t": "h",
+      "drawn": 0.1715686274509804,
+      "contrast": 2.24
+     },
+     {
+      "t": "e",
+      "drawn": 0.15359477124183007,
+      "contrast": 2.24
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "done",
+    "words": [
+     {
+      "t": "C",
+      "drawn": 0.1875,
+      "contrast": 4.43
+     },
+     {
+      "t": "h",
+      "drawn": 0.18790849673202614,
+      "contrast": 4.43
+     },
+     {
+      "t": "e",
+      "drawn": 0.18137254901960784,
+      "contrast": 4.43
+     },
+     {
+      "t": "c",
+      "drawn": 0.16493055555555555,
+      "contrast": 4.43
+     },
+     {
+      "t": "k",
+      "drawn": 0.18364197530864199,
+      "contrast": 4.43
+     },
+     {
+      "t": "o",
+      "drawn": 0.17320261437908496,
+      "contrast": 4.43
+     },
+     {
+      "t": "u",
+      "drawn": 0.1650326797385621,
+      "contrast": 4.43
+     },
+     {
+      "t": "t",
+      "drawn": 0.17592592592592593,
+      "contrast": 4.43
+     },
+     {
+      "t": "r",
+      "drawn": 0.13425925925925927,
+      "contrast": 4.43
+     },
+     {
+      "t": "e",
+      "drawn": 0.18627450980392157,
+      "contrast": 4.43
+     },
+     {
+      "t": "a",
+      "drawn": 0.2013888888888889,
+      "contrast": 4.43
+     },
+     {
+      "t": "d",
+      "drawn": 0.20679012345679013,
+      "contrast": 4.43
+     },
+     {
+      "t": "y",
+      "drawn": 0.171875,
+      "contrast": 4.43
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   }
+  ]
+ },
+ {
+  "form": "beui/button-magnetic",
+  "name": "Press, and it leans in",
+  "verdict": "passes",
+  "fails": [],
+  "frames": [
+   {
+    "state": "rest",
+    "words": [
+     {
+      "t": "Get Lifetime Access",
+      "drawn": 0.18172179813401187,
+      "contrast": 5.23
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "pointed at",
+    "words": [
+     {
+      "t": "Get Lifetime Access",
+      "drawn": 0.17906670715659478,
+      "contrast": 4.44
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "mid-gesture",
+    "words": [
+     {
+      "t": "Get Lifetime Access",
+      "drawn": 0.18172179813401187,
+      "contrast": 5.23
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "done",
+    "words": [
+     {
+      "t": "Get Lifetime Access",
+      "drawn": 0.1788642575159429,
+      "contrast": 4.44
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   }
+  ]
+ }
+]
