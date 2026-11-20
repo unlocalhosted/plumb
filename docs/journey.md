@@ -4459,6 +4459,15 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   beside the pitch). All four are kept as house specimens with reasons in a designer's voice. The eye found two
   misreads of its own, now in the backlog: icons drawn as circles inside square SVG boxes, and a three-column section
   read as three edges. Sheet: `generator/shots/house-specimens.png` (local).
+- **The parts, pulled out of the real components.** Thirteen molecules across the four products, each found in
+  the product's own code and cut from its live page where it does its job: crafting attention's offer header, pixel
+  price, lifetime pass, buy button and benefit line; algorecall's lit slab, paper slab and ghost "+4 more"; crafting-
+  ui's gesture sticker and live count; React Plumber's step, install strip and spirit level. None was drawn for the
+  generator. Each says what it is the way its designer would, and points at its file. The components' own source
+  comments already carry the owner's design reasons, often in the owner's words ("make this a carousel", "the install
+  line should stand out"), which makes them the best source for why each part exists. Fixed on the way: the first
+  cut of algorecall's slabs took an inner row and lost each slab's coin and front edge, and tight cuts clipped
+  shadows, so every cut now takes the whole part with a margin. Sheet: `generator/shots/molecules-sheet.png` (local).
 
 ## Open gaps
 - **The mark was never tried among real neighbours** (a row of browser tabs, an npm page, a README header), only on empty tiles. Nobody outside has been asked whether the round leg reads as an R or leans towards a B.
