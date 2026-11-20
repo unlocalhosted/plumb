@@ -3128,6 +3128,30 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **Still open:** the bar's other checks (progress shows, fits where the original sat, keeps its weight) aren't
   plumber rules yet.
 
+### 45. The ideas page was pictures of broken buttons; now it runs the ones that work (2026-11-20)
+
+**The itch.** The owner on the first ideas catalogue: "most of the things are broken and non interactive".
+
+**How we found it.** Looking at the page: red error screens and blank buttons sat among the ideas, and nothing could
+be pressed. Counting the 148 parts the page called working: 25 were the build tool's error screen, and 25 more never
+changed at all where their idea said they would shimmer or glow.
+
+**The system behind it.** The robot's bar for "works" was "something is painted near the edge of the button", which
+an error screen passes. Its motion measure watched boxes move and grow, so a shimmer or a sweeping gradient, which
+only changes colour, read as still. And the page was made of pictures, so even good parts looked dead.
+
+**What we chose.** A part now works only if there is no error screen, it draws a shape, and its pixels change, on their
+own or under the hand. The parts that pass are built into one bundle the plumber site serves, and the catalogue runs
+each one live. Along the way: each library's own style rules had been written into a file that couldn't reach
+Tailwind, so they failed; they now point at the sandbox's stylesheet.
+
+**The fix and the proof.** Run 6 on vm-agent: 349 recorded, 70 pass (was 148 by the old bar), 19 ideas. All 42 live
+parts on the page load and render. Still open: 115 parts still fail to load, the same count as before the style fix,
+so that fix was not their main cause.
+
+**Media hooks.** Before: the picture catalogue (commit cff40cce). After: `/research/button-ideas.html`, pressing a
+hold or a slide live.
+
 ### 44. Good or bad, and which to choose: the forms judged against published standards (2026-11-20)
 
 **The itch.** The owner, after the scrub prototype: "i am not getting anything from interaction whether they are good
@@ -4921,6 +4945,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- The button ideas page runs every button live (press, hold, slide them), and keeps only the 70 that load without an error and visibly do what they claim; error screens and frozen parts are gone ([entry](#45-the-ideas-page-was-pictures-of-broken-buttons-now-it-runs-the-ones-that-work-2026-11-20)).
 - Prototype C on the atoms page (?proto=dial): a knob under each button with a pip per state (at rest, pointed at, pressed, mid-gesture, done), mint or coral by what plumber finds; turning it freezes the button in that state with its fault hatched on it ([entry](#47-prototype-c-a-dial-through-the-buttons-states-2026-11-20)).
 - Prototype B on the atoms page (?proto=thermal): while you hold or slide a button, plumber's faults glow on the button itself, butter when brief and coral when they last, and one line after names the hottest moment ([entry](#46-prototype-b-heat-on-the-button-while-you-hold-it-2026-11-20)).
 - The eight standards behind each form's verdict were checked against Apple's, Material's, Nielsen's and WCAG's published pages; each source is now a link, two claims were corrected (Apple's 44 pt is its default size, not a minimum; Material's longest suggested motion is 500 ms), and no verdict changed ([entry](#45-checking-the-standards-against-their-published-pages-2026-11-20)).

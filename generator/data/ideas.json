@@ -4,32 +4,35 @@
   "commitRule": "press",
   "driver": "press",
   "trick": "plain",
-  "parts": 43,
-  "libraries": 17,
+  "parts": 18,
+  "libraries": 9,
   "best": [
    {
     "id": "@kokonutui/attract-button",
+    "key": "kokonutui__attract-button",
     "name": "Magnet Button",
     "stars": 2388,
     "weight": 0.7
    },
    {
-    "id": "@beui/expanding-arrow-button",
-    "name": "Animated CTA Buttons Expanding Arrow Button",
-    "stars": 1990,
-    "weight": 0.697
-   },
-   {
     "id": "@uiarc/button",
+    "key": "uiarc__button",
     "name": "Button",
     "stars": 1331,
     "weight": 0.674
+   },
+   {
+    "id": "@panelui/button",
+    "key": "panelui__button",
+    "name": "Button",
+    "stars": 1005,
+    "weight": 0.665
    }
   ],
   "measured": {
-   "longestMovementMs": 99,
+   "longestMovementMs": 133,
    "overshootPct": 0.0,
-   "wordsFadeTo": 1.0,
+   "wordsFadeTo": 1,
    "secondsToCommit": null
   }
  },
@@ -38,64 +41,33 @@
   "commitRule": "press",
   "driver": "press",
   "trick": "gradient-border",
-  "parts": 9,
-  "libraries": 7,
+  "parts": 5,
+  "libraries": 4,
   "best": [
    {
     "id": "@affectui/color-picker",
+    "key": "affectui__color-picker",
     "name": "Color Picker",
     "stars": 904,
     "weight": 0.81
    },
    {
     "id": "@affectui/color-picker-clean",
+    "key": "affectui__color-picker-clean",
     "name": "Color Picker (Clean)",
     "stars": 904,
     "weight": 0.81
    },
    {
-    "id": "@magicui/shimmer-button",
-    "name": "Shimmer Button",
-    "stars": 23380,
-    "weight": 0.66
+    "id": "@goodui/chat-composer",
+    "key": "goodui__chat-composer",
+    "name": "Chat composer",
+    "stars": null,
+    "weight": 0.652
    }
   ],
   "measured": {
    "longestMovementMs": 0,
-   "overshootPct": 0.0,
-   "wordsFadeTo": 1.0,
-   "secondsToCommit": null
-  }
- },
- {
-  "idea": "Press that glows",
-  "commitRule": "press",
-  "driver": "press",
-  "trick": "glow",
-  "parts": 9,
-  "libraries": 7,
-  "best": [
-   {
-    "id": "@react-bits/SpecularButton-TS-TW",
-    "name": "SpecularButton",
-    "stars": 52349,
-    "weight": 0.848
-   },
-   {
-    "id": "@kokonutui/gradient-button",
-    "name": "Gradient Button",
-    "stars": 2388,
-    "weight": 0.7
-   },
-   {
-    "id": "@weinc/thick-glass-pill-button-that-refracts-a-portrait-and-flattens-when-pressed",
-    "name": "Thick Glass Pill Button That Refracts a Portrait and Flattens When Pressed",
-    "stars": null,
-    "weight": 0.655
-   }
-  ],
-  "measured": {
-   "longestMovementMs": 33,
    "overshootPct": 0,
    "wordsFadeTo": 1,
    "secondsToCommit": null
@@ -106,100 +78,72 @@
   "commitRule": "press",
   "driver": "press",
   "trick": "liquid",
-  "parts": 7,
-  "libraries": 6,
+  "parts": 4,
+  "libraries": 4,
   "best": [
    {
     "id": "@devl/droplet-button",
+    "key": "devl__droplet-button",
     "name": "Droplet Button",
     "stars": 250,
     "weight": 0.746
    },
    {
-    "id": "@glassyui/glass-button",
-    "name": "Glass Button",
-    "stars": 200,
-    "weight": 0.741
-   },
-   {
     "id": "@kokonutui/v0-button",
+    "key": "kokonutui__v0-button",
     "name": "V0 Button",
     "stars": 2388,
     "weight": 0.7
+   },
+   {
+    "id": "@goodui/ripple-button",
+    "key": "goodui__ripple-button",
+    "name": "Ripple button",
+    "stars": null,
+    "weight": 0.652
    }
   ],
   "measured": {
-   "longestMovementMs": 364,
+   "longestMovementMs": 394,
    "overshootPct": 0.0,
    "wordsFadeTo": 1.0,
    "secondsToCommit": null
   }
  },
  {
-  "idea": "Press with a ripple",
+  "idea": "Press that glows",
   "commitRule": "press",
   "driver": "press",
-  "trick": "ripple",
-  "parts": 7,
-  "libraries": 5,
+  "trick": "glow",
+  "parts": 4,
+  "libraries": 3,
   "best": [
    {
-    "id": "@beui/button-metallic",
-    "name": "Button Metallic Button",
-    "stars": 1990,
-    "weight": 0.697
+    "id": "@weinc/thick-glass-pill-button-that-refracts-a-portrait-and-flattens-when-pressed",
+    "key": "weinc__thick-glass-pill-button-that-refracts-a-portrait-and-flattens-when-pressed",
+    "name": "Thick Glass Pill Button That Refracts a Portrait and Flattens When Pressed",
+    "stars": null,
+    "weight": 0.655
    },
    {
-    "id": "@beui/button-base",
-    "name": "Button Button",
-    "stars": 1990,
-    "weight": 0.697
+    "id": "@ui-layouts/btn-hover-multiple",
+    "key": "ui-layouts__btn-hover-multiple",
+    "name": "btn-hover-multiple",
+    "stars": 3864,
+    "weight": 0.578
    },
    {
-    "id": "@magicui/pulsating-button",
-    "name": "Pulsating Button",
-    "stars": 23380,
-    "weight": 0.66
+    "id": "@microkit/cursor-edge-glow-button",
+    "key": "microkit__cursor-edge-glow-button",
+    "name": "Cursor Edge Glow Button",
+    "stars": 107,
+    "weight": 0.562
    }
   ],
   "measured": {
-   "longestMovementMs": 165,
-   "overshootPct": 0,
-   "wordsFadeTo": 1,
-   "secondsToCommit": null
-  }
- },
- {
-  "idea": "Press that answers in words whose icon reshapes",
-  "commitRule": "press",
-  "driver": "state",
-  "trick": "icon-morph",
-  "parts": 7,
-  "libraries": 6,
-  "best": [
-   {
-    "id": "@spectrumui/morph-button",
-    "name": "Morph Button",
-    "stars": 1543,
-    "weight": 0.685
-   },
-   {
-    "id": "@interior/copy-button",
-    "name": "Copy Button",
-    "stars": 1261,
-    "weight": 0.676
-   },
-   {
-    "id": "@uiarc/action-button",
-    "name": "Action button",
-    "stars": 1331,
-    "weight": 0.674
-   }
-  ],
-  "measured": {
-   "longestMovementMs": 0,
-   "overshootPct": 0,
-   "wordsFadeTo": 1,
+   "longestMovementMs": 283,
+   "overshootPct": 0.0,
+   "wordsFadeTo": 1.0,
    "secondsToCommit": null
   }
  },
@@ -208,26 +152,29 @@
   "commitRule": "press",
   "driver": "press",
   "trick": "shimmer",
-  "parts": 5,
-  "libraries": 4,
+  "parts": 3,
+  "libraries": 3,
   "best": [
    {
-    "id": "@affectui/button",
-    "name": "Button",
-    "stars": 904,
-    "weight": 0.66
-   },
-   {
     "id": "@affectui/button-clean",
+    "key": "affectui__button-clean",
     "name": "Button (Clean)",
     "stars": 904,
     "weight": 0.66
    },
    {
     "id": "@magicui/shiny-button",
+    "key": "magicui__shiny-button",
     "name": "Shiny Button",
     "stars": 23380,
     "weight": 0.66
+   },
+   {
+    "id": "@velora/shimmer-button",
+    "key": "velora__shimmer-button",
+    "name": "Shimmer Button",
+    "stars": 64,
+    "weight": 0.54
    }
   ],
   "measured": {
@@ -238,64 +185,33 @@
   }
  },
  {
-  "idea": "Press that blurs as it changes",
+  "idea": "Press with a ripple",
   "commitRule": "press",
   "driver": "press",
-  "trick": "blur",
+  "trick": "ripple",
   "parts": 3,
   "libraries": 3,
   "best": [
    {
-    "id": "@cult-ui/copy-button",
-    "name": "copy-button",
-    "stars": 7574,
-    "weight": 0.739
+    "id": "@magicui/ripple-button",
+    "key": "magicui__ripple-button",
+    "name": "Ripple Button",
+    "stars": 23380,
+    "weight": 0.66
    },
    {
-    "id": "@xevrion/tooltip-group",
-    "name": "Tooltip group",
-    "stars": null,
-    "weight": 0.651
+    "id": "@tweenly/ripple-button",
+    "key": "tweenly__ripple-button",
+    "name": "Ripple Button",
+    "stars": 8,
+    "weight": 0.598
    },
    {
-    "id": "@hairline/split-button",
-    "name": "Split button",
-    "stars": 21,
-    "weight": 0.64
-   }
-  ],
-  "measured": {
-   "longestMovementMs": 0,
-   "overshootPct": 0,
-   "wordsFadeTo": 1.0,
-   "secondsToCommit": null
-  }
- },
- {
-  "idea": "Press with a burst of particles",
-  "commitRule": "press",
-  "driver": "press",
-  "trick": "particles",
-  "parts": 3,
-  "libraries": 3,
-  "best": [
-   {
-    "id": "@react-bits/PulseHeart-TS-TW",
-    "name": "PulseHeart",
-    "stars": 52349,
-    "weight": 0.998
-   },
-   {
-    "id": "@shadcn-space/button-35",
-    "name": "Button 35 - Kids Play",
-    "stars": 822,
-    "weight": 0.627
-   },
-   {
-    "id": "@ui-layouts/liquid-button",
-    "name": "liquid-button",
-    "stars": 3864,
-    "weight": 0.578
+    "id": "@velora/ripple-button",
+    "key": "velora__ripple-button",
+    "name": "Ripple Button",
+    "stars": 64,
+    "weight": 0.54
    }
   ],
   "measured": {
@@ -310,144 +226,58 @@
   "commitRule": "press",
   "driver": "press",
   "trick": "icon-morph",
-  "parts": 3,
-  "libraries": 3,
+  "parts": 2,
+  "libraries": 2,
   "best": [
    {
     "id": "@spectrumui/follow-button",
+    "key": "spectrumui__follow-button",
     "name": "Follow Button",
     "stars": 1543,
     "weight": 0.685
    },
    {
-    "id": "@uiarc/copy-button",
-    "name": "Copy button",
-    "stars": 1331,
-    "weight": 0.674
-   },
-   {
     "id": "@watermelon/morphing-button-base",
+    "key": "watermelon__morphing-button-base",
     "name": "Morphing Button (base)",
     "stars": 234,
     "weight": 0.599
    }
   ],
   "measured": {
-   "longestMovementMs": 271,
-   "overshootPct": 0,
-   "wordsFadeTo": 0,
-   "secondsToCommit": null
-  }
- },
- {
-  "idea": "Press that answers in words",
-  "commitRule": "press",
-  "driver": "state",
-  "trick": "plain",
-  "parts": 2,
-  "libraries": 2,
-  "best": [
-   {
-    "id": "@cult-ui/halo-button-demo",
-    "name": "halo-button-demo",
-    "stars": 7574,
-    "weight": 0.589
-   },
-   {
-    "id": "@kaui/async-button",
-    "name": "async-button",
-    "stars": 4,
-    "weight": 0.266
-   }
-  ],
-  "measured": {
-   "longestMovementMs": 2807,
-   "overshootPct": 0.0,
-   "wordsFadeTo": 1.0,
-   "secondsToCommit": null
-  }
- },
- {
-  "idea": "Press that follows the pointer that glows",
-  "commitRule": "press",
-  "driver": "pointer-distance",
-  "trick": "glow",
-  "parts": 2,
-  "libraries": 2,
-  "best": [
-   {
-    "id": "@componentry/magnetic-dock",
-    "name": "magnetic-dock",
-    "stars": 657,
-    "weight": 0.646
-   },
-   {
-    "id": "@microkit/cursor-follow-share-button",
-    "name": "Cursor Follow Share Button",
-    "stars": 107,
-    "weight": 0.562
-   }
-  ],
-  "measured": {
-   "longestMovementMs": 233,
-   "overshootPct": 26.4,
-   "wordsFadeTo": 0,
-   "secondsToCommit": null
-  }
- },
- {
-  "idea": "Press that answers in words that glows",
-  "commitRule": "press",
-  "driver": "state",
-  "trick": "glow",
-  "parts": 2,
-  "libraries": 2,
-  "best": [
-   {
-    "id": "@interior/loading-button",
-    "name": "Loading Button",
-    "stars": 1261,
-    "weight": 0.676
-   },
-   {
-    "id": "@siteplane/button",
-    "name": "Button",
-    "stars": 12,
-    "weight": 0.616
-   }
-  ],
-  "measured": {
-   "longestMovementMs": 0,
-   "overshootPct": 0.0,
+   "longestMovementMs": 509,
+   "overshootPct": 13.8,
    "wordsFadeTo": 0.5,
    "secondsToCommit": null
   }
  },
  {
-  "idea": "Press that follows the pointer",
+  "idea": "Press that answers in words whose icon reshapes",
   "commitRule": "press",
-  "driver": "pointer-distance",
-  "trick": "plain",
+  "driver": "state",
+  "trick": "icon-morph",
   "parts": 2,
   "libraries": 2,
   "best": [
    {
-    "id": "@ui-layouts/btn-animated-gradient",
-    "name": "btn-animated-gradient",
-    "stars": 3864,
-    "weight": 0.578
+    "id": "@tweenly/expand-input",
+    "key": "tweenly__expand-input",
+    "name": "Expand Input",
+    "stars": 8,
+    "weight": 0.598
    },
    {
-    "id": "@velora/magnetic-button",
-    "name": "Magnetic Button",
+    "id": "@velora/stateful-button",
+    "key": "velora__stateful-button",
+    "name": "Stateful Button",
     "stars": 64,
     "weight": 0.54
    }
   ],
   "measured": {
-   "longestMovementMs": 150,
-   "overshootPct": 0.0,
-   "wordsFadeTo": 1.0,
+   "longestMovementMs": 483,
+   "overshootPct": 0.1,
+   "wordsFadeTo": 0.5,
    "secondsToCommit": null
   }
  },
@@ -456,60 +286,28 @@
   "commitRule": "confirm",
   "driver": null,
   "trick": "icon-morph",
-  "parts": 3,
-  "libraries": 3,
+  "parts": 2,
+  "libraries": 2,
   "best": [
    {
     "id": "@react-bits/FuseButton-TS-TW",
+    "key": "react-bits__FuseButton-TS-TW",
     "name": "FuseButton",
     "stars": 52349,
     "weight": 0.998
    },
    {
     "id": "@uiarc/confirm-morph",
+    "key": "uiarc__confirm-morph",
     "name": "Confirm morph",
     "stars": 1331,
     "weight": 0.824
-   },
-   {
-    "id": "@stealth/two-step-confirm",
-    "name": "Two-step Confirm",
-    "stars": null,
-    "weight": 0.654
    }
   ],
   "measured": {
-   "longestMovementMs": 233,
-   "overshootPct": 0,
-   "wordsFadeTo": 1,
-   "secondsToCommit": 0.6
-  }
- },
- {
-  "idea": "Press, then confirm",
-  "commitRule": "confirm",
-  "driver": null,
-  "trick": "plain",
-  "parts": 2,
-  "libraries": 2,
-  "best": [
-   {
-    "id": "@kokonutui/tear-button",
-    "name": "Tear Button",
-    "stars": 2388,
-    "weight": 0.85
-   },
-   {
-    "id": "@beui/slide-action-button",
-    "name": "Animated CTA Buttons Slide Action Button",
-    "stars": 1990,
-    "weight": 0.847
-   }
-  ],
-  "measured": {
-   "longestMovementMs": 0,
+   "longestMovementMs": 400,
    "overshootPct": 0.0,
-   "wordsFadeTo": 1,
+   "wordsFadeTo": 0.5,
    "secondsToCommit": 0.6
   }
  },
@@ -518,69 +316,20 @@
   "commitRule": "confirm",
   "driver": null,
   "trick": "glow",
-  "parts": 2,
+  "parts": 1,
   "libraries": 1,
   "best": [
    {
-    "id": "@ns-ui/confirm-slide-shatter",
-    "name": "Confirm Slide Shatter",
-    "stars": null,
-    "weight": 0.654
-   },
-   {
     "id": "@ns-ui/sinkhole-ravel",
+    "key": "ns-ui__sinkhole-ravel",
     "name": "Sinkhole Ravel",
     "stars": null,
     "weight": 0.654
    }
   ],
   "measured": {
-   "longestMovementMs": 183,
-   "overshootPct": 3.3,
-   "wordsFadeTo": 1.0,
-   "secondsToCommit": 0.6
-  }
- },
- {
-  "idea": "Press, then confirm with a burst of particles",
-  "commitRule": "confirm",
-  "driver": null,
-  "trick": "particles",
-  "parts": 1,
-  "libraries": 1,
-  "best": [
-   {
-    "id": "@react-bits/SlingButton-TS-TW",
-    "name": "SlingButton",
-    "stars": 52349,
-    "weight": 0.998
-   }
-  ],
-  "measured": {
-   "longestMovementMs": 35,
-   "overshootPct": 0,
-   "wordsFadeTo": 1,
-   "secondsToCommit": 0.6
-  }
- },
- {
-  "idea": "Press, then confirm that blurs as it changes",
-  "commitRule": "confirm",
-  "driver": null,
-  "trick": "blur",
-  "parts": 1,
-  "libraries": 1,
-  "best": [
-   {
-    "id": "@visant/confirm-morph",
-    "name": "Confirm Morph",
-    "stars": null,
-    "weight": 0.656
-   }
-  ],
-  "measured": {
-   "longestMovementMs": 0,
-   "overshootPct": 0,
+   "longestMovementMs": 366,
+   "overshootPct": 6.6,
    "wordsFadeTo": 1,
    "secondsToCommit": 0.6
   }
@@ -590,67 +339,36 @@
   "commitRule": "held-time",
   "driver": null,
   "trick": "plain",
-  "parts": 9,
-  "libraries": 9,
+  "parts": 6,
+  "libraries": 6,
   "best": [
    {
     "id": "@interior/hold-to-confirm",
+    "key": "interior__hold-to-confirm",
     "name": "Hold to Confirm",
     "stars": 1261,
     "weight": 0.826
    },
    {
-    "id": "@panelui/command-dock",
-    "name": "Command Dock",
-    "stars": 1005,
-    "weight": 0.815
-   },
-   {
     "id": "@sona-ui/hold-to-delete-button",
+    "key": "sona-ui__hold-to-delete-button",
     "name": "Hold To Delete Button",
     "stars": null,
     "weight": 0.655
-   }
-  ],
-  "measured": {
-   "longestMovementMs": 100,
-   "overshootPct": 0.0,
-   "wordsFadeTo": 1,
-   "secondsToCommit": 1.2
-  }
- },
- {
-  "idea": "Hold whose icon reshapes",
-  "commitRule": "held-time",
-  "driver": null,
-  "trick": "icon-morph",
-  "parts": 5,
-  "libraries": 5,
-  "best": [
-   {
-    "id": "@kokonutui/hold-button",
-    "name": "Hold Button",
-    "stars": 2388,
-    "weight": 0.85
    },
    {
-    "id": "@crucible/ratchet",
-    "name": "Ratchet",
-    "stars": null,
-    "weight": 0.655
-   },
-   {
-    "id": "@stealth/hold-to-confirm",
-    "name": "Hold to Confirm",
+    "id": "@ns-ui/crack-arrest-hole",
+    "key": "ns-ui__crack-arrest-hole",
+    "name": "Crack Arrest Hole",
     "stars": null,
     "weight": 0.654
    }
   ],
   "measured": {
-   "longestMovementMs": 0,
-   "overshootPct": 0,
-   "wordsFadeTo": 1,
-   "secondsToCommit": 1.2
+   "longestMovementMs": 508,
+   "overshootPct": 8.2,
+   "wordsFadeTo": 0.71,
+   "secondsToCommit": 1.6
   }
  },
  {
@@ -658,33 +376,73 @@
   "commitRule": "held-time",
   "driver": null,
   "trick": "liquid",
-  "parts": 4,
-  "libraries": 4,
+  "parts": 3,
+  "libraries": 3,
   "best": [
    {
     "id": "@react-bits/HoldButton-TS-TW",
+    "key": "react-bits__HoldButton-TS-TW",
     "name": "HoldButton",
     "stars": 52349,
     "weight": 0.998
    },
    {
     "id": "@beui/hold-action-button",
+    "key": "beui__hold-action-button",
     "name": "Animated CTA Buttons Hold Action Button",
     "stars": 1990,
     "weight": 0.847
    },
    {
-    "id": "@ns-ui/confirm-hold-wax",
-    "name": "Confirm Hold Wax",
-    "stars": null,
-    "weight": 0.654
+    "id": "@karaui/hold-action-button",
+    "key": "karaui__hold-action-button",
+    "name": "Animated CTA Buttons Hold Action Button",
+    "stars": 4,
+    "weight": 0.571
    }
   ],
   "measured": {
-   "longestMovementMs": 1640,
-   "overshootPct": 0.0,
-   "wordsFadeTo": 0.23,
+   "longestMovementMs": 1611,
+   "overshootPct": 0,
+   "wordsFadeTo": 0,
    "secondsToCommit": 1.6
+  }
+ },
+ {
+  "idea": "Hold whose icon reshapes",
+  "commitRule": "held-time",
+  "driver": null,
+  "trick": "icon-morph",
+  "parts": 3,
+  "libraries": 3,
+  "best": [
+   {
+    "id": "@kokonutui/hold-button",
+    "key": "kokonutui__hold-button",
+    "name": "Hold Button",
+    "stars": 2388,
+    "weight": 0.85
+   },
+   {
+    "id": "@stealth/hold-to-confirm",
+    "key": "stealth__hold-to-confirm",
+    "name": "Hold to Confirm",
+    "stars": null,
+    "weight": 0.654
+   },
+   {
+    "id": "@tweenly/hold-button",
+    "key": "tweenly__hold-button",
+    "name": "Hold Button",
+    "stars": 8,
+    "weight": 0.598
+   }
+  ],
+  "measured": {
+   "longestMovementMs": 167,
+   "overshootPct": 0,
+   "wordsFadeTo": 0,
+   "secondsToCommit": 1.2
   }
  },
  {
@@ -697,13 +455,14 @@
   "best": [
    {
     "id": "@hairline/hold-to-start",
+    "key": "hairline__hold-to-start",
     "name": "Hold to start",
     "stars": 21,
     "weight": 0.64
    }
   ],
   "measured": {
-   "longestMovementMs": 567,
+   "longestMovementMs": 900,
    "overshootPct": 2.9,
    "wordsFadeTo": 0,
    "secondsToCommit": null
@@ -719,14 +478,15 @@
   "best": [
    {
     "id": "@ns-ui/confirm-hold-ink",
+    "key": "ns-ui__confirm-hold-ink",
     "name": "Confirm Hold Ink",
     "stars": null,
     "weight": 0.654
    }
   ],
   "measured": {
-   "longestMovementMs": 533,
-   "overshootPct": 5.4,
+   "longestMovementMs": 534,
+   "overshootPct": 9.1,
    "wordsFadeTo": 1,
    "secondsToCommit": null
   }
@@ -740,16 +500,17 @@
   "libraries": 1,
   "best": [
    {
-    "id": "@visant/hold-to-confirm",
-    "name": "Hold to Confirm",
+    "id": "@xevrion/hold-to-delete",
+    "key": "xevrion__hold-to-delete",
+    "name": "Hold to delete",
     "stars": null,
-    "weight": 0.656
+    "weight": 0.651
    }
   ],
   "measured": {
    "longestMovementMs": 0,
    "overshootPct": 0,
-   "wordsFadeTo": 1,
+   "wordsFadeTo": 0,
    "secondsToCommit": null
   }
  },
@@ -758,32 +519,28 @@
   "commitRule": "threshold",
   "driver": null,
   "trick": "shimmer",
-  "parts": 4,
-  "libraries": 4,
+  "parts": 2,
+  "libraries": 2,
   "best": [
    {
-    "id": "@crucible/throw",
-    "name": "Throw",
-    "stars": null,
-    "weight": 0.655
-   },
-   {
     "id": "@furin/slide-to-confirm",
+    "key": "furin__slide-to-confirm",
     "name": "Slide to Confirm",
     "stars": null,
     "weight": 0.654
    },
    {
-    "id": "@xevrion/slide-to-confirm",
-    "name": "Slide to confirm",
-    "stars": null,
-    "weight": 0.651
+    "id": "@tweenly/slide-button",
+    "key": "tweenly__slide-button",
+    "name": "Slide Button",
+    "stars": 8,
+    "weight": 0.598
    }
   ],
   "measured": {
-   "longestMovementMs": 324,
-   "overshootPct": 5.4,
-   "wordsFadeTo": 1,
+   "longestMovementMs": 769,
+   "overshootPct": 11.7,
+   "wordsFadeTo": 0.04,
    "secondsToCommit": 0.8
   }
  },
@@ -792,32 +549,28 @@
   "commitRule": "threshold",
   "driver": null,
   "trick": "plain",
-  "parts": 3,
-  "libraries": 3,
+  "parts": 2,
+  "libraries": 2,
   "best": [
    {
-    "id": "@visant/slide-to-confirm",
-    "name": "Slide to Confirm",
-    "stars": null,
-    "weight": 0.656
-   },
-   {
     "id": "@prestige/slide-to-confirm",
+    "key": "prestige__slide-to-confirm",
     "name": "Slide to Confirm",
     "stars": 41,
     "weight": 0.622
    },
    {
     "id": "@karaui/slide-action-button",
+    "key": "karaui__slide-action-button",
     "name": "Animated CTA Buttons Slide Action Button",
     "stars": 4,
     "weight": 0.571
    }
   ],
   "measured": {
-   "longestMovementMs": 0,
-   "overshootPct": 0,
-   "wordsFadeTo": 1,
+   "longestMovementMs": 487,
+   "overshootPct": 5.2,
+   "wordsFadeTo": 0,
    "secondsToCommit": 0.8
   }
  },
@@ -831,6 +584,7 @@
   "best": [
    {
     "id": "@react-bits/SlideCommit-TS-TW",
+    "key": "react-bits__SlideCommit-TS-TW",
     "name": "SlideCommit",
     "stars": 52349,
     "weight": 0.998

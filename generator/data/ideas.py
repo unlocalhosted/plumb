@@ -5,7 +5,8 @@
 #   python3 generator/data/ideas.py   → data/ideas.json, and a summary
 import json, statistics as st, collections
 d = json.load(open('data/buttons.json'))
-live = [r for r in d if (r.get('rendered') or {}).get('renders') and r['rendered'].get('drewShape') and r['kind'] in ('button', 'group')]
+# the bar: it loads, draws a shape, is alive (its pixels change on their own or under the hand) and isn't an error screen
+live = [r for r in d if (r.get('rendered') or {}).get('renders') and r['rendered'].get('drewShape') and r['rendered'].get('alive') and not r['rendered'].get('errorScreen') and r['kind'] in ('button', 'group')]
 # the trick a person notices first, when a part has several (the rarer and louder ones lead)
 LEAD = ['particles', 'liquid', 'text-scramble', 'tilt', 'gradient-border', 'ripple', 'shimmer', 'icon-morph', 'glow', 'noise', 'blur']
 lead = lambda r: next((t for t in LEAD if t in r['tricks']), 'plain')
@@ -26,7 +27,7 @@ for (commit, driver, trick), rs in groups.items():
     over = [v for v in m('maxOvershootPct') if v < 60]
     name = ' '.join(x for x in [COMMIT[commit], DRIVER.get(driver, ''), TRICK[trick]] if x)
     ideas.append({'idea': name, 'commitRule': commit, 'driver': driver or None, 'trick': trick, 'parts': len(rs), 'libraries': len({r['registry'] for r in rs}),
-                  'best': [{'id': r['id'], 'name': r['name'], 'stars': r.get('stars'), 'weight': r['weight']} for r in rs[:3]],
+                  'best': [{'id': r['id'], 'key': r['rendered'].get('key'), 'name': r['name'], 'stars': r.get('stars'), 'weight': r['weight']} for r in rs[:3]],
                   'measured': {'longestMovementMs': int(st.median(m('longestMovementMs'))) if m('longestMovementMs') else None,
                                'overshootPct': round(st.median(over), 1) if over else None,
                                'wordsFadeTo': round(st.median(m('faintestWords')), 2) if m('faintestWords') else None,

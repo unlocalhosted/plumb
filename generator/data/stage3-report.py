@@ -5,12 +5,14 @@
 import json, re, statistics as st, collections
 R = [json.loads(l) for l in open('sandbox/results.jsonl') if l.strip()]
 d = json.load(open('data/buttons.json')); by = {r['id']: r for r in d}
-n = len(R); ok = [r for r in R if r.get('renders')]; shaped = [r for r in ok if r.get('drewShape')]
-print(f"{n} recorded · {len(ok)} render ({round(100*len(ok)/n)}%) · {len(shaped)} draw a shape ({round(100*len(shaped)/n)}%)")
+n = len(R); ok = [r for r in R if r.get('renders')]
+# the bar: it drew a shape, it is alive (its pixels change on their own or under the hand), and it isn't an error screen
+shaped = [r for r in ok if r.get('drewShape') and r.get('alive', True) and not r.get('errorScreen')]
+print(f"{n} recorded · {len(ok)} render ({round(100*len(ok)/n)}%) · {len(shaped)} work: a shape, alive, no error ({round(100*len(shaped)/n)}%) · {sum(1 for r in ok if r.get('drewShape') and r.get('alive') is False)} drew but never changed")
 cause = collections.Counter()
 for r in R:
-    if r.get('renders') and r.get('drewShape'): continue
-    e = r.get('error') or ('words only: no shape' if r.get('renders') else 'unknown')
+    if r in shaped: continue
+    e = r.get('error') or ('words only: no shape' if r.get('renders') and not r.get('drewShape') else 'never changes: nothing it claims happens' if r.get('renders') else 'unknown')
     e = re.sub(r'["\'][^"\']{0,80}["\']', '…', e); e = re.sub(r'\d+', 'N', e)[:70]
     cause[e] += 1
 print('why the rest fail:'); [print(f"  {k:3d}  {c}") for c, k in cause.most_common(10)]
@@ -23,5 +25,5 @@ for rule in ['press', 'confirm', 'held-time', 'threshold', 'countdown']:
     faint = [r['faintestWords'] for r in g if r.get('faintestWords') is not None]
     print(f"  {rule:10} {len(g):3d} parts · longest movement median {int(st.median(longest)) if longest else '–'} ms · overshoot median {round(st.median(over),1) if over else '–'}% · words fade to {round(st.median(faint),2) if faint else '–'}")
 for r in R:
-    if r['id'] in by: by[r['id']]['rendered'] = {k: r.get(k) for k in ['renders', 'drewShape', 'painted', 'error', 'target', 'size', 'longestMovementMs', 'maxOvershootPct', 'faintestWords', 'movements']}
+    if r['id'] in by: by[r['id']]['rendered'] = {k: r.get(k) for k in ['renders', 'drewShape', 'painted', 'error', 'target', 'size', 'longestMovementMs', 'maxOvershootPct', 'faintestWords', 'movements', 'alive', 'idleChange', 'gestureChange', 'errorScreen', 'key']}
 json.dump(d, open('data/buttons.json', 'w'), indent=1, ensure_ascii=False)

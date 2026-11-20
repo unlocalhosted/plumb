@@ -5,19 +5,13 @@ import json, os, shutil, html
 G = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(G, '..', 'web', 'public', 'research')
 ideas = json.load(open(os.path.join(G, 'data', 'ideas.json')))
-shots = os.path.join(G, 'sandbox', 'shots'); dest = os.path.join(OUT, 'button-ideas')
+dest = os.path.join(OUT, 'button-ideas')
 os.makedirs(dest, exist_ok=True)
 e = html.escape
 RULE = {'press': ('Press', 'var(--press)'), 'confirm': ('Press, then confirm', 'var(--confirm)'), 'held-time': ('Hold', 'var(--hold)'), 'threshold': ('Slide', 'var(--slide)'), 'countdown': ('Countdown', 'var(--countdown)')}
-def shot(pid, state):
-    f = pid.lstrip('@').replace('/', '__') + f'-{state}.png'
-    if not os.path.exists(os.path.join(shots, f)): return None
-    # trimmed to what was drawn: the recorder shoots the whole stage, the button sits small in it
-    from PIL import Image, ImageChops
-    im = Image.open(os.path.join(shots, f)).convert('RGB'); bg = Image.new('RGB', im.size, im.getpixel((2, 2)))
-    box = ImageChops.difference(im, bg).convert('L').point(lambda v: 255 if v > 12 else 0).getbbox()
-    if box: pad = 24; im = im.crop((max(0, box[0] - pad), max(0, box[1] - pad), min(im.width, box[2] + pad), min(im.height, box[3] + pad)))
-    im.save(os.path.join(dest, f), optimize=True); return f'button-ideas/{f}'
+# the old still pictures go: the page shows the parts themselves now (live/, brought home from vm-agent)
+for f in os.listdir(dest):
+    if f.endswith('.png'): os.remove(os.path.join(dest, f))
 def numbers(m):
     out = []
     if m.get('secondsToCommit'): out.append(f"commits after {m['secondsToCommit']} s")
@@ -30,8 +24,8 @@ for i in ideas:
     name, colour = RULE[i['commitRule']]
     parts = []
     for b in i['best']:
-        rest, mid = shot(b['id'], 'rest'), shot(b['id'], 'mid')
-        imgs = ''.join(f'<figure><img loading="lazy" alt="{e(b["name"])} {lab}" src="{s}"><figcaption>{lab}</figcaption></figure>' for s, lab in ((rest, 'at rest'), (mid, 'mid-gesture')) if s)
+        # the part itself, live: built by sandbox/live-build.mjs into button-ideas/live/, one page per part
+        imgs = f'<iframe loading="lazy" title="{e(b["name"])}, live" src="button-ideas/live/live.html?part={e(b.get("key") or "")}"></iframe>'
         stars = f"{b['stars']:,} ★" if b.get('stars') else 'stars unknown'
         parts.append(f'<div class="part"><div class="shots">{imgs or "<p class=none>no shot</p>"}</div><p class="pname">{e(b["name"])}</p><p class="pid">{e(b["id"])} · {stars}</p></div>')
     n += 1
@@ -61,15 +55,15 @@ h1 {{ font:700 clamp(32px,6vw,48px)/1.08 var(--serif); margin:0; max-width:760px
 .idea h2 {{ font:700 24px/1.2 var(--serif); margin:6px 0 4px; }}
 .meta {{ font:400 13.5px/1.4 var(--sans); color:var(--gray); margin:0 0 16px; }}
 .parts {{ display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:20px; }}
-.shots {{ display:grid; grid-template-columns:1fr 1fr; gap:6px; }}
+.shots iframe {{ display:block; width:100%; height:200px; border:0; border-radius:6px; background:#fff; }}
 figure {{ margin:0; }} figure img {{ width:100%; aspect-ratio:3/2; object-fit:contain; background:var(--faint); border-radius:4px; display:block; }}
 figcaption {{ font:500 11px/1.3 var(--sans); color:var(--gray); margin-top:4px; }}
 .pname {{ font:600 14px/1.3 var(--sans); margin:8px 0 2px; }} .pid {{ font:400 12px/1.3 var(--sans); color:var(--gray); margin:0; }}
 .none {{ font:400 12px var(--sans); color:var(--gray); }}
 </style></head><body><main>
 <p class="kicker">The button proof of concept · stage 4</p>
-<h1>{len(ideas)} ideas for a button, from {total} that were watched working</h1>
-<p class="dek">Every part here was installed, pressed, held or slid by a robot, and drew a real shape on screen. Parts are grouped by how they commit and the trick a person notices first; each idea shows its three best, weighted by GitHub stars and craft.</p>
+<h1>{len(ideas)} ideas for a button, from {total} that work</h1>
+<p class="dek">Every part here is live: press it, hold it, slide it. Each was first installed and used by a robot, and kept only if it loaded without an error, drew a real shape, and visibly changed on its own or under the hand. Parts are grouped by how they commit and the trick a person notices first; each idea shows its three best, weighted by GitHub stars and craft.</p>
 <nav class="filters" aria-label="How it commits"><button aria-pressed="true" data-f="">All</button>{''.join(f'<button aria-pressed="false" data-f="{k}">{v[0]}</button>' for k, v in RULE.items() if any(i['commitRule'] == k for i in ideas))}</nav>
 {''.join(cards)}
 </main>
@@ -79,4 +73,4 @@ document.querySelector('.filters').addEventListener('click', (ev) => {{ const b 
   document.querySelectorAll('.idea').forEach((s) => {{ s.hidden = !!b.dataset.f && s.dataset.rule !== b.dataset.f; }}); }});
 </script></body></html>'''
 open(os.path.join(OUT, 'button-ideas.html.tmp'), 'w').write(page); os.replace(os.path.join(OUT, 'button-ideas.html.tmp'), os.path.join(OUT, 'button-ideas.html'))
-print(f'{n} ideas → web/public/research/button-ideas.html · {len(os.listdir(dest))} shots, {sum(os.path.getsize(os.path.join(dest, f)) for f in os.listdir(dest)) // 1024} KB')
+print(f'{n} ideas → web/public/research/button-ideas.html')

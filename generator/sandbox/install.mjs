@@ -91,7 +91,10 @@ for (const r of pick) {
   for (const k of Object.keys(vars)) if (!STANDARD.has(k)) colourNames.add(k);
   for (const [k, v] of Object.entries(theme)) themeKeys.set(k, v);
   const css = { ...lt.css, ...(item.css ?? {}) };
-  await writeFile(`${dir}theme.css`, `[data-part="${key}"] {\n${Object.entries(vars).map(([k, v]) => `  --${k}: ${v};`).join('\n')}\n}\n${cssText(css)}\n`);
+  // a library's own rules use Tailwind's shorthands (@apply …), which resolve only against the sandbox's stylesheet, so
+  // the file points at it (@reference); its @imports (its fonts, a package's stylesheet) are the library site's, not ours
+  const own = cssText(Object.fromEntries(Object.entries(css).filter(([k]) => !k.startsWith('@import')))).split('\n').filter((l) => !/^\s*@import\b/.test(l)).join('\n');
+  await writeFile(`${dir}theme.css`, `@reference "../../styles.css";\n[data-part="${key}"] {\n${Object.entries(vars).map(([k, v]) => `  --${k}: ${v};`).join('\n')}\n}\n${own}\n`);
   for (const n of wanted) await standardPiece(n);
   // the entry: the author's example if there is one, else the part's main export with words in it
   const main = written.find((w) => /registry:(example)/.test(w.type ?? '')) ?? written.find((w) => basename(w.to).replace(/\.(tsx?|jsx?)$/, '').toLowerCase() === p.name.toLowerCase()) ?? written.find((w) => /\.(tsx|jsx)$/.test(w.to)) ?? written[0];
