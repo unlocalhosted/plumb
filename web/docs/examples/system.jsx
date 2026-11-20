@@ -4,6 +4,8 @@
 // shows up later (the theme changes and a hard-coded value doesn't follow), a "Change your theme" button that shows it.
 import { useEffect, useRef, useState } from 'react';
 import { CRAFT } from '../../../overlay/src/checks/craft.js';
+import { SLOP } from '../../../overlay/src/checks/slop.js';
+import { WORDS as COPY } from '../../../overlay/src/checks/words.js';
 
 // the example app's theme, before and after "Change your theme": a rebrand from indigo to teal, softer corners,
 // a darker surface. Elements written with the token follow it; hard-coded copies keep the old look.
@@ -87,7 +89,7 @@ function Presses({ fixed }) {
 }
 
 // the other concerns' examples carry their words beside their scene (overlay/src/checks/<concern>.js)
-const WORDS = { ...CRAFT };
+const WORDS = { ...CRAFT, ...SLOP, ...COPY };
 export const hasExample = (id) => !!(EXAMPLES[id] || WORDS[id]);
 // Every fix is shown as a transition (interaction principles 35b), played by the tiles of "How a change moves" own
 // player (overlay/src/check-motion.js on show-motion.js). A Broken / Fixed toggle plays it either way; the code line
