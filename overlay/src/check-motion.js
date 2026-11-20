@@ -102,13 +102,19 @@ export const CHECK_SPECS = {
       track: () => { const S = s.getBoundingClientRect(), r = len.getBoundingClientRect(); pillLeft(pill, r.bottom - S.top + 26, r.right - S.left); },
       landed: () => { x.animate([{ background: '#f3f4f6' }, { background: '#4f46e5', color: '#fff', scale: .96, offset: .5 }, { background: '#f3f4f6' }], { duration: 300 }); } };
   },
+  // a page under an open dialog. Broken: a tooltip from the page, typed z-999, sits on top of the dimmed page and over
+  // the dialog's question. Fixed: on the named tooltip layer it goes under the dim with the rest of the page, and the
+  // dialog reads clean. Only its layer changes, so it stays where it is
   'provenance/z': (s) => {
-    s.innerHTML = '<div class="ck-scene"><div style="position:relative;width:320px;height:160px;border-radius:12px;background:#f3f4f6"><div class="tip" style="position:absolute;left:150px;top:44px;padding:6px 10px;border-radius:8px;background:#111827;color:#fff;font:500 12px system-ui;white-space:nowrap;z-index:2">Last edited by Sam</div><div style="position:absolute;inset:22px 40px;display:grid;gap:12px;place-content:center;justify-items:center;background:#fff;border-radius:12px;box-shadow:0 10px 30px -8px rgb(0 0 0 / .3);font:600 14px system-ui;z-index:1">Delete project?<span class="btn2" style="background:#dc2626;height:32px">Delete</span></div></div></div>';
+    s.innerHTML = `<div class="ck-scene"><div style="position:relative;width:296px;height:176px;border-radius:12px;background:#fff;box-shadow:inset 0 0 0 1px rgb(0 0 0 / .08);overflow:hidden;font:500 12px system-ui;color:#374151">
+      <div style="display:grid;gap:8px;padding:14px">${['Atlas', 'Beacon', 'Comet'].map((w) => `<div style="display:flex;justify-content:space-between;padding:8px 10px;border-radius:8px;background:#f3f4f6"><b style="font-weight:600">${w}</b><span style="color:#6b7280">2h ago</span></div>`).join('')}</div>
+      <div style="position:absolute;inset:0;background:rgb(15 23 42 / .45);z-index:10"></div>
+      <div style="position:absolute;left:44px;right:44px;top:34px;bottom:34px;display:grid;gap:12px;place-content:center;justify-items:center;background:#fff;border-radius:12px;box-shadow:0 12px 30px -8px rgb(0 0 0 / .4);font:600 14px system-ui;color:#111827;z-index:20">Delete project?<span class="btn2" style="background:#dc2626;height:30px;padding:0 14px;font-size:13px">Delete</span></div>
+      <div class="tip" style="position:absolute;left:18px;top:50px;padding:6px 10px;border-radius:8px;background:#111827;color:#fff;font:500 12px system-ui;white-space:nowrap;z-index:999;box-shadow:0 4px 12px -4px rgb(0 0 0 / .4)">Last edited by Sam</div></div></div>`;
     const tip = s.querySelector('.tip'), ring = make(s, 'ring'), pill = make(s, 'pill');
-    return { labels: ['z 999', 'tooltip layer'], guides: [{ el: ring, kind: 'ring' }, { el: pill, kind: 'pill' }],
-      // under the dialog by the end: it sinks and goes behind as the layers are named
-      at: (p) => { tip.style.zIndex = p > 0.5 ? 0 : 2; tip.style.opacity = String(lerp(1, 0.35, p)); tip.style.transform = `translateY(${lerp(0, 6, p)}px) scale(${lerp(1, 0.96, p)})`; },
-      track: () => { ringAround(ring, tip, s, 6); pillOver(pill, tip, s, 14); } };
+    return { labels: ['z-[999]', 'z-tooltip'], curve: 'steps(1, jump-end)', guides: [{ el: ring, kind: 'ring' }, { el: pill, kind: 'pill' }],
+      at: (p) => { tip.style.zIndex = p ? 5 : 999; },
+      track: () => { ringAround(ring, tip, s, 6); const S = s.getBoundingClientRect(), r = tip.getBoundingClientRect(); at(pill, `left:${r.left - S.left + r.width / 2}px;top:${r.bottom - S.top + 24}px`); } };
   },
   'dead/color': (s) => {
     const rows = [['primary', '#4f46e5', '31 uses'], ['muted', '#64748b', '18 uses'], ['danger', '#dc2626', '4 uses'], ['brand-old', '#7c3aed', 'unused'], ['accent-2', '#db2777', 'unused']];
