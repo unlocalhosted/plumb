@@ -39,6 +39,8 @@ export const nowrapSentence = rule('nowrap-sentence', 'wrap', TEXT, function (el
   if (!/nowrap/.test(s.whiteSpace) && s.textWrapMode !== 'nowrap') return;
   const text = ownText(el), words = wordsIn(text);
   if (words < 8 || text.length < 50 || !shown(el, facts)) return;
+  // words a screen reader hears in a box kept out of sight (a 1px visually hidden hint) can't run off any screen
+  const box = facts.rect(el); if (box.width <= 2 || box.height <= 2 || facts.style(el).visibility === 'hidden') return;
   // cut off on purpose (craft's truncate-intent judges that), or a strip made to scroll (a ticker, a row of chips)
   if (s.textOverflow === 'ellipsis' || el.closest('pre, code, [aria-hidden="true"]')) return;
   for (let p = el; p && p !== document.body; p = p.parentElement) if (/auto|scroll/.test(facts.style(p).overflowX)) return;
