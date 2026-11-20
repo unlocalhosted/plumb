@@ -61,18 +61,22 @@ function headingAfter(el, facts) {
 }
 
 // ── words ───────────────────────────────────────────────────
-// U1: small capitals, spaced out, right above a bigger heading. A table header, a key cap and a control are not it.
+// U1: small capitals, spaced out, right above a bigger heading; or a small coloured label over one twice its size. A table header, a key cap and a control are not it.
 export const eyebrow = rule('eyebrow', 'case', 'p,div,span,small,strong,em,h5,h6,dt', function (el, facts) {
   const s = facts.style(el);
-  if (s.textTransform !== 'uppercase') return;
   const text = trimmed(el.textContent);
   if (!text || wordsIn(text) > 6 || text.length > 48 || el.closest(`th, ${CONTROL}, ${CODE}, nav, [role="navigation"], table, thead`)) return;
-  // the label is the innermost element that holds the words: a pill around it is the same label
-  if ([...el.children].some((k) => trimmed(k.textContent) === text && facts.style(k).textTransform === 'uppercase')) return;
   const size = px(s.fontSize), tracking = s.letterSpacing === 'normal' ? 0 : px(s.letterSpacing);
-  if (!(tracking >= size * 0.04) || !shown(el, facts)) return;
+  // two kinds: small capitals spaced out, or (the owner's list, 2026-11-20) a small label in a colour, or in a coloured
+  // pill, over a heading at least twice its size
+  const caps = s.textTransform === 'uppercase' && tracking >= size * 0.04;
+  const tinted = !caps && ((lch(s.color)?.C ?? 0) >= 0.06 || (lch(s.backgroundColor)?.C ?? 0) >= 0.04 || (lch(facts.style(el.parentElement ?? el).backgroundColor)?.C ?? 0) >= 0.04 && trimmed(el.parentElement?.textContent ?? '') === text);
+  if (!caps && !tinted) return;
+  // the label is the innermost element that holds the words: a pill around it is the same label
+  if ([...el.children].some((k) => trimmed(k.textContent) === text)) return;
+  if (!shown(el, facts)) return;
   const h = headingAfter(el, facts);
-  if (!h || px(facts.style(h).fontSize) < size * 1.4 || !shown(h, facts)) return;
+  if (!h || px(facts.style(h).fontSize) < size * (caps ? 1.4 : 2) || !shown(h, facts)) return;
   return found(this, el, { text: quote(text) }, { value: quote(text), confidence: 0.85, advice: 'Delete the label. If the heading needs it to make sense, rewrite the heading.' });
 });
 

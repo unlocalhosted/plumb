@@ -23,7 +23,7 @@ const OWN = (name) => ({ id: `owner-slop-${name.toLowerCase().replace(/[^a-z]+/g
 
 // rule short name → [the rule it comes from, its spec entry, its words]
 const TABLE = {
-  eyebrow: [U(1, 'Eyebrow labels'), {}, ({ text }) => ({ label: 'Label over a heading', line: `"${text}" sits in small capitals above the heading.`, reason: 'The heading already says what this part is. The label only repeats it, louder.' })],
+  eyebrow: [U(1, 'Eyebrow labels'), {}, ({ text }) => ({ label: 'Label over a heading', line: `"${text}" sits as a small label above the heading.`, reason: 'The heading already says what this part is. The label only repeats it, louder.' })],
   numbering: [U(2, 'Decorative numbering'), ADVISORY, ({ text }) => ({ label: 'Numbers with no order', line: `"${text}" numbers something that has no order.`, reason: 'Numbers tell people to go in sequence. If the parts can be read in any order, they are noise.' })],
   'status-chain': [U(6, 'Status strings'), ADVISORY, ({ count, text }) => ({ label: 'Too much in one line', line: text ? `"${text}" puts ${count} things in one line.` : `${count} things are put in one line, split by dots or bars.`, reason: 'Nobody reads a chain. Keep the one fact people act on and put the rest where it is needed.' })],
   'flavour-badge': [U(9, 'Badges and pills without real state'), ADVISORY, ({ text }) => ({ label: 'Badge for flavour', line: `"${text}" is set as a badge.`, reason: 'A badge should mean something the app tracks, like a stream that is live. Added for flavour, it teaches people to ignore badges.' })],
