@@ -46,3 +46,5 @@ docs/films/*-draft/
 /generator/reads/
 /generator/library/cache/
 /generator/data/traces/
+/generator/sandbox/node_modules/
+/generator/sandbox/parts/
