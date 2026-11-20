@@ -144,6 +144,13 @@ pickers.
 34. **No hover repaint.** Leaving a hovered thing must not flash or redraw it; if it does, remove the property that
     causes it (it was 3D tilt).
 35. **Reduced motion:** states change at once; nothing slides, rolls or bounces.
+35b. **Every fix is shown as a transition, never a cut.** Wherever plumber shows a fix (Clean up's preview, the fix
+    bar, the docs' Broken / Fixed switch, a film), the change plays, so the person sees what plumber did and why: the
+    guides mark what is about to change and show the value now (coral, off your theme); the element moves to the fixed
+    value on the spring; the pill crosses over to your token's name and turns sky; the guides go. Going back plays the
+    same beats in reverse. One motion for every fix, the shared module (`overlay/src/show-motion.js`, the design
+    site's "How a change moves"), so it reads the same everywhere. (Owner, 2026-11-20: "all fix have to be shown as
+    transitions … which showcase what plumber does and help understand".)
 
 ## 8. Look (summary; the rules are in `visual-language.md`)
 
