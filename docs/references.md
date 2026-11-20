@@ -288,3 +288,8 @@ All free under the Unsplash License, hotlinked from images.unsplash.com as Unspl
 - Why: two pricing cards with structures unlike the others: a name-led card with no box, and a card that puts its
   button before its price.
 - What it changed: two of the first five specimens (`generator/specimens/pricing-card/`).
+
+## 2026-11-20 · Interface Craft's design critique (asked for by the owner)
+- **What:** the Design Critique method in the interface-craft skill (Josh Puckett), `~/.claude/skills/interface-craft/design-critique.md`.
+- **Why:** the owner asked for it on Blueprint's open UX calls ("please ask /interface-craft about the ux thing").
+- **What it changed:** its read put one count first: the bar counted places (197) while Fix stepped through fixes (49), so the number could not be worked through and did not drop. The owner chose its ranked list: count fixes, roll the count as fixes land, room under the page for the bar, a Space hint at the moment a click lands on a note. Used in [the fifth batch](journey.md#the-fifth-batch-one-count-room-for-the-bar-2026-11-20).

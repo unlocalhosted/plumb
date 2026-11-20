@@ -2875,6 +2875,24 @@ field is empty). The table of five writes, before and after. The Next table: eig
   page's first heading (U5), the JSON output's repeated fields (U36), the homepage's first sentence (U43), a way from
   the overlay to the project page (U38), the hairline fix that is itself hard-coded (U42).
 - **Not traced yet:** counts that change with no edit (U18).
+
+### The fifth batch: one count, room for the bar (2026-11-20)
+
+- **The itch:** the tester's "All concerns 200" that nobody could start on, and one card counted three ways (2, 7
+  and 11). A design critique the owner asked for (interface-craft's) named the cause: the bar counted places, Fix
+  counted fixes, and the card counted places again, so no number could be worked through or went down.
+- **What the owner chose:** count fixes; roll the number as fixes land; make room under the page for the bar; say
+  "hold Space" at the moment a click hits a note.
+- **The fix and the proof:** on the Ledger screen the bar reads 80 (it said 197) and Fix "1 of 80"; the card says
+  "N fixes here". A change in the count rolls in the direction it travels; after a write that reloads the page it
+  rolls from the count remembered in the tab (checked: remembered 81, landed on 80, rolled). While the bar shows,
+  `<html>` gets the bar's height as padding at its foot (the page grew 82px, its last words ended at 686px above the
+  bar at 730; closing left no style attribute). The first click in a tab that lands on a note opens its fix with "To
+  click the page itself, hold Space."
+- **Left:** the new count shows for about half a second before it rolls (it waits to be sure the reading has
+  settled); counts that change with no edit (U18) are still not traced.
+- **Media hooks:** the bar before (197, `docs/qa/shots/2026-11-20/u03-concern-list.jpg`) and now (80); the roll as a
+  fix lands.
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
 - Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".
@@ -4490,6 +4508,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- Blueprint counts what you work through: one number in fixes, the same in the bar, Fix and the card, rolling down as fixes land; the page gets room under the bar ([entry](#the-fifth-batch-one-count-room-for-the-bar-2026-11-20)).
 - Picking a concern in Blueprint names its notes on the page, one pin per kind with how many; the X-ray card's box drawing shows one number per side; leaving Fix puts the page back where it was ([entry](#the-third-batch-of-fixes-from-the-blueprint-walk-2026-11-20)).
 - Blueprint's notes say what is wrong in plain words; History, Help and Setup open above the bar; Fix brings an element in below a sticky header with its choice beside it; Clean up's Copy and Close are in view ([entry](#the-second-batch-of-fixes-from-the-blueprint-walk-2026-11-20)).
 - In Blueprint, a pin no longer covers the words it marks and can be pointed at; the X-ray card always shows its own element's note, stays above the bar and holds still as you reach for it; Escape closes only the box you are in ([entry](#blueprint-walked-by-a-tester-and-fixed-as-it-went-2026-11-20)).
