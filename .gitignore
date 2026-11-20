@@ -52,3 +52,4 @@ docs/films/*-draft/
 /generator/sandbox/installed.json
 /generator/sandbox/results.jsonl
 /generator/sandbox/shots/
+/generator/sandbox/declared-deps.txt
