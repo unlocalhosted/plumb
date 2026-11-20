@@ -48,10 +48,6 @@ export const SHOW_CSS = `
   ${HUES.map((h) => `.sh-chip[data-tone="${h}"], .sh-mark[data-tone="${h}"] { --hue: var(--pl-${h}); --hue-soft: var(--pl-${h}-soft); --hue-ink: var(--pl-${h}-ink); }`).join('\n  ')}
 
   .sh-marks { position: fixed; inset: 0; pointer-events: none; z-index: 1; }
-  .sh-spot { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 0; opacity: 0; transition: opacity 360ms var(--pl-ease-out); }
-  .sh-spot[data-on] { opacity: 1; }
-  .sh-spot .sh-dim { fill: rgb(18 16 24 / .42); }
-
   .sh-mark { position: fixed; box-sizing: border-box; border-radius: 3px; }
   .sh-mark.line { background: color-mix(in oklab, var(--hue) 14%, transparent); box-shadow: inset 0 -1px 0 0 color-mix(in oklab, var(--hue) 70%, transparent); }
   .sh-mark.pad { background-image: repeating-linear-gradient(45deg, color-mix(in oklab, var(--hue) 60%, transparent) 0 1px, transparent 1px 6px); background-color: color-mix(in oklab, var(--hue) 12%, transparent); }
@@ -112,27 +108,14 @@ export function roll(chip, to) {
 
 // The marks: bands over a role's places, kept on them while the page moves under the show
 export class Marks {
-  #layer; #frame = 0; #bands = []; #spot; #holes;
+  #layer; #frame = 0; #bands = [];
   constructor(root) {
-    // the spotlight (owner, 2026-11-20, for demo videos): the page dimmed while the show plays, with a hole over each
-    // place the step in hand is changing, so the eye goes to what moves. Under the marks; the bar stays above it
-    this.#spot = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    this.#spot.setAttribute('class', 'sh-spot'); this.#spot.setAttribute('aria-hidden', 'true');
-    // one path: the window, with a rounded hole per place cut out by the even-odd rule (a mask by id does not resolve
-    // inside the overlay's shadow root, and the dim never drew)
-    this.#spot.innerHTML = '<path class="sh-dim" fill-rule="evenodd"/>';
-    this.#holes = this.#spot.querySelector('.sh-dim');
     this.#layer = Object.assign(document.createElement('div'), { className: 'sh-marks' });
     this.#layer.setAttribute('aria-hidden', 'true');
-    root.append(this.#spot, this.#layer);
+    root.append(this.#layer);
   }
-  spotlight(on) { this.#spot.toggleAttribute('data-on', !!on && !still()); if (on) this.#cut([]); }
-  #cut(rects) {
-    const W = innerWidth, H = innerHeight, pad = 8, rr = 10;
-    const hole = (r) => { const x = r.left - pad, y = r.top - pad, w = Math.max(0, r.width + pad * 2), h = Math.max(0, r.height + pad * 2), k = Math.min(rr, w / 2, h / 2);
-      return `M${x + k} ${y}H${x + w - k}A${k} ${k} 0 0 1 ${x + w} ${y + k}V${y + h - k}A${k} ${k} 0 0 1 ${x + w - k} ${y + h}H${x + k}A${k} ${k} 0 0 1 ${x} ${y + h - k}V${y + k}A${k} ${k} 0 0 1 ${x + k} ${y}Z`; };
-    this.#holes.setAttribute('d', `M0 0H${W}V${H}H0Z` + rects.map(hole).join(''));
-  }
+  // bands: [{ rect: () => DOMRect-like, kind: 'line'|'pad'|'gap'|'mar'|'ink'|'measure', to? }]. A measure band is a
+  // space drawn as the reference draws it (hairlines, gutter I-beam, live pill); `to` is the size it lands on
   show(bands, hue) {
     cancelAnimationFrame(this.#frame);
     this.#bands = bands;
@@ -145,7 +128,6 @@ export class Marks {
     const lefts = bands.filter((b) => b.kind === 'measure').map((b) => b.rect()?.left).filter(Number.isFinite);
     const gutter = lefts.length ? Math.max(58, Math.min(...lefts) - 16) : 0;
     const draw = () => {
-      if (this.#spot.hasAttribute('data-on')) this.#cut(this.#bands.map((b) => b.rect?.()).filter((r) => r && r.width > 0.5 && r.height > 0.5 && r.bottom > 0 && r.top < innerHeight));
       this.#bands.forEach((b, i) => {
         const r = b.rect(), els = parts[i];
         const off = !r || r.width < 0.5 || (b.kind !== 'measure' && r.height < 0.5) || r.bottom < 0 || r.top > innerHeight;
@@ -166,7 +148,7 @@ export class Marks {
   }
   lift() { this.#layer.dataset.phase = 'out'; }
   clear() { cancelAnimationFrame(this.#frame); this.#frame = 0; this.#bands = []; this.#layer.replaceChildren(); delete this.#layer.dataset.phase; }
-  remove() { this.clear(); this.spotlight(false); this.#layer.remove(); this.#spot.remove(); }
+  remove() { this.clear(); this.#layer.remove(); }
 }
 
 // The page's own elements ease on the overlay's spring (the page can't read the overlay's tokens: the curve is written
@@ -191,10 +173,6 @@ export function ease(el, set, { props = ['font-size', 'line-height', 'letter-spa
 // while the measures follow the page live, a hold on the landed values, and the marks lift. One pass, one beat
 export const SWEEP = { read: 1100, land: 900 };
 export async function playAll(steps, { marks, signal } = {}) {
-  marks?.spotlight(true);
-  try { await playAllSteps(steps, { marks, signal }); } finally { marks?.spotlight(false); }
-}
-async function playAllSteps(steps, { marks, signal }) {
   await bringIntoView(steps.flatMap((s) => s.bands?.() ?? []), signal);
   const quick = signal?.aborted || still();
   for (const s of steps) s.chip?.setAttribute('data-on', '');
@@ -222,10 +200,6 @@ async function bringIntoView(bands, signal) {
   if (smooth) await wait(BEAT.travel, signal);
 }
 export async function play(steps, { marks, signal, onStep } = {}) {
-  marks?.spotlight(true);
-  try { await playSteps(steps, { marks, signal, onStep }); } finally { if (!signal?.aborted) await wait(BEAT.hold, signal); marks?.spotlight(false); }
-}
-async function playSteps(steps, { marks, signal, onStep }) {
   for (let i = 0; i < steps.length; i++) {
     const s = steps[i];
     await bringIntoView(s.bands?.(), signal);
