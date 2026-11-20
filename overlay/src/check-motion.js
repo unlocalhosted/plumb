@@ -18,6 +18,7 @@ import { lerp, at, make, ringAround, pillOver, pillLeft, box, shadowReach } from
 import { CRAFT } from './checks/craft.js';
 import { SLOP } from './checks/slop.js';
 import { WORDS } from './checks/words.js';
+import { STATES } from './checks/states.js';
 const CSS = `
   .ck-scene { position: absolute; inset: 0; display: grid; place-items: center; }
   .btn2 { display: inline-flex; align-items: center; height: 40px; padding: 0 18px; border-radius: 9px; color: #fff; font: 600 14px system-ui; }
@@ -143,7 +144,7 @@ export const CHECK_SPECS = {
 };
 
 // the other concerns' examples: each entry's scene, beside its words (checks/<concern>.js)
-for (const [id, ex] of Object.entries({ ...CRAFT, ...SLOP, ...WORDS })) CHECK_SPECS[id] = ex.scene;
+for (const [id, ex] of Object.entries({ ...CRAFT, ...SLOP, ...WORDS, ...STATES })) CHECK_SPECS[id] = ex.scene;
 
 // a label is words, not markup: "<Button>" is shown, not made
 const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');

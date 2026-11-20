@@ -636,7 +636,7 @@ Object.assign(CRAFT, {
       const bx = s.querySelector('.bx'), cards = [...s.querySelectorAll('.cd')], [clip, seam, pill] = G(s, 'vl', 'vl', 'pill');
       // the edge that cuts the row, and the end of the last card: cut right on the gap, the row looks finished
       return { labels: ['cut on the gap', 'a card crosses the edge'], guides: [{ el: clip, kind: 'v' }, { el: seam, kind: 'v' }, { el: pill, kind: 'pill' }],
-        at: (p) => { bx.style.width = p ? '270px' : '236px'; bx.style.maskImage = p ? 'linear-gradient(to right, #000 78%, transparent)' : 'none'; },
+        at: (p) => { bx.style.width = p ? '284px' : '236px'; bx.style.maskImage = p ? 'linear-gradient(to right, #000 86%, transparent)' : 'none'; },
         track: () => { const B = box(bx, s), c = box(cards[1], s); lineV(clip, B.r, B.t - 12, B.b + 12); lineV(seam, c.r, B.t - 12, B.b + 12); at(pill, `left:${B.r}px;top:${B.b + 26}px`); } };
     },
   },
