@@ -9,11 +9,13 @@
   header h1 { font-size: 18px; margin: 0; } header p { margin: 4px 0 0; opacity: .65; font-size: 13px; }
   header button { margin-left: auto; font: 600 13px system-ui; padding: 8px 14px; border-radius: 10px; border: 0; background: #f24a9f; color: #fff; cursor: pointer; }
   #board { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(500px, 1fr)); gap: 22px; }
-  .tile h2 { font: 600 13px/1 system-ui; margin: 0 0 8px; } .tile h2 span { font-weight: 500; opacity: .55; }
+  .tile h2 { display: flex; align-items: center; gap: 6px; font: 600 13px/1 system-ui; margin: 0 0 8px; } .tile h2 span { font-weight: 500; opacity: .55; }
+  .tile h2 button { margin-left: auto; flex: none; font: 600 12px system-ui; padding: 6px 10px; border-radius: 8px; border: 0; background: #fff; color: #1c1b19; cursor: pointer; box-shadow: 0 1px 2px rgb(0 0 0 / .12); }
+  .tile h2 button:hover { background: #f24a9f; color: #fff; }
 </style>
 </head>
 <body>
-<header><div><h1>How a change moves, for each of Clean up’s steps</h1><p>Guides draw in, the page moves on the spring, the number rolls and lands, the guides go.</p></div><button id="play">Play again</button></header>
+<header><div><h1>How a change moves, for each of Clean up’s steps</h1><p>Guides draw in, the page moves on the spring, the number rolls and lands, the guides go.</p></div><button id="play">Play all</button></header>
 <div id="board"></div>
 <script type="module">
   import tokens from '../src/tokens.css?raw';
@@ -210,12 +212,14 @@
   ];
   const board = document.getElementById('board'), runs = [];
   for (const [title, sub, build] of TILES) {
-    const sec = document.createElement('section'); sec.className = 'tile'; sec.innerHTML = `<h2>${title} <span>${sub}</span></h2>`;
+    const sec = document.createElement('section'); sec.className = 'tile'; sec.innerHTML = `<h2>${title} <span>${sub}</span><button type="button">▶ Play</button></h2>`;
     const host = document.createElement('div'); sec.append(host); board.append(sec);
     const root = host.attachShadow({ mode: 'open' }); root.innerHTML = `<style>${css}</style><div class="stage"></div>`;
     const stage = root.querySelector('.stage'); const spec = build(stage);
     for (const g of stage.querySelectorAll('.g')) g.style.opacity = 0;
-    runs.push(async () => { spec.reset(); stage.getAnimations({ subtree: true }).forEach((a) => a.cancel()); for (const g of stage.querySelectorAll('.g')) g.style.opacity = 0; await wait(300); for (const g of stage.querySelectorAll('.g')) g.style.opacity = ''; await play(stage, spec); });
+    const run = async () => { spec.reset(); stage.getAnimations({ subtree: true }).forEach((a) => a.cancel()); for (const g of stage.querySelectorAll('.g')) g.style.opacity = 0; await wait(300); for (const g of stage.querySelectorAll('.g')) g.style.opacity = ''; await play(stage, spec); };
+    runs.push(run);
+    sec.querySelector('h2 button').onclick = run; // each tile plays on its own
   }
   const all = () => runs.forEach((r, i) => setTimeout(r, i * 260));
   document.getElementById('play').onclick = all;
