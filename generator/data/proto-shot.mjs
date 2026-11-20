@@ -4,7 +4,7 @@ import { chromium } from 'playwright';
 const [proto = 'scrub', form = 'beui/slide-action-button'] = process.argv.slice(2);
 const b = await chromium.launch(); const p = await b.newPage({ viewport: { width: 1280, height: 1100 }, deviceScaleFactor: 2 });
 await p.goto(`http://localhost:4399/atoms.html?atom=buy&proto=${proto}`, { waitUntil: 'networkidle' }); await p.waitForTimeout(3000);
-const card = p.locator(`[data-form="${form}"]`); await card.scrollIntoViewIfNeeded(); await p.waitForTimeout(300);
+const card = p.locator(`[data-form="${form}"]`); await card.locator('.atom-stage').evaluate((e) => e.scrollIntoView({ block: 'center' })); await p.waitForTimeout(300);
 const g = await p.evaluate((form) => { const s = document.querySelector(`[data-form="${form}"]`); const st = s.querySelector('.atom-stage'); const e = st.querySelector('button,[role=button]') ?? st.firstElementChild; const r = e.getBoundingClientRect(), W = st.firstElementChild.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2, w: W.width, gesture: s.dataset.gesture }; }, form);
 await p.mouse.move(g.x, g.y - 80); await p.mouse.move(g.x, g.y, { steps: 6 }); await p.waitForTimeout(250);
 await p.mouse.down();

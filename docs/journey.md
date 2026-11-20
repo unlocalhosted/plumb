@@ -3217,6 +3217,40 @@ A real version might glow around the words instead of over them.
 **Media hooks.** The slide mid-gesture with its words glowing, then the same card after with its line
 (`node generator/data/proto-shot.mjs thermal beui/slide-action-button` writes both).
 
+### 47. Prototype C: a dial through the button's states (2026-11-20)
+
+**The itch.** A button lives through several states: at rest, pointed at, pressed, partway through, done. A fault
+often shows up in only one of them. Prototypes A and B tie faults to a moment in time. The third idea the owner
+chose ties them to the state instead.
+
+**What it does.** Open the atoms page with `?proto=dial`. Under every button sits a knob with five pips around it, one
+per state. At rest is caught as the page settles, and pointed at when the pointer rests on the button before its first
+press. Pressed, mid-gesture and done are caught the first time you use it. A pip turns mint when plumber finds the
+state right and coral when it finds it wrong, so you can see the button's whole life at a glance. Turn the knob (drag
+it, press a pip, or use the arrow keys) and the button freezes in that state, with the main fault hatched on it and
+one line saying what is wrong. Esc, or using the button again, hands it back.
+
+**What we chose and why.**
+- For a hold or a slide, "mid-gesture" is halfway through. For a plain press it is the moment the button answers
+  (its wait, its question), between letting go and done.
+- Only faults you can see on the button's face count, as in prototype B. With every note counted, a shadow's tint
+  that is the same in every state turned all five pips coral, and the dial told the states apart by nothing.
+- Pointed at is caught only before the first press. After it, press-then-confirm is still showing its question when
+  you point at it again, and that was being recorded as "pointed at".
+
+**The proof.** On crafting attention's buy button:
+- Slide to commit: four mint pips and one coral at mid-gesture. Frozen there, the words are hatched in coral and the
+  line reads "The fill covers 43% of these words".
+- Press, then confirm: coral at mid-gesture and done. Its question's words read at contrast 0, which matches its
+  verdict.
+- Hold to commit: right in every state.
+
+**Still open.** On press-then-confirm the fault sits on a part that is almost zero size while the button changes
+shape, so the hatch is a dot in the corner rather than on the words you read.
+
+**Media hooks.** The slide's dial turned to mid-gesture, the knob and the hatched words side by side
+(`node generator/data/proto-shot.mjs dial beui/slide-action-button`).
+
 ### 38. Alt and the X-ray card (2026-11-20)
 
 - **The itch:** holding Alt showed the old name tag outside Blueprint, and Alt-click opened the old element card with its heat and a dark spacing slider. Once the X-ray card took over, its pink note looked wrong. The owner on the note: "why is this black on muddy pink". On three new tints of it: "all of them look so ugly".
@@ -4887,6 +4921,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- Prototype C on the atoms page (?proto=dial): a knob under each button with a pip per state (at rest, pointed at, pressed, mid-gesture, done), mint or coral by what plumber finds; turning it freezes the button in that state with its fault hatched on it ([entry](#47-prototype-c-a-dial-through-the-buttons-states-2026-11-20)).
 - Prototype B on the atoms page (?proto=thermal): while you hold or slide a button, plumber's faults glow on the button itself, butter when brief and coral when they last, and one line after names the hottest moment ([entry](#46-prototype-b-heat-on-the-button-while-you-hold-it-2026-11-20)).
 - The eight standards behind each form's verdict were checked against Apple's, Material's, Nielsen's and WCAG's published pages; each source is now a link, two claims were corrected (Apple's 44 pt is its default size, not a minimum; Material's longest suggested motion is 500 ms), and no verdict changed ([entry](#45-checking-the-standards-against-their-published-pages-2026-11-20)).
 - Each form of a button now gets a verdict (works, needs work, breaks for some people), why it matters to the person using it, what to do, and which form to choose, judged against Apple's, Google's and WCAG's published standards by using each form for real four ways ([entry](#44-good-or-bad-and-which-to-choose-the-forms-judged-against-published-standards-2026-11-20)).

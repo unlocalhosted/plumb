@@ -97,6 +97,7 @@ export function mountAtoms({ Shipped, product }) {
   const proto = new URLSearchParams(location.search).get('proto');
   if (proto === 'scrub') import('./proto-scrub.js');
   if (proto === 'thermal') import('./proto-thermal.js');
+  if (proto === 'dial') import('./proto-dial.js');
   const want = new URLSearchParams(location.search).get('atom');
   const atom = product.atoms.find((x) => x.id === want) ?? product.atoms[0];
   createRoot(document.getElementById('root')).render(<Page Shipped={Shipped} product={product} atom={atom} />);
