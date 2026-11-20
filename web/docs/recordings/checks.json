@@ -1,0 +1,2472 @@
+{
+ "concerns": [
+  {
+   "id": "system",
+   "name": "Design system check",
+   "short": "Design system",
+   "toy": "grid"
+  },
+  {
+   "id": "craft",
+   "name": "Craft and polish",
+   "short": "Craft",
+   "toy": "alignment"
+  },
+  {
+   "id": "access",
+   "name": "Accessible and correct",
+   "short": "Accessible",
+   "toy": "access"
+  },
+  {
+   "id": "slop",
+   "name": "Anti-slop check",
+   "short": "Anti-slop",
+   "toy": "shadow"
+  },
+  {
+   "id": "words",
+   "name": "Words and clarity",
+   "short": "Words",
+   "toy": "type"
+  },
+  {
+   "id": "states",
+   "name": "States and behaviour",
+   "short": "States",
+   "toy": "switch"
+  }
+ ],
+ "checks": [
+  {
+   "id": "dead/color",
+   "concern": "system",
+   "name": "Theme tokens nothing uses",
+   "why": "Unused tokens make the theme harder to choose from.",
+   "where": "code",
+   "tile": null,
+   "fix": "If other apps use them, mark them published: decisions.….exported: true. Otherwise remove them."
+  },
+  {
+   "id": "existence/dead-class",
+   "concern": "system",
+   "name": "A class that makes no CSS",
+   "why": "Tailwind never made CSS for it, so the style it was meant to apply is missing and nothing warns you.",
+   "where": "code",
+   "tile": null,
+   "fix": "site.opaque ? Map each value to a complete class, e.g. …a', b: '$…b' }. : alternatives.length ? Did you mean $…\\).join(' or ')}? : Remove it, or define \\.$…\\ in a stylesheet."
+  },
+  {
+   "id": "existence/dead-var",
+   "concern": "system",
+   "name": "A variable that is never defined",
+   "why": "The browser drops a declaration whose variable doesn’t exist, so the value you meant never applies.",
+   "where": "code",
+   "tile": null,
+   "fix": "ranked?.action?.startsWith('Did you mean') ? ranked.action : Define $…, or use a token instead."
+  },
+  {
+   "id": "habits/focus-outline",
+   "concern": "access",
+   "name": "Focus outline removed",
+   "why": "Keyboard users lose track of focus, and forced-colors mode shows nothing.",
+   "where": "code",
+   "tile": null,
+   "fix": "Restore an outline on :focus-visible."
+  },
+  {
+   "id": "habits/hover-gate",
+   "concern": "access",
+   "name": "Hover styles that stick on touch",
+   "why": "Touch can leave a hover style stuck after a tap.",
+   "where": "code",
+   "tile": null,
+   "fix": "Use pointer-hover: (or wrap the rule in @media (hover: hover) and (pointer: fine))."
+  },
+  {
+   "id": "habits/logical-inline",
+   "concern": "access",
+   "name": "Left and right instead of start and end",
+   "why": "It doesn't mirror in right-to-left layouts.",
+   "where": "code",
+   "tile": null,
+   "fix": "Use …."
+  },
+  {
+   "id": "habits/no-ease-in",
+   "concern": "states",
+   "name": "Feedback that starts slowly (ease-in)",
+   "why": "Feedback to a person’s hand should begin immediately, without a slow start.",
+   "where": "code",
+   "tile": null,
+   "fix": "Use the project’s responsive easing decision instead of ease-in."
+  },
+  {
+   "id": "habits/overflow-clip",
+   "concern": "states",
+   "name": "overflow-hidden that breaks sticky",
+   "why": "It breaks position: sticky inside and still allows script scrolling.",
+   "where": "code",
+   "tile": null,
+   "fix": "Use overflow-clip if nothing scrolls it."
+  },
+  {
+   "id": "habits/overscroll-contain",
+   "concern": "states",
+   "name": "A scroll that leaks to the page",
+   "why": "Reaching its edge scrolls the page behind it.",
+   "where": "code",
+   "tile": null,
+   "fix": "Add overscroll-contain."
+  },
+  {
+   "id": "habits/safe-area-fallback",
+   "concern": "access",
+   "name": "Safe area with no fallback",
+   "why": "A safe-area environment variable needs a fallback so unavailable insets cannot invalidate the declaration.",
+   "where": "code",
+   "tile": null,
+   "fix": "Add a fallback: env(safe-area-inset-*, 0px), alongside the element’s own spacing."
+  },
+  {
+   "id": "habits/transition-named",
+   "concern": "states",
+   "name": "Transition on every property",
+   "why": "Name the properties that transition so an unrelated change does not start animating.",
+   "where": "code",
+   "tile": null,
+   "fix": "Replace all with the specific properties that should transition."
+  },
+  {
+   "id": "habits/viewport-dynamic",
+   "concern": "access",
+   "name": "100vh that jumps on phones",
+   "why": "Mobile toolbars change the viewport height.",
+   "where": "code",
+   "tile": null,
+   "fix": "Use dvh for a changing viewport, svh for the smallest, lvh for the largest."
+  },
+  {
+   "id": "imitation/{Component}",
+   "concern": "system",
+   "name": "A component rebuilt by hand",
+   "why": "A copy misses the component’s states, its focus ring and every fix made to it later.",
+   "where": "code",
+   "tile": null,
+   "fix": "Use <…> from …."
+  },
+  {
+   "id": "ownership/{Component}",
+   "concern": "system",
+   "name": "A component’s own styling overridden",
+   "why": "The component decides this itself; a style laid over it from outside breaks when the component changes.",
+   "where": "code",
+   "tile": null,
+   "fix": "…. : $… has no variant for this. Ask for one, or wrap it in an element you style.} Defined in …."
+  },
+  {
+   "id": "provenance/arbitrary",
+   "concern": "system",
+   "name": "Spacing not in your theme",
+   "why": "Off-scale spacing makes layouts drift apart and can't be changed from the theme.",
+   "where": "code",
+   "tile": "Padding",
+   "fix": "Plumber swaps the hard-coded value for your token, on the element and in your code, with one Undo."
+  },
+  {
+   "id": "provenance/color",
+   "concern": "system",
+   "name": "Colour not in your theme",
+   "why": "A raw colour won't follow theme or colour-scheme changes.",
+   "where": "code",
+   "tile": "Colour",
+   "fix": "Plumber swaps the hard-coded value for your token, on the element and in your code, with one Undo."
+  },
+  {
+   "id": "provenance/color/by-value",
+   "concern": "system",
+   "name": "Same value as a token, hard-coded",
+   "why": "If the token changes, this copy stays behind.",
+   "where": "code",
+   "tile": "Colour",
+   "fix": "Plumber swaps the hard-coded value for your token, on the element and in your code, with one Undo."
+  },
+  {
+   "id": "provenance/color/framework",
+   "concern": "system",
+   "name": "From Tailwind, not your theme",
+   "why": "Your theme has its own steps; Tailwind’s defaults sit outside them and won’t change when your theme does.",
+   "where": "code",
+   "tile": "Colour",
+   "fix": "Plumber swaps the hard-coded value for your token, on the element and in your code, with one Undo."
+  },
+  {
+   "id": "provenance/color/tier",
+   "concern": "system",
+   "name": "A raw token where a named one fits",
+   "why": "A named token says what a value is for, so it changes with the design; a raw one doesn't.",
+   "where": "code",
+   "tile": "Colour",
+   "fix": "Plumber swaps the hard-coded value for your token, on the element and in your code, with one Undo."
+  },
+  {
+   "id": "provenance/elevation",
+   "concern": "system",
+   "name": "Shadow not in your theme",
+   "why": "A hand-written shadow won't match the other surfaces or follow theme changes.",
+   "where": "code",
+   "tile": "Shadows",
+   "fix": "Plumber swaps the hard-coded value for your token, on the element and in your code, with one Undo."
+  },
+  {
+   "id": "provenance/motion",
+   "concern": "system",
+   "name": "Timing not in your theme",
+   "why": "A one-off duration or curve makes motion feel inconsistent and ignores the team's timing.",
+   "where": "code",
+   "tile": "Timing",
+   "fix": "Plumber swaps the hard-coded value for your token, on the element and in your code, with one Undo."
+  },
+  {
+   "id": "provenance/radius",
+   "concern": "system",
+   "name": "Corner not in your theme",
+   "why": "Off-scale corners make surfaces look unrelated and can't be changed from the theme.",
+   "where": "code",
+   "tile": "Corners",
+   "fix": "Plumber swaps the hard-coded value for your token, on the element and in your code, with one Undo."
+  },
+  {
+   "id": "provenance/type",
+   "concern": "system",
+   "name": "Type not in your theme",
+   "why": "Sizes and weights off the type scale break the reading rhythm and can't be changed from the theme.",
+   "where": "code",
+   "tile": "Text size",
+   "fix": "Plumber swaps the hard-coded value for your token, on the element and in your code, with one Undo."
+  },
+  {
+   "id": "provenance/z",
+   "concern": "system",
+   "name": "Layer order not in your theme",
+   "why": "A raw z-index competes with every other layer; named layers keep stacking predictable.",
+   "where": "code",
+   "tile": null,
+   "fix": "choices (nearest tokens below and above, with amount and reason), per-site edit."
+  },
+  {
+   "id": "craft/concentric-radius",
+   "concern": "craft",
+   "name": "Corner doesn’t match its parent",
+   "why": "Inner radius = outer radius minus the padding. Then the curves line up.",
+   "where": "page",
+   "tile": "Corners",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/inner-outer-spacing",
+   "concern": "craft",
+   "name": "Group falls apart",
+   "why": "People see things that are close together as one group.",
+   "where": "page",
+   "tile": "Gap",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/text-opacity",
+   "concern": "craft",
+   "name": "Faded with opacity",
+   "why": "Opacity changes with whatever is behind the text.",
+   "where": "page",
+   "tile": "Colour",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/half-pixel",
+   "concern": "craft",
+   "name": "Blurry text",
+   "why": "Text blur when they sit between two pixels.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "craft/hairline",
+   "concern": "craft",
+   "name": "Line too heavy",
+   "why": "A hairline should be one screen pixel thick.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "craft/image-outline",
+   "concern": "craft",
+   "name": "Image blends into the page",
+   "why": "A faint inner outline gives it an edge.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "craft/layered-shadow",
+   "concern": "craft",
+   "name": "Shadow is one big blur",
+   "why": "Real shadows have a sharp part and a soft part.",
+   "where": "page",
+   "tile": "Shadows",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/scale-from-zero",
+   "concern": "craft",
+   "name": "Grows from nothing",
+   "why": "Start near full size, at 0.95, and fade in.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "craft/z-index-war",
+   "concern": "craft",
+   "name": "z-index too high",
+   "why": "Big numbers fight other components. Give the component its own layer instead.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "craft/content-align",
+   "concern": "craft",
+   "name": "Text off the column",
+   "why": "Line up the words, not the boxes. Let the background stick out.",
+   "where": "page",
+   "tile": "Shared edges",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/button-padding",
+   "concern": "craft",
+   "name": "Sides too tight",
+   "why": "Words are wide, so equal padding looks cramped left and right.",
+   "where": "page",
+   "tile": "Padding",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/icon-side",
+   "concern": "craft",
+   "name": "Too much space by the icon",
+   "why": "Icons carry their own space inside them.",
+   "where": "page",
+   "tile": "Padding",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/measure",
+   "concern": "craft",
+   "name": "Lines too long",
+   "why": "Short lines are easier to follow back to the start.",
+   "where": "page",
+   "tile": "Line length",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/leading",
+   "concern": "craft",
+   "name": "Lines too close",
+   "why": "Bigger text needs less line height, smaller text more.",
+   "where": "page",
+   "tile": "Line spacing",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/tracking",
+   "concern": "craft",
+   "name": "Big text too loose",
+   "why": "Small capitals need a little more space. Big text needs a little less.",
+   "where": "page",
+   "tile": "Letter spacing",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/tabular-nums",
+   "concern": "craft",
+   "name": "Numbers don’t line up",
+   "why": "Tabular numbers make every digit the same width.",
+   "where": "page",
+   "tile": "Number columns",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/heading-widow",
+   "concern": "words",
+   "name": "One word on the last line",
+   "why": "Balanced lines look intended.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "craft/one-light",
+   "concern": "craft",
+   "name": "Shadow from the wrong side",
+   "why": "Every shadow on a page should come from the same light.",
+   "where": "page",
+   "tile": "Shadows",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/border-on-shadow",
+   "concern": "craft",
+   "name": "Border fights the shadow",
+   "why": "A see-through border blends with what’s behind it.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "craft/contrast",
+   "concern": "access",
+   "name": "Hard to read",
+   "why": "Measured with APCA, which tracks what people can actually read.",
+   "where": "page",
+   "tile": "Disabled",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/words-on-layers",
+   "concern": "craft",
+   "name": "Words lose their ground",
+   "why": "Words have to change with what is under them: a fill or layer that slides beneath them takes their contrast with it.",
+   "where": "page",
+   "tile": "Colour",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/disabled-contrast",
+   "concern": "access",
+   "name": "Disabled text unreadable",
+   "why": "Opacity fades the words along with the button.",
+   "where": "page",
+   "tile": "Disabled",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/hit-target",
+   "concern": "access",
+   "name": "Too small to tap",
+   "why": "The tap area can be bigger than what’s drawn.",
+   "where": "page",
+   "tile": "Tap target",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/media-size",
+   "concern": "craft",
+   "name": "One size off",
+   "why": "Different sizes in one list look like a mistake.",
+   "where": "page",
+   "tile": "Controls",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/image-fit",
+   "concern": "craft",
+   "name": "Picture can be stretched",
+   "why": "Its box is set on both sides, and a picture is pulled to fill whatever box it is given.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "craft/flex-min",
+   "concern": "states",
+   "name": "Text can never be cut off",
+   "why": "A flex item is never narrower than its longest line. A longer name or a narrower screen pushes the rest of the row out.",
+   "where": "page",
+   "tile": "Controls",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/image-ground",
+   "concern": "craft",
+   "name": "Words rely on the picture",
+   "why": "A picture can load late, or not at all. Then the words sit on the colour under it.",
+   "where": "page",
+   "tile": "Colour",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/sticky-room",
+   "concern": "craft",
+   "name": "Set to stick, but can’t",
+   "why": "A sticky element moves only inside its parent’s box. Stretched to the same height, it scrolls away with the page.",
+   "where": "page",
+   "tile": "Baseline",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/fixed-height",
+   "concern": "states",
+   "name": "Text can outgrow its box",
+   "why": "A box that holds text sets its least height, not its exact height: text grows downward.",
+   "where": "page",
+   "tile": "Controls",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/scroll-on-demand",
+   "concern": "craft",
+   "name": "Scrollbar always shown",
+   "why": "A scrollbar says there is more. Set to scroll, it is drawn whether or not there is.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "craft/declared-gap",
+   "concern": "craft",
+   "name": "Gap set by left-over space",
+   "why": "The distance between neighbours is a decision. Left to whatever space remains, it closes to nothing.",
+   "where": "page",
+   "tile": "Gap",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/list-wrap",
+   "concern": "craft",
+   "name": "List can run off its row",
+   "why": "A flex row does not wrap unless it is told to, and a list has whatever length its data has.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "craft/image-stretch",
+   "concern": "craft",
+   "name": "Picture can be pulled tall",
+   "why": "A flex row stretches its items to its own height, and a picture given only a width is stretched with them.",
+   "where": "page",
+   "tile": "Baseline",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/background-tile",
+   "concern": "craft",
+   "name": "Background photo can repeat",
+   "why": "A background repeats unless it is told not to. A pattern is meant to; a photo is one picture.",
+   "where": "page",
+   "tile": "Colour",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/fixed-column",
+   "concern": "craft",
+   "name": "Fixed column on every screen",
+   "why": "A fixed column needs a one-column form where it no longer fits. Keep the columns from …px up.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "craft/truncate-intent",
+   "concern": "words",
+   "name": "Cut off, no way to see it",
+   "why": "Put the full text in a title or a tooltip.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "craft/scrollbar-gutter",
+   "concern": "craft",
+   "name": "Jumps when it scrolls",
+   "why": "A stable gutter keeps room for the scrollbar.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "craft/bold-hover",
+   "concern": "craft",
+   "name": "Row jumps on hover",
+   "why": "Bold text is wider than regular text.",
+   "where": "page",
+   "tile": "Weight",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/hanging-quote",
+   "concern": "words",
+   "name": "Quote mark inside the edge",
+   "why": "Hang the quote outside so the letters line up.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "craft/caps-case",
+   "concern": "craft",
+   "name": "Punctuation sits low",
+   "why": "The font’s case feature lifts them.",
+   "where": "page",
+   "tile": "Number columns",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/gradient-space",
+   "concern": "craft",
+   "name": "Gradient goes grey",
+   "why": "Mixing in OKLCH keeps the colour bright.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "craft/input-zoom",
+   "concern": "access",
+   "name": "Zooms on iPhone",
+   "why": "Safari zooms in when the field is focused, and stays zoomed.",
+   "where": "page",
+   "tile": "Text size",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/anchor-offset",
+   "concern": "craft",
+   "name": "Hidden under the header",
+   "why": "scroll-margin-top leaves room for the header.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "craft/middle-truncate",
+   "concern": "words",
+   "name": "Path cut at the wrong end",
+   "why": "Cut paths and ids in the middle.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "craft/text-wrap-role",
+   "concern": "words",
+   "name": "Ragged paragraph",
+   "why": "Pretty wrapping avoids a lonely last word.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "craft/continuous-corners",
+   "concern": "craft",
+   "name": "Corners could be smoother",
+   "why": "Curvature that eases in looks gentler than a circle’s arc.",
+   "where": "page",
+   "tile": "Corners",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/optical-sizing",
+   "concern": "craft",
+   "name": "Optical size turned off",
+   "why": "With optical size on, small text gets sturdier shapes and big text finer ones.",
+   "where": "page",
+   "tile": "Number columns",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/tinted-shadow",
+   "concern": "craft",
+   "name": "Grey shadow on colour",
+   "why": "Real shadows on colour take the colour, darker.",
+   "where": "page",
+   "tile": "Shadows",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/eased-scrim",
+   "concern": "craft",
+   "name": "Scrim has a hard edge",
+   "why": "An eased fade (more stops, dropping fast then slow) has no visible edge.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "craft/pure-black-white",
+   "concern": "craft",
+   "name": "Pure white area",
+   "why": "Your other surfaces are tinted; this one escaped.",
+   "where": "page",
+   "tile": "Colour",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/content-size",
+   "concern": "craft",
+   "name": "Fixed width crushes its words",
+   "why": "Fixed sizes break with real content and translations.",
+   "where": "page",
+   "tile": "Controls",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/baseline-align",
+   "concern": "craft",
+   "name": "Words sit at different heights",
+   "why": "Tops and centres of different sizes don’t line up to the eye; baselines do.",
+   "where": "page",
+   "tile": "Baseline",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/icon-cap",
+   "concern": "craft",
+   "name": "Icon sits off the text",
+   "why": "Centring on the line box puts icons low; the eye reads the capitals’ middle.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "craft/trim-leading",
+   "concern": "craft",
+   "name": "Padding looks bigger than it is",
+   "why": "A text box carries invisible space above and below the letters.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "craft/heading-lead",
+   "concern": "craft",
+   "name": "Heading sits nearer what came before",
+   "why": "A heading belongs to what it introduces: give it more space above than below.",
+   "where": "page",
+   "tile": "Margin",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/pair-spacing",
+   "concern": "craft",
+   "name": "Heading drifts away from its text",
+   "why": "Past about one line of the heading, the text stops reading as the heading’s.",
+   "where": "page",
+   "tile": "Margin",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/card-optical-padding",
+   "concern": "craft",
+   "name": "Card looks taller on top",
+   "why": "The first line carries space above its capitals, so equal padding looks bigger on top.",
+   "where": "page",
+   "tile": "Padding",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/text-collision",
+   "concern": "access",
+   "name": "Words run into other words",
+   "why": "Two texts that touch read as one, or not at all.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "craft/weight-levels",
+   "concern": "craft",
+   "name": "One weight too many",
+   "why": "Two or three weights make a clear hierarchy; every extra level weakens the others.",
+   "where": "page",
+   "tile": "Weight",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/grey-levels",
+   "concern": "craft",
+   "name": "One grey too many",
+   "why": "Two or three text colours make a clear hierarchy; a fourth reads as a mistake.",
+   "where": "page",
+   "tile": "Colour",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/rhythm",
+   "concern": "craft",
+   "name": "Off the page’s rhythm",
+   "why": "Repeating a few gaps down the page is what makes it feel even.",
+   "where": "page",
+   "tile": "Gap",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/elevation-ladder",
+   "concern": "craft",
+   "name": "Shadow a step too close",
+   "why": "Elevation reads in clear steps. Two heights this close look like one height done twice.",
+   "where": "page",
+   "tile": "Shadows",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/optical-centre",
+   "concern": "craft",
+   "name": "Icon looks off-centre",
+   "why": "The eye centres a shape by its weight, not its box.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "craft/overshoot",
+   "concern": "craft",
+   "name": "Round icon looks smaller",
+   "why": "A circle covers less than a square of the same width, so it reads smaller.",
+   "where": "page",
+   "tile": "Controls",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/stroke-weight",
+   "concern": "craft",
+   "name": "Icon stroke doesn’t match",
+   "why": "An icon’s line should weigh what the words beside it weigh.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "craft/scroll-cue",
+   "concern": "craft",
+   "name": "Hidden content, no hint",
+   "why": "Without an edge cue, people think they’ve seen everything.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "craft/press-feedback",
+   "concern": "states",
+   "name": "No response to a press",
+   "why": "A press that shows nothing feels like it didn’t register.",
+   "where": "page",
+   "tile": "Timing",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/exit-faster",
+   "concern": "states",
+   "name": "Leaves as slowly as it came",
+   "why": "People are done with it when they close it. Waiting feels slow.",
+   "where": "page",
+   "tile": "Timing",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/interruptible",
+   "concern": "states",
+   "name": "Can’t reverse midway",
+   "why": "A transition reverses from where it is.",
+   "where": "page",
+   "tile": "Timing",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/row-lines",
+   "concern": "craft",
+   "name": "Plans don’t line up",
+   "why": "Plans are compared by reading straight across; a part that drifts down breaks the comparison.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "craft/shared-edges",
+   "concern": "craft",
+   "name": "Lines start on different edges",
+   "why": "A card is one column: lines that start on one edge read as one thing.",
+   "where": "page",
+   "tile": "Shared edges",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/action-fit",
+   "concern": "craft",
+   "name": "Buttons differ across plans",
+   "why": "The same action drawn the same way across a row reads as the same choice.",
+   "where": "page",
+   "tile": "Colour",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/column-edge",
+   "concern": "craft",
+   "name": "Off the line",
+   "why": "Rows of one column share one edge. A few pixels off reads as a mistake.",
+   "where": "page",
+   "tile": "Shared edges",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/sibling-match",
+   "concern": "craft",
+   "name": "Corners don’t match",
+   "why": "Mixed corners make one set of pieces look like two.",
+   "where": "page",
+   "tile": "Controls",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/dark-elevation",
+   "concern": "craft",
+   "name": "Shadow does nothing in dark",
+   "why": "In the dark, a surface rises by getting lighter, or by a light edge on top.",
+   "where": "page",
+   "tile": "Colour",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/dark-weight",
+   "concern": "craft",
+   "name": "Light text looks heavy on dark",
+   "why": "Light text glows into a dark ground. Smooth it, or lighten the weight in dark.",
+   "where": "page",
+   "tile": "Weight",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/skeleton-match",
+   "concern": "states",
+   "name": "Skeleton is the wrong size",
+   "why": "When the real content lands, everything under it jumps.",
+   "where": "page",
+   "tile": "Controls",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/spinner-timing",
+   "concern": "states",
+   "name": "Spinner flashes",
+   "why": "A blink is worse than nothing. Wait 200ms, then keep it up for 500ms.",
+   "where": "page",
+   "tile": "Timing",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/menu-pointerdown",
+   "concern": "states",
+   "name": "Menu opens late",
+   "why": "Opening on the press feels instant, and lets people press, drag and release to pick.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "craft/tooltip-delay",
+   "concern": "states",
+   "name": "craft/tooltip-delay",
+   "why": "",
+   "where": "page",
+   "tile": "Timing",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/palette-motion",
+   "concern": "craft",
+   "name": "Shortcut opens slowly",
+   "why": "A shortcut people use all day shouldn’t make them wait on motion.",
+   "where": "page",
+   "tile": "Timing",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "craft/submenu-path",
+   "concern": "states",
+   "name": "Submenu closes on the way",
+   "why": "People cut corners. Give it a safe triangle, or 300ms of grace.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "craft/overdrag",
+   "concern": "states",
+   "name": "No limit when dragged",
+   "why": "Past its limit, something should give: move less than the pointer, then spring back.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "craft/touch-manipulation",
+   "concern": "access",
+   "name": "Tap flashes grey on phones",
+   "why": "Browsers add a grey tap highlight to custom controls. Turn it off.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "a11y/control-name",
+   "concern": "access",
+   "name": "No name for screen readers",
+   "why": "Someone who cannot see it hears only its role. Give it words, or an aria-label.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "a11y/image-alt",
+   "concern": "access",
+   "name": "Image with no alt",
+   "why": "A screen reader reads out its file name, or nothing. Say what it is for, or mark it as decoration.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "a11y/alt-cliche",
+   "concern": "access",
+   "name": "Alt says it is an image",
+   "why": "A screen reader already announces an image, so it is said twice.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "a11y/svg-name",
+   "concern": "access",
+   "name": "Graphic with no description",
+   "why": "A screen reader says \"image\" and nothing more.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "a11y/tabindex-positive",
+   "concern": "access",
+   "name": "Jumps the tab order",
+   "why": "Tab stops following the page’s order, and every later change has to keep the numbers right.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "a11y/tabindex-redundant",
+   "concern": "access",
+   "name": "tabindex it does not need",
+   "why": "tabindex=\"0\" adds nothing here, and reads as if it were a custom control.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "a11y/hidden-focusable",
+   "concern": "access",
+   "name": "Hidden, but takes focus",
+   "why": "Focus lands on something that is announced as nothing.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "a11y/role-presentation-control",
+   "concern": "access",
+   "name": "Control told to be nothing",
+   "why": "A screen reader no longer says it can be pressed or typed into.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "a11y/label-on-generic",
+   "concern": "access",
+   "name": "Label on a plain box",
+   "why": "A plain box has no name to give: most screen readers never read the label.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "a11y/label-in-name",
+   "concern": "access",
+   "name": "Label hides the words shown",
+   "why": "Someone using voice control says the words they see, and nothing answers.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "a11y/role-in-label",
+   "concern": "access",
+   "name": "Role said twice",
+   "why": "It is read out with its role twice, as in “button, Close button”.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "a11y/link-name-reused",
+   "concern": "access",
+   "name": "Same link text, different places",
+   "why": "In a list of links, which is how many people move around, they cannot be told apart.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "a11y/heading-skip",
+   "concern": "access",
+   "name": "Heading level skipped",
+   "why": "People who move by headings hear a level missing and look for what they skipped.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "a11y/heading-h1-many",
+   "concern": "access",
+   "name": "More than one h1",
+   "why": "The h1 is how someone learns what the page is; with several, none of them says it.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "a11y/main-many",
+   "concern": "access",
+   "name": "More than one main",
+   "why": "\"Skip to main content\" has one place to go.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "a11y/nav-unnamed",
+   "concern": "access",
+   "name": "Navigation with no name",
+   "why": "They are all read out as \"navigation\", so nobody can tell which is which.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "a11y/iframe-title",
+   "concern": "access",
+   "name": "Frame with no title",
+   "why": "A screen reader says \"frame\" and the address, and people have to go in to find out what it is.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "a11y/iframe-scroll",
+   "concern": "access",
+   "name": "Frame cannot scroll",
+   "why": "Someone who zooms in cannot reach what no longer fits.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "a11y/table-headers",
+   "concern": "access",
+   "name": "Table with no header cells",
+   "why": "A screen reader reads each cell with nothing to say what column or row it belongs to.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "a11y/heading-in-summary",
+   "concern": "access",
+   "name": "Heading inside a summary",
+   "why": "Some browsers treat the summary as a button, and the heading stops being one.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "a11y/redundant-role",
+   "concern": "access",
+   "name": "Says what the tag already says",
+   "why": "It adds nothing, and one day it will disagree with the tag.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "a11y/role-on-structure",
+   "concern": "access",
+   "name": "Role replaces the structure",
+   "why": "The list, table or heading it belonged to loses an item, and the count read out is wrong.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "a11y/native-over-role",
+   "concern": "access",
+   "name": "A div playing a button",
+   "why": "A <button> does this with the keyboard and focus handling a role has to rebuild by hand.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "a11y/field-autocomplete",
+   "concern": "access",
+   "name": "Field the browser cannot fill",
+   "why": "With autocomplete set (email, name, one-time code), it is filled in for people who find typing hard.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "forms/nested-form",
+   "concern": "access",
+   "name": "Form inside a form",
+   "why": "Browsers do not allow it: which one a button submits depends on how the page was built.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "forms/button-type",
+   "concern": "access",
+   "name": "Helper button submits the form",
+   "why": "A button in a form is a submit button unless it says otherwise.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "forms/submit-missing",
+   "concern": "access",
+   "name": "Form with no submit button",
+   "why": "Enter in a field does nothing, and a screen reader finds no way to send the form.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "forms/fieldset-legend",
+   "concern": "access",
+   "name": "Group with no legend",
+   "why": "A screen reader says \"group\" and never what the fields in it are about.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "forms/field-name",
+   "concern": "access",
+   "name": "Field the form does not send",
+   "why": "A form sends only named fields: what is typed here is left behind.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "forms/password-no-form",
+   "concern": "access",
+   "name": "Password outside a form",
+   "why": "Password managers look for a form to fill and to save from.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "forms/search-landmark",
+   "concern": "access",
+   "name": "Search with no landmark",
+   "why": "People who jump by landmarks cannot jump to it.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "forms/form-unnamed",
+   "concern": "access",
+   "name": "Form with no name",
+   "why": "They are all read out as \"form\", so nobody can tell which is which.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "forms/get-sensitive",
+   "concern": "access",
+   "name": "Password sent in the address",
+   "why": "It ends up in the address bar, the history and the server’s logs.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "forms/textarea-resize",
+   "concern": "access",
+   "name": "Text box that cannot grow",
+   "why": "A long message is written through a few lines’ window.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "forms/label-unbound",
+   "concern": "access",
+   "name": "Label tied to nothing",
+   "why": "Clicking it does not focus the field, and a screen reader reads the field with no name.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "forms/label-proximity",
+   "concern": "access",
+   "name": "Label nearer the field above",
+   "why": "The eye pairs a label with whatever is closest.",
+   "where": "page",
+   "tile": "Gap",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "forms/invalid-undescribed",
+   "concern": "access",
+   "name": "Error with no message tied to it",
+   "why": "A screen reader says \"invalid\" and not what is wrong.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "forms/required-unmarked",
+   "concern": "access",
+   "name": "Required, and does not say so",
+   "why": "People find out when the form refuses them.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "forms/required-unsaid",
+   "concern": "access",
+   "name": "Marked required only for the eye",
+   "why": "A screen reader does not say it is required, and the browser lets it through empty.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "forms/label-overridden",
+   "concern": "access",
+   "name": "aria-label hides the label shown",
+   "why": "A screen reader says one thing, the screen another; voice control answers to neither.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "forms/autocomplete-off",
+   "concern": "access",
+   "name": "Autofill turned off",
+   "why": "A password manager cannot fill it, so people choose passwords they can type.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "forms/numeric-keyboard",
+   "concern": "access",
+   "name": "Letters keyboard for a number",
+   "why": "On a phone people switch keyboards before they can type.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "forms/number-for-code",
+   "concern": "access",
+   "name": "Number field for a code",
+   "why": "It drops leading zeros, changes on scroll and shows spinner arrows. It is for amounts.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "forms/split-code",
+   "concern": "access",
+   "name": "One value in several boxes",
+   "why": "Paste, autofill from a text message and screen readers all expect one field.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "forms/identifier-correction",
+   "concern": "access",
+   "name": "Autocorrect on an identifier",
+   "why": "A phone capitalises and \"fixes\" a username as it is typed.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "forms/invalid-on-load",
+   "concern": "access",
+   "name": "Shown as an error before typing",
+   "why": ":invalid is true from the start for a required field. :user-invalid waits for the person.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "forms/submit-disabled",
+   "concern": "access",
+   "name": "Submit disabled until valid",
+   "why": "Nothing says why it cannot be pressed, and a disabled button cannot be focused to find out.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "forms/control-hidden",
+   "concern": "access",
+   "name": "Real control removed",
+   "why": "It cannot be reached by keyboard and a screen reader never hears of it.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "forms/name-split",
+   "concern": "access",
+   "name": "Name split in two",
+   "why": "Many names do not divide that way. One field takes them all.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "forms/latin-only",
+   "concern": "access",
+   "name": "Only A to Z allowed",
+   "why": "José, Zoë and 李 are told their name is wrong.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "forms/submit-wording",
+   "concern": "access",
+   "name": "Button says only “Submit”",
+   "why": "A button that says what happens (\"Save changes\") needs no reading of the form.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "forms/radio-group",
+   "concern": "access",
+   "name": "Options with no group",
+   "why": "A screen reader reads each option and never the question they answer.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "forms/describedby-missing",
+   "concern": "access",
+   "name": "Points at a message that is not there",
+   "why": "The help or error it promises is never read out.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "forms/input-type",
+   "concern": "access",
+   "name": "Plain text field for an email",
+   "why": "type=\"email\" brings the right keyboard on a phone and the browser’s own check.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "forms/visual-order",
+   "concern": "access",
+   "name": "Drawn in a different order",
+   "why": "Tab follows the page’s order, so focus jumps against what the eye sees.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "forms/placeholder-instruction",
+   "concern": "access",
+   "name": "Instructions in the placeholder",
+   "why": "It goes away at the first keystroke, just when it is needed.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "forms/inline-handler",
+   "concern": "access",
+   "name": "Script written in the markup",
+   "why": "A strict content security policy blocks inline script, and the control stops working.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "components/breadcrumb-list",
+   "concern": "states",
+   "name": "Breadcrumbs not in an ordered list",
+   "why": "The order is the meaning: a screen reader says \"list, 4 items\" and people know how deep they are.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "components/breadcrumb-current",
+   "concern": "states",
+   "name": "Trail does not mark this page",
+   "why": "A screen reader reads every step the same, so nobody hears where they are.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "components/breadcrumb-separator",
+   "concern": "states",
+   "name": "Dividers read out loud",
+   "why": "A screen reader reads it between every step (\"Home, slash, Docs, slash\").",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "components/link-nested-control",
+   "concern": "states",
+   "name": "A button inside a link",
+   "why": "One press cannot mean two things: browsers and screen readers each pick a different one.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "components/carousel-name",
+   "concern": "states",
+   "name": "Carousel with no name",
+   "why": "A screen reader says \"carousel\" and not what it shows.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "components/dialog-name",
+   "concern": "states",
+   "name": "Dialog with no name",
+   "why": "A screen reader says \"dialog\" when it opens and nothing about what it asks.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "components/dialog-native",
+   "concern": "states",
+   "name": "A div playing a dialog",
+   "why": "<dialog> keeps focus inside, closes on Esc and returns focus by itself. A role has to rebuild all three.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "components/dialog-aria-extras",
+   "concern": "states",
+   "name": "aria-modal on a real modal",
+   "why": "It adds nothing, and it stays true if the dialog is ever shown without being modal.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "components/dialog-fake-modal",
+   "concern": "states",
+   "name": "Says modal, is not",
+   "why": "It was opened with show() or the open attribute. Tab walks out of it into the page behind.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "components/dialog-close",
+   "concern": "states",
+   "name": "Dialog with no way out",
+   "why": "Someone on a touch screen or a screen reader has nothing to press to leave.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "components/dialog-scroll-lock",
+   "concern": "states",
+   "name": "Page locked with overflow: hidden",
+   "why": "The scrollbar goes and the page jumps sideways; on iOS the page can still scroll. overscroll-behavior on the dialog does it without either.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "components/dialog-display",
+   "concern": "states",
+   "name": "Closed dialog still showing",
+   "why": "A display set on dialog overrides its closed state. Scope it to dialog[open].",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "components/menu-structure",
+   "concern": "states",
+   "name": "Menu whose items are not menu items",
+   "why": "A screen reader counts and moves by menu items; these are left out or announced alone.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "components/nav-as-menu",
+   "concern": "states",
+   "name": "Site navigation as a menu",
+   "why": "A menu takes them out of the Tab order and promises arrow keys. Site navigation is a list of links.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "components/popup-expanded",
+   "concern": "states",
+   "name": "Opens something, does not say if open",
+   "why": "A screen reader cannot tell whether pressing it opened anything.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "components/checked-missing",
+   "concern": "states",
+   "name": "No on or off said",
+   "why": "A screen reader announces it and never whether it is on.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "components/nav-current",
+   "concern": "states",
+   "name": "Navigation does not mark this page",
+   "why": "A screen reader reads every link the same. aria-current=\"page\" says where you are, and is the hook to style it.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "components/nav-details",
+   "concern": "states",
+   "name": "Submenu built on details",
+   "why": "Screen readers do not agree on what a summary is. A button with aria-expanded is read the same everywhere.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "components/current-many",
+   "concern": "states",
+   "name": "Several current pages",
+   "why": "Only one can be where you are.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "components/tablist-name",
+   "concern": "states",
+   "name": "Tabs with no name",
+   "why": "A screen reader says \"tab list\" and not what the tabs switch.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "components/tab-selected",
+   "concern": "states",
+   "name": "No tab says it is selected",
+   "why": "A screen reader cannot say which panel is showing.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "components/tabpanel-name",
+   "concern": "states",
+   "name": "Panel with no name",
+   "why": "Point aria-labelledby at its tab, so the panel is announced by the tab’s words.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "components/tabs-as-nav",
+   "concern": "states",
+   "name": "Tabs that are page links",
+   "why": "A tab promises a panel on this page and arrow keys. Links that look like tabs are navigation.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "components/tab-shift",
+   "concern": "states",
+   "name": "Selected tab changes size",
+   "why": "Every tab after it moves when the selection changes.",
+   "where": "page",
+   "tile": "Controls",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "components/tabs-wrap",
+   "concern": "states",
+   "name": "Tabs on several rows",
+   "why": "The order and the selected tab are hard to follow. Scroll the row or move the extra into a menu.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "components/tab-structure",
+   "concern": "states",
+   "name": "Tab outside a tab list",
+   "why": "A screen reader does not count it or tie it to its neighbours.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "components/tabpanel-many",
+   "concern": "states",
+   "name": "Several panels showing",
+   "why": "Only the selected tab’s panel should be there; the rest need hidden.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "components/tab-stops",
+   "concern": "states",
+   "name": "Every tab is a Tab stop",
+   "why": "Tabs are one stop: Tab lands on the selected one and arrows move between them.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "components/toolbar-name",
+   "concern": "states",
+   "name": "Toolbar with no name",
+   "why": "A screen reader says \"toolbar\" and not what it is for.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "components/menubar-name",
+   "concern": "states",
+   "name": "Menu bar with no name",
+   "why": "A screen reader says \"menu bar\" and not whose.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "components/pressed-on-action",
+   "concern": "states",
+   "name": "On/off state on an action",
+   "why": "aria-pressed is for buttons that stay on. This is announced as a toggle.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "components/progress-name",
+   "concern": "states",
+   "name": "Progress of nothing",
+   "why": "A screen reader says \"40 percent\" and not of what.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "components/progress-tabindex",
+   "concern": "states",
+   "name": "Progress bar takes focus",
+   "why": "It cannot be used, so Tab stops on something that does nothing.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "components/progress-native",
+   "concern": "states",
+   "name": "A div playing a progress bar",
+   "why": "<progress> says its value by itself; a role needs aria-valuenow kept right by hand.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "components/spinner-silent",
+   "concern": "states",
+   "name": "Spinner that says nothing",
+   "why": "Someone who cannot see it does not know anything is loading.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "components/expanded-on-generic",
+   "concern": "states",
+   "name": "Open/closed on a plain box",
+   "why": "A plain box has no state to announce and cannot be pressed from the keyboard.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "components/expanded-out-of-sync",
+   "concern": "states",
+   "name": "Says closed, is not",
+   "why": "A screen reader announces the wrong state.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "html/page-lang",
+   "concern": "access",
+   "name": "Page says no language",
+   "why": "A screen reader guesses the accent to read it in, and translation tools guess what to translate from.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "html/viewport-meta",
+   "concern": "access",
+   "name": "No viewport set for phones",
+   "why": "A phone draws it as a 980px desktop page, shrunk.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "html/zoom-disabled",
+   "concern": "access",
+   "name": "Pinch zoom turned off",
+   "why": "People who need bigger text cannot zoom in.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "html/quirks-mode",
+   "concern": "access",
+   "name": "Page in quirks mode",
+   "why": "The browser lays it out by the rules of the 1990s: boxes and tables size differently.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "html/landmark-main",
+   "concern": "access",
+   "name": "Page with no main",
+   "why": "A screen reader user cannot jump past the header to what the page is about.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "html/banner-many",
+   "concern": "access",
+   "name": "More than one page header",
+   "why": "A landmark that appears twice does not say where anything is.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "html/h1-missing",
+   "concern": "access",
+   "name": "Page with no main heading",
+   "why": "The h1 is how someone, and a search engine, learns what the page is.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "html/list-fake",
+   "concern": "access",
+   "name": "List typed by hand",
+   "why": "A screen reader reads the marks as text and never says “list, 3 items”.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "html/list-structure",
+   "concern": "access",
+   "name": "List item outside a list",
+   "why": "On its own it is not announced as part of any list.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "html/pointer-generic",
+   "concern": "access",
+   "name": "Pressable for the mouse only",
+   "why": "Tab skips it and a screen reader does not say it can be pressed.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "html/link-as-button",
+   "concern": "access",
+   "name": "Link that goes nowhere",
+   "why": "It is announced as a link and does something else. An action is a <button>.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "html/boolean-value",
+   "concern": "access",
+   "name": "Value on an on/off attribute",
+   "why": "The attribute being there is what turns it on; even =\"false\" would.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "html/figure-caption",
+   "concern": "access",
+   "name": "Figure with no caption",
+   "why": "A figure is for something with a caption. Without one it is a plain image.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "html/pre-no-code",
+   "concern": "access",
+   "name": "Code block with no <code>",
+   "why": "<pre> keeps the spacing; <code> is what says it is code.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "html/pre-scroll-keyboard",
+   "concern": "access",
+   "name": "Scrolls for the mouse only",
+   "why": "Someone on a keyboard cannot reach what runs off the edge.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "html/pre-scroll-region",
+   "concern": "access",
+   "name": "Focus stop with no name",
+   "why": "A screen reader stops on it and says nothing about what it is.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "html/img-size",
+   "concern": "access",
+   "name": "Image with no size",
+   "why": "The page has no room kept for it, so everything below jumps when it arrives.",
+   "where": "page",
+   "tile": "Controls",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "html/lazy-above-fold",
+   "concern": "access",
+   "name": "First-screen image loaded late",
+   "why": "The browser waits for layout before it even asks for it.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "html/eager-below-fold",
+   "concern": "access",
+   "name": "Off-screen images loaded at once",
+   "why": "It competes for the network with what is on screen.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "html/fetchpriority-overused",
+   "concern": "access",
+   "name": "Everything is high priority",
+   "why": "Priority is shared out: when all are first, none is.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "html/hero-priority",
+   "concern": "access",
+   "name": "Biggest image not put first",
+   "why": "The browser finds out it matters only after layout. fetchpriority=\"high\" tells it at once.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "html/img-oversized",
+   "concern": "access",
+   "name": "Image far bigger than drawn",
+   "why": "A phone downloads all of it. srcset lets the browser pick a size that fits.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "html/picture-img",
+   "concern": "access",
+   "name": "Picture with no image",
+   "why": "The <img> is what is drawn; the sources only offer it other files.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "html/summary-first",
+   "concern": "access",
+   "name": "Summary is not first",
+   "why": "Only a first-child summary is the toggle; this one is hidden with the rest.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "html/summary-nested-control",
+   "concern": "access",
+   "name": "Control inside a summary",
+   "why": "Pressing it also toggles the details, and screen readers announce the pair unpredictably.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "html/summary-no-cue",
+   "concern": "access",
+   "name": "Toggle with no arrow",
+   "why": "Nothing shows that this opens.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "html/title-tooltip",
+   "concern": "access",
+   "name": "Tooltip from a title",
+   "why": "A title appears on mouse hover only: not on a keyboard, not on touch.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "html/video-size",
+   "concern": "access",
+   "name": "Video with no size",
+   "why": "The page jumps when its first frame arrives.",
+   "where": "page",
+   "tile": "Controls",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "html/video-poster",
+   "concern": "access",
+   "name": "Video with no poster",
+   "why": "Until someone presses play it is a black box.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "html/video-captions",
+   "concern": "access",
+   "name": "Video with no captions",
+   "why": "Someone who cannot hear it, or has the sound off, gets the pictures only.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "html/background-video",
+   "concern": "access",
+   "name": "Background video read as content",
+   "why": "A screen reader stops on a video that has nothing to say.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "html/autoplay-sound",
+   "concern": "access",
+   "name": "Plays sound by itself",
+   "why": "It talks over a screen reader, and browsers block it for most people anyway.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "html/iframe-hidden",
+   "concern": "access",
+   "name": "Hidden frame that takes focus",
+   "why": "Focus disappears into something announced as nothing.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "experience/nowrap-sentence",
+   "concern": "states",
+   "name": "Sentence that cannot wrap",
+   "why": "On a narrow screen, or with larger text, the line runs off the side.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "experience/justify-rivers",
+   "concern": "states",
+   "name": "Justified with no hyphens",
+   "why": "The spaces stretch to fill each line and open rivers of white down the paragraph.",
+   "where": "page",
+   "tile": "Baseline",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "experience/caps-long",
+   "concern": "states",
+   "name": "A sentence in capitals",
+   "why": "Capitals have no word shapes, so a sentence of them is read letter by letter.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "experience/page-overflow-x",
+   "concern": "states",
+   "name": "Page scrolls sideways",
+   "why": "Everything can be dragged sideways, and on a phone the page loads zoomed out.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "experience/motion-no-opt-out",
+   "concern": "states",
+   "name": "Motion that cannot be turned off",
+   "why": "People who get dizzy from movement set that preference, and this page does not listen.",
+   "where": "page",
+   "tile": "Timing",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "experience/font-display",
+   "concern": "states",
+   "name": "Text hidden while its font loads",
+   "why": "On a slow connection the words are invisible for up to three seconds, then appear.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "experience/preconnect-missing",
+   "concern": "states",
+   "name": "Cold start to another site",
+   "why": "The first of them waits for a lookup, a connection and a handshake that could have started with the page.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "experience/script-blocking",
+   "concern": "states",
+   "name": "Scripts that hold the page",
+   "why": "Nothing is drawn until each is fetched and run, in order.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "experience/page-title",
+   "concern": "states",
+   "name": "Page with no title",
+   "why": "The tab, the history and a screen reader’s first words are the address.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "experience/skip-link",
+   "concern": "states",
+   "name": "No way past the navigation",
+   "why": "Someone on a keyboard presses Tab that many times on every page.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "experience/color-scheme-missing",
+   "concern": "states",
+   "name": "Dark page, light browser parts",
+   "why": "Scrollbars, form controls and the flash before the page loads stay white.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "experience/link-target-renamed",
+   "concern": "states",
+   "name": "One place, two names",
+   "why": "In a list of links they look like two places.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "experience/button-name-reused",
+   "concern": "states",
+   "name": "Many buttons, one name",
+   "why": "Out of their rows, in a screen reader’s list or said to voice control, they cannot be told apart.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "experience/state-in-label",
+   "concern": "states",
+   "name": "State said twice",
+   "why": "A screen reader reads the label, then the state: it is heard twice, or two ways that disagree.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "experience/scroll-no-hint",
+   "concern": "states",
+   "name": "More to the side, and no sign of it",
+   "why": "Nothing says it scrolls, so what is past the edge is never found.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "experience/scroll-keyboard",
+   "concern": "states",
+   "name": "Scrolls for the mouse only",
+   "why": "In browsers that do not focus scroll areas themselves, a keyboard cannot reach what is below.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "experience/control-covered",
+   "concern": "states",
+   "name": "Something sits on top of this",
+   "why": "The press lands on what is on top. It looks pressable and is not.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "tells/eyebrow",
+   "concern": "slop",
+   "name": "Label over a heading",
+   "why": "The heading already says what this part is. The label only repeats it, louder.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "tells/numbering",
+   "concern": "slop",
+   "name": "Numbers with no order",
+   "why": "Numbers tell people to go in sequence. If the parts can be read in any order, they are noise.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "tells/status-chain",
+   "concern": "words",
+   "name": "Too much in one line",
+   "why": "Nobody reads a chain. Keep the one fact people act on and put the rest where it is needed.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "tells/flavour-badge",
+   "concern": "slop",
+   "name": "Badge for flavour",
+   "why": "A badge should mean something the app tracks, like a stream that is live. Added for flavour, it teaches people to ignore badges.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "tells/status-dot",
+   "concern": "slop",
+   "name": "Coloured dot",
+   "why": "A dot says \"this is live\". If nothing real drives it, it claims something untrue.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "tells/emoji",
+   "concern": "slop",
+   "name": "Emoji as decoration",
+   "why": "It says nothing the words do not, and it changes look on every system.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "tells/icon-tile",
+   "concern": "slop",
+   "name": "Icon in a tinted square",
+   "why": "The tile repeats on every item and tells them apart by colour alone. The names already do that.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "tells/chart-type-title",
+   "concern": "words",
+   "name": "Title names the chart",
+   "why": "People can see it is a chart. The title should say what it measures.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "tells/reading-instructions",
+   "concern": "words",
+   "name": "Explains how to read",
+   "why": "If it needs instructions, change the thing. If it does not, cut them.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "tells/narrating",
+   "concern": "words",
+   "name": "Narrates the screen",
+   "why": "People can see it. Keep the words they need to act.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "tells/subtitle-echo",
+   "concern": "words",
+   "name": "Subtitle says it again",
+   "why": "A second line that adds no fact is read for nothing. Keep it only if it says something the heading does not.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "tells/em-dash",
+   "concern": "words",
+   "name": "Em dash in copy",
+   "why": "Generated copy leans on the dash. A full stop or a comma reads as written by a person.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "tells/stock-words",
+   "concern": "words",
+   "name": "Stock word",
+   "why": "It could sit on any product's page. Say what this one does.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+  },
+  {
+   "id": "tells/hue-gradient",
+   "concern": "slop",
+   "name": "Gradient across hues",
+   "why": "A two-hue gradient is the first thing generated pages reach for. A solid colour holds the brand better.",
+   "where": "page",
+   "tile": "Colour",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "tells/glow",
+   "concern": "slop",
+   "name": "Coloured glow",
+   "why": "A glow lifts it with no light to explain it. A soft neutral shadow or a border does the job.",
+   "where": "page",
+   "tile": "Shadows",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "tells/transition-all",
+   "concern": "slop",
+   "name": "Animates everything",
+   "why": "Size and layout changes slide when they should snap, and the browser does extra work. Name the properties that should move.",
+   "where": "page",
+   "tile": "Timing",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  },
+  {
+   "id": "tells/hover-grow",
+   "concern": "slop",
+   "name": "Card grows on hover",
+   "why": "A card that jumps at the pointer feels busy. A colour or shadow change is enough to say it can be clicked.",
+   "where": "page",
+   "tile": null,
+   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+  },
+  {
+   "id": "tells/heavy-weight",
+   "concern": "slop",
+   "name": "Extra-heavy weight",
+   "why": "Size and colour carry the order better. Weights of 800 and 900 shout.",
+   "where": "page",
+   "tile": "Weight",
+   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+  }
+ ]
+}

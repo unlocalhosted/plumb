@@ -319,6 +319,19 @@ export const MOTION_TILES = [
   }],
 ];
 
+// one tile's stage in a host of its own (a shadow root), and how to play it again from the start
+function stageTile(host, build, tokensCss = '') {
+  const root = host.shadowRoot ?? host.attachShadow({ mode: 'open' }); root.innerHTML = `<style>${tokensCss}${MOTION_CSS}</style><div class="stage"></div>`;
+  const stage = root.querySelector('.stage'); const spec = build(stage);
+  for (const g of stage.querySelectorAll('.g')) g.style.opacity = 0;
+  return async () => { spec.reset(); stage.getAnimations({ subtree: true }).forEach((a) => a.cancel()); for (const g of stage.querySelectorAll('.g')) g.style.opacity = 0; await wait(300); for (const g of stage.querySelectorAll('.g')) g.style.opacity = ''; await playTile(stage, spec); };
+}
+// One tile by its title, on its own (the docs' "What Plumber checks" shows the fix of a check with it): { play, title, line }
+export function mountTile(host, title, { tokensCss = '' } = {}) {
+  const tile = MOTION_TILES.find((t) => Array.isArray(t) && t[0] === title);
+  if (!tile) return null;
+  return { play: stageTile(host, tile[2], tokensCss), title: tile[0], line: tile[1] };
+}
 export function mountMotionBoard(board, { tokensCss = '', autoplay = false } = {}) {
   board.classList.add('mo-board');
   const runs = [];
@@ -327,10 +340,7 @@ export function mountMotionBoard(board, { tokensCss = '', autoplay = false } = {
     const [title, sub, build] = tile;
     const sec = document.createElement('section'); sec.className = 'tile'; sec.innerHTML = `<header><h2>${title}</h2><p>${sub}</p><button type="button">▶ Play</button></header>`;
     const host = document.createElement('div'); sec.append(host); board.append(sec);
-    const root = host.attachShadow({ mode: 'open' }); root.innerHTML = `<style>${tokensCss}${MOTION_CSS}</style><div class="stage"></div>`;
-    const stage = root.querySelector('.stage'); const spec = build(stage);
-    for (const g of stage.querySelectorAll('.g')) g.style.opacity = 0;
-    const run = async () => { spec.reset(); stage.getAnimations({ subtree: true }).forEach((a) => a.cancel()); for (const g of stage.querySelectorAll('.g')) g.style.opacity = 0; await wait(300); for (const g of stage.querySelectorAll('.g')) g.style.opacity = ''; await playTile(stage, spec); };
+    const run = stageTile(host, build, tokensCss);
     runs.push(run);
     sec.querySelector('header button').onclick = run; // each tile plays on its own
   }

@@ -22,12 +22,17 @@ export const CONCERNS = [
 
 const BY_PACK = { a11y: 'access', html: 'access', forms: 'access', security: 'access', tells: 'slop', experience: 'states', components: 'states' };
 const ACCESS = new Set(['contrast', 'disabled-contrast', 'hit-target', 'input-zoom', 'text-collision', 'touch-manipulation']);
+// what the words say and how they read: the tells about wording (they were all Anti-slop, and Words had none), and the
+// craft rules about how a line breaks or is cut
+const WORDS = new Set(['tells/status-chain', 'tells/chart-type-title', 'tells/reading-instructions', 'tells/narrating', 'tells/subtitle-echo', 'tells/em-dash', 'tells/stock-words',
+  'craft/heading-widow', 'craft/truncate-intent', 'craft/hanging-quote', 'craft/middle-truncate', 'craft/text-wrap-role']);
 const STATES = new Set(['press-feedback', 'press-feedback-probe', 'interruptible', 'interruptible-probe', 'exit-faster', 'menu-pointerdown',
   'submenu-path', 'tooltip-delay', 'spinner-timing', 'skeleton-match', 'overdrag', 'fixed-height', 'flex-min', 'scroll-cue-seen']);
 
 /** The concern a finding is about: one of CONCERNS' ids. */
 export function concernOf(mark) {
   if (mark.family !== 'craft') return 'system';
+  if (WORDS.has(String(mark.rule))) return 'words';
   const [pack, name] = String(mark.rule ?? '').split('/');
   if (BY_PACK[pack]) return BY_PACK[pack];
   if (ACCESS.has(name)) return 'access';
