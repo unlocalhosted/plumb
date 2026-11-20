@@ -301,7 +301,9 @@ export class Readiness {
     const where = q.evidence?.length ? `<div class="where">${q.evidence.map((e) => `<code>${esc(short(e.file))}:${e.line}</code> ${esc(e.text)}`).join(' · ')}</div>` : '';
     const also = q.hit.length > 1 ? `<div class="also">Also limits ${q.hit.slice(1).map((c) => esc(c.label)).join(' · ')}</div>` : '';
     const w = SETUP.step(q);
-    if (q.status === 'unknown') return `<div class="req" data-status="unknown">${this.#chip(q)}<div class="what">${esc(w.title)}</div><div class="loses">${esc(w.loses)}</div>${where}</div>`;
+    // not confirmed yet: what to check and how, when that is a step to run (U22: "Plugin order needs a check" said a
+    // worry with nothing to do); a change to a file waits until the step is confirmed
+    if (q.status === 'unknown') return `<div class="req" data-status="unknown">${this.#chip(q)}<div class="what">${esc(w.title)}</div><div class="loses">${esc(w.loses)}</div>${where}${q.fix?.kind === 'step' ? this.#fixHtml(q, s) : ''}</div>`;
     const tick = s.done ? '<span class="box" aria-hidden="true"></span>' : `<input class="box" type="checkbox" data-id="${esc(q.id)}" aria-label="Fix: ${esc(w.title)}" ${this.#ticked.has(q.id) ? 'checked' : ''}>`;
     return `<div class="req" data-status="missing" data-id="${esc(q.id)}"${s.done ? ' data-done' : ''}>
       ${tick}<div class="what">${esc(w.title)}</div>
