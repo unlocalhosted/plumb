@@ -120,10 +120,10 @@ export const XRAY_LIVE_CSS = `
   .xr-said .xs::-webkit-scrollbar { display: none; }
   .xr-said .xs { grid-template-rows: auto 1fr auto; padding-bottom: 12px; margin-bottom: -12px; } /* room for the buttons' shadows, which the scroller would cut */
   .xr-said .sl { scroll-snap-align: start; scroll-snap-stop: always; min-width: 0; grid-row: 1 / -1; display: grid; grid-template-rows: subgrid; }
-  .xr-said .sl .sh { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: center; }
-  .xr-said .sl .sh > i { width: 26px; height: 26px; } .xr-said .sl .sh > i svg { display: block; width: 100%; height: 100%; overflow: visible; }
-  .xr-said .sl .sh b { font: 650 14.5px/1.3 var(--pl-round, var(--pl-sans)); }
-  .xr-said .sl .sw { margin-top: 6px; } .xr-said .sl .nas { margin-top: 12px; align-self: end; }
+  .xr-said .sl .xsh { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: center; }
+  .xr-said .sl .xsh > i { width: 26px; height: 26px; } .xr-said .sl .xsh > i svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .xr-said .sl .xsh b { font: 650 14.5px/1.3 var(--pl-round, var(--pl-sans)); }
+  .xr-said .sl .xsw { margin-top: 6px; min-width: 0; } /* named apart: ".sw" is the swatch row elsewhere in the overlay and squeezed this to 18px */ .xr-said .sl .nas { margin-top: 12px; align-self: end; }
   /* the open note in a list: its row, then its sentence and what to do, under its name (no second copy above) */
   .xr-said .xi[data-open] { background: var(--pl-bg-inset); border-radius: 12px; padding-bottom: 10px; }
   .xr-said .xi[data-open] .xn { color: var(--pl-text-primary); font: 650 14px/1.3 var(--pl-round, var(--pl-sans)); background: none; }
@@ -296,8 +296,8 @@ export function mountXray(o) {
     // three rows every page shares (subgrid): the name, the sentence, the actions; a short issue leaves room, and its
     // actions stay where the others' are (owner, 2026-11-20: "use sub-grid so that… everything remain at its place")
     return '<div class="xs" tabindex="-1">' + notes.map((n, i) => `<section class="sl" data-i="${i}" data-rule="${esc(n.rule)}" aria-label="Issue ${i + 1} of ${notes.length}">`
-      + `<div class="sh"><i class="cn" data-tip="${esc(n.concernName)}" aria-label="${esc(n.concernName)}" role="img">${toyOfConcern(n.concern)}</i><b>${esc(n.name)}</b></div>`
-      + `<div class="sw">${sentence(n)}</div><div class="nas">${actsFor(n)}</div></section>`).join('') + '</div>';
+      + `<div class="xsh"><i class="cn" data-tip="${esc(n.concernName)}" aria-label="${esc(n.concernName)}" role="img">${toyOfConcern(n.concern)}</i><b>${esc(n.name)}</b></div>`
+      + `<div class="xsw">${sentence(n)}</div><div class="nas">${actsFor(n)}</div></section>`).join('') + '</div>';
   }
   function noteHtml(el) {
     // the element's own note, asked of the page's marks; never the pill's words, which may be about the element the
