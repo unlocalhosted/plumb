@@ -16,7 +16,7 @@
    fill needs (that one reads as near-black on a purple); the button's own ink still reads on it */
 .pour-flood { position: absolute; inset: 0; background: color-mix(in oklch, var(--atom-fill) 66%, black); color: var(--atom-on-fill);
   clip-path: circle(0 at var(--x, 50%) var(--y, 50%)); transition: clip-path 260ms cubic-bezier(.4, 0, .2, 1); }
-.pour[data-state="pouring"] .pour-flood, .pour[data-state="done"] .pour-flood { clip-path: circle(var(--reach, 200%) at var(--x, 50%) var(--y, 50%)); transition-duration: 560ms; transition-timing-function: cubic-bezier(.22, 1, .36, 1); }
+.pour[data-state="pouring"] .pour-flood, .pour[data-state="done"] .pour-flood { clip-path: circle(var(--reach, 200%) at var(--x, 50%) var(--y, 50%)); transition-duration: 440ms; transition-timing-function: cubic-bezier(.22, 1, .36, 1); }
 /* done: the arrow has gone where it pointed; the words say what is happening */
 .pour[data-state="done"] .pour-icon { transform: translateX(6px); opacity: 0; transition: transform 200ms ease-out, opacity 200ms ease-out; }
 .pour-said { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }

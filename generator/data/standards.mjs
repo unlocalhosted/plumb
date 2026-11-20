@@ -67,7 +67,7 @@ export const STANDARDS = [
     fix: 'Give the pressable part at least 44 px in each direction.' },
 
   { id: 'motion-purposeful', name: 'Its motion is quick and respects reduced motion', severity: 'weakens',
-    principle: 'Interface motion should be brief and say something; people who ask for reduced motion should get the same states without the travel.',
+    principle: 'Interface motion should be brief and say something; people who ask for reduced motion should get the same states without the travel. Motion that goes on while the control says it is waiting is a progress indicator, which may run as long as the wait, but it too must stop for reduced motion.',
     // Material's longest suggested pair is 500 ms (emphasised, for a transition that begins and ends on screen); a
     // control's own movement should be no longer than that.
     sources: [src('Material Design 3, easing and duration: suggested transitions run 200–500 ms', 'https://m3.material.io/styles/motion/easing-and-duration/applying-easing-and-duration'),

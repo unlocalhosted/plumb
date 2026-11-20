@@ -1,0 +1,9 @@
+/* the arrow travels in a lane of its own just wide enough for it, so the words never move */
+.lead-arrow { overflow: hidden; transition: transform 160ms cubic-bezier(.22, 1, .36, 1); }
+.lead-arrow svg { transition: transform 160ms cubic-bezier(.22, 1, .36, 1); }
+@media (hover: hover) { .lead:hover .lead-arrow svg { transform: translateX(2px); } }
+.lead:active .lead-arrow svg { transform: translateX(4px); }
+/* opening: the arrow leaves to the right and comes back in from the left, over and over, until the next screen */
+.lead[data-state="done"] .lead-arrow svg { animation: lead-go 1100ms cubic-bezier(.55, 0, .45, 1) infinite; }
+/* it rests in place most of the loop and only dashes out and back, so the arrow is almost always there to see */
+@keyframes lead-go { 0%, 40% { transform: translateX(0); } 62% { transform: translateX(130%); } 62.01% { transform: translateX(-130%); } 84%, 100% { transform: translateX(0); } }

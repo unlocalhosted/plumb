@@ -271,6 +271,7 @@ export function watchGestures(root, { Craft, Theme }) {
 }
 
 addEventListener('pointerdown', (e) => {
+  if (window.__judging) return; // the interaction judge is using the page: the view would freeze the button under it
   if (e.button !== 0 || inStrip(e)) return;
   const stage = stageOf(e);
   if (stage) start(stage, e);

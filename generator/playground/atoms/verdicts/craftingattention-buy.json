@@ -25,8 +25,9 @@
     307,
     56
    ],
-   "firstMs": 45,
-   "motionMs": 67,
+   "firstMs": 49,
+   "motionMs": 72,
+   "progressMs": 0,
    "commits": true,
    "words": null,
    "backsOut": true,
@@ -106,7 +107,7 @@
      "ok": true,
      "says": "Its motion is brief, and it calms down for people who ask for reduced motion.",
      "fix": null,
-     "principle": "Interface motion should be brief and say something; people who ask for reduced motion should get the same states without the travel.",
+     "principle": "Interface motion should be brief and say something; people who ask for reduced motion should get the same states without the travel. Motion that goes on while the control says it is waiting is a progress indicator, which may run as long as the wait, but it too must stop for reduced motion.",
      "sources": [
       {
        "says": "Material Design 3, easing and duration: suggested transitions run 200–500 ms",
@@ -158,14 +159,15 @@
     307,
     48
    ],
-   "firstMs": 11,
-   "motionMs": 361,
+   "firstMs": 4,
+   "motionMs": 372,
+   "progressMs": 0,
    "commits": true,
    "words": null,
    "backsOut": true,
    "keyboard": true,
    "focusable": true,
-   "reducedMotionMs": 16,
+   "reducedMotionMs": 2,
    "verdict": "works",
    "results": [
     {
@@ -239,7 +241,409 @@
      "ok": true,
      "says": "Its motion is brief, and it calms down for people who ask for reduced motion.",
      "fix": null,
-     "principle": "Interface motion should be brief and say something; people who ask for reduced motion should get the same states without the travel.",
+     "principle": "Interface motion should be brief and say something; people who ask for reduced motion should get the same states without the travel. Motion that goes on while the control says it is waiting is a progress indicator, which may run as long as the wait, but it too must stop for reduced motion.",
+     "sources": [
+      {
+       "says": "Material Design 3, easing and duration: suggested transitions run 200–500 ms",
+       "url": "https://m3.material.io/styles/motion/easing-and-duration/applying-easing-and-duration"
+      },
+      {
+       "says": "Apple Human Interface Guidelines, Motion: aim for brevity and precision in feedback animations; make motion optional",
+       "url": "https://developer.apple.com/design/human-interface-guidelines/motion"
+      },
+      {
+       "says": "WCAG 2.2, 2.3.3 Animation from Interactions (AAA): motion triggered by interaction can be disabled",
+       "url": "https://www.w3.org/TR/WCAG22/#animation-from-interactions"
+      }
+     ],
+     "checked": true
+    },
+    {
+     "id": "friction-fits-stakes",
+     "name": "The effort fits the stakes",
+     "severity": "weakens",
+     "ok": true,
+     "says": "One press is right here: checkout asks for the payment itself, so a slip here costs nothing.",
+     "fix": null,
+     "principle": "Consequential, hard-to-undo actions deserve a deliberate step; everyday ones should not make people work. Both too little and too much friction cost trust.",
+     "sources": [
+      {
+       "says": "Apple Human Interface Guidelines, Alerts: use alerts sparingly; avoid them for common, undoable actions",
+       "url": "https://developer.apple.com/design/human-interface-guidelines/alerts"
+      },
+      {
+       "says": "Material Design 3, Dialogs: purposefully interruptive, so use them sparingly",
+       "url": "https://m3.material.io/components/dialogs/guidelines"
+      },
+      {
+       "says": "Nielsen Norman Group heuristic #5, Error prevention: a confirmation option before people commit",
+       "url": "https://www.nngroup.com/articles/ten-usability-heuristics/"
+      }
+     ],
+     "checked": true
+    }
+   ],
+   "score": 0
+  },
+  {
+   "form": "native/lead",
+   "name": "Press, and the arrow leads",
+   "kind": "press",
+   "target": [
+    307,
+    48
+   ],
+   "firstMs": 35,
+   "motionMs": 509,
+   "progressMs": 1593,
+   "commits": true,
+   "words": null,
+   "backsOut": true,
+   "keyboard": true,
+   "focusable": true,
+   "reducedMotionMs": 14,
+   "verdict": "works",
+   "results": [
+    {
+     "id": "answers-at-once",
+     "name": "Answers the press at once",
+     "severity": "weakens",
+     "ok": true,
+     "says": "It answers the moment it is pressed, so the customer knows the button heard them.",
+     "fix": null,
+     "principle": "People need to know their action registered: the interface answers within about a tenth of a second, or the press feels lost.",
+     "sources": [
+      {
+       "says": "Nielsen Norman Group heuristic #1, Visibility of system status: keep people informed through appropriate feedback within a reasonable amount of time",
+       "url": "https://www.nngroup.com/articles/ten-usability-heuristics/"
+      },
+      {
+       "says": "Nielsen, Response Times: 0.1 second is about the limit for feeling the system reacts instantaneously",
+       "url": "https://www.nngroup.com/articles/response-times-3-important-limits/"
+      }
+     ],
+     "checked": true
+    },
+    {
+     "id": "words-stay-readable",
+     "name": "Its words stay readable in every state",
+     "severity": "breaks",
+     "ok": true,
+     "says": "Its words read clearly at every moment, including mid-gesture.",
+     "fix": null,
+     "principle": "What a button says must be readable in every state it passes through, not only at rest: mid-gesture is when people check what they are committing to.",
+     "sources": [
+      {
+       "says": "WCAG 2.2, 1.4.3 Contrast (Minimum)",
+       "url": "https://www.w3.org/TR/WCAG22/#contrast-minimum"
+      },
+      {
+       "says": "Plumber: craft/words-on-layers (words follow their ground)",
+       "url": null
+      }
+     ],
+     "checked": true
+    },
+    {
+     "id": "big-enough",
+     "name": "It is big enough to hit",
+     "severity": "weakens",
+     "ok": true,
+     "says": "Its target is comfortably big for a finger.",
+     "fix": null,
+     "principle": "The thing you press needs room for a finger: small targets cause missed and mistaken presses.",
+     "sources": [
+      {
+       "says": "Apple Human Interface Guidelines, Accessibility: default control size on iOS 44×44 pt (minimum 28×28 pt)",
+       "url": "https://developer.apple.com/design/human-interface-guidelines/accessibility"
+      },
+      {
+       "says": "Material Design 3: consider making touch targets at least 48×48 dp",
+       "url": "https://m3.material.io/foundations/designing/structure"
+      },
+      {
+       "says": "WCAG 2.2, 2.5.8 Target Size (Minimum): at least 24×24 CSS px (AA)",
+       "url": "https://www.w3.org/TR/WCAG22/#target-size-minimum"
+      }
+     ],
+     "checked": true
+    },
+    {
+     "id": "motion-purposeful",
+     "name": "Its motion is quick and respects reduced motion",
+     "severity": "weakens",
+     "ok": true,
+     "says": "Its motion is brief, and it calms down for people who ask for reduced motion.",
+     "fix": null,
+     "principle": "Interface motion should be brief and say something; people who ask for reduced motion should get the same states without the travel. Motion that goes on while the control says it is waiting is a progress indicator, which may run as long as the wait, but it too must stop for reduced motion.",
+     "sources": [
+      {
+       "says": "Material Design 3, easing and duration: suggested transitions run 200–500 ms",
+       "url": "https://m3.material.io/styles/motion/easing-and-duration/applying-easing-and-duration"
+      },
+      {
+       "says": "Apple Human Interface Guidelines, Motion: aim for brevity and precision in feedback animations; make motion optional",
+       "url": "https://developer.apple.com/design/human-interface-guidelines/motion"
+      },
+      {
+       "says": "WCAG 2.2, 2.3.3 Animation from Interactions (AAA): motion triggered by interaction can be disabled",
+       "url": "https://www.w3.org/TR/WCAG22/#animation-from-interactions"
+      }
+     ],
+     "checked": true
+    },
+    {
+     "id": "friction-fits-stakes",
+     "name": "The effort fits the stakes",
+     "severity": "weakens",
+     "ok": true,
+     "says": "One press is right here: checkout asks for the payment itself, so a slip here costs nothing.",
+     "fix": null,
+     "principle": "Consequential, hard-to-undo actions deserve a deliberate step; everyday ones should not make people work. Both too little and too much friction cost trust.",
+     "sources": [
+      {
+       "says": "Apple Human Interface Guidelines, Alerts: use alerts sparingly; avoid them for common, undoable actions",
+       "url": "https://developer.apple.com/design/human-interface-guidelines/alerts"
+      },
+      {
+       "says": "Material Design 3, Dialogs: purposefully interruptive, so use them sparingly",
+       "url": "https://m3.material.io/components/dialogs/guidelines"
+      },
+      {
+       "says": "Nielsen Norman Group heuristic #5, Error prevention: a confirmation option before people commit",
+       "url": "https://www.nngroup.com/articles/ten-usability-heuristics/"
+      }
+     ],
+     "checked": true
+    }
+   ],
+   "score": 0
+  },
+  {
+   "form": "native/answer",
+   "name": "Press, and it says what’s happening",
+   "kind": "press",
+   "target": [
+    307,
+    48
+   ],
+   "firstMs": 47,
+   "motionMs": 0,
+   "progressMs": 1606,
+   "commits": true,
+   "words": null,
+   "backsOut": true,
+   "keyboard": true,
+   "focusable": true,
+   "reducedMotionMs": 6,
+   "verdict": "works",
+   "results": [
+    {
+     "id": "answers-at-once",
+     "name": "Answers the press at once",
+     "severity": "weakens",
+     "ok": true,
+     "says": "It answers the moment it is pressed, so the customer knows the button heard them.",
+     "fix": null,
+     "principle": "People need to know their action registered: the interface answers within about a tenth of a second, or the press feels lost.",
+     "sources": [
+      {
+       "says": "Nielsen Norman Group heuristic #1, Visibility of system status: keep people informed through appropriate feedback within a reasonable amount of time",
+       "url": "https://www.nngroup.com/articles/ten-usability-heuristics/"
+      },
+      {
+       "says": "Nielsen, Response Times: 0.1 second is about the limit for feeling the system reacts instantaneously",
+       "url": "https://www.nngroup.com/articles/response-times-3-important-limits/"
+      }
+     ],
+     "checked": true
+    },
+    {
+     "id": "words-stay-readable",
+     "name": "Its words stay readable in every state",
+     "severity": "breaks",
+     "ok": true,
+     "says": "Its words read clearly at every moment, including mid-gesture.",
+     "fix": null,
+     "principle": "What a button says must be readable in every state it passes through, not only at rest: mid-gesture is when people check what they are committing to.",
+     "sources": [
+      {
+       "says": "WCAG 2.2, 1.4.3 Contrast (Minimum)",
+       "url": "https://www.w3.org/TR/WCAG22/#contrast-minimum"
+      },
+      {
+       "says": "Plumber: craft/words-on-layers (words follow their ground)",
+       "url": null
+      }
+     ],
+     "checked": true
+    },
+    {
+     "id": "big-enough",
+     "name": "It is big enough to hit",
+     "severity": "weakens",
+     "ok": true,
+     "says": "Its target is comfortably big for a finger.",
+     "fix": null,
+     "principle": "The thing you press needs room for a finger: small targets cause missed and mistaken presses.",
+     "sources": [
+      {
+       "says": "Apple Human Interface Guidelines, Accessibility: default control size on iOS 44×44 pt (minimum 28×28 pt)",
+       "url": "https://developer.apple.com/design/human-interface-guidelines/accessibility"
+      },
+      {
+       "says": "Material Design 3: consider making touch targets at least 48×48 dp",
+       "url": "https://m3.material.io/foundations/designing/structure"
+      },
+      {
+       "says": "WCAG 2.2, 2.5.8 Target Size (Minimum): at least 24×24 CSS px (AA)",
+       "url": "https://www.w3.org/TR/WCAG22/#target-size-minimum"
+      }
+     ],
+     "checked": true
+    },
+    {
+     "id": "motion-purposeful",
+     "name": "Its motion is quick and respects reduced motion",
+     "severity": "weakens",
+     "ok": true,
+     "says": "Its motion is brief, and it calms down for people who ask for reduced motion.",
+     "fix": null,
+     "principle": "Interface motion should be brief and say something; people who ask for reduced motion should get the same states without the travel. Motion that goes on while the control says it is waiting is a progress indicator, which may run as long as the wait, but it too must stop for reduced motion.",
+     "sources": [
+      {
+       "says": "Material Design 3, easing and duration: suggested transitions run 200–500 ms",
+       "url": "https://m3.material.io/styles/motion/easing-and-duration/applying-easing-and-duration"
+      },
+      {
+       "says": "Apple Human Interface Guidelines, Motion: aim for brevity and precision in feedback animations; make motion optional",
+       "url": "https://developer.apple.com/design/human-interface-guidelines/motion"
+      },
+      {
+       "says": "WCAG 2.2, 2.3.3 Animation from Interactions (AAA): motion triggered by interaction can be disabled",
+       "url": "https://www.w3.org/TR/WCAG22/#animation-from-interactions"
+      }
+     ],
+     "checked": true
+    },
+    {
+     "id": "friction-fits-stakes",
+     "name": "The effort fits the stakes",
+     "severity": "weakens",
+     "ok": true,
+     "says": "One press is right here: checkout asks for the payment itself, so a slip here costs nothing.",
+     "fix": null,
+     "principle": "Consequential, hard-to-undo actions deserve a deliberate step; everyday ones should not make people work. Both too little and too much friction cost trust.",
+     "sources": [
+      {
+       "says": "Apple Human Interface Guidelines, Alerts: use alerts sparingly; avoid them for common, undoable actions",
+       "url": "https://developer.apple.com/design/human-interface-guidelines/alerts"
+      },
+      {
+       "says": "Material Design 3, Dialogs: purposefully interruptive, so use them sparingly",
+       "url": "https://m3.material.io/components/dialogs/guidelines"
+      },
+      {
+       "says": "Nielsen Norman Group heuristic #5, Error prevention: a confirmation option before people commit",
+       "url": "https://www.nngroup.com/articles/ten-usability-heuristics/"
+      }
+     ],
+     "checked": true
+    }
+   ],
+   "score": 0
+  },
+  {
+   "form": "native/sheen",
+   "name": "A sheen, once",
+   "kind": "press",
+   "target": [
+    307,
+    48
+   ],
+   "firstMs": 2,
+   "motionMs": 457,
+   "progressMs": 0,
+   "commits": true,
+   "words": null,
+   "backsOut": true,
+   "keyboard": true,
+   "focusable": true,
+   "reducedMotionMs": 10,
+   "verdict": "works",
+   "results": [
+    {
+     "id": "answers-at-once",
+     "name": "Answers the press at once",
+     "severity": "weakens",
+     "ok": true,
+     "says": "It answers the moment it is pressed, so the customer knows the button heard them.",
+     "fix": null,
+     "principle": "People need to know their action registered: the interface answers within about a tenth of a second, or the press feels lost.",
+     "sources": [
+      {
+       "says": "Nielsen Norman Group heuristic #1, Visibility of system status: keep people informed through appropriate feedback within a reasonable amount of time",
+       "url": "https://www.nngroup.com/articles/ten-usability-heuristics/"
+      },
+      {
+       "says": "Nielsen, Response Times: 0.1 second is about the limit for feeling the system reacts instantaneously",
+       "url": "https://www.nngroup.com/articles/response-times-3-important-limits/"
+      }
+     ],
+     "checked": true
+    },
+    {
+     "id": "words-stay-readable",
+     "name": "Its words stay readable in every state",
+     "severity": "breaks",
+     "ok": true,
+     "says": "Its words read clearly at every moment, including mid-gesture.",
+     "fix": null,
+     "principle": "What a button says must be readable in every state it passes through, not only at rest: mid-gesture is when people check what they are committing to.",
+     "sources": [
+      {
+       "says": "WCAG 2.2, 1.4.3 Contrast (Minimum)",
+       "url": "https://www.w3.org/TR/WCAG22/#contrast-minimum"
+      },
+      {
+       "says": "Plumber: craft/words-on-layers (words follow their ground)",
+       "url": null
+      }
+     ],
+     "checked": true
+    },
+    {
+     "id": "big-enough",
+     "name": "It is big enough to hit",
+     "severity": "weakens",
+     "ok": true,
+     "says": "Its target is comfortably big for a finger.",
+     "fix": null,
+     "principle": "The thing you press needs room for a finger: small targets cause missed and mistaken presses.",
+     "sources": [
+      {
+       "says": "Apple Human Interface Guidelines, Accessibility: default control size on iOS 44×44 pt (minimum 28×28 pt)",
+       "url": "https://developer.apple.com/design/human-interface-guidelines/accessibility"
+      },
+      {
+       "says": "Material Design 3: consider making touch targets at least 48×48 dp",
+       "url": "https://m3.material.io/foundations/designing/structure"
+      },
+      {
+       "says": "WCAG 2.2, 2.5.8 Target Size (Minimum): at least 24×24 CSS px (AA)",
+       "url": "https://www.w3.org/TR/WCAG22/#target-size-minimum"
+      }
+     ],
+     "checked": true
+    },
+    {
+     "id": "motion-purposeful",
+     "name": "Its motion is quick and respects reduced motion",
+     "severity": "weakens",
+     "ok": true,
+     "says": "Its motion is brief, and it calms down for people who ask for reduced motion.",
+     "fix": null,
+     "principle": "Interface motion should be brief and say something; people who ask for reduced motion should get the same states without the travel. Motion that goes on while the control says it is waiting is a progress indicator, which may run as long as the wait, but it too must stop for reduced motion.",
      "sources": [
       {
        "says": "Material Design 3, easing and duration: suggested transitions run 200–500 ms",
@@ -291,16 +695,23 @@
     48,
     48
    ],
-   "firstMs": 36,
-   "motionMs": 1592,
+   "firstMs": 39,
+   "motionMs": 225,
+   "progressMs": 1592,
    "commits": true,
-   "words": null,
+   "words": {
+    "when": "Mid-gesture",
+    "says": "Where the fill passes under these words (55% of them), they read at Lc 15; they need 60. They fade to 27% on the rest too, so for a moment nothing reads.",
+    "rule": "craft/words-on-layers",
+    "at": 655,
+    "moments": 1
+   },
    "backsOut": true,
    "keyboard": true,
    "focusable": true,
-   "reducedMotionMs": 1225,
+   "reducedMotionMs": 1218,
    "progressRatio": 3.1,
-   "verdict": "needs-work",
+   "verdict": "breaks",
    "results": [
     {
      "id": "answers-at-once",
@@ -326,9 +737,9 @@
      "id": "words-stay-readable",
      "name": "Its words stay readable in every state",
      "severity": "breaks",
-     "ok": true,
-     "says": "Its words read clearly at every moment, including mid-gesture.",
-     "fix": null,
+     "ok": false,
+     "says": "Mid-gesture, where the fill passes under these words (55% of them), they read at Lc 15; they need 60. They fade to 27% on the rest too, so for a moment nothing reads.",
+     "fix": "Keep the words on their ground: redraw them in the fill’s own ink, clipped at the fill’s edge (as hold-to-confirm does), or move them out of the fill’s path.",
      "principle": "What a button says must be readable in every state it passes through, not only at rest: mid-gesture is when people check what they are committing to.",
      "sources": [
       {
@@ -429,7 +840,7 @@
      "ok": false,
      "says": "It plays its motion even for people who ask their device to reduce motion.",
      "fix": "Honour reduced motion (states change at once) and keep a control’s own motion short.",
-     "principle": "Interface motion should be brief and say something; people who ask for reduced motion should get the same states without the travel.",
+     "principle": "Interface motion should be brief and say something; people who ask for reduced motion should get the same states without the travel. Motion that goes on while the control says it is waiting is a progress indicator, which may run as long as the wait, but it too must stop for reduced motion.",
      "sources": [
       {
        "says": "Material Design 3, easing and duration: suggested transitions run 200–500 ms",
@@ -471,7 +882,7 @@
      "checked": true
     }
    ],
-   "score": 2
+   "score": 12
   },
   {
    "form": "beui/hold-action-button",
@@ -481,178 +892,9 @@
     307,
     48
    ],
-   "firstMs": 37,
-   "motionMs": 1108,
-   "commits": true,
-   "words": null,
-   "backsOut": true,
-   "keyboard": true,
-   "focusable": true,
-   "reducedMotionMs": 0,
-   "progressRatio": 3.1,
-   "verdict": "needs-work",
-   "results": [
-    {
-     "id": "answers-at-once",
-     "name": "Answers the press at once",
-     "severity": "weakens",
-     "ok": true,
-     "says": "It answers the moment it is pressed, so the customer knows the button heard them.",
-     "fix": null,
-     "principle": "People need to know their action registered: the interface answers within about a tenth of a second, or the press feels lost.",
-     "sources": [
-      {
-       "says": "Nielsen Norman Group heuristic #1, Visibility of system status: keep people informed through appropriate feedback within a reasonable amount of time",
-       "url": "https://www.nngroup.com/articles/ten-usability-heuristics/"
-      },
-      {
-       "says": "Nielsen, Response Times: 0.1 second is about the limit for feeling the system reacts instantaneously",
-       "url": "https://www.nngroup.com/articles/response-times-3-important-limits/"
-      }
-     ],
-     "checked": true
-    },
-    {
-     "id": "words-stay-readable",
-     "name": "Its words stay readable in every state",
-     "severity": "breaks",
-     "ok": true,
-     "says": "Its words read clearly at every moment, including mid-gesture.",
-     "fix": null,
-     "principle": "What a button says must be readable in every state it passes through, not only at rest: mid-gesture is when people check what they are committing to.",
-     "sources": [
-      {
-       "says": "WCAG 2.2, 1.4.3 Contrast (Minimum)",
-       "url": "https://www.w3.org/TR/WCAG22/#contrast-minimum"
-      },
-      {
-       "says": "Plumber: craft/words-on-layers (words follow their ground)",
-       "url": null
-      }
-     ],
-     "checked": true
-    },
-    {
-     "id": "progress-shows",
-     "name": "You can see your progress",
-     "severity": "breaks",
-     "ok": true,
-     "says": "The fill stands out from the track, so it is always clear how far there is to go.",
-     "fix": null,
-     "principle": "A hold or a drag commits only at the end; the part done has to stand clearly apart from the part to go, or people let go too early or hold on not knowing.",
-     "sources": [
-      {
-       "says": "WCAG 2.2, 1.4.11 Non-text Contrast (3:1 for the states of a control)",
-       "url": "https://www.w3.org/TR/WCAG22/#non-text-contrast"
-      }
-     ],
-     "checked": true
-    },
-    {
-     "id": "can-back-out",
-     "name": "You can back out mid-gesture",
-     "severity": "breaks",
-     "ok": true,
-     "says": "Letting go early takes it back, so a half-meant gesture never commits.",
-     "fix": null,
-     "principle": "Starting a gesture must not commit you: letting go early, or sliding away, has to undo it.",
-     "sources": [
-      {
-       "says": "WCAG 2.2, 2.5.2 Pointer Cancellation",
-       "url": "https://www.w3.org/TR/WCAG22/#pointer-cancellation"
-      },
-      {
-       "says": "Nielsen Norman Group heuristic #3, User control and freedom: a clearly marked emergency exit",
-       "url": "https://www.nngroup.com/articles/ten-usability-heuristics/"
-      }
-     ],
-     "checked": true
-    },
-    {
-     "id": "big-enough",
-     "name": "It is big enough to hit",
-     "severity": "weakens",
-     "ok": true,
-     "says": "Its target is comfortably big for a finger.",
-     "fix": null,
-     "principle": "The thing you press needs room for a finger: small targets cause missed and mistaken presses.",
-     "sources": [
-      {
-       "says": "Apple Human Interface Guidelines, Accessibility: default control size on iOS 44×44 pt (minimum 28×28 pt)",
-       "url": "https://developer.apple.com/design/human-interface-guidelines/accessibility"
-      },
-      {
-       "says": "Material Design 3: consider making touch targets at least 48×48 dp",
-       "url": "https://m3.material.io/foundations/designing/structure"
-      },
-      {
-       "says": "WCAG 2.2, 2.5.8 Target Size (Minimum): at least 24×24 CSS px (AA)",
-       "url": "https://www.w3.org/TR/WCAG22/#target-size-minimum"
-      }
-     ],
-     "checked": true
-    },
-    {
-     "id": "motion-purposeful",
-     "name": "Its motion is quick and respects reduced motion",
-     "severity": "weakens",
-     "ok": false,
-     "says": "Its movements run 1108 ms, longer than a control’s motion should.",
-     "fix": "Honour reduced motion (states change at once) and keep a control’s own motion short.",
-     "principle": "Interface motion should be brief and say something; people who ask for reduced motion should get the same states without the travel.",
-     "sources": [
-      {
-       "says": "Material Design 3, easing and duration: suggested transitions run 200–500 ms",
-       "url": "https://m3.material.io/styles/motion/easing-and-duration/applying-easing-and-duration"
-      },
-      {
-       "says": "Apple Human Interface Guidelines, Motion: aim for brevity and precision in feedback animations; make motion optional",
-       "url": "https://developer.apple.com/design/human-interface-guidelines/motion"
-      },
-      {
-       "says": "WCAG 2.2, 2.3.3 Animation from Interactions (AAA): motion triggered by interaction can be disabled",
-       "url": "https://www.w3.org/TR/WCAG22/#animation-from-interactions"
-      }
-     ],
-     "checked": true
-    },
-    {
-     "id": "friction-fits-stakes",
-     "name": "The effort fits the stakes",
-     "severity": "weakens",
-     "ok": false,
-     "says": "It asks for a deliberate gesture before a step that asks again: checkout asks for the payment itself, so a slip here costs nothing, so the customer is made to commit twice.",
-     "fix": "Let one press open the next step; keep the ceremony for where the commitment really happens.",
-     "principle": "Consequential, hard-to-undo actions deserve a deliberate step; everyday ones should not make people work. Both too little and too much friction cost trust.",
-     "sources": [
-      {
-       "says": "Apple Human Interface Guidelines, Alerts: use alerts sparingly; avoid them for common, undoable actions",
-       "url": "https://developer.apple.com/design/human-interface-guidelines/alerts"
-      },
-      {
-       "says": "Material Design 3, Dialogs: purposefully interruptive, so use them sparingly",
-       "url": "https://m3.material.io/components/dialogs/guidelines"
-      },
-      {
-       "says": "Nielsen Norman Group heuristic #5, Error prevention: a confirmation option before people commit",
-       "url": "https://www.nngroup.com/articles/ten-usability-heuristics/"
-      }
-     ],
-     "checked": true
-    }
-   ],
-   "score": 2
-  },
-  {
-   "form": "arc/hold-to-confirm",
-   "name": "Hold to confirm",
-   "kind": "hold",
-   "target": [
-    307,
-    48
-   ],
-   "firstMs": 35,
-   "motionMs": 0,
+   "firstMs": 31,
+   "motionMs": 371,
+   "progressMs": 1120,
    "commits": true,
    "words": null,
    "backsOut": true,
@@ -769,7 +1011,178 @@
      "ok": true,
      "says": "Its motion is brief, and it calms down for people who ask for reduced motion.",
      "fix": null,
-     "principle": "Interface motion should be brief and say something; people who ask for reduced motion should get the same states without the travel.",
+     "principle": "Interface motion should be brief and say something; people who ask for reduced motion should get the same states without the travel. Motion that goes on while the control says it is waiting is a progress indicator, which may run as long as the wait, but it too must stop for reduced motion.",
+     "sources": [
+      {
+       "says": "Material Design 3, easing and duration: suggested transitions run 200–500 ms",
+       "url": "https://m3.material.io/styles/motion/easing-and-duration/applying-easing-and-duration"
+      },
+      {
+       "says": "Apple Human Interface Guidelines, Motion: aim for brevity and precision in feedback animations; make motion optional",
+       "url": "https://developer.apple.com/design/human-interface-guidelines/motion"
+      },
+      {
+       "says": "WCAG 2.2, 2.3.3 Animation from Interactions (AAA): motion triggered by interaction can be disabled",
+       "url": "https://www.w3.org/TR/WCAG22/#animation-from-interactions"
+      }
+     ],
+     "checked": true
+    },
+    {
+     "id": "friction-fits-stakes",
+     "name": "The effort fits the stakes",
+     "severity": "weakens",
+     "ok": false,
+     "says": "It asks for a deliberate gesture before a step that asks again: checkout asks for the payment itself, so a slip here costs nothing, so the customer is made to commit twice.",
+     "fix": "Let one press open the next step; keep the ceremony for where the commitment really happens.",
+     "principle": "Consequential, hard-to-undo actions deserve a deliberate step; everyday ones should not make people work. Both too little and too much friction cost trust.",
+     "sources": [
+      {
+       "says": "Apple Human Interface Guidelines, Alerts: use alerts sparingly; avoid them for common, undoable actions",
+       "url": "https://developer.apple.com/design/human-interface-guidelines/alerts"
+      },
+      {
+       "says": "Material Design 3, Dialogs: purposefully interruptive, so use them sparingly",
+       "url": "https://m3.material.io/components/dialogs/guidelines"
+      },
+      {
+       "says": "Nielsen Norman Group heuristic #5, Error prevention: a confirmation option before people commit",
+       "url": "https://www.nngroup.com/articles/ten-usability-heuristics/"
+      }
+     ],
+     "checked": true
+    }
+   ],
+   "score": 1
+  },
+  {
+   "form": "arc/hold-to-confirm",
+   "name": "Hold to confirm",
+   "kind": "hold",
+   "target": [
+    307,
+    48
+   ],
+   "firstMs": 35,
+   "motionMs": 0,
+   "progressMs": 0,
+   "commits": true,
+   "words": null,
+   "backsOut": true,
+   "keyboard": true,
+   "focusable": true,
+   "reducedMotionMs": 0,
+   "progressRatio": 3.1,
+   "verdict": "needs-work",
+   "results": [
+    {
+     "id": "answers-at-once",
+     "name": "Answers the press at once",
+     "severity": "weakens",
+     "ok": true,
+     "says": "It answers the moment it is pressed, so the customer knows the button heard them.",
+     "fix": null,
+     "principle": "People need to know their action registered: the interface answers within about a tenth of a second, or the press feels lost.",
+     "sources": [
+      {
+       "says": "Nielsen Norman Group heuristic #1, Visibility of system status: keep people informed through appropriate feedback within a reasonable amount of time",
+       "url": "https://www.nngroup.com/articles/ten-usability-heuristics/"
+      },
+      {
+       "says": "Nielsen, Response Times: 0.1 second is about the limit for feeling the system reacts instantaneously",
+       "url": "https://www.nngroup.com/articles/response-times-3-important-limits/"
+      }
+     ],
+     "checked": true
+    },
+    {
+     "id": "words-stay-readable",
+     "name": "Its words stay readable in every state",
+     "severity": "breaks",
+     "ok": true,
+     "says": "Its words read clearly at every moment, including mid-gesture.",
+     "fix": null,
+     "principle": "What a button says must be readable in every state it passes through, not only at rest: mid-gesture is when people check what they are committing to.",
+     "sources": [
+      {
+       "says": "WCAG 2.2, 1.4.3 Contrast (Minimum)",
+       "url": "https://www.w3.org/TR/WCAG22/#contrast-minimum"
+      },
+      {
+       "says": "Plumber: craft/words-on-layers (words follow their ground)",
+       "url": null
+      }
+     ],
+     "checked": true
+    },
+    {
+     "id": "progress-shows",
+     "name": "You can see your progress",
+     "severity": "breaks",
+     "ok": true,
+     "says": "The fill stands out from the track, so it is always clear how far there is to go.",
+     "fix": null,
+     "principle": "A hold or a drag commits only at the end; the part done has to stand clearly apart from the part to go, or people let go too early or hold on not knowing.",
+     "sources": [
+      {
+       "says": "WCAG 2.2, 1.4.11 Non-text Contrast (3:1 for the states of a control)",
+       "url": "https://www.w3.org/TR/WCAG22/#non-text-contrast"
+      }
+     ],
+     "checked": true
+    },
+    {
+     "id": "can-back-out",
+     "name": "You can back out mid-gesture",
+     "severity": "breaks",
+     "ok": true,
+     "says": "Letting go early takes it back, so a half-meant gesture never commits.",
+     "fix": null,
+     "principle": "Starting a gesture must not commit you: letting go early, or sliding away, has to undo it.",
+     "sources": [
+      {
+       "says": "WCAG 2.2, 2.5.2 Pointer Cancellation",
+       "url": "https://www.w3.org/TR/WCAG22/#pointer-cancellation"
+      },
+      {
+       "says": "Nielsen Norman Group heuristic #3, User control and freedom: a clearly marked emergency exit",
+       "url": "https://www.nngroup.com/articles/ten-usability-heuristics/"
+      }
+     ],
+     "checked": true
+    },
+    {
+     "id": "big-enough",
+     "name": "It is big enough to hit",
+     "severity": "weakens",
+     "ok": true,
+     "says": "Its target is comfortably big for a finger.",
+     "fix": null,
+     "principle": "The thing you press needs room for a finger: small targets cause missed and mistaken presses.",
+     "sources": [
+      {
+       "says": "Apple Human Interface Guidelines, Accessibility: default control size on iOS 44×44 pt (minimum 28×28 pt)",
+       "url": "https://developer.apple.com/design/human-interface-guidelines/accessibility"
+      },
+      {
+       "says": "Material Design 3: consider making touch targets at least 48×48 dp",
+       "url": "https://m3.material.io/foundations/designing/structure"
+      },
+      {
+       "says": "WCAG 2.2, 2.5.8 Target Size (Minimum): at least 24×24 CSS px (AA)",
+       "url": "https://www.w3.org/TR/WCAG22/#target-size-minimum"
+      }
+     ],
+     "checked": true
+    },
+    {
+     "id": "motion-purposeful",
+     "name": "Its motion is quick and respects reduced motion",
+     "severity": "weakens",
+     "ok": true,
+     "says": "Its motion is brief, and it calms down for people who ask for reduced motion.",
+     "fix": null,
+     "principle": "Interface motion should be brief and say something; people who ask for reduced motion should get the same states without the travel. Motion that goes on while the control says it is waiting is a progress indicator, which may run as long as the wait, but it too must stop for reduced motion.",
      "sources": [
       {
        "says": "Material Design 3, easing and duration: suggested transitions run 200–500 ms",
@@ -821,21 +1234,16 @@
     195,
     48
    ],
-   "firstMs": 48,
-   "motionMs": 1278,
+   "firstMs": 62,
+   "motionMs": 495,
+   "progressMs": 1264,
    "commits": true,
-   "words": {
-    "when": "Just after letting go",
-    "says": "Contrast is 0 on the APCA scale at 14px. Text this size needs 60.",
-    "rule": "craft/contrast",
-    "at": 115,
-    "moments": 2
-   },
+   "words": null,
    "backsOut": true,
    "keyboard": true,
    "focusable": true,
-   "reducedMotionMs": 1012,
-   "verdict": "breaks",
+   "reducedMotionMs": 1013,
+   "verdict": "needs-work",
    "results": [
     {
      "id": "answers-at-once",
@@ -861,9 +1269,9 @@
      "id": "words-stay-readable",
      "name": "Its words stay readable in every state",
      "severity": "breaks",
-     "ok": false,
-     "says": "Just after letting go, contrast is 0 on the APCA scale at 14px. Text this size needs 60.",
-     "fix": "Keep the words on their ground: redraw them in the fill’s own ink, clipped at the fill’s edge (as hold-to-confirm does), or move them out of the fill’s path.",
+     "ok": true,
+     "says": "Its words read clearly at every moment, including mid-gesture.",
+     "fix": null,
      "principle": "What a button says must be readable in every state it passes through, not only at rest: mid-gesture is when people check what they are committing to.",
      "sources": [
       {
@@ -928,7 +1336,7 @@
      "ok": false,
      "says": "It plays its motion even for people who ask their device to reduce motion.",
      "fix": "Honour reduced motion (states change at once) and keep a control’s own motion short.",
-     "principle": "Interface motion should be brief and say something; people who ask for reduced motion should get the same states without the travel.",
+     "principle": "Interface motion should be brief and say something; people who ask for reduced motion should get the same states without the travel. Motion that goes on while the control says it is waiting is a progress indicator, which may run as long as the wait, but it too must stop for reduced motion.",
      "sources": [
       {
        "says": "Material Design 3, easing and duration: suggested transitions run 200–500 ms",
@@ -970,7 +1378,7 @@
      "checked": true
     }
    ],
-   "score": 12
+   "score": 2
   },
   {
    "form": "beui/button-stateful",
@@ -980,21 +1388,16 @@
     307,
     48
    ],
-   "firstMs": 39,
-   "motionMs": 1602,
+   "firstMs": 61,
+   "motionMs": 1433,
+   "progressMs": 0,
    "commits": true,
-   "words": {
-    "when": "Just after letting go",
-    "says": "Faded to 0.5, the words drop to contrast 42.",
-    "rule": "craft/disabled-contrast",
-    "at": 113,
-    "moments": 1
-   },
+   "words": null,
    "backsOut": true,
    "keyboard": true,
    "focusable": true,
-   "reducedMotionMs": 1288,
-   "verdict": "breaks",
+   "reducedMotionMs": 1304,
+   "verdict": "needs-work",
    "results": [
     {
      "id": "answers-at-once",
@@ -1020,9 +1423,9 @@
      "id": "words-stay-readable",
      "name": "Its words stay readable in every state",
      "severity": "breaks",
-     "ok": false,
-     "says": "Just after letting go, faded to 0.5, the words drop to contrast 42.",
-     "fix": "Keep the words on their ground: redraw them in the fill’s own ink, clipped at the fill’s edge (as hold-to-confirm does), or move them out of the fill’s path.",
+     "ok": true,
+     "says": "Its words read clearly at every moment, including mid-gesture.",
+     "fix": null,
      "principle": "What a button says must be readable in every state it passes through, not only at rest: mid-gesture is when people check what they are committing to.",
      "sources": [
       {
@@ -1067,7 +1470,7 @@
      "ok": false,
      "says": "It plays its motion even for people who ask their device to reduce motion.",
      "fix": "Honour reduced motion (states change at once) and keep a control’s own motion short.",
-     "principle": "Interface motion should be brief and say something; people who ask for reduced motion should get the same states without the travel.",
+     "principle": "Interface motion should be brief and say something; people who ask for reduced motion should get the same states without the travel. Motion that goes on while the control says it is waiting is a progress indicator, which may run as long as the wait, but it too must stop for reduced motion.",
      "sources": [
       {
        "says": "Material Design 3, easing and duration: suggested transitions run 200–500 ms",
@@ -1109,7 +1512,7 @@
      "checked": true
     }
    ],
-   "score": 11
+   "score": 1
   },
   {
    "form": "beui/button-magnetic",
@@ -1119,8 +1522,9 @@
     307,
     48
    ],
-   "firstMs": 38,
-   "motionMs": 235,
+   "firstMs": 34,
+   "motionMs": 231,
+   "progressMs": 0,
    "commits": true,
    "words": null,
    "backsOut": true,
@@ -1200,7 +1604,7 @@
      "ok": true,
      "says": "Its motion is brief, and it calms down for people who ask for reduced motion.",
      "fix": null,
-     "principle": "Interface motion should be brief and say something; people who ask for reduced motion should get the same states without the travel.",
+     "principle": "Interface motion should be brief and say something; people who ask for reduced motion should get the same states without the travel. Motion that goes on while the control says it is waiting is a progress indicator, which may run as long as the wait, but it too must stop for reduced motion.",
      "sources": [
       {
        "says": "Material Design 3, easing and duration: suggested transitions run 200–500 ms",

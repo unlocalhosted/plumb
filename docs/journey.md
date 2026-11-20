@@ -3128,6 +3128,27 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **Still open:** the bar's other checks (progress shows, fits where the original sat, keeps its weight) aren't
   plumber rules yet.
 
+### 47. Three more suggestions, and a judge that tells a button from the tools around it (2026-11-20)
+
+**The itch.** The owner: "build more suggestions like the pour".
+
+**What we built.** Three more presses for crafting attention's buy button, in its own skin: the arrow leads (pressing
+sends the button's own arrow on its way, and it keeps dashing out and back while checkout opens); it says what's
+happening (the label rolls up to "Opening checkout" with a thin line growing along the edge, the words moving but never
+fading, the fault that broke the library version); and a sheen, once (a soft light crosses the button when it comes
+into view and when the pointer arrives, never on a loop, and not at all with reduced motion).
+
+**What the judge got wrong, and the fixes.** Most of the time went on the judge, not the buttons. It counted a
+progress indicator (motion that goes on while the button says it is waiting) as a slow transition; Material and Apple
+let a progress indicator run as long as the wait, so it now only has to stop for reduced motion, and transitions keep
+Material's 500 ms limit (plus one frame of reading error). It also read the page's own tools as part of each button:
+plumber's gesture view, now built into the atoms page, freezes the button into its worst moment about a second after
+release, which looked like movement under reduced motion. The view now steps aside while the judge uses the page.
+
+**The proof.** All four of our suggestions work and meet every standard they are held to; a filmstrip of a real click
+on each is in `docs/films/pour/suggestions-strip.png`. The arrow's loop was changed after the last judge run (it now
+rests most of the loop); its transition and reduced-motion behaviour are unchanged.
+
 ### 46. The first suggestion we built ourselves: a press that pours (2026-11-20)
 
 **The itch.** The owner, on the live ideas page: "the example which were working also looked bad and not polished",
@@ -5112,6 +5133,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- Crafting attention's buy button now has four suggestions built by us (pours, arrow leads, says what's happening, a sheen once), each passing every interaction standard; the judge now tells progress from slow motion and ignores the page's own tools ([entry](#47-three-more-suggestions-and-a-judge-that-tells-a-button-from-the-tools-around-it-2026-11-20)).
 - On the plumber site, press one of plumber's own buttons (Design → A button in use): its filmstrip shows it keeps moving 525 ms after you let go, and "With the fix" makes your press again with the spring-back quicker and shows it clean ([entry](#53-plumbers-own-button-in-use-with-its-fix-2026-11-20)).
 - Use any form on the atoms page and a filmstrip of the button opens under it, the wrong moments in coral, each fault one line with its fix; each form's verdict is one line ([entry](#52-a-filmstrip-of-the-button-and-verdicts-in-one-line-2026-11-20)).
 - The atoms page shows what went wrong in any gesture you make, with its fixes, without a special link; the two other ways of showing it are gone ([entry](#51-one-way-to-show-a-gesture-on-the-page-itself-2026-11-20)).

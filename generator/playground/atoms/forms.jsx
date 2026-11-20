@@ -10,6 +10,9 @@ import { MagneticButton } from '../vendor/beui/components/button/magnetic.tsx';
 import { HoldToConfirm } from '../vendor/arc/hold-to-confirm/hold-to-confirm.tsx';
 import { ConfirmMorph } from '../vendor/arc/confirm-morph/confirm-morph.tsx';
 import { Pour } from './native/pour.jsx';
+import { Lead } from './native/lead.jsx';
+import { Answer } from './native/answer.jsx';
+import { Sheen } from './native/sheen.jsx';
 
 const Icon = ({ atom }) => atom.iconHTML ? <span aria-hidden className="atom-icon" dangerouslySetInnerHTML={{ __html: atom.iconHTML }} /> : null;
 const face = 'h-[var(--atom-height)] rounded-[var(--atom-radius)] text-[length:var(--atom-size)] font-[number:var(--atom-weight)] shadow-[var(--atom-lip)]';
@@ -31,6 +34,15 @@ export const FORMS = {
     { id: 'native/pour', name: 'Press, and it pours', gesture: 'press',
       why: 'The deeper shade floods out from the exact point you pressed, so the press feels like it lands where your finger did; the words stay readable on both sides of the edge, and sliding off before letting go drains it back.',
       roles: {}, render: (a) => <Pour label={a.label} doneLabel={a.doneLabel} icon={<Icon atom={a} />} /> },
+    { id: 'native/lead', name: 'Press, and the arrow leads', gesture: 'press',
+      why: 'Pressing sends the button’s own arrow on its way, and while checkout opens it keeps travelling, so the wait moves in the direction the customer is going.',
+      roles: {}, render: (a) => <Lead label={a.label} doneLabel={a.doneLabel} icon={<Icon atom={a} />} /> },
+    { id: 'native/answer', name: 'Press, and it says what’s happening', gesture: 'press',
+      why: 'The label rolls up to “Opening checkout” and a thin line grows along the edge, so the moment between the press and the next screen has a voice; the words move but never fade.',
+      roles: {}, render: (a) => <Answer label={a.label} doneLabel={a.doneLabel} icon={<Icon atom={a} />} /> },
+    { id: 'native/sheen', name: 'A sheen, once', gesture: 'press',
+      why: 'A soft light crosses the button when it comes into view and when the pointer arrives, never on a loop: the one thing to do catches the eye without nagging.',
+      roles: {}, render: (a) => <Sheen label={a.label} doneLabel={a.doneLabel} icon={<Icon atom={a} />} /> },
     { id: 'beui/slide-action-button', name: 'Slide to commit', gesture: 'slide',
       why: 'Committing takes a deliberate gesture: drawing the thumb across is a small ceremony, and nobody does it by accident.',
       // the track carries the action colour, so the action keeps its weight; the trail is the stronger fill; the thumb is the ink
