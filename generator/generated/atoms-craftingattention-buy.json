@@ -1,0 +1,715 @@
+[
+ {
+  "form": "house",
+  "name": "As shipped",
+  "verdict": "the original fails too",
+  "fails": [
+   {
+    "check": "says",
+    "state": "pointed at",
+    "why": "At pointed at, “Start with an account” reads at 3.05:1 against what is under it (it needs 4.5:1)."
+   }
+  ],
+  "frames": [
+   {
+    "state": "rest",
+    "words": [
+     {
+      "t": "Start with an account",
+      "drawn": 0.1875243664717349,
+      "contrast": 5.23
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "pointed at",
+    "words": [
+     {
+      "t": "Start with an account",
+      "drawn": 0.1875243664717349,
+      "contrast": 3.05
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "done",
+    "words": [
+     {
+      "t": "Start with an account",
+      "drawn": 0.1875243664717349,
+      "contrast": 3.05
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   }
+  ]
+ },
+ {
+  "form": "beui/slide-action-button",
+  "name": "Slide to commit",
+  "verdict": "dropped",
+  "fails": [
+   {
+    "check": "says",
+    "state": "mid-gesture",
+    "why": "At mid-gesture it shows no words: nothing tells you what is happening."
+   }
+  ],
+  "frames": [
+   {
+    "state": "rest",
+    "words": [
+     {
+      "t": "Slide to start with an account",
+      "drawn": 0.1746031746031746,
+      "contrast": 5.23
+     }
+    ],
+    "progress": 5.23,
+    "leak": 0
+   },
+   {
+    "state": "pointed at",
+    "words": [
+     {
+      "t": "Slide to start with an account",
+      "drawn": 0.1746031746031746,
+      "contrast": 5.23
+     }
+    ],
+    "progress": 5.23,
+    "leak": 0
+   },
+   {
+    "state": "mid-gesture",
+    "words": [],
+    "progress": 3.1,
+    "leak": 0
+   },
+   {
+    "state": "done",
+    "words": [
+     {
+      "t": "Opening checkout",
+      "drawn": 0.18784722222222222,
+      "contrast": 16.2
+     }
+    ],
+    "progress": 16.2,
+    "leak": 0
+   }
+  ]
+ },
+ {
+  "form": "beui/hold-action-button",
+  "name": "Hold to commit",
+  "verdict": "passes",
+  "fails": [],
+  "frames": [
+   {
+    "state": "rest",
+    "words": [
+     {
+      "t": "Hold to start with an account",
+      "drawn": 0.17756869772998804,
+      "contrast": 5.23
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "pointed at",
+    "words": [
+     {
+      "t": "Hold to start with an account",
+      "drawn": 0.17756869772998804,
+      "contrast": 5.23
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "mid-gesture",
+    "words": [
+     {
+      "t": "Keep holding",
+      "drawn": 0.19867886178861788,
+      "contrast": 5.23
+     }
+    ],
+    "progress": 3.1,
+    "leak": 0
+   },
+   {
+    "state": "done",
+    "words": [
+     {
+      "t": "Keep holding",
+      "drawn": 0.2000338753387534,
+      "contrast": 16.2
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   }
+  ]
+ },
+ {
+  "form": "arc/hold-to-confirm",
+  "name": "Hold to confirm",
+  "verdict": "dropped",
+  "fails": [
+   {
+    "check": "progress",
+    "state": "mid-gesture",
+    "why": "Half way through, the done part and the part to go differ at 2.86:1 (it needs 3:1), so the progress barely shows."
+   }
+  ],
+  "frames": [
+   {
+    "state": "rest",
+    "words": [
+     {
+      "t": "Hold to start with an account",
+      "drawn": 0.17280701754385966,
+      "contrast": 5.23
+     },
+     {
+      "t": "Hold to start with an account",
+      "drawn": 0.17280701754385966,
+      "contrast": 5.23
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "pointed at",
+    "words": [
+     {
+      "t": "Hold to start with an account",
+      "drawn": 0.17280701754385966,
+      "contrast": 5.66
+     },
+     {
+      "t": "Hold to start with an account",
+      "drawn": 0.17280701754385966,
+      "contrast": 5.66
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "mid-gesture",
+    "words": [
+     {
+      "t": "Hold to start with an account",
+      "drawn": 0.19562962962962963,
+      "contrast": 16.2
+     },
+     {
+      "t": "Hold to start with an account",
+      "drawn": 0.19562962962962963,
+      "contrast": 16.2
+     }
+    ],
+    "progress": 2.86,
+    "leak": 0
+   },
+   {
+    "state": "done",
+    "words": [
+     {
+      "t": "Opening checkout",
+      "drawn": 0.18773148148148147,
+      "contrast": 16.2
+     },
+     {
+      "t": "Opening checkout",
+      "drawn": 0.18773148148148147,
+      "contrast": 16.2
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   }
+  ]
+ },
+ {
+  "form": "arc/confirm-morph",
+  "name": "Press, then confirm",
+  "verdict": "passes",
+  "fails": [],
+  "frames": [
+   {
+    "state": "rest",
+    "words": [
+     {
+      "t": "Start with an account",
+      "drawn": 0.17602442868400314,
+      "contrast": 5.23
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "pointed at",
+    "words": [
+     {
+      "t": "Start with an account",
+      "drawn": 0.1762214342001576,
+      "contrast": 4.8
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "mid-gesture",
+    "words": [
+     {
+      "t": "Pay ₹8,619 once?",
+      "drawn": 0.1871158392434988,
+      "contrast": 5.23
+     },
+     {
+      "t": "Not yet",
+      "drawn": 0.1849942726231386,
+      "contrast": 5.23
+     },
+     {
+      "t": "Yes",
+      "drawn": 0.1890096618357488,
+      "contrast": 16.2
+     }
+    ],
+    "progress": 3.1,
+    "leak": 0
+   },
+   {
+    "state": "done",
+    "words": [
+     {
+      "t": "Checkout ready",
+      "drawn": 0.18451422436929682,
+      "contrast": 5.23
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   }
+  ]
+ },
+ {
+  "form": "beui/button-stateful",
+  "name": "Press, and it answers",
+  "verdict": "dropped",
+  "fails": [
+   {
+    "check": "says",
+    "state": "mid-gesture",
+    "why": "At mid-gesture, “k” reads at 2.17:1 against what is under it (it needs 4.5:1)."
+   }
+  ],
+  "frames": [
+   {
+    "state": "rest",
+    "words": [
+     {
+      "t": "S",
+      "drawn": 0.2324561403508772,
+      "contrast": 5.23
+     },
+     {
+      "t": "t",
+      "drawn": 0.18055555555555555,
+      "contrast": 5.23
+     },
+     {
+      "t": "a",
+      "drawn": 0.21568627450980393,
+      "contrast": 5.23
+     },
+     {
+      "t": "r",
+      "drawn": 0.1388888888888889,
+      "contrast": 5.23
+     },
+     {
+      "t": "t",
+      "drawn": 0.19444444444444445,
+      "contrast": 5.23
+     },
+     {
+      "t": "w",
+      "drawn": 0.1875,
+      "contrast": 5.23
+     },
+     {
+      "t": "i",
+      "drawn": 0.1875,
+      "contrast": 5.23
+     },
+     {
+      "t": "t",
+      "drawn": 0.18055555555555555,
+      "contrast": 5.23
+     },
+     {
+      "t": "h",
+      "drawn": 0.22058823529411764,
+      "contrast": 5.23
+     },
+     {
+      "t": "a",
+      "drawn": 0.20588235294117646,
+      "contrast": 5.23
+     },
+     {
+      "t": "n",
+      "drawn": 0.1895424836601307,
+      "contrast": 5.23
+     },
+     {
+      "t": "a",
+      "drawn": 0.20588235294117646,
+      "contrast": 5.23
+     },
+     {
+      "t": "c",
+      "drawn": 0.16993464052287582,
+      "contrast": 5.23
+     },
+     {
+      "t": "c",
+      "drawn": 0.16666666666666666,
+      "contrast": 5.23
+     },
+     {
+      "t": "o",
+      "drawn": 0.19281045751633988,
+      "contrast": 5.23
+     },
+     {
+      "t": "u",
+      "drawn": 0.19281045751633988,
+      "contrast": 5.23
+     },
+     {
+      "t": "n",
+      "drawn": 0.18627450980392157,
+      "contrast": 5.23
+     },
+     {
+      "t": "t",
+      "drawn": 0.19444444444444445,
+      "contrast": 5.23
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "pointed at",
+    "words": [
+     {
+      "t": "S",
+      "drawn": 0.2324561403508772,
+      "contrast": 4.38
+     },
+     {
+      "t": "t",
+      "drawn": 0.18055555555555555,
+      "contrast": 4.38
+     },
+     {
+      "t": "a",
+      "drawn": 0.21568627450980393,
+      "contrast": 4.38
+     },
+     {
+      "t": "r",
+      "drawn": 0.1388888888888889,
+      "contrast": 4.38
+     },
+     {
+      "t": "t",
+      "drawn": 0.19444444444444445,
+      "contrast": 4.38
+     },
+     {
+      "t": "w",
+      "drawn": 0.1875,
+      "contrast": 4.38
+     },
+     {
+      "t": "i",
+      "drawn": 0.1875,
+      "contrast": 4.38
+     },
+     {
+      "t": "t",
+      "drawn": 0.18055555555555555,
+      "contrast": 4.38
+     },
+     {
+      "t": "h",
+      "drawn": 0.22058823529411764,
+      "contrast": 4.38
+     },
+     {
+      "t": "a",
+      "drawn": 0.20588235294117646,
+      "contrast": 4.38
+     },
+     {
+      "t": "n",
+      "drawn": 0.1895424836601307,
+      "contrast": 4.38
+     },
+     {
+      "t": "a",
+      "drawn": 0.20588235294117646,
+      "contrast": 4.38
+     },
+     {
+      "t": "c",
+      "drawn": 0.16993464052287582,
+      "contrast": 4.38
+     },
+     {
+      "t": "c",
+      "drawn": 0.16666666666666666,
+      "contrast": 4.38
+     },
+     {
+      "t": "o",
+      "drawn": 0.19281045751633988,
+      "contrast": 4.38
+     },
+     {
+      "t": "u",
+      "drawn": 0.19281045751633988,
+      "contrast": 4.38
+     },
+     {
+      "t": "n",
+      "drawn": 0.18627450980392157,
+      "contrast": 4.38
+     },
+     {
+      "t": "t",
+      "drawn": 0.19444444444444445,
+      "contrast": 4.38
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "mid-gesture",
+    "words": [
+     {
+      "t": "O",
+      "drawn": 0.22601010101010102,
+      "contrast": 2.17
+     },
+     {
+      "t": "p",
+      "drawn": 0.22685185185185186,
+      "contrast": 2.17
+     },
+     {
+      "t": "e",
+      "drawn": 0.19444444444444445,
+      "contrast": 2.17
+     },
+     {
+      "t": "n",
+      "drawn": 0.184640522875817,
+      "contrast": 2.17
+     },
+     {
+      "t": "i",
+      "drawn": 0.1875,
+      "contrast": 2.17
+     },
+     {
+      "t": "n",
+      "drawn": 0.184640522875817,
+      "contrast": 2.17
+     },
+     {
+      "t": "g",
+      "drawn": 0.23919753086419754,
+      "contrast": 2.17
+     },
+     {
+      "t": "c",
+      "drawn": 0.16993464052287582,
+      "contrast": 2.17
+     },
+     {
+      "t": "h",
+      "drawn": 0.21405228758169934,
+      "contrast": 2.17
+     },
+     {
+      "t": "e",
+      "drawn": 0.2107843137254902,
+      "contrast": 2.17
+     },
+     {
+      "t": "c",
+      "drawn": 0.1650326797385621,
+      "contrast": 2.17
+     },
+     {
+      "t": "k",
+      "drawn": 0.09567901234567901,
+      "contrast": 2.17
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "done",
+    "words": [
+     {
+      "t": "C",
+      "drawn": 0.20105820105820105,
+      "contrast": 4.38
+     },
+     {
+      "t": "h",
+      "drawn": 0.21405228758169934,
+      "contrast": 4.38
+     },
+     {
+      "t": "e",
+      "drawn": 0.19444444444444445,
+      "contrast": 4.38
+     },
+     {
+      "t": "c",
+      "drawn": 0.16666666666666666,
+      "contrast": 4.38
+     },
+     {
+      "t": "k",
+      "drawn": 0.19290123456790123,
+      "contrast": 4.38
+     },
+     {
+      "t": "o",
+      "drawn": 0.19281045751633988,
+      "contrast": 4.38
+     },
+     {
+      "t": "u",
+      "drawn": 0.19281045751633988,
+      "contrast": 4.38
+     },
+     {
+      "t": "t",
+      "drawn": 0.18055555555555555,
+      "contrast": 4.38
+     },
+     {
+      "t": "r",
+      "drawn": 0.1388888888888889,
+      "contrast": 4.38
+     },
+     {
+      "t": "e",
+      "drawn": 0.19444444444444445,
+      "contrast": 4.38
+     },
+     {
+      "t": "a",
+      "drawn": 0.2107843137254902,
+      "contrast": 4.38
+     },
+     {
+      "t": "d",
+      "drawn": 0.22839506172839505,
+      "contrast": 4.38
+     },
+     {
+      "t": "y",
+      "drawn": 0.19270833333333334,
+      "contrast": 4.38
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   }
+  ]
+ },
+ {
+  "form": "beui/button-magnetic",
+  "name": "Press, and it leans in",
+  "verdict": "passes",
+  "fails": [],
+  "frames": [
+   {
+    "state": "rest",
+    "words": [
+     {
+      "t": "Start with an account",
+      "drawn": 0.1875243664717349,
+      "contrast": 5.23
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "pointed at",
+    "words": [
+     {
+      "t": "Start with an account",
+      "drawn": 0.18556701030927836,
+      "contrast": 4.4
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "mid-gesture",
+    "words": [
+     {
+      "t": "Start with an account",
+      "drawn": 0.1875243664717349,
+      "contrast": 5.23
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "done",
+    "words": [
+     {
+      "t": "Start with an account",
+      "drawn": 0.18556701030927836,
+      "contrast": 4.4
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   }
+  ]
+ }
+]

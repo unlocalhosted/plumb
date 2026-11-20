@@ -1,0 +1,27 @@
+/* The atoms page every product shares: Tailwind's colour names point at per-form roles (forms.jsx `roles`), which
+   the skin answers (skin.js, set on each stage from the original atom). */
+@theme inline {
+  --color-primary: var(--tw-primary, var(--atom-fill));
+  --color-primary-foreground: var(--tw-primary-foreground, var(--atom-on-fill));
+  --color-muted: var(--tw-muted, var(--atom-fill));
+  --color-muted-foreground: var(--tw-muted-foreground, var(--atom-on-fill));
+  --color-foreground: var(--tw-foreground, var(--atom-on-fill));
+  --color-background: var(--tw-background, var(--atom-on-fill));
+}
+[data-atom] { font-family: var(--atom-font); --space-2: 8px; --space-5: 24px; --leading-body: 1.4; --duration-fast: 150ms; --duration-standard: 220ms; --ease-standard: cubic-bezier(.22, 1, .36, 1); --font-body: var(--atom-font); --tracking-body: 0; }
+/* beUI's hold paints its liquid's wavy edge in a sky blue it doesn't expose: the stronger fill instead */
+[data-atom] svg.text-sky-400 { color: var(--atom-deep); }
+.atoms-page { padding: 24px 0 80px; }
+.atoms-page h1 { max-width: 1200px; margin: 0 auto 6px; padding: 0 32px; font: 600 16px/1.3 ui-monospace, monospace; }
+.atoms-page .skin { max-width: 1200px; margin: 0 auto 20px; padding: 0 32px; font: 12px/1.5 ui-monospace, monospace; color: #777; }
+.atoms { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 20px; max-width: 1200px; margin: 0 auto; padding: 0 32px; }
+.atom { border: 1px solid color-mix(in oklab, currentColor 12%, transparent); border-radius: 11px; padding: 28px 28px 20px; display: grid; gap: 18px; align-content: start; }
+.atom-stage { min-height: 96px; display: grid; place-items: center; }
+.atom-stage > * { width: min(100%, var(--atom-width, 304px)); }
+.atom h3 { margin: 0; font: 600 14px/1.3 system-ui; }
+.atom p { margin: 4px 0 0; font: 13px/1.5 system-ui; opacity: .7; }
+.atom code { font: 11px ui-monospace, monospace; opacity: .55; }
+.atoms-shipped { position: absolute; left: -9999px; top: 0; width: 1200px; }
+/* the original's icon, set to the size of the words beside it */
+[data-atom] .atom-icon { display: inline-grid; width: 1.25em; height: 1.25em; flex: none; }
+[data-atom] .atom-icon svg { width: 100%; height: 100%; }

@@ -1,0 +1,4 @@
+/* algorecall's atoms page: its own styles, then the shared atoms page (../atoms) */
+@import "./playground.css";
+@import "../atoms/atoms.css";
+@source "../atoms";

@@ -8,6 +8,10 @@ export const product = {
   wrapper: '', mode: 'light',
   organism: { specimen: 'algorecall-today-stack', component: 'src/pages/today/DueStack.tsx', card: '.pg-organism', name: 'the review stack',
     slots: { status: 'slab-lateness', navigation: 'ghost-slab' } },
+  atoms: [
+    { id: 'start', name: 'the start-review slab', job: 'commit', pick: 'ol > li:first-child button', label: 'Start review', doneLabel: 'Starting', readyLabel: 'Here we go',
+      confirm: 'Start with Arrays & Hashing?', is: 'The top slab, lit in its pattern’s hue: it alone is a button, and pressing it sinks it onto its edge and starts the review.' },
+  ],
   // content (useTodayModel: due slabs with days over and a recall estimate; the rest of the queue as a count)
   content: {
     'a number that changes': true,   // days over, the count of the rest

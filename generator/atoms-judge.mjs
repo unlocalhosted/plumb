@@ -5,17 +5,19 @@
 //             under them (WCAG 1.4.3, normal text)
 //   progress  mid-gesture, the part done stands apart from the part to go at 3:1 (WCAG 1.4.11, states of a control)
 //   inside    nothing it draws leaks past its own shape, its lip included
-//   weight    at rest it carries at least half the action colour the original does: the original is "the one solid
-//             purple thing on the card, the only place the eye can end up" (generator/molecules.mjs, buy-button)
+//   fits      in every state it stays inside the width the original takes: a swapped atom has the original's place,
+//             and a form that grows past it pushes or covers its neighbours
+//   weight    at rest it carries at least half the action colour the original does: a commit action is the one
+//             strongest thing where it sits, and a form that drains its colour gives that up
 // A form that fails any check in any frame is dropped, with the frame and the reason.
-//   node generator/atoms-judge.mjs craftingattention        (the playground must be running on 4399)
+//   node generator/atoms-judge.mjs craftingattention buy      (the product's playground must be running on 4399)
 import { chromium } from 'playwright';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 const here = fileURLToPath(new URL('./', import.meta.url));
-const id = process.argv[2] ?? 'craftingattention';
-const URL_ = 'http://localhost:4399/atoms.html';
-const RANK = { says: 'It stops saying what it does', progress: 'You can’t see your progress', inside: 'Something leaks out of its shape', weight: 'It loses the original’s weight' };
+const id = process.argv[2] ?? 'craftingattention', atomId = process.argv[3] ?? '';
+const URL_ = `http://localhost:4399/atoms.html?atom=${atomId}`;
+const RANK = { fits: 'It doesn’t fit where the original sat', says: 'It stops saying what it does', progress: 'You can’t see your progress', inside: 'Something leaks out of its shape', weight: 'It loses the original’s weight' };
 
 // what the page can tell about a frame: the form's box, its words (box and ink), and how far anything paints past it
 const READ = (form) => {
@@ -71,7 +73,7 @@ const STATES = {
   press: { mid: null, done: async (p, b) => { await p.mouse.click(b.x, b.y); await p.waitForTimeout(300); } },
   lean: { mid: async (p, b) => { await p.mouse.move(b.l + b.w * 0.8, b.y - 30, { steps: 6 }); await p.waitForTimeout(400); }, done: async (p, b) => { await p.mouse.click(b.x, b.y); await p.waitForTimeout(300); } },
   answer: { mid: async (p, b) => { await p.mouse.click(b.x, b.y); await p.waitForTimeout(350); }, done: async (p) => { await p.waitForTimeout(1200); } },
-  confirm: { mid: async (p, b) => { await p.mouse.click(b.x, b.y); await p.waitForTimeout(650); }, done: async (p, b, form) => { await p.locator(`[data-form="${form}"] button`, { hasText: /^Pay$/ }).click(); await p.waitForTimeout(1300); } },
+  confirm: { mid: async (p, b) => { await p.mouse.click(b.x, b.y); await p.waitForTimeout(650); }, done: async (p, b, form) => { await p.locator(`[data-form="${form}"] button`, { hasText: /^(Yes|Pay)$/ }).evaluate((b) => b.click()); await p.waitForTimeout(1300); } },
   hold: { mid: async (p, b) => { await p.mouse.move(b.x, b.y); await p.mouse.down(); await p.waitForTimeout(550); }, done: async (p) => { await p.waitForTimeout(900); }, progress: true },
   slide: { mid: async (p, b, form, box) => { await p.mouse.move(b.x, b.y); await p.mouse.down(); await p.mouse.move(b.x + box.w * 0.5, b.y, { steps: 12 }); await p.waitForTimeout(200); },
     done: async (p, b, form, box) => { await p.mouse.move(b.x + box.w, b.y, { steps: 8 }); await p.mouse.up(); await p.waitForTimeout(350); }, progress: true },
@@ -80,7 +82,8 @@ const STATES = {
 await mkdir(`${here}shots/judge`, { recursive: true });
 const browser = await chromium.launch();
 const helper = await browser.newPage();
-const page0 = await browser.newPage(); await page0.goto(URL_, { waitUntil: 'networkidle' });
+const page0 = await browser.newPage(); await page0.goto(URL_, { waitUntil: "networkidle" }); await page0.waitForSelector("[data-form=\"beui/slide-action-button\"], [data-form]:nth-child(2)", { timeout: 15000 }).catch(() => {});
+const title = await page0.$eval('h1', (h) => h.textContent.replace(/, in every form.*/, ''));
 const forms = await page0.$$eval('[data-form]', (l) => l.map((e) => ({ form: e.dataset.form, gesture: e.dataset.gesture, name: e.querySelector('h3').textContent })));
 await page0.close();
 const results = [];
@@ -89,7 +92,7 @@ for (const f of forms) {
   await page.goto(URL_, { waitUntil: 'networkidle' }); await page.waitForTimeout(1800);
   const stage = page.locator(`[data-form="${f.form}"] .atom-stage`); await stage.scrollIntoViewIfNeeded(); await page.waitForTimeout(300);
   const G = STATES[f.gesture], frames = [];
-  const frame = async (state) => { const read = await page.evaluate(READ, f.form); const buf = await stage.screenshot(); const path = `${here}shots/judge/${id}-${f.form.replace(/\W+/g, '-')}-${state}.png`; await writeFile(path, buf); const px = await helper.evaluate(PIXELS, { png: buf.toString('base64'), read }); frames.push({ state, read, px, path }); return read; };
+  const frame = async (state) => { const read = await page.evaluate(READ, f.form); const buf = await stage.screenshot(); const path = `${here}shots/judge/${id}-${atomId}-${f.form.replace(/\W+/g, '-')}-${state}.png`; await writeFile(path, buf); const px = await helper.evaluate(PIXELS, { png: buf.toString('base64'), read }); frames.push({ state, read, px, path }); return read; };
   const r0 = await frame('rest');
   await page.mouse.move(r0.button.x, r0.button.y); await page.waitForTimeout(350); await frame('pointed at');
   if (G.mid) { await G.mid(page, r0.button, f.form, r0.box); await frame('mid-gesture'); }
@@ -110,6 +113,7 @@ for (const r of [house, ...results.filter((x) => x !== house)]) {
     else { const worst = said.reduce((a, b) => (a.contrast < b.contrast ? a : b)); if (worst.contrast < 4.5) r.fails.push({ check: 'says', state: fr.state, why: `At ${fr.state}, “${worst.t}” reads at ${worst.contrast}:1 against what is under it (it needs 4.5:1).` }); }
     const hidden = fr.px.words.filter((w) => w.drawn <= 0.04 && fr.read.words.find((x) => x.t === w.t));
     if (said.length && hidden.length && fr.state !== 'rest') r.fails.push({ check: 'says', state: fr.state, why: `At ${fr.state}, “${hidden[0].t}” is there but not drawn: something covers it.` });
+    if (r !== house && fr.read.box.w > house.frames[0].read.box.w * 1.06 + 2) r.fails.push({ check: 'fits', state: fr.state, why: `At ${fr.state} it is ${Math.round(fr.read.box.w)}px wide where the original takes ${Math.round(house.frames[0].read.box.w)}px.` });
     if (fr.read.leak > 1) r.fails.push({ check: 'inside', state: fr.state, why: `At ${fr.state}, ${fr.read.by ?? 'a part'} paints ${fr.read.leak}px past the form’s own shape.` });
     if (fr.state === 'mid-gesture' && r.progressKind && fr.px.progress < 3) r.fails.push({ check: 'progress', state: fr.state, why: `Half way through, the done part and the part to go differ at ${fr.px.progress}:1 (it needs 3:1), so the progress barely shows.` });
   }
@@ -125,13 +129,13 @@ for (const r of [house, ...results.filter((x) => x !== house)]) {
   r.verdict = r.form === 'house' ? (r.fails.length ? 'the original fails too' : 'the original') : r.fails.length ? 'dropped' : 'passes';
   console.log(`${r.verdict.padEnd(10)} ${r.name}${r.fails.map((x) => `\n           · ${RANK[x.check]}: ${x.why}`).join('')}${r.inherited?.length ? `\n           (inherits the original’s: ${r.inherited.map((x) => x.why).join(' ')})` : ''}`);
 }
-await writeFile(`${here}generated/atoms-${id}.json`, JSON.stringify(results.map((r) => ({ form: r.form, name: r.name, verdict: r.verdict, fails: r.fails, frames: r.frames.map(({ state, px, read }) => ({ state, words: px.words, progress: px.progress, leak: read.leak })) })), null, 1));
+await writeFile(`${here}generated/atoms-${id}-${atomId}.json`, JSON.stringify(results.map((r) => ({ form: r.form, name: r.name, verdict: r.verdict, fails: r.fails, frames: r.frames.map(({ state, px, read }) => ({ state, words: px.words, progress: px.progress, leak: read.leak })) })), null, 1));
 
 // the sheet: every frame of every form, the failing frames marked
 const img = async (p) => `data:image/png;base64,${(await readFile(p)).toString('base64')}`;
 const failed = (r, st) => r.fails.some((x) => x.state === st);
-const row = async (r) => `<section class="${r.verdict === 'dropped' ? 'drop' : r.form === 'house' && r.fails.length ? 'orig' : 'ok'}"><header><b>${r.name}</b> <i>${r.verdict}</i> <code>${r.form === 'house' ? 'shipped' : r.form}</code></header><div class="frames">${(await Promise.all(r.frames.map(async (fr) => `<figure class="${failed(r, fr.state) ? 'bad' : ''}"><img src="${await img(fr.path)}"><figcaption>${fr.state}</figcaption></figure>`))).join('')}</div>${r.fails.length ? `<ul>${r.fails.map((x) => `<li><b>${RANK[x.check]}.</b> ${x.why}</li>`).join('')}</ul>` : '<p>Passes all four in every state.</p>'}</section>`;
-const html = `<style>body{margin:0;padding:28px;background:#f4f2ee;font:14px/1.45 -apple-system,system-ui;color:#1d1b17}h1{font-size:20px;margin:0 0 4px}h1+p{margin:0 0 18px;color:#555;max-width:900px}section{background:#fff;border-radius:12px;padding:14px;margin-bottom:14px}header{margin-bottom:8px}header i{font-style:normal;margin-left:6px;color:#1a9460}.orig header i{color:#b7791f}.drop header i{color:#bf3a1e}code{font:11px ui-monospace,monospace;color:#999;margin-left:6px}.frames{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}figure{margin:0;background:#f6f4fb;border-radius:8px;padding:6px;border:2px solid transparent}figure.bad{border-color:#e0573a}img{width:100%}figcaption{font-size:12px;color:#888;text-align:center}ul{margin:10px 0 0;padding-left:18px;color:#333}p{margin:10px 0 0;color:#1a9460}</style><h1>The buy button’s forms, judged in every state</h1><p>Each form is driven through its gesture and measured on its pixels: it still says what it does (4.5:1), its progress shows (3:1), nothing leaks out of its shape, and at rest it keeps at least half the original’s weight. Red frames are where it fails.</p>${(await Promise.all(results.map(row))).join('')}`;
+const row = async (r) => `<section class="${r.verdict === 'dropped' ? 'drop' : r.form === 'house' && r.fails.length ? 'orig' : 'ok'}"><header><b>${r.name}</b> <i>${r.verdict}</i> <code>${r.form === 'house' ? 'shipped' : r.form}</code></header><div class="frames">${(await Promise.all(r.frames.map(async (fr) => `<figure class="${failed(r, fr.state) ? 'bad' : ''}"><img src="${await img(fr.path)}"><figcaption>${fr.state}</figcaption></figure>`))).join('')}</div>${r.fails.length ? `<ul>${r.fails.map((x) => `<li><b>${RANK[x.check]}.</b> ${x.why}</li>`).join('')}</ul>` : '<p>Passes all five in every state.</p>'}</section>`;
+const html = `<style>body{margin:0;padding:28px;background:#f4f2ee;font:14px/1.45 -apple-system,system-ui;color:#1d1b17}h1{font-size:20px;margin:0 0 4px}h1+p{margin:0 0 18px;color:#555;max-width:900px}section{background:#fff;border-radius:12px;padding:14px;margin-bottom:14px}header{margin-bottom:8px}header i{font-style:normal;margin-left:6px;color:#1a9460}.orig header i{color:#b7791f}.drop header i{color:#bf3a1e}code{font:11px ui-monospace,monospace;color:#999;margin-left:6px}.frames{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}figure{margin:0;background:#f6f4fb;border-radius:8px;padding:6px;border:2px solid transparent}figure.bad{border-color:#e0573a}img{width:100%}figcaption{font-size:12px;color:#888;text-align:center}ul{margin:10px 0 0;padding-left:18px;color:#333}p{margin:10px 0 0;color:#1a9460}</style><h1>${title}, judged in every state</h1><p>Each form is driven through its gesture and measured on its pixels: it still says what it does (4.5:1), its progress shows (3:1), nothing leaks out of its shape, it fits where the original sat, and at rest it keeps at least half the original’s weight. Red frames are where it fails.</p>${(await Promise.all(results.map(row))).join('')}`;
 const b2 = await chromium.launch(); const sp = await b2.newPage({ viewport: { width: 1400, height: 900 } });
-await sp.setContent(html); await sp.waitForTimeout(300); await sp.screenshot({ path: `${here}shots/judge-${id}.png`, fullPage: true }); await b2.close();
-console.log(`sheet: generator/shots/judge-${id}.png`);
+await sp.setContent(html); await sp.waitForTimeout(300); await sp.screenshot({ path: `${here}shots/judge-${id}-${atomId}.png`, fullPage: true }); await b2.close();
+console.log(`sheet: generator/shots/judge-${id}-${atomId}.png`);

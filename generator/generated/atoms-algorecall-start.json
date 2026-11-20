@@ -1,0 +1,626 @@
+[
+ {
+  "form": "house",
+  "name": "As shipped",
+  "verdict": "the original",
+  "fails": [],
+  "frames": [
+   {
+    "state": "rest",
+    "words": [
+     {
+      "t": "Arrays & Hashing",
+      "drawn": 0.17142857142857143,
+      "contrast": 4.7
+     },
+     {
+      "t": "3 days over",
+      "drawn": 0.1226890756302521,
+      "contrast": 4.7
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "pointed at",
+    "words": [
+     {
+      "t": "Arrays & Hashing",
+      "drawn": 0.17142857142857143,
+      "contrast": 4.7
+     },
+     {
+      "t": "3 days over",
+      "drawn": 0.1226890756302521,
+      "contrast": 4.7
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "done",
+    "words": [
+     {
+      "t": "Arrays & Hashing",
+      "drawn": 0.17142857142857143,
+      "contrast": 4.7
+     },
+     {
+      "t": "3 days over",
+      "drawn": 0.1226890756302521,
+      "contrast": 4.7
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   }
+  ]
+ },
+ {
+  "form": "beui/slide-action-button",
+  "name": "Slide to commit",
+  "verdict": "dropped",
+  "fails": [
+   {
+    "check": "says",
+    "state": "mid-gesture",
+    "why": "At mid-gesture it shows no words: nothing tells you what is happening."
+   }
+  ],
+  "frames": [
+   {
+    "state": "rest",
+    "words": [
+     {
+      "t": "Slide to start review",
+      "drawn": 0.16128472222222223,
+      "contrast": 4.7
+     }
+    ],
+    "progress": 4.7,
+    "leak": 0
+   },
+   {
+    "state": "pointed at",
+    "words": [
+     {
+      "t": "Slide to start review",
+      "drawn": 0.16128472222222223,
+      "contrast": 4.7
+     }
+    ],
+    "progress": 4.7,
+    "leak": 0
+   },
+   {
+    "state": "mid-gesture",
+    "words": [],
+    "progress": 5.44,
+    "leak": 0
+   },
+   {
+    "state": "done",
+    "words": [
+     {
+      "t": "Starting",
+      "drawn": 0.18469827586206897,
+      "contrast": 5.44
+     }
+    ],
+    "progress": 1.16,
+    "leak": 0
+   }
+  ]
+ },
+ {
+  "form": "beui/hold-action-button",
+  "name": "Hold to commit",
+  "verdict": "dropped",
+  "fails": [
+   {
+    "check": "says",
+    "state": "done",
+    "why": "At done it shows no words: nothing tells you what is happening."
+   }
+  ],
+  "frames": [
+   {
+    "state": "rest",
+    "words": [
+     {
+      "t": "Hold to start review",
+      "drawn": 0.17088336192109777,
+      "contrast": 4.7
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "pointed at",
+    "words": [
+     {
+      "t": "Hold to start review",
+      "drawn": 0.17088336192109777,
+      "contrast": 4.7
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "mid-gesture",
+    "words": [
+     {
+      "t": "Keep holding",
+      "drawn": 0.4086496028243601,
+      "contrast": 4.7
+     }
+    ],
+    "progress": 5.44,
+    "leak": 0
+   },
+   {
+    "state": "done",
+    "words": [
+     {
+      "t": "Keep holding",
+      "drawn": 0,
+      "contrast": 1.14
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   }
+  ]
+ },
+ {
+  "form": "arc/hold-to-confirm",
+  "name": "Hold to confirm",
+  "verdict": "dropped",
+  "fails": [
+   {
+    "check": "says",
+    "state": "pointed at",
+    "why": "At pointed at, “Hold to start review” reads at 4.31:1 against what is under it (it needs 4.5:1)."
+   }
+  ],
+  "frames": [
+   {
+    "state": "rest",
+    "words": [
+     {
+      "t": "Hold to start review",
+      "drawn": 0.16727272727272727,
+      "contrast": 4.7
+     },
+     {
+      "t": "Hold to start review",
+      "drawn": 0,
+      "contrast": 1
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "pointed at",
+    "words": [
+     {
+      "t": "Hold to start review",
+      "drawn": 0.16727272727272727,
+      "contrast": 4.31
+     },
+     {
+      "t": "Hold to start review",
+      "drawn": 0,
+      "contrast": 1.09
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "mid-gesture",
+    "words": [
+     {
+      "t": "Hold to start review",
+      "drawn": 0.49630681818181815,
+      "contrast": 1.16
+     },
+     {
+      "t": "Hold to start review",
+      "drawn": 0.4661221590909091,
+      "contrast": 5.44
+     }
+    ],
+    "progress": 4.99,
+    "leak": 0
+   },
+   {
+    "state": "done",
+    "words": [
+     {
+      "t": "Starting",
+      "drawn": 0.22916666666666666,
+      "contrast": 1.16
+     },
+     {
+      "t": "Starting",
+      "drawn": 0.19610881542699724,
+      "contrast": 5.44
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   }
+  ]
+ },
+ {
+  "form": "arc/confirm-morph",
+  "name": "Press, then confirm",
+  "verdict": "dropped",
+  "fails": [
+   {
+    "check": "says",
+    "state": "pointed at",
+    "why": "At pointed at, “Start review” reads at 4.43:1 against what is under it (it needs 4.5:1)."
+   },
+   {
+    "check": "weight",
+    "state": "rest",
+    "why": "At rest it carries 50% of the original’s action colour, so it is no longer the heaviest thing on the card."
+   }
+  ],
+  "frames": [
+   {
+    "state": "rest",
+    "words": [
+     {
+      "t": "Start review",
+      "drawn": 0.17439470077661032,
+      "contrast": 4.7
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "pointed at",
+    "words": [
+     {
+      "t": "Start review",
+      "drawn": 0.17439470077661032,
+      "contrast": 4.43
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "mid-gesture",
+    "words": [
+     {
+      "t": "Start with Arrays & Hashing?",
+      "drawn": 0.17102991944764095,
+      "contrast": 4.7
+     },
+     {
+      "t": "Not yet",
+      "drawn": 0.13599105812220566,
+      "contrast": 4.7
+     },
+     {
+      "t": "Yes",
+      "drawn": 0,
+      "contrast": 1
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "done",
+    "words": [
+     {
+      "t": "Here we go",
+      "drawn": 0.17527173913043478,
+      "contrast": 4.7
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   }
+  ]
+ },
+ {
+  "form": "beui/button-stateful",
+  "name": "Press, and it answers",
+  "verdict": "dropped",
+  "fails": [
+   {
+    "check": "says",
+    "state": "mid-gesture",
+    "why": "At mid-gesture it shows no words: nothing tells you what is happening."
+   }
+  ],
+  "frames": [
+   {
+    "state": "rest",
+    "words": [
+     {
+      "t": "S",
+      "drawn": 0.18181818181818182,
+      "contrast": 4.7
+     },
+     {
+      "t": "t",
+      "drawn": 0.1590909090909091,
+      "contrast": 4.7
+     },
+     {
+      "t": "a",
+      "drawn": 0.1715909090909091,
+      "contrast": 4.7
+     },
+     {
+      "t": "r",
+      "drawn": 0.12175324675324675,
+      "contrast": 4.7
+     },
+     {
+      "t": "t",
+      "drawn": 0.16396103896103897,
+      "contrast": 4.7
+     },
+     {
+      "t": "r",
+      "drawn": 0.12175324675324675,
+      "contrast": 4.7
+     },
+     {
+      "t": "e",
+      "drawn": 0.16022727272727272,
+      "contrast": 4.7
+     },
+     {
+      "t": "v",
+      "drawn": 0.12081339712918661,
+      "contrast": 4.7
+     },
+     {
+      "t": "i",
+      "drawn": 0.16161616161616163,
+      "contrast": 4.7
+     },
+     {
+      "t": "e",
+      "drawn": 0.16022727272727272,
+      "contrast": 4.7
+     },
+     {
+      "t": "w",
+      "drawn": 0.15235690235690236,
+      "contrast": 4.7
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "pointed at",
+    "words": [
+     {
+      "t": "S",
+      "drawn": 0.18181818181818182,
+      "contrast": 4.88
+     },
+     {
+      "t": "t",
+      "drawn": 0.1590909090909091,
+      "contrast": 4.88
+     },
+     {
+      "t": "a",
+      "drawn": 0.1715909090909091,
+      "contrast": 4.88
+     },
+     {
+      "t": "r",
+      "drawn": 0.12175324675324675,
+      "contrast": 4.88
+     },
+     {
+      "t": "t",
+      "drawn": 0.16396103896103897,
+      "contrast": 4.88
+     },
+     {
+      "t": "r",
+      "drawn": 0.12175324675324675,
+      "contrast": 4.88
+     },
+     {
+      "t": "e",
+      "drawn": 0.16022727272727272,
+      "contrast": 4.88
+     },
+     {
+      "t": "v",
+      "drawn": 0.12081339712918661,
+      "contrast": 4.88
+     },
+     {
+      "t": "i",
+      "drawn": 0.16161616161616163,
+      "contrast": 4.88
+     },
+     {
+      "t": "e",
+      "drawn": 0.16022727272727272,
+      "contrast": 4.88
+     },
+     {
+      "t": "w",
+      "drawn": 0.1531986531986532,
+      "contrast": 4.88
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "mid-gesture",
+    "words": [
+     {
+      "t": "S",
+      "drawn": 0,
+      "contrast": 5.67
+     },
+     {
+      "t": "t",
+      "drawn": 0,
+      "contrast": 5.67
+     },
+     {
+      "t": "a",
+      "drawn": 0,
+      "contrast": 5.67
+     },
+     {
+      "t": "r",
+      "drawn": 0,
+      "contrast": 5.67
+     },
+     {
+      "t": "t",
+      "drawn": 0,
+      "contrast": 5.67
+     },
+     {
+      "t": "i",
+      "drawn": 0,
+      "contrast": 5.67
+     },
+     {
+      "t": "n",
+      "drawn": 0,
+      "contrast": 5.67
+     },
+     {
+      "t": "g",
+      "drawn": 0,
+      "contrast": 5.67
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "done",
+    "words": [
+     {
+      "t": "H",
+      "drawn": 0.17424242424242425,
+      "contrast": 4.88
+     },
+     {
+      "t": "e",
+      "drawn": 0.16022727272727272,
+      "contrast": 4.88
+     },
+     {
+      "t": "r",
+      "drawn": 0.12175324675324675,
+      "contrast": 4.88
+     },
+     {
+      "t": "e",
+      "drawn": 0.16363636363636364,
+      "contrast": 4.88
+     },
+     {
+      "t": "w",
+      "drawn": 0.15151515151515152,
+      "contrast": 4.88
+     },
+     {
+      "t": "e",
+      "drawn": 0.1625,
+      "contrast": 4.88
+     },
+     {
+      "t": "g",
+      "drawn": 0.22727272727272727,
+      "contrast": 4.88
+     },
+     {
+      "t": "o",
+      "drawn": 0.15151515151515152,
+      "contrast": 4.88
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   }
+  ]
+ },
+ {
+  "form": "beui/button-magnetic",
+  "name": "Press, and it leans in",
+  "verdict": "passes",
+  "fails": [],
+  "frames": [
+   {
+    "state": "rest",
+    "words": [
+     {
+      "t": "Start review",
+      "drawn": 0.15268065268065267,
+      "contrast": 4.7
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "pointed at",
+    "words": [
+     {
+      "t": "Start review",
+      "drawn": 0.1486320491345617,
+      "contrast": 4.88
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   },
+   {
+    "state": "mid-gesture",
+    "words": [
+     {
+      "t": "Start review",
+      "drawn": 0.1486320491345617,
+      "contrast": 4.88
+     }
+    ],
+    "progress": 1.39,
+    "leak": 0
+   },
+   {
+    "state": "done",
+    "words": [
+     {
+      "t": "Start review",
+      "drawn": 0.1487437185929648,
+      "contrast": 4.88
+     }
+    ],
+    "progress": 1,
+    "leak": 0
+   }
+  ]
+ }
+]

@@ -13,6 +13,11 @@ export const product = {
     looks: { price: { color: 'var(--color-accent-solid)' } },
     // slot → the house molecule that fills it today (generator/molecules.mjs)
     slots: { price: 'pixel-price', position: 'price-ladder', action: 'buy-button', proof: 'benefit', status: 'offer-header' } },
+  // its atoms: where each is on the shipped component, its job (which forms it can take), and the words a form needs
+  atoms: [
+    { id: 'buy', name: 'the buy button', job: 'commit', pick: '.lifetime-offer .home-button.primary', confirm: 'Pay ₹8,619 once?', doneLabel: 'Opening checkout', readyLabel: 'Checkout ready',
+      is: 'The one solid purple thing on the card, full width, with an arrow: the only place the eye can end up.' },
+  ],
   // content the product has (currency-config.ts getPricingTier: three launch stages; one lifetime price; no periods)
   content: {
     'a number that changes': true,       // the price, worked out per currency

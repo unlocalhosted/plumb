@@ -3013,6 +3013,39 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **Still open:** stills can't show the magnetic lean. Hold to buy shows a sliver of its liquid at rest. The forms
   aren't judged by plumber yet, and the other products' atoms haven't been started.
 
+### 41. A taste bar for atoms, and atoms that cost a line (2026-11-20)
+
+- **The itch:** the owner, on the seven buy-button forms: "slide to get lifetime is broken", "hold to get lifetime the
+  color are almost same so we might need a way to judge the correctness", and "i hope we dont need to invent these
+  kind of thing for every single element".
+- **How we found what was broken:** by sliding it on the live page. The fill covered the words mid-slide, the end
+  showed only a tick, and the thumb's lip stuck out of the track. At rest, a pale track with a small violet thumb had
+  stopped being the strongest thing on the card. On the holds, the fill was the product's hover violet, which is
+  lighter than the button, so there was nothing to see. That colour was my pick, not the library's.
+- **The system behind it:** forms were looked at as stills and chosen by eye. Each new atom would have needed its own
+  hand-written skin and page.
+- **What we chose (asked and confirmed):** a bar by job, run on every state, plus a pipeline where an atom is a line.
+  - The bar (generator/atoms-judge.mjs) drives each form through its gesture (rest, pointed at, mid, done) and
+    measures its pixels for five things. It still says what it does (WCAG 4.5:1). Its progress shows (3:1, WCAG
+    1.4.11). Nothing leaks out of its shape. It fits where the original sat. At rest it keeps half the original's
+    action colour.
+  - A failure the original has too, no worse than the original's, doesn't drop a form.
+  - The skin (playground/atoms/skin.js) is read off the original on the running page. Its stronger fill is picked from
+    the product's own tokens to pass the bar, in the same colour family. Words flip to the fill's colour where a dark
+    shade passes under them.
+  - The forms (playground/atoms/forms.jsx) are written once per job, each with the role every colour plays in it.
+  - A product declares its atoms: where the atom is, its job, and its words.
+- **Dead ends along the way:** the first judge measured ink across the whole button, so every form "said nothing". It
+  read oklch as numbers, so white read at 1.56:1. It counted the product's own lip as a leak from a bare wrapper. The
+  first colour picker chose near-black as a "deeper violet".
+- **The proof:**
+  - generator/shots/judge-craftingattention-buy.png and judge-algorecall-start.png (local).
+  - On the buy button: slide is dropped (beUI fades its own words as you drag). Hold-to-commit now passes, with a
+    deeper violet picked to pass. The shipped hover reads at 3.05:1, a finding about the product itself.
+  - algorecall's start slab got its skin with no CSS written for it. Only "press, and it leans in" passes there.
+- **Still open:** the fit check misses a form that clips its own words (the confirm prompt on algorecall). The bar
+  only judges; it doesn't yet fix a form that fails on colour alone. Copy and toggle atoms have no forms yet.
+
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
 - Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".
