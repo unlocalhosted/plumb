@@ -11,24 +11,19 @@ import './verdict.css';
 const VERDICTS = import.meta.glob('./verdicts/*.json', { eager: true, import: 'default' });
 const VERDICT_WORDS = { works: 'Works', 'needs-work': 'Needs work', breaks: 'Breaks for some people' };
 
+// one line per form: the verdict, and what fails in a few words; what it measured and the source show on hover. The
+// detail of a fault is what you see when you use the button (gesture.js).
+const FAILS = { 'answers-at-once': 'slow to answer', 'words-stay-readable': 'words lost', 'progress-shows': 'progress hard to see',
+  'can-back-out': 'can’t back out', 'no-drag-needed': 'drag only', 'big-enough': 'too small to hit', 'motion-purposeful': 'moves too long',
+  'friction-fits-stakes': 'too much effort for the stakes' };
 function Verdict({ v }) {
   if (!v) return null;
-  const off = v.results.filter((r) => !r.ok), on = v.results.filter((r) => r.ok);
+  const off = v.results.filter((r) => !r.ok);
   return (
-    <div className="verdict pl-light">
+    <p className="verdict pl-light">
       <span className={`verdict-chip ${v.verdict}`}>{VERDICT_WORDS[v.verdict]}</span>
-      {off.map((r) => (
-        <div key={r.id} className={`verdict-off ${r.severity}`}>
-          <h4>{r.name}</h4>
-          <p>{r.says}</p>
-          <p className="verdict-fix"><b>What to do:</b> {r.fix}</p>
-          <p className="verdict-src">{r.sources.map((s, i) => { const x = typeof s === 'string' ? { says: s } : s;
-            return <span key={i}>{i ? ' · ' : ''}{x.url ? <a href={x.url} target="_blank" rel="noreferrer">{x.says}</a> : x.says}</span>; })}
-            {r.checked ? '' : ' (source not yet checked against the page)'}</p>
-        </div>))}
-      {on.length > 0 && <details className="verdict-on"><summary>Meets {on.length} standard{on.length > 1 ? 's' : ''}{off.length ? '' : ', all it is held to'}</summary>
-        <ul>{on.map((r) => <li key={r.id}><b>{r.name}.</b> {r.says}</li>)}</ul></details>}
-    </div>);
+      {off.map((r, i) => <span key={r.id} className={`verdict-fails ${r.severity}`} title={`${r.says} ${r.sources.map((s) => (typeof s === 'string' ? s : s.says)).join(' · ')}`}>{i ? ' · ' : ''}{FAILS[r.id] ?? r.name}</span>)}
+    </p>);
 }
 
 function Choose({ data, forms }) {

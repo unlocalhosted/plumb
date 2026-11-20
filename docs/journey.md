@@ -3389,6 +3389,26 @@ script is `generator/data/gesture-shot.mjs`.
 508 ms after you let go. "Press, and it says what's happening", one of the main session's new forms, shows one: still
 moving 1.1 s after you let go.
 
+### 52. A filmstrip of the button, and verdicts in one line (2026-11-20)
+
+**The itch.** The owner, on the lanes: "where is the interactive and visual part i just see this, and i said make
+things concise and remove bs, this is the same interaction i have been seeing since last 3 msg". Three rounds had
+changed words while the view stayed a text box. "Fixes like the other stuff" had been read as a sentence, and the
+graph the owner liked had been cut down to a thin bar. The verdict cards under each form were a second wall of text.
+
+**What we chose (the owner picked both).** After you use a button, a filmstrip of the real button opens under it:
+nine stills through the gesture, the moments where something is wrong edged in coral, the lost words hatched on the
+still. Choosing a still freezes the real button in that pose. Each kind of fault is one line, the problem in coral
+and then the fix: "Words lost for 2.1 s, 65% at worst → redraw them in the fill's colour, clipped to it with
+`clip-path`". The verdict under each form is one line: the chip and what fails, in a few words, with the standard and
+its source on hover.
+
+**The proof.** On the slide, six of nine stills are coral: the thumb's trail takes the words from 0.4 s to 2.1 s.
+On the hold you watch the fill build and drain, and the three stills after 1.3 s are coral for still moving.
+
+**Still open.** The verdict lines come from a judge run that measured the slide wrongly ("slow to answer"). They are
+right again once the judge is rerun.
+
 ### 38. Alt and the X-ray card (2026-11-20)
 
 - **The itch:** holding Alt showed the old name tag outside Blueprint, and Alt-click opened the old element card with its heat and a dark spacing slider. Once the X-ray card took over, its pink note looked wrong. The owner on the note: "why is this black on muddy pink". On three new tints of it: "all of them look so ugly".
@@ -5059,6 +5079,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- Use any form on the atoms page and a filmstrip of the button opens under it, the wrong moments in coral, each fault one line with its fix; each form's verdict is one line ([entry](#52-a-filmstrip-of-the-button-and-verdicts-in-one-line-2026-11-20)).
 - The atoms page shows what went wrong in any gesture you make, with its fixes, without a special link; the two other ways of showing it are gone ([entry](#51-one-way-to-show-a-gesture-on-the-page-itself-2026-11-20)).
 - Plumber no longer flags contrast on words kept only for screen readers and hidden with clip-path; press-then-confirm's "breaks" verdict came from one ([entry](#50-words-hidden-for-screen-readers-are-no-longer-judged-for-contrast-2026-11-20)).
 - Prototype A shows only what is wrong in a gesture, each fault as a plain problem, the time it happened and its fix in real CSS names; a clean gesture is one mint line ([entry](#49-only-whats-wrong-each-with-its-fix-2026-11-20)).

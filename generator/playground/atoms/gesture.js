@@ -1,14 +1,12 @@
-// What went wrong in a gesture, over time, and how to fix it: part of the atoms page, under any form you use.
+// What went wrong in a gesture, and how to fix it: part of the atoms page, under any form you use.
 //
-//   record   pressing a button starts a recording of it: every frame, what each of its parts looks like (transform,
-//            opacity, clip, size, colours, where it sits) and what it says, and every tenth of a second plumber judges
-//            what is drawn
-//   faults   letting go, a lane opens under the button for each thing that went wrong, on one time line: the problem
-//            in plain words, when it happened in coral, and the fix in real CSS names. Each is read against its
-//            standard: its words (lost for 150 ms or more), its first answer (Nielsen's 0.1 s), its movement after you
-//            let go (Material's 500 ms). A gesture with nothing wrong gets one mint line
-//   scrub    dragging along the lanes (or the arrow keys) freezes the real button in its pose at that moment, the
-//            words fault painted on it; Esc or Live hands it back
+//   record     pressing a button starts a recording of it: every frame, what each of its parts looks like and where it
+//              sits, and every tenth of a second plumber judges what is drawn and keeps a still of the button
+//   filmstrip  letting go, a strip of those stills opens under the button. A still where something is wrong has a coral
+//              edge, and the words fault is hatched on it. Under the strip, each kind of fault is one line: what, then
+//              the fix. Each is read against its standard: words lost for 150 ms or more, a first answer over Nielsen's
+//              0.1 s, movement past Material's 500 ms after you let go. Nothing wrong is one mint line
+//   freeze     choosing a still freezes the real button in that pose; Esc or Live hands it back
 import { Craft, Theme } from '../../../overlay/src/craft.js';
 import '../../../overlay/src/tokens.css';
 import './gesture.css';
@@ -55,6 +53,20 @@ function saying(stage) {
   }
   return [...out].join(' ');
 }
+// a still of the button: the stage copied (its skin's variables come with it) and every part with how it looks this
+// instant written onto it, so it holds the pose with no motion of its own
+const LOOK = [...PROPS, 'border-radius', 'box-shadow', 'background-image', 'font-family', 'font-size', 'font-weight', 'letter-spacing', 'line-height'];
+function still(stage) {
+  const frame = stage.cloneNode(false); frame.removeAttribute('data-atom'); frame.className = 'still-stage';
+  for (const c of stage.children) {
+    if (c.classList.contains('scrub-paint')) continue;
+    const copy = c.cloneNode(true), from = [c, ...c.querySelectorAll('*')], to = [copy, ...copy.querySelectorAll('*')];
+    from.forEach((el, i) => { const cs = getComputedStyle(el); for (const p of LOOK) to[i].style.setProperty(p, cs.getPropertyValue(p), 'important'); to[i].style.setProperty('transition', 'none', 'important'); to[i].style.setProperty('animation', 'none', 'important'); });
+    to.forEach((el) => { el.removeAttribute('id'); el.setAttribute('tabindex', '-1'); el.setAttribute('aria-hidden', 'true'); });
+    frame.append(copy);
+  }
+  return frame;
+}
 // how many of the button's parts look different from the frame before
 const changed = (a, b) => a.parts.reduce((n, [, v, box], i) => n + (b.parts[i] && (box !== b.parts[i][2] || v.some((x, j) => x !== b.parts[i][1][j])) ? 1 : 0), 0);
 
@@ -63,12 +75,12 @@ function start(stage) {
   // the pose before the page answers (this listener runs before the button's own), and plumber's verdict on it, so the
   // first frame that differs is the answer and judging never delays it
   rec = { stage, t0: performance.now(), frames: [], verdicts: [], events: [{ t: 0, name: 'pressed' }], up: null, lastJudge: 0 };
-  rec.frames.push({ t: 0, parts: sample(stage), says: saying(stage) }); rec.verdicts.push({ t: 0, findings: rest.get(stage) ?? [] });
+  rec.frames.push({ t: 0, parts: sample(stage), says: saying(stage) }); rec.verdicts.push({ t: 0, findings: rest.get(stage) ?? [], still: still(stage) });
   const tick = () => {
     if (!rec || rec.stage !== stage) return;
     const t = performance.now() - rec.t0;
     rec.frames.push({ t, parts: sample(stage), says: saying(stage) });
-    if (t - rec.lastJudge >= JUDGE_EVERY) { rec.lastJudge = t; rec.verdicts.push({ t, findings: judge(stage) }); }
+    if (t - rec.lastJudge >= JUDGE_EVERY) { rec.lastJudge = t; rec.verdicts.push({ t, findings: judge(stage), still: still(stage) }); }
     if (rec.up != null && t - rec.up > TAIL) return finish();
     requestAnimationFrame(tick);
   };
@@ -76,120 +88,119 @@ function start(stage) {
 }
 function letGo() { if (rec && rec.up == null) { rec.up = performance.now() - rec.t0; rec.events.push({ t: rec.up, name: 'let go' }); } }
 
-// ── reading the recording: what each lane says ──────────────────────────────────────────────────────────────────
+// ── reading the recording ──────────────────────────────────────────────────────────────────────────────────────
 function read(r) {
   const end = r.frames.at(-1).t, up = r.up ?? end;
-  // movement: per frame, how many parts changed since the frame before
   const moves = r.frames.map((f, i) => ({ t: f.t, n: i ? changed(f, r.frames[i - 1]) : 0 }));
   const first = moves.find((m) => m.n > 0)?.t ?? null;
   const lastMove = [...moves].reverse().find((m) => m.n > 0)?.t ?? null;
   const settle = lastMove != null && lastMove > up ? lastMove - up : 0;
-  const stillMoving = lastMove != null && end - lastMove < 50 && settle > 0;
-  // the words: the stretches where plumber finds them unreadable, and how much of them is lost
+  // the words: the stretches where plumber finds them unreadable; a flicker under 150 ms is gone before anyone could
+  // read them anyway
   const lost = []; let cur = null;
   r.verdicts.forEach((v, i) => {
     const w = v.findings.filter((f) => WORDS.test(f.rule)), next = r.verdicts[i + 1]?.t ?? end;
-    // a layer passing under the words (a fill, a trail) is one cause; the words fading on their own ground is another
     if (w.length) { const share = Math.max(0, ...w.map((f) => f.share ?? 0)), layer = w.some((f) => /words-on-layers/.test(f.rule));
       if (cur) { cur.to = next; cur.share = Math.max(cur.share, share); cur.layer ||= layer; } else lost.push(cur = { from: v.t, to: next, share, layer }); }
     else cur = null;
   });
-  // a flicker shorter than a tenth and a half of a second is gone before anyone could read the words anyway
   for (let i = lost.length - 1; i >= 0; i--) if (lost[i].to - lost[i].from < 150) lost.splice(i, 1);
-  // what it says along the way: each new set of words, from when it first shows
-  const says = []; for (const f of r.frames) if (f.says && f.says !== says.at(-1)?.text) says.push({ t: f.t, text: f.says });
-  return { end, up, moves, first, settle, stillMoving, lost, says };
+  return { end, up, first, settle, lost };
+}
+// what is wrong at moment t
+function wrongAt(r, L, t) {
+  return { words: L.lost.some((x) => t >= x.from - 1 && t <= x.to), // stills come every tenth of a second, so a short overrun is shown on the still nearest it
+    moving: r.up != null && L.settle > SETTLE_LIMIT && t > r.up + SETTLE_LIMIT - JUDGE_EVERY / 2 && t <= r.up + L.settle + JUDGE_EVERY / 2,
+    waiting: L.first != null && L.first > ANSWER_LIMIT && t > ANSWER_LIMIT && t < L.first };
 }
 
-// ── the story ──────────────────────────────────────────────────────────────────────────────────────────────────
+// ── the filmstrip ──────────────────────────────────────────────────────────────────────────────────────────────
+const COLS = 3, SHOWN = 9;
 function finish() {
   const r = rec; rec = null;
   if (!r || r.frames.length < 4) return;
   const section = r.stage.closest('.atom') ?? r.stage.parentElement;
   section.querySelector('.scrub')?.remove();
-  const L = read(r), { end, up } = L, pct = (t) => `${(Math.max(0, Math.min(end, t)) / end) * 100}%`;
-  // movement drawn in 60 steps, each the most that moved in it, so a drag's frame-to-frame flicker reads as one motion
-  const W = 1000, H = 22, BINS = 60, bins = new Array(BINS).fill(0);
-  for (const m of L.moves) { const i = Math.min(BINS - 1, Math.floor((m.t / end) * BINS)); bins[i] = Math.max(bins[i], m.n); }
-  const maxN = Math.max(1, ...bins), bw = W / BINS;
-  const motion = `M0 ${H} ${bins.map((n, i) => { const y = (H - 2 - (n / maxN) * (H - 5)).toFixed(1); return `L${(i * bw).toFixed(1)} ${y} L${((i + 1) * bw).toFixed(1)} ${y}`; }).join(' ')} L${W} ${H} Z`;
-  const answerOk = L.first != null && L.first <= ANSWER_LIMIT, settleOk = L.settle <= SETTLE_LIMIT, lostMs = L.lost.reduce((a, x) => a + x.to - x.from, 0);
-  const ms = (x) => (x < 1000 ? `${Math.round(x)} ms` : s1(x));
+  const L = read(r), { end, up } = L, ms = (x) => (x < 1000 ? `${Math.round(x)} ms` : s1(x));
+  const faults = [];
   const most = Math.max(0, ...L.lost.map((x) => x.share)), mostPct = Math.round(most <= 1 ? most * 100 : most);
-  // the press and the let-go, and the scrub head, run through every lane's row (not over the words above it)
-  const marks = r.events.map((e) => `<i class="scrub-event" style="left:${pct(e.t)}"></i>`).join('') + '<b class="scrub-head"></b>';
-  // only what is wrong gets a lane: the problem in plain words, when it happened, and the fix
-  const lane = (problem, body, fix) => `
-    <div class="lane"><p class="lane-head">${problem}</p><div class="lane-body">${body}${marks}</div><p class="lane-fix"><b>Fix</b> ${fix}</p></div>`;
-  const lanes = [];
-  if (L.lost.length) lanes.push(lane(`Its words can’t be read for ${s1(lostMs)}${mostPct ? `, ${mostPct}% at worst` : ''}`,
-    `${L.lost.map((x) => `<i class="seg lost" style="left:${pct(x.from)};width:calc(${pct(x.to)} - ${pct(x.from)})"></i>`).join('')}`,
-    L.lost.some((x) => x.layer)
-      ? 'Redraw the words in the fill’s text colour and clip them to the fill with <code>clip-path</code>.'
-      : 'Keep the words at full <code>opacity</code>; swap them at once.'));
-  if (!settleOk) lanes.push(lane(`It ${L.stillMoving ? 'is still moving' : 'keeps moving'} ${ms(L.settle)} after you let go`,
-    `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><path class="motion" d="${motion}"/></svg>
-     <i class="seg over" style="left:${pct(up + SETTLE_LIMIT)};width:calc(${pct(up + L.settle)} - ${pct(up + SETTLE_LIMIT)})"></i>`,
-    `Settle in about 300 ms; drop the motion under <code>prefers-reduced-motion</code>.`));
-  if (!answerOk) lanes.push(lane(L.first == null ? 'Nothing changes when you press it' : `It takes ${ms(L.first)} to answer the press`,
-    `<i class="seg over" style="left:${pct(ANSWER_LIMIT)};width:calc(${pct(L.first ?? end)} - ${pct(ANSWER_LIMIT)})"></i>`,
-    'Answer on <code>:active</code>: sink it onto its lip, or start the fill.'));
+  if (L.lost.length) faults.push([`Words lost for ${s1(L.lost.reduce((a, x) => a + x.to - x.from, 0))}${mostPct ? `, ${mostPct}% at worst` : ''}`,
+    L.lost.some((x) => x.layer) ? 'redraw them in the fill’s colour, clipped to it with <code>clip-path</code>' : 'keep them at full <code>opacity</code>; swap them at once']);
+  if (L.settle > SETTLE_LIMIT) faults.push([`Moves ${ms(L.settle)} after you let go`, 'settle in about 300 ms, and not at all under <code>prefers-reduced-motion</code>']);
+  if (L.first == null || L.first > ANSWER_LIMIT) faults.push([L.first == null ? 'No answer to the press' : `Answers the press after ${ms(L.first)}`, 'answer on <code>:active</code>: sink it, or start the fill']);
   const el = document.createElement('div');
   el.className = 'scrub pl-light';
-  el.innerHTML = lanes.length ? `
-    <div class="scrub-track" role="slider" tabindex="0" aria-label="Scrub the recorded gesture" aria-valuemin="0" aria-valuemax="${Math.round(end)}">
-      ${lanes.join('')}
-      <div class="scrub-when">${up / end < 0.25 ? `<span style="left:0">pressed, let go</span>` : `<span style="left:0">pressed</span><span class="end" style="left:${pct(up)}">let go</span>`}</div>
-    </div>
-    <div class="scrub-note"><p></p><button type="button" class="scrub-live">Live <kbd>Esc</kbd></button></div>`
-    : '<p class="scrub-clean">Nothing wrong in this gesture.</p>';
-  r.stage.insertAdjacentElement('afterend', el); // directly under the button it is about
-  if (!lanes.length) { requestAnimationFrame(() => el.classList.add('open')); return; }
+  if (!faults.length) {
+    el.innerHTML = '<p class="scrub-clean">Nothing wrong in this gesture.</p>';
+    r.stage.insertAdjacentElement('afterend', el); requestAnimationFrame(() => el.classList.add('open')); return;
+  }
+  // the stills: evenly through the gesture, with the middle of every fault among them
+  const want = Array.from({ length: SHOWN }, (_, i) => (i * end) / (SHOWN - 1));
+  const must = [...L.lost.map((x) => (x.from + x.to) / 2), L.settle > SETTLE_LIMIT ? up + (SETTLE_LIMIT + L.settle) / 2 : null].filter((x) => x != null);
+  for (const m of must) { let k = 0; want.forEach((w, i) => { if (Math.abs(w - m) < Math.abs(want[k] - m)) k = i; }); if (!must.includes(want[k]) || want[k] === m) want[k] = m; }
+  const near = (t) => r.verdicts.reduce((a, b) => (Math.abs(b.t - t) < Math.abs(a.t - t) ? b : a));
+  const picks = [...new Set(want.sort((a, b) => a - b).map(near))];
+  // each still shows the button only: the box its parts take, with a little room
+  const S = r.stage.getBoundingClientRect();
+  const box = [...r.stage.children].filter((c) => !c.classList.contains('scrub-paint')).reduce((b, c) => { const q = c.getBoundingClientRect(); return [Math.min(b[0], q.left - S.left), Math.min(b[1], q.top - S.top), Math.max(b[2], q.right - S.left), Math.max(b[3], q.bottom - S.top)]; }, [Infinity, Infinity, -Infinity, -Infinity]);
+  const pad = 6, cx = box[0] - pad, cy = box[1] - pad, cw = box[2] - box[0] + 2 * pad, ch = box[3] - box[1] + 2 * pad;
+  el.innerHTML = `<div class="strip" role="listbox" aria-label="The gesture, frame by frame"></div>
+    <ul class="faults">${faults.map(([what, fix]) => `<li><b>${what}</b> → ${fix}</li>`).join('')}</ul>
+    <button type="button" class="scrub-live">Live <kbd>Esc</kbd></button>`;
+  const strip = el.querySelector('.strip');
+  strip.style.setProperty('--cols', COLS);
+  r.stage.insertAdjacentElement('afterend', el);
+  const fw = (strip.getBoundingClientRect().width - (COLS - 1) * 6) / COLS, k = fw / cw;
+  for (const v of picks) {
+    const w = wrongAt(r, L, v.t), bad = w.words || w.moving || w.waiting;
+    const f = document.createElement('button'); f.type = 'button'; f.className = `still${bad ? ' bad' : ''}`; f.setAttribute('role', 'option');
+    f.innerHTML = `<span class="still-view" style="height:${ch * k}px"></span><span class="still-t">${s1(v.t)}${bad ? ` · ${w.words ? 'words' : w.moving ? 'moving' : 'no answer'}` : ''}</span>`;
+    const view = f.querySelector('.still-view'), frame = v.still.cloneNode(true);
+    Object.assign(frame.style, { width: `${S.width}px`, height: `${S.height}px`, transform: `scale(${k}) translate(${-cx}px, ${-cy}px)` });
+    view.append(frame);
+    if (w.words) { const fd = v.findings.filter((x) => WORDS.test(x.rule)).sort((a, b) => (b.share ?? 0) - (a.share ?? 0))[0];
+      const hatch = document.createElement('span'); hatch.className = 'still-paint'; hatch.style.transform = `scale(${k}) translate(${-cx}px, ${-cy}px)`;
+      hatch.innerHTML = (fd?.spans.length ? fd.spans : fd ? [fd.box] : []).map(([x, y, ww, hh]) => `<i style="left:${x}px;top:${y}px;width:${ww}px;height:${hh}px"></i>`).join('');
+      view.append(hatch); }
+    f.addEventListener('click', () => show(v.t));
+    strip.append(f);
+  }
   const paint = document.createElement('div'); paint.className = 'scrub-paint';
   r.stage.appendChild(paint);
-  scrub = { r, L, el, paint, end, touched: new Set() };
-  const track = el.querySelector('.scrub-track');
-  const at = (clientX) => { const b = track.querySelector('.lane-body').getBoundingClientRect(); return Math.max(0, Math.min(1, (clientX - b.left) / b.width)) * end; };
-  track.addEventListener('pointerdown', (e) => { track.setPointerCapture(e.pointerId); show(at(e.clientX)); });
-  track.addEventListener('pointermove', (e) => { if (e.buttons & 1) show(at(e.clientX)); });
-  track.addEventListener('keydown', (e) => { const step = e.shiftKey ? 200 : 33; if (e.key === 'ArrowRight') { show(scrub.t + step); e.preventDefault(); } if (e.key === 'ArrowLeft') { show(scrub.t - step); e.preventDefault(); } if (e.key === 'Home') show(0); if (e.key === 'End') show(end); });
-  el.querySelector('.scrub-live').addEventListener('click', release);
-  // it opens on the first problem the lanes show: the words lost, else the movement past its limit, else the late answer
-  const opening = L.lost[0] ? (L.lost[0].from + L.lost[0].to) / 2 : !settleOk ? up + (SETTLE_LIMIT + L.settle) / 2 : !answerOk ? (ANSWER_LIMIT + (L.first ?? end)) / 2 : 0;
-  requestAnimationFrame(() => { el.classList.add('open'); show(opening); });
+  scrub = { r, L, el, paint, end, touched: new Set(), picks };
+  el.querySelector('.scrub-live').addEventListener('click', unfreeze);
+  el.addEventListener('keydown', (e) => { const i = picks.findIndex((v) => v.t === scrub?.t); if (e.key === 'ArrowRight' && picks[i + 1]) { show(picks[i + 1].t); e.preventDefault(); } if (e.key === 'ArrowLeft' && i > 0) { show(picks[i - 1].t); e.preventDefault(); } });
+  const firstBad = picks.find((v) => { const w = wrongAt(r, L, v.t); return w.words || w.moving || w.waiting; });
+  requestAnimationFrame(() => { el.classList.add('open'); show((firstBad ?? picks[0]).t); });
 }
 
-// freeze the real button in its pose at time t, the fault painted on it, the head and the note following
+// freeze the real button in its pose at time t, the words fault painted on it, its still marked as chosen
 function show(t) {
   if (!scrub) return;
-  const { r, L, el, paint, end } = scrub;
-  t = Math.max(0, Math.min(end, t)); scrub.t = t;
+  const { r, L, el, paint, picks } = scrub;
+  scrub.t = t;
   const f = r.frames.reduce((a, b) => (Math.abs(b.t - t) < Math.abs(a.t - t) ? b : a));
   for (const [node, values] of f.parts) {
     if (!node.isConnected) continue;
     PROPS.forEach((p, i) => node.style.setProperty(p, values[i], 'important'));
     scrub.touched.add(node);
   }
-  // paint the words fault on the frozen button, if the words are lost at this moment
-  const v = [...r.verdicts].reverse().find((x) => x.t <= t + 1) ?? r.verdicts[0];
-  // only inside a stretch the words lane shows: a flicker it left out is not painted or named either
-  const inLost = L.lost.some((x) => t >= x.from - 1 && t <= x.to);
-  const words = inLost ? (v?.findings ?? []).filter((x) => WORDS.test(x.rule)).sort((a, b) => (b.share ?? 0) - (a.share ?? 0))[0] : null;
-  paint.innerHTML = !words ? '' : words.spans.length
-    ? words.spans.map(([x, y, w, h]) => `<i class="scrub-fail" style="left:${x}px;top:${y}px;width:${w}px;height:${h}px"></i>`).join('')
-    : `<i class="scrub-box" style="left:${words.box[0]}px;top:${words.box[1]}px;width:${words.box[2]}px;height:${words.box[3]}px"></i>`;
-  el.querySelectorAll('.scrub-head').forEach((h) => { h.style.left = `${(t / end) * 100}%`; });
-  el.querySelector('.scrub-track').setAttribute('aria-valuenow', String(Math.round(t)));
-  const phase = r.up == null || t < r.up ? (t < 120 ? 'pressing' : 'held') : t - r.up > 600 ? 'done' : 'just let go';
-  const wrong = [words && 'words lost', r.up != null && t > r.up + SETTLE_LIMIT && t <= r.up + L.settle && 'still moving', L.first != null && L.first > ANSWER_LIMIT && t > ANSWER_LIMIT && t < L.first && 'no answer yet'].filter(Boolean);
-  el.querySelector('.scrub-note p').innerHTML = `<b>${s1(t)}, ${phase}</b> · ${wrong.length ? `<span class="bad">${wrong.join(', ')}</span>` : 'fine here'}`;
+  const v = picks.find((x) => x.t === t) ?? r.verdicts.reduce((a, b) => (Math.abs(b.t - t) < Math.abs(a.t - t) ? b : a));
+  const words = wrongAt(r, L, t).words ? v.findings.filter((x) => WORDS.test(x.rule)).sort((a, b) => (b.share ?? 0) - (a.share ?? 0))[0] : null;
+  paint.innerHTML = !words ? '' : (words.spans.length ? words.spans : [words.box]).map(([x, y, w, h]) => `<i class="scrub-fail" style="left:${x}px;top:${y}px;width:${w}px;height:${h}px"></i>`).join('');
+  el.querySelectorAll('.still').forEach((s, i) => { const on = picks[i].t === t; s.classList.toggle('on', on); s.setAttribute('aria-selected', String(on)); });
 }
 
-// hand the button back
-function release() {
+// hand the button back: Live or Esc unfreezes it and keeps the strip; a new press clears the strip too
+function unfreeze() {
   if (!scrub) return;
   for (const node of scrub.touched) for (const p of PROPS) node.style.removeProperty(p);
-  scrub.paint.remove(); scrub.el.remove(); scrub = null;
+  scrub.touched.clear(); scrub.paint.innerHTML = ''; scrub.t = null;
+  scrub.el.querySelectorAll('.still').forEach((s) => { s.classList.remove('on'); s.setAttribute('aria-selected', 'false'); });
+}
+function release() {
+  if (!scrub) return;
+  unfreeze(); scrub.paint.remove(); scrub.el.remove(); scrub = null;
 }
 
 // plumber's verdict on the button as the pointer arrives, so the press itself is never held up by judging; and one
@@ -202,8 +213,8 @@ setTimeout(() => { const s = document.querySelector('[data-atom]'); if (s) judge
 addEventListener('pointerdown', (e) => {
   if (e.button !== 0 || e.target.closest('.scrub')) return;
   const stage = e.target.closest('[data-atom]');
-  if (stage) start(stage); else release();
+  if (stage) start(stage);
 }, { capture: true });
 addEventListener('pointerup', letGo, { capture: true });
 addEventListener('pointercancel', letGo, { capture: true });
-addEventListener('keydown', (e) => { if (e.key === 'Escape') release(); });
+addEventListener('keydown', (e) => { if (e.key === 'Escape') unfreeze(); });
