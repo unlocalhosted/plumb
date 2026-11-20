@@ -59,7 +59,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u02-craft-pins.jpg`
-- **Status:** open
+- **Status:** fixed c34d3c05: the note reads "“Ledger” and “Live · v2.4…” are 963px apart only because…", the pin "Gap set by left-over space". The pin still sits at the row's corner, not on the gap · verified (tester, 05:52): the pin reads "Gap set by left-over space" and the note names "Ledger" and "Live · v2.4…". `docs/qa/shots/2026-11-20/u03-verified.jpg`
 
 ### U4 · Most notes on the page are not problems
 - **Where:** Blueprint, All concerns and Design system check (Ledger screen).
@@ -84,7 +84,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding (the page I'm judging is partly hidden).
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u01-bar-at-rest.jpg`
-- **Status:** open
+- **Status:** needs owner: the bar is 54px at the bottom centre; the only ways to keep it off a heading change the person's page or the bar. Options: (a) add room under the page while Blueprint is open (a spacer as tall as the bar), so anything can be scrolled out from under it; costs: Blueprint changes the page it judges, by one block at the very end. (b) the bar shrinks to a small pill when the pointer is far from it, growing back on approach; costs: one more motion, and the count is out of sight at rest. (c) leave it; the page scrolls. I'd pick (a), drawn as the margin pattern so it reads as plumber's, not the page's
 
 ### U6 · The card shows another element's note
 - **Where:** Blueprint, All concerns, the X-ray card on the "Get started" button.
@@ -142,7 +142,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u10-section-card.jpg`
-- **Status:** open
+- **Status:** fixed 838eb9f2: each side shows its px (12, 24); the token's name is on hover ("12px · 3")
 
 ### U11 · The padding stripes cover the button's words
 - **Where:** X-ray card on the "Get started" button.
@@ -152,7 +152,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u07-craft-button-no-note.jpg`
-- **Status:** open
+- **Status:** fixed 16f6103a: the "blue stripes" over the words were the text-size highlight, a tinted box over the label; it is an outline now. The padding hatch stays on the padding bands only
 
 ### U12 · The card jumps up as I reach for its buttons, so my click lands on something else
 - **Where:** Blueprint, X-ray card on the "Get started" button, with the pink note on top.
@@ -188,7 +188,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding.
 - **Severity:** 4
 - **Evidence:** `docs/qa/shots/2026-11-20/u13-agent-note.jpg`
-- **Status:** open
+- **Status:** fixed 116fe677: the place reads "a · App.jsx:23", the full path on hover · verified (tester, 05:53): the agent note reads "header · App.jsx:12". `docs/qa/shots/2026-11-20/u14-verified.png`
 
 ### U15 · The first fix says text-sm isn't one of my sizes, then lists the size it is
 - **Where:** Fix, first fix on the Ledger screen (the line "Click the button above to create your free account").
@@ -238,7 +238,7 @@ How to read an issue, and what each one needs:
 - **Evidence:** `docs/qa/shots/2026-11-20/u03-concern-list.jpg` (200), `docs/qa/shots/2026-11-20/u18-counts-182.png`,
   `docs/qa/shots/2026-11-20/u18-counts-197.png`; `fixtures/.tells-app/src` files were last written 04:29, before
   the walk.
-- **Status:** open
+- **Status:** open, not yet traced: while checking it the page reloaded on its own (writes to the shared test copy reload it), which may be part of it. To check next: the same page, no writes, counts at open, after a scroll, after a reload; notes that depend on what is on screen (pairs, words that run into each other) would explain a scroll changing the count
 
 ### U19 · The Blueprint bar covers the bottom of the setup panel
 - **Where:** ··· → Setup steps, 1280×800.
@@ -260,7 +260,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding and DX. I run init twice, or wonder what the second one does differently.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u19-setup-panel.jpg`; panel text read from the page.
-- **Status:** open
+- **Status:** fixed cc44f3ec: with no config, one step ("Choose your rules"), which says it records today's problems too (seen in `plumber doctor --verbose`; the test server on 4340 shows it after a restart)
 
 ### U21 · Setup steps point at package.json line 1 for things that aren't in package.json
 - **Where:** Setup steps, "Turn on React Fast Refresh", "Plugin order needs a check", "Check that saving updates the
@@ -272,7 +272,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** DX. I open package.json and find nothing to change.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u19-setup-panel.jpg`; panel text read from the page.
-- **Status:** open
+- **Status:** fixed 5bf095fd: with no dev server config found, those steps carry no place and say "your dev server config" (seen in `plumber doctor`; the running test server still shows package.json:1 until it restarts)
 
 ### U22 · "Plugin order needs a check" gives me nothing to do
 - **Where:** Setup steps, under NOT CONFIRMED YET.
@@ -283,7 +283,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** acting. A worry with no way to act on it.
 - **Severity:** 3
 - **Evidence:** panel text read from the page (see U19 shot).
-- **Status:** open
+- **Status:** fixed 1c0a5221: an unconfirmed step shows its instruction and command with Copy ("Move plumb() before the plugins that transform JSX or TSX…")
 
 ### U23 · The C key on "Clean up page" is squashed
 - **Where:** ··· list.
@@ -293,7 +293,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding (the shortcut can't be read).
 - **Severity:** 4
 - **Evidence:** `docs/qa/shots/2026-11-20/u24-more-menu.png`; the `kbd` in the Clean up row measures 6px wide.
-- **Status:** open
+- **Status:** fixed 116fe677: the C is an 18px key cap · verified (tester, 05:51): the C key cap is full size. `docs/qa/shots/2026-11-20/u23-verified.png`
 
 ### U24 · Clean up stops at a command with no way to run or copy it, and every other step is locked
 - **Where:** ··· → Clean up page (or the C key), on the Ledger screen with no site read yet.
@@ -309,7 +309,7 @@ How to read an issue, and what each one needs:
   terminal, and the panel doesn't help me get there.
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u24-cleanup-full.jpg`, `docs/qa/shots/2026-11-20/u24-cleanup-census.png`
-- **Status:** partly fixed 0117b87a: the command's Copy button was there but laid out past the panel's edge (U25); it shows now. Still open: where to run the command (which folder), and whether the passes that don't need the whole site should open before the census
+- **Status:** partly fixed 0117b87a: the command's Copy button was there but laid out past the panel's edge (U25); it shows now. Still open: where to run the command (which folder), and whether the passes that don't need the whole site should open before the census · tester (05:48): the Copy button now shows beside the command; the steps after Text are still locked until the site is read, as the fixer notes.
 
 ### U25 · Clean up's words and step names are cut off on the right
 - **Where:** Clean up panel.
@@ -322,7 +322,7 @@ How to read an issue, and what each one needs:
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u24-cleanup-census.png`; in the overlay, `.cu` is 520px wide and its
   `.body` 718px.
-- **Status:** fixed 0117b87a
+- **Status:** fixed 0117b87a · verified (tester, 05:48): the words wrap inside the panel ("Run this once in your project, then try again."); the 8 steps are circles with their names on hover, all inside the panel. `docs/qa/shots/2026-11-20/u25-verified-cleanup.jpg`
 
 ### U26 · While Clean up is open the Blueprint bar is gone, and the only visible button is Try again
 - **Where:** Clean up panel.
@@ -332,7 +332,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** acting. A person who doesn't think of Escape is stuck in front of a panel that does nothing.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u24-cleanup-full.jpg`
-- **Status:** fixed 0117b87a (same cause as U25: Close was laid out past the panel's right edge; it shows now with its Esc key)
+- **Status:** fixed 0117b87a (same cause as U25: Close was laid out past the panel's right edge; it shows now with its Esc key) · verified (tester, 05:48): "Close esc" shows at the panel's bottom right. `docs/qa/shots/2026-11-20/u25-verified-cleanup.jpg`
 
 ### U27 · History opens underneath the Blueprint bar
 - **Where:** ··· → History.
@@ -358,7 +358,7 @@ How to read an issue, and what each one needs:
 - **Severity:** 3
 - **Evidence:** strip text read from the page; `fixtures/.tells-app/src/*.jsx` modified at 04:29, History opened
   about 04:51.
-- **Status:** open
+- **Status:** partly fixed 9669774c: the entry reads "A file was changed outside React Plumber after this, in your editor or by git. Undo it there." Still open: no file name or real time ("Now" for an old change)
 
 ### U29 · Help: the last shortcut is under the bar, and one row's keys run into its words
 - **Where:** ··· → Help (Keyboard shortcuts).
@@ -404,7 +404,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** intent. I expect to read problems and get a panel that can write to my code with Enter.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u31-alt-click.jpg`, `docs/qa/shots/2026-11-20/u28-help.jpg`
-- **Status:** open
+- **Status:** fixed fafa775d: Help reads "Alt + click · Open its editor, with its notes in the bar". The README line is U37
 
 ### U33 · Every "Read more" link in the CLI goes to a site that doesn't exist
 - **Where:** `plumber craft` text output.
@@ -430,7 +430,7 @@ How to read an issue, and what each one needs:
   asked to make.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u33-craft-output.txt`, the finding at `src/App.jsx:156:9`.
-- **Status:** open
+- **Status:** fixed cfa7cb6e: `plumber craft` now says "→ Change `font-semibold` to `font-medium`: 500, one the page already uses." under the weight note
 
 ### U35 · The page and the CLI count the same page differently
 - **Where:** Blueprint on the Ledger screen vs `plumber craft` on the same URL.
@@ -442,7 +442,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** trust and DX. A developer who checks one against the other finds two numbers and no reason.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u33-craft-output.txt` (first line), `docs/qa/shots/2026-11-20/u18-counts-197.png`.
-- **Status:** open
+- **Status:** partly fixed c6e79518: the first line reads "70 findings from the craft, accessibility and generated-look checks. For your tokens, run npx plumber check." Still open: 70 here against 72 in Blueprint without the design system (the two read the page differently)
 
 ### U36 · The JSON output says everything twice
 - **Where:** `plumber craft --json`.
@@ -455,7 +455,7 @@ How to read an issue, and what each one needs:
 - **Evidence:** `node dist/cli.js craft --url http://127.0.0.1:4340/ --json --no-probe --no-pairs --root
   fixtures/.tells-app` → keys `schemaVersion, tool, root, spec, routes, findings`; first finding has
   `"because"` = `"why"` and `"action"` = `"fix"`.
-- **Status:** open
+- **Status:** needs owner: dropping the repeated fields (because/why, action/fix) and the second copy of the findings changes `--json`'s published shape (schemaVersion 1) for anyone reading it. Options: (a) keep both until a schemaVersion 2 and mark the old names deprecated in the docs; costs nothing now, the file stays big. (b) drop them now; costs a break for any script reading why/fix or routes[].findings. I'd pick (a)
 
 ### U37 · The README describes a Blueprint bar that has changed
 - **Where:** README, "Blueprint: fixing" and "Inspect".
@@ -467,7 +467,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** DX. The first thing a developer reads doesn't match the first thing they see.
 - **Severity:** 3
 - **Evidence:** `README.md` lines 21, 82, 88.
-- **Status:** open
+- **Status:** partly fixed 29df4492: the Blueprint paragraph and the Alt+click row now describe the concern picker, the ··· menu and the editor. Still open: the GIF at the top (and its alt text) shows the old heat and fix panel; it needs a new recording
 
 ### U38 · On the dev server, /__plumb/system is raw JSON, and nothing in the overlay leads to the project page
 - **Where:** `http://127.0.0.1:4340/__plumb/system`, and the overlay's ··· list.
@@ -479,7 +479,7 @@ How to read an issue, and what each one needs:
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u38-system-json.jpg`; `overlay/src/project-page.js` header says "The CLI
   serves it".
-- **Status:** open
+- **Status:** needs owner: a new way in, not a fix. Options: (a) a "Your design system" row in ··· that opens the project page, with the dev server serving it at /__plumb/; costs: the page is built for `npx plumber` and would need the overlay's server to serve it. (b) /__plumb/system answers a browser with a short page that says what it is and the command that opens the project page; costs little, still a terminal step. I'd pick (b) now and (a) when the project page is ready to ship in the overlay
 
 ### U39 · On crafting-ui, picking "Design system check" pins nothing
 - **Where:** Blueprint on the owner's crafting-ui home page (localhost:5180), 1280×800.
@@ -492,7 +492,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding. The list says there are 10 problems and the page shows none.
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u39-crafting-ds-no-pins.jpg`
-- **Status:** fixed d3928478: every picked concern gets pins (they were craft only); on crafting-ui the one design-system note in view is named "Spacing not in your theme"
+- **Status:** fixed d3928478: every picked concern gets pins (they were craft only); on crafting-ui the one design-system note in view is named "Spacing not in your theme" · verified (tester, 05:49): on crafting-ui, Design system check pins "Spacing not in your theme ×11". `docs/qa/shots/2026-11-20/u39-verified.jpg`
 
 ### U40 · Three identical "Line too heavy" pins in a row, with no way to tell which line
 - **Where:** Blueprint, Craft and polish, crafting-ui home page after scrolling one screen.
@@ -503,7 +503,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u40-crafting-craft-pins.jpg`
-- **Status:** partly fixed 5068ff8a: pins keep below a sticky header. Still open: identical pins in a row (three "Line too heavy", five "Only left-over space between") with no way to tell them apart · the rest fixed d3928478: one pin per kind of note on screen, with how many (×3), at the topmost of its elements
+- **Status:** partly fixed 5068ff8a: pins keep below a sticky header. Still open: identical pins in a row (three "Line too heavy", five "Only left-over space between") with no way to tell them apart · the rest fixed d3928478: one pin per kind of note on screen, with how many (×3), at the topmost of its elements · verified for the repeats (tester, 05:50): the identical pins are one pin, "Line too heavy ×7". It sits at the page's top-left corner above the CONTENTS tab, not on any of the seven lines, so it still doesn't show which lines. `docs/qa/shots/2026-11-20/u40-verified.jpg`
 
 ### U41 · The fix in hand is under the app's sticky header, and its choice row covers the header
 - **Where:** Fix, crafting-ui home page, fix 1 of 10 "2 places: line too heavy".
@@ -528,7 +528,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** trust. One concern's fix is another concern's problem.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u41-crafting-fix-under-header.jpg`
-- **Status:** open
+- **Status:** needs owner: the heavy-line check's fix is h-[0.5px], which the design-system check then calls hard-coded. Options: (a) offer a named hairline (add `--spacing-hairline: 0.5px` to the theme, then h-hairline), through the same "add to theme" flow; costs: one more token in the person's theme. (b) the design-system check leaves values under 1px alone (a device pixel is not a step of a scale, as the verdict already does); costs: hard-coded half pixels never get a note. I'd pick (b): it matches how the verdict already treats them
 
 ### U43 · The site's first sentence has two grammar slips
 - **Where:** the plumber site's home page (localhost:4330), under "A design engineer on every screen."
@@ -540,7 +540,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** trust. A tool that judges craft has a slip in its first line.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u43-site-hero.jpg`
-- **Status:** open
+- **Status:** needs owner: the sentence is in an uncommitted edit to `homepage/src/hero/Hero.jsx` (not in any commit), likely the owner's own words, so the fixer left it. Suggested: "Plumber acts as your own design engineer. It finds where your frontend drifts from your system and writes the fix into your JSX." Taking it costs nothing; leaving it keeps the comma splice and "frontend drift".
 
 ### U44 · At 700px wide the Fix bar cuts off both its lines
 - **Where:** Fix, fix 1 of 49, window 700px wide.
@@ -574,7 +574,7 @@ How to read an issue, and what each one needs:
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u46-fix-arrows.jpg`; in the overlay the buttons "Previous fix" and
   "Next fix" measure 22 × 22px.
-- **Status:** open
+- **Status:** fixed 116fe677: the arrows are 28px · verified (tester, 05:51): both arrows are 28 × 28px; ‹ is disabled on the first fix.
 
 ### U47 · ← on the first fix jumps to "Note 31 of 31" at the bottom of the page
 - **Where:** Fix, fix 1 of 49, pressing ←.
@@ -586,7 +586,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding. I lose my place and can't tell how much is left.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u47-note-31-of-31.jpg`
-- **Status:** open
+- **Status:** partly fixed c2ba8519: ← on the first fix stays, and ‹ is off there. Still open: the counter changes from fixes to notes ("Note 1 of 31") with no line saying so, and fixes + notes (79) differ from the bar's count (197, places), which is the counting choice in U4 · tester (05:51): ← on fix 1 of 49 now stays, with ‹ faded. `docs/qa/shots/2026-11-20/u47-verified-first-fix.jpg`
 
 ### U48 · "Contrast 45 at 12px. Small text needs 60." gives a number with no scale
 - **Where:** Fix, Note 31 of 31, "1 paragraph: hard to read".
@@ -597,7 +597,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u47-note-31-of-31.jpg`
-- **Status:** open
+- **Status:** fixed f37902a7: "Contrast is 45 on the APCA scale at 12px. Small text needs 60." (checked from the words file; not walked to Note 31 in Fix)
 
 ### U49 · Closing Blueprint leaves the page where Fix scrolled it
 - **Where:** Fix, then Escape twice to leave Fix and Blueprint.
@@ -607,7 +607,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** intent. I was reading the top of my page and closing a tool moved me.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u49-scroll-after-close.jpg`; README line 92.
-- **Status:** open
+- **Status:** fixed 29fffc4f: Fix scrolled to 80px, Escape brought the page back to 0
 
 ### U50 · After Alt+click, "All concerns" means only that element, and one card gets three counts
 - **Where:** outside Blueprint, Alt+click on a card, then ··· → Inspect an element on the "Active users" card.
@@ -632,7 +632,7 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding. I can't tell whether my click on the menu did anything.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u51-inspect-no-sign.jpg`
-- **Status:** open
+- **Status:** fixed 30490ea6: the bar says "Click an element to inspect it. Esc stops." (for 4 seconds; the pointer is unchanged)
 
 ### U52 · After Undo, the message offers "Undo" again
 - **Where:** element editor, after resizing the Churn card by its right edge (it wrote `w-xs` to 3 places) and
@@ -645,7 +645,7 @@ How to read an issue, and what each one needs:
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u52-resize-written.jpg` (after the write),
   `docs/qa/shots/2026-11-20/u52-undone-undo.jpg` (after Undo).
-- **Status:** open
+- **Status:** fixed 61ef203e, not walked by the fixer in the element editor (cause: an undo was remembered with its undo handles left to find after a reload, and the newest write found was the undo itself). Tester: please re-check the resize-then-Undo path · reopened (tester, 05:55): resized the Churn card (wrote w-xs to 3 places), pressed Undo, no reload: the message still reads "Undone. Your code is back as it was." with a button "Undo". The fix covers the message shown after a reload; the one shown right after Undo still offers Undo. The test copy was restored (no w-xs in App.jsx). `docs/qa/shots/2026-11-20/u52-reopened.jpg`
 
 ### U53 · Holding Space shows nothing, so nobody finds it
 - **Where:** Blueprint at rest, holding Space.
@@ -659,7 +659,7 @@ How to read an issue, and what each one needs:
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u53-space-held.jpg` (taken while held); in the overlay the host gets
   `data-bp-pass` and `path.hit` turns `pointer-events: none`.
-- **Status:** open
+- **Status:** partly fixed 30490ea6: while Space is held the bar says "Using the page" and the marks and pins fade to 20%. Still open: no hint at rest that Space exists
 
 ### U54 · History's timeline doesn't say what its parts or buttons do
 - **Where:** ··· → History, after one resize and its undo.
@@ -673,7 +673,7 @@ How to read an issue, and what each one needs:
   its buttons will do to my code.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u27-verified-u54-history.jpg`
-- **Status:** open
+- **Status:** partly fixed 9669774c: "Changed in your editor", "Changed again later", buttons "Undo this change" and "Undo its whole step", "nothing" for an empty value. Still open: a change's tooltip prints a whole chunk of JSX as its "from", and opening History scrolls the page
 
 ### U55 · A selected card's outline and grips are drawn over the concern list
 - **Where:** element editor with the "Active users" card selected, then the concern list opened from the bar.
@@ -683,4 +683,4 @@ How to read an issue, and what each one needs:
 - **Why it hurts:** understanding. Lines cross the words I'm trying to read and pick from.
 - **Severity:** 3
 - **Evidence:** `docs/qa/shots/2026-11-20/u50-this-element-11.jpg`
-- **Status:** open
+- **Status:** fixed 6fbec11d: the open list stands above the X-ray layer; with the Active users card selected, every row is the topmost thing under its centre
