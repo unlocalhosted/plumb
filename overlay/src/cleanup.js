@@ -165,7 +165,7 @@ export const CLEANUP = {
     reading:  { flight: 'read', on: { ready: 'ready', nothing: 'nothing', failed: 'error', noCensus: 'noCensus', stop: 'idle' } },
     ready:    { on: { preview: 'preview', read: 'reading', finished: 'done', stop: 'idle' } }, // Apply shows first, then writes from `preview`
     nothing:  { on: { read: 'reading', finished: 'done', stop: 'idle' } },
-    preview:  { on: { cancel: 'ready', write: 'writing', stop: 'idle' } },
+    preview:  { on: { cancel: 'ready', write: 'writing', read: 'reading', stop: 'idle' } }, // read: on to the next pass, this one's preview kept on the page
     writing:  { flight: 'write', on: { landed: 'done', failed: 'error', notLanded: 'idle', stop: 'idle' } }, // notLanded: the page reloaded mid-write and the trace shows nothing
     done:     { on: { read: 'reading', failed: 'error', stop: 'idle' } }, // read: the next pass, or the page again after Undo; failed: the undo refused
     error:    { on: { read: 'reading', stop: 'idle' } },
@@ -316,11 +316,16 @@ export class Cleanup {
   // on to the next pass; the one in hand is skipped unless it was written
   #next() {
     const k = PASSES[this.#pass];
+    // from a preview: on to the next pass with this one still on the page, not written (owner, 2026-11-20: "dont stop me
+    // from seeing other changes apart from typography"), so the whole clean-up can be seen before anything is written
+    if (this.#state === 'preview') { this.#settle(); this.#listen(false); this.#held = false; this.#done.set(k, 'kept'); }
     if (!this.#done.has(k)) this.#done.set(k, 'skipped');
     if (this.#hasNext()) return this.#readPass(this.#pass + 1);
     this.#send('finished'); this.#host.render();
   }
   #savedLine(saved) { return (saved?.pass ? W[PASSES[saved.pass]] : W).saved(saved.places, saved.files); }
+  // the passes previewed and kept on the page, not written, said before the next pass's own line
+  #keptLine() { const kept = PASSES.filter((p) => this.#done.get(p) === 'kept').map((p) => W.pass[p]); return kept.length ? W.keptOnPage(kept) + ' ' : ''; }
   #pageOnly = false; // the text pass read this page alone: there is no census of the site yet
   // the whole site being read from here (POST census, then its progress every second): null, or { running, read, route, error }
   #site = null;
@@ -364,8 +369,8 @@ export class Cleanup {
     if (s === 'noCensus' || (k === 'colour' && this.#rn?.open)) return null;
     const TOY = { text: 'type', spacing: 'gap', colour: 'fill', icons: 'icon', radius: 'corner', sizes: 'size', shadows: 'shadow', speeds: 'motion', states: 'opacity' };
     const strip = `<span class="passes" role="list" aria-label="${esc(W2.passes)}">${PASSES.map((p, i) => {
-      const st = this.#done.get(p), kind = st === 'done' ? 'done' : st ? 'skipped' : i === this.#pass ? 'now' : 'soon';
-      return `<i role="listitem" class="ps ${kind}" title="${esc(W2.pass[p])}${st === 'done' ? ' · done' : ''}" aria-label="${esc(W2.pass[p])}${st === 'done' ? ', done' : kind === 'now' ? ', now' : ''}">${toyOf(TOY[p])}</i>`;
+      const st = this.#done.get(p), kind = i === this.#pass ? 'now' : st === 'done' ? 'done' : st === 'kept' ? 'kept' : st ? 'skipped' : 'soon';
+      return `<i role="listitem" class="ps ${kind}" title="${esc(W2.pass[p])}${st === 'done' ? ' · done' : st === 'kept' ? ' · on the page, not written' : ''}" aria-label="${esc(W2.pass[p])}${st === 'done' ? ', done' : st === 'kept' ? ', on the page, not written' : kind === 'now' ? ', now' : ''}">${toyOf(TOY[p])}</i>`;
     }).join('')}</span>`;
     const b = (label, cu, o = {}) => button(esc(label), { cls: `sm ${o.quiet ? 'quiet' : ''}`, key: o.key ?? '', attrs: `data-cu="${cu}"` });
     const sw = this.#sw, p = sw ? sw.page : this.#page;
@@ -376,7 +381,7 @@ export class Cleanup {
     else if (s === 'preview') {
       say = sw ? S.head(p.before, p.after, p.places) : W2.previewing(this.#page?.moves ?? 0);
       more = `This is a preview. ${W2.holdSpace}`;
-      acts = b('Apply', 'apply', { key: '↵' }) + b(W2.cancel, 'cancel', { quiet: true, key: 'Esc' });
+      acts = b('Apply', 'apply', { key: '↵' }) + (this.#hasNext() ? b(W2.next, 'next', { quiet: true, key: '→' }) : '') + b(W2.cancel, 'cancel', { quiet: true, key: 'Esc' });
     } else if (s === 'nothing') {
       say = sw ? S.nothing : W2.nothing(this.#p?.roles?.length ?? 0); more = sw ? S.sub(p) : W2.nothingWhy;
       acts = b(this.#hasNext() || !sw ? W2.next : W2.done, this.#hasNext() || !sw ? 'next' : 'close', { key: this.#hasNext() || !sw ? '→' : 'Esc' });
@@ -388,7 +393,7 @@ export class Cleanup {
       acts = (more_ ? b(W2.next, 'next', { key: '→' }) : '') + (this.#saved ? b(W2.undo, 'undo', { quiet: true }) : '') + b(more_ ? W2.close : W2.done, 'close', { quiet: true, key: 'Esc' });
     } else if (s === 'ready') {
       say = sw ? S.head(p.before, p.after, p.places) : W2.head(this.#p?.cost?.sizesBefore ?? p.before, this.#p?.roles?.length ?? 0);
-      more = sw ? S.sub(p) : this.#pageOnly ? (this.#site?.running ? W.siteReading(this.#site.read, this.#site.route) : this.#site?.error ? `${W.siteFailed} ${this.#site.error}` : W.pageOnly) : W2.why;
+      more = this.#keptLine() + (sw ? S.sub(p) : this.#pageOnly ? (this.#site?.running ? W.siteReading(this.#site.read, this.#site.route) : this.#site?.error ? `${W.siteFailed} ${this.#site.error}` : W.pageOnly) : W2.why);
       acts = (!sw && this.#pageOnly ? b(this.#site?.running ? W.siteBusy : W.readSite, 'site', { quiet: true }) : '') + b(W2.preview, 'preview', { quiet: true, key: 'P' }) + b('Apply', 'apply', { key: '↵' }) + b('Skip', 'skip', { quiet: true, key: '→' });
     }
     // in preview the detail is what changes: the styles as chips, rolling to their values, and how to compare
@@ -681,7 +686,7 @@ export class Cleanup {
     if (this.#state === 'idle') return false;
     if (k === 'Enter' && ['ready', 'preview'].includes(this.#state)) { this.#apply(); return true; }
     if ((k === 'p' || k === 'P') && this.#state === 'ready') { this.#togglePreview(true); return true; }
-    if (k === 'ArrowRight' && (['ready', 'nothing'].includes(this.#state) || (this.#state === 'done' && (this.#pass === 0 || this.#hasNext())))) { this.#next(); return true; }
+    if (k === 'ArrowRight' && (['ready', 'nothing'].includes(this.#state) || (this.#state === 'preview' && this.#hasNext()) || (this.#state === 'done' && (this.#pass === 0 || this.#hasNext())))) { this.#next(); return true; }
     // Space is Blueprint's (hold to use the page) except while previewing, where held Space compares (#space)
     if (k === ' ') return this.#state === 'preview';
     return k !== 'Escape' && this.running; // nothing else reaches the fixes underneath while a clean-up runs

@@ -109,6 +109,7 @@ const FIX_CSS_BASE = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   .fx .one .ps svg { display: block; width: 100%; height: 100%; overflow: visible; }
   .fx .one .ps.soon { opacity: .35; filter: grayscale(1); scale: .86; }
   .fx .one .ps.skipped { opacity: .3; filter: grayscale(1); scale: .8; }
+  .fx .one .ps.kept::after { content: ''; position: absolute; right: -4px; bottom: -4px; width: 10px; height: 10px; border-radius: 50%; background: var(--pl-sky); box-shadow: 0 0 0 1.5px var(--pl-paper); } /* previewed, kept on the page, not written */
   .fx .one .ps.now { scale: 1.12; }
   .fx .one .ps.now::before { content: ''; position: absolute; inset: -5px; border-radius: 9px; box-shadow: 0 0 0 2px var(--pl-sky); }
   .fx .one .ps.done::after { content: ''; position: absolute; right: -4px; bottom: -4px; width: 10px; height: 10px; border-radius: 50%; background: var(--pl-mint); box-shadow: 0 0 0 1.5px var(--pl-paper); }

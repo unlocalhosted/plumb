@@ -959,6 +959,7 @@ export const CLEANUP = {
   // the text pass on this page alone, while the site hasn't been read
   pageOnly: 'From this page’s text alone. Read the whole site once and every page gets the same styles.',
   readSite: 'Read the whole site',
+  keptOnPage: (names) => `Still on the page, not written: ${names.join(', ')}.`,
   siteBusy: 'Reading the site…',
   siteReading: (n, route) => `Reading your site: ${n} ${n === 1 ? 'page' : 'pages'} so far${route ? `, last ${route}` : ''}.`,
   siteDone: (n) => `Read ${n} ${n === 1 ? 'page' : 'pages'} of your site. Text styles now come from all of them.`,
