@@ -11,7 +11,10 @@ Every finding is read by someone deciding what to change: a person in a terminal
 | Do | `choices` + per-site edits, or `action` | The tokens to use with their amounts, or one plain instruction. Exact edit per site when one choice fits. |
 | If intended | `accept` | The command that records it as a reasoned exception: `plumber accept <key> --why "…"`. Human detail views show one real-site example at the end. |
 
-`why` and `fix` stay in JSON for compatibility: `why` = `because`, `fix` = the action text.
+`why` and `fix` stay in JSON for compatibility: `why` = `because`, `fix` = the action text. **Deprecated:** read
+`because` and `action`; `why` and `fix` go in schemaVersion 2. In `plumber craft --json`, the top-level `findings` list
+is the one to read; `routes[].findings` repeats it per route and also goes in schemaVersion 2. Both stay until then so
+no script reading schemaVersion 1 breaks (owner, 2026-11-20).
 
 ## Vocabulary
 
