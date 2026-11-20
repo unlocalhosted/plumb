@@ -189,14 +189,19 @@
         ease: (on) => { c.style.transition = on ? `box-shadow ${T.move}ms ease-in-out` : ''; if (on) c.animate([{}, {}], { duration: T.move }); const t0 = performance.now(); const f = () => { const k = Math.min(1, (performance.now() - t0) / T.move); reach = 34 - 28 * (1 - Math.pow(1 - k, 3)); if (k < 1) requestAnimationFrame(f); }; if (on) f(); },
         apply: () => { c.style.boxShadow = to; }, track, reset: () => { c.style.transition = ''; c.style.boxShadow = from; reach = 34; track(); } };
     }],
-    ['Timing', '400ms → 150ms: the same press, felt at both speeds', (s) => {
-      s.innerHTML = `<div class="pg" style="display:grid;place-items:center;align-content:center;gap:18px;padding:0"><span class="btn b" style="height:40px">Open menu</span><div class="track" style="width:240px"><i class="bar"></i></div></div><i class="g pill"></i>`;
-      const b = s.querySelector('.b'), bar = s.querySelector('.bar'), pill = s.querySelector('.pill');
-      let ms = 400; const press = () => { b.animate([{ scale: 1, background: '#4f46e5' }, { scale: .94, background: '#6d63ff' }, { scale: 1, background: '#4f46e5' }], { duration: ms * 2, easing: 'ease-in-out' }); bar.animate([{ width: '0%' }, { width: `${(ms / 400) * 100}%` }], { duration: ms, easing: 'linear', fill: 'forwards' }); };
-      const track = () => { const S = s.getBoundingClientRect(), r = bar.parentElement.getBoundingClientRect(); pill.style.cssText = `left:${r.left - S.left + r.width / 2}px;top:${r.bottom - S.top + 24}px`; };
+    ['Timing', '400ms → 150ms: the duration is a length, and it shrinks', (s) => {
+      // the bar's length is the time (240px is 400ms); the old length stays as a dashed ghost so the cut is seen
+      const PX = 240 / 400;
+      s.innerHTML = `<div class="pg" style="display:grid;place-items:center;align-content:center;gap:22px;padding:0"><span class="btn b" style="height:40px">Open menu</span>
+        <div class="lane" style="position:relative;width:240px;height:10px"><i class="ghost" style="position:absolute;left:0;top:0;height:10px;width:240px;border-radius:5px;border:1.5px dashed color-mix(in oklab, var(--pl-coral) 70%, transparent);box-sizing:border-box;opacity:0"></i><i class="len" style="position:absolute;left:0;top:0;height:10px;width:240px;border-radius:5px;background:var(--c)"></i></div></div><i class="g pill"></i>`;
+      const b = s.querySelector('.b'), len = s.querySelector('.len'), ghost = s.querySelector('.ghost'), pill = s.querySelector('.pill');
+      const press = (ms) => b.animate([{ scale: 1, background: '#4f46e5' }, { scale: .94, background: '#6d63ff', offset: .5 }, { scale: 1, background: '#4f46e5' }], { duration: ms * 2, easing: 'ease-in-out' });
+      const track = () => { const S = s.getBoundingClientRect(), r = len.getBoundingClientRect(); pill.style.cssText = `left:${r.left - S.left + r.width}px;top:${r.bottom - S.top + 26}px`; };
       track();
       return { from: 400, to: 150, step: 10, unit: 'ms', name: 'fast', guides: () => [{ el: pill, kind: 'pill' }],
-        ease: (on) => { if (on) { ms = 400; press(); setTimeout(() => { ms = 150; press(); }, 420); } }, apply: () => {}, track, reset: () => { ms = 400; bar.getAnimations().forEach((a) => a.cancel()); track(); } };
+        ease: (on) => { if (!on) return; press(400); ghost.style.transition = 'opacity 200ms ease-out'; ghost.style.opacity = '1'; len.style.transition = `width ${T.move}ms ${SPRING}`; setTimeout(() => press(150), T.move + 120); },
+        apply: (v) => { len.style.width = `${v * PX}px`; }, track,
+        reset: () => { len.style.transition = ''; len.style.width = '240px'; ghost.style.transition = ''; ghost.style.opacity = '0'; track(); } };
     }],
     ['Disabled', 'opacity .3 → .5: the needle climbs until it can be read', (s) => {
       s.innerHTML = `<div class="pg" style="display:grid;place-items:center;align-content:center;gap:22px;padding:0"><span class="btn b" style="height:40px;opacity:.3">Delete project</span><div class="meter" style="width:240px"></div><i class="needle"></i></div><i class="g pill"></i>`;
