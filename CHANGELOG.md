@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.1 · 2026-11-21
+
+- **A fix lands on the element it is about.** When one line of code draws several elements and a class is added only
+  to some of them by a condition (`status.id === 'review' && 'rounded-[10px]'`, a red date only on late cards), the
+  finding was shown on the first element that line draws, and taking its fix was refused there ("This change can't
+  be written as classes here"). It is now shown on the elements that carry the class, and the fix is written.
+
 ## 0.6.0 · 2026-11-20
 
 Everything since 0.5.0, as a person using it sees it.
