@@ -2,7 +2,7 @@ import { table } from './cli-table.js';
 import { readFile, stat } from 'node:fs/promises';
 import { basename, relative, resolve } from 'node:path';
 import { UsageError } from './errors.js';
-import { projectFacts, manifestAt, supportNotice, supportRefusal, supportSummary } from './project-facts/index.js';
+import { projectFacts, manifestAt, reactOf, supportNotice, supportRefusal, supportSummary } from './project-facts/index.js';
 import type { App } from './project-facts/index.js';
 import { runnerOf } from './runner.js';
 
@@ -18,6 +18,14 @@ export async function workspaceApps(root: string): Promise<{ workspace: boolean;
   // R2: an unreadable workspace file is unknown; the folder runs as one project and the person is told once.
   const notice = unreadable ? `Could not read ${unreadable.file}:${unreadable.line} (${unreadable.text}); checking this folder as one project.\n` : '';
   return { workspace: !!facts.workspace.value, apps: facts.apps.value ?? [], notice };
+}
+
+/** A React app, not a library: React is there (the project facts' own reading), and not as a peer it expects from
+ *  whoever installs it. */
+async function reactApp(root: string): Promise<boolean> {
+  const react = reactOf(root).value;
+  if (!react || !(react.installed || react.declared)) return false;
+  try { return !(JSON.parse(await readFile(resolve(root, 'package.json'), 'utf8')) as { peerDependencies?: Record<string, string> }).peerDependencies?.react; } catch { return false; }
 }
 
 export async function cliProject(argument?: string, allowWorkspace = false): Promise<{ root: string; notice: string; apps?: WorkspaceApp[] }> {
@@ -36,6 +44,12 @@ export async function cliProject(argument?: string, allowWorkspace = false): Pro
   const root = facts.root.value;
   if (root === null) throw new UsageError(`No project here. React Plumber reads a React app: a folder with package.json.\n  → cd into your app, or: ${runnerOf(process.cwd())} plumber --root path/to/app`);
   const { workspace, apps, notice } = await workspaceApps(root);
+  // An explicit --root with no package.json climbs only to a React app: past it, a library or a repository's own
+  // package.json is not the project the person named (owner, 2026-11-20, U63: --root fixtures/.tells-app read the
+  // whole plumb repository). A workspace root is refused below with its apps listed.
+  if (argument !== undefined && !override && root !== start && !workspace && !(await reactApp(root))) {
+    throw new UsageError(`--root ${argument}: there is no package.json in that folder, and the nearest one above (${relative(cwd, root) || '.'}, ${basename(root)}) isn't a React app, so Plumber won't read it.\n  → pass your app's folder, the one with package.json: ${runnerOf(cwd)} plumber --root path/to/app`);
+  }
   if (workspace && !override) {
     if (allowWorkspace) return { root, notice, apps };
     if (!apps.length) {
