@@ -65,6 +65,8 @@ export interface ReadFile { (file: string): Promise<{ text: string; hash: string
  * element and prop resolution). Neither writes. */
 export interface StyleContext {
   read: ReadFile;
+  /** the project's root: where a system finds the project's own tools (its sass) */
+  root?: string;
   classEdit(place: ClassPlace): Promise<Edit & { hash: string }>;
 }
 

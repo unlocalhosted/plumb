@@ -28,6 +28,7 @@ import { sourceHash } from '../collect/cache.js';
 import { matchesPath } from '../collect/pattern.js';
 import { lineStarts, sourceSite } from '../collect/source.js';
 import { PROPERTIES, cssErrors, cssValueSafe, locateStyle } from '../styles/index.js';
+import { compileScss } from '../styles/sass.js';
 import type { ClassPlace, Edit, Evidence, ReadFile, StyleContext } from '../styles/index.js';
 import { parseSync } from 'oxc-parser';
 import type { ClassTraceLimit } from '../collect/computed.js';
@@ -1416,7 +1417,7 @@ export class Session extends EventEmitter {
     const changes = options?.changes;
     if (!Array.isArray(changes) || !changes.length || changes.length > 32) throw new UsageError('Style write takes one to thirty-two changes.');
     const read: ReadFile = async (file) => { const path = this.file(file); await this.readableSource(path); const text = await readFile(path, 'utf8'); return { text, hash: sourceHash(text) }; };
-    const ctx: StyleContext = { read, classEdit: place => this.classEdit(place) };
+    const ctx: StyleContext = { read, root: this.root, classEdit: place => this.classEdit(place) };
     const results: Record<string, unknown>[] = [];
     const byFile = new Map<string, { hash: string; edits: Edit[]; said: string[] }>();
     for (const [index, change] of changes.entries()) {
@@ -1453,6 +1454,7 @@ export class Session extends EventEmitter {
         let next = text;
         for (const e of ordered) next = next.slice(0, e.start) + e.replacement + next.slice(e.end);
         if (/\.css$/.test(path) && cssErrors(next, path) > cssErrors(text, path)) throw new UsageError('The change would leave the stylesheet unreadable, so nothing was written.');
+        if (/\.scss$/.test(path)) { try { compileScss(this.root, path, next); } catch (error) { throw new UsageError(`The change would stop this .scss file compiling, so nothing was written: ${errorMessage(error).split('\n')[0]}`); } }
         const written = await this.rewrite(path, hash, next, said.join('; ').slice(0, 120));
         done.push(written.undo); files[path] = written.hash;
       }
@@ -1465,7 +1467,7 @@ export class Session extends EventEmitter {
     const { prop, evidence } = options ?? {} as { prop: string; evidence: Evidence };
     if (typeof prop !== 'string' || !/^[a-z][a-z-]*$/.test(prop) || !evidence || typeof evidence !== 'object') throw new UsageError('Style place takes a property and what the page saw.');
     const read: ReadFile = async (file) => { const path = this.file(file); await this.readableSource(path); const text = await readFile(path, 'utf8'); return { text, hash: sourceHash(text) }; };
-    const placed = await locateStyle(evidence, prop, { read, classEdit: place => this.classEdit(place) }).catch(() => null);
+    const placed = await locateStyle(evidence, prop, { read, root: this.root, classEdit: place => this.classEdit(place) }).catch(() => null);
     if (!placed) return null;
     const { system, origin } = placed;
     return { system: system.id, says: system.says, said: origin.said, file: origin.file, value: origin.value, hash: origin.hash, conditions: origin.conditions, writable: origin.writable };

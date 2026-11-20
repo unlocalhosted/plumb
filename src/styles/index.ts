@@ -7,12 +7,13 @@ import { parseCss } from '../lower/css.js';
 import { classes } from './classes.js';
 import { PROPERTIES } from './properties.js';
 import { rules } from './rules.js';
+import { sass } from './sass.js';
 import type { Evidence, Origin, StyleContext, StyleSystem } from './systems.js';
 
 export type { Change, ClassPlace, Edit, Evidence, Origin, ReadFile, StyleContext, StyleSystem } from './systems.js';
 export { PROPERTIES };
 
-export const SYSTEMS: StyleSystem[] = [classes, rules];
+export const SYSTEMS: StyleSystem[] = [classes, rules, sass];
 
 export async function locateStyle(evidence: Evidence, prop: string, ctx: StyleContext, systems = SYSTEMS): Promise<{ system: StyleSystem; origin: Origin } | null> {
   for (const system of systems) {
