@@ -12,6 +12,7 @@ import { GESTURE_CSS } from './gesture-css.js';
 const PROPS = ['transform', 'opacity', 'clip-path', 'width', 'height', 'background-color', 'color', 'visibility', 'filter', 'translate', 'scale'];
 const JUDGE_EVERY = 100; // ms between plumber's verdicts while recording
 const TAIL = 1100; // ms recorded after letting go: the release and the done state
+const RESTLESS = 3000; // ms after letting go by which a button that is only springing back has come to rest
 // the standards each lane is read against (generator/data/standards.mjs, checked against their pages)
 const ANSWER_LIMIT = 100; // Nielsen: 0.1 s feels instantaneous
 const SETTLE_LIMIT = 500; // Material 3: its longest suggested transition
@@ -68,6 +69,8 @@ function still(stage) {
   }
   return frame;
 }
+// whether the button refuses a press right now: disabled, busy, or not taking the pointer
+const blocked = (stage) => [...stage.querySelectorAll('button,[role=button],a,[role=slider]')].some((b) => b.disabled || b.getAttribute('aria-disabled') === 'true' || b.getAttribute('aria-busy') === 'true' || getComputedStyle(b).pointerEvents === 'none');
 // how many of the button's parts look different from the frame before
 const changed = (a, b) => a.parts.reduce((n, [, v, box], i) => n + (b.parts[i] && (box !== b.parts[i][2] || v.some((x, j) => x !== b.parts[i][1][j])) ? 1 : 0), 0);
 
@@ -77,13 +80,16 @@ function start(stage, e) {
   // first frame that differs is the answer and judging never delays it
   const S0 = stage.getBoundingClientRect();
   rec = { stage, t0: performance.now(), frames: [], verdicts: [], events: [{ t: 0, name: 'pressed' }], up: null, lastJudge: 0, path: [{ t: 0, x: e.clientX - S0.left, y: e.clientY - S0.top }] };
-  rec.frames.push({ t: 0, parts: sample(stage), says: saying(stage) }); rec.verdicts.push({ t: 0, findings: rest.get(stage) ?? [], still: still(stage) });
+  rec.frames.push({ t: 0, parts: sample(stage), says: saying(stage), blocked: blocked(stage) }); rec.verdicts.push({ t: 0, findings: rest.get(stage) ?? [], still: still(stage) });
   const tick = () => {
     if (!rec || rec.stage !== stage) return;
     const t = performance.now() - rec.t0;
-    rec.frames.push({ t, parts: sample(stage), says: saying(stage) });
+    rec.frames.push({ t, parts: sample(stage), says: saying(stage), blocked: blocked(stage) });
     if (t - rec.lastJudge >= JUDGE_EVERY) { rec.lastJudge = t; rec.verdicts.push({ t, findings: judge(stage), still: still(stage) }); }
-    if (rec.up != null && t - rec.up > TAIL) return finish();
+    // recorded until it is still (nothing changed for 200 ms) once the tail is past, or until RESTLESS: a button still
+    // moving then never settles
+    if (rec.up != null && t - rec.up > TAIL) { const quiet = rec.frames.filter((f) => f.t > t - 200), prev = rec.frames[rec.frames.length - quiet.length - 1];
+      if (t - rec.up > RESTLESS || (prev && quiet.every((f) => !changed(f, prev)))) return finish(); }
     requestAnimationFrame(tick);
   };
   requestAnimationFrame(tick);
@@ -144,12 +150,25 @@ function read(r) {
     else cur = null;
   });
   for (let i = lost.length - 1; i >= 0; i--) if (lost[i].to - lost[i].from < 150) lost.splice(i, 1);
-  return { end, up, first, settle, lost };
+  // the movement after you let go is judged by what it is for, then by what it does to the person, never by its length
+  // alone (a standard's number is evidence of a harm, not the verdict). Its purpose: if the button comes back saying
+  // what it said at rest, the movement is it springing back, feedback to the hand; if it says something new, it is
+  // answering (working, waiting, done), and moving while it answers is the answer.
+  const restSays = r.frames[0].says, endSays = r.frames.at(-1).says;
+  const purpose = endSays === restSays ? 'springs back' : 'answers';
+  const after = r.frames.filter((f) => f.t > up && f.t <= up + settle);
+  const stillMoving = lastMove != null && end - lastMove < 50 && settle > 0 && end - up >= RESTLESS;
+  // the harms: it won't take the next press while it springs back (for an answer that is the point: no second charge),
+  // or it never comes to rest with nothing to wait for
+  const harms = [];
+  if (purpose === 'springs back' && settle > SETTLE_LIMIT && after.some((f) => f.blocked)) harms.push('holds');
+  if (purpose === 'springs back' && stillMoving) harms.push('restless');
+  return { end, up, first, settle, lost, purpose, harms, restSays };
 }
 // what is wrong at moment t
 function wrongAt(r, L, t) {
   return { words: L.lost.some((x) => t >= x.from - 1 && t <= x.to), // stills come every tenth of a second, so a short overrun is shown on the still nearest it
-    moving: r.up != null && L.settle > SETTLE_LIMIT && t > r.up + SETTLE_LIMIT - JUDGE_EVERY / 2 && t <= r.up + L.settle + JUDGE_EVERY / 2,
+    moving: r.up != null && L.harms.length > 0 && L.settle > SETTLE_LIMIT && t > r.up + SETTLE_LIMIT - JUDGE_EVERY / 2 && t <= r.up + L.settle + JUDGE_EVERY / 2,
     waiting: L.first != null && L.first > ANSWER_LIMIT && t > ANSWER_LIMIT && t < L.first };
 }
 
@@ -162,28 +181,41 @@ function finish() {
   section.querySelector('.scrub')?.remove();
   last.set(r.stage, r.path);
   const L = read(r), { end, up } = L, ms = (x) => (x < 1000 ? `${Math.round(x)} ms` : s1(x));
-  const faults = [];
+  // each fault: what goes wrong for the person, why, and the fix that keeps what the design meant; a fault the owner
+  // kept (with a reason) is said as kept, not flagged
+  const design = intentFor(r.stage, L), label = L.restSays || 'button';
+  const all = [];
   const most = Math.max(0, ...L.lost.map((x) => x.share)), mostPct = Math.round(most <= 1 ? most * 100 : most);
-  if (L.lost.length) faults.push([`Words lost for ${s1(L.lost.reduce((a, x) => a + x.to - x.from, 0))}${mostPct ? `, ${mostPct}% at worst` : ''}`,
-    L.lost.some((x) => x.layer) ? 'redraw them in the fill’s colour, clipped to it with <code>clip-path</code>' : 'keep them at full <code>opacity</code>; swap them at once']);
-  if (L.settle > SETTLE_LIMIT) faults.push([`Moves ${ms(L.settle)} after you let go`, 'settle in about 300 ms, and not at all under <code>prefers-reduced-motion</code>', 'quicken']);
-  if (L.first == null || L.first > ANSWER_LIMIT) faults.push([L.first == null ? 'No answer to the press' : `Answers the press after ${ms(L.first)}`, 'answer on <code>:active</code>: sink it, or start the fill']);
+  if (L.lost.length) all.push({ kind: 'words', what: `Words lost for ${s1(L.lost.reduce((a, x) => a + x.to - x.from, 0))}${mostPct ? `, ${mostPct}% at worst` : ''}`,
+    fix: L.lost.some((x) => x.layer) ? 'redraw them in the fill’s colour, clipped to it with <code>clip-path</code>' : 'keep them at full <code>opacity</code>; swap them at once' });
+  if (L.harms.includes('holds')) all.push({ kind: 'motion', preview: 'quicken', what: `Won’t take another press for ${ms(L.settle)} while it springs back`,
+    fix: 'keep the spring, and let a new press cut in from wherever it is' });
+  if (L.harms.includes('restless')) all.push({ kind: 'motion', preview: 'quicken', what: 'Never comes to rest after you let go', fix: 'let the spring end, and not run at all under <code>prefers-reduced-motion</code>' });
+  if (L.first == null || L.first > ANSWER_LIMIT) all.push({ kind: 'answer', what: L.first == null ? 'No answer to the press' : `Answers the press after ${ms(L.first)}`, fix: 'answer on <code>:active</code>: sink it, or start the fill' });
+  const faults = all.filter((f) => !kept(label, f.kind)), keptOnes = all.filter((f) => kept(label, f.kind));
+  // a long movement that harms nobody is not a fault: say why it is the way it is, once, quietly
+  const why = L.settle > SETTLE_LIMIT && !L.harms.length
+    ? (L.purpose === 'springs back'
+      ? `<b>${design ? `Springs back for ${ms(L.settle)}, on purpose.` : `Comes back to rest over ${ms(L.settle)}.`}</b> ${design ? `${design.says} ` : ''}Nothing waits on it: you can press again at once.`
+      : `<b>Moves for ${ms(L.settle)} while it answers.</b> That is the button saying it is working; nothing is held up.`) : '';
+  const notes = [why && `<p class="scrub-why">${why}${design?.source ? ` <span>${design.source}</span>` : ''}</p>`,
+    ...keptOnes.map((f) => `<p class="scrub-why"><b>Kept: ${f.what.charAt(0).toLowerCase()}${f.what.slice(1)}.</b> ${kept(label, f.kind)}</p>`)].filter(Boolean).join('');
   const el = document.createElement('div');
   el.className = 'scrub pl-light';
   // the fix, on the button: a switch between the button as it is and with the fix, which makes your gesture again
-  const fixOn = r.stage.dataset.fix === 'on', canFix = fixOn || faults.some((f) => f[2]);
+  const fixOn = r.stage.dataset.fix === 'on', canFix = fixOn || faults.some((f) => f.preview);
   const toggle = canFix ? `<div class="fix-switch" role="radiogroup" aria-label="The fix"><button type="button" role="radio" data-fix="off" aria-checked="${!fixOn}">As it is</button><button type="button" role="radio" data-fix="on" aria-checked="${fixOn}">With the fix</button></div>` : '';
   const wire = () => el.querySelectorAll('.fix-switch button').forEach((btn) => btn.addEventListener('click', () => {
     if ((r.stage.dataset.fix === 'on') === (btn.dataset.fix === 'on')) return;
     r.stage.dataset.fix = btn.dataset.fix; replay(r.stage); }));
   // with nothing wrong, one mint line; with the fix on, its filmstrip too, to set beside the one before
   if (!faults.length && !fixOn) {
-    el.innerHTML = '<p class="scrub-clean">Nothing wrong in this gesture.</p>';
+    el.innerHTML = `${notes}<p class="scrub-clean">Nothing wrong in this gesture.</p>`;
     r.stage.insertAdjacentElement('afterend', el); wire(); requestAnimationFrame(() => el.classList.add('open')); return;
   }
   // the stills: evenly through the gesture, with the middle of every fault among them
   const want = Array.from({ length: SHOWN }, (_, i) => (i * end) / (SHOWN - 1));
-  const must = [...L.lost.map((x) => (x.from + x.to) / 2), L.settle > SETTLE_LIMIT ? up + (SETTLE_LIMIT + L.settle) / 2 : null].filter((x) => x != null);
+  const must = [...L.lost.map((x) => (x.from + x.to) / 2), L.harms.length && L.settle > SETTLE_LIMIT ? up + (SETTLE_LIMIT + L.settle) / 2 : null].filter((x) => x != null);
   for (const m of must) { let k = 0; want.forEach((w, i) => { if (Math.abs(w - m) < Math.abs(want[k] - m)) k = i; }); if (!must.includes(want[k]) || want[k] === m) want[k] = m; }
   const near = (t) => r.verdicts.reduce((a, b) => (Math.abs(b.t - t) < Math.abs(a.t - t) ? b : a));
   const picks = [...new Set(want.sort((a, b) => a - b).map(near))];
@@ -192,7 +224,8 @@ function finish() {
   const box = [...r.stage.children].filter((c) => !c.classList.contains('scrub-paint')).reduce((b, c) => { const q = c.getBoundingClientRect(); return [Math.min(b[0], q.left - S.left), Math.min(b[1], q.top - S.top), Math.max(b[2], q.right - S.left), Math.max(b[3], q.bottom - S.top)]; }, [Infinity, Infinity, -Infinity, -Infinity]);
   const pad = 6, cx = box[0] - pad, cy = box[1] - pad, cw = box[2] - box[0] + 2 * pad, ch = box[3] - box[1] + 2 * pad;
   el.innerHTML = `<div class="strip" role="listbox" aria-label="The gesture, frame by frame"></div>
-    ${faults.length ? `<ul class="faults">${faults.map(([what, fix]) => `<li><b>${what}</b> → ${fix}</li>`).join('')}</ul>` : '<p class="scrub-clean">Nothing wrong with the fix: it settles in time.</p>'}
+    ${faults.length ? `<ul class="faults">${faults.map((f) => `<li data-kind="${f.kind}"><b>${f.what}</b> → ${f.fix} <button type="button" class="keep">Keep</button></li>`).join('')}</ul>` : '<p class="scrub-clean">Nothing wrong with the fix.</p>'}
+    ${notes}
     <div class="scrub-foot">${toggle}<button type="button" class="scrub-live">Live <kbd>Esc</kbd></button></div>`;
   const strip = el.querySelector('.strip');
   strip.style.setProperty('--cols', COLS);
@@ -216,6 +249,15 @@ function finish() {
   r.stage.appendChild(paint);
   scrub = { r, L, el, paint, end, touched: new Set(), picks };
   el.querySelector('.scrub-live').addEventListener('click', unfreeze); wire();
+  // Keep, because…: a sentence with one blank, as plumber asks for a reason anywhere else; the reason is kept for this
+  // button and the fault is said as kept from then on
+  el.querySelectorAll('.faults .keep').forEach((btn) => btn.addEventListener('click', () => {
+    const li = btn.closest('li'), what = li.querySelector('b').textContent;
+    li.innerHTML = `<label class="keep-why">Keep “${what.charAt(0).toLowerCase()}${what.slice(1)}”, because <input type="text" placeholder="say why it is meant"></label>`;
+    const input = li.querySelector('input'); input.focus();
+    input.addEventListener('keydown', (e) => { if (e.key !== 'Enter' || !input.value.trim()) return;
+      keep(label, li.dataset.kind, input.value.trim()); li.outerHTML = `<p class="scrub-why"><b>Kept.</b> ${input.value.trim()}</p>`; });
+  }));
   el.addEventListener('keydown', (e) => { const i = picks.findIndex((v) => v.t === scrub?.t); if (e.key === 'ArrowRight' && picks[i + 1]) { show(picks[i + 1].t); e.preventDefault(); } if (e.key === 'ArrowLeft' && i > 0) { show(picks[i - 1].t); e.preventDefault(); } });
   const firstBad = picks.find((v) => { const w = wrongAt(r, L, v.t); return w.words || w.moving || w.waiting; });
   requestAnimationFrame(() => { el.classList.add('open'); if (firstBad) show(firstBad.t); }); // nothing wrong: the button stays live
@@ -262,8 +304,19 @@ addEventListener('pointerout', (e) => { const stage = stageOf(e); if (stage && !
 // watch the stages in a page or a shadow root: its look goes in once, and plumber's first, slower judgement is made
 // before anyone presses anything
 const watched = new WeakSet();
-export function watchGestures(root, { Craft, Theme }) {
+// what the design meant, as each page's design system says it: [{ test(stage, reading), says, source }]. A movement that
+// matches a documented choice is said as meant, with where it is written down.
+const intents = new WeakMap();
+const intentFor = (stage, L) => (intents.get(stage.getRootNode()) ?? []).find((i) => i.test(stage, L)) ?? null;
+// the owner's Keep: a reason per button and kind of fault, kept in this browser (the prototype has no server to write to)
+const KEPT = 'plumb.gesture.kept';
+const keptAll = () => { try { return JSON.parse(localStorage.getItem(KEPT) ?? '{}'); } catch { return {}; } };
+const kept = (label, kind) => keptAll()[`${location.pathname}|${label}|${kind}`] ?? null;
+const keep = (label, kind, why) => { try { localStorage.setItem(KEPT, JSON.stringify({ ...keptAll(), [`${location.pathname}|${label}|${kind}`]: why })); } catch { /* private window: kept for now only */ } };
+
+export function watchGestures(root, { Craft, Theme }, { intent = [] } = {}) {
   craft ??= new Craft({ now: true, theme: new Theme({ decisions: () => [] }) });
+  intents.set(root, intent);
   if (watched.has(root)) return; watched.add(root);
   const style = document.createElement('style'); style.textContent = GESTURE_CSS;
   (root instanceof Document ? root.head : root).append(style);

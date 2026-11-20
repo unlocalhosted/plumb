@@ -3463,6 +3463,38 @@ clean stills and "Nothing wrong with the fix: it settles in time". The atoms pag
 **Still open.** Writing the fix to plumber's code: shortening `feel()`'s spring-back from about 505 ms to about
 300 ms on a button is a taste call on a bounce the owner liked. The words fault has no preview yet.
 
+### 54. Judging what a motion is for, not how long it takes (2026-11-20)
+
+**The itch.** The gesture view flagged plumber's own button: "moves 524 ms after you let go", past Material's 500 ms.
+It offered to shorten the bounce. The owner: "i liked the bounce it seems you are not good judge and you are kind of
+being rigid. why is this shortcoming. you should have ability to understand why a design choice is made a certain way
+and if it breaks then why it breaks".
+
+**The system behind it.** The judge measured a symptom (how long something moves) and held it against a number taken
+out of its context. Material's 500 ms is for transitions, where content moves from one state to another while you wait
+for it. The soft block's bounce isn't one: the press has already done its job, nothing waits on the bounce, a new press
+cuts in from wherever it is, and it stays still for people who ask for less motion. Three gaps made the mistake
+inevitable. The judge never asked what a motion is for. It never read the design's intent, though plumber's code and
+design pages say the bounce is deliberate. And it judged a number instead of a harm.
+
+**What we chose (confirmed by the owner).** Purpose, then intent, then harm, and only a harm is a fault.
+- *Purpose:* a button that comes back saying what it said at rest is springing back (feedback to the hand). One that
+  says something new is answering, and moving while it answers is the answer.
+- *Intent:* from the design itself (a page passes in what its design system says, with where it says it) and from
+  the owner's Keep (a reason, once, and that fault is said as kept from then on).
+- *Harm:* while it springs back, it won't take another press; or it never comes to rest. Lost words and a late answer
+  stay faults, because they are harms in themselves.
+A long movement that harms nobody gets one quiet line saying why it is the way it is.
+
+**The proof.** Plumber's button: "Springs back for 524 ms, on purpose. Plumber's buttons are soft blocks: let go, and
+one springs back past where it was and settles, as one body. Nothing waits on it: you can press again at once."
+Below that, its source and "Nothing wrong in this gesture". The hold had read "never comes to rest", but the recording
+had stopped before it did. The view now records until the button is still (up to 3 s), and the hold reads "Comes back
+to rest over 1.1 s", with nothing wrong. The slide still shows its real fault, words lost for 2.1 s.
+
+**Still open.** The judge behind the verdict lines (`interaction-judge.mjs`, its "moves too long" standard) still
+uses the 500 ms number on its own; it belongs to the session working on the judge, and the rule is handed over.
+
 ### 38. Alt and the X-ray card (2026-11-20)
 
 - **The itch:** holding Alt showed the old name tag outside Blueprint, and Alt-click opened the old element card with its heat and a dark spacing slider. Once the X-ray card took over, its pink note looked wrong. The owner on the note: "why is this black on muddy pink". On three new tints of it: "all of them look so ugly".
@@ -5133,6 +5165,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- Plumber judges a motion by what it is for and whether it harms anyone, not by its length: a bounce the design meant is said as meant, with its source, and you can Keep a fault with a reason ([entry](#54-judging-what-a-motion-is-for-not-how-long-it-takes-2026-11-20)).
 - Crafting attention's buy button now has four suggestions built by us (pours, arrow leads, says what's happening, a sheen once), each passing every interaction standard; the judge now tells progress from slow motion and ignores the page's own tools ([entry](#47-three-more-suggestions-and-a-judge-that-tells-a-button-from-the-tools-around-it-2026-11-20)).
 - On the plumber site, press one of plumber's own buttons (Design → A button in use): its filmstrip shows it keeps moving 525 ms after you let go, and "With the fix" makes your press again with the spring-back quicker and shows it clean ([entry](#53-plumbers-own-button-in-use-with-its-fix-2026-11-20)).
 - Use any form on the atoms page and a filmstrip of the button opens under it, the wrong moments in coral, each fault one line with its fix; each form's verdict is one line ([entry](#52-a-filmstrip-of-the-button-and-verdicts-in-one-line-2026-11-20)).

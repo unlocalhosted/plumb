@@ -33,6 +33,15 @@ export const GESTURE_CSS = `
 .atom .scrub .faults { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font: 400 12.5px/1.45 var(--pl-sans); color: var(--pl-ink-2); }
 .atom .scrub .faults b { color: var(--pl-coral); font-weight: 600; }
 .atom .scrub code { font: 500 11.5px ui-monospace, monospace; color: var(--pl-ink); background: var(--pl-paper-2); padding: 1px 4px; border-radius: 4px; white-space: nowrap; }
+/* why a movement is the way it is, when it harms nobody: quiet ink, the source after it */
+.atom .scrub .scrub-why { margin: 0; font: 400 12.5px/1.45 var(--pl-sans); color: var(--pl-ink-2); opacity: 1; }
+.atom .scrub .scrub-why b { color: var(--pl-ink); font-weight: 600; }
+.atom .scrub .scrub-why span { color: var(--pl-ink-3, #b3ad9f); }
+/* Keep: a small quiet button at the end of a fault; then a sentence with one blank */
+.faults .keep { margin-left: 4px; font: 600 11px/1 var(--pl-sans); border: 0; border-radius: 6px; padding: 4px 7px; background: var(--pl-paper-2, #f6f6f4); color: var(--pl-ink-2); cursor: pointer; }
+.faults .keep:hover { color: var(--pl-ink); }
+.keep-why { display: block; font: 400 12.5px/1.6 var(--pl-sans); color: var(--pl-ink); }
+.keep-why input { font: inherit; border: 0; border-bottom: 1.5px solid var(--pl-ink); background: none; color: var(--pl-ink); padding: 0 2px; min-width: 12em; outline: none; }
 .atom .scrub-clean { margin: 0; font: 600 12.5px/1.4 var(--pl-sans); color: var(--pl-mint); opacity: 1; }
 /* the fix: a two-way switch, as it is or with the fix; the side that is on is a solid block, the other quiet */
 .scrub-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }

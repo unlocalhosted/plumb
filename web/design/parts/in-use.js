@@ -6,6 +6,15 @@ import { TOY_DEFS } from '../../../overlay/src/toys.js';
 import { BUTTON_CSS, button as b } from '../../../overlay/src/kit.js';
 import { watchGestures } from '../../../generator/playground/atoms/gesture.js';
 
+// what plumber's design system says its buttons do when you let go, in its own words: the soft block's comment in
+// overlay/src/soft.js and the interaction principles (docs/design/interaction-principles.md, 29 and 30). A spring-back
+// on a soft block is judged as meant.
+const INTENT = [{
+  test: (stage, reading) => reading.purpose === 'springs back' && !!stage.querySelector('.tb, .s-btn, .s-box'),
+  says: 'Plumber’s buttons are soft blocks: let go, and one springs back past where it was and settles, as one body.',
+  source: 'soft.js · interaction principles 29, 30',
+}];
+
 const BUTTONS = [
   ['Action', b('Add to theme', { key: '↵' }), 'the one thing this moment is for'],
   ['Quiet', b('Keep', { cls: 'quiet', key: 'K' }), 'a real choice, not the main one'],
@@ -26,6 +35,6 @@ export function mount(host, root, css) {
     <div class="uses">${BUTTONS.map(([name, html, says]) => `<section class="atom"><div class="atom-stage" data-atom>${html}</div><h3>${name}</h3><p>${says}</p></section>`).join('')}</div>
   </section>`;
   // plumber's craft engine, built for the site (web/scripts/engine.mjs): the site's bundler can't take its source
-  import(/* webpackIgnore: true */ /* turbopackIgnore: true */ '/engine/craft.js').then((engine) => watchGestures(root, engine));
+  import(/* webpackIgnore: true */ /* turbopackIgnore: true */ '/engine/craft.js').then((engine) => watchGestures(root, engine, { intent: INTENT }));
   void host;
 }
