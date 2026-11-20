@@ -24,18 +24,25 @@ const T = { guides: BEAT.in + 120, hold: Math.max(200, BEAT.hold - 200), move: B
 
 // the board the tiles sit on: a grid of tiles, each titled, with its own Play (the host page gives the board this class)
 export const BOARD_CSS = `
-  .mo-board { display: grid; grid-template-columns: repeat(auto-fill, minmax(480px, 1fr)); gap: 22px; }
-  .mo-board > h3 { grid-column: 1 / -1; margin: 18px 0 -6px; font: 700 15px var(--pl-sans, system-ui); }
-  .mo-board .tile h2 { display: flex; align-items: center; gap: 6px; margin: 0 0 8px; font: 600 13px/1.3 var(--pl-sans, system-ui); }
-  .mo-board .tile h2 span { font-weight: 500; opacity: .6; }
-  .mo-board .tile h2 button { margin-left: auto; flex: none; font: 600 12px var(--pl-sans, system-ui); padding: 6px 10px; border-radius: 8px; border: 0; background: var(--pl-bg-surface, #fff); color: inherit; cursor: pointer; box-shadow: 0 1px 2px rgb(0 0 0 / .12); }
-  @media (hover: hover) and (pointer: fine) { .mo-board .tile h2 button:hover { background: var(--pl-pink); color: #fff; } }
+  .mo-board { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 28px 22px; }
+  .mo-board > h3 { grid-column: 1 / -1; margin: 22px 0 -8px; font: 700 18px/1.2 var(--pl-round, var(--pl-sans, system-ui)); color: var(--pl-text-primary); }
+  /* each tile spans two of the board's rows (subgrid): the titles of a row share one height, so its stages line up */
+  .mo-board .tile { grid-row: span 2; display: grid; grid-template-rows: subgrid; row-gap: 10px; min-width: 0; }
+  .mo-board .tile header { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; align-items: start; }
+  .mo-board .tile h2 { margin: 0; font: 650 15px/1.3 var(--pl-sans, system-ui); color: var(--pl-text-primary); }
+  .mo-board .tile p { grid-column: 1; margin: 0; font: 400 13px/1.45 var(--pl-sans, system-ui); color: var(--pl-text-secondary); }
+  .mo-board .tile header button { grid-column: 2; grid-row: 1 / span 2; align-self: center; font: 600 12px var(--pl-sans, system-ui); padding: 7px 12px; border-radius: 9px; border: 0;
+    background: var(--pl-bg-inset, #f1f1ef); color: var(--pl-text-primary); cursor: pointer; }
+  @media (hover: hover) and (pointer: fine) { .mo-board .tile header button:hover { background: var(--pl-pink); color: #fff; } }
+  .mo-board .tile header button:focus-visible { outline: 2px solid var(--pl-sky); outline-offset: 2px; }
   @media (max-width: 560px) { .mo-board { grid-template-columns: 1fr; } }
 `;
 
 export const MOTION_CSS = `
     :host { display: block; }
-    .stage { position: relative; height: 260px; border-radius: 16px; background: #fff; overflow: hidden; font-family: system-ui; }
+    /* the stage is someone's page, light in either scheme: its words are the page's ink, never the docs' (white on
+       white in the dark scheme) */
+    .stage { position: relative; height: 240px; border-radius: 16px; background: #fff; color: #1c1b19; color-scheme: light; overflow: hidden; font-family: system-ui; }
     .pg { position: absolute; inset: 0; padding: 40px 72px 40px 96px; }
     /* the guides, as one family: hairlines across, an I-beam in the gutter, the value in a pill */
     .g { position: absolute; pointer-events: none; }
@@ -116,7 +123,7 @@ export const MOTION_TILES = [
       apply: (v) => { t.style.fontSize = `${v}px`; }, track, reset: () => { t.style.transition = ''; t.style.fontSize = '18px'; track(); } };
   }],
   ['Padding', '28px → 16px: the hatch is the space, the beam measures it', (s) => {
-    s.innerHTML = `<div class="pg" style="display:grid;place-items:center;padding:0"><div class="card box" style="position:relative;padding:28px;width:300px"><div class="hatch pad" style="position:absolute;inset:0;border-radius:12px"></div><div class="in" style="position:relative;background:#fff;border-radius:6px;padding:10px 12px;font-weight:600">Total revenue <span style="color:#64748b;font-weight:500">$48,200</span></div></div></div>
+    s.innerHTML = `<div class="pg" style="display:grid;place-items:center;padding:0"><div class="card box" style="position:relative;padding:28px;width:240px"><div class="hatch pad" style="position:absolute;inset:0;border-radius:12px"></div><div class="in" style="position:relative;background:#fff;border-radius:6px;padding:10px 12px;font-weight:600">Total revenue <span style="color:#64748b;font-weight:500">$48,200</span></div></div></div>
       <i class="g hl top"></i><i class="g hl inner"></i><i class="g beam"></i><i class="g pill"></i>`;
     const box = s.querySelector('.box'), inn = s.querySelector('.in'), pad = s.querySelector('.pad'), top = s.querySelector('.top'), inner = s.querySelector('.inner'), beam = s.querySelector('.beam'), pill = s.querySelector('.pill');
     const clip = () => { const p = parseFloat(getComputedStyle(box).paddingTop); pad.style.clipPath = `path(evenodd, "M0 0H${box.offsetWidth}V${box.offsetHeight}H0Z M${p} ${p}H${box.offsetWidth - p}V${box.offsetHeight - p}H${p}Z")`; };
@@ -128,7 +135,7 @@ export const MOTION_TILES = [
       reset: () => { box.style.transition = ''; box.style.padding = '28px'; track(); } };
   }],
   ['Margin', '40px → 24px: the dither between two blocks closes up', (s) => {
-    s.innerHTML = `<div class="pg" style="padding:30px 72px 0 120px"><div class="card a" style="height:56px;display:flex;align-items:center;padding:0 14px;font-weight:600">Overview</div><div class="dither m" style="height:40px"></div><div class="card b" style="height:56px;display:flex;align-items:center;padding:0 14px;font-weight:600">Deployments</div></div>
+    s.innerHTML = `<div class="pg" style="padding:34px 28px 0 104px"><div class="card a" style="height:56px;display:flex;align-items:center;padding:0 14px;font-weight:600">Overview</div><div class="dither m" style="height:40px"></div><div class="card b" style="height:56px;display:flex;align-items:center;padding:0 14px;font-weight:600">Deployments</div></div>
       <i class="g hl t"></i><i class="g hl u"></i><i class="g beam"></i><i class="g pill"></i>`;
     const m = s.querySelector('.m'), a = s.querySelector('.a'), b = s.querySelector('.b'), t = s.querySelector('.t'), u = s.querySelector('.u'), beam = s.querySelector('.beam'), pill = s.querySelector('.pill');
     const track = () => { const S = s.getBoundingClientRect(), y1 = a.getBoundingClientRect().bottom - S.top, y2 = b.getBoundingClientRect().top - S.top;
@@ -139,7 +146,7 @@ export const MOTION_TILES = [
       reset: () => { m.style.transition = ''; m.style.height = '40px'; track(); } };
   }],
   ['Gap', '12px → 20px: stripes in each gap, the items slide apart together', (s) => {
-    s.innerHTML = `<div class="pg" style="display:grid;place-items:center;padding:0"><div class="row" style="display:flex;gap:12px;position:relative">${['Design', 'Build', 'Ship'].map((w) => `<div class="card it" style="width:96px;height:70px;display:grid;place-items:center;font-weight:600">${w}</div>`).join('')}</div></div>
+    s.innerHTML = `<div class="pg" style="display:grid;place-items:center;padding:0"><div class="row" style="display:flex;gap:12px;position:relative">${['Design', 'Build', 'Ship'].map((w) => `<div class="card it" style="width:80px;height:64px;display:grid;place-items:center;font-weight:600">${w}</div>`).join('')}</div></div>
       <i class="g stripes s1" style="opacity:0"></i><i class="g stripes s2" style="opacity:0"></i><i class="g vl l1"></i><i class="g vl l2"></i><i class="g hbeam"></i><i class="g pill"></i>`;
     const row = s.querySelector('.row'), its = [...s.querySelectorAll('.it')], st = [s.querySelector('.s1'), s.querySelector('.s2')], l1 = s.querySelector('.l1'), l2 = s.querySelector('.l2'), hb = s.querySelector('.hbeam'), pill = s.querySelector('.pill');
     const track = () => { const S = s.getBoundingClientRect(); const r = its.map((x) => x.getBoundingClientRect());
@@ -172,7 +179,7 @@ export const MOTION_TILES = [
       reset: () => { ic.style.transition = ''; ic.style.width = ic.style.height = '22px'; track(); } };
   }],
   ['Corners', '4px → 12px: an arc on the corner opens with it', (s) => {
-    s.innerHTML = `<div class="pg" style="display:grid;place-items:center;padding:0"><div class="card c" style="width:260px;height:120px;border-radius:4px;background:#e8eaef;display:grid;place-items:center;font-weight:600">Project card</div></div><i class="g arc"></i><i class="g pill"></i>`;
+    s.innerHTML = `<div class="pg" style="display:grid;place-items:center;padding:0"><div class="card c" style="width:220px;height:110px;border-radius:4px;background:#e8eaef;display:grid;place-items:center;font-weight:600">Project card</div></div><i class="g arc"></i><i class="g pill"></i>`;
     const c = s.querySelector('.c'), arc = s.querySelector('.arc'), pill = s.querySelector('.pill');
     const track = () => { const S = s.getBoundingClientRect(), r = c.getBoundingClientRect(), rad = parseFloat(getComputedStyle(c).borderTopLeftRadius), w = Math.max(10, rad * 2);
       arc.style.cssText = `left:${r.left - S.left - 5}px;top:${r.top - S.top - 5}px;width:${w + 10}px;height:${w + 10}px;border-top-left-radius:${rad + 5}px`; pill.style.cssText = `left:${r.left - S.left - 40}px;top:${r.top - S.top - 20}px`; };
@@ -193,7 +200,7 @@ export const MOTION_TILES = [
   }],
   ['Shadows', 'a hand-made glow → your shadow: its reach is outlined and pulls in', (s) => {
     const from = '0 18px 40px -6px rgb(79 70 229 / .45)', to = '0 1px 3px rgb(0 0 0 / .1), 0 1px 2px rgb(0 0 0 / .06)';
-    s.innerHTML = `<div class="pg" style="display:grid;place-items:center;padding:0"><div class="c" style="width:240px;height:96px;border-radius:12px;background:#fff;box-shadow:${from};display:grid;place-items:center;font-weight:600">Usage this month</div></div><i class="g ring"></i><i class="g pill"></i>`;
+    s.innerHTML = `<div class="pg" style="display:grid;place-items:center;padding:0"><div class="c" style="width:200px;height:84px;border-radius:12px;background:#fff;box-shadow:${from};display:grid;place-items:center;font-weight:600">Usage this month</div></div><i class="g ring"></i><i class="g pill"></i>`;
     const c = s.querySelector('.c'), ring = s.querySelector('.ring'), pill = s.querySelector('.pill');
     let reach = 34; const track = () => { const S = s.getBoundingClientRect(), r = c.getBoundingClientRect(); ring.style.cssText = `left:${r.left - S.left - reach}px;top:${r.top - S.top - reach * 0.6}px;width:${r.width + reach * 2}px;height:${r.height + reach * 1.8}px;border-radius:${12 + reach}px`;
       pill.style.cssText = `left:${r.left - S.left + r.width / 2}px;top:${r.top - S.top - reach * 0.6 - 16}px`; };
@@ -229,7 +236,7 @@ export const MOTION_TILES = [
   }],
   '— Craft fixes —',
   ['Line spacing', 'leading 1.2 → 1.5: a baseline under every line, and they spread', (s) => {
-    s.innerHTML = `<div class="pg" style="padding:44px 72px 0 110px"><p class="t" style="margin:0;font-size:15px;line-height:1.2;color:#222;max-width:380px">Every release this week, newest first. Each one lists who shipped it, what changed and how long it took to reach production.</p></div><i class="g hl l0"></i><i class="g hl l1"></i><i class="g hl l2"></i><i class="g beam"></i><i class="g pill"></i>`;
+    s.innerHTML = `<div class="pg" style="padding:40px 28px 0 92px"><p class="t" style="margin:0;font-size:14px;line-height:1.2;color:#222;max-width:300px">Every release this week, newest first. Each one lists who shipped it, what changed and how long it took to reach production.</p></div><i class="g hl l0"></i><i class="g hl l1"></i><i class="g hl l2"></i><i class="g beam"></i><i class="g pill"></i>`;
     const t = s.querySelector('.t'), ls = [0, 1, 2].map((i) => s.querySelector('.l' + i)), beam = s.querySelector('.beam'), pill = s.querySelector('.pill');
     const lines = () => { const r = document.createRange(); r.selectNodeContents(t); const out = []; for (const q of r.getClientRects()) if (!out.some((o) => Math.abs(o.bottom - q.bottom) < 2)) out.push(q); return out; };
     const track = () => { const S = s.getBoundingClientRect(), L = lines(), fs = 15, lh = parseFloat(getComputedStyle(t).lineHeight), y = L.map((q) => q.top - S.top + (lh + fs * 0.72) / 2);
@@ -259,22 +266,22 @@ export const MOTION_TILES = [
       apply: () => {}, track, reset: () => { b.getAnimations().forEach((x) => x.cancel()); track(); } };
   }],
   ['Shared edges', 'three left edges → one: the gutter line, and the blocks slide onto it', (s) => {
-    const offs = [36, 20, 44];
-    s.innerHTML = `<div class="pg" style="padding:34px 72px 0 72px">${['Overview', 'Recent deploys', 'Team'].map((w, i) => `<div class="card k" style="height:40px;margin:0 0 12px ${offs[i]}px;width:300px;display:flex;align-items:center;padding:0 12px;font-weight:600">${w}</div>`).join('')}</div><i class="g vl edge"></i><i class="g pill"></i>`;
+    const offs = [30, 14, 38];
+    s.innerHTML = `<div class="pg" style="padding:38px 28px 0 56px">${['Overview', 'Recent deploys', 'Team'].map((w, i) => `<div class="card k" style="height:40px;margin:0 0 12px ${offs[i]}px;width:230px;display:flex;align-items:center;padding:0 12px;font-weight:600">${w}</div>`).join('')}</div><i class="g vl edge"></i><i class="g pill"></i>`;
     const ks = [...s.querySelectorAll('.k')], edge = s.querySelector('.edge'), pill = s.querySelector('.pill');
     const track = () => { const S = s.getBoundingClientRect(), x = ks[1].getBoundingClientRect().left - S.left - 0; edge.style.left = `${Math.min(...ks.map((k) => k.getBoundingClientRect().left)) - S.left}px`; pill.style.cssText = `left:${parseFloat(edge.style.left)}px;top:20px`; };
     track();
     return { labels: ['3 edges', '1 edge'], guides: () => [{ el: edge, kind: 'v' }, { el: pill, kind: 'pill' }],
-      ease: (on) => { ks.forEach((k) => { k.style.transition = on ? `margin-left ${T.move}ms ${SPRING}` : ''; }); }, apply: () => { ks.forEach((k) => { k.style.marginLeft = '20px'; }); }, track,
+      ease: (on) => { ks.forEach((k) => { k.style.transition = on ? `margin-left ${T.move}ms ${SPRING}` : ''; }); }, apply: () => { ks.forEach((k) => { k.style.marginLeft = '14px'; }); }, track,
       reset: () => { ks.forEach((k, i) => { k.style.transition = ''; k.style.marginLeft = `${offs[i]}px`; }); track(); } };
   }],
-  ['Line length', '95 → 65 characters: the line shortens to a reading measure', (s) => {
-    s.innerHTML = `<div class="pg" style="padding:40px 40px 0 40px"><p class="t" style="margin:0;font-size:14px;line-height:1.5;color:#222;max-width:95ch">Plumber reads the page the way a person does: what is drawn, where it sits, and how each part relates to the parts beside it, so its notes are about what you see.</p></div><i class="g vl rim"></i><i class="g hbeam"></i><i class="g pill"></i>`;
+  ['Line length', '60 → 42 characters: the line shortens to a reading measure', (s) => {
+    s.innerHTML = `<div class="pg" style="padding:40px 28px 0 28px"><p class="t" style="margin:0;font-size:13px;line-height:1.5;color:#222;max-width:60ch">Plumber reads the page the way a person does: what is drawn, where it sits, and how each part relates to the parts beside it, so its notes are about what you see.</p></div><i class="g vl rim"></i><i class="g hbeam"></i><i class="g pill"></i>`;
     const t = s.querySelector('.t'), rim = s.querySelector('.rim'), hb = s.querySelector('.hbeam'), pill = s.querySelector('.pill');
     const track = () => { const S = s.getBoundingClientRect(), r = t.getBoundingClientRect(); rim.style.left = `${r.right - S.left}px`; hb.style.cssText = `left:${r.left - S.left}px;top:${r.bottom - S.top + 16}px;width:${r.width}px`; pill.style.cssText = `left:${r.left - S.left + r.width / 2}px;top:${r.bottom - S.top + 40}px`; };
     track();
-    return { from: 95, to: 65, unit: 'ch', name: 'measure', guides: () => [{ el: rim, kind: 'v' }, { el: hb, kind: 'beam' }, { el: pill, kind: 'pill' }],
-      ease: (on) => { t.style.transition = on ? `max-width ${T.move}ms ${SPRING}` : ''; }, apply: (v) => { t.style.maxWidth = `${v}ch`; }, track, reset: () => { t.style.transition = ''; t.style.maxWidth = '95ch'; track(); } };
+    return { from: 60, to: 42, unit: 'ch', name: 'measure', guides: () => [{ el: rim, kind: 'v' }, { el: hb, kind: 'beam' }, { el: pill, kind: 'pill' }],
+      ease: (on) => { t.style.transition = on ? `max-width ${T.move}ms ${SPRING}` : ''; }, apply: (v) => { t.style.maxWidth = `${v}ch`; }, track, reset: () => { t.style.transition = ''; t.style.maxWidth = '60ch'; track(); } };
   }],
   ['Tap target', '28px → 44px: the reach grows, the icon stays', (s) => {
     s.innerHTML = `<div class="pg" style="display:grid;place-items:center;padding:0"><span class="hit" style="position:relative;display:grid;place-items:center;width:28px;height:28px;border-radius:8px"><svg viewBox="0 0 24 24" style="width:18px;height:18px"><path d="M6 6l12 12M18 6 6 18" stroke="#111" stroke-width="2.2" stroke-linecap="round"/></svg></span></div><i class="g ring"></i><i class="g pill"></i>`;
@@ -312,14 +319,14 @@ export function mountMotionBoard(board, { tokensCss = '', autoplay = false } = {
   for (const tile of MOTION_TILES) {
     if (typeof tile === 'string') { const h = document.createElement('h3'); h.textContent = tile.replace(/—/g, '').trim(); board.append(h); continue; }
     const [title, sub, build] = tile;
-    const sec = document.createElement('section'); sec.className = 'tile'; sec.innerHTML = `<h2>${title} <span>${sub}</span><button type="button">▶ Play</button></h2>`;
+    const sec = document.createElement('section'); sec.className = 'tile'; sec.innerHTML = `<header><h2>${title}</h2><p>${sub}</p><button type="button">▶ Play</button></header>`;
     const host = document.createElement('div'); sec.append(host); board.append(sec);
     const root = host.attachShadow({ mode: 'open' }); root.innerHTML = `<style>${tokensCss}${MOTION_CSS}</style><div class="stage"></div>`;
     const stage = root.querySelector('.stage'); const spec = build(stage);
     for (const g of stage.querySelectorAll('.g')) g.style.opacity = 0;
     const run = async () => { spec.reset(); stage.getAnimations({ subtree: true }).forEach((a) => a.cancel()); for (const g of stage.querySelectorAll('.g')) g.style.opacity = 0; await wait(300); for (const g of stage.querySelectorAll('.g')) g.style.opacity = ''; await playTile(stage, spec); };
     runs.push(run);
-    sec.querySelector('h2 button').onclick = run; // each tile plays on its own
+    sec.querySelector('header button').onclick = run; // each tile plays on its own
   }
   const all = () => runs.forEach((r, i) => setTimeout(r, i * 260));
   if (autoplay) all();
