@@ -74,9 +74,19 @@ export const XRAY_LIVE_CSS = `
   .xr-said .xd .nas { margin: 10px 0 0; }
   /* the element's name and file lead, one quiet line; the note comes after it, the part in hand last */
   .xr-card { display: flex; flex-direction: column; } .xr-card > .xr-body { display: contents; }
-  .xr-card .xr-head { order: -1; grid-template-columns: 20px 1fr; gap: 0 8px; margin-bottom: 12px; }
-  .xr-card .xr-head .toy { width: 20px; height: 20px; }
-  .xr-card .xr-head b { font-size: 13px; line-height: 16px; } .xr-card .xr-head code { font-size: 10.5px; line-height: 13px; }
+  /* one line: what it is, and where it is written as a small tag (the file and line; the whole path on hover) */
+  .xr-card .xr-head { order: -1; display: flex; align-items: center; gap: 8px; margin: 0 0 14px; min-width: 0; }
+  .xr-card .xr-head .toy { width: 18px; height: 18px; flex: none; }
+  .xr-card .xr-head b { flex: 0 1 auto; min-width: 0; font: 650 13.5px/18px var(--pl-round, var(--pl-sans)); }
+  .xr-card .xr-head code { flex: none; margin-left: auto; max-width: 52%; padding: 3px 7px; border-radius: 7px; background: var(--pl-bg-inset); direction: ltr;
+    font: 500 11px/14px var(--pl-mono); color: var(--pl-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .xr-card .xr-head code.none { background: none; padding: 0; }
+  /* the part in hand: its control, and the words about its keys only while the hand is on it */
+  .xr-card .xr-hand { order: 2; margin: 4px -2px 0; }
+  .xr-card .xr-hand .say { opacity: 0; transition: opacity 160ms var(--pl-ease-out); }
+  .xr-card .xr-hand:is(:hover, :focus-within) .say { opacity: 1; }
+  .xr-card .xr-said { order: 1; }
+  .xr-card .xr-said .xa { margin-top: 0; }
   .xr-many { display: inline-flex; align-items: center; height: 18px; padding: 0 6px; margin-left: 4px; border-radius: 99px; vertical-align: 2px; background: var(--pl-sky-soft); color: var(--pl-sky-ink); font: 600 11px/1 var(--pl-sans); letter-spacing: 0; }
   .xr-many[data-scope="all"] { background: var(--pl-pink-soft); color: var(--pl-pink-ink); } .xr-many[data-scope="one"] { background: var(--pl-bg-inset); color: var(--xr-label); }
   /* the value in hand, beside the pointer: its number and its token, while you drag or scroll */
@@ -367,6 +377,8 @@ export function mountXray(o) {
     card.toggleAttribute('data-still', same);
     const foot = pendHtml();
     if (!same || x.card + foot !== lastCard) { body.innerHTML = x.card + foot; lastCard = x.card + foot; }
+    const where = body.querySelector('.xr-head code:not(.none)');
+    if (where && source && where.textContent === source) { where.textContent = tail(source); where.title = source; }
     const head = body.querySelector('.xr-head b');
     head?.querySelector('.xr-many')?.remove();
     const info = infos.get(el);
