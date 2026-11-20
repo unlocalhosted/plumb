@@ -173,7 +173,10 @@ function verify(k, el, byId, rules, facts, theme, before) {
       const ns = { tracking: ['--tracking-'], leading: ['--leading-'], text: ['--text-'], font: ['--font-weight-'] }[t[1]];
       const said = { tracking: 'letter-spacing', leading: 'line-height', text: 'text size', font: 'weight' }[t[1]];
       const colour = t[1] === 'text' && theme.colors().some((c) => c.short === t[2]);
-      if (!colour && !ns.some((n) => theme.has(`${n}${t[2]}`))) return withdraw(k, 'no-step', `Your theme has no ${said} step for this. Add one, then use it here.`);
+      // a theme that names no weights of its own leaves Tailwind's as the system: a weight the page already uses is the
+      // answer, not a step to add (U34: the note said "use one of those", its action "add a step")
+      const ownWeights = t[1] === 'font' && theme.scale('weight').some((x) => x.own);
+      if (!colour && !ns.some((n) => theme.has(`${n}${t[2]}`)) && !(t[1] === 'font' && !ownWeights)) return withdraw(k, 'no-step', `Your theme has no ${said} step for this. Add one, then use it here.`);
       continue;
     }
     const u = utilityOf(cls);
