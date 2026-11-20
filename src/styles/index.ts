@@ -1,19 +1,22 @@
 /**
  * The project's style systems, asked in turn (systems.ts says what one is). The first that can place a property from
- * the page's evidence writes it. Today: rules in plain stylesheets. Classes, inline style, CSS modules and the rest join
- * as one object each.
+ * the page's evidence writes it. Today: utility classes and rules in plain stylesheets. Inline style, CSS modules, Sass
+ * and the rest join as one object each.
  */
 import { parseCss } from '../lower/css.js';
+import { classes } from './classes.js';
+import { PROPERTIES } from './properties.js';
 import { rules } from './rules.js';
-import type { Evidence, Origin, ReadFile, StyleSystem } from './systems.js';
+import type { Evidence, Origin, StyleContext, StyleSystem } from './systems.js';
 
-export type { Change, Edit, Evidence, Origin, ReadFile, StyleSystem } from './systems.js';
+export type { Change, ClassPlace, Edit, Evidence, Origin, ReadFile, StyleContext, StyleSystem } from './systems.js';
+export { PROPERTIES };
 
-export const SYSTEMS: StyleSystem[] = [rules];
+export const SYSTEMS: StyleSystem[] = [classes, rules];
 
-export async function locateStyle(evidence: Evidence, prop: string, read: ReadFile, systems = SYSTEMS): Promise<{ system: StyleSystem; origin: Origin } | null> {
+export async function locateStyle(evidence: Evidence, prop: string, ctx: StyleContext, systems = SYSTEMS): Promise<{ system: StyleSystem; origin: Origin } | null> {
   for (const system of systems) {
-    const origin = await system.locate(evidence, prop, read);
+    const origin = await system.locate(evidence, prop, ctx);
     if (origin) return { system, origin };
   }
   return null;

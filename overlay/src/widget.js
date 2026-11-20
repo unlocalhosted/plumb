@@ -50,7 +50,7 @@ import { noteOfMark } from './blueprint-marks.js';
 import { PICKER_CSS } from './picker.js';
 import { TOY_DEFS } from './toys.js';
 import { classSiteOf, siteMatesOf } from './locate.js';
-import { route as routeStyles } from './style-systems.js';
+import { route as routeStyles, loadProperties } from './style-systems.js';
 import { utility } from './craft-read.js';
 
 const tokensCss = await (await fetch(new URL('./tokens.css', import.meta.url))).text();
@@ -633,6 +633,7 @@ class PlumbOverlay extends HTMLElement {
         // a write may reload the page: what it wrote is kept so the X-ray can say it when the page is back
         const keepFor = (list) => (state) => { try { const x = JSON.parse(sessionStorage.getItem('plumb:xray') ?? 'null') ?? { results: [] }; x.at = Date.now(); x.results = [...(x.results ?? []).filter((r) => !list.some((g) => g.id === r.id)), ...list.map((g) => ({ id: g.id, name: g.name, prop: g.prop, keys: g.keys, ...state }))]; sessionStorage.setItem('plumb:xray', JSON.stringify(x)); } catch { /* storage may be off */ } };
         // one write per element and scope, per system: two writes to one line would trip over each other
+        await loadProperties(request);
         const byPart = new Map();
         for (const g of groups) { const k = `${g.part}|${g.scope}`; (byPart.get(k) ?? byPart.set(k, []).get(k)).push(g); }
         const out = [];

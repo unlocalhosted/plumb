@@ -3776,6 +3776,26 @@ On the site (Next, localhost:4330), Sync on the "It sees what design engineers s
 **Not done in layer 0.** Utility classes still decide and write on the page; they move behind the server interface
 next. The page still keeps its own short property table instead of the server's.
 
+### 66. Layer 0 done: classes behind the same interface (2026-11-20)
+**The itch.** The owner: "finish layer 0 and i think we should support sass syntax too".
+
+**What we built.** Utility classes are now a style system on the server beside rules (`src/styles/classes.ts`). The
+page still works out which classes go out and in, because that needs the element's live classes and the variants
+active now; the server places each class string (on the element, or carried in through a prop from another file)
+and returns the swap as an edit, so a Sync that touches classes and rules is one undo. The page's property list (11
+properties) was replaced by the server's table (38), which is what let colour, margin, shadow and the rest route to a
+rule.
+
+**The proof.**
+- Ledger (Vite, Tailwind): Sync on a `gap-2` row wrote `gap-6` in `src/App.jsx`, the gap went from 8px to 24px, and
+  undo left the file clean.
+- The plumber site (Next, plain CSS): the heading's size wrote `.title` (34px → 44px → back), and a colour change on
+  `.lead` wrote `color: var(--ink-1)` and was undone.
+- Not checked: a class string that comes into the element through a prop from another file.
+
+**Sass.** Decided in: a `.scss` file becomes its own system, placed through the source map because the browser only
+sees compiled CSS. It is layer 9 in the brief, after the writes are made safe.
+
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
 - Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".
@@ -5437,6 +5457,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- Every X-ray Sync goes through one server-side interface for classes and plain CSS rules, as one undo; colour, margin, shadow and 35 other properties now reach a CSS rule ([entry](#66-layer-0-done-classes-behind-the-same-interface-2026-11-20)).
 - The same CSS rule fixes work on a Next site: the rule's file is read from Next's CSS source map; the plumber homepage at localhost:4330 can now be fixed with plumber ([entry](#63-css-rule-fixes-work-on-the-next-site-2026-11-20)).
 - On a Vite app with plain CSS, the X-ray's Sync writes a change into the stylesheet rule that styles the element (a shorthand gets the property added after it), with undo; every change goes through one style-system interface, so more ways of styling can be added ([entry](#62-sync-picks-a-style-system-for-each-change-2026-11-20)).
 - The States and Access pages play every check (170): what a screen reader says is drawn as a caption that changes with the fix, where Tab goes as numbered stops that move, loading as bars on a time axis, and markup with the part that matters boxed ([entry](#55-every-check-plays-its-fix-on-a-card-that-stays-still-2026-11-20)).

@@ -111,17 +111,23 @@ One at a time, each shown working before the next, on a real plain-CSS app as we
 6. **Finding fixes and Clean up,** mostly proving what `src/surfaces/edits.ts` already does.
 7. **Recipes and rename,** with the recipes' rule finder folded into the rule system.
 8. **The edges:** writing inside `@media`, two sides at once (`padding-x`), bundlers beyond Turbopack.
+9. **Sass** (the owner, 2026-11-20: "we should support sass syntax too"). A `.scss` file is its own system. The browser
+   only sees the compiled CSS, so a rule's selector won't match the nested source; the place comes from the source
+   map instead (Vite needs `css.devSourcemap`; Next maps `.scss` already, unverified). The value is edited where it is
+   written, read with a Sass-aware parser, never Lightning CSS. A value that comes from a `$variable` offers the
+   variable's definition as the place; one that comes from a mixin or `@extend` is said, not written. Less and
+   PostCSS nesting stay out until someone asks.
 
 ## Progress
 
-- **Layer 0, first half (2026-11-20):** the interface and the rule system are on the server (`src/styles/`), the engine
-  commits their edits with one undo, and Sync's rule path sends evidence only (journey 65). Left in layer 0: utility
-  classes behind the same interface, and one property table.
+- **Layer 0, done (2026-11-20):** the interface lives on the server (`src/styles/`) with two systems, utility classes and
+  plain stylesheet rules. Sync sends evidence for both; the engine places, checks and commits every edit as one undo.
+  One property table (`src/styles/properties.ts`, 38 properties) is read by the page instead of its own copy (journey
+  65, 66). Still on the page: spelling a value as a class (`gap-6`), which needs the element's live classes and active
+  variants; it moves when the card's picks do (layer 4).
 
 ## Decisions still open
 
-- **Preprocessors** (Sass, Less, PostCSS nesting): in or out. Today they fail the `.css` check and fall to the dead
-  class.
 - **A colour pick on `.lead { color: var(--ink-2) }`**: change the rule to another token, or change the token's
   definition. The second changes every use of the token.
 - **"Just this one" on a shared rule**: it needs a new rule or class, and somewhere to put it.

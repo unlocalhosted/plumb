@@ -9,7 +9,8 @@ import { lineStarts } from '../collect/source.js';
 import { lowerStylesheet } from '../lower/stylesheets.js';
 import { parseCss, selectorText } from '../lower/css.js';
 import type { Declaration } from '../report.js';
-import type { Change, Edit, Evidence, Origin, ReadFile, StyleSystem } from './systems.js';
+import { carriersOf } from './properties.js';
+import type { Change, Edit, Evidence, Origin, StyleContext, StyleSystem } from './systems.js';
 
 /** A selector in the lowering's spelling; the text itself when it doesn't parse. */
 export function spelled(selector: string): string {
@@ -46,11 +47,11 @@ function valueRange(declaration: string): [number, number] | null {
 export const rules: StyleSystem = {
   id: 'rule',
   says: 'a CSS rule',
-  async locate(evidence: Evidence, prop: string, read: ReadFile): Promise<Origin | null> {
+  async locate(evidence: Evidence, prop: string, ctx: StyleContext): Promise<Origin | null> {
     const { file, selector } = evidence;
     if (!file || !selector || !/\.css$/.test(file) || /[/\\]node_modules[/\\]/.test(file)) return null;
-    const { text, hash } = await read(file);
-    const want = spelled(selector), carriers = evidence.carriers?.length ? evidence.carriers : [prop];
+    const { text, hash } = await ctx.read(file);
+    const want = spelled(selector), carriers = carriersOf(prop);
     let lowered: Declaration[];
     try { lowered = lowerStylesheet(text, file); } catch { return null; }
     const mine = lowered.filter(d => d.sourceOrigin !== 'framework' && selectorOf(d) === want);

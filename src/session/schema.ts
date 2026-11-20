@@ -99,7 +99,7 @@ export const shapes: Record<string, Check<Record<string, unknown>>> = {
   'undo-change': object({ id: str, ...trace }),
   'undo-group': object({ group: str, ...trace }),
   'undo-changes': object({ ids: list(str, 1, 500), ...trace }),
-  style: object({ changes: list(object({ prop: str, value: str, token: optional(str), evidence: object({ file: optional(str), selector: optional(str), carriers: optional(list(str, 1, 8)), computed: optional(text) }) }), 1, 32), ...trace }),
+  style: object({ changes: list(object({ prop: str, value: str, token: optional(str), evidence: object({ file: optional(str), selector: optional(str), carriers: optional(list(str, 1, 8)), computed: optional(text), classes: optional(list(any, 1, 40)) }) }), 1, 32), ...trace }),
   set: object({ file: str, hash: str, ...lineColumn, key: str, token: str, at: optional(place), ...trace }),
   swap: object({ file: str, hash: str, ...lineColumn, from: optional(text), to: str, at: optional(place), of: optional(object({ ...position, chain })), ...trace }),
   swaps: object({ file: str, hash: str, edits: list(swapEdit, 1, 200), ...trace }),

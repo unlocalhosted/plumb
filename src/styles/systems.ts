@@ -20,6 +20,15 @@ export interface Evidence {
   carriers?: string[];
   /** the computed value now */
   computed?: string;
+  /** the class strings that set it, as the page found them in the code (class-site): where a utility system writes */
+  classes?: ClassPlace[];
+}
+
+/** A class string to change: the element (or the string a prop carries in from elsewhere) and the classes out and in. */
+export interface ClassPlace {
+  file: string; hash: string; line: number; column: number; from: string; to: string;
+  at?: { line: number; column: number };
+  of?: { file: string; line: number; column: number; chain?: { file: string; line: number; column: number }[] };
 }
 
 /** Where a property's value is written: one range in one file, said in plain words. */
@@ -36,22 +45,30 @@ export interface Origin {
   said: string;
   conditions: { media?: string; layer?: string; state?: string; important: boolean };
   writable: true | string;
+  /** the edits a system already worked out while placing it (a class string is placed by changing it) */
+  planned?: Edit[];
 }
 
 /** One replacement in one file. Pure: the engine applies and guards it. */
-export interface Edit { file: string; start: number; end: number; replacement: string }
+export interface Edit { file: string; start: number; end: number; replacement: string; /** the file's hash when the edit was worked out, when it isn't the origin's file */ hash?: string }
 
 /** One change, in neutral terms: a property, the value it should have, and the token it comes from when there is one. */
 export interface Change { prop: string; value: string; token?: string }
 
 export interface ReadFile { (file: string): Promise<{ text: string; hash: string }> }
+/** What the engine lends a system: reading a file, and placing a class change in a class string (the engine's own
+ * element and prop resolution). Neither writes. */
+export interface StyleContext {
+  read: ReadFile;
+  classEdit(place: ClassPlace): Promise<Edit & { hash: string }>;
+}
 
 export interface StyleSystem {
   id: string;
   /** what the person is told it is: "a CSS rule", "a class" */
   says: string;
   /** where this system writes `prop` given what the page saw; null when the evidence isn't this system's */
-  locate(evidence: Evidence, prop: string, read: ReadFile): Promise<Origin | null>;
+  locate(evidence: Evidence, prop: string, ctx: StyleContext): Promise<Origin | null>;
   /** how this system spells a token for a property (`var(--text-meta)`), or null when it has no spelling for it */
   encode(token: string, prop: string): string | null;
   /** the edits that set `origin` to `value` */

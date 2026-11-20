@@ -50,21 +50,25 @@ export const utilityClasses = {
       const swaps = changes.filter((g) => !BOX.test(g.prop)).map((g) => swapInForce(classes, FAMILY[g.prop] ?? (() => false), g.cls, active)).filter(Boolean);
       const edit = elementEdit(classes, swaps, box, active);
       if (!edit) { for (const g of changes) out.push({ id: g.id, state: 'ok', where: 'already written that way' }); return out; }
-      const edits = await classEditsOf(el, edit.from, edit.to);
-      const group = ctx.group(), files = new Map();
-      for (const e of edits) (files.get(e.file) ?? files.set(e.file, { hash: e.hash, edits: [] }).get(e.file)).edits.push(e.edit);
-      const at = edits[0] ? `${edits[0].file}:${edits[0].edit.line}` : '';
+      // the class strings that set it: evidence for the server's class system (src/styles/classes.ts), which places
+      // and writes them with any rule changes as one undo
+      const places = (await classEditsOf(el, edit.from, edit.to)).map((e) => ({ file: e.file, hash: e.hash, ...e.edit }));
+      const group = ctx.group(), at = places[0] ? `${places[0].file}:${places[0].line}` : '';
       ctx.keep({ state: 'ok', cls: edit.to, where: at, group });
-      for (const [file, f] of files) await ctx.post('swaps', { file, hash: f.hash, edits: f.edits, trace: { group, meta: { step: 'X-ray', laws: [] } } });
-      for (const g of changes) out.push({ id: g.id, state: 'ok', cls: edit.to, where: at, group });
+      const answer = await ctx.post('style', { changes: changes.map((g) => ({ prop: g.prop, value: g.value, evidence: { classes: places } })), trace: { group, meta: { step: 'X-ray', laws: [] } } });
+      for (const [i, g] of changes.entries()) {
+        const r = answer?.results?.[i] ?? {};
+        out.push(r.state === 'ok' ? { id: g.id, state: 'ok', cls: edit.to, where: at, group } : { id: g.id, state: 'failed', why: r.why ?? "This change couldn't be placed." });
+      }
     } catch (error) { fail(error?.message ?? String(error)); }
     return out;
   },
 };
 
 // ── rules in plain stylesheets ──────────────────────────────
-// the declarations that set a property: its own name, then the shorthands that carry it
-const CARRIERS = {
+// the declarations that set a property: its own name, then the shorthands that carry it. The server's table
+// (src/styles/properties.ts) is read once and replaces this one; this is what the page knows before it answers.
+let CARRIERS = {
   'font-size': ['font-size', 'font'], 'line-height': ['line-height', 'font'], 'font-weight': ['font-weight', 'font'],
   gap: ['gap'], 'border-radius': ['border-radius'], width: ['width'], height: ['height'],
   'padding-top': ['padding-top', 'padding-block-start', 'padding-block', 'padding'], 'padding-bottom': ['padding-bottom', 'padding-block-end', 'padding-block', 'padding'],
@@ -80,6 +84,12 @@ const heavier = (a, b) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
 // (data-vite-dev-id); a sheet a bundler serves (Next's chunks) is traced through its source map when the change is
 // written (fileOfBundled). Only rules outside @media and the like: a conditional rule is said, not written. A winner in
 // a sheet that is nobody's file (a package, an inline <style>) is nobody's to write: null.
+let table = null;
+/** The server's property table, read once (GET style-properties); the page's own until it answers. */
+export function loadProperties(request) {
+  table ??= request('style-properties', {}).then((t) => { if (t && typeof t === 'object') CARRIERS = Object.fromEntries(Object.entries(t).map(([k, v]) => [k, v.carriers])); }).catch(() => { table = null; });
+  return table;
+}
 export function winningRule(el, prop) {
   const carriers = CARRIERS[prop];
   if (!carriers) return null;

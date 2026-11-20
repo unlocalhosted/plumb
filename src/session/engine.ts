@@ -27,8 +27,8 @@ import { ledgerPath } from '../ledger/store.js';
 import { sourceHash } from '../collect/cache.js';
 import { matchesPath } from '../collect/pattern.js';
 import { lineStarts, sourceSite } from '../collect/source.js';
-import { cssErrors, cssValueSafe, locateStyle } from '../styles/index.js';
-import type { Edit, Evidence, ReadFile } from '../styles/index.js';
+import { PROPERTIES, cssErrors, cssValueSafe, locateStyle } from '../styles/index.js';
+import type { ClassPlace, Edit, Evidence, ReadFile, StyleContext } from '../styles/index.js';
 import { parseSync } from 'oxc-parser';
 import type { ClassTraceLimit } from '../collect/computed.js';
 import type { StructuredEdit, RefusedSite } from '../surfaces/edits.js';
@@ -1416,13 +1416,16 @@ export class Session extends EventEmitter {
     const changes = options?.changes;
     if (!Array.isArray(changes) || !changes.length || changes.length > 32) throw new UsageError('Style write takes one to thirty-two changes.');
     const read: ReadFile = async (file) => { const path = this.file(file); await this.readableSource(path); const text = await readFile(path, 'utf8'); return { text, hash: sourceHash(text) }; };
+    const ctx: StyleContext = { read, classEdit: place => this.classEdit(place) };
     const results: Record<string, unknown>[] = [];
     const byFile = new Map<string, { hash: string; edits: Edit[]; said: string[] }>();
     for (const [index, change] of changes.entries()) {
       const { prop, value, token, evidence } = change ?? {} as typeof change;
       if (typeof prop !== 'string' || !/^[a-z][a-z-]*$/.test(prop) || typeof value !== 'string' || !evidence || typeof evidence !== 'object') { results.push({ index, state: 'failed', why: 'A change is a property, a value and what the page saw.' }); continue; }
       if (!cssValueSafe(value) || token !== undefined && !/^--[\w-]+$/.test(token)) { results.push({ index, state: 'failed', why: 'A value is plain CSS: balanced brackets, no quotes, ; { } or url().' }); continue; }
-      const placed = await locateStyle(evidence, prop, read).catch(() => null);
+      let placed;
+      try { placed = await locateStyle(evidence, prop, ctx); }
+      catch (error) { results.push({ index, state: 'failed', why: error instanceof UsageError ? error.message : 'This change could not be placed.' }); continue; }
       if (!placed) { results.push({ index, state: 'unplaced', why: 'No style system of this project writes this value where the page found it.' }); continue; }
       const { system, origin } = placed;
       if (origin.writable !== true) { results.push({ index, state: 'failed', why: origin.writable, said: origin.said }); continue; }
@@ -1431,8 +1434,13 @@ export class Session extends EventEmitter {
       const entry = byFile.get(path) ?? byFile.set(path, { hash: origin.hash, edits: [], said: [] }).get(path)!;
       if (entry.hash !== origin.hash) { results.push({ index, state: 'failed', why: 'The file changed while the changes were read. Try again.' }); continue; }
       const edits = system.edit(origin, { prop, value, ...(token ? { token } : {}) });
-      entry.edits.push(...edits.map(e => ({ ...e, file: path })));
-      const to = edits[0]?.replacement.replace(/^; [a-z-]+: /, '') ?? value;
+      // several changes to one element share its class string: the same edit is made once
+      for (const e of edits) {
+        const target = byFile.get(this.file(e.file)) ?? byFile.set(this.file(e.file), { hash: e.hash ?? origin.hash, edits: [], said: [] }).get(this.file(e.file))!;
+        if (target.hash !== (e.hash ?? origin.hash)) throw new UsageError('A file changed while the changes were read. Try again.');
+        if (!target.edits.some(x => x.start === e.start && x.end === e.end && x.replacement === e.replacement)) target.edits.push({ ...e, file: this.file(e.file) });
+      }
+      const to = system.id === 'class' ? (evidence.classes ?? []).map(p => p.to).join(' ') : edits[0]?.replacement.replace(/^; [a-z-]+: /, '') ?? value;
       entry.said.push(`${origin.said} { ${prop}: ${origin.value ?? '(added)'} → ${to} }`);
       results.push({ index, state: 'ok', system: system.id, says: system.says, said: origin.said, file: path, from: origin.value, to, ...(origin.conditions.layer ? { layer: origin.conditions.layer } : {}), ...(origin.conditions.state ? { state: origin.conditions.state } : {}) });
     }
@@ -1450,6 +1458,21 @@ export class Session extends EventEmitter {
       }
     } catch (error) { if (done.length) await this.putBack(done, error); throw error; }
     return { revision: this.revision, results, files, undo: done.length ? [this.asOneWrite(done, `${done.length > 1 ? `${done.length} files` : 'style'}: ${results.filter(r => r.state === 'ok').length} change(s)`)] : [] };
+  }
+  /** The properties a style change can be about, and the declarations that carry each (src/styles/properties.ts). */
+  async styleProperties(): Promise<typeof PROPERTIES> { return PROPERTIES; }
+  /** One class swap, placed and worked out but not written: the class system's half of a style write (the same
+   * element, prop and string resolution `swaps` uses). */
+  private async classEdit(place: ClassPlace): Promise<Edit & { hash: string }> {
+    const names = (v: string) => String(v ?? '').split(/\s+/).filter(Boolean);
+    if (!place || typeof place.file !== 'string' || typeof place.hash !== 'string' || typeof place.from !== 'string' || typeof place.to !== 'string' || names(place.from).length > 8 || names(place.to).length > 8 || (!names(place.from).length && !names(place.to).length)) throw new UsageError('A class change needs its file, hash, place and the classes out and in.');
+    const path = this.file(place.file); this.position(place.line); this.position(place.column);
+    const facts = place.at && place.of ? await this.pinFacts(path, place.line, place.column) : await this.elementFacts(path, place.line, place.column);
+    if (sourceHash(facts.text) !== place.hash) throw stale();
+    if (!place.at && !names(place.from).length && isComponentJSX(facts.location.tag)) throw new UsageError(`<${facts.location.tag}> is a component; add the class inside it, by hand.`);
+    const pin = place.at ? await this.pinned(path, facts, { line: place.line, column: place.column, at: place.at, ...(place.of ? { of: place.of } : {}) }, pinWrite(names(place.from), names(place.to))) : undefined;
+    const change = swapClasses(path, facts.text, facts.location.start, names(place.from), names(place.to), pin);
+    return { file: path, hash: place.hash, start: change.start, end: change.end, replacement: change.replacement };
   }
   /** Swap classes on an element (a craft suggestion): take `from` out of its static className, put `to` in its place. */
   async swap(options: SwapOptions): Promise<ApplyResult> {
