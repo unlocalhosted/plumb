@@ -13,7 +13,7 @@
 </style>
 </head>
 <body>
-<header><div><h1>How a change moves: text, padding, margin, gap</h1><p>Guides draw in, the page moves on the spring, the number rolls and lands, the guides go.</p></div><button id="play">Play again</button></header>
+<header><div><h1>How a change moves, for each of Clean up’s steps</h1><p>Guides draw in, the page moves on the spring, the number rolls and lands, the guides go.</p></div><button id="play">Play again</button></header>
 <div id="board"></div>
 <script type="module">
   import tokens from '../src/tokens.css?raw';
@@ -41,10 +41,20 @@
     .dither { background: radial-gradient(color-mix(in oklab, var(--pl-butter) 85%, transparent) 0.8px, transparent 1px) 0 0 / 4px 4px; }
     .stripes { background: repeating-linear-gradient(90deg, color-mix(in oklab, var(--pl-lilac) 60%, transparent) 0 1px, transparent 1px 4px), color-mix(in oklab, var(--pl-lilac) 12%, transparent); }
     .card { background: #f3f4f6; border-radius: 12px; }
+    .ring { border: 1.5px dashed var(--c); border-radius: 12px; }
+    .sq { border: 1.5px solid color-mix(in oklab, var(--c) 70%, transparent); border-radius: 4px; }
+    .arc { border-top: 2px solid var(--c); border-left: 2px solid var(--c); }
+    .pill .chip { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin: 6px 2px 0 -2px; box-shadow: 0 0 0 1.5px #fff; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; padding: 0 18px; border-radius: 10px; background: #4f46e5; color: #fff; font: 600 14px/1 system-ui; }
+    .track { height: 6px; border-radius: 3px; background: #eef0f3; overflow: hidden; } .track i { display: block; height: 100%; width: 0; background: var(--c); border-radius: 3px; }
+    .meter { position: relative; height: 8px; border-radius: 4px; background: linear-gradient(90deg, var(--pl-coral) 0 60%, var(--pl-mint) 60% 100%); opacity: .35; }
+    .needle { position: absolute; top: -5px; width: 3px; height: 18px; border-radius: 2px; background: var(--c); }
     .txt { margin: 0; color: #111; font-weight: 700; letter-spacing: -0.01em; line-height: 1.15; }
     .sub { margin: 6px 0 0; color: #64748b; font-size: 13px; }
   `;
-  const roll = (from, to) => { const steps = []; const a = Math.round(from), b = Math.round(to), dir = Math.sign(b - a) || 1; for (let v = a; v !== b + dir; v += dir) steps.push(v); return steps; };
+  // the digits a value passes through, every `step` (a time rolls by 10ms, a ratio by a tenth), at most 24 of them
+  const roll = (from, to, step = 1, fmt = (v) => v) => { const n = Math.max(1, Math.round(Math.abs(to - from) / step)), k = Math.ceil(n / 24), out = [];
+    for (let i = 0; i <= n; i += k) out.push(fmt(from + Math.sign(to - from) * i * step)); if (out[out.length - 1] !== fmt(to)) out.push(fmt(to)); return out; };
   const pillHtml = (vals, unit, name = '') => `<span class="roll"><span>${vals.map((v) => `<b>${v}</b>`).join('')}</span></span>${unit}${name ? ` <i>${name}</i>` : ''}`;
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   const animate = (el, kf, o) => el.animate(kf, { fill: 'both', ...o }).finished;
@@ -53,8 +63,8 @@
   async function play(stage, spec) {
     stage.removeAttribute('data-landed');
     const g = spec.guides(); // [{ el, kind: 'h'|'v'|'beam'|'pill' }]
-    const pill = g.find((x) => x.kind === 'pill').el, vals = roll(spec.from, spec.to);
-    pill.innerHTML = pillHtml(vals, spec.unit);
+    const pill = g.find((x) => x.kind === 'pill').el, fmt = spec.fmt ?? ((v) => Math.round(v)), vals = spec.labels ? [spec.labels[0]] : roll(spec.from, spec.to, spec.step ?? 1, fmt);
+    pill.innerHTML = spec.labels ? `${spec.chip?.(0) ?? ''}${spec.labels[0]}` : pillHtml(vals, spec.unit);
     const strip = pill.querySelector('.roll > span');
     // 1. the guides draw in: lines sweep from the edge, the beam and the pill pop
     await Promise.all(g.map((x, i) => x.kind === 'h' ? animate(x.el, [{ transform: 'scaleX(0)', opacity: 0 }, { transform: 'scaleX(1)', opacity: 1 }], { duration: T.guides, delay: i * 40, easing: 'cubic-bezier(.2,.8,.2,1)' })
@@ -63,12 +73,14 @@
     await wait(T.hold);
     // 2. the page moves on the spring; the guides follow it every frame; the number rolls with it
     spec.ease(true); spec.apply(spec.to);
-    strip.animate([{ transform: 'translateY(0)' }, { transform: `translateY(${-(vals.length - 1) * 22}px)` }], { duration: T.move, easing: SPRING, fill: 'both' });
+    strip?.animate([{ transform: 'translateY(0)' }, { transform: `translateY(${-(vals.length - 1) * 22}px)` }], { duration: T.move, easing: SPRING, fill: 'both' });
+    // a value that is a name (a colour, a shadow): the pill's words cross over halfway through the move
+    if (spec.labels) setTimeout(() => { pill.animate([{ opacity: 1, filter: 'blur(0)' }, { opacity: 0, filter: 'blur(2px)' }], { duration: 140 }).finished.then(() => { pill.innerHTML = `${spec.chip?.(1) ?? ''}${spec.labels[1]}`; pill.animate([{ opacity: 0, filter: 'blur(2px)' }, { opacity: 1, filter: 'blur(0)' }], { duration: 180 }); }); }, T.move * 0.35);
     const t0 = performance.now();
     await new Promise((done) => { const f = () => { spec.track(); if (performance.now() - t0 < T.move + 80) requestAnimationFrame(f); else done(); }; f(); });
     // 3. it lands: the pill turns to the scale's colour and names the step, a small settle
     stage.setAttribute('data-landed', '');
-    pill.innerHTML = pillHtml([Math.round(spec.to)], spec.unit, spec.name);
+    pill.innerHTML = spec.labels ? `${spec.chip?.(1) ?? ''}${spec.labels[1]}` : pillHtml([fmt(spec.to)], spec.unit, spec.name);
     pill.animate([{ scale: 1 }, { scale: 1.08 }, { scale: 1 }], { duration: 360, easing: 'cubic-bezier(.34,1.56,.64,1)' });
     await wait(T.land);
     // 4. the guides go, the page keeps its change
@@ -123,6 +135,77 @@
       return { from: 12, to: 20, unit: 'px', name: 'space-5', guides: () => [{ el: l1, kind: 'v' }, { el: l2, kind: 'v' }, { el: hb, kind: 'beam' }, { el: pill, kind: 'pill' }, ...st.map((el) => ({ el, kind: 'beam' }))],
         ease: (on) => { row.style.transition = on ? `gap ${T.move}ms ${SPRING}` : ''; }, apply: (v) => { row.style.gap = `${v}px`; }, track,
         reset: () => { row.style.transition = ''; row.style.gap = '12px'; track(); } };
+    }],
+    ['Colour', '#3b82f6 → your accent: a ring marks it, the colour fades across', (s) => {
+      s.innerHTML = `<div class="pg" style="display:grid;place-items:center;padding:0"><span class="btn b" style="height:44px;background:#3b82f6">Start free trial</span></div><i class="g ring"></i><i class="g pill"></i>`;
+      const btn = s.querySelector('.b'), ring = s.querySelector('.ring'), pill = s.querySelector('.pill');
+      const track = () => { const S = s.getBoundingClientRect(), r = btn.getBoundingClientRect(); ring.style.cssText = `left:${r.left - S.left - 6}px;top:${r.top - S.top - 6}px;width:${r.width + 12}px;height:${r.height + 12}px`; pill.style.cssText = `left:${r.left - S.left + r.width / 2}px;top:${r.bottom - S.top + 30}px`; };
+      track();
+      const to = 'var(--pl-pink)';
+      return { labels: ['#3b82f6', 'accent'], chip: (i) => `<i class="chip" style="background:${i ? to : '#3b82f6'}"></i>`, guides: () => [{ el: ring, kind: 'beam' }, { el: pill, kind: 'pill' }],
+        ease: (on) => { btn.style.transition = on ? `background-color ${T.move}ms ease-in-out` : ''; }, apply: () => { btn.style.background = to; }, track,
+        reset: () => { btn.style.transition = ''; btn.style.background = '#3b82f6'; track(); } };
+    }],
+    ['Icons', '22px → 16px: a square around the icon, it settles to the text', (s) => {
+      s.innerHTML = `<div class="pg" style="display:grid;place-items:center;padding:0"><div style="display:flex;align-items:center;gap:8px;font:600 15px system-ui"><svg class="ic" viewBox="0 0 24 24" style="width:22px;height:22px"><circle cx="12" cy="12" r="9" fill="none" stroke="#111" stroke-width="2"/><path d="M12 7v5l3 2" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round"/></svg>Last deployed 2h ago</div></div><i class="g sq"></i><i class="g hbeam"></i><i class="g pill"></i>`;
+      const ic = s.querySelector('.ic'), sq = s.querySelector('.sq'), hb = s.querySelector('.hbeam'), pill = s.querySelector('.pill');
+      const track = () => { const S = s.getBoundingClientRect(), r = ic.getBoundingClientRect(); sq.style.cssText = `left:${r.left - S.left - 3}px;top:${r.top - S.top - 3}px;width:${r.width + 6}px;height:${r.height + 6}px`;
+        hb.style.cssText = `left:${r.left - S.left}px;top:${r.top - S.top - 18}px;width:${r.width}px`; pill.style.cssText = `left:${r.left - S.left + r.width / 2}px;top:${r.top - S.top - 42}px`; };
+      track();
+      return { from: 22, to: 16, unit: 'px', name: 'icon-sm', guides: () => [{ el: sq, kind: 'beam' }, { el: hb, kind: 'beam' }, { el: pill, kind: 'pill' }],
+        ease: (on) => { ic.style.transition = on ? `width ${T.move}ms ${SPRING}, height ${T.move}ms ${SPRING}` : ''; }, apply: (v) => { ic.style.width = ic.style.height = `${v}px`; }, track,
+        reset: () => { ic.style.transition = ''; ic.style.width = ic.style.height = '22px'; track(); } };
+    }],
+    ['Corners', '4px → 12px: an arc on the corner opens with it', (s) => {
+      s.innerHTML = `<div class="pg" style="display:grid;place-items:center;padding:0"><div class="card c" style="width:260px;height:120px;border-radius:4px;background:#e8eaef;display:grid;place-items:center;font-weight:600">Project card</div></div><i class="g arc"></i><i class="g pill"></i>`;
+      const c = s.querySelector('.c'), arc = s.querySelector('.arc'), pill = s.querySelector('.pill');
+      const track = () => { const S = s.getBoundingClientRect(), r = c.getBoundingClientRect(), rad = parseFloat(getComputedStyle(c).borderTopLeftRadius), w = Math.max(10, rad * 2);
+        arc.style.cssText = `left:${r.left - S.left - 5}px;top:${r.top - S.top - 5}px;width:${w + 10}px;height:${w + 10}px;border-top-left-radius:${rad + 5}px`; pill.style.cssText = `left:${r.left - S.left - 40}px;top:${r.top - S.top - 20}px`; };
+      track();
+      return { from: 4, to: 12, unit: 'px', name: 'rounded-card', guides: () => [{ el: arc, kind: 'beam' }, { el: pill, kind: 'pill' }],
+        ease: (on) => { c.style.transition = on ? `border-radius ${T.move}ms ${SPRING}` : ''; }, apply: (v) => { c.style.borderRadius = `${v}px`; }, track,
+        reset: () => { c.style.transition = ''; c.style.borderRadius = '4px'; track(); } };
+    }],
+    ['Controls', '48px → 40px: a button settles to your control height', (s) => {
+      s.innerHTML = `<div class="pg" style="display:grid;place-items:center;padding:0"><span class="btn b" style="height:48px">Save changes</span></div><i class="g hl t"></i><i class="g hl u"></i><i class="g beam"></i><i class="g pill"></i>`;
+      const b = s.querySelector('.b'), t = s.querySelector('.t'), u = s.querySelector('.u'), beam = s.querySelector('.beam'), pill = s.querySelector('.pill');
+      const track = () => { const S = s.getBoundingClientRect(), r = b.getBoundingClientRect(), y1 = r.top - S.top, y2 = r.bottom - S.top;
+        t.style.top = `${y1}px`; u.style.top = `${y2}px`; beam.style.cssText = `left:${r.left - S.left - 26}px;top:${y1}px;height:${y2 - y1}px`; pill.style.cssText = `left:${r.left - S.left - 58}px;top:${(y1 + y2) / 2}px`; };
+      track();
+      return { from: 48, to: 40, unit: 'px', name: 'control', guides: () => [{ el: t, kind: 'h' }, { el: u, kind: 'h' }, { el: beam, kind: 'beam' }, { el: pill, kind: 'pill' }],
+        ease: (on) => { b.style.transition = on ? `height ${T.move}ms ${SPRING}` : ''; }, apply: (v) => { b.style.height = `${v}px`; }, track,
+        reset: () => { b.style.transition = ''; b.style.height = '48px'; track(); } };
+    }],
+    ['Shadows', 'a hand-made glow → your shadow: its reach is outlined and pulls in', (s) => {
+      const from = '0 18px 40px -6px rgb(79 70 229 / .45)', to = '0 1px 3px rgb(0 0 0 / .1), 0 1px 2px rgb(0 0 0 / .06)';
+      s.innerHTML = `<div class="pg" style="display:grid;place-items:center;padding:0"><div class="c" style="width:240px;height:96px;border-radius:12px;background:#fff;box-shadow:${from};display:grid;place-items:center;font-weight:600">Usage this month</div></div><i class="g ring"></i><i class="g pill"></i>`;
+      const c = s.querySelector('.c'), ring = s.querySelector('.ring'), pill = s.querySelector('.pill');
+      let reach = 34; const track = () => { const S = s.getBoundingClientRect(), r = c.getBoundingClientRect(); ring.style.cssText = `left:${r.left - S.left - reach}px;top:${r.top - S.top - reach * 0.6}px;width:${r.width + reach * 2}px;height:${r.height + reach * 1.8}px;border-radius:${12 + reach}px`;
+        pill.style.cssText = `left:${r.left - S.left + r.width / 2}px;top:${r.top - S.top - reach * 0.6 - 16}px`; };
+      track();
+      return { labels: ['custom glow', 'shadow-sm'], guides: () => [{ el: ring, kind: 'beam' }, { el: pill, kind: 'pill' }],
+        ease: (on) => { c.style.transition = on ? `box-shadow ${T.move}ms ease-in-out` : ''; if (on) c.animate([{}, {}], { duration: T.move }); const t0 = performance.now(); const f = () => { const k = Math.min(1, (performance.now() - t0) / T.move); reach = 34 - 28 * (1 - Math.pow(1 - k, 3)); if (k < 1) requestAnimationFrame(f); }; if (on) f(); },
+        apply: () => { c.style.boxShadow = to; }, track, reset: () => { c.style.transition = ''; c.style.boxShadow = from; reach = 34; track(); } };
+    }],
+    ['Timing', '400ms → 150ms: the same press, felt at both speeds', (s) => {
+      s.innerHTML = `<div class="pg" style="display:grid;place-items:center;align-content:center;gap:18px;padding:0"><span class="btn b" style="height:40px">Open menu</span><div class="track" style="width:240px"><i class="bar"></i></div></div><i class="g pill"></i>`;
+      const b = s.querySelector('.b'), bar = s.querySelector('.bar'), pill = s.querySelector('.pill');
+      let ms = 400; const press = () => { b.animate([{ scale: 1, background: '#4f46e5' }, { scale: .94, background: '#6d63ff' }, { scale: 1, background: '#4f46e5' }], { duration: ms * 2, easing: 'ease-in-out' }); bar.animate([{ width: '0%' }, { width: `${(ms / 400) * 100}%` }], { duration: ms, easing: 'linear', fill: 'forwards' }); };
+      const track = () => { const S = s.getBoundingClientRect(), r = bar.parentElement.getBoundingClientRect(); pill.style.cssText = `left:${r.left - S.left + r.width / 2}px;top:${r.bottom - S.top + 24}px`; };
+      track();
+      return { from: 400, to: 150, step: 10, unit: 'ms', name: 'fast', guides: () => [{ el: pill, kind: 'pill' }],
+        ease: (on) => { if (on) { ms = 400; press(); setTimeout(() => { ms = 150; press(); }, 420); } }, apply: () => {}, track, reset: () => { ms = 400; bar.getAnimations().forEach((a) => a.cancel()); track(); } };
+    }],
+    ['Disabled', 'opacity .3 → .5: the needle climbs until it can be read', (s) => {
+      s.innerHTML = `<div class="pg" style="display:grid;place-items:center;align-content:center;gap:22px;padding:0"><span class="btn b" style="height:40px;opacity:.3">Delete project</span><div class="meter" style="width:240px"></div><i class="needle"></i></div><i class="g pill"></i>`;
+      const b = s.querySelector('.b'), meter = s.querySelector('.meter'), needle = s.querySelector('.needle'), pill = s.querySelector('.pill');
+      const ratio = () => 1 + (parseFloat(getComputedStyle(b).opacity) - 0.3) / 0.2 * 2.5 + 0.9; // 1.9:1 at .3 → 4.4:1 at .5, for the comp
+      const track = () => { const S = s.getBoundingClientRect(), r = meter.getBoundingClientRect(), k = Math.min(1, (ratio() - 1) / 5);
+        needle.style.cssText = `position:absolute;left:${r.left - S.left + k * r.width - 1}px;top:${r.top - S.top - 5}px`; pill.style.cssText = `left:${r.left - S.left + k * r.width}px;top:${r.bottom - S.top + 24}px`; };
+      track();
+      return { from: 1.9, to: 4.4, step: 0.1, fmt: (v) => v.toFixed(1), unit: ':1', name: 'readable', guides: () => [{ el: pill, kind: 'pill' }],
+        ease: (on) => { b.style.transition = on ? `opacity ${T.move}ms ${SPRING}` : ''; }, apply: () => { b.style.opacity = '.5'; }, track,
+        reset: () => { b.style.transition = ''; b.style.opacity = '.3'; track(); } };
     }],
   ];
   const board = document.getElementById('board'), runs = [];
