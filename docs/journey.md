@@ -2938,6 +2938,15 @@ field is empty). The table of five writes, before and after. The Next table: eig
   kept it (commit ed803fc5).
 - **Not done:** an element outside any React root (static HTML next to the app) still waits the 10 s; not seen on
   these pages.
+- **Later the same day, a fourth gap:** the tester saw 80 become 79 after opening one fix and closing it. A fix's
+  preview puts inline styles on its elements and takes them off; that rewriting made the elements count as "moving"
+  for 1.5 s, and the craft check skips moving elements. It waited for real animations to end, but nothing came back
+  for elements that were only rewritten, so their notes ("01 //", "Click the button above") stayed away. It now
+  checks them again once they are still, and the page counts as unread until then. Three rounds on Ledger kept 80
+  (commit 5a1ec206).
+- **Checked on the site in dark mode** at localhost:4330: four openings each showed 35 at about 1 s, and the concern
+  list adds up to the bar. At 127.0.0.1:4330 the site never starts, because Next 16 refuses its live-update socket
+  from that address, so Blueprint can only wait there.
 - **Media hooks:** a before/after clip of the bar opening: the number climbing, then "Checking this page…" and one
   number.
 
