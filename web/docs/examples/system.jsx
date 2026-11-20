@@ -2,7 +2,7 @@
 // One example per design-system check (docs › What it checks › Design system check). Each shows what the check is
 // about, not just the property it touches: a Broken / Fixed switch, the line of code it is about, and where the cost
 // shows up later (the theme changes and a hard-coded value doesn't follow), a "Change your theme" button that shows it.
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 // the example app's theme, before and after "Change your theme": a rebrand from indigo to teal, softer corners,
 // a darker surface. Elements written with the token follow it; hard-coded copies keep the old look.
@@ -86,88 +86,122 @@ function Presses({ fixed }) {
 }
 
 export const hasExample = (id) => !!EXAMPLES[id];
-// Every fix is shown as a transition (interaction principles 35b): switching plays plumber's beats over the element it
-// changes: the guides mark it with the value now (coral), the element moves on the spring, the pill crosses over to
-// your token's name (sky), the guides go. Going back plays the same, the other way.
+// Every fix is shown as a transition (interaction principles 35b), and you can feel it yourself: the stage is your app
+// twice, broken on the left of the handle and fixed on its right. Opened, the handle sweeps across and the fix plays
+// as it passes the element: the guides mark it with the value now (coral), the pill crosses over to your token (sky)
+// and lands; the code line under the stage changes in step. Drag the handle to move through it by hand.
 const SPRING = 'linear(0, 0.21 6%, 0.62 15%, 0.9 25%, 1.01 36%, 1.02 46%, 1 60%, 1)';
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const still = () => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-export function Example({ id }) {
-  const ex = EXAMPLES[id], [fixed, setFixed] = useState(false), [t, setT] = useState(0), [busy, setBusy] = useState(false);
-  const scene = useRef(null), ring = useRef(null), pill = useRef(null), run = useRef(0);
-  // the guides follow the element while it moves
-  const follow = () => {
-    const el = scene.current?.querySelector('[data-fix]'), box = scene.current;
-    if (!el || !box || !ring.current) return;
+const textOf = (node) => (node == null ? '' : typeof node === 'string' || typeof node === 'number' ? String(node) : Array.isArray(node) ? node.map(textOf).join('') : textOf(node.props?.children));
+const ease = (k) => 1 - Math.pow(1 - k, 3);
+
+export function Specimen({ id, name, why }) {
+  const ex = EXAMPLES[id], [t, setT] = useState(0), [x, setX] = useState(100), [mark, setMark] = useState(null);
+  const stage = useRef(null), anim = useRef(0), dragging = useRef(false);
+  const T = THEME[t], before = ex?.show(false, t, T), after = ex?.show(true, t, T);
+  // where the element is, as a share of the stage's width, and its box for the guides
+  const measure = () => {
+    const el = stage.current?.querySelector('.sp-before [data-fix]'), box = stage.current;
+    if (!el || !box) return;
     const r = el.getBoundingClientRect(), b = box.getBoundingClientRect();
-    ring.current.style.cssText = `left:${r.left - b.left - 6}px;top:${r.top - b.top - 6}px;width:${r.width + 12}px;height:${r.height + 12}px`;
-    pill.current.style.left = `${r.left - b.left + r.width / 2}px`; pill.current.style.top = `${r.top - b.top - 14}px`;
+    setMark({ left: r.left - b.left, top: r.top - b.top, w: r.width, h: r.height, at: ((r.left + r.width / 2 - b.left) / b.width) * 100 });
   };
-  useLayoutEffect(follow);
-  const go = async (to) => {
-    if (to === fixed || busy) return;
-    if (still() || !ex.say) { setFixed(to); return; }
-    const mine = ++run.current; setBusy(true);
-    const [from, into] = to ? ex.say : [ex.say[1], ex.say[0]], g = scene.current.querySelector('.ex-g');
-    pill.current.textContent = from; g.dataset.landed = to ? '' : 'back'; g.removeAttribute('data-landed'); follow();
-    g.dataset.on = '';                                    // 1. the guides mark it, with the value now
-    await sleep(520); if (mine !== run.current) return;
-    setFixed(to);                                         // 2. it moves to the fixed value on the spring
-    const t0 = performance.now(); const track = () => { follow(); if (performance.now() - t0 < 760) requestAnimationFrame(track); }; track();
-    await sleep(300); pill.current.animate([{ opacity: 1, filter: 'blur(0)' }, { opacity: 0, filter: 'blur(2px)' }], { duration: 140 });
-    await sleep(140); pill.current.textContent = into;     // 3. the pill crosses over and lands
-    if (to) g.dataset.landed = ''; pill.current.animate([{ opacity: 0, scale: .9 }, { opacity: 1, scale: 1.08, offset: .6 }, { opacity: 1, scale: 1 }], { duration: 360, easing: 'cubic-bezier(.34,1.56,.64,1)' });
-    await sleep(900); if (mine !== run.current) return;
-    delete g.dataset.on;                                  // 4. the guides go
-    await sleep(260); setBusy(false);
+  useLayoutEffect(() => { measure(); }, [t, id]);
+  // the sweep: the handle crosses from all broken to all fixed on an ease, the beats follow from where it is
+  const sweep = (from = 100, to = 0) => {
+    cancelAnimationFrame(anim.current);
+    if (still()) { setX(to); return; }
+    const t0 = performance.now(), dur = 1500;
+    const step = () => { const k = Math.min(1, (performance.now() - t0) / dur); setX(from + (to - from) * ease(k)); if (k < 1 && !dragging.current) anim.current = requestAnimationFrame(step); };
+    anim.current = requestAnimationFrame(step);
+  };
+  useEffect(() => { const id = setTimeout(() => sweep(), 450); return () => { clearTimeout(id); cancelAnimationFrame(anim.current); }; }, []);
+  const drag = (e) => {
+    if (e.button !== 0) return;
+    cancelAnimationFrame(anim.current); dragging.current = true;
+    const b = stage.current.getBoundingClientRect(), to = (m) => setX(Math.max(0, Math.min(100, ((m.clientX - b.left) / b.width) * 100)));
+    to(e); e.currentTarget.setPointerCapture(e.pointerId);
+    e.currentTarget.onpointermove = to; e.currentTarget.onpointerup = () => { dragging.current = false; e.currentTarget.onpointermove = null; };
   };
   if (!ex) return null;
-  const T = THEME[t], { scene: drawn, code, note } = ex.show(fixed, t, T);
+  // the element is fixed once the handle has passed its middle; the guides show while the handle is near or past it
+  const passed = mark ? x < mark.at : x < 50, near = mark ? x < mark.at + 22 && x > -1 : false, settled = x <= 0.5;
+  const [fromSay, toSay] = ex.say ?? ['', ''], code = [textOf(before.code), textOf(after.code)];
   return (
-    <div className="ex">
+    <div className="sp">
       <style>{CSS}</style>
-      <div className="ex-bar">
-        <div className="ex-seg" role="radiogroup" aria-label="Show">
-          <button type="button" role="radio" aria-checked={!fixed} onClick={() => go(false)}>Broken</button>
-          <button type="button" role="radio" aria-checked={fixed} onClick={() => go(true)}>Fixed</button>
+      <div className="sp-stage" ref={stage} onPointerDown={drag} style={{ '--x': `${x}%` }}>
+        <div className="sp-layer sp-before">{before.scene}</div>
+        <div className="sp-layer sp-after" aria-hidden="true">{after.scene}</div>
+        {mark && <div className="sp-g" data-on={(near && !settled) || undefined} data-landed={passed || undefined} aria-hidden="true">
+          <i className="sp-ring" style={{ left: mark.left - 7, top: mark.top - 7, width: mark.w + 14, height: mark.h + 14 }} />
+          <b className="sp-pill" style={{ left: mark.left + mark.w / 2, top: mark.top - 14 }} key={passed ? 'to' : 'from'}>{passed ? toSay : fromSay}</b>
+        </div>}
+        <div className="sp-handle" role="slider" aria-label="Broken to fixed" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(100 - x)} tabIndex={0}
+          onKeyDown={(e) => { if (e.key === 'ArrowLeft') setX(Math.max(0, x - 5)); if (e.key === 'ArrowRight') setX(Math.min(100, x + 5)); }}><i /></div>
+        <span className="sp-tag sp-l" data-gone={x < 14 || undefined}>Broken</span><span className="sp-tag sp-r" data-gone={x > 86 || undefined}>Fixed</span>
+        <div className="sp-tools" onPointerDown={(e) => e.stopPropagation()}>
+          <button type="button" onClick={() => sweep(100, 0)}>▶ Play the fix</button>
+          {ex.theme && <button type="button" aria-pressed={!!t} onClick={() => setT(t ? 0 : 1)}>{t ? '↺ Old theme' : 'Change your theme'}</button>}
         </div>
-        {ex.theme && <button type="button" className="ex-theme" aria-pressed={!!t} onClick={() => setT(t ? 0 : 1)}>{t ? '↺ Back to the old theme' : 'Change your theme'}</button>}
       </div>
-      <div className="ex-scene" ref={scene}>{drawn}<div className="ex-g" aria-hidden="true"><i className="ex-ring" ref={ring} /><b className="ex-gpill" ref={pill} /></div></div>
-      <div className="ex-foot">{code}<p>{note}</p></div>
+      <div className="sp-code" data-fixed={passed || undefined}>
+        <span className="sp-diff"><s key={'a' + passed}>{code[0]}</s><i aria-hidden="true">→</i><b>{code[1]}</b></span>
+        <p>{passed ? after.note : before.note}</p>
+      </div>
+      {(name || why) && <div className="sp-meta">{name && <h3>{name}</h3>}{why && <p>{why}</p>}</div>}
     </div>
   );
 }
+export const Example = Specimen;
+
+// a closed card: the broken state, small, as a picture of the problem
+export function Thumb({ id }) {
+  const ex = EXAMPLES[id];
+  if (!ex) return null;
+  const { scene } = ex.show(false, 0, THEME[0]);
+  return <div className="sp-thumb" aria-hidden="true"><style>{CSS}</style><div className="sp-thumb-in">{scene}</div></div>;
+}
 
 const CSS = `
-  .ex { display: grid; gap: 12px; }
-  .ex-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-  .ex-seg { display: inline-flex; padding: 3px; border-radius: 10px; background: var(--pl-bg-surface); }
-  .ex-seg button { all: unset; cursor: pointer; padding: 6px 12px; border-radius: 8px; font: 600 13px/1 var(--pl-sans); color: var(--pl-text-secondary); }
-  .ex-seg button[aria-checked="true"] { background: var(--pl-bg-inset); color: var(--pl-text-primary); }
-  .ex-seg button[aria-checked="true"]:first-child { background: color-mix(in oklab, var(--pl-coral) 18%, transparent); color: var(--pl-coral-ink); }
-  .ex-seg button[aria-checked="true"]:last-child { background: color-mix(in oklab, var(--pl-mint) 22%, transparent); color: var(--pl-mint-ink); }
-  .ex-seg button:focus-visible, .ex-theme:focus-visible { outline: 2px solid var(--pl-sky); outline-offset: 2px; }
-  .ex-theme { all: unset; cursor: pointer; padding: 7px 12px; border-radius: 9px; font: 600 13px/1 var(--pl-sans); background: var(--pl-pink); color: #fff; }
-  .ex-theme[aria-pressed="true"] { background: var(--pl-bg-surface); color: var(--pl-text-primary); }
-  /* the scene is someone's app: light ground, its own ink, in either scheme of the docs */
-  .ex-scene { color-scheme: light; color: #111827; background: #fff; border-radius: 14px; padding: 26px 22px; min-height: 120px; display: grid; place-items: center; font: 400 14px/1.4 system-ui; }
-  .ex-scene { position: relative; }
-  .ex-scene [data-fix] { transition: background-color 640ms ease-in-out, color 640ms ease-in-out, padding 640ms ${SPRING}, border-radius 640ms ${SPRING}, font-size 640ms ${SPRING}, box-shadow 640ms ease-in-out, opacity 400ms ease; }
-  /* the guides: a dashed ring round what changes and its value in a pill, coral until it lands on your token (sky) */
-  .ex-g { position: absolute; inset: 0; pointer-events: none; --c: var(--pl-coral); opacity: 0; transition: opacity 220ms ease-out; }
-  .ex-g[data-on] { opacity: 1; } .ex-g[data-landed=""] { --c: var(--pl-sky); }
-  .ex-ring { position: absolute; border: 1.5px dashed var(--c); border-radius: 12px; transition: border-color 280ms ease-out; }
-  .ex-g[data-on] .ex-ring { animation: ex-draw 420ms cubic-bezier(.2,.8,.2,1) both; }
-  .ex-gpill { position: absolute; translate: -50% -100%; height: 22px; padding: 0 9px; border-radius: 11px; background: var(--c); color: #fff; font: 600 12px/22px system-ui; white-space: nowrap; box-shadow: 0 1px 2px rgb(0 0 0 / .25); transition: background-color 280ms ease-out; }
-  .ex-g[data-on] .ex-gpill { animation: ex-pop 360ms cubic-bezier(.34,1.56,.64,1) 120ms both; }
-  @keyframes ex-draw { from { opacity: 0; scale: 1.06; } }
-  @keyframes ex-pop { from { opacity: 0; scale: .85; } }
-  @media (prefers-reduced-motion: reduce) { .ex-g { display: none; } .ex-scene [data-fix] { transition: none; } }
-  .ex-foot { display: grid; gap: 6px; }
-  .ex-foot p { margin: 0; font: 400 14px/1.5 var(--pl-sans); color: var(--pl-text-secondary); }
-  .ex-code { justify-self: start; font: 500 12.5px/1 var(--pl-mono); padding: 5px 8px; border-radius: 7px; background: color-mix(in oklab, var(--pl-mint) 20%, transparent); color: var(--pl-text-primary); }
-  .ex-code[data-bad] { background: color-mix(in oklab, var(--pl-coral) 20%, transparent); }
+  /* the specimen: your app as the stage (broken left of the handle, fixed right), the code line, then the words */
+  .sp { display: grid; gap: 0; }
+  .sp-stage { position: relative; height: 250px; overflow: hidden; border-radius: 16px; background: #fff; color: #111827; color-scheme: light; font: 400 14px/1.4 system-ui; cursor: ew-resize; touch-action: pan-y; user-select: none; }
+  .sp-layer { position: absolute; inset: 0; display: grid; place-items: center; padding: 26px 22px; }
+  .sp-after { clip-path: inset(0 0 0 var(--x)); }
+  .sp-layer [data-fix] { transition: none; }
+  .sp-handle { position: absolute; top: 0; bottom: 0; left: var(--x); width: 0; z-index: 3; outline: none; }
+  .sp-handle::before { content: ''; position: absolute; top: 0; bottom: 0; left: -1px; width: 2px; background: #111827; opacity: .85; }
+  .sp-handle i { position: absolute; top: 50%; left: 0; translate: -50% -50%; width: 30px; height: 30px; border-radius: 50%; background: #111827; box-shadow: 0 2px 8px rgb(0 0 0 / .3); }
+  .sp-handle i::before, .sp-handle i::after { content: ''; position: absolute; top: 50%; width: 6px; height: 6px; border-left: 2px solid #fff; border-bottom: 2px solid #fff; translate: 0 -50%; }
+  .sp-handle i::before { left: 7px; rotate: 45deg; } .sp-handle i::after { right: 7px; rotate: -135deg; }
+  .sp-handle:focus-visible i { box-shadow: 0 0 0 3px var(--pl-sky); }
+  .sp-tag { position: absolute; top: 12px; z-index: 2; font: 650 11px/1 system-ui; padding: 5px 9px; border-radius: 99px; letter-spacing: .01em; transition: opacity 200ms; pointer-events: none; }
+  .sp-l { left: 12px; background: #fde7e2; color: #9a3412; } .sp-r { right: 12px; background: #d6f5e6; color: #065f46; } .sp-tag[data-gone] { opacity: 0; }
+  .sp-tools { position: absolute; left: 12px; bottom: 12px; z-index: 4; display: flex; gap: 6px; cursor: default; }
+  .sp-tools button { all: unset; cursor: pointer; padding: 7px 11px; border-radius: 9px; background: #111827; color: #fff; font: 600 12px/1 system-ui; box-shadow: 0 2px 8px rgb(0 0 0 / .18); }
+  .sp-tools button:focus-visible { outline: 2px solid var(--pl-sky); outline-offset: 2px; }
+  .sp-tools button[aria-pressed="true"] { background: #fff; color: #111827; box-shadow: inset 0 0 0 1px #d1d5db; }
+  /* the guides follow the handle: the ring and the value appear as it nears the element, land as it passes */
+  .sp-g { position: absolute; inset: 0; z-index: 2; pointer-events: none; --c: var(--pl-coral); opacity: 0; transition: opacity 240ms ease-out; }
+  .sp-g[data-on] { opacity: 1; } .sp-g[data-landed] { --c: var(--pl-sky); }
+  .sp-ring { position: absolute; border: 1.5px dashed var(--c); border-radius: 13px; transition: border-color 260ms ease-out; }
+  .sp-pill { position: absolute; translate: -50% -100%; height: 22px; padding: 0 9px; border-radius: 11px; background: var(--c); color: #fff; font: 600 12px/22px system-ui; white-space: nowrap; box-shadow: 0 1px 3px rgb(0 0 0 / .25); transition: background-color 260ms ease-out;
+    animation: sp-land 380ms cubic-bezier(.34,1.56,.64,1) both; }
+  @keyframes sp-land { from { opacity: 0; scale: .86; filter: blur(2px); } }
+  /* the code: the line plumber edits, changing as the handle passes */
+  .sp-code { display: grid; gap: 8px; padding: 14px 4px 0; }
+  .sp-diff { justify-self: start; display: inline-flex; align-items: center; gap: 10px; max-width: 100%; padding: 9px 12px; border-radius: 10px; background: #111827; font: 500 12.5px/1.2 var(--pl-mono, ui-monospace); overflow: hidden; }
+  .sp-diff s, .sp-diff b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 260ms, opacity 260ms, filter 260ms; font-weight: 500; }
+  .sp-diff s { color: #fca5a5; text-decoration: none; } .sp-diff b { color: #6b7280; } .sp-diff i { font-style: normal; color: #6b7280; }
+  .sp-code[data-fixed] .sp-diff s { color: #6b7280; text-decoration: line-through; text-decoration-thickness: 1.5px; } .sp-code[data-fixed] .sp-diff b { color: #86efac; }
+  .sp-code p { margin: 0; font: 400 14.5px/1.55 var(--pl-sans); color: var(--pl-text-secondary); max-width: 640px; }
+  .sp-meta { display: grid; gap: 4px; padding: 14px 4px 0; } .sp-meta h3 { margin: 0; font: 650 18px/1.3 var(--pl-round, var(--pl-sans)); color: var(--pl-text-primary); }
+  .sp-meta p { margin: 0; color: var(--pl-text-secondary); }
+  /* the closed card's picture: the broken state, small, never pressable */
+  .sp-thumb { position: relative; height: 112px; overflow: hidden; border-radius: 12px; background: #fff; color: #111827; color-scheme: light; font: 400 14px/1.4 system-ui; pointer-events: none; }
+  .sp-thumb-in { position: absolute; left: 50%; top: 50%; width: 420px; height: 250px; display: grid; place-items: center; translate: -50% -50%; scale: .5; }
+  @media (prefers-reduced-motion: reduce) { .sp-g, .sp-pill { transition: none; animation: none; } }
   .ex-row { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: center; }
   .ex-row figure { margin: 0; display: grid; gap: 8px; justify-items: center; } .ex-row figcaption { font: 500 12px system-ui; color: #6b7280; }
   .ex-btn { display: inline-flex; align-items: center; height: 38px; padding: 0 16px; border-radius: 8px; color: #fff; font: 600 14px system-ui; transition: background-color 360ms ease, box-shadow 200ms; }

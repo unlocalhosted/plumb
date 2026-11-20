@@ -3,7 +3,7 @@
 // catches and how it is fixed, with the fix's motion tile playing in it (one tile per kind of change).
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Toy } from '../site/Toy.jsx';
-import { Example, hasExample } from './examples/system.jsx';
+import { Specimen, Thumb, hasExample } from './examples/system.jsx';
 
 // what each concern is about, in a sentence a person can hold on to
 const ABOUT = {
@@ -38,20 +38,22 @@ function Tile({ title, css }) {
 // a check as a card: its name and where it is read; opened, it takes the whole row and says what it catches and how
 // it is fixed, with the fix playing where there is one
 function Card({ c, css, open, onOpen }) {
+  const ex = hasExample(c.id);
   return (
-    <li className="ck-card" data-open={open || undefined}>
+    <li className="ck-card" data-open={open || undefined} data-ex={ex || undefined}>
       <button type="button" className="ck-face" aria-expanded={open} onClick={onOpen}>
+        {ex && !open && <Thumb id={c.id} />}
         <span className="ck-name">{c.name}</span>
-        <span className="ck-meta"><span className="ck-where" data-where={c.where}>{WHERE[c.where]}</span>{(hasExample(c.id) || c.tile) && <span className="ck-plays">▶ Try it</span>}</span>
+        <span className="ck-meta"><span className="ck-where" data-where={c.where}>{WHERE[c.where]}</span>{(ex || c.tile) && !open && <span className="ck-plays">Play the fix</span>}</span>
       </button>
       {open && (
         <div className="ck-body">
+          {ex ? <Specimen id={c.id} /> : c.tile && <Tile title={c.tile} css={css} />}
           <div className="ck-text">
-            <p><b>What it catches.</b> {c.why || 'See the rule for what it looks for.'}</p>
+            {!ex && <p><b>What it catches.</b> {c.why || 'See the rule for what it looks for.'}</p>}
             <p><b>How Plumber fixes it.</b> {c.fix}</p>
             <p className="ck-id"><code>{c.id}</code></p>
           </div>
-          {hasExample(c.id) ? <Example id={c.id} /> : c.tile && <Tile title={c.tile} css={css} />}
         </div>
       )}
     </li>
@@ -112,19 +114,24 @@ const CSS = `
   /* a concern's page: its toy and sentence, a filter, the checks as a grid of cards */
   .ck-lead { display: flex; align-items: center; gap: 14px; margin: 6px 0 18px; } .ck-lead p { margin: 0; color: var(--pl-text-secondary); max-width: 620px; }
   .ck .ck-grid { list-style: none; margin: 14px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); gap: 10px; grid-auto-flow: dense; }
-  .ck .ck-card { display: flex; flex-direction: column; margin: 0; border-radius: 14px; background: var(--pl-bg-inset); min-width: 0; }
+  .ck .ck-card { display: flex; flex-direction: column; margin: 0; border-radius: 18px; background: var(--pl-bg-inset); min-width: 0; transition: translate 240ms var(--pl-spring), box-shadow 240ms var(--pl-ease-out); }
+  @media (hover: hover) and (pointer: fine) { .ck .ck-card:not([data-open]):hover { translate: 0 -2px; box-shadow: 0 10px 24px -14px rgb(0 0 0 / .45); } }
+  .ck .ck-card[data-ex] .ck-face { padding: 8px 8px 14px; gap: 10px; align-content: start; }
+  .ck .ck-card[data-ex] .ck-face .ck-name, .ck .ck-card[data-ex] .ck-face .ck-meta { padding: 0 6px; }
+  .ck .ck-card[data-open] .ck-face { padding: 16px 18px 8px; }
+  .ck .ck-card[data-ex] .ck-text p { font-size: 13.5px; } /* with a specimen, the fix line and the rule are the small print under it */
   .ck-card[data-open] { grid-column: 1 / -1; }
   .ck-face { all: unset; box-sizing: border-box; width: 100%; flex: 1 0 auto; min-height: 92px; display: grid; align-content: space-between; gap: 12px; padding: 14px; border-radius: 14px; cursor: pointer; }
   @media (hover: hover) and (pointer: fine) { .ck-card:not([data-open]) .ck-face:hover { background: color-mix(in oklab, var(--pl-bg-inset) 75%, var(--pl-sky-soft)); } }
   .ck-face:focus-visible { outline: 2px solid var(--pl-sky); outline-offset: 2px; }
   .ck-name { font: 600 15px/1.35 var(--pl-sans); color: var(--pl-text-primary); }
   .ck-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-  .ck-plays { font: 600 11.5px/1 var(--pl-sans); color: var(--pl-pink); }
+  .ck-plays { font: 600 11.5px/1 var(--pl-sans); color: var(--pl-pink); } .ck-plays::before { content: '▶ '; font-size: 9px; }
   .ck-card[data-open] .ck-face { flex: none; min-height: 0; padding-bottom: 6px; }
   .ck-where { font: 600 11.5px/1 var(--pl-sans); padding: 5px 8px; border-radius: 99px; background: var(--pl-sky-soft); color: var(--pl-sky-ink); white-space: nowrap; }
   .ck-where[data-where="code"] { background: var(--pl-lilac-soft); color: var(--pl-lilac-ink); }
   /* the words first, then the fix playing at the row's full width (a tile is drawn for a stage this wide) */
-  .ck-body { display: grid; gap: 14px; padding: 0 14px 16px; }
+  .ck-body { display: grid; gap: 14px; padding: 4px 14px 18px; }
   .ck-text p { margin: 8px 0 0; font: 400 14.5px/1.55 var(--pl-sans); color: var(--pl-text-secondary); }
   .ck-text b { color: var(--pl-text-primary); font-weight: 650; }
   .ck-id code { font: 500 12px var(--pl-mono); color: var(--pl-text-secondary); }
