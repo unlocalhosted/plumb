@@ -3059,6 +3059,39 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **Still open:** the fit check misses a form that clips its own words (the confirm prompt on algorecall). The bar
   only judges; it doesn't yet fix a form that fails on colour alone. Copy and toggle atoms have no forms yet.
 
+### 42. From copying parts to learning how they are built (2026-11-20)
+
+- **The itch:** the owner, on the re-skinned atoms: "you are producing poor copies of these component from reference
+  libraries", "this is just for one atom", "can we involve some kind of ML / AI approach". Then: "learn about these
+  approaches like hey how the motion and slider is composed... what are the primitives behind these buttons, like at
+  concept level", and "prepare data well... transition across color, text color and spring physics... the kind of
+  interaction and emotion it evokes... where this make sense or not".
+- **The system behind it:** each form was a library's finished code with its surface repainted. It brought its own
+  habits along (beUI's slider fades its own words; Arc's hold draws its words twice), and every atom times every part
+  needed hand-written glue.
+- **What we chose:** learn the ideas, not the code.
+  - The parts we collected are taken apart into recipes (generator/recipes.mjs): what drives each one, what is derived
+    from that, how it commits and how you back out, its states, shape and motion. Each recipe also says how its colours
+    move, the feel it gives off and where it fits, built from 25 shared primitives.
+  - The springs are worked out from their own numbers: damping ratio, overshoot, settle time.
+  - Asked "is this data clean for ML?", the answer was no. Too few parts, mostly prose, one rater, motion read from
+    code rather than watched, and no outcomes to learn from. So the recipes became fixed fields with enums, numbers and
+    feel on five scales (generator/data/schema.mjs, recipes.json).
+  - A recorder (generator/data/record.mjs) now samples every element of each form on every frame in the browser.
+  - No model is trained yet. That waits for the owner's own keeps and drops as labels.
+- **The proof:** generator/shots/recipes.png and generator/data/motion-craftingattention-buy.json. The recordings
+  match the source where they should:
+  - beUI's hold fill runs 1.60s (code: 1.6s) and drains in 0.2s (code: 0.24s).
+  - Arc's confirm opens its width in 306ms (code: 0.3s) without overshoot.
+  - The slide's auto-reset starts 1.2s after completing (code: 1.2s) and travels home in 385ms with no overshoot,
+    as its damping ratio of 1.09 predicts.
+
+  Working the numbers out also corrected two readings. The magnetic button's spring is firm, not loose. The "rotated
+  chevron" on the slide was its icon reshaping into a tick.
+- **Still open:** overshoot isn't reliable on parts whose letters leave and return within one run (it reads 143% on
+  the stateful button). Only the six commit forms are recorded, on one product. The feel scores are one rater's.
+  Extraction from the wider registries hasn't started.
+
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
 - Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".
