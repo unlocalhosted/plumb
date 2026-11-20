@@ -135,7 +135,22 @@ const FIX_CSS_BASE = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
      hover: spilling, it made the row wider than it measured and pushed Skip off the window (U65) */
   .fx.fx-on .chip { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .fx.fx-on .take { max-width: 240px; } .fx.fx-on .take > :not(kbd) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
-  .fx.fx-on > .ic.sm { display: block; width: 22px; height: 22px; margin: 0 2px 0 4px; flex: none; } .fx.fx-on > .ic.sm svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  /* the property and its steps are one thing (owner, 2026-11-20: "A and option should be close to each other so they
+     feel like they are an option for A"): one well holds the toy and the steps, each step named under its bar; the
+     actions sit apart from it, and only taking the change is a raised button */
+  .fx.fx-on .pick { display: inline-flex; align-items: center; gap: 6px; flex: none; padding: 2px 8px 2px 6px; border-radius: 12px; background: var(--pl-bg-inset); }
+  .fx.fx-on .pick .ic.sm { display: block; width: 22px; height: 22px; margin: 0; flex: none; } .fx.fx-on .pick .ic.sm svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .fx.fx-on .pick .ep.st .opt, .fx.fx-on .pick .ep.st .notch { height: 36px; }
+  .fx.fx-on .pick .ep.st .lab { position: static; translate: none; opacity: 1; margin-top: 3px; padding: 0; background: none; font: 500 9.5px/1 var(--pl-mono); color: var(--pl-text-secondary); }
+  .fx.fx-on .pick .ep.st .opt[aria-checked="true"] .lab, .fx.fx-on .pick .ep.st .opt[data-picked] .lab { color: var(--pl-text-primary); font-weight: 650; }
+  .fx.fx-on .pick .ep.st .notch .lab { color: var(--pl-coral-ink); }
+  .fx.fx-on .pick .ep .page:disabled { display: none; } /* no more steps that way: no room kept for the arrow */
+  .fx.fx-on .pick .ep.st .opt[data-picked]::after { display: none; }
+  .fx.fx-on .pick + .acts, .fx.fx-on .pick ~ .acts { margin-left: 8px; gap: 2px; }
+  .fx.fx-on .acts .tb.quiet { --lift: 0px; height: 28px; padding-top: 0; background: none; box-shadow: none; }
+  .fx.fx-on .acts .tb.quiet .top { height: 28px; background: none; box-shadow: none; color: var(--pl-text-secondary); transform: none; font-weight: 600; }
+  .fx.fx-on .acts .tb.quiet kbd { box-shadow: none; }
+  @media (hover: hover) and (pointer: fine) { .fx.fx-on .acts .tb.quiet:hover .top { background: var(--pl-bg-inset); color: var(--pl-text-primary); } }
   .fx.fx-on .ctl { display: inline-flex; align-items: center; flex: none; }
   .fx.fx-on .ctl .ep { flex: none; }
   .fx.fx-on .chip { height: 26px; min-width: 34px; padding: 0 8px; border-radius: 8px; font: 500 12px/26px var(--pl-mono); color: var(--pl-ink-2); background: var(--pl-paper-2); }
@@ -1335,7 +1350,7 @@ export class FixPanel {
         const name = prop ? prop[0].toUpperCase() + prop.slice(1) : FIX.what(mark);
         const control = kindNow === 'radius' ? radiusControl(name, state) : kindNow === 'colour' && steps.every((x) => x.swatch) ? swatches(name, state)
           : steps.every((x) => Number.isFinite(x.n)) ? stepper(name, state) : null;
-        chips = control ? `<span class="ic sm" aria-hidden="true">${toyFor(mark, kindNow)}</span><span class="ctl">${control}</span>`
+        chips = control ? `<span class="pick"><span class="ic sm" aria-hidden="true">${toyFor(mark, kindNow)}</span><span class="ctl">${control}</span></span>`
           : `<span class="chips">${v.options.map((o, i) => `<button class="sp chip" data-i="${i}" aria-pressed="${v.at === i}" title="${esc(o.cls ?? o.label ?? '')}">${esc(unitOf(o.n) ?? o.label ?? '')}</button>`).join('')}</span>`;
       }
       const writable = !v?.ready || v.options.some((o) => o.ok);
