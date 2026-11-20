@@ -25,7 +25,8 @@
  *  motion    the card pops in from the element's side; the scale opens out of the fields and folds back faster;
  *            reduced motion: positions only, no spring, roll or swell
  * ───────────────────────────────────────────────────────── */
-import { request } from './api.js';
+import { request, post } from './api.js';
+import { route as routeStyles, loadProperties, fileOfBundled } from './style-systems.js';
 import { locate, componentOf, classSiteOf } from './locate.js';
 import { clearOf } from './geometry.js';
 import { esc } from './choices.js';
@@ -716,6 +717,9 @@ export class TextEditor {
     // a colour is said by its token's name (draw), not its value
     const text = key === 'style' ? W.styled(step.label, name) : W.changed(r.label, key === 'color' ? step.token : said(key, step.value ?? step.label, this.#target), name);
     try {
+      // a value a CSS rule of yours sets is written in that rule (style-systems.js, docs/briefs/css-parity.md layer 4)
+      const ruled = await this.#writeRule(key, step, text);
+      if (ruled) { this.#host.said?.(text, ruled.undo ?? []); return true; }
       // a value written in one branch (a ternary's case) is changed in that string: its position goes with the write
       const result = await this.#host.write({ file: this.#props.file, line: this.#props.line, column: this.#props.column, hash: this.#props.hash, ...(r.p?.at ? { at: r.p.at } : {}) }, key, step.token, text);
       // the write's invalidate reads the element again (changed); the panel says it, with Undo
@@ -727,6 +731,37 @@ export class TextEditor {
       this.#draw();
       return false;
     }
+  }
+
+  // A pick on a property that a rule in your stylesheet sets: the rule's value becomes the step's token (its variable),
+  // through the project's style systems (POST style), one undo. Null when any of its properties is a class's, or set
+  // by nothing of the element's own: those go the class way.
+  async #writeRule(key, step, said) {
+    const el = this.#target;
+    if (!el) return null;
+    const root = getComputedStyle(document.documentElement), has = (v) => !!root.getPropertyValue(v).trim();
+    const varOf = (css) => css?.match(/^var\((--[\w-]+)\)$/)?.[1] ?? null;
+    let wanted;
+    if (key === 'style') {
+      const t = varOf(step.css), part = (suffix, v) => (t && has(`${t}--${suffix}`) ? `var(${t}--${suffix})` : v);
+      wanted = [['font-size', t ? step.css : step.size], ['line-height', step.lineHeight == null ? null : part('line-height', step.lineHeight > 4 ? `${step.lineHeight}px` : String(step.lineHeight))],
+        ['font-weight', step.weight == null ? null : part('font-weight', String(step.weight))], ['letter-spacing', step.letterSpacing == null ? null : part('letter-spacing', `${step.letterSpacing}em`)]].filter(([, v]) => v);
+    } else if (['font-size', 'font-weight', 'line-height', 'letter-spacing', 'color', 'text-transform'].includes(key)) wanted = [[key, varOf(step.css) ? step.css : step.value]];
+    else return null;
+    await loadProperties(request);
+    const routed = routeStyles(wanted.map(([prop, value], id) => ({ id, prop, value, els: [el] })));
+    if (!routed.size || [...routed.keys()].some((s) => s.id !== 'rule')) return null;
+    const changes = [];
+    for (const g of [...routed.values()].flat()) {
+      const file = g.claim.file ?? await fileOfBundled(g.claim).catch(() => null);
+      if (!file) return null;
+      const token = varOf(g.value);
+      changes.push({ prop: g.prop, value: g.value, ...(token ? { token } : {}), evidence: { file, selector: g.claim.selector, ...(g.claim.media ? { media: g.claim.media } : {}) } });
+    }
+    const answer = await post('style', { changes, trace: { group: `card.${Date.now().toString(36)}`, meta: { step: said, laws: [] } } });
+    const failed = answer?.results?.find((r) => r.state !== 'ok');
+    if (failed) throw new Error(failed.why ?? "This change couldn't be written.");
+    return answer;
   }
 
   // ── the panel: the style and the type values as token pickers ──
