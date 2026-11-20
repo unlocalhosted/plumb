@@ -624,6 +624,16 @@ export class Blueprint {
     const swaps = new Map(); // file → one swaps call for all of its lines
     for (const st of steps) if (st.kind === 'swap') { if (!swaps.has(st.file)) swaps.set(st.file, []); swaps.get(st.file).push({ line: st.line, column: st.column, from: st.from, to: st.to, ...(st.at ? { at: st.at } : {}) }); }
     try {
+      // changes a rule of yours owns (style-systems.js): one style write for all of them, in the same step
+      const styled = steps.filter((st) => st.kind === 'style').flatMap((st) => st.changes);
+      if (styled.length) {
+        const r = await post('style', { changes: styled, trace });
+        const bad = r?.results?.find((x) => x.state !== 'ok');
+        if (r?.undo?.length) undo.push(...r.undo);
+        for (const f of Object.keys(r?.files ?? {})) files.add(f);
+        if (bad) throw Object.assign(new Error(bad.why ?? "A change couldn't be written."), { partial: null });
+      }
+      steps = steps.filter((st) => st.kind !== 'style');
       const done = new Set();
       for (const st of steps) {
         const h = hash.get(st.file) ?? st.hash;

@@ -12,6 +12,8 @@
  * in (a component's usage: that prop's string, edited). A change with no such place is listed as left alone, and why.
  * ───────────────────────────────────────────────────────── */
 import { classEditsOf } from './locate.js';
+import { request } from './api.js';
+import { ruleChanges } from './style-systems.js';
 import { activeVariants, prefixesInForce, bareOf } from './variants.js';
 import { esc } from './choices.js';
 import { FIX } from './words.js';
@@ -156,6 +158,12 @@ export class Tidy {
     // every line of code the change's copies come from, once (a copy without a stamp is its own line)
     const lines = (c) => { const done = new Set(); return (c.els ?? [c.el]).filter((el) => { const k = placeOf(el) ?? el; if (done.has(k)) return false; done.add(k); return true; }).map((el) => ({ ...c, el })); };
     for (const c of this.#changes.flatMap(lines)) {
+      // a value a rule of yours sets is written in that rule (style-systems.js), not as a class
+      const wants = c.prop === 'padding' ? (c.sides ? Object.entries(c.sides).map(([k, n]) => [`padding-${k}`, n]) : ['top', 'right', 'bottom', 'left'].map((k) => [`padding-${k}`, +c.to]))
+        : [[c.prop === 'radius' ? 'border-radius' : c.prop, +c.to]];
+      const ruled = [];
+      for (const [prop, n] of wants) { const r = await ruleChanges(c.el, [prop], prop === 'font-weight' ? String(n) : `${n}px`, request).catch(() => null); if (!r) { ruled.length = 0; break; } ruled.push(...r); }
+      if (ruled.length) { steps.push({ kind: 'style', changes: ruled }); continue; }
       let edits;
       try { edits = await classEditsOf(c.el, c.fromClass, c.toClass); } catch { left.push(W.noPlace(W.props[c.prop])); continue; }
       for (const { file, hash, edit } of edits) {

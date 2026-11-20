@@ -231,6 +231,38 @@ function tokenOf(change) {
   return names.find((n) => root.getPropertyValue(n).trim()) ?? null;
 }
 
+// Your own token for a value: a custom property on the root whose value is exactly it, named for its kind (space,
+// radius, text, weight…). Read from the page, so a project's own names count, not Tailwind's alone.
+const KINDS = { spacing: /space|spacing|gap|gutter|pad|inset|s-?\d/i, radius: /radius|round|corner|r-/i, type: /text|font|size|fs|t-/i, weight: /weight|fw/i, color: /color|ink|bg|fg|line|accent|on/i };
+const KIND_OF = (prop) => /radius/.test(prop) ? 'radius' : /font-size|line-height/.test(prop) ? 'type' : /font-weight/.test(prop) ? 'weight' : /color/.test(prop) ? 'color' : 'spacing';
+export function ownToken(prop, value) {
+  const root = document.documentElement, cs = getComputedStyle(root), kind = KINDS[KIND_OF(prop)];
+  let best = null;
+  for (const name of cs) {
+    if (!name.startsWith('--') || !kind.test(name) || cs.getPropertyValue(name).trim() !== String(value).trim()) continue;
+    if (!best || name.length < best.length) best = name;
+  }
+  return best;
+}
+/**
+ * One change made on the page (a property of an element and the value it should be), as style changes when a rule of
+ * yours owns every property it touches: [{ prop, value, token?, evidence }]. Null when a class owns any of them, or
+ * nothing does: the caller writes it the class way.
+ */
+export async function ruleChanges(el, props, value, request) {
+  await loadProperties(request);
+  const routed = route(props.map((prop, id) => ({ id, prop, value, els: [el] })));
+  if (!routed.size || [...routed.keys()].some((sys) => sys.id !== 'rule')) return null;
+  const out = [];
+  for (const g of [...routed.values()].flat()) {
+    const file = g.claim.file ?? await fileOfBundled(g.claim).catch(() => null);
+    if (!file) return null;
+    const token = ownToken(g.prop, value), hash = hashRead(el, g.prop);
+    out.push({ prop: g.prop, value, ...(token ? { token } : {}), evidence: { file, selector: g.claim.selector, ...(g.claim.media ? { media: g.claim.media } : {}), ...(hash ? { hash } : {}) } });
+  }
+  return out;
+}
+
 // The page's half of the rule system: evidence only (which rule wins, and its file). Where the value is written, and
 // how, is decided on the server by the project's style systems (src/styles, POST style), as one undo.
 export const cssRules = {
@@ -243,7 +275,7 @@ export const cssRules = {
       try {
         // a rule in a bundle: its file comes from the bundle's source map
         if (!claim.file && claim.bundle) { const file = await fileOfBundled(claim); if (!file) throw new Error(`${claim.selector} comes from a stylesheet Plumber can't trace to a file of yours.`); claim = { ...claim, file }; }
-        const token = tokenOf(g);
+        const token = tokenOf(g) ?? ownToken(g.prop, g.value);
         sent.push({ g, change: { prop: g.prop, value: g.value, ...(token ? { token } : {}), evidence: { file: claim.file, selector: claim.selector, carriers: CARRIERS[g.prop], ...(claim.media ? { media: claim.media } : {}), ...(claim.layer ? { layer: claim.layer } : {}), ...(hashRead(g.els[0], g.prop) ? { hash: hashRead(g.els[0], g.prop) } : {}) } } });
       } catch (error) { out.push({ id: g.id, state: 'failed', why: error?.message ?? String(error) }); }
     }
