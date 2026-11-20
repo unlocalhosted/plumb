@@ -567,7 +567,7 @@ class PlumbOverlay extends HTMLElement {
       // every note on an element, for the pinned card: its reading's marks (your tokens, the craft rules), by concern
       notesOf: async (el) => {
         const state = await this.read(el);
-        const seen = new Set(), order = CONCERNS.map((c) => c.id);
+        const seen = new Set(), order = [...CONCERNS.map((c) => c.id).filter((c) => c !== 'system'), 'system']; // what you can act on first; your-theme notes last
         return (state?.marks ?? []).map((m) => ({ ...noteOfMark(m), concern: concernOf(m) }))
           .filter((n) => n.name && !seen.has(n.rule + n.name) && seen.add(n.rule + n.name))
           .map((n) => ({ ...n, concernName: CONCERNS.find((c) => c.id === n.concern)?.short ?? '' }))

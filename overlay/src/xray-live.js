@@ -54,7 +54,17 @@ export const XRAY_LIVE_CSS = `
      tinted note box, the card inside the card, the developer words and the inspector dump were all wrong). A note is a
      row like any other: its concern's toy, its name in the toy face, one plain sentence; colour comes from the toy,
      never from a panel behind words. The box diagram and the measurement rows are the page's, so the card drops them. */
-  .xr-card .xr-box, .xr-card .xr-rows { display: none; }
+  /* the measurements (box, size, corner, gap, type, colour) are a fold under the notes: shut when the element has
+     notes, open when it has none, and kept the way you last left it (owner, 2026-11-20: "why did you remove all the
+     info?"; the page draws the spacing, not the size, type or colour) */
+  .xr-card:not([data-details]) :is(.xr-box, .xr-rows) { display: none; }
+  .xr-card .xr-box { order: 4; } .xr-card .xr-rows { order: 5; } .xr-card .xr-body > :not(.xr-head, .xr-box, .xr-rows) { order: 6; }
+  .xr-more { all: unset; order: 3; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; margin: 10px -2px 0; padding: 0 8px; height: 30px;
+    border-radius: 10px; cursor: pointer; font: 600 12px/1 var(--pl-sans); color: var(--pl-text-secondary); }
+  .xr-more i { width: 8px; height: 8px; border-right: 1.75px solid currentColor; border-bottom: 1.75px solid currentColor; rotate: 45deg; translate: 0 -2px; transition: rotate 220ms var(--pl-spring-pop, ease-out); }
+  .xr-more[aria-expanded="true"] i { rotate: 225deg; translate: 0 2px; }
+  @media (hover: hover) and (pointer: fine) { .xr-more:hover { background: var(--pl-bg-inset); color: var(--pl-text-primary); } }
+  .xr-more:focus-visible { box-shadow: 0 0 0 2px var(--pl-border-focus); }
   .xr-said { margin: 2px 0 12px; font: 400 13px/1.4 var(--pl-sans); color: var(--pl-text-primary); }
   .xr-said .nt { display: grid; grid-template-columns: 26px 1fr; gap: 0 10px; align-items: start; }
   .xr-said .nt > i { width: 26px; height: 26px; margin-top: 1px; } .xr-said .nt > i svg { display: block; width: 100%; height: 100%; overflow: visible; }
@@ -173,7 +183,7 @@ export const familyOf = (prop) => (prop === 'width' || prop === 'height' ? 'size
 
 export function mountXray(o) {
   const C = o.container, E = o.events ?? C, watch = o.watch ?? C;
-  C.insertAdjacentHTML('beforeend', '<div class="xr"></div><div class="xr-card" hidden><div class="xr-said" hidden></div><div class="xr-hand"></div><div class="xr-body"></div></div><div class="xr-live" hidden></div>');
+  C.insertAdjacentHTML('beforeend', '<div class="xr"></div><div class="xr-card" hidden><div class="xr-said" hidden></div><div class="xr-hand"></div><button type="button" class="xr-more" aria-expanded="false"><span>Measurements</span><i aria-hidden="true"></i></button><div class="xr-body"></div></div><div class="xr-live" hidden></div>');
   const layer = C.querySelector(':scope > .xr'), card = C.querySelector(':scope > .xr-card'), body = card.querySelector('.xr-body'), hand = card.querySelector('.xr-hand'), live = C.querySelector(':scope > .xr-live');
   const off = []; // every listener added, taken off by destroy()
   const on = (target, type, fn, opts) => { target.addEventListener(type, fn, opts); off.push(() => target.removeEventListener(type, fn, opts)); };
@@ -189,7 +199,11 @@ export function mountXray(o) {
   // One body under the pointer (owner, 2026-11-20: "the small card itself to expand and shrink into small card"): the
   // card grows from the pill by the pointer (a note's, else the part's) and shrinks back to it; the pill's words become
   // the card's first line, and the pills step aside while it is open (the host's data-grown)
-  const said = card.querySelector('.xr-said');
+  const said = card.querySelector('.xr-said'), more = card.querySelector('.xr-more');
+  // the fold's state: yours once you have opened or shut it, else open only where there are no notes
+  let details = null; try { const v = localStorage.getItem('plumb:xray-details'); details = v == null ? null : v === '1'; } catch {}
+  const foldNow = () => { const open = details ?? said.hidden; card.toggleAttribute('data-details', open); more.setAttribute('aria-expanded', String(open)); };
+  more.addEventListener('click', (e) => { e.stopPropagation(); details = !card.hasAttribute('data-details'); try { localStorage.setItem('plumb:xray-details', details ? '1' : '0'); } catch {} foldNow(); if (shown) draw(shown); });
   let from = null;
   const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
   function pillBox() {
@@ -399,6 +413,7 @@ export function mountXray(o) {
     // the note goes in before the card is measured: put in after, it made the card about 90px taller where it stood,
     // over the bar (U9), and the next placing moved it from under the hand (U12)
     if (el !== saidEl) syncSaid(el);
+    foldNow();
     // measured as it will show: a card still hidden measures 0, and the 420 guessed for it was ~140px short of a card
     // with a note, so it ran over the bar (U9)
     const wasHidden = card.hidden;
