@@ -272,7 +272,12 @@ export class Cleanup {
     this.#send('read'); this.#err = null; this.#host.render();
     const census = pageCensus(), stamps = new Set(census.map((c) => c.stamp));
     try {
-      const said = await post('system', { census, scope: 'project', route: location.pathname });
+      // no census of the whole site yet: this page's own text styles, said in a line, instead of a dead end (owner,
+      // 2026-11-20: "why its bugging out here"); the census still makes every page end up the same
+      let said, pageOnly = false;
+      try { said = await post('system', { census, scope: 'project', route: location.pathname }); }
+      catch (error) { if (!errorIs(error, 'no-census')) throw error; said = await post('system', { census, scope: 'page' }); pageOnly = true; }
+      this.#pageOnly = pageOnly;
       if (run !== this.#run) return; // closed (or moved on) while the page was read
       this.#p = said?.proposal ?? null;
       const roles = rolesInOrder(this.#p ?? { roles: [] }).map((r) => {
@@ -316,6 +321,7 @@ export class Cleanup {
     this.#send('finished'); this.#host.render();
   }
   #savedLine(saved) { return (saved?.pass ? W[PASSES[saved.pass]] : W).saved(saved.places, saved.files); }
+  #pageOnly = false; // the text pass read this page alone: there is no census of the site yet
   #moves() { return this.#sw ? this.#sw.page?.places ?? 0 : this.#page?.moves ?? 0; }
 
   html() {
@@ -366,7 +372,7 @@ export class Cleanup {
       acts = (more_ ? b(W2.next, 'next', { key: '→' }) : '') + (this.#saved ? b(W2.undo, 'undo', { quiet: true }) : '') + b(more_ ? W2.close : W2.done, 'close', { quiet: true, key: 'Esc' });
     } else if (s === 'ready') {
       say = sw ? S.head(p.before, p.after, p.places) : W2.head(this.#p?.cost?.sizesBefore ?? p.before, this.#p?.roles?.length ?? 0);
-      more = sw ? S.sub(p) : W2.why;
+      more = sw ? S.sub(p) : this.#pageOnly ? W.pageOnly : W2.why;
       acts = b(W2.preview, 'preview', { quiet: true, key: 'P' }) + b('Apply', 'apply', { key: '↵' }) + b('Skip', 'skip', { quiet: true, key: '→' });
     }
     // in preview the detail is what changes: the styles as chips, rolling to their values, and how to compare

@@ -956,6 +956,8 @@ export const CLEANUP = {
   doneSkipped: 'You skipped text on this page.',
   notYet: 'Spacing, colour and icons come to Plumber next.',
   noCensus: 'Plumber hasn’t read your whole site yet.',
+  // the text pass on this page alone, while the site hasn't been read
+  pageOnly: 'From this page’s text alone. Run plumber census once and every page gets the same styles.',
   noCensusWhy: 'Text styles are worked out from every page, so each page ends up the same. Run this once in your project, then try again.',
   copy: 'Copy',
   copied: 'Copied',
