@@ -30,9 +30,29 @@ const READ = (form) => {
   const S = stage.getBoundingClientRect(), R = root.getBoundingClientRect();
   const visible = (e) => { for (let n = e; n && n !== stage; n = n.parentElement) { const cs = getComputedStyle(n); if (cs.display === 'none' || cs.visibility === 'hidden' || +cs.opacity < 0.3) return false; } const r = e.getBoundingClientRect(); return r.width > 2 && r.height > 2; };
   const clipped = (e) => { const cs = getComputedStyle(e); return cs.position === 'absolute' && cs.overflow === 'hidden' && e.getBoundingClientRect().width <= 2; };
+  // what of an element is seen: its box, cut by every box above it that clips (overflow, or a clip-path inset)
+  const and = (a, b) => b ? { l: Math.max(a.l, b.l), r: Math.min(a.r, b.r), t: Math.max(a.t, b.t), b: Math.min(a.b, b.b) } : a;
+  const seen = (e) => { const r0 = e.getBoundingClientRect(); let box = { l: r0.left, r: r0.right, t: r0.top, b: r0.bottom };
+    for (let n = e; n && n !== stage; n = n.parentElement) { const cs = getComputedStyle(n), c = n.getBoundingClientRect();
+      if (n !== e && cs.overflow !== 'visible') box = and(box, { l: c.left, r: c.right, t: c.top, b: c.bottom });
+      const m = /^inset\(([^)]*)\)/.exec(cs.clipPath); if (m) { const v = m[1].replace(/round.*/, '').trim().split(/\s+/); const [T, R, B, L] = [v[0], v[1] ?? v[0], v[2] ?? v[0], v[3] ?? v[1] ?? v[0]];
+        const px = (x, size) => (x.endsWith('%') ? parseFloat(x) / 100 * size : parseFloat(x) || 0);
+        box = and(box, { t: c.top + px(T, c.height), r: c.right - px(R, c.width), b: c.bottom - px(B, c.height), l: c.left + px(L, c.width) }); } }
+    return box.r - box.l > 1 && box.b - box.t > 1 ? box : null; };
+  const opaque = (e) => { const m = getComputedStyle(e).backgroundColor.match(/[\d.]+/g); return m && (m.length < 4 || +m[3] > 0.5) && !/^rgba\(0, 0, 0, 0\)$/.test(getComputedStyle(e).backgroundColor); };
   const words = [...root.querySelectorAll('*')].concat(root).filter((e) => [...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim()) && visible(e) && !clipped(e))
-    // the words' own box (their text, not the element that holds them with an icon and padding)
-    .map((e) => { const rg = document.createRange(); const t = [...e.childNodes].find((n) => n.nodeType === 3 && n.textContent.trim()); rg.selectNodeContents(t); const r = rg.getBoundingClientRect(); return { t: e.textContent.trim(), ink: getComputedStyle(e).color, x: r.x - S.x, y: r.y - S.y, w: r.width, h: r.height }; })
+    // the words' own box (their text, not the element that holds them with an icon and padding), cut to what is seen
+    // of it: inside whatever clips it, and without the part a later fill covers (Arc draws its words twice, dark on
+    // the button and light inside the fill, cut at the fill's edge: each copy is measured where it shows)
+    .map((e) => { const rg = document.createRange(); const t = [...e.childNodes].find((n) => n.nodeType === 3 && n.textContent.trim()); rg.selectNodeContents(t); const r = rg.getBoundingClientRect();
+      let box = and({ l: r.left, r: r.right, t: r.top, b: r.bottom }, seen(e));
+      for (const c of root.querySelectorAll('*')) {
+        if (c.contains(e) || e.contains(c) || !(e.compareDocumentPosition(c) & Node.DOCUMENT_POSITION_FOLLOWING) || !opaque(c) || !visible(c)) continue;
+        const v = seen(c); if (!v || v.t > box.t + 1 || v.b < box.b - 1 || v.r <= box.l || v.l >= box.r) continue;
+        const left = { ...box, r: Math.min(box.r, v.l) }, right = { ...box, l: Math.max(box.l, v.r) };
+        box = left.r - left.l >= right.r - right.l ? left : right;
+      }
+      return { t: e.textContent.trim(), ink: getComputedStyle(e).color, x: box.l - S.x, y: box.t - S.y, w: box.r - box.l, h: box.b - box.t }; })
     .filter((w) => w.w > 2 && w.h > 2);
   // painted extent: a box plus its outer shadows, cut by any box between it and the form that clips
   const shadow = (cs) => { let b = { l: 0, r: 0, t: 0, b: 0 }; for (const m of (cs.boxShadow === 'none' ? '' : cs.boxShadow).matchAll(/(-?[\d.]+)px (-?[\d.]+)px ([\d.]+)px (-?[\d.]+)px(?! inset)/g)) { const [x, y, bl, sp] = m.slice(1).map(Number); b = { l: Math.max(b.l, -x + bl + sp), r: Math.max(b.r, x + bl + sp), t: Math.max(b.t, -y + bl + sp), b: Math.max(b.b, y + bl + sp) }; } return b; };
@@ -86,26 +106,27 @@ const page0 = await browser.newPage(); await page0.goto(URL_, { waitUntil: "netw
 const title = await page0.$eval('h1', (h) => h.textContent.replace(/, in every form.*/, ''));
 const forms = await page0.$$eval('[data-form]', (l) => l.map((e) => ({ form: e.dataset.form, gesture: e.dataset.gesture, name: e.querySelector('h3').textContent })));
 await page0.close();
-const results = [];
-for (const f of forms) {
+// drive one form through its states, with a patch of CSS on it (a remedy being tried), and keep its frames
+const drive = async (f, patch = [], tag = '') => {
   const page = await browser.newPage({ viewport: { width: 1280, height: 1100 }, deviceScaleFactor: 2 });
   await page.goto(URL_, { waitUntil: 'networkidle' }); await page.waitForTimeout(1800);
+  const sel = `[data-form="${f.form}"] [data-atom]`;
+  if (patch.length) await page.addStyleTag({ content: patch.map((m) => m.css(sel)).join('\n') });
   const stage = page.locator(`[data-form="${f.form}"] .atom-stage`); await stage.scrollIntoViewIfNeeded(); await page.waitForTimeout(300);
   const G = STATES[f.gesture], frames = [];
-  const frame = async (state) => { const read = await page.evaluate(READ, f.form); const buf = await stage.screenshot(); const path = `${here}shots/judge/${id}-${atomId}-${f.form.replace(/\W+/g, '-')}-${state}.png`; await writeFile(path, buf); const px = await helper.evaluate(PIXELS, { png: buf.toString('base64'), read }); frames.push({ state, read, px, path }); return read; };
+  const frame = async (state) => { const read = await page.evaluate(READ, f.form); const buf = await stage.screenshot(); const path = `${here}shots/judge/${id}-${atomId}-${f.form.replace(/\W+/g, '-')}${tag}-${state}.png`; await writeFile(path, buf); const px = await helper.evaluate(PIXELS, { png: buf.toString('base64'), read }); frames.push({ state, read, px, path }); return read; };
   const r0 = await frame('rest');
   await page.mouse.move(r0.button.x, r0.button.y); await page.waitForTimeout(350); await frame('pointed at');
   if (G.mid) { await G.mid(page, r0.button, f.form, r0.box); await frame('mid-gesture'); }
   await G.done(page, r0.button, f.form, r0.box); await frame('done');
   await page.mouse.up().catch(() => {});
-  results.push({ ...f, frames, progressKind: !!G.progress });
   await page.close();
-}
-await browser.close();
+  return { ...f, frames, progressKind: !!G.progress };
+};
 
-// the verdicts
-const house = results.find((r) => r.form === 'house'), houseArea = house.frames[0].px.fillArea;
-for (const r of [house, ...results.filter((x) => x !== house)]) {
+// the verdict on one run of a form, against the original
+let house = null;
+const judge = (r) => {
   r.fails = [];
   for (const fr of r.frames) {
     const said = fr.px.words.filter((w) => w.drawn > 0.04);
@@ -117,25 +138,78 @@ for (const r of [house, ...results.filter((x) => x !== house)]) {
     if (fr.read.leak > 1) r.fails.push({ check: 'inside', state: fr.state, why: `At ${fr.state}, ${fr.read.by ?? 'a part'} paints ${fr.read.leak}px past the form’s own shape.` });
     if (fr.state === 'mid-gesture' && r.progressKind && fr.px.progress < 3) r.fails.push({ check: 'progress', state: fr.state, why: `Half way through, the done part and the part to go differ at ${fr.px.progress}:1 (it needs 3:1), so the progress barely shows.` });
   }
-  const area = r.frames[0].px.fillArea / houseArea;
+  const area = r.frames[0].px.fillArea / house.frames[0].px.fillArea;
   if (area < 0.5) r.fails.push({ check: 'weight', state: 'rest', why: `At rest it carries ${Math.round(area * 100)}% of the original’s action colour, so it is no longer the heaviest thing on the card.` });
   // a failure the original has too, no worse than the original's (the same check, a ratio as low or lower) is the
   // original's: it is reported once, on the original, and doesn't drop a form that only inherits it
   const ratioOf = (x) => parseFloat(x.why.match(/([\d.]+):1/)?.[1] ?? 'NaN');
   if (r !== house) r.inherited = r.fails.filter((x) => house.fails.some((h) => h.check === x.check && ratioOf(x) >= ratioOf(h) - 0.01));
   if (r !== house) r.fails = r.fails.filter((x) => !r.inherited.includes(x));
-  // one line per check, the first frame it fails in
+  // every failing frame stays known (the sheet marks them); the list says each check once, at its first frame
+  r.frameFails = r.fails;
   const seen = new Set(); r.fails = r.fails.filter((x) => !seen.has(x.check) && seen.add(x.check));
-  r.verdict = r.form === 'house' ? (r.fails.length ? 'the original fails too' : 'the original') : r.fails.length ? 'dropped' : 'passes';
-  console.log(`${r.verdict.padEnd(10)} ${r.name}${r.fails.map((x) => `\n           · ${RANK[x.check]}: ${x.why}`).join('')}${r.inherited?.length ? `\n           (inherits the original’s: ${r.inherited.map((x) => x.why).join(' ')})` : ''}`);
+  return r;
+};
+
+// The remedies a designer reaches for, by the check that failed. Each is a patch on the one form, in the skin's own
+// colours, and says what it changes the way it would be said to a client. A remedy is kept only if the form then
+// fails fewer checks and fails nothing new.
+const at = (...states) => (s) => states.includes(s);
+const REMEDIES = {
+  says: [
+    { id: 'hover-deepens', when: at('pointed at'), says: 'Pointed at, it deepens a step instead of fading, so its words keep their contrast.',
+      css: (sel) => `${sel} :is(button,[role=button]):hover:not(:disabled) { background-color: color-mix(in oklab, var(--atom-fill) 80%, var(--atom-deep)) !important; }` },
+    { id: 'hover-holds', when: at('pointed at'), says: 'Pointed at, it keeps its colour and answers with its lift alone, so its words never fade.',
+      css: (sel) => `${sel} :is(button,[role=button]):hover { background-color: var(--atom-fill) !important; }` },
+    { id: 'busy-stays-solid', when: at('mid-gesture', 'done'), says: 'While it works it stays solid instead of washing out, so what it is doing reads.',
+      css: (sel) => `${sel} :is(button,[role=button]):disabled, ${sel} [aria-busy="true"], ${sel} [data-state="loading"] { opacity: 1 !important; }` },
+    { id: 'words-stay', when: at('mid-gesture'), says: 'Its words stay in view while you act, instead of fading out under your finger.',
+      css: (sel) => `${sel} [class*="place-items-center"] { opacity: 1 !important; }` },
+  ],
+  progress: [
+    { id: 'deeper-trail', says: 'The part already done is drawn a clear step deeper, so your progress shows at a glance.',
+      css: (sel) => `${sel} { --atom-deep: color-mix(in oklab, var(--atom-fill) 55%, black) !important; }` },
+    { id: 'deepest-trail', says: 'The part already done is drawn much deeper, so your progress shows at a glance.',
+      css: (sel) => `${sel} { --atom-deep: color-mix(in oklab, var(--atom-fill) 35%, black) !important; }` },
+  ],
+  weight: [
+    { id: 'full-width', says: 'It takes the original’s full width, so the action keeps its weight on the card.',
+      css: (sel) => `${sel} > *, ${sel} > * > * { width: 100% !important; min-width: 100% !important; justify-content: center !important; }` },
+  ],
+};
+
+const results = [];
+house = await drive(forms.find((f) => f.form === 'house')); judge(house);
+results.push(house);
+for (const f of forms.filter((x) => x.form !== 'house')) {
+  let r = judge(await drive(f));
+  r.first = r.fails; r.patch = [];
+  // try the remedies for each failing check, keeping what helps, until nothing more helps
+  for (let round = 0, better = true; r.fails.length && better && round < 4; round++) {
+    better = false;
+    for (const fail of r.fails) {
+      for (const m of (REMEDIES[fail.check] ?? []).filter((m) => (!m.when || m.when(fail.state)) && !r.patch.includes(m))) {
+        const t = judge(await drive(f, [...r.patch, m], `-fix${r.patch.length + 1}-${m.id}`));
+        const newChecks = t.fails.filter((x) => !r.fails.some((y) => y.check === x.check));
+        console.log(`  try ${m.id.padEnd(16)} on ${f.name}: ${r.frameFails.length} → ${t.frameFails.length} failing frames${newChecks.length ? `, new: ${newChecks.map((x) => x.check).join(' ')}` : ''}`);
+        if (t.frameFails.length < r.frameFails.length && !newChecks.length) { t.first = r.first; t.patch = [...r.patch, m]; r = t; better = true; break; }
+      }
+      if (better) break;
+    }
+  }
+  r.verdict = !r.fails.length ? (r.patch.length ? 'fixed' : 'passes') : 'dropped';
+  results.push(r);
 }
-await writeFile(`${here}generated/atoms-${id}-${atomId}.json`, JSON.stringify(results.map((r) => ({ form: r.form, name: r.name, verdict: r.verdict, fails: r.fails, frames: r.frames.map(({ state, px, read }) => ({ state, words: px.words, progress: px.progress, leak: read.leak })) })), null, 1));
+house.verdict = house.fails.length ? 'the original fails too' : 'the original';
+await browser.close();
+for (const r of results) console.log(`${r.verdict.padEnd(10)} ${r.name}${r.patch?.length ? `\n           fixed by: ${r.patch.map((m) => m.says).join(' ')}` : ''}${r.fails.map((x) => `\n           · ${RANK[x.check]}: ${x.why}`).join('')}`);
+await writeFile(`${here}generated/atoms-${id}-${atomId}.json`, JSON.stringify(results.map((r) => ({ form: r.form, name: r.name, verdict: r.verdict, fails: r.fails, firstFails: r.first ?? [], fixedBy: (r.patch ?? []).map((m) => ({ id: m.id, says: m.says })), frames: r.frames.map(({ state, px, read }) => ({ state, words: px.words, progress: px.progress, leak: read.leak })) })), null, 1));
 
 // the sheet: every frame of every form, the failing frames marked
 const img = async (p) => `data:image/png;base64,${(await readFile(p)).toString('base64')}`;
-const failed = (r, st) => r.fails.some((x) => x.state === st);
-const row = async (r) => `<section class="${r.verdict === 'dropped' ? 'drop' : r.form === 'house' && r.fails.length ? 'orig' : 'ok'}"><header><b>${r.name}</b> <i>${r.verdict}</i> <code>${r.form === 'house' ? 'shipped' : r.form}</code></header><div class="frames">${(await Promise.all(r.frames.map(async (fr) => `<figure class="${failed(r, fr.state) ? 'bad' : ''}"><img src="${await img(fr.path)}"><figcaption>${fr.state}</figcaption></figure>`))).join('')}</div>${r.fails.length ? `<ul>${r.fails.map((x) => `<li><b>${RANK[x.check]}.</b> ${x.why}</li>`).join('')}</ul>` : '<p>Passes all five in every state.</p>'}</section>`;
-const html = `<style>body{margin:0;padding:28px;background:#f4f2ee;font:14px/1.45 -apple-system,system-ui;color:#1d1b17}h1{font-size:20px;margin:0 0 4px}h1+p{margin:0 0 18px;color:#555;max-width:900px}section{background:#fff;border-radius:12px;padding:14px;margin-bottom:14px}header{margin-bottom:8px}header i{font-style:normal;margin-left:6px;color:#1a9460}.orig header i{color:#b7791f}.drop header i{color:#bf3a1e}code{font:11px ui-monospace,monospace;color:#999;margin-left:6px}.frames{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}figure{margin:0;background:#f6f4fb;border-radius:8px;padding:6px;border:2px solid transparent}figure.bad{border-color:#e0573a}img{width:100%}figcaption{font-size:12px;color:#888;text-align:center}ul{margin:10px 0 0;padding-left:18px;color:#333}p{margin:10px 0 0;color:#1a9460}</style><h1>${title}, judged in every state</h1><p>Each form is driven through its gesture and measured on its pixels: it still says what it does (4.5:1), its progress shows (3:1), nothing leaks out of its shape, it fits where the original sat, and at rest it keeps at least half the original’s weight. Red frames are where it fails.</p>${(await Promise.all(results.map(row))).join('')}`;
+const failed = (r, st) => (r.frameFails ?? r.fails).some((x) => x.state === st);
+const row = async (r) => `<section class="${r.verdict === 'dropped' ? 'drop' : r.form === 'house' && r.fails.length ? 'orig' : 'ok'}"><header><b>${r.name}</b> <i>${r.verdict}</i> <code>${r.form === 'house' ? 'shipped' : r.form}</code></header><div class="frames">${(await Promise.all(r.frames.map(async (fr) => `<figure class="${failed(r, fr.state) ? 'bad' : ''}"><img src="${await img(fr.path)}"><figcaption>${fr.state}</figcaption></figure>`))).join('')}</div>${r.patch?.length ? `<p class="fix"><b>Fixed.</b> It first failed: ${r.first.map((x) => RANK[x.check].toLowerCase()).join('; ')}. ${r.patch.map((m) => m.says).join(' ')}</p>` : ''}${r.fails.length ? `<ul>${r.fails.map((x) => `<li><b>${RANK[x.check]}.</b> ${x.why}</li>`).join('')}</ul>` : '<p>Passes all five in every state.</p>'}</section>`;
+const html = `<style>body{margin:0;padding:28px;background:#f4f2ee;font:14px/1.45 -apple-system,system-ui;color:#1d1b17}h1{font-size:20px;margin:0 0 4px}h1+p{margin:0 0 18px;color:#555;max-width:900px}section{background:#fff;border-radius:12px;padding:14px;margin-bottom:14px}header{margin-bottom:8px}header i{font-style:normal;margin-left:6px;color:#1a9460}.orig header i{color:#b7791f}.drop header i{color:#bf3a1e}.fix{color:#2d5f9a!important}code{font:11px ui-monospace,monospace;color:#999;margin-left:6px}.frames{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}figure{margin:0;background:#f6f4fb;border-radius:8px;padding:6px;border:2px solid transparent}figure.bad{border-color:#e0573a}img{width:100%}figcaption{font-size:12px;color:#888;text-align:center}ul{margin:10px 0 0;padding-left:18px;color:#333}p{margin:10px 0 0;color:#1a9460}</style><h1>${title}, judged in every state</h1><p>Each form is driven through its gesture and measured on its pixels: it still says what it does (4.5:1), its progress shows (3:1), nothing leaks out of its shape, it fits where the original sat, and at rest it keeps at least half the original’s weight. Red frames are where it fails. A form that failed is tried with the remedies a designer would reach for, and kept if they fix it without breaking anything else.</p>${(await Promise.all(results.map(row))).join('')}`;
 const b2 = await chromium.launch(); const sp = await b2.newPage({ viewport: { width: 1400, height: 900 } });
 await sp.setContent(html); await sp.waitForTimeout(300); await sp.screenshot({ path: `${here}shots/judge-${id}-${atomId}.png`, fullPage: true }); await b2.close();
 console.log(`sheet: generator/shots/judge-${id}-${atomId}.png`);

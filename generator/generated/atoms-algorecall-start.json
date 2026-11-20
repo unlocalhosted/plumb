@@ -4,13 +4,15 @@
   "name": "As shipped",
   "verdict": "the original",
   "fails": [],
+  "firstFails": [],
+  "fixedBy": [],
   "frames": [
    {
     "state": "rest",
     "words": [
      {
       "t": "Arrays & Hashing",
-      "drawn": 0.17142857142857143,
+      "drawn": 0.18250950570342206,
       "contrast": 4.7
      },
      {
@@ -27,7 +29,7 @@
     "words": [
      {
       "t": "Arrays & Hashing",
-      "drawn": 0.17142857142857143,
+      "drawn": 0.18250950570342206,
       "contrast": 4.7
      },
      {
@@ -44,7 +46,7 @@
     "words": [
      {
       "t": "Arrays & Hashing",
-      "drawn": 0.17142857142857143,
+      "drawn": 0.18250950570342206,
       "contrast": 4.7
      },
      {
@@ -69,6 +71,14 @@
     "why": "At mid-gesture it shows no words: nothing tells you what is happening."
    }
   ],
+  "firstFails": [
+   {
+    "check": "says",
+    "state": "mid-gesture",
+    "why": "At mid-gesture it shows no words: nothing tells you what is happening."
+   }
+  ],
+  "fixedBy": [],
   "frames": [
    {
     "state": "rest",
@@ -125,6 +135,14 @@
     "why": "At done it shows no words: nothing tells you what is happening."
    }
   ],
+  "firstFails": [
+   {
+    "check": "says",
+    "state": "done",
+    "why": "At done it shows no words: nothing tells you what is happening."
+   }
+  ],
+  "fixedBy": [],
   "frames": [
    {
     "state": "rest",
@@ -155,7 +173,7 @@
     "words": [
      {
       "t": "Keep holding",
-      "drawn": 0.4086496028243601,
+      "drawn": 0.39221094439541043,
       "contrast": 4.7
      }
     ],
@@ -184,7 +202,20 @@
    {
     "check": "says",
     "state": "pointed at",
+    "why": "At pointed at, “Hold to start review” is there but not drawn: something covers it."
+   }
+  ],
+  "firstFails": [
+   {
+    "check": "says",
+    "state": "pointed at",
     "why": "At pointed at, “Hold to start review” reads at 4.31:1 against what is under it (it needs 4.5:1)."
+   }
+  ],
+  "fixedBy": [
+   {
+    "id": "hover-holds",
+    "says": "Pointed at, it keeps its colour and answers with its lift alone, so its words never fade."
    }
   ],
   "frames": [
@@ -211,12 +242,12 @@
      {
       "t": "Hold to start review",
       "drawn": 0.16727272727272727,
-      "contrast": 4.31
+      "contrast": 4.7
      },
      {
       "t": "Hold to start review",
       "drawn": 0,
-      "contrast": 1.09
+      "contrast": 1
      }
     ],
     "progress": 1,
@@ -227,26 +258,21 @@
     "words": [
      {
       "t": "Hold to start review",
-      "drawn": 0.49630681818181815,
-      "contrast": 1.16
+      "drawn": 0.28604594330400784,
+      "contrast": 4.7
      },
      {
       "t": "Hold to start review",
-      "drawn": 0.4661221590909091,
+      "drawn": 0.16655359565807326,
       "contrast": 5.44
      }
     ],
-    "progress": 4.99,
+    "progress": 5.44,
     "leak": 0
    },
    {
     "state": "done",
     "words": [
-     {
-      "t": "Starting",
-      "drawn": 0.22916666666666666,
-      "contrast": 1.16
-     },
      {
       "t": "Starting",
       "drawn": 0.19610881542699724,
@@ -261,8 +287,9 @@
  {
   "form": "arc/confirm-morph",
   "name": "Press, then confirm",
-  "verdict": "dropped",
-  "fails": [
+  "verdict": "fixed",
+  "fails": [],
+  "firstFails": [
    {
     "check": "says",
     "state": "pointed at",
@@ -274,13 +301,23 @@
     "why": "At rest it carries 50% of the original’s action colour, so it is no longer the heaviest thing on the card."
    }
   ],
+  "fixedBy": [
+   {
+    "id": "hover-holds",
+    "says": "Pointed at, it keeps its colour and answers with its lift alone, so its words never fade."
+   },
+   {
+    "id": "full-width",
+    "says": "It takes the original’s full width, so the action keeps its weight on the card."
+   }
+  ],
   "frames": [
    {
     "state": "rest",
     "words": [
      {
       "t": "Start review",
-      "drawn": 0.17439470077661032,
+      "drawn": 0.19170854271356783,
       "contrast": 4.7
      }
     ],
@@ -292,8 +329,8 @@
     "words": [
      {
       "t": "Start review",
-      "drawn": 0.17439470077661032,
-      "contrast": 4.43
+      "drawn": 0.19170854271356783,
+      "contrast": 4.7
      }
     ],
     "progress": 1,
@@ -304,18 +341,13 @@
     "words": [
      {
       "t": "Start with Arrays & Hashing?",
-      "drawn": 0.17102991944764095,
+      "drawn": 0.18075980392156862,
       "contrast": 4.7
      },
      {
       "t": "Not yet",
-      "drawn": 0.13599105812220566,
+      "drawn": 0.17455290611028315,
       "contrast": 4.7
-     },
-     {
-      "t": "Yes",
-      "drawn": 0,
-      "contrast": 1
      }
     ],
     "progress": 1,
@@ -326,7 +358,7 @@
     "words": [
      {
       "t": "Here we go",
-      "drawn": 0.17527173913043478,
+      "drawn": 0.18790760869565218,
       "contrast": 4.7
      }
     ],
@@ -338,12 +370,19 @@
  {
   "form": "beui/button-stateful",
   "name": "Press, and it answers",
-  "verdict": "dropped",
-  "fails": [
+  "verdict": "fixed",
+  "fails": [],
+  "firstFails": [
    {
     "check": "says",
     "state": "mid-gesture",
     "why": "At mid-gesture it shows no words: nothing tells you what is happening."
+   }
+  ],
+  "fixedBy": [
+   {
+    "id": "busy-stays-solid",
+    "says": "While it works it stays solid instead of washing out, so what it is doing reads."
    }
   ],
   "frames": [
@@ -476,43 +515,43 @@
     "words": [
      {
       "t": "S",
-      "drawn": 0,
-      "contrast": 5.67
+      "drawn": 0.18181818181818182,
+      "contrast": 4.7
      },
      {
       "t": "t",
-      "drawn": 0,
-      "contrast": 5.67
+      "drawn": 0.16396103896103897,
+      "contrast": 4.7
      },
      {
       "t": "a",
-      "drawn": 0,
-      "contrast": 5.67
+      "drawn": 0.1715909090909091,
+      "contrast": 4.7
      },
      {
       "t": "r",
-      "drawn": 0,
-      "contrast": 5.67
+      "drawn": 0.12175324675324675,
+      "contrast": 4.7
      },
      {
       "t": "t",
-      "drawn": 0,
-      "contrast": 5.67
+      "drawn": 0.1590909090909091,
+      "contrast": 4.7
      },
      {
       "t": "i",
-      "drawn": 0,
-      "contrast": 5.67
+      "drawn": 0.16161616161616163,
+      "contrast": 4.7
      },
      {
       "t": "n",
-      "drawn": 0,
-      "contrast": 5.67
+      "drawn": 0.14285714285714285,
+      "contrast": 4.7
      },
      {
       "t": "g",
-      "drawn": 0,
-      "contrast": 5.67
+      "drawn": 0.22954545454545455,
+      "contrast": 4.7
      }
     ],
     "progress": 1,
@@ -572,6 +611,8 @@
   "name": "Press, and it leans in",
   "verdict": "passes",
   "fails": [],
+  "firstFails": [],
+  "fixedBy": [],
   "frames": [
    {
     "state": "rest",
@@ -602,7 +643,7 @@
     "words": [
      {
       "t": "Start review",
-      "drawn": 0.1486320491345617,
+      "drawn": 0.1494137353433836,
       "contrast": 4.88
      }
     ],
