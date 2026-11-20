@@ -648,10 +648,10 @@ export class FixPanel {
       const b = e.target.closest('button');
       if (!b) return;
       if (b.classList.contains('start')) this.hold(0);
-      else if (b.classList.contains('cleanup')) { this.#menu = null; this.#cleanup.start(); }
-      else if (b.classList.contains('cpick')) { this.#menu = this.#menu === 'concern' ? null : 'concern'; this.#html = ''; this.render(); }
+      else if (b.classList.contains('cleanup')) { this.#menu = null; this.#host.claim?.('task'); this.#cleanup.start(); }
+      else if (b.classList.contains('cpick')) { this.#menu = this.#menu === 'concern' ? null : 'concern'; if (this.#menu) this.#host.claim?.('menu'); this.#html = ''; this.render(); }
       else if (b.classList.contains('pick') && 'c' in b.dataset) { this.#concern = b.dataset.c || null; this.#menu = null; this.#host.spotlight(this.#concernLit()); this.#html = ''; this.render(); }
-      else if (b.classList.contains('more')) { this.#menu = this.#menu === 'more' ? null : 'more'; this.#html = ''; this.render(); }
+      else if (b.classList.contains('more')) { this.#menu = this.#menu === 'more' ? null : 'more'; if (this.#menu) this.#host.claim?.('menu'); this.#html = ''; this.render(); }
       else if (b.classList.contains('tool')) { this.#menu = null; this.#html = ''; this.render(); this.#host.tool?.(b.dataset.tool); if (b.dataset.tool === 'pick') this.notice(FIX.bar.picking); }
       else if (b.classList.contains('bar-close')) this.#host.tool?.('bp-toggle');
       else if (b.classList.contains('setup')) { this.#menu = null; this.#html = ''; this.render(); this.#host.openSetup?.(); }
@@ -708,6 +708,10 @@ export class FixPanel {
   // a file was written or undone: the element in the editor (or the card) is read again
   changed() { this.#editor.changed(); this.#card.changed(); }
   get holding() { return this.#holding; }
+  // for the one owner of the screen (widget.js #owner): Clean up running is a task; a menu or the pop card open is a pop-up
+  get cleaning() { return this.#cleanup.running; }
+  get menuOpen() { return !!this.#menu; }
+  closeMenu() { if (!this.#menu) return; this.#menu = null; this.#html = ''; this.render(); }
   // a card hands the screen to the fixes: the element's own cause first, else the first one inside it
   #handOver(card) { const el = card.target; card.close(); if (!el || !this.holdEl(el, 'none')) this.hold(0); }
 
@@ -1153,7 +1157,7 @@ export class FixPanel {
       if (k === '.' && this.#live().length) { this.#handOver(this.#card); return true; }
     }
     if (!this.#holding) {
-      if ((k === 'c' || k === 'C') && !this.#editor.open && !this.#card.open) { this.#cleanup.start(); return true; }
+      if ((k === 'c' || k === 'C') && !this.#editor.open && !this.#card.open) { this.#host.claim?.('task'); this.#cleanup.start(); return true; }
       if (k === 'Enter' && this.#live().length) { this.hold(0); return true; }
       return false;
     }

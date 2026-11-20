@@ -101,7 +101,8 @@ export class Blueprint {
     // the fix panel drives the selection without drawing it: a cause in hand is its first place selected with every
     // other place as its group; the panel reads the plan, picks, takes, and applies through Changes' guarded writes
     this.#fix = new FixPanel(root, {
-      hold: (g, lead) => { this.#holding = true; this.#host.xrayAside?.(); // the fix is the one job: the X-ray's card goes now, not on the next move
+      claim: (kind) => this.#host.claim?.(kind),
+      hold: (g, lead) => { this.#holding = true; this.#host.claim?.('task'); this.#host.xrayAside?.(); // the fix is the one job: the X-ray's card goes now, not on the next move
         const on = g.members.filter((m) => m.el), first = on.find((m) => m.el === lead) ?? on[0], rest = on.filter((m) => m !== first); this.#marks.prove(first?.el ?? null, first?.mark ?? null); if (!first) return; this.#selection.select(first.el, this.#itemOf(first.el), { key: first.mark.key, rule: first.mark.rule, mark: first.mark, group: rest.filter((m) => m.el !== first.el).map((m) => ({ el: m.el, item: this.#itemOf(m.el), key: m.mark.key })) }); },
       release: () => { this.#holding = false; this.#marks.prove(null, null); this.#selection.clear(); },
       // the bar's tools and setup notice are the widget's (docs/design/one-bar.md)
@@ -678,6 +679,9 @@ export class Blueprint {
   get cardOpen() { return !!this.#fix.editing; }
   // a fix in hand (Fix pressed, a cause in the bar): the one job now; the X-ray steps aside until it is put down
   get fixing() { return !!this.#fix.holding; }
+  get cleaning() { return !!this.#fix.cleaning; }
+  get menuOpen() { return !!this.#fix.menuOpen; }
+  closeMenu() { this.#fix.closeMenu(); }
   // the element being read (an Alt+click), or null for the whole page
   get scope() { return this.#scope; }
   // from one element to the whole page (Alt+B while one element is read)

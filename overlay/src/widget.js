@@ -364,11 +364,11 @@ class PlumbOverlay extends HTMLElement {
     this.#$('.bp-toggle').addEventListener('click', () => this.#toggleBlueprint());
     // What this setup costs the person, and its fixes (docs/briefs/readiness.md); shares the punch list's place above the dock.
     // Every gesture, and a word the first time each mode is used.
-    this.#help = new Help(this.#root, { button: this.#$('.dock .help'), avoid: () => [this.#blueprint?.panelRect?.(), ...(this.#history?.occluders() ?? [])].filter(Boolean), quiet: () => this.hasAttribute('data-card') || this.hasAttribute('data-blueprint') }); // no tip over Blueprint's bar: Alt+B holds Alt, and the bar shows its own keys
+    this.#help = new Help(this.#root, { button: this.#$('.dock .help'), avoid: () => [this.#blueprint?.panelRect?.(), ...(this.#history?.occluders() ?? [])].filter(Boolean), quiet: () => this.hasAttribute('data-card') || this.hasAttribute('data-blueprint'), opened: () => this.claim('help') }); // no tip over Blueprint's bar: Alt+B holds Alt, and the bar shows its own keys
     // Every write, undoable: a toast after each one, and the recent ones from the dock.
-    this.#history = new History(this.#root, { button: this.#$('.dock .history'), host: { announce: text => this.#announce(text), changed: () => this.#dock() } });
+    this.#history = new History(this.#root, { button: this.#$('.dock .history'), host: { opened: () => this.claim('history'), announce: text => this.#announce(text), changed: () => this.#dock() } });
     // Words on the page, edited like a CMS: double-click, type, Enter (docs/briefs/text-editing.md).
-    this.#text = new TextEditor(this.#root, { editing: (on, rect) => { if (on) this.#help.hint('words'); this.#blueprint?.editing(on, rect); }, wrote: (result, text) => this.#history.wrote(result, text), heard: () => this.#history.resumed, announce: text => this.#announce(text), changed: () => this.#dock(),
+    this.#text = new TextEditor(this.#root, { editing: (on, rect) => { if (on) { this.claim('task'); this.#help.hint('words'); } this.#blueprint?.editing(on, rect); }, wrote: (result, text) => this.#history.wrote(result, text), heard: () => this.#history.resumed, announce: text => this.#announce(text), changed: () => this.#dock(),
       inBlueprint: () => !!this.#blueprint?.active, blueprint: () => setTimeout(() => this.#blueprint?.enter({ instant: true }), 120) });
     this.#ready = new Readiness(this.#root, { dock: this.#$('.dock'), onOpen: () => this.changed?.() });
     requestAnimationFrame(() => requestAnimationFrame(() => this.#$('.dock').removeAttribute('data-enter')));
@@ -574,7 +574,8 @@ class PlumbOverlay extends HTMLElement {
           .sort((a, b) => order.indexOf(a.concern) - order.indexOf(b.concern));
       },
       // a card open in blueprint (an Alt+click, an element read alone, words being edited) is what's in hand: the X-ray steps aside
-      paused: () => !!(self.#blueprint?.scope || self.#blueprint?.cardOpen || self.#blueprint?.fixing || self.#pinned || self.#text?.editing),
+      // one owner of the screen (#owner): the X-ray shows only when nothing else is open or running
+      paused: () => self.#owner() !== 'idle',
       // the card's room is the page above Plumber's own bar: it never sits on the fix panel or the dock (a card placed
       // over the panel took the click meant for its Undo)
       // The bar can change after the card is placed (the fix panel is rebuilt when a write lands, and comes back taller):
@@ -797,6 +798,27 @@ class PlumbOverlay extends HTMLElement {
   setupLeft() { return this.#ready?.left ?? 0; }
   // a fix put in hand: the X-ray's card and drawing go at once (it would otherwise wait for the next pointer move)
   xrayAside() { this.#xray?.hide(); }
+
+  // ── ONE OWNER OF THE SCREEN ───────────────────────────────
+  // (owner, 2026-11-20: "when the clean up is running why the xray keep hindering… the help pop up remaining open")
+  // What has the screen now, worked out from the pieces themselves, never kept apart from them:
+  //   task   Fix holding a place, Clean up running, words being edited, an element's card open or read alone
+  //   panel  Help, History, Blueprint's menus (the concern list, ···)
+  //   idle   nothing: the X-ray may show (Alt held; in Blueprint, hover too)
+  // A task starting closes every pop-up; a pop-up opening closes the others. The X-ray steps aside for both.
+  #owner() {
+    const bp = this.#blueprint;
+    if (bp?.fixing || bp?.cleaning || bp?.scope || bp?.cardOpen || this.#pinned || this.#text?.editing) return 'task';
+    if (this.#help?.open || this.#history?.open || bp?.menuOpen) return 'panel';
+    return 'idle';
+  }
+  #closePanels(keep = null) {
+    if (keep !== 'help' && this.#help?.open) this.#help.toggle(false);
+    if (keep !== 'history' && this.#history?.open) this.#history.toggle(false);
+    if (keep !== 'menu') this.#blueprint?.closeMenu?.();
+  }
+  // a task began: pop-ups close and the X-ray goes; a pop-up opened: the others close and the X-ray goes
+  claim(kind) { if (kind === 'task') this.#closePanels(); else this.#closePanels(kind); this.#xray?.hide(); }
   openSetup() { this.#ready?.toggle(true); }
   remember(text, undo, place = null, group = null, extra = {}) { try { sessionStorage.setItem(RESUME, JSON.stringify({ ...extra, at: Date.now(), blueprint: !!this.#blueprint?.active, fix: text, undo: undo ?? [], group, pending: undo === undefined, place, scope: scopeKey(this.#blueprint?.scope), card: !!this.#blueprint?.carding })); } catch {} }
   forgetResume() { try { sessionStorage.removeItem(RESUME); } catch {} }

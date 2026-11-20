@@ -79,8 +79,9 @@ export class Help {
   // button: the dock's ? button
   // avoid() → the rects the hint never covers (the fix bar): it sits above them, as they are now (a bar that appears or
   // grows after the hint is said moves it up); quiet() → true while something else owns the screen (a card): the tip goes
-  constructor(root, { button, avoid, quiet }) {
-    this.#button = button; this.#avoid = avoid; this.#quiet = quiet;
+  #opened = null;
+  constructor(root, { button, avoid, quiet, opened }) {
+    this.#button = button; this.#avoid = avoid; this.#quiet = quiet; this.#opened = opened;
     this.#sheet = Object.assign(document.createElement('section'), { className: 'hp pl-card', hidden: true });
     this.#sheet.setAttribute('role', 'dialog');
     this.#sheet.setAttribute('aria-label', 'Keyboard shortcuts');
@@ -99,6 +100,7 @@ export class Help {
   toggle(on = !this.open) {
     this.#button.setAttribute('aria-pressed', String(on));
     if (!on) { this.#sheet.removeAttribute('data-on'); this.#sheet.hidden = true; return; }
+    this.#opened?.(); // one pop-up at a time (widget.js #owner)
     this.#unhint();
     this.#sheet.hidden = false;
     requestAnimationFrame(() => this.#sheet.setAttribute('data-on', ''));

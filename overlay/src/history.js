@@ -224,6 +224,7 @@ export class History {
     if (on === this.open) return;
     this.#button.setAttribute('aria-pressed', String(on));
     if (!on) return this.#close();
+    this.#host.opened?.(); // one pop-up at a time (widget.js #owner)
     this.#strip.hidden = false;
     this.#seen.clear();
     this.#at = -1;
