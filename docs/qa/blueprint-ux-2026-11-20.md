@@ -696,7 +696,7 @@ How to read an issue, and what each one needs:
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u56-dark-value.png`, `docs/qa/shots/2026-11-20/u56-dark-card.jpg`;
   colours read from the card's `.thumb` and the value's computed colour.
-- **Status:** open
+- **Status:** fixed 45c2c3e1: on its highlight the value is lettered in sky's ink (night: white on #1d77c8, 4.6:1; `npm run contrast` 74/74). Checked on a value on the site at night; not on a hard-coded one
 
 ### U57 · At phone width the ··· button is gone, and with it setup, Clean up, History and Help
 - **Where:** Blueprint bar, window 375px wide (the browser pane's phone size, which also sets a touch device).
@@ -708,7 +708,7 @@ How to read an issue, and what each one needs:
   purpose for touch, the items still need a way in.
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u57-phone-no-more.jpg`
-- **Status:** open
+- **Status:** fixed 6020a422: at 375px the bar shows the count, Fix, ··· and Close
 
 ### U58 · At phone width the Fix bar squeezes its words into a column, and the choice row runs off screen
 - **Where:** Fix, window 375px wide, fix 1 of 51.
@@ -721,4 +721,69 @@ How to read an issue, and what each one needs:
   (U44) wraps well; this is the next width down.
 - **Severity:** 2
 - **Evidence:** `docs/qa/shots/2026-11-20/u58-phone-fix-bar.jpg`
+- **Status:** fixed 6020a422: at 375px fix 1 reads in full (words on top, arrows and Clean up below, 158px tall); the choice row wraps inside the window with Skip in reach
+
+### U59 · The project page's spacing step draws nothing, though the app has four spacing steps
+- **Where:** project page (`npx plumber`), step 1 "Spacing", on a copy of `fixtures/tailwind-min`.
+- **What I saw:** "Most of plumb-fixture-tailwind-min's gaps and paddings already use your steps. 0 places type one
+  by hand." Under it, a grey box holds only its caption, "Each size is drawn at its size; the mark under it grows
+  with the places that use it.", and no sizes. The app's theme sets four spacing steps (`--spacing-s1` to `s4`, 4px
+  to 16px). The question below, "How should your spacing work?", has a single answer, "Keep what you have".
+- **What I expected:** the four steps drawn at their sizes; with nothing typed by hand, "All of its gaps use your
+  steps" rather than "Most … 0 places".
+- **Why it hurts:** understanding. The step's whole point is the drawing, and it is empty; "most" and "0" contradict.
+- **Severity:** 2
+- **Evidence:** `docs/qa/shots/2026-11-20/u59-spacing-empty.jpg`; `fixtures/tailwind-min/src/styles.css` defines
+  `--spacing-s1: 4px` to `--spacing-s4: 16px`.
+- **Status:** open
+
+### U60 · The project page calls Tailwind's 289 default colours "Your palette"
+- **Where:** project page, step 2 "Colours", same app.
+- **What I saw:** "Your palette, 289 colours" with every Tailwind default swatch, and the answer "Keep your palette as
+  it is: your palette and its named uses already point the right way." The app's theme defines one colour,
+  `--color-brand: #2563eb`, and a named use pointing at it.
+- **What I expected:** "Your palette: 1 colour (brand)", with Tailwind's defaults named as Tailwind's and set apart.
+- **Why it hurts:** trust. A person told their palette is 289 colours, and that it's fine, learns nothing true about
+  their app. Same family as U4 (Tailwind's defaults counted as the person's).
+- **Severity:** 2
+- **Evidence:** `docs/qa/shots/2026-11-20/u60-palette-289.jpg`
+- **Status:** open
+
+### U61 · The palette's swatch rows run out of their box and across the "Your rules" column
+- **Where:** project page, step 2, 1024px wide.
+- **What I saw:** the first swatch row (and the blue row) don't wrap. They run past the grey box, over the "Your
+  rules" column on the right ("Plumber holds your code to these from now on", "Corners"), and off the window. The
+  page is 3,108px wide in a 1,024px window, so it scrolls sideways.
+- **What I expected:** swatches wrap inside the box.
+- **Why it hurts:** understanding; the side column's words are covered.
+- **Severity:** 2
+- **Evidence:** `docs/qa/shots/2026-11-20/u61-swatches-overflow.jpg`; `document.documentElement.scrollWidth` is 3108,
+  `clientWidth` 1024.
+- **Status:** open
+
+### U62 · The project page only opens with a hidden switch
+- **Where:** `npx plumber` with no command.
+- **What I saw:** in a terminal it prints three lines ("4 files in 0.2s · Nothing to fix in your styles. · Next: run
+  npx plumber init …") and opens nothing. The page opens only with `PLUMBER_ONBOARDING=1` set (`src/flags.ts`).
+  Neither the README nor `plumber --help` mentions the page or the switch, and the overlay has no link to it (U38).
+- **What I expected:** if the page is ready for people, `npx plumber` opens it; if not, the setup steps shouldn't
+  send people looking for it.
+- **Why it hurts:** DX. The page that explains a person's own system is out of reach. This may be on purpose while it
+  is unfinished: a call for the owner.
+- **Severity:** 3
+- **Evidence:** `node dist/cli.js --root ./fixtures/tailwind-min` prints the three lines; with
+  `PLUMBER_ONBOARDING=1 PLUMBER_TERMINAL=1` it serves the page on port 7331
+  (`docs/qa/shots/2026-11-20/u62-project-page-welcome.jpg`).
+- **Status:** open
+
+### U63 · `plumber --root <folder>` climbs to the repository when the folder has no package.json
+- **Where:** `node dist/cli.js --root fixtures/.tells-app` (no command).
+- **What I saw:** "Using the project at ../.. (plumb, package.json)." and then "✗ Multiple Tailwind entry files:"
+  followed by 45 absolute paths from all over the repository, and a fix line that is a shell snippet:
+  "→ ${EDITOR:-vi} plumber.config.ts". Exit code 2. `plumber craft` with the same `--root` used the folder as given.
+- **What I expected:** `--root` is the project I named. If it can't be one (no package.json), say that about this
+  folder ("fixtures/.tells-app has no package.json"), not an error about 45 files from somewhere else.
+- **Why it hurts:** DX. I named a folder and got told about the whole repository, with a wall of paths.
+- **Severity:** 3
+- **Evidence:** `docs/qa/shots/2026-11-20/u63-bare-root-ignored.txt`
 - **Status:** open
