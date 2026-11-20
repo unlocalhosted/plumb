@@ -40,6 +40,7 @@ import { sizing } from './boxmodel.js';
 import { picker } from './picker.js';
 import { burst } from './burst.js';
 import { button, KEEP_ICON } from './kit.js';
+import { stepper, bind as bindSteps } from './editor-primitives.js';
 import { toyOf } from './toys.js';
 import { CONCERNS } from './concerns.js';
 
@@ -140,6 +141,24 @@ export const XRAY_LIVE_CSS = `
     transition: max-height 220ms var(--pl-ease-out), margin-top 220ms var(--pl-ease-out), opacity 160ms var(--pl-ease-out), translate 220ms var(--pl-ease-out); }
   .xr-card .xr-hand:is(:hover, :focus-within) .say { max-height: 22px; margin-top: 6px; opacity: 1; translate: 0 0; }
   @media (prefers-reduced-motion: reduce) { .xr-card .xr-hand .say { transition: opacity 120ms linear; translate: none; } }
+  /* the part in hand: a head line, then the steps; no ring, no drum, the steps are the control */
+  .xr-hand .hs { display: grid; gap: 8px; }
+  .xr-hand .hh { display: flex; align-items: center; gap: 6px; min-width: 0; font: 600 12.5px/1 var(--pl-sans); color: var(--pl-text-primary); }
+  .xr-hand .hh .ht { width: 18px; height: 18px; flex: none; } .xr-hand .hh .ht svg { display: block; width: 100%; height: 100%; }
+  .xr-hand .hh > b { font-weight: 650; }
+  .xr-hand .hc { all: unset; cursor: pointer; padding: 4px 7px; border-radius: 7px; font: 600 11px/1 var(--pl-sans); color: var(--pl-lilac-ink); background: var(--pl-lilac-soft); white-space: nowrap; max-width: 96px; overflow: hidden; text-overflow: ellipsis; }
+  @media (hover: hover) and (pointer: fine) { .xr-hand .hc:hover { background: color-mix(in oklab, var(--pl-lilac-soft) 80%, var(--pl-lilac)); } }
+  .xr-hand .hc:focus-visible { box-shadow: 0 0 0 2px var(--pl-border-focus); }
+  .xr-hand .hv { margin-left: auto; font: 500 12px/1 var(--pl-mono); font-variant-numeric: tabular-nums; color: var(--pl-text-secondary); white-space: nowrap; }
+  .xr-hand .hv b { font: 650 12.5px/1 var(--pl-sans); color: var(--pl-sky-ink); margin-right: 3px; }
+  .xr-hand .hv.off { color: var(--pl-coral); } .xr-hand .hv.off i { font: 600 11px/1 var(--pl-sans); font-style: normal; }
+  .xr-hand .hs .ep.st { justify-content: space-between; padding: 6px 4px; border-radius: 12px; background: var(--pl-bg-inset); }
+  .xr-hand .hs .ep.st .opt, .xr-hand .hs .ep.st .notch { height: 40px; }
+  .xr-hand .hs .ep.st .lab { position: static; translate: none; opacity: 1; margin-top: 4px; padding: 0; background: none; font: 500 10px/1 var(--pl-mono); color: var(--pl-text-secondary); }
+  .xr-hand .hs .ep.st .opt[aria-checked="true"] .lab { color: var(--pl-sky-ink); font-weight: 700; }
+  .xr-hand .hs .ep.st .notch .lab { color: var(--pl-coral); }
+  .xr-hand .hs .ep.st .opt, .xr-hand .hs .ep.st .notch { flex: 1; }
+  .xr-hand .hs .ep .page:disabled { visibility: hidden; }
   /* the value holds still while it changes: the step's name in a column of its own, the number in even figures */
   .xr-hand .slot b { min-width: 5.4ch; } .xr-hand .slot span { font-variant-numeric: tabular-nums; }
   .xr-card .xr-said { order: 1; }
@@ -717,32 +736,50 @@ export function mountXray(o) {
       if (inHand?.el === el) { const p = inHand.prop; hand.innerHTML = ''; inHand = null; hold(el, p); }
       if (shown === el) { lastCard = ''; draw(el); }
     }, () => {});
-    const p = picker(C, {
-      name: prop.replace('-', ' '), toy: TOYS[prop.split('-')[0]] ?? TOYS[prop] ?? 'size', options: S, into: hand, keys: 'row', start: S.indexOf(nearest(S, now)),
-      mark: () => '', format: (x) => `${x.v}px`,
-      apply: (x) => { const qs = linkedOf(prop); if (qs.every((q) => Math.abs(read(el, q) - x.v) < 0.5)) return; for (const q of qs) set(el, q, x.v); if (inHand?.sized) { inHand.sizing = 'fixed'; showSeg(); } draw(el); },
-    });
+    // The part in hand, seen whole (owner, 2026-11-20: the drum, the dropdown and the ← → / ↕ gestures were hidden and
+    // jumpy): a head line (its toy, its name, where and which sides as chips you click, the value now), then your
+    // theme's steps as the fix bar draws them, a bar as wide as each step; a click takes one, ‹ › page, a scroll steps
+    const label = (prop === 'border-radius' ? 'Corner' : prop === 'font-size' ? 'Text size' : prop[0].toUpperCase() + prop.slice(1).replace('-', ' '));
+    const toyName = TOYS[prop.split('-')[0]] ?? TOYS[prop] ?? 'size';
+    let at = Math.max(0, S.indexOf(nearest(S, now))), start = null;
+    const rowEl = document.createElement('div'); rowEl.className = 'hs';
+    hand.append(rowEl);
+    const apply = (x) => { const qs = linkedOf(prop); if (qs.every((q) => Math.abs(read(el, q) - x.v) < 0.5)) return; for (const q of qs) set(el, q, x.v); if (inHand?.sized) { inHand.sizing = 'fixed'; showSeg(); } draw(el); };
+    const paint = () => {
+      const v = read(el, prop), x = S[at], off = !S.some((q) => Math.abs(q.v - v) < 0.5);
+      const steps = S.map((q) => ({ token: q.name, label: q.name, value: `${q.v}px`, n: q.v }));
+      const state = { steps, current: off ? null : x.name, picked: null, drift: off ? { n: v, label: `${Math.round(v * 10) / 10}px` } : null, ...(start != null ? { start } : {}) };
+      rowEl.innerHTML = `<div class="hh"><i class="ht" aria-hidden="true">${toyOf(toyName) || toyOf("size")}</i><b>${esc(label)}</b>`
+        + `${segs.includes('scope') ? '<button type="button" class="hc" data-s="scope"></button>' : ''}${segs.includes('mode') ? '<button type="button" class="hc" data-s="mode"></button>' : ''}`
+        + `<span class="hv${off ? ' off' : ''}">${off ? `${Math.round(v * 10) / 10}px <i>off your scale</i>` : `<b>${esc(x.name)}</b> ${x.v}px`}</span></div>${stepper(label, state)}`;
+      bindSteps(rowEl, { pick: (_, i) => { at = i; apply(S[i]); paint(); }, page: (_, st) => { start = Math.max(0, st); paint(); } });
+      if (inHand) showSeg(true);
+    };
+    rowEl.addEventListener('click', (e) => { const c = e.target.closest?.('.hc'); if (!c || !inHand) return; e.stopPropagation(); cycle(inHand, c.dataset.s); });
+    const p = { row: rowEl, at: () => at, set: (i) => { const k = Math.max(0, Math.min(S.length - 1, i)); if (k === at) return; at = k; start = null; apply(S[k]); paint(); } };
     const segs = [...(scopes.length > 1 ? ['scope'] : []), ...(sided || sized ? ['mode'] : []), 'value'];
-    const label = (prop === 'border-radius' ? 'corner' : prop === 'font-size' ? 'text size' : prop);
-    p.row.querySelector('.scrub').insertAdjacentHTML('afterend', (segs.includes('scope') ? '<span class="side" data-s="scope"></span>' : '') + `<span class="side" data-s="mode">${label}</span>`);
-    hand.insertAdjacentHTML('beforeend', `<div class="say">${segs.includes('scope') ? '<span data-s="scope">where</span>' : ''}${segs.includes('mode') ? `<span data-s="mode">${sided ? 'sides' : 'sizing'}</span>` : ''}<span data-s="value">value</span><span class="how">← → choose · ↕ change</span></div>`);
-    p.row.insertAdjacentHTML('afterbegin', '<i class="thumb" aria-hidden="true"></i>');
     inHand = { el, prop, p, S, sided, sized, sizing: sized ? sizingOf(el, prop) : null, scopes, segs, seg: 'value', tx: 0, ty: 0, axis: null, idle: 0 };
-    showSeg();
-    requestAnimationFrame(() => thumbAt(0, 0, true));
+    paint();
   }
-  const showSeg = () => {
+  // a chip clicked: where (this one, this page, everywhere) or which sides / what sizing, one step on, round again
+  const cycle = (h, kind) => {
+    if (kind === 'scope') { const j = (h.scopes.indexOf(scope) + 1) % h.scopes.length; if (h.scopes[j] !== scope) { rescope(h, h.scopes[j]); draw(h.el); } }
+    else if (h.sided) { link = LINKS[(LINKS.indexOf(link) + 1) % 3]; const v = read(h.el, h.prop); for (const q of linkedOf(h.prop)) if (Math.abs(read(h.el, q) - v) >= 0.5) set(h.el, q, v); draw(h.el); }
+    else if (h.sized) { resize(h, SIZINGS[(SIZINGS.indexOf(h.sizing) + 1) % 3]); draw(h.el); resync(); }
+    showSeg();
+  };
+  const showSeg = (quiet = false) => {
     const h = inHand; if (!h) return;
     h.p.row.dataset.seg = h.seg;
     for (const sp of hand.querySelectorAll('.say [data-s]')) sp.toggleAttribute('data-on', sp.dataset.s === h.seg);
     const sc = h.p.row.querySelector('[data-s="scope"]'); if (sc) sc.textContent = scopeSaid(h.el);
     const md = h.p.row.querySelector('[data-s="mode"]');
-    if (h.sided) md.textContent = sidesSaid(h.prop); else if (h.sized) md.textContent = h.sizing;
-    if (shown && !held) draw(shown);
+    if (md) { if (h.sided) md.textContent = sidesSaid(h.prop); else if (h.sized) md.textContent = h.sizing; }
+    if (!quiet && shown && !held) draw(shown);
   };
   const thumbAt = (pull = 0, dir = 0, still = false) => {
     const h = inHand; if (!h) return;
-    const row = h.p.row, t = row.querySelector('.thumb');
+    const row = h.p.row, t = row.querySelector('.thumb'); if (!t) return;
     // measured in the row's own layout, not on screen: the card grows from the pill with a scale, and a thumb measured
     // mid-grow sat over the label, not the value (U45, 2026-11-20)
     const box1 = (s) => {
@@ -790,7 +827,7 @@ export function mountXray(o) {
     h.idle = setTimeout(() => { h.axis = null; h.ax = h.ay = 0; h.ty = 0; h.switched = false; if (h.tx) { h.tx = 0; thumbAt(0); } }, 200);
     if (!h.axis) { h.ax = (h.ax ?? 0) + dx; h.ay = (h.ay ?? 0) + dy; if (Math.abs(h.ax) + Math.abs(h.ay) < 6) return; h.axis = Math.abs(h.ax) > Math.abs(h.ay) ? 'x' : 'y'; }
     if (h.axis === 'x') {
-      if (h.segs.length < 2 || h.switched) return;
+      if (!h.p.row.querySelector('.thumb') || h.segs.length < 2 || h.switched) return;
       h.tx += dx;
       const dir = Math.sign(h.tx), i = h.segs.indexOf(h.seg), next = h.segs[i + dir];
       if (next && Math.abs(h.tx) >= 44) {
@@ -816,6 +853,7 @@ export function mountXray(o) {
         const j = Math.max(0, Math.min(2, SIZINGS.indexOf(h.sizing) + step));
         if (SIZINGS[j] !== h.sizing) { resize(h, SIZINGS[j]); draw(h.el); showSeg(); resync(); bump('[data-s="mode"]'); }
       } else h.p.set(h.p.at() + step);
+      if (h.seg === 'value') h.p.row.querySelector('.hv')?.animate?.([{ transform: `translateY(${up ? 4 : -4}px)`, opacity: 0.5 }, { transform: 'none', opacity: 1 }], { duration: 200, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' });
     }
   }, { passive: false, capture: true });
   // a click on a number: the list of your sizes
