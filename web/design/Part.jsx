@@ -43,6 +43,7 @@ const LOAD = {
   messages: () => import('./parts/messages.js'),
   surfaces: () => import('./parts/surfaces.js'),
   price: () => import('./parts/price.js'),
+  'in-use': () => import('./parts/in-use.js'),
 };
 
 export function Part({ id, css }) {

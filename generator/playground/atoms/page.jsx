@@ -89,7 +89,7 @@ function Page({ Shipped, product, atom }) {
 
 export function mountAtoms({ Shipped, product }) {
   // use any form and plumber shows what went wrong in that gesture, over time, with its fix (gesture.js)
-  import('./gesture.js');
+  Promise.all([import('./gesture.js'), import('../../../overlay/src/craft.js')]).then(([g, engine]) => g.watchGestures(document, engine));
   const want = new URLSearchParams(location.search).get('atom');
   const atom = product.atoms.find((x) => x.id === want) ?? product.atoms[0];
   createRoot(document.getElementById('root')).render(<Page Shipped={Shipped} product={product} atom={atom} />);

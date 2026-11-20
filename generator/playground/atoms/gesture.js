@@ -7,9 +7,7 @@
 //              the fix. Each is read against its standard: words lost for 150 ms or more, a first answer over Nielsen's
 //              0.1 s, movement past Material's 500 ms after you let go. Nothing wrong is one mint line
 //   freeze     choosing a still freezes the real button in that pose; Esc or Live hands it back
-import { Craft, Theme } from '../../../overlay/src/craft.js';
-import '../../../overlay/src/tokens.css';
-import './gesture.css';
+import { GESTURE_CSS } from './gesture-css.js';
 
 const PROPS = ['transform', 'opacity', 'clip-path', 'width', 'height', 'background-color', 'color', 'visibility', 'filter', 'translate', 'scale'];
 const JUDGE_EVERY = 100; // ms between plumber's verdicts while recording
@@ -22,10 +20,13 @@ const NOISE = /^experience\/font|sibling-match|^html\/|landmark|heading/;
 const s1 = (ms) => `${(ms / 1000).toFixed(1)} s`;
 
 let rec = null, scrub = null;
-const craft = new Craft({ now: true, theme: new Theme({ decisions: () => [] }) });
+// plumber's craft engine, handed in by the page (the atoms page imports it; the plumber site loads it built, since its
+// bundler can't take the engine's own source)
+let craft = null;
 
 // ── recording ──────────────────────────────────────────────────────────────────────────────────────────────────
 function judge(stage) {
+  if (!craft) return [];
   const S = stage.getBoundingClientRect();
   const els = [stage, ...stage.querySelectorAll('*')].filter((e) => !e.closest('.scrub-paint') && (({ width, height }) => width > 0 && height > 0)(e.getBoundingClientRect()));
   const out = craft.enrich(els.map((el, i) => ({ id: i, el, marks: [], dims: {}, file: 'atom', line: 1, column: 1 })));
@@ -70,11 +71,12 @@ function still(stage) {
 // how many of the button's parts look different from the frame before
 const changed = (a, b) => a.parts.reduce((n, [, v, box], i) => n + (b.parts[i] && (box !== b.parts[i][2] || v.some((x, j) => x !== b.parts[i][1][j])) ? 1 : 0), 0);
 
-function start(stage) {
+function start(stage, e) {
   release();
   // the pose before the page answers (this listener runs before the button's own), and plumber's verdict on it, so the
   // first frame that differs is the answer and judging never delays it
-  rec = { stage, t0: performance.now(), frames: [], verdicts: [], events: [{ t: 0, name: 'pressed' }], up: null, lastJudge: 0 };
+  const S0 = stage.getBoundingClientRect();
+  rec = { stage, t0: performance.now(), frames: [], verdicts: [], events: [{ t: 0, name: 'pressed' }], up: null, lastJudge: 0, path: [{ t: 0, x: e.clientX - S0.left, y: e.clientY - S0.top }] };
   rec.frames.push({ t: 0, parts: sample(stage), says: saying(stage) }); rec.verdicts.push({ t: 0, findings: rest.get(stage) ?? [], still: still(stage) });
   const tick = () => {
     if (!rec || rec.stage !== stage) return;
@@ -86,7 +88,44 @@ function start(stage) {
   };
   requestAnimationFrame(tick);
 }
-function letGo() { if (rec && rec.up == null) { rec.up = performance.now() - rec.t0; rec.events.push({ t: rec.up, name: 'let go' }); } }
+function letGo(e) {
+  if (!rec || rec.up != null) return;
+  rec.up = performance.now() - rec.t0; rec.events.push({ t: rec.up, name: 'let go' });
+  const S = rec.stage.getBoundingClientRect(); rec.path.push({ t: rec.up, x: e.clientX - S.left, y: e.clientY - S.top, up: true });
+  if (rec.stage.dataset.fix === 'on') quicken(rec.stage);
+}
+// the hand's path while it is down, so the same gesture can be made again with a fix on
+addEventListener('pointermove', (e) => { if (!rec || rec.up != null) return; const S = rec.stage.getBoundingClientRect(); rec.path.push({ t: performance.now() - rec.t0, x: e.clientX - S.left, y: e.clientY - S.top }); }, { capture: true });
+
+// ── the fix, previewed on the real button ─────────────────────────────────────────────────────────────────────
+// Moving too long after you let go: every motion the button starts from the let-go on is played faster, so it ends
+// within FIX_SETTLE. It runs on the page's own animations (CSS transitions, keyframes, the Web Animations API), so it is
+// the same motion, only quicker; a motion a script drives frame by frame can't be reached this way.
+const FIX_SETTLE = 300;
+function quicken(stage) {
+  const until = performance.now() + 900;
+  const step = () => {
+    for (const a of stage.getAnimations({ subtree: true })) {
+      const t = a.effect?.getComputedTiming?.(); if (!t || !Number.isFinite(t.endTime) || a.playState !== 'running') continue;
+      const left = (t.endTime - (t.localTime ?? 0)) / (a.playbackRate || 1);
+      if (left > FIX_SETTLE && !a.quickened) { a.updatePlaybackRate((a.playbackRate || 1) * left / FIX_SETTLE); a.quickened = true; }
+    }
+    if (performance.now() < until) requestAnimationFrame(step);
+  };
+  setTimeout(step, 0); // after the button's own let-go has started its motion
+}
+// the same gesture again, made on the real button: the press, the path, the let-go, at the times they happened
+const last = new WeakMap();
+function replay(stage) {
+  const g = last.get(stage); if (!g) return;
+  const root = stage.getRootNode(), S = stage.getBoundingClientRect();
+  const at = (p) => ({ clientX: S.left + p.x, clientY: S.top + p.y });
+  const target = (p) => { const { clientX, clientY } = at(p); const el = root.elementFromPoint(clientX, clientY); return el && stage.contains(el) ? el : stage.firstElementChild; };
+  const send = (type, p, el) => el.dispatchEvent(new PointerEvent(type, { bubbles: true, composed: true, cancelable: true, pointerId: 1, pointerType: 'mouse', isPrimary: true, button: 0, buttons: type === 'pointerup' ? 0 : 1, ...at(p) }));
+  const first = g[0], el = target(first);
+  send('pointerdown', first, el);
+  for (const p of g.slice(1)) setTimeout(() => send(p.up ? 'pointerup' : 'pointermove', p, p.up ? target(p) : el), p.t);
+}
 
 // ── reading the recording ──────────────────────────────────────────────────────────────────────────────────────
 function read(r) {
@@ -121,18 +160,26 @@ function finish() {
   if (!r || r.frames.length < 4) return;
   const section = r.stage.closest('.atom') ?? r.stage.parentElement;
   section.querySelector('.scrub')?.remove();
+  last.set(r.stage, r.path);
   const L = read(r), { end, up } = L, ms = (x) => (x < 1000 ? `${Math.round(x)} ms` : s1(x));
   const faults = [];
   const most = Math.max(0, ...L.lost.map((x) => x.share)), mostPct = Math.round(most <= 1 ? most * 100 : most);
   if (L.lost.length) faults.push([`Words lost for ${s1(L.lost.reduce((a, x) => a + x.to - x.from, 0))}${mostPct ? `, ${mostPct}% at worst` : ''}`,
     L.lost.some((x) => x.layer) ? 'redraw them in the fill’s colour, clipped to it with <code>clip-path</code>' : 'keep them at full <code>opacity</code>; swap them at once']);
-  if (L.settle > SETTLE_LIMIT) faults.push([`Moves ${ms(L.settle)} after you let go`, 'settle in about 300 ms, and not at all under <code>prefers-reduced-motion</code>']);
+  if (L.settle > SETTLE_LIMIT) faults.push([`Moves ${ms(L.settle)} after you let go`, 'settle in about 300 ms, and not at all under <code>prefers-reduced-motion</code>', 'quicken']);
   if (L.first == null || L.first > ANSWER_LIMIT) faults.push([L.first == null ? 'No answer to the press' : `Answers the press after ${ms(L.first)}`, 'answer on <code>:active</code>: sink it, or start the fill']);
   const el = document.createElement('div');
   el.className = 'scrub pl-light';
-  if (!faults.length) {
+  // the fix, on the button: a switch between the button as it is and with the fix, which makes your gesture again
+  const fixOn = r.stage.dataset.fix === 'on', canFix = fixOn || faults.some((f) => f[2]);
+  const toggle = canFix ? `<div class="fix-switch" role="radiogroup" aria-label="The fix"><button type="button" role="radio" data-fix="off" aria-checked="${!fixOn}">As it is</button><button type="button" role="radio" data-fix="on" aria-checked="${fixOn}">With the fix</button></div>` : '';
+  const wire = () => el.querySelectorAll('.fix-switch button').forEach((btn) => btn.addEventListener('click', () => {
+    if ((r.stage.dataset.fix === 'on') === (btn.dataset.fix === 'on')) return;
+    r.stage.dataset.fix = btn.dataset.fix; replay(r.stage); }));
+  // with nothing wrong, one mint line; with the fix on, its filmstrip too, to set beside the one before
+  if (!faults.length && !fixOn) {
     el.innerHTML = '<p class="scrub-clean">Nothing wrong in this gesture.</p>';
-    r.stage.insertAdjacentElement('afterend', el); requestAnimationFrame(() => el.classList.add('open')); return;
+    r.stage.insertAdjacentElement('afterend', el); wire(); requestAnimationFrame(() => el.classList.add('open')); return;
   }
   // the stills: evenly through the gesture, with the middle of every fault among them
   const want = Array.from({ length: SHOWN }, (_, i) => (i * end) / (SHOWN - 1));
@@ -145,8 +192,8 @@ function finish() {
   const box = [...r.stage.children].filter((c) => !c.classList.contains('scrub-paint')).reduce((b, c) => { const q = c.getBoundingClientRect(); return [Math.min(b[0], q.left - S.left), Math.min(b[1], q.top - S.top), Math.max(b[2], q.right - S.left), Math.max(b[3], q.bottom - S.top)]; }, [Infinity, Infinity, -Infinity, -Infinity]);
   const pad = 6, cx = box[0] - pad, cy = box[1] - pad, cw = box[2] - box[0] + 2 * pad, ch = box[3] - box[1] + 2 * pad;
   el.innerHTML = `<div class="strip" role="listbox" aria-label="The gesture, frame by frame"></div>
-    <ul class="faults">${faults.map(([what, fix]) => `<li><b>${what}</b> → ${fix}</li>`).join('')}</ul>
-    <button type="button" class="scrub-live">Live <kbd>Esc</kbd></button>`;
+    ${faults.length ? `<ul class="faults">${faults.map(([what, fix]) => `<li><b>${what}</b> → ${fix}</li>`).join('')}</ul>` : '<p class="scrub-clean">Nothing wrong with the fix: it settles in time.</p>'}
+    <div class="scrub-foot">${toggle}<button type="button" class="scrub-live">Live <kbd>Esc</kbd></button></div>`;
   const strip = el.querySelector('.strip');
   strip.style.setProperty('--cols', COLS);
   r.stage.insertAdjacentElement('afterend', el);
@@ -168,10 +215,10 @@ function finish() {
   const paint = document.createElement('div'); paint.className = 'scrub-paint';
   r.stage.appendChild(paint);
   scrub = { r, L, el, paint, end, touched: new Set(), picks };
-  el.querySelector('.scrub-live').addEventListener('click', unfreeze);
+  el.querySelector('.scrub-live').addEventListener('click', unfreeze); wire();
   el.addEventListener('keydown', (e) => { const i = picks.findIndex((v) => v.t === scrub?.t); if (e.key === 'ArrowRight' && picks[i + 1]) { show(picks[i + 1].t); e.preventDefault(); } if (e.key === 'ArrowLeft' && i > 0) { show(picks[i - 1].t); e.preventDefault(); } });
   const firstBad = picks.find((v) => { const w = wrongAt(r, L, v.t); return w.words || w.moving || w.waiting; });
-  requestAnimationFrame(() => { el.classList.add('open'); show((firstBad ?? picks[0]).t); });
+  requestAnimationFrame(() => { el.classList.add('open'); if (firstBad) show(firstBad.t); }); // nothing wrong: the button stays live
 }
 
 // freeze the real button in its pose at time t, the words fault painted on it, its still marked as chosen
@@ -206,14 +253,27 @@ function release() {
 // plumber's verdict on the button as the pointer arrives, so the press itself is never held up by judging; and one
 // judgement at load, so the engine's first, slower run happens before anyone presses anything
 const rest = new WeakMap();
-addEventListener('pointerover', (e) => { const stage = e.target.closest?.('[data-atom]'); if (stage && !rec && !rest.has(stage)) rest.set(stage, judge(stage)); }, { capture: true });
-addEventListener('pointerout', (e) => { const stage = e.target.closest?.('[data-atom]'); if (stage && !stage.contains(e.relatedTarget)) rest.delete(stage); }, { capture: true });
-setTimeout(() => { const s = document.querySelector('[data-atom]'); if (s) judge(s); }, 1500);
+// the stage an event is on, inside a shadow root too (the plumber site draws its design pages in one)
+const stageOf = (e) => e.composedPath().find((n) => n instanceof Element && n.matches('[data-atom]')) ?? null;
+const inStrip = (e) => e.composedPath().some((n) => n instanceof Element && n.classList.contains('scrub'));
+addEventListener('pointerover', (e) => { const stage = stageOf(e); if (stage && !rec && !rest.has(stage)) rest.set(stage, judge(stage)); }, { capture: true });
+addEventListener('pointerout', (e) => { const stage = stageOf(e); if (stage && !stage.contains(e.relatedTarget)) rest.delete(stage); }, { capture: true });
+
+// watch the stages in a page or a shadow root: its look goes in once, and plumber's first, slower judgement is made
+// before anyone presses anything
+const watched = new WeakSet();
+export function watchGestures(root, { Craft, Theme }) {
+  craft ??= new Craft({ now: true, theme: new Theme({ decisions: () => [] }) });
+  if (watched.has(root)) return; watched.add(root);
+  const style = document.createElement('style'); style.textContent = GESTURE_CSS;
+  (root instanceof Document ? root.head : root).append(style);
+  setTimeout(() => { const s = root.querySelector('[data-atom]'); if (s) judge(s); }, 1500);
+}
 
 addEventListener('pointerdown', (e) => {
-  if (e.button !== 0 || e.target.closest('.scrub')) return;
-  const stage = e.target.closest('[data-atom]');
-  if (stage) start(stage);
+  if (e.button !== 0 || inStrip(e)) return;
+  const stage = stageOf(e);
+  if (stage) start(stage, e);
 }, { capture: true });
 addEventListener('pointerup', letGo, { capture: true });
 addEventListener('pointercancel', letGo, { capture: true });

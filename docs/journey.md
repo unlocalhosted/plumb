@@ -3409,6 +3409,39 @@ On the hold you watch the fill build and drain, and the three stills after 1.3 s
 **Still open.** The verdict lines come from a judge run that measured the slide wrongly ("slow to answer"). They are
 right again once the judge is rerun.
 
+### 53. Plumber's own button, in use, with its fix (2026-11-20)
+
+**The itch.** The owner: "you are showing the issue but now what about the fixes". Asked where it should live, they
+chose the plumber site, with "plumber's own button" as the one to fix.
+
+**How we found it.** A new design page, A button in use (`/design/in-use`), puts three of plumber's own buttons on
+stages: Action, Quiet and Destroys. Press one and the filmstrip opens under it. All three keep moving for about
+525 ms after you let go. That's the soft block's spring-back, past the 500 ms Material gives a control. Their
+reduced-motion handling is fine: the soft block stays still when you ask for less motion.
+
+**The system behind it.** The spring-back is the soft block's own physics (`overlay/src/soft.js`, `feel()`): its
+length grows with the button's height, and on a 35 px button it comes to about 505 ms, plus the lift easing out.
+It was made on purpose and liked ("springs back past where it rests and settles, as one body"). So the fix keeps the
+bounce and only shortens it.
+
+**What we chose.** The fix is shown the way plumber shows its others: on the real button, as a switch between "As it
+is" and "With the fix". Turning the fix on makes your own gesture again on the real button: the same press, path and
+let-go, at the same times. Every motion the button starts from the let-go on plays faster, to end within 300 ms. A
+new filmstrip shows the result. It works on the page's own animations (CSS transitions, keyframes, the Web Animations
+API). A motion a script drives frame by frame can't be reached this way, so for those it can only point at the code.
+Nothing is written to plumber's code until the owner decides.
+
+**Dead ends.** The site's bundler (Turbopack) can't take plumber's craft engine from source. It tries to bundle the
+engine's server address, `new URL('../', import.meta.url)`, however it is written: a variable or a joined string fail
+the same way. So the site loads a built copy of the engine at run time (`web/scripts/engine.mjs`, run by
+`npm run dev` and `npm run build`), with the standard spec beside it.
+
+**The proof.** On Action: as it is, "Moves 526 ms after you let go" with the 1.0 s still in coral. With the fix: nine
+clean stills and "Nothing wrong with the fix: it settles in time". The atoms page gets the same switch.
+
+**Still open.** Writing the fix to plumber's code: shortening `feel()`'s spring-back from about 505 ms to about
+300 ms on a button is a taste call on a bounce the owner liked. The words fault has no preview yet.
+
 ### 38. Alt and the X-ray card (2026-11-20)
 
 - **The itch:** holding Alt showed the old name tag outside Blueprint, and Alt-click opened the old element card with its heat and a dark spacing slider. Once the X-ray card took over, its pink note looked wrong. The owner on the note: "why is this black on muddy pink". On three new tints of it: "all of them look so ugly".
@@ -5079,6 +5112,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- On the plumber site, press one of plumber's own buttons (Design → A button in use): its filmstrip shows it keeps moving 525 ms after you let go, and "With the fix" makes your press again with the spring-back quicker and shows it clean ([entry](#53-plumbers-own-button-in-use-with-its-fix-2026-11-20)).
 - Use any form on the atoms page and a filmstrip of the button opens under it, the wrong moments in coral, each fault one line with its fix; each form's verdict is one line ([entry](#52-a-filmstrip-of-the-button-and-verdicts-in-one-line-2026-11-20)).
 - The atoms page shows what went wrong in any gesture you make, with its fixes, without a special link; the two other ways of showing it are gone ([entry](#51-one-way-to-show-a-gesture-on-the-page-itself-2026-11-20)).
 - Plumber no longer flags contrast on words kept only for screen readers and hidden with clip-path; press-then-confirm's "breaks" verdict came from one ([entry](#50-words-hidden-for-screen-readers-are-no-longer-judged-for-contrast-2026-11-20)).

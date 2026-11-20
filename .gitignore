@@ -53,3 +53,6 @@ docs/films/*-draft/
 /generator/sandbox/results.jsonl
 /generator/sandbox/shots/
 /generator/sandbox/declared-deps.txt
+
+# plumber's craft engine, built for the site by web/scripts/engine.mjs
+/web/public/engine/

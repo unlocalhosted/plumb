@@ -58,6 +58,8 @@ export const GROUPS = [
       lede: 'A heading has hard-coded type and you want it on the right style, fast and sure. Four ways that let the page and plumber do the work instead of a panel of controls. Each runs on the same piece of someone’s app.' },
     { id: 'colour-ideas', hue: 'pink', toy: 'fill', name: 'Colour picker: three ideas', says: 'Decided: nearest first, with every colour by role (B with C). Now on Token pickers. Kept as the record.', ready: true,
       lede: 'Colour isn’t like the other pickers: no size to order by, many tokens in roles, and a light and a dark value each. A hard-coded colour stays the same in dark mode; a token follows it. Three ways to pick, on the same piece of someone’s app.' },
+    { id: 'in-use', hue: 'pink', toy: 'button', name: 'A button in use', says: 'Press plumber’s own buttons and see, frame by frame, what goes wrong and how to fix it.', ready: true,
+      lede: 'A button is judged while it is used, not only at rest. Press one of plumber’s own buttons: when you let go, its filmstrip opens under it, with what went wrong and the fix.' },
   ], 'Ideas tried side by side before one was chosen, kept as the record.'],
 ];
 export const PARTS = GROUPS.flatMap(([, parts]) => parts);
