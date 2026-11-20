@@ -27,7 +27,7 @@ const EXAMPLES = {
   'provenance/color/framework': { say: ['slate-500, Tailwind’s', 'muted'], theme: true, show: (fixed, t, T) => ({
     scene: <div className="ex-card" style={{ background: T.surface, color: T.ink }}><b>Deployments</b><span data-fix style={{ color: fixed ? T.muted : '#64748b' }}>Updated 2 minutes ago</span></div>,
     code: fixed ? <Code>text-muted</Code> : <Code bad>text-slate-500</Code>,
-    note: fixed ? 'On your muted colour, it follows your theme into the dark.' : 'slate-500 is Tailwind’s, not yours: your theme went dark, it didn’t.' }) },
+    note: fixed ? 'On your muted colour, it sits with the rest of the card.' : 'slate-500 is Tailwind’s cool grey. Your greys are warm, so this one line looks borrowed.' }) },
   'provenance/color/tier': { say: ['blue-600', 'action'], theme: true, show: (fixed, t, T) => ({
     scene: <div className="ex-row"><Btn fix bg={fixed ? T.primary : '#2563eb'}>Continue</Btn></div>,
     code: fixed ? <Code>bg-action</Code> : <Code bad>bg-blue-600</Code>,

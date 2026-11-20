@@ -56,8 +56,10 @@ export const CHECK_SPECS = {
   'provenance/color/tier': colourCheck({ html: `<span class="btn2 go">Continue</span>${REBRAND}`, pick: '.go', from: '#2563eb', to: '#0f766e', labels: ['blue-600', 'action'] }),
   'provenance/color': colourCheck({ html: '<div class="dark"><b>Usage this month</b><span class="q">2,401 of 5,000 requests</span></div><span class="cap">Your app in its dark theme.</span>',
     pick: '.q', prop: 'color', from: '#4b5563', to: '#94a3b8', labels: ['#4b5563', 'muted'] }),
-  'provenance/color/framework': colourCheck({ html: '<div class="dark"><b>Deployments</b><span class="q">Updated 2 minutes ago</span></div><span class="cap">Your app in its dark theme.</span>',
-    pick: '.q', prop: 'color', from: '#475569', to: '#94a3b8', labels: ['slate-500, Tailwind’s', 'muted'] }),
+  // a warm app: its greys are your theme's taupe. One line is on Tailwind's slate-500, a cool blue-grey, and reads
+  // as if it came from another app; on your muted colour it joins its siblings
+  'provenance/color/framework': colourCheck({ html: '<div class="light" style="gap:6px;background:#fbf7f1;color:#2b2420;box-shadow:inset 0 0 0 1px rgb(120 90 60 / .14)"><b style="font-size:15px">Order #1042</b><span style="color:#8a7462">Placed on 12 November</span><span class="q">Ships in 2 to 3 days</span><span style="color:#8a7462">Paid with Visa</span></div>',
+    pick: '.q', prop: 'color', from: '#64748b', to: '#8a7462', labels: ['slate-500, Tailwind’s', 'muted'] }),
   'existence/dead-class': colourCheck({ html: '<span class="btn2 go" style="color:#111;box-shadow:inset 0 0 0 1px #d1d5db">Get started</span>', pick: '.go', from: 'transparent', to: '#4f46e5', labels: ['brand-500: no CSS', 'primary'],
     after: (s, p) => { const b = s.querySelector('.go'); b.style.color = p > 0.5 ? '#fff' : '#111'; b.style.boxShadow = `inset 0 0 0 1px rgb(209 213 219 / ${1 - p})`; } }),
   // one line, on a variable nobody defined, stays full black among its muted siblings
