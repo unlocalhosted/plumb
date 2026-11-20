@@ -2942,6 +2942,27 @@ field is empty). The table of five writes, before and after. The Next table: eig
   dropped, but the chip paired with the badge is kept, which the judge should explain. algorecall has no colour for
   "late", because its hues belong to patterns, so the badges stay neutral.
 
+### 39. Variants that look different: whole-card directions (2026-11-20)
+
+- **The itch:** the owner, on the four sheets: "i can't tell a difference for shit, all cards look the same".
+- **The system behind it:** a variant was the shipped card plus one library part in one slot. The judge dropped any
+  variant that added a note, which rewarded the smallest change. Most of the parts differed only in motion, so the
+  stills showed one card many times over.
+- **What we chose and why:** asked first, and the owner picked whole-card directions. Each direction rethinks the
+  card: what leads and how strongly, how it groups, its ground, density and width. It still uses only the product's
+  type, colours and parts, and library parts become finishing. The specimens already recorded all of this. The earlier
+  rearranging test (entry 37) used only the order, which is why it looked like the original.
+- **The fix:** a composer (generator/playground/compose.jsx) lays out a product's parts by job, following a reference's
+  grammar. The product says what each part is and which of its tokens play each role on each ground
+  (craftingattention/parts.jsx). One dead end along the way: crafting attention flips its ink scale by mode, so
+  "ink-900" is pale in light mode, and its dark card is painted in its own text ink instead.
+- **The proof:** generator/shots/directions-craftingattention.png (local). The shipped card sits beside five
+  directions, from Bencho, Linear, Supabase, Arc free and Arc lifetime. Each is different at a glance, and each comes
+  with one line on the idea behind it.
+- **Still open:** the directions aren't judged by plumber yet. The other three products have no parts files. Each
+  direction's idea is written by hand per reference, not worked out from its grammar. Arc lifetime's card comes out too
+  wide for the column the shipped card sits in.
+
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
 - Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".

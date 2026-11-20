@@ -1,0 +1,610 @@
+[
+ {
+  "id": "bencho-forever",
+  "grammar": {
+   "id": "bencho-forever",
+   "kind": "pricing card",
+   "status": "kept",
+   "jobs": [
+    {
+     "job": "identity"
+    },
+    {
+     "job": "status",
+     "optional": true
+    },
+    {
+     "job": "price"
+    },
+    {
+     "job": "proof",
+     "count": [
+      4,
+      7
+     ]
+    },
+    {
+     "job": "action"
+    },
+    {
+     "job": "help"
+    }
+   ],
+   "order": [
+    "identity",
+    "status",
+    "price",
+    "proof",
+    "action",
+    "help"
+   ],
+   "nesting": {
+    "stack": [
+     {
+      "row": [
+       "identity",
+       "status"
+      ],
+      "ends": true
+     },
+     "price",
+     {
+      "list": "proof"
+     },
+     {
+      "group": [
+       "action",
+       "help"
+      ]
+     }
+    ]
+   },
+   "hierarchy": {
+    "price": 1,
+    "identity": 2,
+    "help": 2,
+    "action": 3,
+    "status": 3,
+    "proof": 4
+   },
+   "lead": "clear",
+   "colour": {
+    "identity": "ink",
+    "status": "chip",
+    "price": "ink",
+    "proof": "ink",
+    "action": "the-action",
+    "help": "quieter"
+   },
+   "space": {
+    "inside": 0.7,
+    "between": 1.7,
+    "pinned": "action"
+   },
+   "grouping": "space",
+   "container": {
+    "ground": "inverse",
+    "edge": "none",
+    "shape": "large"
+   },
+   "density": "balanced",
+   "fit": {
+    "width": [
+     24,
+     28
+    ],
+    "words": {
+     "identity": 1,
+     "status": 2,
+     "price": 4,
+     "help": 5
+    },
+    "counts": {
+     "proof": [
+      4,
+      7
+     ]
+    },
+    "itemWords": 5
+   },
+   "move": {
+    "type": "single-out",
+    "args": {
+     "which": "recommended"
+    },
+    "scope": "siblings",
+    "words": "the recommended plan stands out from its row"
+   },
+   "kept": {
+    "by": "owner",
+    "why": "We put the badge on the same line as the plan name and showed the old price crossed out next to the new one, so you see the deal in one look. The two plans also line up part for part, which keeps the comparison easy.",
+    "confirmed": "2026-11-20",
+    "worded": "by Claude in a designer's voice, confirmed by the owner"
+   },
+   "generic": null,
+   "source": {
+    "url": "https://bencho.dev/pricing",
+    "captured": "2026-11-20",
+    "sidecar": "generator/sidecars/bencho-forever.json"
+   }
+  }
+ },
+ {
+  "id": "linear-basic",
+  "grammar": {
+   "id": "linear-basic",
+   "kind": "pricing card",
+   "status": "kept",
+   "jobs": [
+    {
+     "job": "identity"
+    },
+    {
+     "job": "price"
+    },
+    {
+     "job": "input",
+     "optional": true
+    },
+    {
+     "job": "proof",
+     "count": [
+      5,
+      7
+     ]
+    },
+    {
+     "job": "action"
+    }
+   ],
+   "order": [
+    "identity",
+    "price",
+    "input",
+    "proof",
+    "action"
+   ],
+   "nesting": {
+    "stack": [
+     {
+      "group": [
+       "identity",
+       "price"
+      ]
+     },
+     "input",
+     {
+      "list": "proof"
+     },
+     "action"
+    ]
+   },
+   "hierarchy": {
+    "identity": 1,
+    "price": 2,
+    "action": 2,
+    "proof": 3,
+    "input": 4
+   },
+   "lead": "clear",
+   "colour": {
+    "identity": "ink",
+    "price": "ink",
+    "input": "quieter",
+    "proof": "ink",
+    "action": "the-action-quiet"
+   },
+   "space": {
+    "inside": 0.6,
+    "between": 3,
+    "pinned": "action"
+   },
+   "grouping": "space",
+   "container": {
+    "ground": "none",
+    "edge": "none",
+    "shape": "none"
+   },
+   "density": "airy",
+   "fit": {
+    "width": [
+     22,
+     26
+    ],
+    "words": {
+     "identity": 1,
+     "price": 4
+    },
+    "counts": {
+     "proof": [
+      5,
+      7
+     ]
+    },
+    "itemWords": 5
+   },
+   "move": null,
+   "kept": {
+    "by": "owner",
+    "why": "We let the plan name lead and kept the price small, so people choose by what each plan is for rather than hunting for the cheapest number. There's no box around the plans; the spacing does that job. And because every list and every button sits at the same height, you can compare all four plans just by reading across.",
+    "confirmed": "2026-11-20",
+    "worded": "by Claude in a designer's voice, confirmed by the owner"
+   },
+   "generic": null,
+   "source": {
+    "url": "https://linear.app/pricing",
+    "captured": "2026-11-20",
+    "sidecar": "generator/sidecars/linear-basic.json"
+   }
+  }
+ },
+ {
+  "id": "supabase-pro",
+  "grammar": {
+   "id": "supabase-pro",
+   "kind": "pricing card",
+   "status": "kept",
+   "jobs": [
+    {
+     "job": "identity"
+    },
+    {
+     "job": "status",
+     "optional": true
+    },
+    {
+     "job": "meta"
+    },
+    {
+     "job": "action"
+    },
+    {
+     "job": "price"
+    },
+    {
+     "job": "help"
+    },
+    {
+     "job": "proof",
+     "count": [
+      7,
+      10
+     ]
+    }
+   ],
+   "order": [
+    "identity",
+    "status",
+    "meta",
+    "action",
+    "price",
+    "help",
+    "proof"
+   ],
+   "nesting": {
+    "stack": [
+     {
+      "row": [
+       "identity",
+       "status"
+      ]
+     },
+     "meta",
+     "action",
+     {
+      "group": [
+       "price",
+       "help"
+      ]
+     },
+     {
+      "list": "proof"
+     }
+    ]
+   },
+   "hierarchy": {
+    "price": 1,
+    "identity": 2,
+    "help": 3,
+    "proof": 3,
+    "meta": 4,
+    "status": 4,
+    "action": 5
+   },
+   "lead": "strong",
+   "colour": {
+    "identity": "ink",
+    "status": "chip",
+    "meta": "quieter",
+    "action": "the-action",
+    "price": "ink",
+    "help": "ink",
+    "proof": "ink"
+   },
+   "space": {
+    "inside": 1,
+    "between": 5
+   },
+   "grouping": "space",
+   "container": {
+    "ground": "surface",
+    "edge": "line",
+    "shape": "medium"
+   },
+   "density": "airy",
+   "fit": {
+    "width": [
+     20,
+     23
+    ],
+    "words": {
+     "identity": 1,
+     "meta": 10,
+     "price": 3,
+     "help": 10
+    },
+    "counts": {
+     "proof": [
+      7,
+      10
+     ]
+    },
+    "itemWords": 8
+   },
+   "move": {
+    "type": "single-out",
+    "args": {
+     "which": "recommended"
+    },
+    "scope": "siblings",
+    "words": "the recommended plan stands out from its row"
+   },
+   "kept": {
+    "by": "owner",
+    "why": "We put the button before the price. By the time someone reaches the cost, they already know what the plan is for, so the price confirms a choice instead of starting one.",
+    "confirmed": "2026-11-20",
+    "worded": "by Claude in a designer's voice, confirmed by the owner",
+    "only": [
+     "order"
+    ]
+   },
+   "generic": null,
+   "source": {
+    "url": "https://supabase.com/pricing",
+    "captured": "2026-11-20",
+    "sidecar": "generator/sidecars/supabase-pro.json"
+   }
+  }
+ },
+ {
+  "id": "uiarc-free",
+  "grammar": {
+   "id": "uiarc-free",
+   "kind": "pricing card",
+   "status": "kept",
+   "jobs": [
+    {
+     "job": "media"
+    },
+    {
+     "job": "identity"
+    },
+    {
+     "job": "price"
+    },
+    {
+     "job": "meta"
+    },
+    {
+     "job": "action"
+    }
+   ],
+   "order": [
+    "media",
+    "identity",
+    "price",
+    "meta",
+    "action"
+   ],
+   "nesting": {
+    "stack": [
+     {
+      "row": [
+       "media",
+       "identity",
+       "price"
+      ]
+     },
+     "meta",
+     "action"
+    ]
+   },
+   "hierarchy": {
+    "identity": 1,
+    "action": 2,
+    "meta": 3,
+    "price": 4
+   },
+   "lead": "flat",
+   "colour": {
+    "media": "ink",
+    "identity": "ink",
+    "price": "quieter",
+    "meta": "quieter",
+    "action": "link"
+   },
+   "space": {
+    "inside": 1.1,
+    "between": 1.3,
+    "across": 0.9
+   },
+   "grouping": "one row, then space",
+   "container": {
+    "ground": "surface",
+    "edge": "line",
+    "shape": "medium"
+   },
+   "density": "compact",
+   "fit": {
+    "width": [
+     38,
+     46
+    ],
+    "words": {
+     "identity": 1,
+     "price": 2,
+     "meta": 20,
+     "action": 3
+    },
+    "counts": {},
+    "itemWords": 0
+   },
+   "move": {
+    "type": "bind",
+    "args": {
+     "a": "identity",
+     "b": "price"
+    },
+    "scope": "organism",
+    "words": "the price is said on the same line as the name"
+   },
+   "kept": {
+    "by": "owner",
+    "why": "On a free plan the price isn't news, so we didn't make a headline of it. It's a quiet word beside the name, and the card spends its room on what you actually get.",
+    "confirmed": "2026-11-20",
+    "worded": "by Claude in a designer's voice, confirmed by the owner"
+   },
+   "generic": null,
+   "source": {
+    "url": "https://uiarc.dev/pricing",
+    "captured": "2026-11-20",
+    "sidecar": "generator/sidecars/uiarc-free.json"
+   }
+  }
+ },
+ {
+  "id": "uiarc-lifetime",
+  "grammar": {
+   "id": "uiarc-lifetime",
+   "kind": "pricing card",
+   "status": "kept",
+   "jobs": [
+    {
+     "job": "status",
+     "optional": true
+    },
+    {
+     "job": "identity"
+    },
+    {
+     "job": "price"
+    },
+    {
+     "job": "meta"
+    },
+    {
+     "job": "proof",
+     "count": [
+      3,
+      5
+     ]
+    },
+    {
+     "job": "action"
+    }
+   ],
+   "order": [
+    "status",
+    "identity",
+    "price",
+    "meta",
+    "proof",
+    "action"
+   ],
+   "nesting": {
+    "stack": [
+     "status",
+     "identity",
+     {
+      "group": [
+       "price",
+       "meta"
+      ]
+     },
+     "divider",
+     {
+      "list": "proof"
+     },
+     "action"
+    ]
+   },
+   "hierarchy": {
+    "price": 1,
+    "identity": 2,
+    "action": 3,
+    "meta": 4,
+    "proof": 4,
+    "status": 5
+   },
+   "lead": "strong",
+   "colour": {
+    "status": "chip",
+    "identity": "ink",
+    "price": "ink",
+    "meta": "quieter",
+    "proof": "quieter",
+    "action": "the-action"
+   },
+   "space": {
+    "inside": 0.6,
+    "between": 3.5
+   },
+   "grouping": "space, one divider",
+   "container": {
+    "ground": "tinted",
+    "edge": "none",
+    "shape": "medium"
+   },
+   "density": "airy",
+   "fit": {
+    "width": [
+     40,
+     52
+    ],
+    "words": {
+     "status": 1,
+     "identity": 6,
+     "price": 2,
+     "meta": 7
+    },
+    "counts": {
+     "proof": [
+      3,
+      5
+     ]
+    },
+    "itemWords": 8
+   },
+   "move": {
+    "type": "single-out",
+    "args": {
+     "which": "recommended"
+    },
+    "scope": "siblings",
+    "words": "the recommended plan stands out from its row"
+   },
+   "kept": {
+    "by": "owner",
+    "why": "We named this plan by what you get, \"Pay once, keep it forever\", because that's the reason anyone picks it. Then we made the price the biggest thing on the page. With a one-time price, the number is the good news, so there's no reason to tuck it away.",
+    "confirmed": "2026-11-20",
+    "worded": "by Claude in a designer's voice, confirmed by the owner"
+   },
+   "generic": null,
+   "source": {
+    "url": "https://uiarc.dev/pricing",
+    "captured": "2026-11-20",
+    "sidecar": "generator/sidecars/uiarc-lifetime.json"
+   }
+  }
+ }
+]
