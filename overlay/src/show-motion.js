@@ -88,29 +88,37 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const animate = (el, kf, o) => el.animate(kf, { fill: 'both', ...o }).finished;
 
 // one tile: build(stage) returns { from, to, unit, name, guides(), apply(value) }; the beats are the same for all
+// spec.now: turn round a move already under way, without drawing the guides in again.
+// spec.stale(), when given, says a newer run took the stage (a toggle flipped mid-play): this one stops at its next beat
 export async function playTile(stage, spec) {
+  const gone = () => spec.stale?.();
   stage.removeAttribute('data-landed');
   const g = spec.guides(); // [{ el, kind: 'h'|'v'|'beam'|'pill' }]
   const pill = g.find((x) => x.kind === 'pill').el, fmt = spec.fmt ?? ((v) => Math.round(v)), vals = spec.labels ? [spec.labels[0]] : roll(spec.from, spec.to, spec.step ?? 1, fmt);
   pill.innerHTML = spec.labels ? `${spec.chip?.(0) ?? ''}${spec.labels[0]}` : pillHtml(vals, spec.unit);
   const strip = pill.querySelector('.roll > span');
-  // 1. the guides draw in: lines sweep from the edge, the beam and the pill pop
-  await Promise.all(g.map((x, i) => x.kind === 'h' ? animate(x.el, [{ transform: 'scaleX(0)', opacity: 0 }, { transform: 'scaleX(1)', opacity: 1 }], { duration: T.guides, delay: i * 40, easing: 'cubic-bezier(.2,.8,.2,1)' })
+  // 1. the guides draw in: lines sweep from the edge, the beam and the pill pop. A run that turns round a move already
+  // under way (spec.now) keeps the guides where they are and moves at once
+  if (!spec.now) await Promise.all(g.map((x, i) => x.kind === 'h' ? animate(x.el, [{ transform: 'scaleX(0)', opacity: 0 }, { transform: 'scaleX(1)', opacity: 1 }], { duration: T.guides, delay: i * 40, easing: 'cubic-bezier(.2,.8,.2,1)' })
     : x.kind === 'v' ? animate(x.el, [{ transform: 'scaleY(0)', opacity: 0 }, { transform: 'scaleY(1)', opacity: 1 }], { duration: T.guides, delay: i * 40, easing: 'cubic-bezier(.2,.8,.2,1)' })
     : animate(x.el, [{ opacity: 0, scale: 0.85 }, { opacity: 1, scale: 1 }], { duration: T.guides * 0.8, delay: 120, easing: 'cubic-bezier(.34,1.56,.64,1)' })));
-  await wait(T.hold);
+  if (gone()) return;
+  if (!spec.now) await wait(T.hold);
+  if (gone()) return;
   // 2. the page moves on the spring; the guides follow it every frame; the number rolls with it
   spec.ease(true); spec.apply(spec.to);
   strip?.animate([{ transform: 'translateY(0)' }, { transform: `translateY(${-(vals.length - 1) * 22}px)` }], { duration: T.move, easing: SPRING, fill: 'both' });
   // a value that is a name (a colour, a shadow): the pill's words cross over halfway through the move
-  if (spec.labels) setTimeout(() => { pill.animate([{ opacity: 1, filter: 'blur(0)' }, { opacity: 0, filter: 'blur(2px)' }], { duration: 140 }).finished.then(() => { pill.innerHTML = `${spec.chip?.(1) ?? ''}${spec.labels[1]}`; pill.animate([{ opacity: 0, filter: 'blur(2px)' }, { opacity: 1, filter: 'blur(0)' }], { duration: 180 }); }); }, T.move * 0.35);
+  if (spec.labels) setTimeout(() => { if (gone()) return; pill.animate([{ opacity: 1, filter: 'blur(0)' }, { opacity: 0, filter: 'blur(2px)' }], { duration: 140 }).finished.then(() => { pill.innerHTML = `${spec.chip?.(1) ?? ''}${spec.labels[1]}`; pill.animate([{ opacity: 0, filter: 'blur(2px)' }, { opacity: 1, filter: 'blur(0)' }], { duration: 180 }); }); }, T.move * 0.35);
   const t0 = performance.now();
   await new Promise((done) => { const f = () => { spec.track(); if (performance.now() - t0 < T.move + 80) requestAnimationFrame(f); else done(); }; f(); });
+  if (gone()) return;
   // 3. it lands: the pill turns to the scale's colour and names the step, a small settle
   stage.setAttribute('data-landed', '');
   pill.innerHTML = spec.labels ? `${spec.chip?.(1) ?? ''}${spec.labels[1]}` : pillHtml([fmt(spec.to)], spec.unit, spec.name);
   pill.animate([{ scale: 1 }, { scale: 1.08 }, { scale: 1 }], { duration: 360, easing: 'cubic-bezier(.34,1.56,.64,1)' });
   await wait(T.land);
+  if (gone()) return;
   // 4. the guides go, the page keeps its change
   await Promise.all(g.map((x) => animate(x.el, [{ opacity: 1 }, { opacity: 0 }], { duration: T.out, easing: 'ease-out' })));
 }

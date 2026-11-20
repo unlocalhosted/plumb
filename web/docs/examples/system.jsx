@@ -86,48 +86,41 @@ function Presses({ fixed }) {
 }
 
 export const hasExample = (id) => !!EXAMPLES[id];
-// Every fix is shown as a transition (interaction principles 35b), with the one motion the tiles of "How a change
-// moves" use (overlay/src/check-motion.js on show-motion.js): the stage is the check's own scene, Play runs the beats,
-// and the slider under it holds the same motion wherever the hand is. The code line crosses over halfway.
+// Every fix is shown as a transition (interaction principles 35b), played by the tiles of "How a change moves" own
+// player (overlay/src/check-motion.js on show-motion.js). A Broken / Fixed toggle plays it either way; the code line
+// crosses over when the scene starts to move.
 const textOf = (node) => (node == null ? '' : typeof node === 'string' || typeof node === 'number' ? String(node) : Array.isArray(node) ? node.map(textOf).join('') : textOf(node.props?.children));
 
 export function Specimen({ id, css = '' }) {
-  const ex = EXAMPLES[id], host = useRef(null), ctl = useRef(null), rail = useRef(null), [p, setP] = useState(0), [ready, setReady] = useState(false);
+  const ex = EXAMPLES[id], host = useRef(null), ctl = useRef(null), [fixed, setFixed] = useState(false), [moved, setMoved] = useState(false);
   useEffect(() => {
-    let gone = false, raf = 0, first = 0;
+    let gone = false, first = 0;
+    setFixed(false); setMoved(false);
     import('../../../overlay/src/check-motion.js').then(({ mountCheck }) => {
       if (gone || !host.current) return;
-      ctl.current = mountCheck(host.current, id, { tokensCss: css }); setReady(true);
-      // the slider and the code follow the motion while it plays
-      const follow = () => { if (ctl.current) setP(ctl.current.p); raf = requestAnimationFrame(follow); }; follow();
-      first = setTimeout(() => ctl.current?.play(), 450);
+      ctl.current = mountCheck(host.current, id, { tokensCss: css, onMove: (f) => { if (!gone) setMoved(f); } });
+      // opened, it shows the fix once: the toggle flips to Fixed and the fix plays
+      first = setTimeout(() => { if (!gone) { setFixed(true); ctl.current?.set(true); } }, 500);
     });
-    return () => { gone = true; cancelAnimationFrame(raf); clearTimeout(first); };
+    return () => { gone = true; clearTimeout(first); };
   }, [id, css]);
-  const drag = (e) => {
-    if (!ctl.current || e.button !== 0) return;
-    const b = rail.current.getBoundingClientRect(), to = (m) => ctl.current.scrub(Math.max(0, Math.min(1, (m.clientX - b.left) / b.width)));
-    to(e); e.currentTarget.setPointerCapture(e.pointerId); e.currentTarget.onpointermove = to; e.currentTarget.onpointerup = () => { e.currentTarget.onpointermove = null; };
-  };
+  const flip = (to) => { if (to === fixed || !ctl.current) return; setFixed(to); ctl.current.set(to); };
   if (!ex) return null;
-  const before = ex.show(false, 0, THEME[0]), after = ex.show(true, 0, THEME[0]), fixed = p >= 0.5, k = Math.max(0, Math.min(1, p));
+  const before = ex.show(false, 0, THEME[0]), after = ex.show(true, 0, THEME[0]);
   return (
     <div className="sp">
       <style>{CSS}</style>
       <div className="sp-stage" ref={host} />
       <div className="sp-ctl">
-        <button type="button" className="sp-play" disabled={!ready} onClick={() => ctl.current?.play()}>▶ Play the fix</button>
-        <div className="sp-rail" ref={rail} onPointerDown={drag} role="slider" tabIndex={0} aria-label="Broken to fixed" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(k * 100)}
-          onKeyDown={(e) => { if (e.key === 'ArrowRight') ctl.current?.scrub(Math.min(1, k + 0.1)); if (e.key === 'ArrowLeft') ctl.current?.scrub(Math.max(0, k - 0.1)); }}>
-          <span className="sp-end" data-on={!fixed || undefined}>Broken</span>
-          <span className="sp-track"><i style={{ width: `${k * 100}%` }} /><b style={{ left: `${k * 100}%` }} /></span>
-          <span className="sp-end" data-on={fixed || undefined}>Fixed</span>
+        <div className="sp-seg" role="radiogroup" aria-label="Show the code broken or fixed" data-fixed={fixed || undefined}
+          onKeyDown={(e) => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); e.stopPropagation(); flip(e.key === 'ArrowRight'); } }}>
+          <i aria-hidden="true" />
+          <button type="button" role="radio" aria-checked={!fixed} tabIndex={fixed ? -1 : 0} onClick={() => flip(false)}>Broken</button>
+          <button type="button" role="radio" aria-checked={fixed} tabIndex={fixed ? 0 : -1} onClick={() => flip(true)}>Fixed</button>
         </div>
+        <span className="sp-diff" data-fixed={moved || undefined}><s>{textOf(before.code)}</s><i aria-hidden="true">→</i><b>{textOf(after.code)}</b></span>
       </div>
-      <div className="sp-code" data-fixed={fixed || undefined}>
-        <span className="sp-diff"><s>{textOf(before.code)}</s><i aria-hidden="true">→</i><b>{textOf(after.code)}</b></span>
-        <p>{fixed ? after.note : before.note}</p>
-      </div>
+      <p className="sp-note">{moved ? after.note : before.note}</p>
     </div>
   );
 }
@@ -144,22 +137,23 @@ const CSS = `
   /* the specimen: the check's own scene played by the tiles' motion, a slider that holds it, the code line, the note */
   .sp { display: grid; gap: 12px; }
   .sp-stage { border-radius: 16px; overflow: hidden; min-height: 250px; }
-  .sp-ctl { display: flex; align-items: center; gap: 12px; }
-  .sp-play { all: unset; cursor: pointer; flex: none; padding: 8px 12px; border-radius: 10px; background: var(--pl-pink); color: #fff; font: 600 12.5px/1 var(--pl-sans); box-shadow: 0 6px 14px -8px var(--pl-pink); }
-  .sp-play:disabled { opacity: .5; cursor: default; } .sp-play:focus-visible, .sp-rail:focus-visible { outline: 2px solid var(--pl-sky); outline-offset: 3px; }
-  .sp-rail { flex: 1; display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; cursor: ew-resize; touch-action: pan-y; user-select: none; border-radius: 10px; padding: 6px 4px; }
-  .sp-end { font: 600 12px/1 var(--pl-sans); color: var(--pl-text-secondary); transition: color 200ms; }
-  .sp-end:first-child[data-on] { color: var(--pl-coral); } .sp-end:last-child[data-on] { color: var(--pl-mint); }
-  .sp-track { position: relative; height: 6px; border-radius: 3px; background: color-mix(in oklab, var(--pl-coral) 30%, var(--pl-bg-surface)); }
-  .sp-track i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 3px; background: var(--pl-mint); }
-  .sp-track b { position: absolute; top: 50%; width: 18px; height: 18px; translate: -50% -50%; border-radius: 50%; background: var(--pl-bg-surface); box-shadow: 0 1px 4px rgb(0 0 0 / .35), inset 0 0 0 2px var(--pl-text-primary); }
-  /* the code: the line plumber edits, crossing over as the fix lands */
-  .sp-code { display: grid; gap: 8px; }
-  .sp-diff { justify-self: start; display: inline-flex; align-items: center; gap: 10px; max-width: 100%; padding: 9px 12px; border-radius: 10px; background: #111827; font: 500 12.5px/1.2 var(--pl-mono, ui-monospace); overflow: hidden; }
+  .sp-ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+  /* the toggle: two sides, one thumb that travels between them on the spring */
+  .sp-seg { position: relative; flex: none; display: grid; grid-template-columns: 1fr 1fr; padding: 3px; border-radius: 12px; background: var(--pl-bg-inset); }
+  .sp-seg > i { position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc(50% - 3px); border-radius: 9px; background: var(--pl-coral);
+    box-shadow: 0 1px 2px rgb(0 0 0 / .2); transition: translate 420ms var(--pl-spring), background-color 280ms ease-out; }
+  .sp-seg[data-fixed] > i { translate: 100% 0; background: var(--pl-sky); }
+  .sp-seg button { all: unset; position: relative; cursor: pointer; padding: 8px 16px; text-align: center; border-radius: 9px; font: 600 13px/1 var(--pl-sans); color: var(--pl-text-secondary); transition: color 200ms; }
+  .sp-seg button[aria-checked="true"] { color: var(--pl-coral-on); } .sp-seg[data-fixed] button[aria-checked="true"] { color: var(--pl-sky-on); }
+  .sp-seg button:focus-visible { outline: 2px solid var(--pl-sky); outline-offset: 2px; }
+  @media (hover: hover) and (pointer: fine) { .sp-seg button[aria-checked="false"]:hover { color: var(--pl-text-primary); } }
+  @media (prefers-reduced-motion: reduce) { .sp-seg > i { transition: none; } }
+  /* the code: the line plumber edits, crossing over as the fix moves */
+  .sp-diff { min-width: 0; display: inline-flex; align-items: center; gap: 10px; max-width: 100%; padding: 9px 12px; border-radius: 10px; background: #111827; font: 500 12.5px/1.2 var(--pl-mono, ui-monospace); overflow: hidden; }
   .sp-diff s, .sp-diff b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 260ms; font-weight: 500; text-decoration: none; }
   .sp-diff s { color: #fca5a5; } .sp-diff b { color: #6b7280; } .sp-diff i { font-style: normal; color: #6b7280; }
-  .sp-code[data-fixed] .sp-diff s { color: #6b7280; text-decoration: line-through; text-decoration-thickness: 1.5px; } .sp-code[data-fixed] .sp-diff b { color: #86efac; }
-  .sp-code p { margin: 0; font: 400 14.5px/1.55 var(--pl-sans); color: var(--pl-text-secondary); max-width: 640px; }
+  .sp-diff[data-fixed] s { color: #6b7280; text-decoration: line-through; text-decoration-thickness: 1.5px; } .sp-diff[data-fixed] b { color: #86efac; }
+  .sp-note { margin: 0; font: 400 14.5px/1.55 var(--pl-sans); color: var(--pl-text-secondary); max-width: 640px; }
   .sp-thumb { position: relative; height: 118px; overflow: hidden; border-radius: 12px; background: #fff; pointer-events: none; }
   .sp-thumb-in { position: absolute; left: 50%; top: 50%; width: 460px; translate: -50% -50%; scale: .5; }
   .ex-row { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: center; }

@@ -58,7 +58,7 @@ function Panel({ c, css, at, of, onPrev, onNext, onClose }) {
     if (!c) return;
     ref.current?.focus({ preventScroll: true });
     const key = (e) => {
-      if (e.target.closest?.('input, textarea, [role="slider"]')) return;
+      if (e.target.closest?.('input, textarea, [role="slider"], [role="radiogroup"]')) return;
       if (e.key === 'Escape') { e.preventDefault(); onClose(); }
       else if (e.key === 'ArrowRight') { e.preventDefault(); onNext(); }
       else if (e.key === 'ArrowLeft') { e.preventDefault(); onPrev(); }

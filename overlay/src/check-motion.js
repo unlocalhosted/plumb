@@ -1,18 +1,18 @@
 /* ─────────────────────────────────────────────────────────
  * A CHECK'S FIX, MOVING · React Plumber
  *
- * Each check's example (the docs: What it checks), played with the same motion as the tiles of "How a change moves"
- * (show-motion.js: the guides, the beats, the spring, the rolling pill): one motion for every fix (interaction
- * principles 35b). A check is a spec: its scene, its guides, and at(p), the scene at any point p between broken (0)
- * and fixed (1). One player runs it two ways: Play (the beats: the guides draw in, the fix moves on the spring with
- * the guides following, the pill rolls and lands on your token, the guides go) and Drag (the same motion held at
- * wherever the hand is, landing when it reaches fixed).
+ * Each check's example (the docs: What it checks), played by the tiles' own player (show-motion.js playTile): the
+ * guides draw in, the scene moves on CSS transitions (the overlay's spring for a length, an ease for a colour) while
+ * the guides follow it every frame, the pill rolls and lands on your token, the guides go. One motion for every fix
+ * (interaction principles 35b). A Broken / Fixed toggle plays it either way; flipped mid-move, the scene turns round
+ * from where it is.
  *
- *  CHECK_SPECS[id](stage) → { from, to, unit, name?, labels?: [before, after], guides: [{ el, kind }], at(p), track() }
- *  mountCheck(host, id, { tokensCss }) → { play(), scrub(p), at(p) } | null
+ *  CHECK_SPECS[id](stage) → { from, to, unit, name?, labels?: [before, after], curve?, guides: [{ el, kind }], at(p), track() }
+ *                           at(p) sets the scene at broken (0) or fixed (1); the transitions do the rest
+ *  mountCheck(host, id, { tokensCss, onMove }) → { set(fixed), still(p) } | null
  * ───────────────────────────────────────────────────────── */
-import { BEAT } from './motion-beats.js';
-import { MOTION_CSS, TILE_BEATS as T, rollValues, pillHtml, animateTo, waitFor } from './show-motion.js';
+import { SPRING } from './motion-beats.js';
+import { MOTION_CSS, TILE_BEATS as T, playTile, pillHtml } from './show-motion.js';
 
 // the spring, sampled: the overlay's curve (motion-beats.js SPRING) as a function, so a held point and a played
 // moment are the same place on it
@@ -46,8 +46,8 @@ const pillLeft = (pill, y, x) => { at(pill, `left:${x}px;top:${y}px`); };
 const colourCheck = ({ html, pick, from, to, prop = 'background', labels, after }) => (s) => {
   s.innerHTML = `<div class="ck-scene">${html}</div>`;
   const el = s.querySelector(pick), ring = make(s, 'ring'), pill = make(s, 'pill');
-  return { labels, guides: [{ el: ring, kind: 'ring' }, { el: pill, kind: 'pill' }],
-    at: (p) => { el.style[prop] = mix(from, to, p); after?.(s, p); }, track: () => { ringAround(ring, el, s); pillOver(pill, el, s, 18); } };
+  return { labels, curve: 'ease-in-out', guides: [{ el: ring, kind: 'ring' }, { el: pill, kind: 'pill' }],
+    at: (p) => { el.style[prop] = p ? to : from; after?.(s, p); }, track: () => { ringAround(ring, el, s); pillOver(pill, el, s, 18); } };
 };
 const REBRAND = '<span class="cap">Your theme was rebranded from indigo to teal.</span>';
 export const CHECK_SPECS = {
@@ -89,10 +89,10 @@ export const CHECK_SPECS = {
     const from = [0, 18, 40, -6, 0.45], to = [0, 1, 3, 0, 0.14];
     s.innerHTML = '<div class="ck-scene" style="background:#f3f4f6"><div style="display:flex;gap:22px"><div class="x" style="width:120px;height:80px;border-radius:12px;background:#fff"></div><div style="width:120px;height:80px;border-radius:12px;background:#fff;box-shadow:0 1px 3px rgb(0 0 0 / .14)"></div></div></div>';
     const x = s.querySelector('.x'), ring = make(s, 'ring'), pill = make(s, 'pill');
-    let reach = 30;
+    const reach = () => { const n = (getComputedStyle(x).boxShadow.match(/-?[\d.]+px/g) ?? []).map(parseFloat); return 6 + Math.max(0, (n[1] ?? 0) + (n[2] ?? 0) * 0.5); };
     return { labels: ['glow, by hand', 'shadow-card'], guides: [{ el: ring, kind: 'ring' }, { el: pill, kind: 'pill' }],
-      at: (p) => { const v = from.map((f, i) => lerp(f, to[i], p)); x.style.boxShadow = `0 ${v[1]}px ${v[2]}px ${v[3]}px rgb(${Math.round(lerp(79, 0, p))} ${Math.round(lerp(70, 0, p))} ${Math.round(lerp(229, 0, p))} / ${v[4]})`; reach = lerp(30, 6, p); },
-      track: () => { ringAround(ring, x, s, reach); pillOver(pill, x, s, reach + 8); } };
+      at: (p) => { const v = from.map((f, i) => lerp(f, to[i], p)); x.style.boxShadow = `0 ${v[1]}px ${v[2]}px ${v[3]}px rgb(${Math.round(lerp(79, 0, p))} ${Math.round(lerp(70, 0, p))} ${Math.round(lerp(229, 0, p))} / ${v[4]})`; },
+      track: () => { const r = reach(); ringAround(ring, x, s, r); pillOver(pill, x, s, r + 8); } };
   },
   'provenance/motion': (s) => {
     s.innerHTML = '<div class="ck-scene" style="align-content:center;gap:24px"><div style="display:flex;gap:10px"><span class="menu">File</span><span class="menu x">Edit</span><span class="menu">View</span></div><div style="position:relative;width:240px;height:10px"><i class="ghost" style="position:absolute;inset:0;border-radius:5px;border:1.5px dashed color-mix(in oklab, var(--pl-coral) 70%, transparent)"></i><i class="len" style="position:absolute;left:0;top:0;height:10px;width:240px;border-radius:5px;background:var(--c)"></i></div></div>';
@@ -134,50 +134,46 @@ export const CHECK_SPECS = {
   },
 };
 
-// One player for every check: the tile's beats when played, the same motion held at a point when dragged
-export function mountCheck(host, id, { tokensCss = '' } = {}) {
+// One player for every check: the tiles' own (playTile). The scene's elements carry a transition while it moves,
+// so at(0) or at(1) is all a spec says; a flip mid-move turns the transition round from where it is.
+export function mountCheck(host, id, { tokensCss = '', onMove } = {}) {
   const build = CHECK_SPECS[id];
   if (!build) return null;
   const root = host.shadowRoot ?? host.attachShadow({ mode: 'open' });
-  root.innerHTML = `<style>${tokensCss}${MOTION_CSS}${CSS} .stage { height: 250px; } .ring, .arc { pointer-events: none; }</style><div class="stage"></div>`;
-  const stage = root.querySelector('.stage'), spec = build(stage), pill = spec.guides.find((g) => g.kind === 'pill')?.el;
-  const num = Number.isFinite(spec.from) && Number.isFinite(spec.to), vals = num ? rollValues(spec.from, spec.to, spec.step ?? 1, (v) => Math.round(v)) : null;
-  let run = 0, p = 0, swapped = false;
-  const setPill = (k, landed) => {
-    if (!pill) return;
-    if (num) {
-      if (landed) { pill.innerHTML = pillHtml([Math.round(spec.to)], spec.unit, spec.name); return; }
-      if (!pill.querySelector('.roll')) pill.innerHTML = pillHtml(vals, spec.unit);
-      pill.querySelector('.roll > span').style.transform = `translateY(${-Math.min(1, Math.max(0, k)) * (vals.length - 1) * 22}px)`;
-    } else {
-      const want = k >= 0.5 ? 1 : 0;
-      if (pill.dataset.side !== String(want)) { pill.dataset.side = String(want); pill.textContent = spec.labels[want]; if (swapped) animateTo(pill, [{ opacity: 0, filter: 'blur(2px)' }, { opacity: 1, filter: 'blur(0)' }], { duration: 200 }); swapped = true; }
-    }
-  };
-  const show = (k, landed = false) => { p = k; spec.at(k); spec.track(); setPill(k, landed); stage.toggleAttribute('data-landed', landed); };
-  // hidden by an attribute: the guides' places are rewritten every frame (style), which would wipe a hidden style
+  root.innerHTML = `<style>${tokensCss}${MOTION_CSS}${CSS} .stage { height: 250px; } .ring, .arc { pointer-events: none; }
+    .stage[data-moving] .ck-scene, .stage[data-moving] .ck-scene * { transition: all ${T.move}ms var(--ck-curve); }
+    .stage[data-back][data-landed] { --c: var(--pl-coral); }</style><div class="stage"></div>`;
+  const stage = root.querySelector('.stage'), spec = build(stage);
+  stage.style.setProperty('--ck-curve', spec.curve ?? SPRING);
+  const kinds = () => spec.guides.map((g) => ({ el: g.el, kind: g.kind === 'ring' ? 'beam' : g.kind }));
   const guides = (on) => { for (const g of spec.guides) g.el.toggleAttribute('data-off', !on); };
-  guides(false); show(0);
+  const pill = spec.guides.find((g) => g.kind === 'pill')?.el;
+  let run = 0, busy = false;
+  guides(false); spec.at(0); spec.track();
   return {
-    // the beats: guides draw in, a hold, the move on the spring (the guides following), the landing, the guides go
-    async play() {
-      const mine = ++run; swapped = false; pill && delete pill.dataset.side; show(0); guides(true);
-      if (matchMedia('(prefers-reduced-motion: reduce)').matches) { show(1, true); await waitFor(900); if (mine === run) guides(false); return; }
-      await Promise.all(spec.guides.map((g, i) => g.kind === 'h' ? animateTo(g.el, [{ transform: 'scaleX(0)', opacity: 0 }, { transform: 'scaleX(1)', opacity: 1 }], { duration: T.guides, delay: i * 40, easing: 'cubic-bezier(.2,.8,.2,1)' })
-        : animateTo(g.el, [{ opacity: 0, scale: 0.85 }, { opacity: 1, scale: 1 }], { duration: T.guides * 0.8, delay: 120, easing: 'cubic-bezier(.34,1.56,.64,1)' })));
-      await waitFor(T.hold); if (mine !== run) return;
-      const t0 = performance.now(), dur = T.move;
-      await new Promise((done) => { const f = () => { if (mine !== run) return done(); const k = Math.min(1, (performance.now() - t0) / dur); show(spring(k)); if (k < 1) requestAnimationFrame(f); else done(); }; f(); });
+    // play the fix to fixed (true) or back to broken (false), with the tile's beats
+    async set(fixed) {
+      const mine = ++run, turning = busy; busy = true;
+      // flipped while it plays: the guides stay up and the scene turns round at once; otherwise they start over.
+      // The scene's own transitions keep going either way, so it turns from where it is
+      for (const g of spec.guides) g.el.getAnimations().forEach((a) => turning ? (a.commitStyles?.(), a.cancel()) : a.cancel());
+      stage.toggleAttribute('data-back', !fixed); guides(true);
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        busy = false;
+        spec.at(fixed ? 1 : 0); spec.track(); onMove?.(fixed); stage.toggleAttribute('data-landed', true);
+        if (pill) pill.innerHTML = spec.labels ? spec.labels[fixed ? 1 : 0] : pillHtml([Math.round(fixed ? spec.to : spec.from)], spec.unit, fixed ? spec.name : '');
+        return;
+      }
+      const [from, to] = fixed ? [spec.from, spec.to] : [spec.to, spec.from];
+      await playTile(stage, { from, to, step: spec.step, unit: spec.unit, name: fixed ? spec.name : '', labels: spec.labels && (fixed ? spec.labels : [...spec.labels].reverse()),
+        guides: kinds, stale: () => mine !== run, track: spec.track, now: turning,
+        ease: (on) => { stage.toggleAttribute('data-moving', on); onMove?.(fixed); }, apply: () => spec.at(fixed ? 1 : 0) });
       if (mine !== run) return;
-      show(1, true); spec.landed?.(); pill && animateTo(pill, [{ scale: 1 }, { scale: 1.08 }, { scale: 1 }], { duration: 360, easing: 'cubic-bezier(.34,1.56,.64,1)' });
-      await waitFor(T.land + 380); if (mine !== run) return;
-      await Promise.all(spec.guides.map((g) => animateTo(g.el, [{ opacity: 1 }, { opacity: 0 }], { duration: T.out, easing: 'ease-out' })));
-      if (mine === run) { for (const g of spec.guides) g.el.getAnimations().forEach((a) => a.cancel()); guides(false); }
+      busy = false;
+      if (fixed) spec.landed?.();
+      guides(false);
     },
-    // the same motion, held: the guides show, the scene and the pill sit where the hand is, it lands at the end
-    scrub(k) { run++; for (const g of spec.guides) g.el.getAnimations().forEach((a) => a.cancel()); guides(true); show(k, k >= 0.999); },
-    // a still: the scene at p, no guides (a gallery card's picture)
-    still(k) { run++; guides(false); show(k); },
-    get p() { return p; },
+    // a still: the scene at broken (0) or fixed (1), no guides (a gallery card's picture)
+    still(p) { run++; guides(false); spec.at(p); spec.track(); },
   };
 }
