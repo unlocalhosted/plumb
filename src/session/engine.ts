@@ -1428,6 +1428,7 @@ export class Session extends EventEmitter {
       catch (error) { results.push({ index, state: 'failed', why: error instanceof UsageError ? error.message : 'This change could not be placed.' }); continue; }
       if (!placed) { results.push({ index, state: 'unplaced', why: 'No style system of this project writes this value where the page found it.' }); continue; }
       const { system, origin } = placed;
+      if (evidence.hash && evidence.hash !== origin.hash) { results.push({ index, state: 'failed', why: `${origin.said} changed since the card read it. Look again and Sync.`, said: origin.said }); continue; }
       if (origin.writable !== true) { results.push({ index, state: 'failed', why: origin.writable, said: origin.said }); continue; }
       const path = this.file(origin.file);
       const entry = byFile.get(path) ?? byFile.set(path, { hash: origin.hash, edits: [], said: [] }).get(path)!;
@@ -1457,6 +1458,17 @@ export class Session extends EventEmitter {
       }
     } catch (error) { if (done.length) await this.putBack(done, error); throw error; }
     return { revision: this.revision, results, files, undo: done.length ? [this.asOneWrite(done, `${done.length > 1 ? `${done.length} files` : 'style'}: ${results.filter(r => r.state === 'ok').length} change(s)`)] : [] };
+  }
+  /** Where one property of one element is written, from what the page saw: the card's read of a place (its words,
+   * the value as written, the file's hash to send back with the write). Nothing is written. */
+  async stylePlace(options: { prop: string; evidence: Evidence }): Promise<Record<string, unknown> | null> {
+    const { prop, evidence } = options ?? {} as { prop: string; evidence: Evidence };
+    if (typeof prop !== 'string' || !/^[a-z][a-z-]*$/.test(prop) || !evidence || typeof evidence !== 'object') throw new UsageError('Style place takes a property and what the page saw.');
+    const read: ReadFile = async (file) => { const path = this.file(file); await this.readableSource(path); const text = await readFile(path, 'utf8'); return { text, hash: sourceHash(text) }; };
+    const placed = await locateStyle(evidence, prop, { read, classEdit: place => this.classEdit(place) }).catch(() => null);
+    if (!placed) return null;
+    const { system, origin } = placed;
+    return { system: system.id, says: system.says, said: origin.said, file: origin.file, value: origin.value, hash: origin.hash, conditions: origin.conditions, writable: origin.writable };
   }
   /** The properties a style change can be about, and the declarations that carry each (src/styles/properties.ts). */
   async styleProperties(): Promise<typeof PROPERTIES> { return PROPERTIES; }

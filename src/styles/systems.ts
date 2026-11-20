@@ -23,6 +23,8 @@ export interface Evidence {
   /** the winning rule holds under this condition now (the browser's `conditionText`), and in this cascade layer */
   media?: string;
   layer?: string;
+  /** the file's hash when the card read this place (POST style-place); a write after the file changed is refused */
+  hash?: string;
   /** the class strings that set it, as the page found them in the code (class-site): where a utility system writes */
   classes?: ClassPlace[];
 }

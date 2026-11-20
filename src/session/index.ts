@@ -148,6 +148,7 @@ export class Session extends EventEmitter {
   swap(...args: Parameters<Engine['swap']>) { return this.call('swap', args); }
   styleWrite(...args: Parameters<Engine['styleWrite']>) { return this.call('styleWrite', args); }
   styleProperties(...args: Parameters<Engine['styleProperties']>) { return this.call('styleProperties', args); }
+  stylePlace(...args: Parameters<Engine['stylePlace']>) { return this.call('stylePlace', args); }
   swaps(...args: Parameters<Engine['swaps']>) { return this.call('swaps', args); }
   accept(...args: Parameters<Engine['accept']>) { return this.call('accept', args); }
   applyAll(...args: Parameters<Engine['applyAll']>) { return this.call('applyAll', args); }

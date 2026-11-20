@@ -168,6 +168,11 @@ export function evidenceFor(el, prop) {
 }
 /** The winning rule of el's prop in a file of yours, for the rule system; null when a utility class, a style attribute
  * or nothing of the element's own wins. */
+// the file's hash for a place, as the card read it (POST style-place): sent back with the write so a file that changed
+// since is refused, never written over
+const readAt = new WeakMap();
+export function placeRead(el, prop, place) { if (!readAt.has(el)) readAt.set(el, new Map()); readAt.get(el).set(prop, place); }
+const hashRead = (el, prop) => readAt.get(el)?.get(prop)?.hash;
 export function winningRule(el, prop) {
   const e = evidenceFor(el, prop);
   if (e.kind !== 'rule' || e.isClass && hasClassFor(el, prop)) return null;
@@ -239,7 +244,7 @@ export const cssRules = {
         // a rule in a bundle: its file comes from the bundle's source map
         if (!claim.file && claim.bundle) { const file = await fileOfBundled(claim); if (!file) throw new Error(`${claim.selector} comes from a stylesheet Plumber can't trace to a file of yours.`); claim = { ...claim, file }; }
         const token = tokenOf(g);
-        sent.push({ g, change: { prop: g.prop, value: g.value, ...(token ? { token } : {}), evidence: { file: claim.file, selector: claim.selector, carriers: CARRIERS[g.prop], ...(claim.media ? { media: claim.media } : {}), ...(claim.layer ? { layer: claim.layer } : {}) } } });
+        sent.push({ g, change: { prop: g.prop, value: g.value, ...(token ? { token } : {}), evidence: { file: claim.file, selector: claim.selector, carriers: CARRIERS[g.prop], ...(claim.media ? { media: claim.media } : {}), ...(claim.layer ? { layer: claim.layer } : {}), ...(hashRead(g.els[0], g.prop) ? { hash: hashRead(g.els[0], g.prop) } : {}) } } });
       } catch (error) { out.push({ id: g.id, state: 'failed', why: error?.message ?? String(error) }); }
     }
     if (!sent.length) return out;

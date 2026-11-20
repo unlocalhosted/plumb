@@ -50,7 +50,7 @@ import { noteOfMark } from './blueprint-marks.js';
 import { PICKER_CSS } from './picker.js';
 import { TOY_DEFS } from './toys.js';
 import { classSiteOf, siteMatesOf } from './locate.js';
-import { route as routeStyles, loadProperties, evidenceFor, fileOfBundled } from './style-systems.js';
+import { route as routeStyles, loadProperties, evidenceFor, fileOfBundled, placeRead } from './style-systems.js';
 import { utility } from './craft-read.js';
 
 const tokensCss = await (await fetch(new URL('./tokens.css', import.meta.url))).text();
@@ -623,6 +623,9 @@ class PlumbOverlay extends HTMLElement {
           if (file) {
             let mates = [el]; try { mates = [...new Set([el, ...document.querySelectorAll(e.selector)])]; } catch { /* the selector the browser gave is one it matches */ }
             const short = file.split('/').pop();
+            // the server's read of the place: the value as written, and the hash a Sync sends back
+            const place = await post('style-place', { prop, evidence: { file, selector: e.selector, ...(e.media ? { media: e.media } : {}) } }).catch(() => null);
+            if (place) placeRead(el, prop, place);
             return { scopes: mates.length > 1 ? ['page'] : ['one'], mates, where: `${e.selector} in ${short}${e.media ? ` under ${e.media}` : ''}`, rule: true };
           }
         }

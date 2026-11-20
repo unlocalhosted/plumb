@@ -223,6 +223,7 @@ async function dispatchOnce(session: Session, method: string, params: Record<str
   }
   if (method === 'swap') return session.swap({ file: text(params, 'file')!, hash: text(params, 'hash')!, line: position(params, 'line')!, column: position(params, 'column')!, from: text(params, 'from', true) ?? '', to: text(params, 'to')!, ...pinOf(params) });
   if (method === 'style-properties') return read('styleProperties', []);
+  if (method === 'style-place') return session.stylePlace({ prop: text(params, 'prop')!, evidence: (params as { evidence: Parameters<Session['stylePlace']>[0]['evidence'] }).evidence });
   if (method === 'style') return session.styleWrite({ changes: (params as { changes: Parameters<Session['styleWrite']>[0]['changes'] }).changes });
   if (method === 'set') return session.set({ file: text(params, 'file')!, hash: text(params, 'hash')!, line: position(params, 'line')!, column: position(params, 'column')!, key: text(params, 'key')!, token: text(params, 'token')!, ...(object(params.at) ? { at: { line: Number(params.at.line), column: Number(params.at.column) } } : {}) });
   if (method === 'system') {
