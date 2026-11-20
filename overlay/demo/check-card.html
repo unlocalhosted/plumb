@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Check card · three directions</title>
+<style>
+  body { margin: 0; padding: 32px 20px 80px; background: #1d1c1a; color: #f4f3ef; font: 15px/1.5 system-ui, sans-serif; }
+  header { max-width: 1180px; margin: 0 auto 26px; } header h1 { font-size: 20px; margin: 0 0 4px; } header p { margin: 0; color: #a8a49c; }
+  #board { max-width: 1180px; margin: 0 auto; display: grid; gap: 46px; }
+  .opt > h2 { font: 650 15px/1 system-ui; margin: 0 0 6px; } .opt > p { margin: 0 0 14px; color: #a8a49c; font-size: 13.5px; max-width: 720px; }
+</style>
+</head>
+<body>
+<header><h1>The check card, three ways</h1><p>One check (“A raw token where a named one fits”), drawn as a specimen, as a before/after, and as three steps. Each plays the fix.</p></header>
+<div id="board"></div>
+<script type="module">
+  import tokens from '../src/tokens.css?raw';
+  const SPRING = 'linear(0, 0.21 6%, 0.62 15%, 0.9 25%, 1.01 36%, 1.02 46%, 1 60%, 1)';
+  const base = `${tokens}
+    :host { display: block; color: #f4f3ef; font-family: system-ui; }
+    .app { color-scheme: light; background: #fff; color: #111827; border-radius: 16px; position: relative; overflow: hidden; }
+    .btn { display: inline-flex; align-items: center; height: 40px; padding: 0 18px; border-radius: 9px; color: #fff; font: 600 14px system-ui; background: #2563eb; transition: background-color 700ms ease-in-out; }
+    [data-fixed] .btn { background: #0f766e; }
+    .g { position: absolute; pointer-events: none; opacity: 0; transition: opacity 220ms; --c: var(--pl-coral); }
+    [data-play] .g { opacity: 1; } [data-landed] .g { --c: var(--pl-sky); }
+    .ring { border: 1.5px dashed var(--c); border-radius: 13px; transition: border-color 280ms; }
+    .pill { translate: -50% -100%; height: 22px; padding: 0 9px; border-radius: 11px; background: var(--c); color: #fff; font: 600 12px/22px system-ui; white-space: nowrap; transition: background-color 280ms; }
+    code { font: 500 12.5px/1 ui-monospace, Menlo, monospace; }
+    .diff { display: inline-flex; gap: 8px; align-items: center; } .diff s { color: #f0907c; text-decoration-thickness: 1.5px; } .diff b { color: #86e0b0; font-weight: 500; }
+    .seg { display: inline-flex; padding: 3px; border-radius: 10px; background: rgb(255 255 255 / .08); }
+    .seg button { all: unset; cursor: pointer; padding: 6px 12px; border-radius: 8px; font: 600 12.5px/1 system-ui; color: #c9c5bd; }
+    .seg button[aria-checked="true"] { background: rgb(255 255 255 / .14); color: #fff; }
+    .chip { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 9px; border-radius: 99px; font: 600 11.5px/1 system-ui; }
+    .chip.code { background: color-mix(in oklab, var(--pl-lilac) 30%, transparent); color: #d9d3ff; }
+  `;
+  // the fix played: guides mark, it moves, the pill lands, the guides go
+  async function play(root, on) {
+    const st = root.querySelector('[data-stage]'), pill = root.querySelector('.pill');
+    const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+    st.removeAttribute('data-landed'); pill.textContent = on ? 'blue-600' : 'action'; st.setAttribute('data-play', '');
+    await wait(520); st.toggleAttribute('data-fixed', on);
+    await wait(420); pill.textContent = on ? 'action' : 'blue-600'; if (on) st.setAttribute('data-landed', '');
+    await wait(900); st.removeAttribute('data-play');
+  }
+  const seg = (root) => { root.querySelectorAll('.seg button').forEach((b, i) => b.onclick = () => { root.querySelectorAll('.seg button').forEach((x, j) => x.setAttribute('aria-checked', String(i === j))); play(root, i === 1); }); };
+  const OPTS = [
+    ['A · A specimen', 'The card is the live example. The broken state leads, drawn in the app’s world; the switch sits on the stage; the code change is a diff on its edge; one sentence says why. Closed, a card in the grid is a small picture of the broken state, so the grid reads as a gallery.', `
+      .card { display: grid; gap: 0; border-radius: 20px; background: #2a2926; overflow: hidden; }
+      .card .app { border-radius: 0; height: 230px; display: grid; place-items: center; }
+      .card .app .seg { position: absolute; left: 14px; top: 14px; background: #f1f1ef; } .card .app .seg button { color: #57534e; } .card .app .seg button[aria-checked="true"] { background: #fff; color: #111; box-shadow: 0 1px 2px rgb(0 0 0 / .12); }
+      .card .edge { position: absolute; left: 14px; bottom: 12px; padding: 7px 10px; border-radius: 9px; background: #111827; }
+      .card .meta { display: grid; gap: 6px; padding: 18px 20px 20px; }
+      .card h3 { margin: 0; font: 650 18px/1.25 system-ui; }
+      .card p { margin: 0; color: #b9b4ab; font-size: 14.5px; }
+      .card .chips { display: flex; gap: 6px; margin-top: 4px; }
+      .gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 18px; }
+      .thumb { border-radius: 16px; background: #2a2926; overflow: hidden; } .thumb .app { height: 96px; display: grid; place-items: center; border-radius: 0; } .thumb .app .btn { scale: .7; }
+      .thumb b { display: block; padding: 10px 12px 12px; font: 600 13.5px/1.3 system-ui; }`,
+      `<div class="card"><div class="app" data-stage><div class="seg" role="radiogroup"><button role="radio" aria-checked="true">Broken</button><button role="radio" aria-checked="false">Fixed</button></div>
+        <span class="btn">Continue</span><i class="g ring" style="left:calc(50% - 58px);top:calc(50% - 27px);width:116px;height:54px"></i><b class="g pill" style="left:50%;top:calc(50% - 32px)">blue-600</b>
+        <span class="edge diff"><s>bg-blue-600</s>→<b>bg-action</b></span></div>
+        <div class="meta"><h3>A raw token where a named one fits</h3><p>blue-600 says what colour; action says what it’s for, so a rebrand reaches it.</p><div class="chips"><span class="chip code">In your code</span></div></div></div>
+       <div class="gallery">${['A raw token where a named one fits', 'Same value as a token, hard-coded', 'From Tailwind, not your theme'].map((t) => `<div class="thumb"><div class="app"><span class="btn">Continue</span></div><b>${t}</b></div>`).join('')}</div>`],
+    ['B · Before and after', 'The stage is split: Broken on the left, Fixed on the right, the same element in both. Drag the handle across and the fix plays as it passes. The name and one sentence sit above, the diff below.', `
+      .card { display: grid; gap: 12px; padding: 20px; border-radius: 20px; background: #2a2926; }
+      .card h3 { margin: 0; font: 650 18px/1.25 system-ui; } .card p { margin: 0; color: #b9b4ab; font-size: 14.5px; }
+      .split { position: relative; height: 210px; border-radius: 16px; overflow: hidden; }
+      .split .app { position: absolute; inset: 0; border-radius: 0; display: grid; place-items: center; }
+      .split .after { clip-path: inset(0 0 0 var(--x, 50%)); } .split .after .btn { background: #0f766e; }
+      .split .lab { position: absolute; top: 12px; font: 600 11.5px system-ui; padding: 4px 8px; border-radius: 99px; } .split .l { left: 12px; background: #fde7e2; color: #9a3412; } .split .r { right: 12px; background: #d6f5e6; color: #065f46; }
+      .split .h { position: absolute; top: 0; bottom: 0; left: var(--x, 50%); width: 2px; background: #111827; } .split .h::after { content: '⟷'; position: absolute; top: 50%; left: 50%; translate: -50% -50%; width: 30px; height: 30px; border-radius: 50%; background: #111827; color: #fff; display: grid; place-items: center; font-size: 13px; cursor: ew-resize; }
+      .card .diff { justify-self: start; }`,
+      `<div class="card"><h3>A raw token where a named one fits</h3><p>blue-600 says what colour; action says what it’s for, so a rebrand reaches it.</p>
+        <div class="split" data-split><div class="app"><span class="btn">Continue</span></div><div class="app after"><span class="btn">Continue</span></div><span class="lab l">Broken · bg-blue-600</span><span class="lab r">Fixed · bg-action</span><i class="h"></i></div>
+        <span class="diff"><s>bg-blue-600</s>→<b>bg-action</b></span></div>`],
+    ['C · Three steps', 'Left to right: what you wrote, what it does on the page, what Plumber does about it (the fix playing). The card reads like a sentence, and the middle and right panes are the same app, before and after.', `
+      .card { display: grid; gap: 14px; padding: 20px; border-radius: 20px; background: #2a2926; }
+      .card h3 { margin: 0; font: 650 18px/1.25 system-ui; }
+      .steps { display: grid; grid-template-columns: .8fr 1fr 1fr; gap: 10px; }
+      .step { display: grid; grid-template-rows: auto 1fr; gap: 8px; } .step > small { font: 600 12px system-ui; color: #a8a49c; } .step > small b { color: #f4f3ef; }
+      .pane { border-radius: 14px; min-height: 150px; display: grid; place-items: center; position: relative; }
+      .code-pane { background: #111827; place-items: start; padding: 14px; } .code-pane code { color: #e5e7eb; line-height: 1.7; } .code-pane mark { background: color-mix(in oklab, var(--pl-coral) 35%, transparent); color: #fff; border-radius: 4px; padding: 1px 3px; }
+      .app.pane { border-radius: 14px; }`,
+      `<div class="card"><h3>A raw token where a named one fits</h3><div class="steps">
+        <div class="step"><small><b>1</b> What you wrote</small><div class="pane code-pane"><code>&lt;Button<br>&nbsp;className="<mark>bg-blue-600</mark>"&gt;<br>&nbsp;Continue<br>&lt;/Button&gt;</code></div></div>
+        <div class="step"><small><b>2</b> The theme is rebranded</small><div class="pane app"><span class="btn">Continue</span></div></div>
+        <div class="step"><small><b>3</b> What Plumber does</small><div class="pane app" data-stage><span class="btn">Continue</span><i class="g ring" style="left:calc(50% - 58px);top:calc(50% - 27px);width:116px;height:54px"></i><b class="g pill" style="left:50%;top:calc(50% - 32px)">blue-600</b></div></div>
+      </div><div class="seg" role="radiogroup"><button role="radio" aria-checked="true">Before</button><button role="radio" aria-checked="false">Play the fix</button></div></div>`],
+  ];
+  const board = document.getElementById('board');
+  for (const [title, sub, css, html] of OPTS) {
+    const sec = document.createElement('section'); sec.className = 'opt'; sec.innerHTML = `<h2>${title}</h2><p>${sub}</p>`;
+    const host = document.createElement('div'); sec.append(host); board.append(sec);
+    const root = host.attachShadow({ mode: 'open' }); root.innerHTML = `<style>${base}${css}</style>${html}`;
+    seg(root);
+    const sp = root.querySelector('[data-split]');
+    if (sp) { let x = 50; const set = (v) => { x = Math.max(0, Math.min(100, v)); sp.style.setProperty('--x', x + '%'); };
+      sp.addEventListener('pointerdown', (e) => { sp.setPointerCapture(e.pointerId); const r = sp.getBoundingClientRect(); const mv = (m) => set((m.clientX - r.left) / r.width * 100); mv(e); sp.onpointermove = mv; sp.onpointerup = () => { sp.onpointermove = null; }; });
+      let t = 0; const auto = setInterval(() => { t += 0.03; set(50 + 38 * Math.sin(t)); }, 30); sp.addEventListener('pointerdown', () => clearInterval(auto), { once: true }); }
+  }
+</script>
+</body>
+</html>
