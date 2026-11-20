@@ -346,7 +346,7 @@ export class History {
     const warn = this.#warn?.id === c.id ? this.#warn : null;
     pill.dataset.kind = warn?.kind ?? '';
     pill.innerHTML = warn ? esc(warn.text) : c.outside ? esc(c.outside === 'later' ? T.changedRun(c.count) : T.outsideRun(c.count))
-      : `${c.undoes ? `<span class="tt-kind">${esc(T.undo)}</span>` : ''}${esc(c.from.trim() || '∅')} → ${esc(c.to.trim() || '∅')}${laws.map((l) => `<span class="tt-law">${esc(l)}</span>`).join('')}${onPage ? '' : `<span class="tt-where">${esc(T.notHere)}</span>`}`;
+      : `${c.undoes ? `<span class="tt-kind">${esc(T.undo)}</span>` : ''}${esc(c.from.trim() || T.nothing)} → ${esc(c.to.trim() || T.nothing)}${laws.map((l) => `<span class="tt-law">${esc(l)}</span>`).join('')}${onPage ? '' : `<span class="tt-where">${esc(T.notHere)}</span>`}`;
     pill.hidden = false;
     // centred on the tick, slid along its line to stay whole on screen
     const sr = this.#strip.getBoundingClientRect(), tr = tick.getBoundingClientRect(), w = pill.offsetWidth;
@@ -426,7 +426,7 @@ export class History {
     this.#remember();
     try {
       const done = kind === 'change' ? await post('undo-change', { id: c.id }) : await post('undo-group', { group: c.group });
-      const said = kind === 'change' ? T.undone(c.from.trim() || '∅', c.to.trim() || '∅') : T.undoneStep(done?.undone?.length ?? targets.length);
+      const said = kind === 'change' ? T.undone(c.from.trim() || T.nothing, c.to.trim() || T.nothing) : T.undoneStep(done?.undone?.length ?? targets.length);
       this.#remember(said);
       this.#host.announce?.(said);
       this.#at = Infinity;
