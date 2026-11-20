@@ -151,7 +151,10 @@ const refsOf = (raw) => [...String(raw).matchAll(/var\(\s*(--[\w-]+)/g)].map((m)
 const norm = (v) => String(v).trim().toLowerCase().replace(/\s+/g, ' ');
 export function colourModel(kind) {
   // a name counts once (a light and a dark block define the same token twice)
-  const all = [...new Map(kind.groups.flatMap((g) => g.tokens.map((t) => [t.name, { ...t, file: g.file }]))).values()];
+  const every = [...new Map(kind.groups.flatMap((g) => g.tokens.map((t) => [t.name, { ...t, file: g.file }]))).values()];
+  // Tailwind's own defaults are Tailwind's, not your palette: counted apart (U60: "Your palette, 289 colours" for an
+  // app whose theme sets one)
+  const all = every.filter((t) => !t.framework), defaults = every.length - all.length;
   const bare = (name) => name.replace(/^--/, '').replace(/^[a-z]{1,3}-(?=[a-z])/, '');
   const jobOf = (name) => (JOBS.find(([, re]) => re.test(bare(name))) ?? [null])[0];
   // a token holding a colour is a role only when its name starts with a job (--text-…, --bg-…, --border-…); a hue's
@@ -174,7 +177,7 @@ export function colourModel(kind) {
   const unused = palette.filter((p) => !pointed.has(p.name));
   // a role holding a raw colour, and the palette colour it equals exactly (the only safe move)
   const hard = roles.filter((r) => r.raw).map((r) => ({ ...r, match: palette.find((p) => norm(p.value) === norm(r.value)) }));
-  return { palette, roles, unused, hard };
+  return { palette, roles, unused, hard, defaults };
 }
 
 /** The decisions a kind asks for, from its numbers only. */

@@ -27,7 +27,8 @@ export function reasons(members: Decision[]): string[] {
 }
 
 /** One scale (`pattern` is its stem, `--pl-space-*`), or a file's lone tokens of one kind (`pattern` is empty). */
-export interface ReadingGroup { pattern: string; file: string; tokens: { name: string; value: string; raw: string }[]; reasons: string[] }
+// framework: one of Tailwind's own defaults, not the project's (the project page sets them apart, U60)
+export interface ReadingGroup { pattern: string; file: string; tokens: { name: string; value: string; raw: string; framework?: boolean }[]; reasons: string[] }
 export interface FamilyReading { family: Family; groups: ReadingGroup[] }
 
 /** How the project's tokens were read, by family, each family's tokens grouped by file and shared stem. */
@@ -44,7 +45,7 @@ export function readingOf(decisions: Decision[], root: string): FamilyReading[] 
     family,
     groups: [...groups].map(([key, members]) => {
       const [file, pattern] = JSON.parse(key) as [string, string];
-      return { pattern, file, tokens: members.map(d => ({ name: d.name, value: d.resolved ?? d.value, raw: d.value })), reasons: reasons(members) };
+      return { pattern, file, tokens: members.map(d => ({ name: d.name, value: d.resolved ?? d.value, raw: d.value, ...(d.origin === 'framework' ? { framework: true } : {}) })), reasons: reasons(members) };
     }).sort((a, b) => Number(!a.pattern) - Number(!b.pattern) || b.tokens.length - a.tokens.length || a.pattern.localeCompare(b.pattern)),
   })).sort((a, b) => b.groups.reduce((n, g) => n + g.tokens.length, 0) - a.groups.reduce((n, g) => n + g.tokens.length, 0));
 }

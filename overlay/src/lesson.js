@@ -89,7 +89,9 @@ const LESSON_CSS = `
   .shelf .say { margin: 10px 0 0; font: 650 14px/20px var(--pl-sans); color: var(--pl-butter-ink); }
   /* colours: your palette as a strip of chips, then the colours typed by hand beside the palette colour they're nearest */
   .chips { display: flex; flex-wrap: wrap; gap: 6px 18px; }
-  .chips .hue { display: flex; gap: 4px; }
+  /* a hue's row wraps inside the shelf: a row of 22 blues ran across the side column and off the window (U61) */
+  .chips .hue { display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; max-width: 100%; }
+  .shelf { min-width: 0; }
   .chip { display: inline-block; flex: none; width: 24px; height: 24px; border-radius: 8px; box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--pl-ink) 10%, transparent); }
   .shelf h4 { margin: 0 0 12px; font: 650 13px/18px var(--pl-sans); color: var(--pl-ink-2); }
   .shelf h4 + * { margin-bottom: 0; }
@@ -340,13 +342,16 @@ export function mountLesson(host, data, { post } = {}) {
     }
     return best && best.n / total >= 0.2 ? { ...best, total } : null;
   };
-  const share = (part, whole) => { const r = part / whole; return r >= 0.45 && r <= 0.55 ? 'Half' : r >= 0.7 ? 'Most' : `${Math.round(r * 100)}%`; };
+  // every one is 'All', not 'Most' (U59: "Most … 0 places type one by hand")
+  const share = (part, whole) => { const r = part / whole; return r >= 0.999 ? 'All' : r >= 0.45 && r <= 0.55 ? 'Half' : r >= 0.7 ? 'Most' : `${Math.round(r * 100)}%`; };
   const px = (v) => `${Math.round(v * 10) / 10}px`;
 
   // yours, drawn: each size at its size (text as Aa, spacing as a gap, corners as a corner), a mark that grows with
   // its places, and a bracket under the pile worth noticing
   const ramp = (m, all, pile) => {
-    const most = Math.max(...all.map((x) => x.n)), cut = Math.max(3, most * 0.02);
+    // a size used too little to matter is left out, on a big app only: on a small one every size is used once or
+    // twice, and the cut left the shelf with its caption and nothing drawn (U59)
+    const most = Math.max(...all.map((x) => x.n)), cut = all.length <= 12 ? 0 : Math.max(3, most * 0.02);
     const shown = all.filter((x) => x.n >= cut || (pile && x.px >= pile.from && x.px <= pile.to)).slice(0, 26);
     const mark = (x) => m.family === 'type' ? `<span class="aa" style="font-size: ${Math.min(x.px, 30)}px">Aa</span>`
       : m.family === 'radius' ? `<span class="arc" style="border-top-left-radius: ${Math.min(x.px, 30)}px"></span>`
@@ -406,7 +411,7 @@ export function mountLesson(host, data, { post } = {}) {
       return `<li class="${t.distance === 0 ? 'in' : ''}">${chip(t.css, t.css)}${near ? chip(near.value, near.name) : '<i></i>'}<code>${esc(asWritten(t.written[0]?.text, t.css))}</code><span class="n">${near ? `${t.distance === 0 ? 'is' : 'is close to'} your ${esc(near.name.replace(/^--/, ''))} · ` : ''}${nf.format(t.places)}×</span></li>`; }).join('');
     return `<section class="screen" style="${hueOf(s)}">${head(s, 'Colours', 'Colours: a small palette, and a name for each job.', 'Your palette is the colours themselves. Each job (text, a background, a border, a button) gets a name that points at one of them.')}
       <p class="insight">${insight}</p>
-      <div class="shelf"><h4>Your palette, ${col.palette.length} ${col.palette.length === 1 ? 'colour' : 'colours'}</h4><div class="chips">${col.hues.map((h) => `<span class="hue">${h.map((p) => chip(p.value, `${p.name}: ${p.value}`)).join('')}</span>`).join('')}</div>
+      <div class="shelf"><h4>Your palette, ${col.palette.length} ${col.palette.length === 1 ? 'colour' : 'colours'}</h4>${col.defaults ? `<p class="key">Tailwind’s ${nf.format(col.defaults)} default colours are left out: they are Tailwind’s, not yours.</p>` : ''}<div class="chips">${col.hues.map((h) => `<span class="hue">${h.map((p) => chip(p.value, `${p.name}: ${p.value}`)).join('')}</span>`).join('')}</div>
         ${pairs ? `<h4>Typed by hand most often, beside the palette colour it’s nearest</h4><ol class="pairs">${pairs}</ol>` : ''}</div>
       <p class="why">Ten slightly different greys make an app look tired, and changing your brand colour means finding every copy. Named uses that point at one palette change everywhere at once.</p>
       <h2>How should your colours work?</h2>
