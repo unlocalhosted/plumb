@@ -99,6 +99,8 @@ export const shapes: Record<string, Check<Record<string, unknown>>> = {
   'undo-change': object({ id: str, ...trace }),
   'undo-group': object({ group: str, ...trace }),
   'undo-changes': object({ ids: list(str, 1, 500), ...trace }),
+  rule: object({ file: str, selector: str, prop: str }),
+  'set-rule': object({ file: str, hash: str, selector: str, prop: str, value: str, ...trace }),
   set: object({ file: str, hash: str, ...lineColumn, key: str, token: str, at: optional(place), ...trace }),
   swap: object({ file: str, hash: str, ...lineColumn, from: optional(text), to: str, at: optional(place), of: optional(object({ ...position, chain })), ...trace }),
   swaps: object({ file: str, hash: str, edits: list(swapEdit, 1, 200), ...trace }),

@@ -52,6 +52,9 @@ export const methods = [
   { http: 'undo-changes', engine: 'undoChanges', post: true, traced: true, patient: true },
   { http: 'set', engine: 'set', post: true, traced: true, patient: true },
   { http: 'swap', engine: 'swap', post: true, traced: true, patient: true },
+  // a plain stylesheet's rule: where it sets a property for a selector, and the write that changes that value
+  { http: 'rule', engine: 'rule', read: true, json: true },
+  { http: 'set-rule', engine: 'setRule', post: true, traced: true, patient: true },
   { http: 'swaps', engine: 'swaps', post: true, traced: true, patient: true },
   { http: 'prop', engine: 'propEdit', post: true, traced: true, patient: true },
   { http: 'token', engine: 'token', post: true, traced: true, patient: true },

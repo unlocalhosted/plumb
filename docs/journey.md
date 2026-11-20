@@ -3660,6 +3660,31 @@ none. On the messy ledger example it finds 7, among them "Introducing Ledger" an
 "Live editing", "Save tokens", "Install") are gone with their styles; each section now opens on its heading, and every
 heading says what its section is without them. "Business" stays: it is a plan name inside a sample app's pricing card.
 
+### 61. Plumber starts writing plain CSS rules (2026-11-20)
+**The itch.** The owner: "this homepage is not fixeable through plumber ?". It isn't. Plumber's fixes are utility
+classes written into the JSX, and the site that draws the homepage doesn't run Tailwind, so those classes do
+nothing there. Adding `text-meta`, `p-4` and `rounded-lg` to a homepage heading left it at 48px with no padding. The
+homepage's look lives in rules in its `.css` files, and Sync never edited a rule. The owner chose to teach plumber to
+edit CSS rules over adding Tailwind to the site.
+
+**How we found the rest of the gap.** Asking plumber's engine about the homepage heading turned up two more missing
+pieces. From the site's project (`web/`) it refuses: "File must be inside the project root", because the homepage's
+files sit beside it in `homepage/`. From the homepage's own project it answers, but finds no rule for the heading at
+all: the `.title` rule is read, yet never linked to the `<h2 className="title">` that uses it.
+
+**The plan, in layers.** First, the write: change the value one rule sets for one property, in place. Next, the
+link: the page knows which rule wins for an element and property, so it sends that rule's selector and file, and
+the card offers the change. Last, the reach: the site's project must be able to read and write the homepage's files.
+
+**The first layer, and its proof.** Plumber can now be asked where a stylesheet sets a property for a selector (the
+value, its line and column), and can change that value with its undo. On a plain CSS project made from the homepage's
+own foundations stylesheet, `.lead`'s colour went from `var(--ink-2)` to `var(--ink-1)` on line 52 with nothing else
+in the file moved, and undo put it back. Refused, with nothing written: a file that changed since it was read, a
+value that tries to leave the rule (`red; } body { … }`), and a selector the file doesn't have. A rule inside
+`@media` is not changed by this layer.
+
+**Media hooks.** The one-line diff of `.lead`, and the undo.
+
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
 - Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".
@@ -5272,6 +5297,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   `generator/shots/generate-craftingattention.png` (local).
 
 ## Open gaps
+- **Plumber can't fix the homepage on the site yet.** It can now write a value into a plain CSS rule, but the card doesn't yet know which rule styles an element, and the site's project can't reach the homepage's files, which sit beside it ([entry](#61-plumber-starts-writing-plain-css-rules-2026-11-20)).
 - **The owner's slop checks are untuned on real apps.** Tight letters fire on every heading that sets them (28 on our homepage), the shade count reads greys mixed by opacity as separate shades, and none of the eleven has been run through a full plumber read or the docs' recordings yet ([entry](#56-the-owners-slop-list-becomes-eleven-anti-slop-checks-2026-11-20)).
 - **The mark was never tried among real neighbours** (a row of browser tabs, an npm page, a README header), only on empty tiles. Nobody outside has been asked whether the round leg reads as an R or leans towards a B.
 - Resizing: a size between your steps always lands on the nearest one; there is no way yet to keep an exact size as

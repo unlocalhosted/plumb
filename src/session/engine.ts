@@ -27,6 +27,7 @@ import { ledgerPath } from '../ledger/store.js';
 import { sourceHash } from '../collect/cache.js';
 import { matchesPath } from '../collect/pattern.js';
 import { lineStarts, sourceSite } from '../collect/source.js';
+import { findDeclaration, plainValue } from './css-rules.js';
 import { parseSync } from 'oxc-parser';
 import type { ClassTraceLimit } from '../collect/computed.js';
 import type { StructuredEdit, RefusedSite } from '../surfaces/edits.js';
@@ -1403,6 +1404,37 @@ export class Session extends EventEmitter {
       const change = setProp(_file, source, facts.location.start, facts.location.tag, facts.decisions, facts.site.declarations, key, token, { roles, ...(facts.unit ? { unit: facts.unit } : {}) }, at ? offsetOf(source, at) : undefined);
       return { ...change, replacement: change.replacement };
     }, label);
+  }
+  /**
+   * Where a plain stylesheet sets one property for one selector (css-rules.ts): the value as written and its place, or
+   * null. The page knows which rule wins for an element; this answers where that rule writes the value.
+   */
+  async rule(options: { file: string; selector: string; prop: string }): Promise<{ file: string; hash: string; line: number; column: number; selector: string; prop: string; value: string } | null> {
+    const { file, selector, prop } = options ?? {} as { file: string; selector: string; prop: string };
+    if (typeof file !== 'string' || !file.trim() || typeof selector !== 'string' || !selector.trim() || typeof prop !== 'string' || !prop.trim()) throw new UsageError('Rule requires file, selector and prop.');
+    const path = this.file(file);
+    if (!/\.css$/.test(path)) throw new UsageError('Rules are read from a stylesheet.');
+    const text = await readFile(path, 'utf8');
+    const found = findDeclaration(text, selector, prop);
+    if (!found) return null;
+    const at = sourceSite({ file: path, text, lineStarts: lineStarts(text) }, found.start, '');
+    return { file: path, hash: sourceHash(text), line: at.line, column: at.column, selector: found.selector, prop: found.prop, value: found.value };
+  }
+  /** Change the value a plain stylesheet's rule writes for one property: one declaration, in place, with its undo. */
+  async setRule(options: { file: string; hash: string; selector: string; prop: string; value: string }): Promise<Record<string, unknown>> {
+    const { file, hash, selector, prop, value } = options ?? {} as { file: string; hash: string; selector: string; prop: string; value: string };
+    if (typeof file !== 'string' || !file.trim() || typeof hash !== 'string' || !hash.trim() || typeof selector !== 'string' || !selector.trim() || typeof prop !== 'string' || !prop.trim()) throw new UsageError('Set rule requires file, hash, selector, prop and value.');
+    if (!plainValue(value)) throw new UsageError('A value is plain CSS of at most two hundred characters, with no ; { } or url().');
+    const path = this.file(file);
+    if (!/\.css$/.test(path)) throw new UsageError('Rules are written to a stylesheet.');
+    const text = await readFile(path, 'utf8');
+    if (sourceHash(text) !== hash) throw stale();
+    const found = findDeclaration(text, selector, prop);
+    if (!found) throw new UsageError(`${selector} does not set ${prop} in this stylesheet.`, 'not-found');
+    if (found.value === value.trim()) throw new UsageError('That value is already set.');
+    const next = text.slice(0, found.start) + value.trim() + text.slice(found.end);
+    const written = await this.rewrite(path, hash, next, `${found.selector} { ${found.prop}: ${found.value} → ${value.trim()} }`.slice(0, 120));
+    return { revision: this.revision, file: path, hash: written.hash, applied: [`rule:${found.selector}:${found.prop}`], selector: found.selector, from: found.value, to: value.trim(), undo: written.undo };
   }
   /** Swap classes on an element (a craft suggestion): take `from` out of its static className, put `to` in its place. */
   async swap(options: SwapOptions): Promise<ApplyResult> {
