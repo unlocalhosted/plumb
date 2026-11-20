@@ -18,3 +18,22 @@ Files:
 - beui/lib/ease.ts
 - beui/lib/hooks/use-hover-capable.ts
 - beui/lib/utils.ts
+
+- https://beui.dev/r/number-ticker.json (beUI free components: installed with the shadcn CLI, "the source is yours"; Pro items are not in the registry (beui.dev))
+  - vendor/beui/components/number-ticker.tsx
+  - vendor/beui/lib/ease.ts
+  - vendor/beui/lib/i18n.tsx
+  - vendor/beui/lib/utils.ts
+
+- https://beui.dev/r/animated-number.json (beUI free components: installed with the shadcn CLI, "the source is yours"; Pro items are not in the registry (beui.dev))
+  - vendor/beui/components/animated-number.tsx
+  - vendor/beui/lib/ease.ts
+  - vendor/beui/lib/utils.ts
+
+- https://uiarc.dev/r/timeline.json (Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing))
+  - vendor/arc/timeline/timeline.tsx
+  - vendor/arc/timeline/timeline.module.css
+
+- https://uiarc.dev/r/progress.json (Arc open core: free and open source; only free items are in its public registry (uiarc.dev/pricing))
+  - vendor/arc/progress/progress.tsx
+  - vendor/arc/progress/progress.module.css

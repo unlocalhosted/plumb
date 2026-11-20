@@ -1,18 +1,19 @@
 import { useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { LifetimePricing } from '@/components/home/pricing/LifetimePricing';
-import { NextPricing } from './NextPricing.jsx';
+import { OfferCard } from './OfferCard.jsx';
+import variants from './variants.generated.json';
 import './playground.css';
 
+// every variant the generator wrote, beside the product's own component as shipped from its source
 function Page() {
-  // the lifetime pass isn't exported by the product; the shipped card's own drawing is placed in the new card
-  useEffect(() => { const t = setInterval(() => { const art = document.querySelector('[data-variant="shipped"] svg.lifetime-art'), slot = document.querySelector('[data-variant="next"] .lifetime-offer-summary'); if (art && slot && !slot.querySelector('svg.lifetime-art')) { slot.append(art.cloneNode(true)); clearInterval(t); } }, 100); return () => clearInterval(t); }, []);
+  // the lifetime pass isn't exported by the product: the shipped card's own drawing is placed in each variant
+  useEffect(() => { const t = setInterval(() => { const art = document.querySelector('[data-variant="shipped"] svg.lifetime-art'); if (!art) return; for (const slot of document.querySelectorAll('[data-pass-slot]')) if (!slot.firstChild) slot.append(art.cloneNode(true)); clearInterval(t); }, 100); return () => clearInterval(t); }, []);
   return (
     <main className="pg ca-landing home-redesign home-discovery">
-      <h2 className="pg-label">As shipped</h2>
+      <h2 className="pg-label">shipped</h2>
       <div data-variant="shipped"><LifetimePricing authenticated={false} initialConfig={{ currency: 'INR' }} /></div>
-      <h2 className="pg-label">With library parts: Arc’s counter and stepper</h2>
-      <div data-variant="next"><NextPricing /></div>
+      {variants.map((v) => (<div key={v.id}><h2 className="pg-label">{v.id}</h2><div data-variant={v.id}><OfferCard parts={v.parts} /></div></div>))}
     </main>
   );
 }

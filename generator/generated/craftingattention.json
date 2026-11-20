@@ -1,0 +1,314 @@
+{
+ "product": "Crafting attention",
+ "matched": {
+  "price": [
+   "arc/animated-counter",
+   "beui/number-ticker",
+   "beui/animated-number"
+  ],
+  "position": [
+   "arc/stepper"
+  ],
+  "action": [],
+  "proof": [],
+  "status": []
+ },
+ "unplaced": {
+  "price": [
+   "arc/metric-card",
+   "beui/digit-swap",
+   "arc/gauge",
+   "arc/usage-meter",
+   "beui/volume-profile"
+  ],
+  "position": [
+   "arc/progress",
+   "arc/timeline",
+   "beui/timeline",
+   "beui/adaptive-stepper",
+   "beui/smooth-scroll",
+   "beui/scroll-progress",
+   "beui/agent-progress",
+   "arc/onboarding-checklist"
+  ],
+  "action": [
+   "beui/action-swap-cascade",
+   "beui/action-swap-roll",
+   "beui/agent-progress",
+   "arc/button",
+   "arc/action-swap",
+   "arc/action-button",
+   "arc/floating-button-group",
+   "arc/copy-button",
+   "arc/toast",
+   "arc/code-block",
+   "arc/hold-to-confirm",
+   "arc/cookie-consent"
+  ],
+  "proof": [
+   "arc/sortable-data-table",
+   "arc/reorderable-list",
+   "beui/sortable-stack",
+   "beui/table-async",
+   "arc/dropdown-menu",
+   "arc/onboarding-checklist",
+   "arc/image-compare",
+   "beui/todo-list"
+  ],
+  "status": [
+   "beui/scroll-progress",
+   "arc/badge",
+   "arc/chip-group",
+   "arc/countdown",
+   "beui/animated-badge",
+   "beui/animated-toast-stack",
+   "beui/loader",
+   "beui/status-bar",
+   "beui/message",
+   "beui/message-scroller",
+   "beui/file-diff",
+   "beui/tabs"
+  ]
+ },
+ "bridge": {
+  "answered": 27,
+  "own": [
+   "--font-display",
+   "--ease-spring",
+   "--radius-pill"
+  ],
+  "missed": []
+ },
+ "results": [
+  {
+   "id": "house",
+   "parts": {},
+   "notes": [
+    {
+     "rule": "craft/text-opacity",
+     "what": "Faded with opacity",
+     "title": "This text uses opacity 0.65. Use a colour instead.",
+     "slot": "price"
+    },
+    {
+     "rule": "craft/icon-side",
+     "what": "Too much space by the icon",
+     "title": "The icon side has the same 24px as the text side. Take 4px off it.",
+     "slot": null
+    },
+    {
+     "rule": "experience/button-name-reused",
+     "what": "Many buttons, one name",
+     "title": "8 buttons here are all named \"Get Lifetime Access\".",
+     "slot": null
+    }
+   ],
+   "verdict": "house",
+   "case": null
+  },
+  {
+   "id": "animated-counter",
+   "parts": {
+    "price": "arc/animated-counter"
+   },
+   "notes": [
+    {
+     "rule": "craft/icon-side",
+     "what": "Too much space by the icon",
+     "title": "The icon side has the same 24px as the text side. Take 4px off it.",
+     "slot": null
+    }
+   ],
+   "verdict": "kept",
+   "case": {
+    "now": "Faded with opacity; Too much space by the icon; Many buttons, one name",
+    "change": "price: the price rolls in digit by digit, each column in the direction the number moved (arc/animated-counter)",
+    "why": "The price set in the brand’s pixel type with its cadence beside it (\"INR · one-time\"), and an old price struck through when there is one.",
+    "proof": "3 notes before, 1 after; 0 added, 2 resolved"
+   }
+  },
+  {
+   "id": "number-ticker",
+   "parts": {
+    "price": "beui/number-ticker"
+   },
+   "notes": [
+    {
+     "rule": "craft/half-pixel",
+     "what": "Blurry text",
+     "title": "Moved by 0px, -598.4px, so it lands between pixels.",
+     "slot": "price"
+    },
+    {
+     "rule": "craft/half-pixel",
+     "what": "Blurry text",
+     "title": "Moved by 0px, -448.8px, so it lands between pixels.",
+     "slot": "price"
+    },
+    {
+     "rule": "craft/half-pixel",
+     "what": "Blurry text",
+     "title": "Moved by 0px, -74.8px, so it lands between pixels.",
+     "slot": "price"
+    },
+    {
+     "rule": "craft/half-pixel",
+     "what": "Blurry text",
+     "title": "Moved by 0px, -673.2px, so it lands between pixels.",
+     "slot": "price"
+    },
+    {
+     "rule": "craft/icon-side",
+     "what": "Too much space by the icon",
+     "title": "The icon side has the same 24px as the text side. Take 4px off it.",
+     "slot": null
+    }
+   ],
+   "verdict": "dropped",
+   "case": {
+    "now": "Faded with opacity; Too much space by the icon; Many buttons, one name",
+    "change": "price: the price ticks up from zero as the card comes into view, digits blurring as they pass (beui/number-ticker)",
+    "why": "The price set in the brand’s pixel type with its cadence beside it (\"INR · one-time\"), and an old price struck through when there is one.",
+    "proof": "3 notes before, 5 after; 4 added (Blurry text, Blurry text, Blurry text, Blurry text), 2 resolved"
+   }
+  },
+  {
+   "id": "animated-number",
+   "parts": {
+    "price": "beui/animated-number"
+   },
+   "notes": [
+    {
+     "rule": "craft/icon-side",
+     "what": "Too much space by the icon",
+     "title": "The icon side has the same 24px as the text side. Take 4px off it.",
+     "slot": null
+    }
+   ],
+   "verdict": "kept",
+   "case": {
+    "now": "Faded with opacity; Too much space by the icon; Many buttons, one name",
+    "change": "price: the price counts up from zero as the card comes into view (beui/animated-number)",
+    "why": "The price set in the brand’s pixel type with its cadence beside it (\"INR · one-time\"), and an old price struck through when there is one.",
+    "proof": "3 notes before, 1 after; 0 added, 2 resolved"
+   }
+  },
+  {
+   "id": "stepper",
+   "parts": {
+    "position": "arc/stepper"
+   },
+   "notes": [
+    {
+     "rule": "craft/text-opacity",
+     "what": "Faded with opacity",
+     "title": "This text uses opacity 0.65. Use a colour instead.",
+     "slot": "price"
+    },
+    {
+     "rule": "craft/icon-side",
+     "what": "Too much space by the icon",
+     "title": "The icon side has the same 24px as the text side. Take 4px off it.",
+     "slot": null
+    }
+   ],
+   "verdict": "kept",
+   "case": {
+    "now": "Faded with opacity; Too much space by the icon; Many buttons, one name",
+    "change": "position: the three launch stages as a track, the current one marked, each with its price (arc/stepper)",
+    "why": "the position has no part on the live page to learn from (it is in the product's source only)",
+    "proof": "3 notes before, 2 after; 0 added, 1 resolved"
+   }
+  },
+  {
+   "id": "animated-counter+stepper",
+   "parts": {
+    "price": "arc/animated-counter",
+    "position": "arc/stepper"
+   },
+   "notes": [
+    {
+     "rule": "craft/icon-side",
+     "what": "Too much space by the icon",
+     "title": "The icon side has the same 24px as the text side. Take 4px off it.",
+     "slot": null
+    }
+   ],
+   "verdict": "kept",
+   "case": {
+    "now": "Faded with opacity; Too much space by the icon; Many buttons, one name",
+    "change": "price: the price rolls in digit by digit, each column in the direction the number moved (arc/animated-counter) · position: the three launch stages as a track, the current one marked, each with its price (arc/stepper)",
+    "why": "The price set in the brand’s pixel type with its cadence beside it (\"INR · one-time\"), and an old price struck through when there is one. the position has no part on the live page to learn from (it is in the product's source only)",
+    "proof": "3 notes before, 1 after; 0 added, 2 resolved"
+   }
+  },
+  {
+   "id": "number-ticker+stepper",
+   "parts": {
+    "price": "beui/number-ticker",
+    "position": "arc/stepper"
+   },
+   "notes": [
+    {
+     "rule": "craft/half-pixel",
+     "what": "Blurry text",
+     "title": "Moved by 0px, -598.4px, so it lands between pixels.",
+     "slot": "price"
+    },
+    {
+     "rule": "craft/half-pixel",
+     "what": "Blurry text",
+     "title": "Moved by 0px, -448.8px, so it lands between pixels.",
+     "slot": "price"
+    },
+    {
+     "rule": "craft/half-pixel",
+     "what": "Blurry text",
+     "title": "Moved by 0px, -74.8px, so it lands between pixels.",
+     "slot": "price"
+    },
+    {
+     "rule": "craft/half-pixel",
+     "what": "Blurry text",
+     "title": "Moved by 0px, -673.2px, so it lands between pixels.",
+     "slot": "price"
+    },
+    {
+     "rule": "craft/icon-side",
+     "what": "Too much space by the icon",
+     "title": "The icon side has the same 24px as the text side. Take 4px off it.",
+     "slot": null
+    }
+   ],
+   "verdict": "dropped",
+   "case": {
+    "now": "Faded with opacity; Too much space by the icon; Many buttons, one name",
+    "change": "price: the price ticks up from zero as the card comes into view, digits blurring as they pass (beui/number-ticker) · position: the three launch stages as a track, the current one marked, each with its price (arc/stepper)",
+    "why": "The price set in the brand’s pixel type with its cadence beside it (\"INR · one-time\"), and an old price struck through when there is one. the position has no part on the live page to learn from (it is in the product's source only)",
+    "proof": "3 notes before, 5 after; 4 added (Blurry text, Blurry text, Blurry text, Blurry text), 2 resolved"
+   }
+  },
+  {
+   "id": "animated-number+stepper",
+   "parts": {
+    "price": "beui/animated-number",
+    "position": "arc/stepper"
+   },
+   "notes": [
+    {
+     "rule": "craft/icon-side",
+     "what": "Too much space by the icon",
+     "title": "The icon side has the same 24px as the text side. Take 4px off it.",
+     "slot": null
+    }
+   ],
+   "verdict": "kept",
+   "case": {
+    "now": "Faded with opacity; Too much space by the icon; Many buttons, one name",
+    "change": "price: the price counts up from zero as the card comes into view (beui/animated-number) · position: the three launch stages as a track, the current one marked, each with its price (arc/stepper)",
+    "why": "The price set in the brand’s pixel type with its cadence beside it (\"INR · one-time\"), and an old price struck through when there is one. the position has no part on the live page to learn from (it is in the product's source only)",
+    "proof": "3 notes before, 1 after; 0 added, 2 resolved"
+   }
+  }
+ ]
+}

@@ -4510,6 +4510,19 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   worked out by the product's own pricing tiers) where the shipped card says it in one sentence, and the price rolls
   in. beUI's button still read as beUI and was dropped for the product's own. Sheet:
   `generator/shots/playground-sheet.png` (local).
+- **The whole feature, end to end.** The owner: "implement the whole feature please". One command now runs it on
+  crafting attention: a catalogue of the 303 free parts in Arc's and beUI's registries, each tagged with the jobs it
+  can do and the content it needs; a matcher that offers per slot only parts doing that job with content the product
+  has (no billing toggle, since the product sells one lifetime price); an installer from the registries; a bridge that
+  answers each part's variables with the product's semantic tokens (27 answered, 3 already the product's, none
+  missed), after a first draft that mapped "accent" to the text-on-accent colour and pointed a variable at itself;
+  every variant built in the product's own component; plumber's craft engine on each card; and a sheet with each
+  survivor's case. First run: seven variants, five kept, two dropped. beUI's number ticker was dropped for adding four
+  "blurry text" notes, its digits landing between pixels; Arc's counter, beUI's animated number and Arc's stepper each
+  add nothing and resolve the house card's faded strike price. Not yet: adapters for four parts only (Arc's timeline
+  and progress were matched and don't fit: one is a feed of timestamped events, the other needs a learner count the
+  product doesn't expose), and the other three products have no template. Sheet:
+  `generator/shots/generate-craftingattention.png` (local).
 
 ## Open gaps
 - **The mark was never tried among real neighbours** (a row of browser tabs, an npm page, a README header), only on empty tiles. Nobody outside has been asked whether the round leg reads as an R or leans towards a B.

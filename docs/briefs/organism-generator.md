@@ -5,6 +5,13 @@ Status: the engine (layers 0–7) was signed off by the owner on 2026-11-20 and 
 craft rules with alignment taste, the unit is the row of cards, and every change must make its case. This version
 adds them; the owner looks before layer 2 starts. How options are shown and how it learns your taste are in
 [organism-generator-learning.md](organism-generator-learning.md), parked until layer 3 has a result.
+**Built, first version (2026-11-20):** `node generator/generate.mjs craftingattention` runs the whole loop on a real
+product: it matches free library parts to the organism's slots by job and real content (`generator/match.mjs`, over
+the catalogue in `generator/library/`), installs those with an adapter from their registries, bridges their
+variables onto the product's tokens (`generator/bridge.mjs`), builds every variant in the product's own component
+(`generator/playground/`), judges each with plumber's craft engine and drops any that add a note, and writes the
+sheet with each survivor's case. Not yet: adapters exist for four parts only, the off-screen build is the playground
+rather than the engine's, and the other three products have no template.
 It builds on [engine-foundations.md](engine-foundations.md), which plans the layout generator (F7, "the engine is a
 function you can call on a candidate", layer 6). That brief leaves open how candidates are made. This one answers it.
 

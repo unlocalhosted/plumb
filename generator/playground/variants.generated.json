@@ -1,0 +1,51 @@
+[
+ {
+  "id": "house",
+  "parts": {}
+ },
+ {
+  "id": "animated-counter",
+  "parts": {
+   "price": "arc/animated-counter"
+  }
+ },
+ {
+  "id": "number-ticker",
+  "parts": {
+   "price": "beui/number-ticker"
+  }
+ },
+ {
+  "id": "animated-number",
+  "parts": {
+   "price": "beui/animated-number"
+  }
+ },
+ {
+  "id": "stepper",
+  "parts": {
+   "position": "arc/stepper"
+  }
+ },
+ {
+  "id": "animated-counter+stepper",
+  "parts": {
+   "price": "arc/animated-counter",
+   "position": "arc/stepper"
+  }
+ },
+ {
+  "id": "number-ticker+stepper",
+  "parts": {
+   "price": "beui/number-ticker",
+   "position": "arc/stepper"
+  }
+ },
+ {
+  "id": "animated-number+stepper",
+  "parts": {
+   "price": "beui/animated-number",
+   "position": "arc/stepper"
+  }
+ }
+]
