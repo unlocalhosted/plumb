@@ -3,6 +3,8 @@
 export const product = {
   id: 'algorecall',
   name: 'algorecall',
+  // what the product is for, in a sentence: the words its buttons mean inside it (a review here is practice, not a rating)
+  about: 'spaced-repetition practice: recalling coding interview patterns before they are forgotten',
   root: '/Users/vijaysingh/unlocalhosted/algorecall',
   tokens: ['src/theme.css', 'src/index.css'],
   wrapper: '', mode: 'light',

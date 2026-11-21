@@ -9,6 +9,8 @@ import './atoms.css';
 import './verdict.css';
 // how each form does as an interaction, against published standards (generator/data/interaction-judge.mjs)
 const VERDICTS = import.meta.glob('./verdicts/*.json', { eager: true, import: 'default' });
+// the icon chosen by meaning for each product's atom (generator/style/icon.mjs); without one, the shipped icon
+const ICONS = import.meta.glob('./icons/*.json', { eager: true, import: 'default' });
 const VERDICT_WORDS = { works: 'Works', 'needs-work': 'Needs work', breaks: 'Breaks for some people' };
 
 // one line per form: the verdict, and what fails in a few words; what it measured and the source show on hover. The
@@ -83,7 +85,7 @@ function Page({ Shipped, product, atom }) {
   const verdictOf = (id) => verdicts?.forms.find((f) => f.form === id);
   // the words default to the original's own; the gesture forms say the same thing as a gesture
   const label = atom.label ?? skin?.text ?? '', lower = label ? label[0].toLowerCase() + label.slice(1) : '';
-  const a = { slideLabel: `Slide to ${lower}`, holdLabel: `Hold to ${lower}`, doneLabel: 'One moment', ...atom, label, iconHTML: skin?.iconHTML };
+  const a = { slideLabel: `Slide to ${lower}`, holdLabel: `Hold to ${lower}`, doneLabel: 'One moment', ...atom, label, iconHTML: ICONS[`./icons/${product.id}.json`]?.svg ?? skin?.iconHTML };
   const vars = skin ? { ...skin.vars, '--atom-width': `${skin.width}px` } : {};
   return (
     <main className={`atoms-page ${product.wrapper ?? ''}`}>

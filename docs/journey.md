@@ -3128,6 +3128,26 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **Still open:** the bar's other checks (progress shows, fits where the original sat, keeps its weight) aren't
   plumber rules yet.
 
+### 54. The icon is chosen by meaning, not copied (2026-11-21)
+
+**The itch.** "the choice of icon is fucking retarded man": algorecall's suggestions put a tiny copy of the lesson's
+topic picture after "Start review".
+
+**The system behind it.** Suggestions copied whatever picture sat in the shipped button. On crafting attention that is
+an arrow, which means go. On algorecall it is the topic's picture, which says nothing about starting.
+
+**What we tried.** The owner asked for system-1 models only, through the jev service on vm-agent, with no language
+model. Embedding the label against all 1,694 Lucide icon names and their published tags picked a half star ("review"
+read as a rating). Adding what algorecall is for picked a code chat bubble, which is the topic again.
+
+**What we chose.** An icon on a button shows the action, so the field is first narrowed to the icons Lucide itself
+files under arrows, media and navigation. Only those are ranked by meaning against the label, read in the product's
+own sense. For algorecall that gives repeat-1, a loop arrow: in a spaced-repetition app, reviewing means going round
+again. The runners-up were history (a clock turning back) and a code square. A shipped icon from the same set stays
+when it means the action nearly as well.
+
+**Proof.** `docs/films/algorecall/algorecall-icon.mp4`, the suggestions pressed in light and dark with the loop arrow.
+
 ### 53. The style tools run on a second product: algorecall (2026-11-21)
 
 **The itch.** Layer 6 of the plan: the same tools on another product, to show they are general and not tuned to

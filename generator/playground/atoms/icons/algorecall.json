@@ -1,0 +1,46 @@
+{
+ "product": "algorecall",
+ "atom": "start",
+ "set": "lucide-react",
+ "action": "Start review: starting a review, in spaced-repetition practice: recalling coding interview patterns before they are forgotten",
+ "pick": {
+  "name": "repeat-1",
+  "score": 0.386,
+  "why": "the nearest in meaning to “Start review: starting a review, in spaced-repetition practice: recalling coding interview patterns before they are forgotten” of the 660 lucide-react icons filed under arrows, multimedia, navigation"
+ },
+ "nearest": [
+  {
+   "name": "repeat-1",
+   "score": 0.386
+  },
+  {
+   "name": "code-square",
+   "score": 0.312
+  },
+  {
+   "name": "history",
+   "score": 0.286
+  },
+  {
+   "name": "code-2",
+   "score": 0.284
+  },
+  {
+   "name": "repeat",
+   "score": 0.275
+  },
+  {
+   "name": "redo-dot",
+   "score": 0.272
+  },
+  {
+   "name": "list-start",
+   "score": 0.264
+  },
+  {
+   "name": "undo-2",
+   "score": 0.263
+  }
+ ],
+ "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1em\" height=\"1em\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-repeat1 lucide-repeat-1\" aria-hidden=\"true\"><path d=\"m17 2 4 4-4 4\"></path><path d=\"M3 11v-1a4 4 0 0 1 4-4h14\"></path><path d=\"m7 22-4-4 4-4\"></path><path d=\"M21 13v1a4 4 0 0 1-4 4H3\"></path><path d=\"M11 10h1v4\"></path></svg>"
+}
