@@ -312,5 +312,89 @@
     "derived": "Adobe Color rule"
    }
   ]
+ },
+ "shadow": {
+  "method": "the product’s own hard lip, learned from its button",
+  "own": [
+   {
+    "x": 0,
+    "y": 3,
+    "blur": 0,
+    "spread": 0,
+    "inset": false,
+    "color": "oklch(0.737 0.156 294.6)",
+    "token": "--home-key-edge"
+   },
+   {
+    "x": 0,
+    "y": 6,
+    "blur": 0,
+    "spread": 0,
+    "inset": false,
+    "color": "oklch(0.66 0.22 295 / 0.15)",
+    "token": "--color-focus-ring"
+   }
+  ],
+  "relation": [
+   {
+    "y": 3,
+    "x": 0,
+    "blur": 0,
+    "spread": 0,
+    "dl": 0.082,
+    "cShare": 0.744,
+    "dh": -1.9,
+    "alpha": 1,
+    "token": "--home-key-edge"
+   },
+   {
+    "y": 6,
+    "x": 0,
+    "blur": 0,
+    "spread": 0,
+    "dl": 0.005,
+    "cShare": 1.049,
+    "dh": -1.5,
+    "alpha": 0.15,
+    "token": "--color-focus-ring"
+   }
+  ],
+  "states": {
+   "rest": {
+    "height": 1,
+    "shadow": "0px 3px 0px 0px oklch(0.736 0.153 294.6), 0px 6px 0px 0px oklch(0.655 0.210 295.0 / 0.15)"
+   },
+   "pointed at": {
+    "height": 1,
+    "shadow": "0px 3px 0px 0px oklch(0.697 0.157 294.5), 0px 6px 0px 0px oklch(0.621 0.219 294.9 / 0.15)"
+   },
+   "pressed": {
+    "height": 0.3333333333333333,
+    "shadow": "0px 1px 0px 0px oklch(0.691 0.144 294.2), 0px 2px 0px 0px oklch(0.614 0.203 294.6 / 0.15)"
+   }
+  },
+  "reproduces": [
+   {
+    "own": "3px oklch(0.737 0.156 294.6)",
+    "redrawn": "3px oklch(0.736 0.153 294.6)",
+    "colourDiff": 0.32,
+    "sameOffset": true
+   },
+   {
+    "own": "6px oklch(0.66 0.22 295 / 0.15)",
+    "redrawn": "6px oklch(0.655 0.210 295.0 / 0.15)",
+    "colourDiff": 0.94,
+    "sameOffset": true
+   }
+  ],
+  "forSurface": {
+   "note": "redraw(surface, height) for any new surface: the same relation applied",
+   "examples": {
+    "step 9": "0px 3px 0px 0px oklch(0.736 0.153 294.6), 0px 6px 0px 0px oklch(0.655 0.210 295.0 / 0.15)",
+    "step 10": "0px 3px 0px 0px oklch(0.697 0.157 294.5), 0px 6px 0px 0px oklch(0.621 0.219 294.9 / 0.15)",
+    "step 11": "0px 3px 0px 0px oklch(0.856 0.083 296.9), 0px 6px 0px 0px oklch(0.779 0.130 297.3 / 0.15)",
+    "step 12": "0px 3px 0px 0px oklch(0.985 0.011 296.2), 0px 6px 0px 0px oklch(0.915 0.047 296.6 / 0.15)"
+   }
+  }
  }
 }

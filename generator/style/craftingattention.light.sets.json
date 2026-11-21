@@ -1,0 +1,354 @@
+{
+ "product": "craftingattention",
+ "mode": "light",
+ "buttonWords": "14px/550",
+ "sets": {
+  "pour": {
+   "rest": {
+    "fill": {
+     "value": "#8047e1",
+     "token": "--color-focus-ring",
+     "why": "Radix step 9 (solid), the product’s own --color-focus-ring"
+    },
+    "ink": {
+     "value": "oklch(0.99 0.005 260)",
+     "token": "--color-on-accent",
+     "why": "the product’s own pairing (--color-on-accent on --color-accent-500): APCA Lc 79.2, 1.5px under APCA’s line at 14px/550, as shipped"
+    },
+    "shadow": {
+     "value": "0px 3px 0px 0px #5c3ba2, 0px 6px 0px 0px #8047e126",
+     "why": "the product’s own hard lip, learned from its button, at height 1"
+    }
+   },
+   "pointed": {
+    "fill": {
+     "value": "#7339cf",
+     "token": "--ca-violet",
+     "why": "Radix step 10 (solid pointed at), the product’s own --ca-violet"
+    },
+    "ink": {
+     "value": "oklch(0.99 0.005 260)",
+     "token": "--color-on-accent",
+     "why": "the same words as the state before (--color-on-accent): APCA Lc 84.4, as readable as the shipped button"
+    },
+    "shadow": {
+     "value": "0px 3px 0px 0px #502e92, 0px 6px 0px 0px #7339cf26",
+     "why": "the product’s own hard lip, learned from its button, at height 1"
+    }
+   },
+   "pressed": {
+    "fill": {
+     "value": "#522b94",
+     "token": null,
+     "why": "on Radix’s curve, 50% of the way from step 11 to step 12, derived; 0.15 lighter or darker than before"
+    },
+    "ink": {
+     "value": "oklch(0.99 0.005 260)",
+     "token": "--color-on-accent",
+     "why": "the same words as the state before (--color-on-accent): APCA Lc 94.2, as readable as the shipped button"
+    },
+    "shadow": {
+     "value": "0px 1px 0px 0px #331b61, 0px 2px 0px 0px #522b9426",
+     "why": "the product’s own hard lip, learned from its button, at height 0.33"
+    }
+   },
+   "done": {
+    "fill": {
+     "value": "#522b94",
+     "token": null,
+     "why": "on Radix’s curve, 50% of the way from step 11 to step 12, derived; 0.15 lighter or darker than before"
+    },
+    "ink": {
+     "value": "oklch(0.99 0.005 260)",
+     "token": "--color-on-accent",
+     "why": "the same words as the state before (--color-on-accent): APCA Lc 94.2, as readable as the shipped button"
+    },
+    "shadow": {
+     "value": "0px 3px 0px 0px #331b61, 0px 6px 0px 0px #522b9426",
+     "why": "the product’s own hard lip, learned from its button, at height 1"
+    }
+   }
+  },
+  "lead": {
+   "rest": {
+    "fill": {
+     "value": "#8047e1",
+     "token": "--color-focus-ring",
+     "why": "Radix step 9 (solid), the product’s own --color-focus-ring"
+    },
+    "ink": {
+     "value": "oklch(0.99 0.005 260)",
+     "token": "--color-on-accent",
+     "why": "the product’s own pairing (--color-on-accent on --color-accent-500): APCA Lc 79.2, 1.5px under APCA’s line at 14px/550, as shipped"
+    },
+    "shadow": {
+     "value": "0px 3px 0px 0px #5c3ba2, 0px 6px 0px 0px #8047e126",
+     "why": "the product’s own hard lip, learned from its button, at height 1"
+    }
+   },
+   "pointed": {
+    "fill": {
+     "value": "#7339cf",
+     "token": "--ca-violet",
+     "why": "Radix step 10 (solid pointed at), the product’s own --ca-violet"
+    },
+    "ink": {
+     "value": "oklch(0.99 0.005 260)",
+     "token": "--color-on-accent",
+     "why": "the same words as the state before (--color-on-accent): APCA Lc 84.4, as readable as the shipped button"
+    },
+    "shadow": {
+     "value": "0px 3px 0px 0px #502e92, 0px 6px 0px 0px #7339cf26",
+     "why": "the product’s own hard lip, learned from its button, at height 1"
+    }
+   },
+   "pressed": {
+    "fill": {
+     "value": "#7339cf",
+     "token": "--ca-violet",
+     "why": "Radix step 10 (solid pointed at), the product’s own --ca-violet"
+    },
+    "ink": {
+     "value": "oklch(0.99 0.005 260)",
+     "token": "--color-on-accent",
+     "why": "the same words as the state before (--color-on-accent): APCA Lc 84.4, as readable as the shipped button"
+    },
+    "shadow": {
+     "value": "0px 1px 0px 0px #502e92, 0px 2px 0px 0px #7339cf26",
+     "why": "the product’s own hard lip, learned from its button, at height 0.33"
+    }
+   },
+   "working": {
+    "fill": {
+     "value": "#8047e1",
+     "token": "--color-focus-ring",
+     "why": "Radix step 9 (solid), the product’s own --color-focus-ring"
+    },
+    "ink": {
+     "value": "oklch(0.99 0.005 260)",
+     "token": "--color-on-accent",
+     "why": "the same words as the state before (--color-on-accent): APCA Lc 79.2, as readable as the shipped button"
+    },
+    "shadow": {
+     "value": "0px 3px 0px 0px #5c3ba2, 0px 6px 0px 0px #8047e126",
+     "why": "the product’s own hard lip, learned from its button, at height 1"
+    }
+   }
+  },
+  "answer": {
+   "rest": {
+    "fill": {
+     "value": "#8047e1",
+     "token": "--color-focus-ring",
+     "why": "Radix step 9 (solid), the product’s own --color-focus-ring"
+    },
+    "ink": {
+     "value": "oklch(0.99 0.005 260)",
+     "token": "--color-on-accent",
+     "why": "the product’s own pairing (--color-on-accent on --color-accent-500): APCA Lc 79.2, 1.5px under APCA’s line at 14px/550, as shipped"
+    },
+    "shadow": {
+     "value": "0px 3px 0px 0px #5c3ba2, 0px 6px 0px 0px #8047e126",
+     "why": "the product’s own hard lip, learned from its button, at height 1"
+    }
+   },
+   "pointed": {
+    "fill": {
+     "value": "#7339cf",
+     "token": "--ca-violet",
+     "why": "Radix step 10 (solid pointed at), the product’s own --ca-violet"
+    },
+    "ink": {
+     "value": "oklch(0.99 0.005 260)",
+     "token": "--color-on-accent",
+     "why": "the same words as the state before (--color-on-accent): APCA Lc 84.4, as readable as the shipped button"
+    },
+    "shadow": {
+     "value": "0px 3px 0px 0px #502e92, 0px 6px 0px 0px #7339cf26",
+     "why": "the product’s own hard lip, learned from its button, at height 1"
+    }
+   },
+   "pressed": {
+    "fill": {
+     "value": "#7339cf",
+     "token": "--ca-violet",
+     "why": "Radix step 10 (solid pointed at), the product’s own --ca-violet"
+    },
+    "ink": {
+     "value": "oklch(0.99 0.005 260)",
+     "token": "--color-on-accent",
+     "why": "the same words as the state before (--color-on-accent): APCA Lc 84.4, as readable as the shipped button"
+    },
+    "shadow": {
+     "value": "0px 1px 0px 0px #502e92, 0px 2px 0px 0px #7339cf26",
+     "why": "the product’s own hard lip, learned from its button, at height 0.33"
+    }
+   },
+   "working": {
+    "fill": {
+     "value": "#8047e1",
+     "token": "--color-focus-ring",
+     "why": "Radix step 9 (solid), the product’s own --color-focus-ring"
+    },
+    "ink": {
+     "value": "oklch(0.99 0.005 260)",
+     "token": "--color-on-accent",
+     "why": "the same words as the state before (--color-on-accent): APCA Lc 79.2, as readable as the shipped button"
+    },
+    "shadow": {
+     "value": "0px 3px 0px 0px #5c3ba2, 0px 6px 0px 0px #8047e126",
+     "why": "the product’s own hard lip, learned from its button, at height 1"
+    },
+    "line": {
+     "value": "#ede9fc",
+     "token": "--color-viz-pixel-highlight",
+     "why": "Radix step 3 (component at rest), the product’s own --color-viz-pixel-highlight; the growing line along the lip"
+    }
+   }
+  },
+  "sheen": {
+   "rest": {
+    "fill": {
+     "value": "#8047e1",
+     "token": "--color-focus-ring",
+     "why": "Radix step 9 (solid), the product’s own --color-focus-ring"
+    },
+    "ink": {
+     "value": "oklch(0.99 0.005 260)",
+     "token": "--color-on-accent",
+     "why": "the product’s own pairing (--color-on-accent on --color-accent-500): APCA Lc 79.2, 1.5px under APCA’s line at 14px/550, as shipped"
+    },
+    "shadow": {
+     "value": "0px 3px 0px 0px #5c3ba2, 0px 6px 0px 0px #8047e126",
+     "why": "the product’s own hard lip, learned from its button, at height 1"
+    },
+    "light": {
+     "value": "#ede9fc",
+     "token": "--color-viz-pixel-highlight",
+     "why": "Radix step 3 (component at rest), the product’s own --color-viz-pixel-highlight; the band of light, at 35% so the words keep their contrast"
+    }
+   },
+   "pointed": {
+    "fill": {
+     "value": "#7339cf",
+     "token": "--ca-violet",
+     "why": "Radix step 10 (solid pointed at), the product’s own --ca-violet"
+    },
+    "ink": {
+     "value": "oklch(0.99 0.005 260)",
+     "token": "--color-on-accent",
+     "why": "the same words as the state before (--color-on-accent): APCA Lc 84.4, as readable as the shipped button"
+    },
+    "shadow": {
+     "value": "0px 3px 0px 0px #502e92, 0px 6px 0px 0px #7339cf26",
+     "why": "the product’s own hard lip, learned from its button, at height 1"
+    }
+   },
+   "pressed": {
+    "fill": {
+     "value": "#7339cf",
+     "token": "--ca-violet",
+     "why": "Radix step 10 (solid pointed at), the product’s own --ca-violet"
+    },
+    "ink": {
+     "value": "oklch(0.99 0.005 260)",
+     "token": "--color-on-accent",
+     "why": "the same words as the state before (--color-on-accent): APCA Lc 84.4, as readable as the shipped button"
+    },
+    "shadow": {
+     "value": "0px 1px 0px 0px #502e92, 0px 2px 0px 0px #7339cf26",
+     "why": "the product’s own hard lip, learned from its button, at height 0.33"
+    }
+   }
+  },
+  "beam": {
+   "rest": {
+    "fill": {
+     "value": "#8047e1",
+     "token": "--color-focus-ring",
+     "why": "Radix step 9 (solid), the product’s own --color-focus-ring"
+    },
+    "ink": {
+     "value": "oklch(0.99 0.005 260)",
+     "token": "--color-on-accent",
+     "why": "the product’s own pairing (--color-on-accent on --color-accent-500): APCA Lc 79.2, 1.5px under APCA’s line at 14px/550, as shipped"
+    },
+    "shadow": {
+     "value": "0px 3px 0px 0px #5c3ba2, 0px 6px 0px 0px #8047e126",
+     "why": "the product’s own hard lip, learned from its button, at height 1"
+    }
+   },
+   "pressed": {
+    "fill": {
+     "value": "#7339cf",
+     "token": "--ca-violet",
+     "why": "Radix step 10 (solid pointed at), the product’s own --ca-violet"
+    },
+    "ink": {
+     "value": "oklch(0.99 0.005 260)",
+     "token": "--color-on-accent",
+     "why": "the same words as the state before (--color-on-accent): APCA Lc 84.4, as readable as the shipped button"
+    },
+    "shadow": {
+     "value": "0px 1px 0px 0px #502e92, 0px 2px 0px 0px #7339cf26",
+     "why": "the product’s own hard lip, learned from its button, at height 0.33"
+    }
+   },
+   "working": {
+    "fill": {
+     "value": "#8047e1",
+     "token": "--color-focus-ring",
+     "why": "Radix step 9 (solid), the product’s own --color-focus-ring"
+    },
+    "ink": {
+     "value": "oklch(0.99 0.005 260)",
+     "token": "--color-on-accent",
+     "why": "the same words as the state before (--color-on-accent): APCA Lc 79.2, as readable as the shipped button"
+    },
+    "shadow": {
+     "value": "0px 3px 0px 0px #5c3ba2, 0px 6px 0px 0px #8047e126",
+     "why": "the product’s own hard lip, learned from its button, at height 1"
+    },
+    "glow": {
+     "value": "#8047e1",
+     "token": "--color-focus-ring",
+     "why": "Radix step 9 (solid), the product’s own --color-focus-ring"
+    }
+   }
+  },
+  "metal": {
+   "rest": {
+    "fill": {
+     "value": "#391d69",
+     "token": null,
+     "why": "Radix step 12 (high-contrast words) as a face: the brand’s darkest step that is still clearly purple, so chrome has a dark ground"
+    },
+    "ink": {
+     "value": "oklch(0.99 0.005 260)",
+     "token": "--color-on-accent",
+     "why": "the product’s ink (--color-on-accent): APCA Lc 100.5, reads at 14px/550"
+    },
+    "shadow": {
+     "value": "0px 3px 0px 0px #1d0a3d, 0px 6px 0px 0px #391d6926",
+     "why": "the product’s own hard lip, learned from its button, at height 1"
+    }
+   },
+   "pressed": {
+    "fill": {
+     "value": "#391d69",
+     "token": null,
+     "why": "Radix step 12 (high-contrast words) as a face: the brand’s darkest step that is still clearly purple, so chrome has a dark ground"
+    },
+    "ink": {
+     "value": "oklch(0.99 0.005 260)",
+     "token": "--color-on-accent",
+     "why": "the same words as the state before (--color-on-accent): APCA Lc 100.5, as readable as the shipped button"
+    },
+    "shadow": {
+     "value": "0px 1px 0px 0px #1d0a3d, 0px 2px 0px 0px #391d6926",
+     "why": "the product’s own hard lip, learned from its button, at height 0.33"
+    }
+   }
+  }
+ }
+}

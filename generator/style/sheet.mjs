@@ -27,6 +27,16 @@ const engine = (m) => { const x = E[m]; if (!x) return '';
   <h4>Harmony partners · Adobe Color’s rules on the artist’s wheel</h4>
   <div class="ramp">${Object.entries(x.harmony).flatMap(([k, v]) => v.map((c) => sw(c, '', k))).join('')}</div>`; };
 
+// layers 3 and 4: the shadow recipe proven on the product's own button, and every suggestion's states as chosen sets
+const S = {}; for (const m of ['light', 'dark']) { try { S[m] = JSON.parse(await readFile(`${here}${product}.${m}.sets.json`, 'utf8')); } catch {} }
+const layer34 = (m) => { const x = E[m], sets = S[m]; if (!x?.shadow || !sets) return '';
+  const rep = x.shadow.reproduces.map((r) => `${e(r.own)} → ${e(r.redrawn)} (ΔE ${r.colourDiff})`).join('<br>');
+  const chip = (st, v) => `<div class="chip"><button style="background:${v.fill.value};color:${v.ink.value};box-shadow:${v.shadow.value}${v.glow ? `, 0 0 0 3px ${v.glow.value}55, 0 0 18px ${v.glow.value}88` : ''}">Start with an account</button>
+    <small><b>${e(st)}</b> · ${e(v.fill.why)} · words: ${e(v.ink.why)}${v.line ? ` · line: ${e(v.line.why)}` : ''}${v.light ? ` · light: ${e(v.light.why)}` : ''}${v.glow ? ` · glow: ${e(v.glow.why)}` : ''}</small></div>`;
+  return `<h4>Layer 3 · shadows: ${e(x.shadow.method)}</h4><p class="meta">The product’s own button shadow, redrawn from the learned recipe:<br>${rep}</p>
+  <h4>Layer 4 · each suggestion’s states, chosen by the pairing solver</h4>
+  ${Object.entries(sets.sets).map(([k, st]) => `<p class="fam">${e(k)}</p><div class="chips">${Object.entries(st).map(([s2, v]) => chip(s2, v)).join('')}</div>`).join('')}`; };
+
 const side = (m) => `<section class="side" style="--page:${m.page}">
   <h3>${m.mode === 'dark' ? 'Dark' : 'Light'} <small>page ${e(m.page)}</small></h3>
   <h4>Colour families</h4>
@@ -40,6 +50,7 @@ const side = (m) => `<section class="side" style="--page:${m.page}">
   <h4>Corners and type</h4>
   <p class="meta">Radii: ${m.radii.map((r) => `${r.radius}px (${r.count})`).join(', ')}</p>
   ${engine(m.mode)}
+  ${layer34(m.mode)}
   <h4>Type (layer 1)</h4><p class="meta">${m.type.slice(0, 8).map((t) => `${e(t.family)} ${t.size}/${t.weight} (${t.count})`).join(' · ')}</p>
 </section>`;
 const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -63,6 +74,7 @@ h1 { font:700 clamp(30px,5vw,44px)/1.1 var(--serif); margin:0; }
 .sw { width:68px; height:56px; border-radius:6px; padding:5px; display:flex; flex-direction:column; justify-content:space-between; font:10px/1.2 var(--sans); position:relative; overflow:hidden; }
 .sw b { font-weight:700; } .sw em { font-style:normal; font-size:9px; opacity:.8; line-height:1.1; } .sw .dv { position:absolute; top:5px; right:5px; font-style:normal; font-size:9px; opacity:.75; }
 .sw:has(em) { height:84px; width:84px; }
+.chips { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:14px 12px; margin-bottom:6px; } .chip { display:grid; gap:8px; align-content:start; } .chip button { all:unset; box-sizing:border-box; width:100%; height:48px; border-radius:5px; display:grid; place-items:center; font:550 14px Geist, sans-serif; } .chip small { font:11px/1.4 var(--sans); color:#888; }
 .states { display:grid; gap:10px; } .state { display:grid; gap:6px; } .state button { all:unset; box-sizing:border-box; width:300px; height:48px; border-radius:5px; display:grid; place-items:center; font:550 14px Geist, sans-serif; } .state small { font:12px/1.4 var(--sans); color:#888; } .sw span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; opacity:.85; } .sw i { position:absolute; top:5px; right:5px; font-style:normal; opacity:.7; }
 .pairs { display:grid; gap:6px; } .pair { border-radius:8px; padding:12px 14px; display:grid; gap:4px; font-family:Geist,var(--sans); box-shadow:inset 0 0 0 1px rgba(128,128,128,.18); }
 .pair span { line-height:1.15; } .pair small { font:11px var(--sans); opacity:.75; }
