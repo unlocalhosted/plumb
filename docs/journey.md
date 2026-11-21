@@ -3128,6 +3128,50 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **Still open:** the bar's other checks (progress shows, fits where the original sat, keeps its weight) aren't
   plumber rules yet.
 
+### 53. The style tools run on a second product: algorecall (2026-11-21)
+
+**The itch.** Layer 6 of the plan: the same tools on another product, to show they are general and not tuned to
+crafting attention's purple button.
+
+**How we found what broke.** Running the four tools on algorecall's start-review slab, a pale lichen-green button with
+dark green words, a thick lip and an inset highlight. Every problem showed up in that first pass.
+
+**The system behind it.** The tools still carried crafting attention's assumptions:
+- They guessed the brand from token names (accent, primary, button). Algorecall's slab colour has no such name, so the
+  engine picked black.
+- They read the page colour off the page. Algorecall paints its page on an app shell the playground doesn't mount, so
+  the page read as transparent and the dark-mode ramp came out light.
+- They assumed the brand sits at Radix step 9, a strong solid. A pale colour sits among Radix's component steps (3 to 5),
+  where hover and press are the next steps along, not step 10.
+- They assumed a flood goes darker. That is only right under light words; under dark words it should go lighter.
+- The suggestions copied the button's font weight, but algorecall's button is regular and its words are semibold.
+  Every suggestion drew the words lighter than shipped and failed the readability check by one point.
+- Algorecall's playground removed its dark class, so its dark mode was never real.
+
+**The fix.**
+- The reader now measures the atom itself: its fill, its words, their size and weight, and its lip. The engine and the
+  solver start from that.
+- When nothing is painted, the page colour comes from the product's background token.
+- The solver anchors on the atom's own fill and moves along the ramp from wherever that sits.
+- A flood moves away from the words. When there's no room that way (a pale slab under dark words), it turns the other
+  way and the words switch to light.
+- The skin takes its type from the element that holds the words.
+- Algorecall's page follows `?mode=dark`.
+- Crafting attention's generated colours are unchanged.
+
+**The proof.** The judge used each suggestion for real on algorecall: pressed, abandoned, from the keyboard, with
+reduced motion. All six pass in light and dark, the same as on crafting attention. The shadow recipe gives back
+algorecall's own lip (11px, plus its 1px inset highlight) exactly. Algorecall's style sheet is at
+`/research/style-algorecall.html`.
+
+**Still open.** Crafting-ui and plumber have no button picked as an atom yet, so they haven't been run. The judge
+also ranks the metal edge first for starting a daily review. It passes every standard, but a material that says
+"precious" doesn't suit something done every day. The standards check whether a suggestion works, not whether it
+suits the moment.
+
+**Media hooks.** Algorecall's atoms page in both modes (`localhost:4398/atoms.html?atom=start`, `&mode=dark`) beside
+crafting attention's: the same six suggestions, each in the product's own colours.
+
 ### 52. Shadows learned, sets solved, and the suggestions hold no colour of their own (2026-11-21)
 
 **The itch.** Carrying the first-principles plan through without stopping ("go ahead dont wait for me").
@@ -4023,6 +4067,7 @@ it wasn't needed.
 `scripts/record-blueprint.mjs`: the count, the X-ray card on New issue, the corner fix on In review, and its write.
 
 ## Open gaps
+- **The style tools have run on two products, not four.** Crafting-ui and plumber have no button picked out as an atom, and the judge ranks a metal edge first for a daily review because the standards check whether a suggestion works, not whether it suits the moment ([entry](#53-the-style-tools-run-on-a-second-product-algorecall-2026-11-21)).
 - **Tests that check wording, layout and time.** 769 tests are left (by `test(` lines). Many still check sentences, exact counts, pixels,
   fixed waits (55 `waitForTimeout` calls, 69 sleeps) and timings (about 67 asserts). Next: rewrite them to check
   behaviour, or delete them, and consider Playwright's own test runner. ([71](#71-preparing-060-2026-11-20))
@@ -5686,6 +5731,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- The style tools (style reader, colour engine, shadow recipe, pairing solver) now work on a second product: algorecall's start-review slab gets suggestions in its own pale green and dark green words, with its own lip, and all six pass the judge in light and dark ([entry](#53-the-style-tools-run-on-a-second-product-algorecall-2026-11-21)).
 - A fix whose class only some of a line's elements carry (a condition on one column, a red date on late cards) is shown and written on those elements; it used to be offered on the first element and refused. The README's hero is re-recorded on Relay ([entry](#72-a-fix-offered-on-the-wrong-element-2026-11-21)).
 - React Plumber 0.6.0 is ready to release: plain CSS and Sass changed like utility classes, renaming a token by its variable, about 150 new checks from Chrome's web guides, the Anti-slop checks, Break it, and an X-ray card that says what is wrong first. The packed package was tried on a fresh app, and 179 out-of-date tests were removed ([entry](#71-preparing-060-2026-11-20)).
 - The last CSS parity gaps closed: any token renamed across CSS, Sass and code; motion recipes on plain CSS; Clean up's type roles written into each element's own rule; Sass on Next ([entry](#70-the-last-parity-gaps-2026-11-20)).
