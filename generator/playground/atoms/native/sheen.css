@@ -1,5 +1,5 @@
-/* the light: a soft diagonal band of white, low enough that the button's words keep their contrast as it passes */
+/* the light: a soft diagonal band of the solver's light step (the brand's own pale purple, not white), low enough that the button's words keep their contrast as it passes */
 .sheen-light { position: absolute; inset: 0; z-index: 0; pointer-events: none;
-  background: linear-gradient(105deg, transparent 35%, color-mix(in oklab, white 16%, transparent) 50%, transparent 65%);
+  background: linear-gradient(105deg, transparent 35%, color-mix(in oklab, var(--set-rest-light, white) 35%, transparent) 50%, transparent 65%);
   transform: translateX(-100%); animation: sheen-pass 900ms cubic-bezier(.4, 0, .2, 1) forwards; }
 @keyframes sheen-pass { to { transform: translateX(100%); } }

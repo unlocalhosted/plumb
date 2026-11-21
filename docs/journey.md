@@ -3128,6 +3128,32 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **Still open:** the bar's other checks (progress shows, fits where the original sat, keeps its weight) aren't
   plumber rules yet.
 
+### 52. Shadows learned, sets solved, and the suggestions hold no colour of their own (2026-11-21)
+
+**The itch.** Carrying the first-principles plan through without stopping ("go ahead dont wait for me").
+
+**Layer 3, shadows.** The engine learns crafting attention's shadow recipe from its own button (hard offsets, each
+layer's colour a fixed step from the surface) and redraws it for any surface and height. Proof: it gives back the
+product's own shadow with the same offsets and colours within ΔE 0.1 to 0.9, below what the eye tells apart. Products
+whose shadows blur get Josh W. Comeau's layered method instead.
+
+**Layer 4, the pairing solver.** Every suggestion's states (rest, pointed at, pressed, working, done) get a fill, words,
+a shadow and, where they need one, a line, a light or a glow, picked from the tools' candidates with the reason
+written beside each. Three rules came from looking at its first answers. A pairing the product ships is its decision,
+kept. The bar for a new state is the shipped button's own readability (APCA's table is strict at 14px; holding new
+states to more drove the solver to the darkest step, the heavy pour again). And a state keeps the words of the state
+before while they still read, so in dark mode the hover and press now turn lighter under the dark words instead of the
+words flipping to white. Two more from the filmstrips: a flood aims 0.15 away in lightness (the owner could not see
+0.06), and a glow must be lighter than what it glows around; Radix's own steps count as the brand's family, since its
+ramp drifts in hue by design.
+
+**Layer 5, behaviour on the sets.** The suggestions now read every colour and shadow from the solver's generated CSS
+and hold none of their own. border-beam was replaced by a CSS glow, since the library only offers its own palettes.
+Metal's face is the brand's darkest purple, not black.
+
+**Proof.** Filmstrips of real clicks in both modes: `docs/films/pour/sets-light.png`, `sets-dark.png`,
+`glow-check-dark.png`; the sheet's layer 3 and 4 sections at `/research/style-craftingattention.html`.
+
 ### 51. Colours from the tools designers use: Radix, Leonardo, APCA, Material, Adobe Color (2026-11-21)
 
 **The itch.** The owner: "you should use the existing design tools like color pairing tools for oklch and complementary

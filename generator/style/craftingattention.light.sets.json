@@ -310,9 +310,9 @@
      "why": "the product’s own hard lip, learned from its button, at height 1"
     },
     "glow": {
-     "value": "#8047e1",
-     "token": "--color-focus-ring",
-     "why": "Radix step 9 (solid), the product’s own --color-focus-ring"
+     "value": "#ede9fc",
+     "token": "--color-viz-pixel-highlight",
+     "why": "Radix step 3 (component at rest), the product’s own --color-viz-pixel-highlight"
     }
    }
   },

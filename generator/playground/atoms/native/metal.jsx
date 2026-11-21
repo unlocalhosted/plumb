@@ -17,8 +17,8 @@ export function Metal({ label, doneLabel, icon, onCommit }) {
   useMetalBend(ref);
   useEffect(() => () => clearTimeout(timer.current), []);
   return (
-    <MetalFx ref={ref} variant="button" preset="silver" theme="dark" strength={1} disableGlow innerShadow paused={still()} style={{ width: 'min(100%, var(--atom-width, 100%))', background: 'color-mix(in oklch, var(--atom-fill) 14%, black)', borderRadius: 'var(--atom-radius)' }}>
-      <button type="button" className="np" style={{ width: '100%', color: 'var(--atom-fill)' }} data-state={done ? 'done' : 'rest'}
+    <MetalFx ref={ref} variant="button" preset="silver" theme="dark" strength={1} disableGlow innerShadow paused={still()} style={{ width: 'min(100%, var(--atom-width, 100%))', background: 'var(--set-rest-fill, color-mix(in oklch, var(--atom-fill) 14%, black))', borderRadius: 'var(--atom-radius)' }}>
+      <button type="button" className="np" style={{ width: '100%', background: 'transparent', boxShadow: 'none', color: 'var(--set-rest-ink, var(--atom-fill))' }} data-state={done ? 'done' : 'rest'}
         onClick={() => { if (done) return; setDone(true); onCommit?.(); clearTimeout(timer.current); timer.current = setTimeout(() => setDone(false), 2800); }}>
         <span className="np-row"><span>{done ? doneLabel : label}</span>{icon && !done && icon}</span>
         <span className="np-said" aria-live="polite">{done ? doneLabel : ''}</span>

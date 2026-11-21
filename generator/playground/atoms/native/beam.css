@@ -1,0 +1,14 @@
+/* the glow: a ring of the solver's glow colour that breathes out from the edge and fades, over and over, only while
+   the button says it is working; the lip stays as the solver drew it */
+.beam { overflow: visible; }
+.beam::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0;
+  box-shadow: 0 0 0 0 var(--set-working-glow, var(--atom-fill)); }
+.beam[data-state="done"]::after { animation: beam-breathe 1400ms cubic-bezier(.4, 0, .2, 1) infinite; }
+/* a steady soft ring while it works, with a breath that leaves it and fades: the ring says "working", the breath says
+   "still going" */
+.beam[data-state="done"] { box-shadow: var(--set-working-shadow, var(--atom-lip)), 0 0 0 1.5px var(--set-working-glow, var(--atom-fill)), 0 0 14px 2px color-mix(in oklab, var(--set-working-glow, var(--atom-fill)) 55%, transparent); }
+@keyframes beam-breathe {
+  0% { opacity: .85; box-shadow: 0 0 0 1px var(--set-working-glow, var(--atom-fill)), 0 0 12px 2px var(--set-working-glow, var(--atom-fill)); }
+  100% { opacity: 0; box-shadow: 0 0 0 9px var(--set-working-glow, var(--atom-fill)), 0 0 30px 10px var(--set-working-glow, var(--atom-fill)); }
+}
+@media (prefers-reduced-motion: reduce) { .beam[data-state="done"]::after { animation: none; } }

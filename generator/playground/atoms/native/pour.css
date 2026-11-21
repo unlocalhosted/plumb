@@ -1,23 +1,22 @@
-/* The pour. Every colour and size is the atom's skin; the motion is one ease-out that slows into place, quick enough to
+/* The pour. Every colour and shadow is the pairing solver's set for each state (rest, pointed, pressed, done); the motion is one ease-out that slows into place, quick enough to
    feel like the press itself (Material's medium duration band), and no travel at all with reduced motion. */
 .pour { position: relative; isolation: isolate; display: block; width: min(100%, var(--atom-width, 100%)); height: var(--atom-height); padding: 0 20px;
-  border: 0; border-radius: var(--atom-radius); background: var(--atom-fill); color: var(--atom-on-fill); box-shadow: var(--atom-lip);
+  border: 0; border-radius: var(--atom-radius); background: var(--set-rest-fill, var(--atom-fill)); color: var(--set-rest-ink, var(--atom-on-fill)); box-shadow: var(--set-rest-shadow, var(--atom-lip));
   font: var(--atom-weight) var(--atom-size)/1 var(--atom-font); cursor: pointer; overflow: hidden; -webkit-tap-highlight-color: transparent;
-  transition: transform 120ms cubic-bezier(.22, 1, .36, 1), box-shadow 120ms cubic-bezier(.22, 1, .36, 1); }
-.pour:focus-visible { outline: 2px solid var(--atom-fill); outline-offset: 3px; }
+  transition: transform 120ms cubic-bezier(.22, 1, .36, 1), box-shadow 120ms cubic-bezier(.22, 1, .36, 1), background-color 120ms ease-out; }
+.pour:focus-visible { outline: 2px solid var(--set-rest-fill, var(--atom-fill)); outline-offset: 3px; }
+@media (hover: hover) { .pour[data-state="rest"]:hover { background: var(--set-pointed-fill, var(--set-rest-fill)); box-shadow: var(--set-pointed-shadow, var(--set-rest-shadow)); } }
+.pour[data-state="done"] { box-shadow: var(--set-done-shadow, var(--atom-lip)); }
 /* pressed: the button sinks onto its lip */
-.pour[data-state="pouring"] { transform: translateY(1px); box-shadow: 0 1px 0 var(--atom-edge); }
+.pour[data-state="pouring"] { transform: translateY(1px); box-shadow: var(--set-pressed-shadow, 0 1px 0 var(--atom-edge)); }
 .pour-face { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: .5em; }
 .pour-icon { display: inline-grid; width: 1.15em; height: 1.15em; transition: transform 160ms cubic-bezier(.22, 1, .36, 1); }
 .pour-icon svg { width: 100%; height: 100%; }
 @media (hover: hover) { .pour:hover .pour-icon { transform: translateX(3px); } }
 /* the flood: the deeper shade, with its own copy of the words, clipped to a circle growing from the press */
-/* a press only has to read as pressed, so the shade is a rich step of the same colour, not the 3:1 shade a progress
-   fill needs (that one reads as near-black on a purple); the button's own ink still reads on it */
-.pour-flood { position: absolute; inset: 0; --pour: color-mix(in oklch, var(--atom-fill) 66%, black); background: var(--pour);
-  /* the words take an ink picked from the shade's own lightness: light on a deep shade, dark on a light one, so a light
-     button with dark words (crafting attention in dark mode) still reads once the shade has passed */
-  color: oklch(from var(--pour) clamp(0.12, (0.62 - l) * 100, 0.98) 0.02 h);
+/* the flood's shade and the words on it are the solver's pressed set: a step of the brand's own ramp about 0.15 away
+   from the solid (the owner could not see a pour 0.06 darker), with the words as readable as the shipped button */
+.pour-flood { position: absolute; inset: 0; background: var(--set-pressed-fill, color-mix(in oklch, var(--atom-fill) 66%, black)); color: var(--set-pressed-ink, var(--atom-on-fill));
   clip-path: circle(0 at var(--x, 50%) var(--y, 50%)); transition: clip-path 260ms cubic-bezier(.4, 0, .2, 1); }
 .pour[data-state="pouring"] .pour-flood, .pour[data-state="done"] .pour-flood { clip-path: circle(var(--reach, 200%) at var(--x, 50%) var(--y, 50%)); transition-duration: 440ms; transition-timing-function: cubic-bezier(.22, 1, .36, 1); }
 /* done: the arrow has gone where it pointed; the words say what is happening */

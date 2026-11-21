@@ -200,9 +200,9 @@
      "why": "the product’s own hard lip, learned from its button, at height 1"
     },
     "line": {
-     "value": "#36205c",
+     "value": "#e5dbff",
      "token": null,
-     "why": "Radix step 4 (component pointed at), derived; the growing line along the lip"
+     "why": "Radix step 12 (high-contrast words), derived; the growing line along the lip"
     }
    }
   },
@@ -223,9 +223,9 @@
      "why": "the product’s own hard lip, learned from its button, at height 1"
     },
     "light": {
-     "value": "#36205c",
+     "value": "#e5dbff",
      "token": null,
-     "why": "Radix step 4 (component pointed at), derived; the band of light, at 35% so the words keep their contrast"
+     "why": "Radix step 12 (high-contrast words), derived; the band of light, at 35% so the words keep their contrast"
     }
    },
    "pointed": {
@@ -310,9 +310,9 @@
      "why": "the product’s own hard lip, learned from its button, at height 1"
     },
     "glow": {
-     "value": "#a06cff",
-     "token": "--color-focus-ring",
-     "why": "Radix step 9 (solid), the product’s own --color-focus-ring"
+     "value": "#c2a3ff",
+     "token": null,
+     "why": "Radix step 11 (low-contrast words), derived"
     }
    }
   },

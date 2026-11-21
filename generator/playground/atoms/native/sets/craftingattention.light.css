@@ -65,7 +65,7 @@
   --set-working-fill: #8047e1;
   --set-working-ink: oklch(0.99 0.005 260);
   --set-working-shadow: 0px 3px 0px 0px #5c3ba2, 0px 6px 0px 0px #8047e126;
-  --set-working-glow: #8047e1;
+  --set-working-glow: #ede9fc;
 }
 [data-product="craftingattention"][data-mode="light"] [data-form="native/metal"] {
   --set-rest-fill: #391d69;

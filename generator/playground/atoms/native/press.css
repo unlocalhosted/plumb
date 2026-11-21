@@ -1,11 +1,17 @@
-/* What every native press shares, all from the atom's skin: its face, its lip, sinking onto the lip when pressed, the
-   focus ring, the words' row, and reduced motion. Each suggestion adds only its own idea on top. */
+/* What every native press shares: its face, its words, its lip in each state, the focus ring, the words' row, and
+   reduced motion. Every colour and shadow is the pairing solver's (sets/<product>.<mode>.css, generator/style/solve.mjs):
+   the suggestion holds none of its own; the skin is only the fallback for a product not yet solved. */
 .np { position: relative; isolation: isolate; display: block; width: min(100%, var(--atom-width, 100%)); height: var(--atom-height); padding: 0 20px;
-  border: 0; border-radius: var(--atom-radius); background: var(--atom-fill); color: var(--atom-on-fill); box-shadow: var(--atom-lip);
+  border: 0; border-radius: var(--atom-radius); background: var(--set-rest-fill, var(--atom-fill)); color: var(--set-rest-ink, var(--atom-on-fill)); box-shadow: var(--set-rest-shadow, var(--atom-lip));
+  transition-property: transform, box-shadow, background-color, color;
   font: var(--atom-weight) var(--atom-size)/1 var(--atom-font); cursor: pointer; overflow: hidden; -webkit-tap-highlight-color: transparent;
   transition: transform 120ms cubic-bezier(.22, 1, .36, 1), box-shadow 120ms cubic-bezier(.22, 1, .36, 1); }
-.np:focus-visible { outline: 2px solid var(--atom-fill); outline-offset: 3px; }
-.np:active { transform: translateY(1px); box-shadow: 0 1px 0 var(--atom-edge); }
+.np:focus-visible { outline: 2px solid var(--set-rest-fill, var(--atom-fill)); outline-offset: 3px; }
+@media (hover: hover) { .np:hover { background: var(--set-pointed-fill, var(--set-rest-fill, var(--atom-fill))); color: var(--set-pointed-ink, var(--set-rest-ink, var(--atom-on-fill))); box-shadow: var(--set-pointed-shadow, var(--set-rest-shadow, var(--atom-lip))); } }
+/* pressed: the solver's pressed set, and the button sinks onto its shortened lip */
+.np:active { transform: translateY(1px); background: var(--set-pressed-fill, var(--atom-fill)); color: var(--set-pressed-ink, var(--atom-on-fill)); box-shadow: var(--set-pressed-shadow, 0 1px 0 var(--atom-edge)); }
+/* working (the wait after the press): the solver's working set */
+.np[data-state="done"] { background: var(--set-working-fill, var(--set-rest-fill, var(--atom-fill))); color: var(--set-working-ink, var(--set-rest-ink, var(--atom-on-fill))); }
 .np-row { position: absolute; inset: 0; z-index: 1; display: flex; align-items: center; justify-content: center; gap: .5em; }
 .np-icon { display: inline-grid; width: 1.15em; height: 1.15em; flex: none; }
 .np-icon svg { width: 100%; height: 100%; }

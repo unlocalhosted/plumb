@@ -116,6 +116,9 @@ export function mountAtoms({ Shipped, product }) {
   // the product's own dark mode (?mode=dark), for the forms that belong on a dark surface
   const mode = new URLSearchParams(location.search).get('mode');
   if (mode === 'dark' || mode === 'light') document.documentElement.dataset.mode = mode;
+  // the solver's sets are written per product and mode
+  document.documentElement.dataset.product = product.id;
+  document.documentElement.dataset.mode ??= 'light';
   const want = new URLSearchParams(location.search).get('atom');
   const atom = product.atoms.find((x) => x.id === want) ?? product.atoms[0];
   createRoot(document.getElementById('root')).render(<Page Shipped={Shipped} product={product} atom={atom} />);

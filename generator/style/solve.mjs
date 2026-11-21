@@ -41,8 +41,10 @@ const pool = {
   // and 12 (the ramp jumps there), interpolated in OKLCH so they keep the family's chroma and hue
   deep: [step(11), step(12), leo(7), leo(4.5), step(10), ...[1 / 3, 1 / 2, 2 / 3].map((t) => ({ value: formatHex(gamut(interpolate([E.ramp[10].value, E.ramp[11].value], 'oklch')(t))), from: `on Radix’s curve, ${Math.round(t * 100)}% of the way from step 11 to step 12` }))].filter(Boolean),
   quiet: [step(3), step(4), step(5), step(2)],                                     // a face that sits back
-  glow: [step(8), step(7), step(9)],                                               // light around an edge: Radix's border and focus steps
-  light: [step(4), step(3), step(5)],                                              // a band of light across the solid
+  // light around an edge, and a band of light across the solid: the ramp's steps lighter than the solid (a glow is light,
+  // so it must be lighter than what it glows around), the nearest first
+  glow: E.ramp.filter((r) => r.step !== 9 && O(r.value).l > O(E.ramp[8].value).l + 0.08).sort((a, b) => O(a.value).l - O(b.value).l).map((r) => step(r.step)),
+  light: E.ramp.filter((r) => O(r.value).l > O(E.ramp[8].value).l + 0.15).sort((a, b) => O(a.value).l - O(b.value).l).map((r) => step(r.step)),
 };
 // inks: the product's own (its pairs), then the ramp's text steps and its extremes
 const inks = [...new Map([...M.pairs.map((p) => [p.ink, { value: p.ink, token: p.inkToken, from: `the product’s ink (${p.inkToken ?? p.ink})` }]),
@@ -70,9 +72,12 @@ const inkFor = (surface, prefer) => {
 // owner could not see a pour 0.06 darker; one 0.17 darker read), so it aims for 0.15
 const TARGET = { deep: 0.15 };
 const pick = (role, before, minStep = 0, keepInk = null) => {
-  const cands = pool[role].filter((c) => sameFamily(c.value));
+  // Radix's own steps are the brand's family by construction (its ramp drifts in hue as it lightens, by design)
+  const cands = pool[role].filter((c) => /^Radix step/.test(c.from) || sameFamily(c.value));
   const ok = cands.filter((c) => !before || Math.abs(O(c.value).l - O(before).l) >= minStep);
-  const ranked = (ok.length ? ok : cands).map((c) => ({ c, read: reads(inkFor(c.value).value, c.value) }))
+  // a glow or a band of light carries no words: it is ranked by source and family only, never by how words read on it
+  const carriesWords = !['glow', 'light'].includes(role);
+  const ranked = (ok.length ? ok : cands).map((c) => ({ c, read: carriesWords ? reads(inkFor(c.value).value, c.value) : { margin: 0 } }))
     .sort((a, b) => (keepInk ? (reads(keepInk, b.c.value).margin >= BAR) - (reads(keepInk, a.c.value).margin >= BAR) : 0)
       || ((b.read.margin >= BAR) - (a.read.margin >= BAR))
       || (TARGET[role] && before ? Math.abs(Math.abs(O(a.c.value).l - O(before).l) - TARGET[role]) - Math.abs(Math.abs(O(b.c.value).l - O(before).l) - TARGET[role]) : 0)

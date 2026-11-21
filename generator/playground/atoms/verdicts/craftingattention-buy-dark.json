@@ -25,8 +25,8 @@
     307,
     56
    ],
-   "firstMs": 32,
-   "motionMs": 86,
+   "firstMs": 63,
+   "motionMs": 85,
    "progressMs": 0,
    "commits": true,
    "words": {
@@ -165,15 +165,15 @@
     307,
     48
    ],
-   "firstMs": 8,
-   "motionMs": 377,
+   "firstMs": 7,
+   "motionMs": 398,
    "progressMs": 0,
    "commits": true,
    "words": null,
    "backsOut": true,
    "keyboard": true,
    "focusable": true,
-   "reducedMotionMs": 13,
+   "reducedMotionMs": 11,
    "inherited": {
     "when": "At rest",
     "says": "Contrast is 42 on the APCA scale at 14px. Text this size needs 60.",
@@ -306,15 +306,15 @@
     307,
     48
    ],
-   "firstMs": 48,
-   "motionMs": 490,
-   "progressMs": 1604,
+   "firstMs": 63,
+   "motionMs": 501,
+   "progressMs": 1601,
    "commits": true,
    "words": null,
    "backsOut": true,
    "keyboard": true,
    "focusable": true,
-   "reducedMotionMs": 1,
+   "reducedMotionMs": 3,
    "inherited": {
     "when": "At rest",
     "says": "Contrast is 42 on the APCA scale at 14px. Text this size needs 60.",
@@ -455,7 +455,7 @@
    "backsOut": true,
    "keyboard": true,
    "focusable": true,
-   "reducedMotionMs": 8,
+   "reducedMotionMs": 2,
    "inherited": {
     "when": "At rest",
     "says": "Contrast is 42 on the APCA scale at 14px. Text this size needs 60.",
@@ -589,14 +589,14 @@
     48
    ],
    "firstMs": 4,
-   "motionMs": 461,
+   "motionMs": 451,
    "progressMs": 0,
    "commits": true,
    "words": null,
    "backsOut": true,
    "keyboard": true,
    "focusable": true,
-   "reducedMotionMs": 2,
+   "reducedMotionMs": 6,
    "inherited": {
     "when": "At rest",
     "says": "Contrast is 42 on the APCA scale at 14px. Text this size needs 60.",
@@ -729,15 +729,15 @@
     307,
     48
    ],
-   "firstMs": 38,
-   "motionMs": 128,
+   "firstMs": 62,
+   "motionMs": 114,
    "progressMs": 0,
    "commits": true,
    "words": null,
    "backsOut": true,
    "keyboard": true,
    "focusable": true,
-   "reducedMotionMs": 9,
+   "reducedMotionMs": 13,
    "verdict": "works",
    "results": [
     {
@@ -857,27 +857,27 @@
   },
   {
    "form": "native/beam",
-   "name": "A beam while checkout opens",
+   "name": "A glow while checkout opens",
    "kind": "press",
    "target": [
     307,
     48
    ],
-   "firstMs": 35,
-   "motionMs": 126,
+   "firstMs": 50,
+   "motionMs": 102,
    "progressMs": 0,
    "commits": true,
    "words": null,
    "backsOut": true,
    "keyboard": true,
    "focusable": true,
-   "reducedMotionMs": 4,
+   "reducedMotionMs": 3,
    "inherited": {
     "when": "At rest",
     "says": "Contrast is 42 on the APCA scale at 14px. Text this size needs 60.",
     "rule": "craft/contrast",
     "at": 0,
-    "moments": 2
+    "moments": 1
    },
    "verdict": "works",
    "results": [
@@ -1004,21 +1004,21 @@
     48,
     48
    ],
-   "firstMs": 38,
-   "motionMs": 226,
-   "progressMs": 1598,
+   "firstMs": 59,
+   "motionMs": 234,
+   "progressMs": 1592,
    "commits": true,
    "words": {
     "when": "Just after letting go",
-    "says": "Where the fill passes under these words (100% of them), they read at Lc 36; they need 60.",
+    "says": "Where the fill passes under these words (100% of them), they read at Lc 35; they need 60.",
     "rule": "craft/words-on-layers",
-    "at": 1317,
+    "at": 1331,
     "moments": 3
    },
    "backsOut": true,
    "keyboard": true,
    "focusable": true,
-   "reducedMotionMs": 1222,
+   "reducedMotionMs": 1225,
    "progressRatio": 4.57,
    "verdict": "breaks",
    "results": [
@@ -1047,7 +1047,7 @@
      "name": "Its words stay readable in every state",
      "severity": "breaks",
      "ok": false,
-     "says": "Just after letting go, where the fill passes under these words (100% of them), they read at Lc 36; they need 60.",
+     "says": "Just after letting go, where the fill passes under these words (100% of them), they read at Lc 35; they need 60.",
      "fix": "Keep the words on their ground: redraw them in the fill’s own ink, clipped at the fill’s edge (as hold-to-confirm does), or move them out of the fill’s path.",
      "principle": "What a button says must be readable in every state it passes through, not only at rest: mid-gesture is when people check what they are committing to.",
      "sources": [
@@ -1198,35 +1198,34 @@
    "name": "Hold to commit",
    "kind": "hold",
    "target": [
-    1280,
-    1100
+    307,
+    48
    ],
-   "firstMs": null,
-   "motionMs": 0,
-   "progressMs": 0,
-   "commits": false,
-   "words": null,
+   "firstMs": 40,
+   "motionMs": 429,
+   "progressMs": 1128,
+   "commits": true,
+   "words": {
+    "when": "Mid-gesture",
+    "says": "Where the fill passes under these words (100% of them), they read at Lc 0; they need 60.",
+    "rule": "craft/words-on-layers",
+    "at": 1103,
+    "moments": 4
+   },
    "backsOut": true,
    "keyboard": true,
    "focusable": true,
    "reducedMotionMs": 0,
    "progressRatio": 4.57,
-   "inherited": {
-    "when": "At rest",
-    "says": "Contrast is 42 on the APCA scale at 14px. Text this size needs 60.",
-    "rule": "craft/contrast",
-    "at": 0,
-    "moments": 5
-   },
-   "verdict": "needs-work",
+   "verdict": "breaks",
    "results": [
     {
      "id": "answers-at-once",
      "name": "Answers the press at once",
      "severity": "weakens",
-     "ok": false,
-     "says": "Nothing visibly changes for 1000+ ms after the press, long enough to wonder whether it registered.",
-     "fix": "Give the press an immediate answer: the button sinking onto its lip, or its fill starting to move.",
+     "ok": true,
+     "says": "It answers the moment it is pressed, so the customer knows the button heard them.",
+     "fix": null,
      "principle": "People need to know their action registered: the interface answers within about a tenth of a second, or the press feels lost.",
      "sources": [
       {
@@ -1244,9 +1243,9 @@
      "id": "words-stay-readable",
      "name": "Its words stay readable in every state",
      "severity": "breaks",
-     "ok": true,
-     "says": "Its words read clearly at every moment, including mid-gesture.",
-     "fix": null,
+     "ok": false,
+     "says": "Mid-gesture, where the fill passes under these words (100% of them), they read at Lc 0; they need 60.",
+     "fix": "Keep the words on their ground: redraw them in the fill’s own ink, clipped at the fill’s edge (as hold-to-confirm does), or move them out of the fill’s path.",
      "principle": "What a button says must be readable in every state it passes through, not only at rest: mid-gesture is when people check what they are committing to.",
      "sources": [
       {
@@ -1369,7 +1368,7 @@
      "checked": true
     }
    ],
-   "score": 2
+   "score": 11
   },
   {
    "form": "arc/hold-to-confirm",
@@ -1379,7 +1378,7 @@
     307,
     48
    ],
-   "firstMs": 29,
+   "firstMs": 41,
    "motionMs": 0,
    "progressMs": 0,
    "commits": true,
@@ -1557,15 +1556,15 @@
     195,
     48
    ],
-   "firstMs": 41,
-   "motionMs": 494,
-   "progressMs": 1260,
+   "firstMs": 60,
+   "motionMs": 493,
+   "progressMs": 1276,
    "commits": true,
    "words": null,
    "backsOut": true,
    "keyboard": true,
    "focusable": true,
-   "reducedMotionMs": 1013,
+   "reducedMotionMs": 1005,
    "inherited": {
     "when": "At rest",
     "says": "Contrast is 42 on the APCA scale at 14px. Text this size needs 60.",
@@ -1718,21 +1717,21 @@
     307,
     48
    ],
-   "firstMs": 43,
-   "motionMs": 1407,
+   "firstMs": 61,
+   "motionMs": 1415,
    "progressMs": 0,
    "commits": true,
    "words": {
     "when": "Just after letting go",
     "says": "Faded to 0.5, the words drop to contrast 12.",
     "rule": "craft/disabled-contrast",
-    "at": 107,
+    "at": 112,
     "moments": 2
    },
    "backsOut": true,
    "keyboard": true,
    "focusable": true,
-   "reducedMotionMs": 1279,
+   "reducedMotionMs": 1285,
    "verdict": "breaks",
    "results": [
     {
@@ -1858,8 +1857,8 @@
     307,
     48
    ],
-   "firstMs": 41,
-   "motionMs": 227,
+   "firstMs": 62,
+   "motionMs": 259,
    "progressMs": 0,
    "commits": true,
    "words": null,
@@ -1992,5 +1991,5 @@
    "score": 0
   }
  ],
- "judged": "2026-11-20"
+ "judged": "2026-11-21"
 }

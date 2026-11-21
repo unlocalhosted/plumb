@@ -9,6 +9,8 @@ import { StatefulButton } from '../vendor/beui/components/button/stateful.tsx';
 import { MagneticButton } from '../vendor/beui/components/button/magnetic.tsx';
 import { HoldToConfirm } from '../vendor/arc/hold-to-confirm/hold-to-confirm.tsx';
 import { ConfirmMorph } from '../vendor/arc/confirm-morph/confirm-morph.tsx';
+// the pairing solver's sets: every state's colours, words and shadows, per product and mode
+import.meta.glob('./native/sets/*.css', { eager: true });
 import { Pour } from './native/pour.jsx';
 import { Lead } from './native/lead.jsx';
 import { Answer } from './native/answer.jsx';
@@ -45,10 +47,10 @@ export const FORMS = {
     { id: 'native/sheen', name: 'A sheen, once', gesture: 'press',
       why: 'A soft light crosses the button when it comes into view and when the pointer arrives, never on a loop: the one thing to do catches the eye without nagging.',
       roles: {}, render: (a) => <Sheen label={a.label} doneLabel={a.doneLabel} icon={<Icon atom={a} />} /> },
-    { id: 'native/metal', name: 'Lifetime in metal', gesture: 'press', surface: 'dark',
+    { id: 'native/metal', name: 'Lifetime in metal', gesture: 'press',
       why: 'The one rare, valuable purchase gets the material that says precious: a silver ring on its edge that dents like liquid as the pointer nears.',
       roles: {}, render: (a) => <Metal label={a.label} doneLabel={a.doneLabel} icon={<Icon atom={a} />} /> },
-    { id: 'native/beam', name: 'A beam while checkout opens', gesture: 'press', surface: 'dark',
+    { id: 'native/beam', name: 'A glow while checkout opens', gesture: 'press', surface: 'dark',
       why: 'A glow breathes around the button only between the press and the next screen: it says working, and nothing glows at rest.',
       roles: {}, render: (a) => <Beam label={a.label} doneLabel={a.doneLabel} icon={<Icon atom={a} />} /> },
     { id: 'beui/slide-action-button', name: 'Slide to commit', gesture: 'slide',
