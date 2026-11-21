@@ -1,0 +1,1563 @@
+{
+ "product": "craftingattention",
+ "mode": "light",
+ "read": "2026-11-21",
+ "page": "oklch(0.985 0.003 260)",
+ "families": [
+  {
+   "hue": 25,
+   "name": "orange",
+   "steps": [
+    {
+     "l": 0.92,
+     "c": 0.1,
+     "h": 25,
+     "value": "oklch(0.92 0.1 25)",
+     "tokens": [
+      "--color-fail-200",
+      "--color-viz-danger-whisper"
+     ]
+    },
+    {
+     "l": 0.74,
+     "c": 0.18,
+     "h": 25,
+     "value": "oklch(0.74 0.18 25)",
+     "tokens": [
+      "--color-fail-300",
+      "--color-viz-danger-soft"
+     ]
+    },
+    {
+     "l": 0.58,
+     "c": 0.2,
+     "h": 25,
+     "value": "oklch(0.58 0.2 25)",
+     "tokens": [
+      "--color-fail-400",
+      "--color-viz-danger-bright",
+      "--color-danger-solid-hover"
+     ]
+    },
+    {
+     "l": 0.48,
+     "c": 0.2,
+     "h": 25,
+     "value": "oklch(0.48 0.2 25)",
+     "tokens": [
+      "--color-fail-500",
+      "--color-viz-danger-base",
+      "--color-border-danger",
+      "--color-danger-solid",
+      "--color-status-danger",
+      "--ca-fail"
+     ]
+    },
+    {
+     "l": 0.4,
+     "c": 0.17,
+     "h": 25,
+     "value": "oklch(0.4 0.17 25)",
+     "tokens": [
+      "--color-fail-600",
+      "--color-viz-danger-strong"
+     ]
+    },
+    {
+     "l": 0.3,
+     "c": 0.14,
+     "h": 25,
+     "value": "oklch(0.3 0.14 25)",
+     "tokens": [
+      "--color-fail-700",
+      "--color-viz-danger-deep",
+      "--color-fail-text",
+      "--color-difficulty-hard"
+     ]
+    },
+    {
+     "l": 0.24,
+     "c": 0.11,
+     "h": 25,
+     "value": "oklch(0.24 0.11 25)",
+     "tokens": [
+      "--color-fail-800",
+      "--color-viz-danger-deepest"
+     ]
+    }
+   ]
+  },
+  {
+   "hue": 57,
+   "name": "amber",
+   "steps": [
+    {
+     "l": 0.92,
+     "c": 0.1,
+     "h": 55,
+     "value": "oklch(0.92 0.1 55)",
+     "tokens": [
+      "--color-warn-200",
+      "--color-viz-warning-whisper"
+     ]
+    },
+    {
+     "l": 0.78,
+     "c": 0.16,
+     "h": 55,
+     "value": "oklch(0.78 0.16 55)",
+     "tokens": [
+      "--color-warn-300",
+      "--color-viz-warning-soft"
+     ]
+    },
+    {
+     "l": 0.769,
+     "c": 0.188,
+     "h": 70.1,
+     "value": "oklch(0.769 0.188 70.1)",
+     "tokens": [
+      "--color-amber-500"
+     ]
+    },
+    {
+     "l": 0.666,
+     "c": 0.179,
+     "h": 58.3,
+     "value": "oklch(0.666 0.179 58.3)",
+     "tokens": [
+      "--color-amber-600"
+     ]
+    },
+    {
+     "l": 0.66,
+     "c": 0.17,
+     "h": 55,
+     "value": "oklch(0.66 0.17 55)",
+     "tokens": [
+      "--color-warn-400",
+      "--color-viz-warning-bright"
+     ]
+    },
+    {
+     "l": 0.58,
+     "c": 0.18,
+     "h": 55,
+     "value": "oklch(0.58 0.18 55)",
+     "tokens": [
+      "--color-viz-series-5"
+     ]
+    },
+    {
+     "l": 0.55,
+     "c": 0.16,
+     "h": 55,
+     "value": "oklch(0.55 0.16 55)",
+     "tokens": [
+      "--color-warn-500",
+      "--color-viz-warning-base",
+      "--color-border-warn",
+      "--color-border-warning",
+      "--color-status-warning"
+     ]
+    },
+    {
+     "l": 0.45,
+     "c": 0.14,
+     "h": 55,
+     "value": "oklch(0.45 0.14 55)",
+     "tokens": [
+      "--color-warn-600",
+      "--color-viz-warning-strong"
+     ]
+    },
+    {
+     "l": 0.35,
+     "c": 0.12,
+     "h": 55,
+     "value": "oklch(0.35 0.12 55)",
+     "tokens": [
+      "--color-warn-700",
+      "--color-viz-warning-deep",
+      "--color-warn-text",
+      "--color-difficulty-medium"
+     ]
+    }
+   ]
+  },
+  {
+   "hue": 84,
+   "name": "amber",
+   "steps": [
+    {
+     "l": 0.828,
+     "c": 0.189,
+     "h": 84.4,
+     "value": "oklch(0.828 0.189 84.4)",
+     "tokens": [
+      "--color-amber-400"
+     ]
+    }
+   ]
+  },
+  {
+   "hue": 141,
+   "name": "green",
+   "steps": [
+    {
+     "l": 0.94,
+     "c": 0.13,
+     "h": 145,
+     "value": "oklch(0.94 0.13 145)",
+     "tokens": [
+      "--color-success-200",
+      "--color-viz-success-whisper"
+     ]
+    },
+    {
+     "l": 0.897,
+     "c": 0.196,
+     "h": 126.7,
+     "value": "oklch(0.897 0.196 126.7)",
+     "tokens": [
+      "--color-lime-300"
+     ]
+    },
+    {
+     "l": 0.82,
+     "c": 0.18,
+     "h": 137,
+     "value": "oklch(0.82 0.18 137)",
+     "tokens": [
+      "--ca-lime"
+     ]
+    },
+    {
+     "l": 0.78,
+     "c": 0.18,
+     "h": 145,
+     "value": "oklch(0.78 0.18 145)",
+     "tokens": [
+      "--color-success-300",
+      "--color-viz-success-soft"
+     ]
+    },
+    {
+     "l": 0.62,
+     "c": 0.2,
+     "h": 145,
+     "value": "oklch(0.62 0.2 145)",
+     "tokens": [
+      "--color-success-400",
+      "--color-viz-success-bright"
+     ]
+    },
+    {
+     "l": 0.5,
+     "c": 0.18,
+     "h": 145,
+     "value": "oklch(0.5 0.18 145)",
+     "tokens": [
+      "--color-success-500",
+      "--color-viz-success-base",
+      "--color-border-success",
+      "--color-status-success"
+     ]
+    },
+    {
+     "l": 0.41,
+     "c": 0.13,
+     "h": 137,
+     "value": "oklch(0.41 0.13 137)",
+     "tokens": [
+      "--ca-lime-text"
+     ]
+    },
+    {
+     "l": 0.4,
+     "c": 0.16,
+     "h": 145,
+     "value": "oklch(0.4 0.16 145)",
+     "tokens": [
+      "--color-success-600",
+      "--color-viz-success-strong"
+     ]
+    },
+    {
+     "l": 0.3,
+     "c": 0.13,
+     "h": 145,
+     "value": "oklch(0.3 0.13 145)",
+     "tokens": [
+      "--color-success-700",
+      "--color-viz-success-deep",
+      "--color-success-text",
+      "--color-difficulty-easy"
+     ]
+    }
+   ]
+  },
+  {
+   "hue": 169,
+   "name": "teal",
+   "steps": [
+    {
+     "l": 0.8,
+     "c": 0.09,
+     "h": 175,
+     "value": "oklch(0.8 0.09 175)",
+     "tokens": [
+      "--color-viz-pixel-secondary-light"
+     ]
+    },
+    {
+     "l": 0.765,
+     "c": 0.177,
+     "h": 163.2,
+     "value": "oklch(0.765 0.177 163.2)",
+     "tokens": [
+      "--color-emerald-400"
+     ]
+    },
+    {
+     "l": 0.696,
+     "c": 0.17,
+     "h": 162.5,
+     "value": "oklch(0.696 0.17 162.5)",
+     "tokens": [
+      "--color-emerald-500"
+     ]
+    },
+    {
+     "l": 0.596,
+     "c": 0.145,
+     "h": 163.2,
+     "value": "oklch(0.596 0.145 163.2)",
+     "tokens": [
+      "--color-emerald-600"
+     ]
+    },
+    {
+     "l": 0.59,
+     "c": 0.095,
+     "h": 175,
+     "value": "oklch(0.59 0.095 175)",
+     "tokens": [
+      "--color-viz-pixel-secondary-body"
+     ]
+    },
+    {
+     "l": 0.36,
+     "c": 0.065,
+     "h": 175,
+     "value": "oklch(0.36 0.065 175)",
+     "tokens": [
+      "--color-viz-pixel-secondary-shadow"
+     ]
+    }
+   ]
+  },
+  {
+   "hue": 233,
+   "name": "blue",
+   "steps": [
+    {
+     "l": 0.746,
+     "c": 0.16,
+     "h": 232.7,
+     "value": "oklch(0.746 0.16 232.7)",
+     "tokens": [
+      "--color-sky-400"
+     ]
+    }
+   ]
+  },
+  {
+   "hue": 292,
+   "name": "purple",
+   "steps": [
+    {
+     "l": 0.97,
+     "c": 0.04,
+     "h": 295,
+     "value": "oklch(0.97 0.04 295)",
+     "tokens": [
+      "--color-accent-100"
+     ]
+    },
+    {
+     "l": 0.95,
+     "c": 0.06,
+     "h": 295,
+     "value": "oklch(0.95 0.06 295)",
+     "tokens": [
+      "--color-accent-200",
+      "--color-viz-accent-whisper"
+     ]
+    },
+    {
+     "l": 0.85,
+     "c": 0.13,
+     "h": 295,
+     "value": "oklch(0.85 0.13 295)",
+     "tokens": [
+      "--color-accent-300",
+      "--color-viz-accent-soft"
+     ]
+    },
+    {
+     "l": 0.81,
+     "c": 0.085,
+     "h": 285,
+     "value": "oklch(0.81 0.085 285)",
+     "tokens": [
+      "--color-viz-pixel-light"
+     ]
+    },
+    {
+     "l": 0.68,
+     "c": 0.2,
+     "h": 295,
+     "value": "oklch(0.68 0.2 295)",
+     "tokens": [
+      "--color-accent-400",
+      "--color-viz-accent-bright",
+      "--color-accent-solid-hover",
+      "--color-action-solid-hover"
+     ]
+    },
+    {
+     "l": 0.61,
+     "c": 0.18,
+     "h": 285,
+     "value": "oklch(0.61 0.18 285)",
+     "tokens": [
+      "--color-viz-pixel-body"
+     ]
+    },
+    {
+     "l": 0.55,
+     "c": 0.22,
+     "h": 295,
+     "value": "oklch(0.55 0.22 295)",
+     "tokens": [
+      "--color-focus-ring",
+      "--color-accent-500",
+      "--color-viz-accent-base",
+      "--color-accent-solid",
+      "--color-action-solid",
+      "--color-status-accent",
+      "--color-accent"
+     ]
+    },
+    {
+     "l": 0.51,
+     "c": 0.23,
+     "h": 296,
+     "value": "oklch(0.51 0.23 296)",
+     "tokens": [
+      "--ca-violet"
+     ]
+    },
+    {
+     "l": 0.5,
+     "c": 0.24,
+     "h": 295,
+     "value": "oklch(0.5 0.24 295)",
+     "tokens": [
+      "--color-viz-series-3"
+     ]
+    },
+    {
+     "l": 0.48,
+     "c": 0.22,
+     "h": 275,
+     "value": "oklch(0.48 0.22 275)",
+     "tokens": [
+      "--color-viz-series-2"
+     ]
+    },
+    {
+     "l": 0.45,
+     "c": 0.22,
+     "h": 295,
+     "value": "oklch(0.45 0.22 295)",
+     "tokens": [
+      "--color-accent-600",
+      "--color-viz-series-1",
+      "--color-viz-accent-strong"
+     ]
+    },
+    {
+     "l": 0.447,
+     "c": 0.159,
+     "h": 293.8,
+     "value": "oklch(0.447 0.159 293.8)",
+     "tokens": [
+      "--home-key-edge"
+     ]
+    },
+    {
+     "l": 0.43,
+     "c": 0.19,
+     "h": 296,
+     "value": "oklch(0.43 0.19 296)",
+     "tokens": [
+      "--ca-violet-light"
+     ]
+    },
+    {
+     "l": 0.38,
+     "c": 0.15,
+     "h": 285,
+     "value": "oklch(0.38 0.15 285)",
+     "tokens": [
+      "--color-viz-pixel-shadow"
+     ]
+    },
+    {
+     "l": 0.36,
+     "c": 0.18,
+     "h": 295,
+     "value": "oklch(0.36 0.18 295)",
+     "tokens": [
+      "--color-accent-700",
+      "--color-viz-accent-deep",
+      "--color-accent-text"
+     ]
+    },
+    {
+     "l": 0.28,
+     "c": 0.14,
+     "h": 295,
+     "value": "oklch(0.28 0.14 295)",
+     "tokens": [
+      "--color-accent-800"
+     ]
+    }
+   ]
+  },
+  {
+   "hue": 350,
+   "name": "red",
+   "steps": [
+    {
+     "l": 0.55,
+     "c": 0.24,
+     "h": 350,
+     "value": "oklch(0.55 0.24 350)",
+     "tokens": [
+      "--color-viz-series-4"
+     ]
+    }
+   ]
+  }
+ ],
+ "neutrals": [
+  {
+   "l": 1,
+   "c": 0,
+   "h": null,
+   "value": "oklch(1 0 0)",
+   "tokens": [
+    "--color-white",
+    "--tw-ring-offset-color"
+   ]
+  },
+  {
+   "l": 0.99,
+   "c": 0.005,
+   "h": 260,
+   "value": "oklch(0.99 0.005 260)",
+   "tokens": [
+    "--color-on-accent"
+   ]
+  },
+  {
+   "l": 0.99,
+   "c": 0.005,
+   "h": 145,
+   "value": "oklch(0.99 0.005 145)",
+   "tokens": [
+    "--color-on-success"
+   ]
+  },
+  {
+   "l": 0.99,
+   "c": 0.005,
+   "h": 25,
+   "value": "oklch(0.99 0.005 25)",
+   "tokens": [
+    "--color-on-fail"
+   ]
+  },
+  {
+   "l": 0.985,
+   "c": 0.003,
+   "h": 260,
+   "value": "oklch(0.985 0.003 260)",
+   "tokens": [
+    "--color-neutral-100",
+    "--color-surface",
+    "--color-ink-950",
+    "--color-viz-surface",
+    "--color-on-contrast",
+    "--discovery-card"
+   ]
+  },
+  {
+   "l": 0.985,
+   "c": 0.008,
+   "h": 88,
+   "value": "oklch(0.985 0.008 88)",
+   "tokens": [
+    "--ca-on-violet"
+   ]
+  },
+  {
+   "l": 0.985,
+   "c": 0.002,
+   "h": 270,
+   "value": "oklch(0.985 0.002 270)",
+   "tokens": [
+    "--ca-paper"
+   ]
+  },
+  {
+   "l": 0.972,
+   "c": 0.01,
+   "h": 261.1,
+   "value": "oklch(0.972 0.01 261.1)",
+   "tokens": [
+    "--color-instrument-surface"
+   ]
+  },
+  {
+   "l": 0.966,
+   "c": 0.008,
+   "h": 282.9,
+   "value": "oklch(0.966 0.008 282.9)",
+   "tokens": [
+    "--home-quiet-surface"
+   ]
+  },
+  {
+   "l": 0.962,
+   "c": 0.004,
+   "h": 260,
+   "value": "oklch(0.962 0.004 260)",
+   "tokens": [
+    "--color-neutral-200",
+    "--color-ink-925",
+    "--color-viz-surface-raised",
+    "--color-surface-raised",
+    "--color-control-surface",
+    "--hero-stage-bg"
+   ]
+  },
+  {
+   "l": 0.96,
+   "c": 0.008,
+   "h": 270,
+   "value": "oklch(0.96 0.008 270)",
+   "tokens": [
+    "--ca-surface-hover"
+   ]
+  },
+  {
+   "l": 0.959,
+   "c": 0.016,
+   "h": 262.1,
+   "value": "oklch(0.959 0.016 262.1)",
+   "tokens": [
+    "--color-instrument-surface-raised"
+   ]
+  },
+  {
+   "l": 0.946,
+   "c": 0.003,
+   "h": 264,
+   "value": "oklch(0.946 0.003 264)",
+   "tokens": [
+    "--color-surface-sunken"
+   ]
+  },
+  {
+   "l": 0.942,
+   "c": 0.025,
+   "h": 263.5,
+   "value": "oklch(0.942 0.025 263.5)",
+   "tokens": [
+    "--color-instrument-surface-hover"
+   ]
+  },
+  {
+   "l": 0.94,
+   "c": 0.025,
+   "h": 285,
+   "value": "oklch(0.94 0.025 285)",
+   "tokens": [
+    "--color-viz-pixel-highlight"
+   ]
+  },
+  {
+   "l": 0.94,
+   "c": 0.035,
+   "h": 175,
+   "value": "oklch(0.94 0.035 175)",
+   "tokens": [
+    "--color-viz-pixel-secondary-highlight"
+   ]
+  },
+  {
+   "l": 0.93,
+   "c": 0.006,
+   "h": 260,
+   "value": "oklch(0.93 0.006 260)",
+   "tokens": [
+    "--color-neutral-300",
+    "--color-ink-900",
+    "--color-viz-surface-elevated",
+    "--color-surface-elevated"
+   ]
+  },
+  {
+   "l": 0.918,
+   "c": 0.02,
+   "h": 285,
+   "value": "oklch(0.918 0.02 285)",
+   "tokens": [
+    "--ca-panel"
+   ]
+  },
+  {
+   "l": 0.898,
+   "c": 0.008,
+   "h": 260,
+   "value": "oklch(0.898 0.008 260)",
+   "tokens": [
+    "--color-surface-hover",
+    "--color-control-surface-hover"
+   ]
+  },
+  {
+   "l": 0.895,
+   "c": 0.008,
+   "h": 260,
+   "value": "oklch(0.895 0.008 260)",
+   "tokens": [
+    "--color-ink-850",
+    "--color-viz-surface-hover"
+   ]
+  },
+  {
+   "l": 0.894,
+   "c": 0.032,
+   "h": 289.7,
+   "value": "oklch(0.894 0.032 289.7)",
+   "tokens": [
+    "--ca-control"
+   ]
+  },
+  {
+   "l": 0.882,
+   "c": 0.02,
+   "h": 285,
+   "value": "oklch(0.882 0.02 285)",
+   "tokens": [
+    "--ca-mask"
+   ]
+  },
+  {
+   "l": 0.86,
+   "c": 0.01,
+   "h": 260,
+   "value": "oklch(0.86 0.01 260)",
+   "tokens": [
+    "--color-neutral-400",
+    "--color-ink-800",
+    "--color-viz-grid",
+    "--color-border-subtle",
+    "--home-edge",
+    "--discovery-line"
+   ]
+  },
+  {
+   "l": 0.78,
+   "c": 0.024,
+   "h": 285,
+   "value": "oklch(0.78 0.024 285)",
+   "tokens": [
+    "--ca-node"
+   ]
+  },
+  {
+   "l": 0.77,
+   "c": 0.01,
+   "h": 260,
+   "value": "oklch(0.77 0.01 260)",
+   "tokens": [
+    "--color-neutral-500",
+    "--color-ink-700",
+    "--color-viz-grid-strong",
+    "--color-border-default",
+    "--hero-stage-border"
+   ]
+  },
+  {
+   "l": 0.74,
+   "c": 0.018,
+   "h": 285,
+   "value": "oklch(0.74 0.018 285 / 0.72)",
+   "tokens": [
+    "--ca-line"
+   ]
+  },
+  {
+   "l": 0.7,
+   "c": 0.026,
+   "h": 285,
+   "value": "oklch(0.7 0.026 285 / 0.78)",
+   "tokens": [
+    "--ca-panel-line"
+   ]
+  },
+  {
+   "l": 0.687,
+   "c": 0.01,
+   "h": 260,
+   "value": "oklch(0.687 0.01 260)",
+   "tokens": [
+    "--color-text-disabled"
+   ]
+  },
+  {
+   "l": 0.665,
+   "c": 0.012,
+   "h": 260,
+   "value": "oklch(0.665 0.012 260)",
+   "tokens": [
+    "--color-ink-600",
+    "--color-viz-ink-faint"
+   ]
+  },
+  {
+   "l": 0.65,
+   "c": 0.012,
+   "h": 260,
+   "value": "oklch(0.65 0.012 260)",
+   "tokens": [
+    "--color-neutral-600",
+    "--color-border-strong",
+    "--color-control-border",
+    "--color-control-border-hover"
+   ]
+  },
+  {
+   "l": 0.54,
+   "c": 0.014,
+   "h": 260,
+   "value": "oklch(0.54 0.014 260)",
+   "tokens": [
+    "--color-neutral-700",
+    "--color-ink-500",
+    "--color-viz-ink-subtle",
+    "--color-contrast-surface",
+    "--color-status-neutral"
+   ]
+  },
+  {
+   "l": 0.509,
+   "c": 0.014,
+   "h": 260,
+   "value": "oklch(0.509 0.014 260)",
+   "tokens": [
+    "--color-text-subtle"
+   ]
+  },
+  {
+   "l": 0.48,
+   "c": 0.018,
+   "h": 285,
+   "value": "oklch(0.48 0.018 285)",
+   "tokens": [
+    "--ca-muted"
+   ]
+  },
+  {
+   "l": 0.467,
+   "c": 0.015,
+   "h": 260,
+   "value": "oklch(0.467 0.015 260)",
+   "tokens": [
+    "--color-text-muted"
+   ]
+  },
+  {
+   "l": 0.44,
+   "c": 0.016,
+   "h": 260,
+   "value": "oklch(0.44 0.016 260)",
+   "tokens": [
+    "--color-ink-400",
+    "--color-viz-ink-muted"
+   ]
+  },
+  {
+   "l": 0.43,
+   "c": 0.022,
+   "h": 285,
+   "value": "oklch(0.43 0.022 285 / 0.75)",
+   "tokens": [
+    "--ca-line-strong"
+   ]
+  },
+  {
+   "l": 0.4,
+   "c": 0.018,
+   "h": 285,
+   "value": "oklch(0.4 0.018 285)",
+   "tokens": [
+    "--ca-panel-muted"
+   ]
+  },
+  {
+   "l": 0.395,
+   "c": 0.017,
+   "h": 260,
+   "value": "oklch(0.395 0.017 260)",
+   "tokens": [
+    "--color-ink-350",
+    "--color-viz-ink-secondary-muted"
+   ]
+  },
+  {
+   "l": 0.36,
+   "c": 0.018,
+   "h": 260,
+   "value": "oklch(0.36 0.018 260)",
+   "tokens": [
+    "--color-text-secondary"
+   ]
+  },
+  {
+   "l": 0.35,
+   "c": 0.018,
+   "h": 260,
+   "value": "oklch(0.35 0.018 260)",
+   "tokens": [
+    "--color-neutral-800",
+    "--color-viz-ink-secondary",
+    "--color-contrast-surface-strong",
+    "--hero-grid-dot",
+    "--color-ink-300"
+   ]
+  },
+  {
+   "l": 0.35,
+   "c": 0.02,
+   "h": 285,
+   "value": "oklch(0.35 0.02 285)",
+   "tokens": [
+    "--ca-muted-strong"
+   ]
+  },
+  {
+   "l": 0.275,
+   "c": 0.02,
+   "h": 260,
+   "value": "oklch(0.275 0.02 260)",
+   "tokens": [
+    "--color-neutral-900",
+    "--color-viz-ink-body",
+    "--color-text-body",
+    "--color-ink-200"
+   ]
+  },
+  {
+   "l": 0.23,
+   "c": 0.025,
+   "h": 285,
+   "value": "oklch(0.23 0.025 285)",
+   "tokens": [
+    "--color-viz-pixel-label"
+   ]
+  },
+  {
+   "l": 0.206,
+   "c": 0.02,
+   "h": 260,
+   "value": "oklch(0.206 0.02 260)",
+   "tokens": [
+    "--color-text-primary"
+   ]
+  },
+  {
+   "l": 0.205,
+   "c": 0.022,
+   "h": 260,
+   "value": "oklch(0.205 0.022 260)",
+   "tokens": [
+    "--color-viz-ink-strong",
+    "--color-ink-100"
+   ]
+  },
+  {
+   "l": 0.19,
+   "c": 0.018,
+   "h": 285,
+   "value": "oklch(0.19 0.018 285)",
+   "tokens": [
+    "--ca-on-lime",
+    "--ca-panel-text",
+    "--ca-ink"
+   ]
+  },
+  {
+   "l": 0.15,
+   "c": 0.02,
+   "h": 260,
+   "value": "oklch(0.15 0.02 260)",
+   "tokens": [
+    "--color-text-strong",
+    "--color-neutral-1000",
+    "--color-viz-ink-strongest",
+    "--color-ink-50"
+   ]
+  },
+  {
+   "l": 0.15,
+   "c": 0.02,
+   "h": 55,
+   "value": "oklch(0.15 0.02 55)",
+   "tokens": [
+    "--color-on-warn"
+   ]
+  },
+  {
+   "l": 0.145,
+   "c": 0,
+   "h": null,
+   "value": "oklch(0.145 0 0)",
+   "tokens": [
+    "--color-neutral-950"
+   ]
+  }
+ ],
+ "translucent": [
+  {
+   "l": 0.55,
+   "c": 0.22,
+   "h": 295,
+   "a": 0.35,
+   "value": "oklch(0.55 0.22 295 / 0.35)",
+   "tokens": [
+    "--color-border-accent"
+   ]
+  },
+  {
+   "l": 0,
+   "c": 0,
+   "h": 0,
+   "a": 0.1,
+   "value": "oklch(0 0 0 / 0.1)",
+   "tokens": [
+    "--color-image-outline"
+   ]
+  },
+  {
+   "l": 0.51,
+   "c": 0.23,
+   "h": 296,
+   "a": 0.12,
+   "value": "oklch(0.51 0.23 296 / 0.12)",
+   "tokens": [
+    "--ca-violet-soft"
+   ]
+  },
+  {
+   "l": 0.48,
+   "c": 0.2,
+   "h": 25,
+   "a": 0.11,
+   "value": "oklch(0.48 0.2 25 / 0.11)",
+   "tokens": [
+    "--ca-fail-soft"
+   ]
+  },
+  {
+   "l": 0.55,
+   "c": 0.22,
+   "h": 295,
+   "a": 0.15,
+   "value": "oklch(0.55 0.22 295 / 0.15)",
+   "tokens": [
+    "--home-key-shadow"
+   ]
+  }
+ ],
+ "pairs": [
+  {
+   "ink": "oklch(0.35 0.02 285)",
+   "surface": "oklch(0.985 0.002 270)",
+   "inkToken": "--ca-muted-strong",
+   "surfaceToken": "--ca-paper",
+   "surfaceIs": "main.atoms-page",
+   "uses": [
+    {
+     "size": 14,
+     "weight": 400,
+     "text": "From your first vector to your"
+    },
+    {
+     "size": 14,
+     "weight": 400,
+     "text": "Move a vector. Trace a gradien"
+    },
+    {
+     "size": 14,
+     "weight": 400,
+     "text": "Write attention, autograd, and"
+    },
+    {
+     "size": 14,
+     "weight": 400,
+     "text": "Follow the math all the way to"
+    },
+    {
+     "size": 12,
+     "weight": 400,
+     "text": "The price rises in three stage"
+    },
+    {
+     "size": 12,
+     "weight": 400,
+     "text": "First 500 learners"
+    },
+    {
+     "size": 12,
+     "weight": 400,
+     "text": "Next 500 learners"
+    },
+    {
+     "size": 36,
+     "weight": 400,
+     "text": "₹17,319"
+    },
+    {
+     "size": 12,
+     "weight": 400,
+     "text": "After the first 1,000"
+    },
+    {
+     "size": 36,
+     "weight": 400,
+     "text": "₹21,749"
+    },
+    {
+     "size": 12,
+     "weight": 400,
+     "text": "All prices in INR · One-time p"
+    }
+   ]
+  },
+  {
+   "ink": "oklch(0.19 0.018 285)",
+   "surface": "oklch(0.985 0.002 270)",
+   "inkToken": "--ca-panel-text",
+   "surfaceToken": "--ca-paper",
+   "surfaceIs": "main.atoms-page",
+   "uses": [
+    {
+     "size": 40.96,
+     "weight": 550,
+     "text": "Pay once. Stay curious."
+    },
+    {
+     "size": 24,
+     "weight": 500,
+     "text": "One membership.Every way to un"
+    },
+    {
+     "size": 16,
+     "weight": 550,
+     "text": "Interactive tutorials"
+    },
+    {
+     "size": 16,
+     "weight": 550,
+     "text": "Build-from-scratch Labs"
+    },
+    {
+     "size": 16,
+     "weight": 550,
+     "text": "Paths that connect the dots"
+    },
+    {
+     "size": 20,
+     "weight": 550,
+     "text": "Same access. Better to be earl"
+    },
+    {
+     "size": 12,
+     "weight": 500,
+     "text": "Founding learners"
+    },
+    {
+     "size": 12,
+     "weight": 500,
+     "text": "Early learners"
+    },
+    {
+     "size": 12,
+     "weight": 500,
+     "text": "Standard price"
+    }
+   ]
+  },
+  {
+   "ink": "oklch(0.35 0.02 285)",
+   "surface": "oklch(0.966 0.008 282.9)",
+   "inkToken": "--ca-muted-strong",
+   "surfaceToken": "--home-quiet-surface",
+   "surfaceIs": "article.lifetime-offer",
+   "uses": [
+    {
+     "size": 12,
+     "weight": 400,
+     "text": "CraftingAttention"
+    },
+    {
+     "size": 12,
+     "weight": 400,
+     "text": "Lifetime access"
+    },
+    {
+     "size": 12,
+     "weight": 400,
+     "text": "INRone payment"
+    },
+    {
+     "size": 14,
+     "weight": 400,
+     "text": "Launch price for the first 500"
+    },
+    {
+     "size": 12,
+     "weight": 400,
+     "text": "Account creation is free. This"
+    }
+   ]
+  },
+  {
+   "ink": "oklch(0.51 0.23 296)",
+   "surface": "oklch(0.985 0.002 270)",
+   "inkToken": "--ca-violet-soft",
+   "surfaceToken": "--ca-paper",
+   "surfaceIs": "main.atoms-page",
+   "uses": [
+    {
+     "size": 40.96,
+     "weight": 400,
+     "text": "Stay curious."
+    },
+    {
+     "size": 16,
+     "weight": 400,
+     "text": "You are here ↙"
+    },
+    {
+     "size": 16,
+     "weight": 400,
+     "text": "↙"
+    },
+    {
+     "size": 36,
+     "weight": 400,
+     "text": "₹8,619"
+    }
+   ]
+  },
+  {
+   "ink": "oklch(0.19 0.018 285)",
+   "surface": "oklch(0.966 0.008 282.9)",
+   "inkToken": "--ca-panel-text",
+   "surfaceToken": "--home-quiet-surface",
+   "surfaceIs": "article.lifetime-offer",
+   "uses": [
+    {
+     "size": 24,
+     "weight": 550,
+     "text": "For the ones who build."
+    },
+    {
+     "size": 43,
+     "weight": 400,
+     "text": "∞"
+    },
+    {
+     "size": 9,
+     "weight": 400,
+     "text": "LIFETIME"
+    },
+    {
+     "size": 4,
+     "weight": 400,
+     "text": "CRAFTING ATTENTION"
+    }
+   ]
+  },
+  {
+   "ink": "oklch(0.51 0.23 296)",
+   "surface": "oklch(0.966 0.008 282.9)",
+   "inkToken": "--ca-violet-soft",
+   "surfaceToken": "--home-quiet-surface",
+   "surfaceIs": "article.lifetime-offer",
+   "uses": [
+    {
+     "size": 68,
+     "weight": 400,
+     "text": "₹8,619"
+    }
+   ]
+  },
+  {
+   "ink": "oklch(0.48 0.018 285)",
+   "surface": "oklch(0.966 0.008 282.9)",
+   "inkToken": "--ca-muted",
+   "surfaceToken": "--home-quiet-surface",
+   "surfaceIs": "article.lifetime-offer",
+   "uses": [
+    {
+     "size": 26,
+     "weight": 400,
+     "text": "₹17,319"
+    }
+   ]
+  },
+  {
+   "ink": "oklch(0.99 0.005 260)",
+   "surface": "oklch(0.55 0.22 295)",
+   "inkToken": "--color-on-accent",
+   "surfaceToken": "--color-accent-500",
+   "surfaceIs": "a.home-button",
+   "uses": [
+    {
+     "size": 14,
+     "weight": 550,
+     "text": "Start with an account"
+    }
+   ]
+  }
+ ],
+ "edges": [
+  {
+   "color": "oklch(0.738 0.086 293.4)",
+   "token": null,
+   "width": 1,
+   "on": "oklch(0.966 0.008 282.9)",
+   "count": 1
+  },
+  {
+   "color": "oklch(0.447 0.159 293.8)",
+   "token": "--home-key-edge",
+   "width": 1,
+   "on": "oklch(0.55 0.22 295)",
+   "count": 1
+  },
+  {
+   "color": "oklch(0.86 0.01 260)",
+   "token": "--color-neutral-400",
+   "width": 1,
+   "on": "oklch(0.985 0.002 270)",
+   "count": 1
+  },
+  {
+   "color": "oklch(0.51 0.23 296)",
+   "token": "--ca-violet-soft",
+   "width": 1,
+   "on": "oklch(0.51 0.23 296)",
+   "count": 1
+  },
+  {
+   "color": "oklch(0.35 0.02 285)",
+   "token": "--ca-muted-strong",
+   "width": 1,
+   "on": "oklch(0.985 0.003 260)",
+   "count": 2
+  }
+ ],
+ "shadows": [
+  {
+   "on": "article",
+   "surface": "oklch(0.966 0.008 282.9)",
+   "layers": [
+    {
+     "x": 0,
+     "y": 5,
+     "blur": 0,
+     "spread": 0,
+     "inset": false,
+     "color": "oklch(0.923 0.032 293.3)",
+     "token": null
+    }
+   ],
+   "count": 1
+  },
+  {
+   "on": "a",
+   "surface": "oklch(0.55 0.22 295)",
+   "layers": [
+    {
+     "x": 0,
+     "y": 3,
+     "blur": 0,
+     "spread": 0,
+     "inset": false,
+     "color": "oklch(0.447 0.159 293.8)",
+     "token": "--home-key-edge"
+    },
+    {
+     "x": 0,
+     "y": 6,
+     "blur": 0,
+     "spread": 0,
+     "inset": false,
+     "color": "oklch(0.55 0.22 295 / 0.15)",
+     "token": "--color-focus-ring"
+    }
+   ],
+   "count": 1
+  },
+  {
+   "on": "span",
+   "surface": "oklch(0.51 0.23 296)",
+   "layers": [
+    {
+     "x": 0,
+     "y": 0,
+     "blur": 0,
+     "spread": 5,
+     "inset": false,
+     "color": "oklch(0.51 0.23 296 / 0.12)",
+     "token": "--ca-violet-soft"
+    }
+   ],
+   "count": 1
+  }
+ ],
+ "radii": [
+  {
+   "radius": 5,
+   "count": 1
+  },
+  {
+   "radius": 11,
+   "count": 1
+  }
+ ],
+ "type": [
+  {
+   "family": "Geist",
+   "size": 12,
+   "weight": 400,
+   "count": 9
+  },
+  {
+   "family": "Geist",
+   "size": 14,
+   "weight": 400,
+   "count": 5
+  },
+  {
+   "family": "Geist",
+   "size": 16,
+   "weight": 550,
+   "count": 3
+  },
+  {
+   "family": "Geist",
+   "size": 12,
+   "weight": 500,
+   "count": 3
+  },
+  {
+   "family": "Geist Pixel Square",
+   "size": 36,
+   "weight": 400,
+   "count": 3
+  },
+  {
+   "family": "Geist Pixel Square",
+   "size": 16,
+   "weight": 400,
+   "count": 2
+  },
+  {
+   "family": "Geist",
+   "size": 40.96,
+   "weight": 550,
+   "count": 1
+  },
+  {
+   "family": "Geist Pixel Square",
+   "size": 40.96,
+   "weight": 400,
+   "count": 1
+  },
+  {
+   "family": "Geist",
+   "size": 24,
+   "weight": 550,
+   "count": 1
+  },
+  {
+   "family": "Geist Pixel Square",
+   "size": 68,
+   "weight": 400,
+   "count": 1
+  },
+  {
+   "family": "Geist Pixel Square",
+   "size": 26,
+   "weight": 400,
+   "count": 1
+  },
+  {
+   "family": "Geist Pixel Square",
+   "size": 43,
+   "weight": 400,
+   "count": 1
+  },
+  {
+   "family": "JetBrains Mono",
+   "size": 9,
+   "weight": 400,
+   "count": 1
+  },
+  {
+   "family": "JetBrains Mono",
+   "size": 4,
+   "weight": 400,
+   "count": 1
+  },
+  {
+   "family": "Geist",
+   "size": 14,
+   "weight": 550,
+   "count": 1
+  },
+  {
+   "family": "Geist",
+   "size": 24,
+   "weight": 500,
+   "count": 1
+  },
+  {
+   "family": "Geist",
+   "size": 20,
+   "weight": 550,
+   "count": 1
+  }
+ ]
+}

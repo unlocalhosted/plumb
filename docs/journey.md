@@ -3128,6 +3128,28 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **Still open:** the bar's other checks (progress shows, fits where the original sat, keeps its weight) aren't
   plumber rules yet.
 
+### 50. From first principles: style is a model, read before anything moves (2026-11-21)
+
+**The itch.** The owner: the suggestions forced the behaviour and made poor choices for colour, words and shadow; "first
+identify conceptual gaps, then see how you can model those things via tooling, then solve this layer by layer".
+
+**The system behind it.** Suggestions were built behaviour first, and every colour, edge and shadow was filled in by
+hand afterwards (a fill mixed with black, a library's palette, a stripped shadow). There was no model of the product's
+style to draw from and nothing that chose a state's colours as a set.
+
+**What we chose.** Seven gaps, a deterministic tool for each and six layers, in
+[the procedural-style brief](briefs/procedural-style.md), built on design tooling (culori for perceptual colour,
+Material's colour utilities, APCA). Layer 1 is the style reader: crafting attention's 202 colour tokens grouped into hue
+families ordered by lightness, the ink it puts on each surface in its own card, its shadows parsed into layers, its
+corners and type, light and dark.
+
+**What it showed.** Crafting attention's shadows are hard, unblurred offsets tinted with the surface's hue (the button's
+lip is `0 3px 0` edge plus `0 6px 0` purple at 15%), which the metal suggestion had thrown away. Dead end on the way: the
+first colour test let font tokens through as colours; a token now counts only if it paints the same under two inherited
+inks.
+
+**Proof.** `/research/style-craftingattention.html`, generated from `generator/style/craftingattention.{light,dark}.json`.
+
 ### 49. Metal and the beam find their surface: crafting attention's dark page (2026-11-20)
 
 **The itch.** After the effects vanished on the light page, the owner chose "a dark surface".
