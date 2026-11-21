@@ -21,8 +21,10 @@ const css = (o) => { const g = O(formatHex(gamut(o))); return `oklch(${g.l.toFix
 
 // the product's own control and its shadow: the button's, read by layer 1
 const brand = O(E.brand.value);
-const own = M.atom?.shadow ?? M.shadows.find((s) => s.on === 'a' || s.on === 'button') ?? M.shadows[0];
-const hard = own.layers.every((l) => l.blur === 0);
+// a flat button (React Plumber's Copy) has no shadow, and its suggestions keep none: a shadow from elsewhere on the page is not the button's
+const flat = M.atom && !M.atom.shadow;
+const own = flat ? { layers: [] } : M.atom?.shadow ?? M.shadows.find((s) => s.on === 'a' || s.on === 'button') ?? M.shadows[0];
+const hard = flat || own.layers.every((l) => l.blur === 0);
 // height: the rest state is 1; the recipe is each layer's offset per unit of height and its colour's relation to the surface
 const relation = own.layers.map((l) => { const c = O(l.color);
   return { y: l.y, x: l.x, blur: l.blur, spread: l.spread, inset: !!l.inset, dl: +(c.l - brand.l).toFixed(3), cShare: +(c.c / brand.c).toFixed(3), dh: +((c.h ?? brand.h) - brand.h).toFixed(1), alpha: +(c.alpha ?? 1).toFixed(3), token: l.token }; });
@@ -36,7 +38,7 @@ const redraw = (surface, height) => { if (!hard) return comeau(surface, height);
   const s = O(surface);
   return relation.map((r) => ({ inset: r.inset, x: r.x * height, y: r.inset ? r.y : +(r.y * height).toFixed(1), blur: r.blur, spread: r.spread,
     color: css({ mode: 'oklch', l: Math.min(0.99, Math.max(0, s.l + r.dl)), c: s.c * r.cShare, h: (s.h ?? 0) + r.dh, alpha: r.alpha }) })); };
-const text = (layers) => layers.map((l) => `${l.inset ? 'inset ' : ''}${l.x}px ${l.y}px ${l.blur}px ${l.spread}px ${l.color}`).join(', ');
+const text = (layers) => !layers.length ? 'none' : layers.map((l) => `${l.inset ? 'inset ' : ''}${l.x}px ${l.y}px ${l.blur}px ${l.spread}px ${l.color}`).join(', ');
 
 // heights for the states a control goes through: it rests on its lip, rises a little when pointed at, sits on its lip
 // when pressed (a third of its height left, as crafting attention's own :active does)
@@ -45,7 +47,7 @@ const states = Object.fromEntries(Object.entries(E.states).map(([k, v]) => [k, {
 // proof: the recipe redrawn for the product's own fill at rest must give back the product's own shadow
 const back = redraw(E.brand.value, 1);
 const reproduces = own.layers.map((l, i) => ({ own: `${l.y}px ${l.color}`, redrawn: `${back[i].y}px ${back[i].color}`, colourDiff: +de(parse(l.color), parse(back[i].color)).toFixed(2), sameOffset: l.y === back[i].y }));
-E.shadow = { method: hard ? 'the product’s own hard lip, learned from its button' : 'Josh W. Comeau’s layered soft shadow', own: own.layers, relation, states, reproduces,
+E.shadow = { method: flat ? 'none: the product’s button is flat, so its suggestions are too' : hard ? 'the product’s own hard lip, learned from its button' : 'Josh W. Comeau’s layered soft shadow', own: own.layers, relation, states, reproduces,
   forSurface: { note: 'redraw(surface, height) for any new surface: the same relation applied', examples: {} } };
 // the surfaces the suggestions will need a shadow for: the solid's ramp steps 9–12 and the darkest neutral face
 for (const r of E.ramp.slice(8)) E.shadow.forSurface.examples[`step ${r.step}`] = text(redraw(r.value, 1));

@@ -2,7 +2,7 @@
    feel like the press itself (Material's medium duration band), and no travel at all with reduced motion. */
 .pour { position: relative; isolation: isolate; display: block; width: min(100%, var(--atom-width, 100%)); height: var(--atom-height); padding: 0 20px;
   border: 0; border-radius: var(--atom-radius); background: var(--set-rest-fill, var(--atom-fill)); color: var(--set-rest-ink, var(--atom-on-fill)); box-shadow: var(--set-rest-shadow, var(--atom-lip));
-  font: var(--atom-weight) var(--atom-size)/1 var(--atom-font); cursor: pointer; overflow: hidden; -webkit-tap-highlight-color: transparent;
+  font: var(--atom-weight) var(--atom-size)/1 var(--atom-font); text-transform: var(--atom-case, none); letter-spacing: var(--atom-tracking, normal); cursor: pointer; overflow: hidden; -webkit-tap-highlight-color: transparent;
   transition: transform 120ms cubic-bezier(.22, 1, .36, 1), box-shadow 120ms cubic-bezier(.22, 1, .36, 1), background-color 120ms ease-out; }
 .pour:focus-visible { outline: 2px solid var(--set-rest-fill, var(--atom-fill)); outline-offset: 3px; }
 @media (hover: hover) { .pour[data-state="rest"]:hover { background: var(--set-pointed-fill, var(--set-rest-fill)); box-shadow: var(--set-pointed-shadow, var(--set-rest-shadow)); } }

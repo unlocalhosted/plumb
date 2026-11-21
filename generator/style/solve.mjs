@@ -103,7 +103,7 @@ const pick = (role, before, minStep = 0, keepInk = null) => {
   if (!ranked.length) return null;
   const c = ranked[0].c;
   return { value: c.value, token: c.token ?? null, why: `${c.from}${c.token ? `, the product’s own ${c.token}` : ', derived'}${before && minStep ? `; ${Math.abs(O(c.value).l - O(before).l).toFixed(2)} lighter or darker than before` : ''}${ok.length ? '' : ' (nothing moved far enough; the nearest kept)'}` }; };
-const shadowFor = (surface, height) => { const r = E.shadow.relation; const s = O(surface);
+const shadowFor = (surface, height) => { const r = E.shadow.relation; const s = O(surface); if (!r.length) return 'none';
   return r.map((x) => `${x.x * height}px ${+(x.y * height).toFixed(1)}px ${x.blur}px ${x.spread}px ${formatHex(gamut({ mode: 'oklch', l: Math.min(0.99, Math.max(0, s.l + x.dl)), c: s.c * x.cShare, h: (s.h ?? 0) + x.dh }))}${x.alpha < 1 ? Math.round(x.alpha * 255).toString(16).padStart(2, '0') : ''}`).join(', '); };
 let prev = null; // the ink of the state before, within one suggestion
 const state = (fill, height, extra = {}) => ({ fill, ink: (prev = inkFor(fill.value, prev)), shadow: { value: shadowFor(fill.value, height), why: `${E.shadow.method}, at height ${+height.toFixed(2)}` }, ...extra });

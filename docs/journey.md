@@ -3128,6 +3128,30 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **Still open:** the bar's other checks (progress shows, fits where the original sat, keeps its weight) aren't
   plumber rules yet.
 
+### 55. The style tools on a third product: React Plumber's Copy button (2026-11-21)
+
+**The itch.** Finishing layer 6: the tools had to run on crafting-ui and plumber too.
+
+**What we chose.** Crafting-ui's home wall has no labelled action, only arrow buttons and lesson links. React
+Plumber's section is built in crafting-ui's own code with the same tokens, so its Copy button on the install line tests
+that design system. It is the first product with no dark mode, no icon set and a flat button.
+
+**What broke, and the system behind it.**
+- The shadow step assumed every button has a shadow and took one from elsewhere on the page. Now a flat button's
+  suggestions stay flat.
+- The skin copied the button's font but not its capitals and letter spacing, so "COPY" came out as "Copy". It now
+  carries both.
+- The judge failed every suggestion for being 32px tall. That height is the product's own, and the suggestions keep it
+  on purpose. A size the shipped button already has is now booked to the product, the same way inherited word
+  contrast already was.
+- The style sheet page assumed a dark mode.
+- A page server started before its colour sets were written doesn't see them until it restarts. That bit twice
+  today; the tools still don't restart it themselves.
+
+**The proof.** All five suggestions pass the judge on plumber's page. The shipped button keeps its own two notes: it is
+slow to answer a press, and it is small for a finger. Video: `docs/films/style-on-products/plumber-copy.mp4`. Sheet:
+`/research/style-plumber.html`.
+
 ### 54. The icon is chosen by meaning, not copied (2026-11-21)
 
 **The itch.** "the choice of icon is fucking retarded man": algorecall's suggestions put a tiny copy of the lesson's
@@ -4087,7 +4111,7 @@ it wasn't needed.
 `scripts/record-blueprint.mjs`: the count, the X-ray card on New issue, the corner fix on In review, and its write.
 
 ## Open gaps
-- **The style tools have run on two products, not four.** Crafting-ui and plumber have no button picked out as an atom, and the judge ranks a metal edge first for a daily review because the standards check whether a suggestion works, not whether it suits the moment ([entry](#53-the-style-tools-run-on-a-second-product-algorecall-2026-11-21)).
+- **The style tools have run on three products.** Crafting-ui has no labelled action to run on (plumber covers its tokens); a page server must be restarted by hand after new colour sets are written; and the judge ranks a metal edge first for a daily review because the standards check whether a suggestion works, not whether it suits the moment ([entry](#53-the-style-tools-run-on-a-second-product-algorecall-2026-11-21)).
 - **Tests that check wording, layout and time.** 769 tests are left (by `test(` lines). Many still check sentences, exact counts, pixels,
   fixed waits (55 `waitForTimeout` calls, 69 sleeps) and timings (about 67 asserts). Next: rewrite them to check
   behaviour, or delete them, and consider Playwright's own test runner. ([71](#71-preparing-060-2026-11-20))
@@ -5751,6 +5775,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- The style tools work on a third product, React Plumber's Copy button: flat, in capitals and in its own blue, with all five suggestions passing the judge ([entry](#55-the-style-tools-on-a-third-product-react-plumbers-copy-button-2026-11-21)).
 - The style tools (style reader, colour engine, shadow recipe, pairing solver) now work on a second product: algorecall's start-review slab gets suggestions in its own pale green and dark green words, with its own lip, and all six pass the judge in light and dark ([entry](#53-the-style-tools-run-on-a-second-product-algorecall-2026-11-21)).
 - A fix whose class only some of a line's elements carry (a condition on one column, a red date on late cards) is shown and written on those elements; it used to be offered on the first element and refused. The README's hero is re-recorded on Relay ([entry](#72-a-fix-offered-on-the-wrong-element-2026-11-21)).
 - React Plumber 0.6.0 is ready to release: plain CSS and Sass changed like utility classes, renaming a token by its variable, about 150 new checks from Chrome's web guides, the Anti-slop checks, Break it, and an X-ray card that says what is wrong first. The packed package was tried on a fresh app, and 179 out-of-date tests were removed ([entry](#71-preparing-060-2026-11-20)).

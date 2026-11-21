@@ -1,0 +1,745 @@
+{
+ "product": "plumber",
+ "mode": "light",
+ "read": "2026-11-21",
+ "page": "oklch(0.987 0 0)",
+ "atom": {
+  "surface": "oklch(0.506 0.289 264.8)",
+  "ink": "oklch(1 0 0)",
+  "size": 11,
+  "weight": 400,
+  "text": "Copy",
+  "shadow": null,
+  "radius": 7,
+  "surfaceToken": "--draw",
+  "inkToken": "--color-on-accent"
+ },
+ "families": [
+  {
+   "hue": 28,
+   "name": "orange",
+   "steps": [
+    {
+     "l": 0.57,
+     "c": 0.2,
+     "h": 28,
+     "value": "oklch(0.57 0.2 28)",
+     "tokens": [
+      "--accent"
+     ]
+    },
+    {
+     "l": 0.51,
+     "c": 0.2,
+     "h": 28,
+     "value": "oklch(0.51 0.2 28)",
+     "tokens": [
+      "--accent-hover"
+     ]
+    }
+   ]
+  },
+  {
+   "hue": 65,
+   "name": "amber",
+   "steps": [
+    {
+     "l": 0.7,
+     "c": 0.15,
+     "h": 65,
+     "value": "oklch(0.7 0.15 65)",
+     "tokens": [
+      "--warning"
+     ]
+    }
+   ]
+  },
+  {
+   "hue": 160,
+   "name": "green",
+   "steps": [
+    {
+     "l": 0.56,
+     "c": 0.13,
+     "h": 160,
+     "value": "oklch(0.56 0.13 160)",
+     "tokens": [
+      "--success"
+     ]
+    }
+   ]
+  },
+  {
+   "hue": 266,
+   "name": "indigo",
+   "steps": [
+    {
+     "l": 0.9,
+     "c": 0.05,
+     "h": 268,
+     "value": "oklch(0.9 0.05 268)",
+     "tokens": [
+      "--draw-tint"
+     ]
+    },
+    {
+     "l": 0.506,
+     "c": 0.289,
+     "h": 264.8,
+     "value": "oklch(0.506 0.289 264.8)",
+     "tokens": [
+      "--draw",
+      "--info"
+     ]
+    },
+    {
+     "l": 0.506,
+     "c": 0.289,
+     "h": 264.8,
+     "value": "oklch(0.506 0.289 264.8 / 0.55)",
+     "tokens": [
+      "--draw-line"
+     ]
+    },
+    {
+     "l": 0.44,
+     "c": 0.27,
+     "h": 264.8,
+     "value": "oklch(0.44 0.27 264.8)",
+     "tokens": [
+      "--draw-hover"
+     ]
+    }
+   ]
+  }
+ ],
+ "neutrals": [
+  {
+   "l": 1,
+   "c": 0,
+   "h": 0,
+   "value": "oklch(1 0 0)",
+   "tokens": [
+    "--color-on-accent",
+    "--tw-ring-offset-color",
+    "--surface",
+    "--fg-on-accent"
+   ]
+  },
+  {
+   "l": 0.987,
+   "c": 0,
+   "h": 0,
+   "value": "oklch(0.987 0 0)",
+   "tokens": [
+    "--bg"
+   ]
+  },
+  {
+   "l": 0.976,
+   "c": 0.004,
+   "h": 265,
+   "value": "oklch(0.976 0.004 265)",
+   "tokens": [
+    "--surface-hover"
+   ]
+  },
+  {
+   "l": 0.97,
+   "c": 0,
+   "h": 0,
+   "value": "oklch(0.97 0 0)",
+   "tokens": [
+    "--bg-sunken"
+   ]
+  },
+  {
+   "l": 0.956,
+   "c": 0.008,
+   "h": 265,
+   "value": "oklch(0.956 0.008 265)",
+   "tokens": [
+    "--surface-pressed"
+   ]
+  },
+  {
+   "l": 0.13,
+   "c": 0,
+   "h": 0,
+   "value": "oklch(0.13 0 0)",
+   "tokens": [
+    "--fg",
+    "--scrim",
+    "--shadow-ink"
+   ]
+  },
+  {
+   "l": 0,
+   "c": 0,
+   "h": 0,
+   "value": "oklch(0 0 0 / 0.62)",
+   "tokens": [
+    "--fg-muted"
+   ]
+  }
+ ],
+ "translucent": [
+  {
+   "l": 0,
+   "c": 0,
+   "h": 0,
+   "a": 0.42,
+   "value": "oklch(0 0 0 / 0.42)",
+   "tokens": [
+    "--fg-faint"
+   ]
+  },
+  {
+   "l": 0,
+   "c": 0,
+   "h": 0,
+   "a": 0.12,
+   "value": "oklch(0 0 0 / 0.12)",
+   "tokens": [
+    "--line"
+   ]
+  },
+  {
+   "l": 0,
+   "c": 0,
+   "h": 0,
+   "a": 0.32,
+   "value": "oklch(0 0 0 / 0.32)",
+   "tokens": [
+    "--line-strong"
+   ]
+  },
+  {
+   "l": 0.506,
+   "c": 0.289,
+   "h": 264.8,
+   "a": 0.1,
+   "value": "oklch(0.506 0.289 264.8 / 0.1)",
+   "tokens": [
+    "--draw-soft",
+    "--grid-major"
+   ]
+  },
+  {
+   "l": 0.506,
+   "c": 0.289,
+   "h": 264.8,
+   "a": 0.045,
+   "value": "oklch(0.506 0.289 264.8 / 0.04)",
+   "tokens": [
+    "--grid-minor"
+   ]
+  },
+  {
+   "l": 0.57,
+   "c": 0.2,
+   "h": 28,
+   "a": 0.1,
+   "value": "oklch(0.57 0.2 28 / 0.1)",
+   "tokens": [
+    "--accent-soft"
+   ]
+  }
+ ],
+ "pairs": [
+  {
+   "ink": "oklch(0.13 0 0)",
+   "surface": "oklch(0.987 0 0)",
+   "inkToken": "--fg",
+   "surfaceToken": "--bg",
+   "surfaceIs": "body",
+   "uses": [
+    {
+     "size": 11,
+     "weight": 400,
+     "text": "The companion tool"
+    },
+    {
+     "size": 24,
+     "weight": 500,
+     "text": "React Plumber"
+    },
+    {
+     "size": 19,
+     "weight": 400,
+     "text": "Finds where your React and Tai"
+    },
+    {
+     "size": 19,
+     "weight": 400,
+     "text": "npx plumber check in your term"
+    },
+    {
+     "size": 14,
+     "weight": 400,
+     "text": "npx plumber check"
+    },
+    {
+     "size": 19,
+     "weight": 400,
+     "text": "Hold AltB on your running page"
+    },
+    {
+     "size": 19,
+     "weight": 400,
+     "text": "Each one comes with the file, "
+    },
+    {
+     "size": 11,
+     "weight": 400,
+     "text": "This site, checked by its own "
+    },
+    {
+     "size": 14,
+     "weight": 400,
+     "text": "z-index"
+    },
+    {
+     "size": 9,
+     "weight": 400,
+     "text": "no tokens yet"
+    },
+    {
+     "size": 16,
+     "weight": 400,
+     "text": "3%, 68 off"
+    },
+    {
+     "size": 16,
+     "weight": 400,
+     "text": "3"
+    },
+    {
+     "size": 16,
+     "weight": 400,
+     "text": ", 68 off"
+    },
+    {
+     "size": 14,
+     "weight": 400,
+     "text": "elevation"
+    },
+    {
+     "size": 9,
+     "weight": 400,
+     "text": "0"
+    },
+    {
+     "size": 9,
+     "weight": 400,
+     "text": "18 px lift"
+    },
+    {
+     "size": 16,
+     "weight": 400,
+     "text": "26%, 92 off"
+    },
+    {
+     "size": 16,
+     "weight": 400,
+     "text": "26"
+    },
+    {
+     "size": 16,
+     "weight": 400,
+     "text": ", 92 off"
+    },
+    {
+     "size": 15,
+     "weight": 600,
+     "text": "Aa"
+    },
+    {
+     "size": 14,
+     "weight": 400,
+     "text": "type"
+    },
+    {
+     "size": 9,
+     "weight": 400,
+     "text": "11"
+    },
+    {
+     "size": 9,
+     "weight": 400,
+     "text": "56 px"
+    },
+    {
+     "size": 16,
+     "weight": 400,
+     "text": "45%, 1,416 off"
+    },
+    {
+     "size": 16,
+     "weight": 400,
+     "text": "45"
+    },
+    {
+     "size": 16,
+     "weight": 400,
+     "text": ", 1,416 off"
+    },
+    {
+     "size": 14,
+     "weight": 400,
+     "text": "radius"
+    },
+    {
+     "size": 9,
+     "weight": 400,
+     "text": "1"
+    },
+    {
+     "size": 9,
+     "weight": 400,
+     "text": "6 px"
+    },
+    {
+     "size": 16,
+     "weight": 400,
+     "text": "48%, 135 off"
+    },
+    {
+     "size": 16,
+     "weight": 400,
+     "text": "48"
+    },
+    {
+     "size": 16,
+     "weight": 400,
+     "text": ", 135 off"
+    },
+    {
+     "size": 14,
+     "weight": 400,
+     "text": "colour"
+    },
+    {
+     "size": 9,
+     "weight": 400,
+     "text": "dark"
+    },
+    {
+     "size": 9,
+     "weight": 400,
+     "text": "light"
+    },
+    {
+     "size": 16,
+     "weight": 400,
+     "text": "71%, 808 off"
+    },
+    {
+     "size": 16,
+     "weight": 400,
+     "text": "71"
+    },
+    {
+     "size": 16,
+     "weight": 400,
+     "text": ", 808 off"
+    },
+    {
+     "size": 14,
+     "weight": 400,
+     "text": "motion"
+    },
+    {
+     "size": 9,
+     "weight": 400,
+     "text": "40"
+    },
+    {
+     "size": 9,
+     "weight": 400,
+     "text": "500 ms"
+    },
+    {
+     "size": 16,
+     "weight": 400,
+     "text": "75%, 246 off"
+    },
+    {
+     "size": 16,
+     "weight": 400,
+     "text": "75"
+    },
+    {
+     "size": 16,
+     "weight": 400,
+     "text": ", 246 off"
+    },
+    {
+     "size": 14,
+     "weight": 400,
+     "text": "spacing"
+    },
+    {
+     "size": 9,
+     "weight": 400,
+     "text": "0"
+    },
+    {
+     "size": 9,
+     "weight": 400,
+     "text": "40 px"
+    },
+    {
+     "size": 16,
+     "weight": 400,
+     "text": "75%, 797 off"
+    },
+    {
+     "size": 16,
+     "weight": 400,
+     "text": "75"
+    },
+    {
+     "size": 16,
+     "weight": 400,
+     "text": ", 797 off"
+    },
+    {
+     "size": 16,
+     "weight": 400,
+     "text": "Each level is marked with that"
+    }
+   ]
+  },
+  {
+   "ink": "oklch(0.506 0.289 264.8)",
+   "surface": "oklch(0.987 0 0)",
+   "inkToken": "--draw",
+   "surfaceToken": "--bg",
+   "surfaceIs": "body",
+   "uses": [
+    {
+     "size": 11,
+     "weight": 400,
+     "text": "Check"
+    },
+    {
+     "size": 11,
+     "weight": 400,
+     "text": "See"
+    },
+    {
+     "size": 11,
+     "weight": 400,
+     "text": "Fix"
+    }
+   ]
+  },
+  {
+   "ink": "oklch(0.506 0.289 264.8)",
+   "surface": "oklch(1 0 0)",
+   "inkToken": "--draw",
+   "surfaceToken": "--surface",
+   "surfaceIs": "kbd.mx-0.5",
+   "uses": [
+    {
+     "size": 14,
+     "weight": 400,
+     "text": "Alt"
+    },
+    {
+     "size": 14,
+     "weight": 400,
+     "text": "B"
+    }
+   ]
+  },
+  {
+   "ink": "oklch(0.506 0.289 264.8)",
+   "surface": "oklch(0.9 0.05 268)",
+   "inkToken": "--draw",
+   "surfaceToken": "--draw-tint",
+   "surfaceIs": "div.flex",
+   "uses": [
+    {
+     "size": 13,
+     "weight": 400,
+     "text": "$"
+    }
+   ]
+  },
+  {
+   "ink": "oklch(0.13 0 0)",
+   "surface": "oklch(0.9 0.05 268)",
+   "inkToken": "--fg",
+   "surfaceToken": "--draw-tint",
+   "surfaceIs": "div.flex",
+   "uses": [
+    {
+     "size": 14,
+     "weight": 400,
+     "text": "npm install -D @unlocalhosted/"
+    }
+   ]
+  },
+  {
+   "ink": "oklch(1 0 0)",
+   "surface": "oklch(0.506 0.289 264.8)",
+   "inkToken": "--color-on-accent",
+   "surfaceToken": "--draw",
+   "surfaceIs": "button.press",
+   "uses": [
+    {
+     "size": 11,
+     "weight": 400,
+     "text": "Copy"
+    }
+   ]
+  }
+ ],
+ "edges": [
+  {
+   "color": "oklch(0 0 0 / 0.12)",
+   "token": "--fg-muted",
+   "width": 1,
+   "on": "oklch(0.987 0 0)",
+   "count": 1
+  },
+  {
+   "color": "oklch(0.506 0.289 264.8)",
+   "token": "--draw",
+   "width": 1,
+   "on": "oklch(1 0 0)",
+   "count": 16
+  },
+  {
+   "color": "oklch(0.506 0.289 264.8 / 0.6)",
+   "token": "--draw",
+   "width": 1,
+   "on": "oklch(1 0 0)",
+   "count": 7
+  }
+ ],
+ "shadows": [
+  {
+   "on": "span",
+   "surface": "oklch(0.13 0 0)",
+   "layers": [
+    {
+     "x": 0,
+     "y": 0,
+     "blur": 0,
+     "spread": 0,
+     "inset": false,
+     "color": "oklch(0 0 0 / 0)",
+     "token": "--fg-muted"
+    },
+    {
+     "x": 0,
+     "y": 0,
+     "blur": 0,
+     "spread": 0,
+     "inset": false,
+     "color": "oklch(0 0 0 / 0)",
+     "token": "--fg-muted"
+    },
+    {
+     "x": 0,
+     "y": 0,
+     "blur": 0,
+     "spread": 0,
+     "inset": false,
+     "color": "oklch(0 0 0 / 0)",
+     "token": "--fg-muted"
+    },
+    {
+     "x": 0,
+     "y": 0,
+     "blur": 0,
+     "spread": 1,
+     "inset": false,
+     "color": "oklch(0.506 0.289 264.8)",
+     "token": "--draw"
+    },
+    {
+     "x": 0,
+     "y": 0,
+     "blur": 0,
+     "spread": 0,
+     "inset": false,
+     "color": "oklch(0 0 0 / 0)",
+     "token": "--fg-muted"
+    }
+   ],
+   "count": 6
+  }
+ ],
+ "radii": [
+  {
+   "radius": 33554400,
+   "count": 20
+  },
+  {
+   "radius": 5,
+   "count": 2
+  },
+  {
+   "radius": 7,
+   "count": 1
+  },
+  {
+   "radius": 10,
+   "count": 1
+  }
+ ],
+ "type": [
+  {
+   "family": "Geist",
+   "size": 16,
+   "weight": 400,
+   "count": 22
+  },
+  {
+   "family": "Geist Mono",
+   "size": 9,
+   "weight": 400,
+   "count": 13
+  },
+  {
+   "family": "Geist Mono",
+   "size": 14,
+   "weight": 400,
+   "count": 11
+  },
+  {
+   "family": "Geist Mono",
+   "size": 11,
+   "weight": 400,
+   "count": 6
+  },
+  {
+   "family": "Geist",
+   "size": 19,
+   "weight": 400,
+   "count": 4
+  },
+  {
+   "family": "Geist",
+   "size": 24,
+   "weight": 500,
+   "count": 1
+  },
+  {
+   "family": "Geist Mono",
+   "size": 13,
+   "weight": 400,
+   "count": 1
+  },
+  {
+   "family": "Geist",
+   "size": 15,
+   "weight": 600,
+   "count": 1
+  }
+ ]
+}

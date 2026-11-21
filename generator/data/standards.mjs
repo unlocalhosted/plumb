@@ -96,5 +96,6 @@ export const STANDARDS = [
 export const MOMENTS = {
   // the press itself doesn't pay: it opens checkout (its own words: "Opening checkout"), where the payment is confirmed
   'craftingattention/buy': { name: 'buying lifetime access', stakes: 'low', confirmedLater: 'checkout asks for the payment itself, so a slip here costs nothing', frequency: 'once', who: 'a first-time visitor on the pricing page' },
+  'plumber/copy': { name: 'copying the install command', stakes: 'low', reversible: true, frequency: 'once', who: 'a developer trying plumber' },
   'algorecall/start': { name: 'starting a review', stakes: 'low', reversible: true, frequency: 'daily', who: 'a learner coming back' },
 };

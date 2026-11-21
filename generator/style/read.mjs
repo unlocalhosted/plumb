@@ -16,11 +16,11 @@ const [product = 'craftingattention', mode = 'light'] = process.argv.slice(2);
 
 // each product's playground on its own port, so reading one never stops another; the atom read is the product's first
 const { product: P } = await import(`../products/${product}.mjs`);
-const atom = P.atoms[0].id, PORT = { craftingattention: 4399, algorecall: 4398 }[product] ?? 4397;
+const atom = P.atoms[0].id, PORT = { craftingattention: 4399, algorecall: 4398, plumber: 4397 }[product] ?? 4396;
 const DEV = `${process.env.HOME}/.claude/bin/dev-server`, PG = `${here}../playground/${product}`;
 const up = async () => { try { return (await fetch(`http://localhost:${PORT}/atoms.html`)).ok; } catch { return false; } };
 if (!(await up())) {
-  const root = { algorecall: '/Users/vijaysingh/unlocalhosted/algorecall' }[product] ?? '/Users/vijaysingh/unlocalhosted/craftingattention/app';
+  const root = P.root ?? '/Users/vijaysingh/unlocalhosted/craftingattention/app';
   execFileSync(DEV, [PG, `${root}/node_modules/.bin/vite`, '--config', 'vite.config.mjs', '--port', String(PORT), '--strictPort'], { stdio: 'ignore' });
   for (let i = 0; i < 40 && !(await up()); i++) await new Promise((r) => setTimeout(r, 750));
 }

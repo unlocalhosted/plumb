@@ -1,0 +1,345 @@
+{
+ "product": "plumber",
+ "mode": "light",
+ "brand": {
+  "value": "#103dff",
+  "oklch": "oklch(0.506 0.289 264.8)",
+  "token": "--draw"
+ },
+ "page": {
+  "value": "#fbfbfb",
+  "oklch": "oklch(0.987 0.000 0.0)",
+  "token": "--bg"
+ },
+ "buttonWords": "11px/400",
+ "ramp": [
+  {
+   "step": 1,
+   "job": "app background",
+   "value": "#f8f9fa",
+   "oklch": "oklch(0.982 0.002 247.8)",
+   "token": "--bg"
+  },
+  {
+   "step": 2,
+   "job": "subtle background",
+   "value": "#f1f5fd",
+   "oklch": "oklch(0.969 0.012 264.5)",
+   "token": "--surface-pressed"
+  },
+  {
+   "step": 3,
+   "job": "component at rest",
+   "value": "#e5edfe",
+   "oklch": "oklch(0.945 0.025 265.6)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 4,
+   "job": "component pointed at",
+   "value": "#d4e5ff",
+   "oklch": "oklch(0.917 0.040 258.8)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 5,
+   "job": "component pressed or selected",
+   "value": "#c2daff",
+   "oklch": "oklch(0.883 0.057 259.0)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 6,
+   "job": "subtle border",
+   "value": "#adccff",
+   "oklch": "oklch(0.840 0.079 260.3)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 7,
+   "job": "border and focus ring",
+   "value": "#92b8ff",
+   "oklch": "oklch(0.782 0.110 262.4)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 8,
+   "job": "border pointed at",
+   "value": "#6e9dff",
+   "oklch": "oklch(0.706 0.153 263.6)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 9,
+   "job": "solid",
+   "value": "#103dff",
+   "oklch": "oklch(0.499 0.282 264.8)",
+   "token": "--draw"
+  },
+  {
+   "step": 10,
+   "job": "solid pointed at",
+   "value": "#0d35dc",
+   "oklch": "oklch(0.449 0.250 264.8)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 11,
+   "job": "low-contrast words",
+   "value": "#1646eb",
+   "oklch": "oklch(0.492 0.250 264.7)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 12,
+   "job": "high-contrast words",
+   "value": "#10296e",
+   "oklch": "oklch(0.311 0.124 264.8)",
+   "derived": "Radix custom palette"
+  }
+ ],
+ "grays": [
+  {
+   "step": 1,
+   "job": "app background",
+   "value": "#f7f8f9",
+   "oklch": "oklch(0.979 0.002 247.8)",
+   "token": "--bg"
+  },
+  {
+   "step": 2,
+   "job": "subtle background",
+   "value": "#f4f4f7",
+   "oklch": "oklch(0.968 0.004 286.3)",
+   "token": "--surface-hover"
+  },
+  {
+   "step": 3,
+   "job": "component at rest",
+   "value": "#eaebee",
+   "oklch": "oklch(0.940 0.004 271.4)",
+   "token": "--surface-pressed"
+  },
+  {
+   "step": 4,
+   "job": "component pointed at",
+   "value": "#e2e3e7",
+   "oklch": "oklch(0.916 0.006 275.0)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 5,
+   "job": "component pressed or selected",
+   "value": "#dadbe1",
+   "oklch": "oklch(0.892 0.008 278.6)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 6,
+   "job": "subtle border",
+   "value": "#d2d4da",
+   "oklch": "oklch(0.870 0.009 271.3)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 7,
+   "job": "border and focus ring",
+   "value": "#c7c8d1",
+   "oklch": "oklch(0.835 0.012 281.0)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 8,
+   "job": "border pointed at",
+   "value": "#b3b5c0",
+   "oklch": "oklch(0.775 0.016 277.8)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 9,
+   "job": "solid",
+   "value": "#858792",
+   "oklch": "oklch(0.625 0.017 277.7)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 10,
+   "job": "solid pointed at",
+   "value": "#7b7d87",
+   "oklch": "oklch(0.591 0.015 276.9)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 11,
+   "job": "low-contrast words",
+   "value": "#5d5e67",
+   "oklch": "oklch(0.484 0.014 280.8)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 12,
+   "job": "high-contrast words",
+   "value": "#1e1f24",
+   "oklch": "oklch(0.240 0.010 276.7)",
+   "derived": "Radix custom palette"
+  }
+ ],
+ "states": {
+  "rest": {
+   "fill": {
+    "value": "#103dff",
+    "oklch": "oklch(0.499 0.282 264.8)",
+    "token": "--draw"
+   },
+   "ink": {
+    "value": "#ffffff",
+    "oklch": "oklch(1.000 0.000 0.0)",
+    "token": "--color-on-accent",
+    "lc": -86.5,
+    "needPx": 16.5,
+    "shortBy": 5.5,
+    "readsAt": "11px/400",
+    "ok": false
+   }
+  },
+  "pointed at": {
+   "fill": {
+    "value": "#0d35dc",
+    "oklch": "oklch(0.449 0.250 264.8)",
+    "derived": "Radix step 10"
+   },
+   "alsoMaterial": {
+    "value": "#234dff",
+    "oklch": "oklch(0.526 0.264 265.8)",
+    "derived": "Material state layer 8%"
+   },
+   "ink": {
+    "value": "#ffffff",
+    "oklch": "oklch(1.000 0.000 0.0)",
+    "token": "--color-on-accent",
+    "lc": -91.6,
+    "needPx": 16,
+    "shortBy": 5,
+    "readsAt": "11px/400",
+    "ok": false
+   }
+  },
+  "pressed": {
+   "fill": {
+    "value": "#2850ff",
+    "oklch": "oklch(0.532 0.260 266.2)",
+    "derived": "Material state layer 10%"
+   },
+   "ink": {
+    "value": "#ffffff",
+    "oklch": "oklch(1.000 0.000 0.0)",
+    "token": "--color-on-accent",
+    "lc": -82.7,
+    "needPx": 17.3,
+    "shortBy": 6.3,
+    "readsAt": "11px/400",
+    "ok": false
+   }
+  }
+ },
+ "leonardo": [
+  {
+   "ratioToPage": 1.5,
+   "value": "#b6d0ff",
+   "oklch": "oklch(0.854 0.072 262.2)",
+   "derived": "Leonardo"
+  },
+  {
+   "ratioToPage": 3,
+   "value": "#5c8eff",
+   "oklch": "oklch(0.667 0.176 264.2)",
+   "derived": "Leonardo"
+  },
+  {
+   "ratioToPage": 4.5,
+   "value": "#3167ff",
+   "oklch": "oklch(0.574 0.233 264.8)",
+   "derived": "Leonardo"
+  },
+  {
+   "ratioToPage": 7,
+   "value": "#0d35f9",
+   "oklch": "oklch(0.482 0.282 264.8)",
+   "derived": "Leonardo"
+  }
+ ],
+ "harmony": {
+  "complementary": [
+   {
+    "value": "#9e4b00",
+    "oklch": "oklch(0.509 0.131 51.8)",
+    "derived": "Adobe Color rule"
+   }
+  ],
+  "analogous": [
+   {
+    "value": "#007a60",
+    "oklch": "oklch(0.516 0.101 171.1)",
+    "derived": "Adobe Color rule"
+   },
+   {
+    "value": "#4f26ff",
+    "oklch": "oklch(0.501 0.285 277.3)",
+    "derived": "Adobe Color rule"
+   }
+  ],
+  "split complementary": [
+   {
+    "value": "#bf0900",
+    "oklch": "oklch(0.508 0.205 29.8)",
+    "derived": "Adobe Color rule"
+   },
+   {
+    "value": "#845e00",
+    "oklch": "oklch(0.508 0.105 81.0)",
+    "derived": "Adobe Color rule"
+   }
+  ],
+  "triad": [
+   {
+    "value": "#c50010",
+    "oklch": "oklch(0.518 0.211 27.6)",
+    "token": "--accent-hover"
+   },
+   {
+    "value": "#6e6800",
+    "oklch": "oklch(0.507 0.108 105.7)",
+    "derived": "Adobe Color rule"
+   }
+  ]
+ },
+ "shadow": {
+  "method": "none: the product’s button is flat, so its suggestions are too",
+  "own": [],
+  "relation": [],
+  "states": {
+   "rest": {
+    "height": 1,
+    "shadow": "none"
+   },
+   "pointed at": {
+    "height": 1,
+    "shadow": "none"
+   },
+   "pressed": {
+    "height": 0.3333333333333333,
+    "shadow": "none"
+   }
+  },
+  "reproduces": [],
+  "forSurface": {
+   "note": "redraw(surface, height) for any new surface: the same relation applied",
+   "examples": {
+    "step 9": "none",
+    "step 10": "none",
+    "step 11": "none",
+    "step 12": "none"
+   }
+  }
+ }
+}

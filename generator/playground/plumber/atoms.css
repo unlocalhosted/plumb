@@ -1,0 +1,6 @@
+/* React Plumber's atoms page: crafting-ui's own styles, then the shared atoms page (../atoms) */
+@import "./playground.css";
+@import "../atoms/atoms.css";
+@source "../atoms";
+/* crafting-ui paints its page on the app shell, which the playground doesn't mount: the atoms page wears it instead */
+body { background: var(--bg); }

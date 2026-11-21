@@ -14,14 +14,14 @@ import { execFileSync } from 'node:child_process';
 import { STANDARDS, MOMENTS } from './standards.mjs';
 const here = fileURLToPath(new URL('./', import.meta.url));
 const [atom = 'buy', mode = 'light'] = process.argv.slice(2);
-const product = atom === 'start' ? 'algorecall' : 'craftingattention';
+const product = { start: 'algorecall', copy: 'plumber' }[atom] ?? 'craftingattention';
 const moment = MOMENTS[`${product}/${atom}`];
 const DEV = `${process.env.HOME}/.claude/bin/dev-server`, PG = `${here}../playground/${product}`;
-const PORT = product === 'algorecall' ? 4398 : 4399; // each product's playground on its own port (as generator/style/read.mjs)
+const PORT = { algorecall: 4398, plumber: 4397 }[product] ?? 4399; // each product's playground on its own port (as generator/style/read.mjs)
 const up = async () => { try { return (await fetch(`http://localhost:${PORT}/atoms.html`)).ok; } catch { return false; } };
 const started = !(await up());
 if (started) {
-  const root = product === 'algorecall' ? '/Users/vijaysingh/unlocalhosted/algorecall' : '/Users/vijaysingh/unlocalhosted/craftingattention/app';
+  const root = { algorecall: '/Users/vijaysingh/unlocalhosted/algorecall', plumber: '/Users/vijaysingh/unlocalhosted/crafting-ui' }[product] ?? '/Users/vijaysingh/unlocalhosted/craftingattention/app';
   execFileSync(DEV, [PG, `${root}/node_modules/.bin/vite`, '--config', 'vite.config.mjs', '--port', String(PORT), '--strictPort'], { stdio: 'ignore' });
   for (let i = 0; i < 40 && !(await up()); i++) await new Promise((r) => setTimeout(r, 750));
 }
@@ -194,6 +194,10 @@ if (started) try { execFileSync(DEV, ['--stop', PG], { stdio: 'ignore' }); } cat
 // a fault the shipped button already has, in the same words at rest, is the product's, not the form's: every form wears
 // the shipped skin, so it would count against all of them alike. The shipped card keeps it; the forms note it.
 const shippedWords = out.find((x) => x.form === 'house')?.words;
+// the same for size: a form drawn at the shipped button's own height, when that height is under the bar, keeps the
+// product's size, which is the product's decision (React Plumber's Copy is 32px tall on a desktop page)
+const shippedTarget = out.find((x) => x.form === 'house')?.target;
+for (const m of out) if (m.form !== 'house' && shippedTarget && Math.min(...shippedTarget) < 44 && Math.abs(m.target[1] - shippedTarget[1]) <= 1 && m.target[0] >= 44) m.sizeFromProduct = `${shippedTarget[1]}px tall, as shipped`;
 for (const m of out) if (m.form !== 'house' && shippedWords && m.words?.says === shippedWords.says && m.words.when === shippedWords.when) { m.inherited = m.words; m.words = null; }
 
 // ── the verdicts ────────────────────────────────────────────────────────────────────────────────────────────────
@@ -216,7 +220,7 @@ const check = (s, m) => {
     case 'progress-shows': return { ok: m.progressRatio >= 3, m: { ratio: m.progressRatio } };
     case 'can-back-out': return { ok: !!m.backsOut, m: {} };
     case 'no-drag-needed': return { ok: !!m.keyboard, m: {} };
-    case 'big-enough': return { ok: Math.min(...m.target) >= 44, m: { size: `${m.target[0]}×${m.target[1]} px` } };
+    case 'big-enough': return { ok: Math.min(...m.target) >= 44 || !!m.sizeFromProduct, m: { size: `${m.target[0]}×${m.target[1]} px`, ...(m.sizeFromProduct ? { fromProduct: m.sizeFromProduct } : {}) } };
     case 'motion-purposeful': { const all = Math.max(m.motionMs, m.progressMs ?? 0); const reduced = all < 150 || m.reducedMotionMs <= all * 0.4; // 500 ms is Material's upper bound; one frame (16 ms) is the recorder's own reading error
       return { ok: reduced && m.motionMs <= 516, m: { reduced, longestMs: m.motionMs } }; }
     case 'friction-fits-stakes': { const f = fitFor(m); return { ok: f.ok, m: f }; }

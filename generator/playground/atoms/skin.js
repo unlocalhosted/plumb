@@ -52,6 +52,8 @@ export function readSkin(el) {
       '--atom-fill': cs.backgroundColor, '--atom-on-fill': cs.color, '--atom-edge': edge, '--atom-deep': deep ?? edge, '--atom-on-deep': onDeep ?? cs.color,
       '--atom-lip': cs.boxShadow === 'none' ? `0 2px 0 ${edge}` : cs.boxShadow, '--atom-radius': cs.borderTopLeftRadius,
       '--atom-height': `${Math.round(r.height)}px`, '--atom-font': ws.fontFamily, '--atom-size': ws.fontSize, '--atom-weight': ws.fontWeight,
+      // the words' case and spacing too: React Plumber's Copy is set in capitals, tracked 0.1em
+      '--atom-case': ws.textTransform, '--atom-tracking': ws.letterSpacing,
     },
     deepFrom, measured: { fill, ink, height: Math.round(r.height), width: Math.round(r.width) },
   };
