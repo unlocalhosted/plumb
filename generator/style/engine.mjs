@@ -30,7 +30,8 @@ const name = (c) => { const p = parse(c); if (!p) throw new Error(`not a colour:
 const mark = (c, tool) => { const n = name(c); return { value: hex(c), oklch: okStr(c), ...(n ? { token: n.token } : { derived: tool }) }; };
 
 // the brand: the solid the product's own button is painted with, and the page it sits on
-const button = M.pairs.find((p) => /accent|primary|brand|button/.test(`${p.surfaceToken} ${p.uses.map((u) => u.text).join(' ')}`) && oklch(parse(p.surface)).c > 0.08) ?? M.pairs.at(-1);
+// the product's own atom as shipped (its fill, its words, their size and weight); older models fall back to a guess
+const button = M.atom ? { surface: M.atom.surface, ink: M.atom.ink, surfaceToken: M.atom.surfaceToken, uses: [{ size: M.atom.size, weight: M.atom.weight, text: M.atom.text }] } : M.pairs.find((p) => /accent|primary|brand|button/.test(`${p.surfaceToken} ${p.uses.map((u) => u.text).join(' ')}`) && oklch(parse(p.surface)).c > 0.08) ?? M.pairs.at(-1);
 const brand = button.surface, page = M.page, gray = M.neutrals.find((n) => n.l > 0.45 && n.l < 0.6)?.value ?? '#8b8d98';
 
 // ── ramp: Radix ──
@@ -55,7 +56,7 @@ const inkFor = (surface) => { const ranked = inks.map((i) => ({ ink: i, ...reads
 
 // ── states: Material's state layers over the solid ──
 const layer = (over, ink, a) => hex(interpolate([over, ink], 'rgb')(a));
-const solid = R.accentScale[8];
+const solid = M.atom ? hex(M.atom.surface) : R.accentScale[8]; // the atom's own fill; Radix moves a pale one off step 9
 const states = {
   rest: { fill: mark(solid, 'Radix step 9') },
   'pointed at': { fill: mark(R.accentScale[9], 'Radix step 10'), alsoMaterial: mark(layer(solid, button.ink, 0.08), 'Material state layer 8%') },

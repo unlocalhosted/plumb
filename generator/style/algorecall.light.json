@@ -1,0 +1,897 @@
+{
+ "product": "algorecall",
+ "mode": "light",
+ "read": "2026-11-21",
+ "page": "oklch(0.985 0.004 163)",
+ "atom": {
+  "surface": "oklch(0.87 0.075 140)",
+  "ink": "oklch(0.465 0.062 140)",
+  "size": 17.6,
+  "weight": 600,
+  "text": "Arrays & Hashing",
+  "shadow": {
+   "layers": [
+    {
+     "x": 0,
+     "y": 11,
+     "blur": 0,
+     "spread": 0,
+     "inset": false,
+     "color": "oklch(0.77 0.105 140)",
+     "token": null
+    },
+    {
+     "x": 0,
+     "y": 1,
+     "blur": 0,
+     "spread": 0,
+     "inset": true,
+     "color": "oklch(0.93 0.075 140)",
+     "token": null
+    }
+   ]
+  },
+  "radius": 8.8,
+  "surfaceToken": null,
+  "inkToken": "--hue-lichen-ink"
+ },
+ "families": [
+  {
+   "hue": 8,
+   "name": "red",
+   "steps": [
+    {
+     "l": 0.63,
+     "c": 0.14,
+     "h": 8,
+     "value": "oklch(0.63 0.14 8)",
+     "tokens": [
+      "--hue-rose"
+     ]
+    },
+    {
+     "l": 0.465,
+     "c": 0.123,
+     "h": 8,
+     "value": "oklch(0.465 0.123 8)",
+     "tokens": [
+      "--hue-rose-ink"
+     ]
+    }
+   ]
+  },
+  {
+   "hue": 37,
+   "name": "orange",
+   "steps": [
+    {
+     "l": 0.63,
+     "c": 0.14,
+     "h": 38,
+     "value": "oklch(0.63 0.14 38)",
+     "tokens": [
+      "--hue-terracotta"
+     ]
+    },
+    {
+     "l": 0.577,
+     "c": 0.245,
+     "h": 27.3,
+     "value": "oklch(0.577 0.245 27.3)",
+     "tokens": [
+      "--destructive"
+     ]
+    },
+    {
+     "l": 0.56,
+     "c": 0.14,
+     "h": 27,
+     "value": "oklch(0.56 0.14 27)",
+     "tokens": [
+      "--wrong"
+     ]
+    },
+    {
+     "l": 0.5,
+     "c": 0.13,
+     "h": 46,
+     "value": "oklch(0.5 0.13 46)",
+     "tokens": [
+      "--difficulty-hard"
+     ]
+    },
+    {
+     "l": 0.465,
+     "c": 0.123,
+     "h": 38,
+     "value": "oklch(0.465 0.123 38)",
+     "tokens": [
+      "--hue-terracotta-ink"
+     ]
+    },
+    {
+     "l": 0.45,
+     "c": 0.12,
+     "h": 45,
+     "value": "oklch(0.45 0.12 45)",
+     "tokens": [
+      "--difficulty-hard-ink"
+     ]
+    }
+   ]
+  },
+  {
+   "hue": 74,
+   "name": "amber",
+   "steps": [
+    {
+     "l": 0.84,
+     "c": 0.075,
+     "h": 88,
+     "value": "oklch(0.84 0.075 88)",
+     "tokens": [
+      "--difficulty-easy"
+     ]
+    },
+    {
+     "l": 0.828,
+     "c": 0.189,
+     "h": 84.4,
+     "value": "oklch(0.828 0.189 84.4)",
+     "tokens": [
+      "--color-amber-400"
+     ]
+    },
+    {
+     "l": 0.769,
+     "c": 0.188,
+     "h": 70.1,
+     "value": "oklch(0.769 0.188 70.1)",
+     "tokens": [
+      "--color-amber-500"
+     ]
+    },
+    {
+     "l": 0.72,
+     "c": 0.14,
+     "h": 62,
+     "value": "oklch(0.72 0.14 62)",
+     "tokens": [
+      "--difficulty-medium"
+     ]
+    },
+    {
+     "l": 0.666,
+     "c": 0.179,
+     "h": 58.3,
+     "value": "oklch(0.666 0.179 58.3)",
+     "tokens": [
+      "--color-amber-600"
+     ]
+    },
+    {
+     "l": 0.63,
+     "c": 0.13,
+     "h": 78,
+     "value": "oklch(0.63 0.13 78)",
+     "tokens": [
+      "--hue-ochre"
+     ]
+    },
+    {
+     "l": 0.52,
+     "c": 0.12,
+     "h": 58,
+     "value": "oklch(0.52 0.12 58)",
+     "tokens": [
+      "--difficulty-medium-ink"
+     ]
+    },
+    {
+     "l": 0.5,
+     "c": 0.08,
+     "h": 85,
+     "value": "oklch(0.5 0.08 85)",
+     "tokens": [
+      "--difficulty-easy-ink"
+     ]
+    },
+    {
+     "l": 0.465,
+     "c": 0.114,
+     "h": 78,
+     "value": "oklch(0.465 0.114 78)",
+     "tokens": [
+      "--hue-ochre-ink"
+     ]
+    }
+   ]
+  },
+  {
+   "hue": 127,
+   "name": "lime",
+   "steps": [
+    {
+     "l": 0.897,
+     "c": 0.196,
+     "h": 126.7,
+     "value": "oklch(0.897 0.196 126.7)",
+     "tokens": [
+      "--color-lime-300"
+     ]
+    }
+   ]
+  },
+  {
+   "hue": 143,
+   "name": "green",
+   "steps": [
+    {
+     "l": 0.63,
+     "c": 0.07,
+     "h": 140,
+     "value": "oklch(0.63 0.07 140)",
+     "tokens": [
+      "--hue-lichen"
+     ]
+    },
+    {
+     "l": 0.545,
+     "c": 0.11,
+     "h": 150,
+     "value": "oklch(0.545 0.11 150)",
+     "tokens": [
+      "--correct"
+     ]
+    },
+    {
+     "l": 0.465,
+     "c": 0.062,
+     "h": 140,
+     "value": "oklch(0.465 0.062 140)",
+     "tokens": [
+      "--hue-lichen-ink"
+     ]
+    }
+   ]
+  },
+  {
+   "hue": 163,
+   "name": "green",
+   "steps": [
+    {
+     "l": 0.765,
+     "c": 0.177,
+     "h": 163.2,
+     "value": "oklch(0.765 0.177 163.2)",
+     "tokens": [
+      "--color-emerald-400"
+     ]
+    },
+    {
+     "l": 0.696,
+     "c": 0.17,
+     "h": 162.5,
+     "value": "oklch(0.696 0.17 162.5)",
+     "tokens": [
+      "--color-emerald-500"
+     ]
+    },
+    {
+     "l": 0.63,
+     "c": 0.13,
+     "h": 163,
+     "value": "oklch(0.63 0.13 163)",
+     "tokens": [
+      "--color-track-emerald",
+      "--hue-viridian",
+      "--accent-fill"
+     ]
+    },
+    {
+     "l": 0.596,
+     "c": 0.145,
+     "h": 163.2,
+     "value": "oklch(0.596 0.145 163.2)",
+     "tokens": [
+      "--color-emerald-600"
+     ]
+    },
+    {
+     "l": 0.465,
+     "c": 0.114,
+     "h": 163,
+     "value": "oklch(0.465 0.114 163)",
+     "tokens": [
+      "--hue-viridian-ink",
+      "--accent-ink"
+     ]
+    },
+    {
+     "l": 0.235,
+     "c": 0.06,
+     "h": 163,
+     "value": "oklch(0.235 0.06 163)",
+     "tokens": [
+      "--on-accent"
+     ]
+    }
+   ]
+  },
+  {
+   "hue": 185,
+   "name": "teal",
+   "steps": [
+    {
+     "l": 0.855,
+     "c": 0.138,
+     "h": 181.1,
+     "value": "oklch(0.855 0.138 181.1)",
+     "tokens": [
+      "--chart-1"
+     ]
+    },
+    {
+     "l": 0.704,
+     "c": 0.14,
+     "h": 182.5,
+     "value": "oklch(0.704 0.14 182.5)",
+     "tokens": [
+      "--chart-2"
+     ]
+    },
+    {
+     "l": 0.6,
+     "c": 0.118,
+     "h": 184.7,
+     "value": "oklch(0.6 0.118 184.7)",
+     "tokens": [
+      "--chart-3"
+     ]
+    },
+    {
+     "l": 0.511,
+     "c": 0.096,
+     "h": 186.4,
+     "value": "oklch(0.511 0.096 186.4)",
+     "tokens": [
+      "--chart-4"
+     ]
+    },
+    {
+     "l": 0.437,
+     "c": 0.078,
+     "h": 188.2,
+     "value": "oklch(0.437 0.078 188.2)",
+     "tokens": [
+      "--chart-5"
+     ]
+    }
+   ]
+  },
+  {
+   "hue": 205,
+   "name": "cyan",
+   "steps": [
+    {
+     "l": 0.63,
+     "c": 0.12,
+     "h": 205,
+     "value": "oklch(0.63 0.12 205)",
+     "tokens": [
+      "--hue-teal"
+     ]
+    },
+    {
+     "l": 0.465,
+     "c": 0.106,
+     "h": 205,
+     "value": "oklch(0.465 0.106 205)",
+     "tokens": [
+      "--hue-teal-ink"
+     ]
+    }
+   ]
+  },
+  {
+   "hue": 233,
+   "name": "blue",
+   "steps": [
+    {
+     "l": 0.746,
+     "c": 0.16,
+     "h": 232.7,
+     "value": "oklch(0.746 0.16 232.7)",
+     "tokens": [
+      "--color-sky-400"
+     ]
+    },
+    {
+     "l": 0.63,
+     "c": 0.08,
+     "h": 233,
+     "value": "oklch(0.63 0.08 233)",
+     "tokens": [
+      "--hue-steel"
+     ]
+    },
+    {
+     "l": 0.465,
+     "c": 0.07,
+     "h": 233,
+     "value": "oklch(0.465 0.07 233)",
+     "tokens": [
+      "--hue-steel-ink"
+     ]
+    }
+   ]
+  },
+  {
+   "hue": 262,
+   "name": "indigo",
+   "steps": [
+    {
+     "l": 0.63,
+     "c": 0.17,
+     "h": 262,
+     "value": "oklch(0.63 0.17 262)",
+     "tokens": [
+      "--color-track-sapphire",
+      "--hue-cobalt"
+     ]
+    },
+    {
+     "l": 0.465,
+     "c": 0.15,
+     "h": 262,
+     "value": "oklch(0.465 0.15 262)",
+     "tokens": [
+      "--hue-cobalt-ink"
+     ]
+    }
+   ]
+  },
+  {
+   "hue": 292,
+   "name": "purple",
+   "steps": [
+    {
+     "l": 0.63,
+     "c": 0.14,
+     "h": 292,
+     "value": "oklch(0.63 0.14 292)",
+     "tokens": [
+      "--hue-iris"
+     ]
+    },
+    {
+     "l": 0.465,
+     "c": 0.123,
+     "h": 292,
+     "value": "oklch(0.465 0.123 292)",
+     "tokens": [
+      "--hue-iris-ink"
+     ]
+    }
+   ]
+  },
+  {
+   "hue": 322,
+   "name": "pink",
+   "steps": [
+    {
+     "l": 0.63,
+     "c": 0.13,
+     "h": 322,
+     "value": "oklch(0.63 0.13 322)",
+     "tokens": [
+      "--color-track-amethyst",
+      "--hue-plum"
+     ]
+    },
+    {
+     "l": 0.465,
+     "c": 0.114,
+     "h": 322,
+     "value": "oklch(0.465 0.114 322)",
+     "tokens": [
+      "--hue-plum-ink"
+     ]
+    }
+   ]
+  }
+ ],
+ "neutrals": [
+  {
+   "l": 1,
+   "c": 0,
+   "h": null,
+   "value": "oklch(1 0 0)",
+   "tokens": [
+    "--color-white",
+    "--tw-ring-offset-color",
+    "--card",
+    "--popover"
+   ]
+  },
+  {
+   "l": 0.985,
+   "c": 0.004,
+   "h": 163,
+   "value": "oklch(0.985 0.004 163)",
+   "tokens": [
+    "--background",
+    "--primary-foreground",
+    "--sidebar",
+    "--sidebar-primary-foreground"
+   ]
+  },
+  {
+   "l": 0.945,
+   "c": 0.031,
+   "h": 163,
+   "value": "oklch(0.945 0.031 163)",
+   "tokens": [
+    "--accent-soft"
+   ]
+  },
+  {
+   "l": 0.945,
+   "c": 0.004,
+   "h": 163,
+   "value": "oklch(0.945 0.004 163)",
+   "tokens": [
+    "--secondary",
+    "--muted",
+    "--accent",
+    "--sidebar-accent"
+   ]
+  },
+  {
+   "l": 0.885,
+   "c": 0.012,
+   "h": 163,
+   "value": "oklch(0.885 0.012 163)",
+   "tokens": [
+    "--border",
+    "--input",
+    "--sidebar-border"
+   ]
+  },
+  {
+   "l": 0.878,
+   "c": 0.002,
+   "h": 163,
+   "value": "oklch(0.878 0.002 163)",
+   "tokens": [
+    "--icon-stone"
+   ]
+  },
+  {
+   "l": 0.63,
+   "c": 0.012,
+   "h": 163,
+   "value": "oklch(0.63 0.012 163)",
+   "tokens": [
+    "--ring",
+    "--sidebar-ring"
+   ]
+  },
+  {
+   "l": 0.51,
+   "c": 0.012,
+   "h": 163,
+   "value": "oklch(0.51 0.012 163)",
+   "tokens": [
+    "--muted-foreground"
+   ]
+  },
+  {
+   "l": 0.235,
+   "c": 0.012,
+   "h": 163,
+   "value": "oklch(0.235 0.012 163)",
+   "tokens": [
+    "--foreground",
+    "--card-foreground",
+    "--popover-foreground",
+    "--primary",
+    "--secondary-foreground",
+    "--accent-foreground",
+    "--sidebar-foreground",
+    "--sidebar-primary",
+    "--sidebar-accent-foreground"
+   ]
+  },
+  {
+   "l": 0.145,
+   "c": 0,
+   "h": 0,
+   "value": "oklch(0.145 0 0)",
+   "tokens": [
+    "--color-neutral-950"
+   ]
+  }
+ ],
+ "translucent": [],
+ "pairs": [
+  {
+   "ink": "oklch(0.235 0.012 163)",
+   "surface": "oklch(1 0 0)",
+   "inkToken": "--foreground",
+   "surfaceToken": "--card",
+   "surfaceIs": "button.today-lit",
+   "uses": [
+    {
+     "size": 17.6,
+     "weight": 500,
+     "text": "Stack"
+    },
+    {
+     "size": 13.2,
+     "weight": 400,
+     "text": "1 day over"
+    },
+    {
+     "size": 17.6,
+     "weight": 500,
+     "text": "Linked List"
+    },
+    {
+     "size": 13.2,
+     "weight": 400,
+     "text": "due today"
+    },
+    {
+     "size": 17.6,
+     "weight": 500,
+     "text": "Math & Geometry"
+    },
+    {
+     "size": 13.2,
+     "weight": 400,
+     "text": "5 days over"
+    },
+    {
+     "size": 17.6,
+     "weight": 500,
+     "text": "Sliding Window"
+    },
+    {
+     "size": 13.2,
+     "weight": 400,
+     "text": "due today"
+    },
+    {
+     "size": 17.6,
+     "weight": 500,
+     "text": "Two Pointers"
+    },
+    {
+     "size": 13.2,
+     "weight": 400,
+     "text": "2 days over"
+    }
+   ]
+  },
+  {
+   "ink": "oklch(0.465 0.062 140)",
+   "surface": "oklch(0.87 0.075 140)",
+   "inkToken": "--hue-lichen-ink",
+   "surfaceToken": null,
+   "surfaceIs": "button.today-lit",
+   "uses": [
+    {
+     "size": 17.6,
+     "weight": 600,
+     "text": "Arrays & Hashing"
+    },
+    {
+     "size": 13.2,
+     "weight": 400,
+     "text": "3 days over"
+    }
+   ]
+  },
+  {
+   "ink": "oklch(0.235 0.012 163)",
+   "surface": "oklch(0.985 0.004 163)",
+   "inkToken": "--foreground",
+   "surfaceToken": "--background",
+   "surfaceIs": "body",
+   "uses": [
+    {
+     "size": 13.2,
+     "weight": 400,
+     "text": "+3 more"
+    }
+   ]
+  }
+ ],
+ "edges": [
+  {
+   "color": "oklch(0.885 0.012 163)",
+   "token": "--border",
+   "width": 1,
+   "on": "oklch(1 0 0)",
+   "count": 6
+  }
+ ],
+ "shadows": [
+  {
+   "on": "button",
+   "surface": "oklch(0.87 0.075 140)",
+   "layers": [
+    {
+     "x": 0,
+     "y": 11,
+     "blur": 0,
+     "spread": 0,
+     "inset": false,
+     "color": "oklch(0.77 0.105 140)",
+     "token": null
+    },
+    {
+     "x": 0,
+     "y": 1,
+     "blur": 0,
+     "spread": 0,
+     "inset": true,
+     "color": "oklch(0.93 0.075 140)",
+     "token": null
+    }
+   ],
+   "count": 1
+  },
+  {
+   "on": "span",
+   "surface": "oklch(0 0 0 / 0)",
+   "layers": [
+    {
+     "x": 0,
+     "y": 0,
+     "blur": 0,
+     "spread": 0,
+     "inset": false,
+     "color": "oklch(0 0 0 / 0)",
+     "token": "--color-neutral-950"
+    }
+   ],
+   "count": 6
+  },
+  {
+   "on": "button",
+   "surface": "oklch(1 0 0)",
+   "layers": [
+    {
+     "x": 0,
+     "y": 9,
+     "blur": 0,
+     "spread": 0,
+     "inset": false,
+     "color": "oklch(0.9 0 0)",
+     "token": "--icon-stone"
+    },
+    {
+     "x": 0,
+     "y": 1,
+     "blur": 0,
+     "spread": 0,
+     "inset": true,
+     "color": "oklch(1 0 0)",
+     "token": "--color-white"
+    }
+   ],
+   "count": 1
+  },
+  {
+   "on": "button",
+   "surface": "oklch(1 0 0)",
+   "layers": [
+    {
+     "x": 0,
+     "y": 5,
+     "blur": 0,
+     "spread": 0,
+     "inset": false,
+     "color": "oklch(0.9 0 0)",
+     "token": "--icon-stone"
+    },
+    {
+     "x": 0,
+     "y": 1,
+     "blur": 0,
+     "spread": 0,
+     "inset": true,
+     "color": "oklch(1 0 0)",
+     "token": "--color-white"
+    }
+   ],
+   "count": 1
+  },
+  {
+   "on": "button",
+   "surface": "oklch(1 0 0)",
+   "layers": [
+    {
+     "x": 0,
+     "y": 11,
+     "blur": 0,
+     "spread": 0,
+     "inset": false,
+     "color": "oklch(0.9 0 0)",
+     "token": "--icon-stone"
+    },
+    {
+     "x": 0,
+     "y": 1,
+     "blur": 0,
+     "spread": 0,
+     "inset": true,
+     "color": "oklch(1 0 0)",
+     "token": "--color-white"
+    }
+   ],
+   "count": 2
+  },
+  {
+   "on": "button",
+   "surface": "oklch(1 0 0)",
+   "layers": [
+    {
+     "x": 0,
+     "y": 3,
+     "blur": 0,
+     "spread": 0,
+     "inset": false,
+     "color": "oklch(0.9 0 0)",
+     "token": "--icon-stone"
+    },
+    {
+     "x": 0,
+     "y": 1,
+     "blur": 0,
+     "spread": 0,
+     "inset": true,
+     "color": "oklch(1 0 0)",
+     "token": "--color-white"
+    }
+   ],
+   "count": 1
+  }
+ ],
+ "radii": [
+  {
+   "radius": 33554400,
+   "count": 36
+  },
+  {
+   "radius": 8.8,
+   "count": 7
+  },
+  {
+   "radius": 1.548,
+   "count": 6
+  }
+ ],
+ "type": [
+  {
+   "family": "JetBrains Mono Variable",
+   "size": 13.2,
+   "weight": 400,
+   "count": 7
+  },
+  {
+   "family": "DM Sans Variable",
+   "size": 17.6,
+   "weight": 500,
+   "count": 5
+  },
+  {
+   "family": "Space Grotesk Variable",
+   "size": 17.6,
+   "weight": 600,
+   "count": 1
+  }
+ ]
+}

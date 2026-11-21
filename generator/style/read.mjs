@@ -14,16 +14,19 @@ const { parse, converter, differenceCiede2000 } = require('culori');
 const toOklch = converter('oklch');
 const [product = 'craftingattention', mode = 'light'] = process.argv.slice(2);
 
+// each product's playground on its own port, so reading one never stops another; the atom read is the product's first
+const { product: P } = await import(`../products/${product}.mjs`);
+const atom = P.atoms[0].id, PORT = { craftingattention: 4399, algorecall: 4398 }[product] ?? 4397;
 const DEV = `${process.env.HOME}/.claude/bin/dev-server`, PG = `${here}../playground/${product}`;
-const up = async () => { try { return (await fetch('http://localhost:4399/')).ok; } catch { return false; } };
+const up = async () => { try { return (await fetch(`http://localhost:${PORT}/atoms.html`)).ok; } catch { return false; } };
 if (!(await up())) {
   const root = { algorecall: '/Users/vijaysingh/unlocalhosted/algorecall' }[product] ?? '/Users/vijaysingh/unlocalhosted/craftingattention/app';
-  execFileSync(DEV, [PG, `${root}/node_modules/.bin/vite`, '--config', 'vite.config.mjs', '--port', '4399', '--strictPort'], { stdio: 'ignore' });
+  execFileSync(DEV, [PG, `${root}/node_modules/.bin/vite`, '--config', 'vite.config.mjs', '--port', String(PORT), '--strictPort'], { stdio: 'ignore' });
   for (let i = 0; i < 40 && !(await up()); i++) await new Promise((r) => setTimeout(r, 750));
 }
 
 // ── in the page: every token that is a colour, and how the shipped component uses them ──────────────────────────────
-const READ = () => {
+const READ = (pick) => {
   const scope = document.querySelector('.atoms-page') ?? document.body; // the product's wrapper classes are on it
   // a token is a colour when it paints the same under two different inherited colours: one that isn't a colour (a
   // font, a size) is thrown out at computed time and the probe falls back to whatever it inherits
@@ -56,13 +59,24 @@ const READ = () => {
     if (cs.boxShadow !== 'none') shadows.push({ shadow: cs.boxShadow, surface: cs.backgroundColor, on: bgOf(el.parentElement ?? el).color, tag: el.tagName.toLowerCase() });
     if (parseFloat(cs.borderTopLeftRadius) > 0) radii.push(parseFloat(cs.borderTopLeftRadius));
   }
-  return { colours, pairs, edges, shadows, radii, type, page: getComputedStyle(document.documentElement).backgroundColor };
+  // the page: the first painted ground from the product's wrapper up (a product often paints body, not html)
+  const page = [document.querySelector('.atoms-page'), document.body, document.documentElement].map((e) => e && getComputedStyle(e).backgroundColor).find((b) => b && !/rgba\(0, 0, 0, 0\)|transparent/.test(b))
+    // nothing painted (the product sets its page colour on a shell the playground doesn't mount): its page token
+    ?? (() => { const t = Object.keys(colours).find((n) => /^--(color-)?(background|page|paper|canvas|bg)$/.test(n)); return t && colours[t].value; })() ?? 'rgb(255, 255, 255)';
+  // the atom itself, as the product ships it: its fill, its words, its lip. The engine builds from this, never from a
+  // guess at which token is the brand
+  const a = root.querySelector(pick); let atom = null;
+  if (a) { const cs = getComputedStyle(a); const words = [...a.querySelectorAll('*'), a].find((e) => [...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())) ?? a; const ws = getComputedStyle(words);
+    atom = { surface: bgOf(a).color, ink: ws.color, size: parseFloat(ws.fontSize), weight: +ws.fontWeight, text: words.textContent.trim().slice(0, 30), shadow: cs.boxShadow, radius: parseFloat(cs.borderTopLeftRadius) }; }
+  // words on nothing are words on the page
+  for (const x of pairs) if (/rgba\(0, 0, 0, 0\)|transparent/.test(x.surface)) x.surface = page;
+  return { colours, pairs, edges, shadows, radii, type, page, atom };
 };
 
 const b = await chromium.launch(); const p = await b.newPage({ viewport: { width: 1280, height: 1000 } });
-await p.goto(`http://localhost:4399/atoms.html?atom=buy${mode === 'dark' ? '&mode=dark' : ''}`, { waitUntil: 'load' });
+await p.goto(`http://localhost:${PORT}/atoms.html?atom=${atom}${mode === 'dark' ? '&mode=dark' : ''}`, { waitUntil: 'load' });
 await p.waitForTimeout(3000);
-const raw = await p.evaluate(READ); await b.close();
+const raw = await p.evaluate(READ, P.atoms[0].pick); await b.close();
 
 // ── the model ───────────────────────────────────────────────────────────────────────────────────────────────────────
 const L = (c) => { const o = toOklch(parse(c)); return o ? { l: +(o.l ?? 0).toFixed(3), c: +(o.c ?? 0).toFixed(3), h: o.h == null ? null : +o.h.toFixed(1), a: o.alpha ?? 1 } : null; };
@@ -99,7 +113,9 @@ const layersOf = (s) => s.split(/,(?![^(]*\))/).map((part) => { const color = (p
   return { x: nums[0] ?? 0, y: nums[1] ?? 0, blur: nums[2] ?? 0, spread: nums[3] ?? 0, inset: /inset/.test(part), color: color ? round(L(color)) : null, token: color ? nearest(color) : null }; });
 const shadows = Object.values(raw.shadows.reduce((m, x) => { (m[x.shadow] ??= { on: x.tag, surface: round(L(x.surface) ?? L(x.on)), layers: layersOf(x.shadow), count: 0 }).count++; return m; }, {}));
 const count = (arr, key) => Object.entries(arr.reduce((m, x) => { const k = key(x); m[k] = (m[k] ?? 0) + 1; return m; }, {})).sort((a, b) => b[1] - a[1]);
-const model = { product, mode, read: new Date().toISOString().slice(0, 10), page: round(L(raw.page)),
+const atomModel = raw.atom && { ...raw.atom, surface: round(L(raw.atom.surface)), ink: round(L(raw.atom.ink)), surfaceToken: nearest(raw.atom.surface, 'surface'), inkToken: nearest(raw.atom.ink, 'ink'),
+  shadow: raw.atom.shadow === 'none' ? null : { layers: layersOf(raw.atom.shadow) } };
+const model = { product, mode, read: new Date().toISOString().slice(0, 10), page: round(L(raw.page)), atom: atomModel,
   families: fam, neutrals, translucent, pairs,
   edges: Object.values(raw.edges.reduce((m, e) => { const k = `${round(L(e.color))} ${e.width}`; (m[k] ??= { color: round(L(e.color)), token: nearest(e.color), width: e.width, on: round(L(e.surface)), count: 0 }).count++; return m; }, {})),
   shadows, radii: count(raw.radii, (r) => r).map(([r, n]) => ({ radius: +r, count: n })),

@@ -2,3 +2,6 @@
 @import "./playground.css";
 @import "../atoms/atoms.css";
 @source "../atoms";
+
+/* algorecall paints its page on the app shell, which the playground doesn't mount: the atoms page wears it instead */
+body { background: var(--background); color: var(--foreground); }

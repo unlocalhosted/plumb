@@ -23,28 +23,41 @@ const [size, weight] = E.buttonWords.split(/px\//).map(Number);
 const reads = (ink, surface) => { const lc = APCAcontrast(Y(ink), Y(surface)), t = fontLookupAPCA(Math.abs(lc)), w = Math.min(9, Math.max(1, weight / 100)), lo = Math.floor(w), hi = Math.ceil(w);
   const need = t[lo] + (t[hi] - t[lo]) * (w - lo); return { lc: +Math.abs(lc).toFixed(1), needPx: +need.toFixed(1), margin: +(size - need).toFixed(1) }; };
 const brand = O(E.brand.value);
+// the words the product puts on its own atom, read off the shipped component
+const shipInk = M.atom?.ink ?? M.pairs.find((p) => de(parse(p.surface), parse(E.ramp[8].value)) < 2)?.ink ?? '#fff';
 const sameFamily = (c) => { const o = O(c); return o.c < 0.03 || Math.abs((((o.h ?? brand.h) - brand.h) + 540) % 360 - 180) <= 12; };
 
 // candidates, each with where it came from
 const step = (n) => ({ ...E.ramp[n - 1], from: `Radix step ${n} (${E.ramp[n - 1].job})` });
+// the anchor is the atom's own fill as shipped. Radix places a strong brand at step 9 (a solid), but a pale one (algorecall's
+// lichen slab) sits among the component steps 3 to 5; the states move along the ramp from wherever it sits: one step for
+// pointed at, two for pressed (Radix's own 3 → 4 → 5), or 10 for both when it is the solid
+const anchor = M.atom ? { value: formatHex(gamut(parse(M.atom.surface))), token: M.atom.surfaceToken ?? null, from: 'the product’s own atom, as shipped' } : step(9);
+const K = E.ramp.reduce((b, r) => (de(parse(r.value), parse(anchor.value)) < de(parse(E.ramp[b - 1].value), parse(anchor.value)) ? r.step : b), 9);
+const hoverStep = Math.min(12, K + 1), pressStep = K === 9 ? 10 : Math.min(12, K + 2);
+const hoverD = Math.abs(O(E.ramp[hoverStep - 1].value).l - O(E.ramp[K - 1].value).l) || 0.04;
 const leo = (r) => { const l = (E.leonardo ?? []).find((x) => x.ratioToPage === r); return l && { ...l, from: `Leonardo, ${r}:1 against the page` }; };
 const pool = {
-  solid: [step(9)],
+  solid: [anchor],
   // pointed at: Radix's hover step, and the same move turned away from the words (lighter under dark words, darker
   // under light ones), which keeps the words as readable as at rest
-  'solid pointed at': [step(10), ...(() => { const s9 = O(E.ramp[8].value), inkL = O(M.pairs.find((p) => de(parse(p.surface), parse(E.ramp[8].value)) < 2)?.ink ?? '#fff').l;
-    const d = Math.abs(O(E.ramp[9].value).l - s9.l) || 0.04, l = inkL < 0.5 ? s9.l + d : s9.l - d;
+  'solid pointed at': [step(hoverStep), ...(() => { const s9 = O(anchor.value), inkL = O(shipInk).l;
+    const d = hoverD, l = inkL < 0.5 ? s9.l + d : s9.l - d;
     return [{ value: formatHex(gamut({ ...s9, l })), from: `Radix’s hover step turned away from the words (${inkL < 0.5 ? 'lighter, under dark words' : 'darker, under light words'})` }]; })()],
-  pressed: [{ ...E.states.pressed.fill, from: 'Material state layer, 10% of the ink over the solid' }, step(10), ...(() => { const s9 = O(E.ramp[8].value), inkL = O(M.pairs.find((p) => de(parse(p.surface), parse(E.ramp[8].value)) < 2)?.ink ?? '#fff').l;
-    const d = 1.5 * (Math.abs(O(E.ramp[9].value).l - s9.l) || 0.04); return [{ value: formatHex(gamut({ ...s9, l: inkL < 0.5 ? s9.l + d : s9.l - d })), from: `the press, turned away from the words (${inkL < 0.5 ? 'lighter, under dark words' : 'darker, under light words'})` }]; })()],
+  pressed: [{ ...E.states.pressed.fill, from: 'Material state layer, 10% of the ink over the solid' }, step(pressStep), ...(() => { const s9 = O(anchor.value), inkL = O(shipInk).l;
+    const d = 1.5 * hoverD; return [{ value: formatHex(gamut({ ...s9, l: inkL < 0.5 ? s9.l + d : s9.l - d })), from: `the press, turned away from the words (${inkL < 0.5 ? 'lighter, under dark words' : 'darker, under light words'})` }]; })()],
   // a shade that floods over the solid: the ramp's own steps, Leonardo's, and shades on Radix's curve between steps 11
   // and 12 (the ramp jumps there), interpolated in OKLCH so they keep the family's chroma and hue
-  deep: [step(11), step(12), leo(7), leo(4.5), step(10), ...[1 / 3, 1 / 2, 2 / 3].map((t) => ({ value: formatHex(gamut(interpolate([E.ramp[10].value, E.ramp[11].value], 'oklch')(t))), from: `on Radix’s curve, ${Math.round(t * 100)}% of the way from step 11 to step 12` }))].filter(Boolean),
+  deep: [step(11), step(12), leo(7), leo(4.5), step(10), step(9), step(8), ...[1 / 3, 1 / 2, 2 / 3].map((t) => ({ value: formatHex(gamut(interpolate([E.ramp[10].value, E.ramp[11].value], 'oklch')(t))), from: `on Radix’s curve, ${Math.round(t * 100)}% of the way from step 11 to step 12` })),
+    // in dark mode the ramp runs the other way (steps 1 to 7 are the dark grounds): every step can be a flood, as long as it is deeper
+    ...[7, 6, 5, 4, 3, 2, 1].map(step)].filter(Boolean),
   quiet: [step(3), step(4), step(5), step(2)],                                     // a face that sits back
   // light around an edge, and a band of light across the solid: the ramp's steps lighter than the solid (a glow is light,
   // so it must be lighter than what it glows around), the nearest first
-  glow: E.ramp.filter((r) => r.step !== 9 && O(r.value).l > O(E.ramp[8].value).l + 0.08).sort((a, b) => O(a.value).l - O(b.value).l).map((r) => step(r.step)),
-  light: E.ramp.filter((r) => O(r.value).l > O(E.ramp[8].value).l + 0.15).sort((a, b) => O(a.value).l - O(b.value).l).map((r) => step(r.step)),
+  glow: [...E.ramp.filter((r) => r.step !== K && O(r.value).l > O(anchor.value).l + 0.08).sort((a, b) => O(a.value).l - O(b.value).l).map((r) => step(r.step)), { value: '#ffffff', from: 'white: the ramp has nothing lighter' }],
+  // on a pale atom no step is 0.15 lighter: then the lightest step above it, and white past that
+  light: (() => { const up = E.ramp.filter((r) => O(r.value).l > O(anchor.value).l + 0.15); const near = E.ramp.filter((r) => O(r.value).l > O(anchor.value).l + 0.03);
+    return [...(up.length ? up : near).sort((a, b) => O(a.value).l - O(b.value).l).map((r) => step(r.step)), { value: '#ffffff', from: 'white: the ramp has nothing lighter' }]; })(),
 };
 // inks: the product's own (its pairs), then the ramp's text steps and its extremes
 const inks = [...new Map([...M.pairs.map((p) => [p.ink, { value: p.ink, token: p.inkToken, from: `the product’s ink (${p.inkToken ?? p.ink})` }]),
@@ -54,7 +67,7 @@ const inks = [...new Map([...M.pairs.map((p) => [p.ink, { value: p.ink, token: p
 // the bar is the product's own: a derived state must read at least as well as the shipped button's words on its solid,
 // never more than the product asks of itself (APCA's table is strict at 14px; holding new states to more than the
 // shipped button drove the solver to the darkest step)
-const shipped = M.pairs.find((p) => O(p.surface) && Math.abs(O(p.surface).l - O(E.ramp[8].value).l) < 0.02 && O(p.surface).c > 0.08) ?? M.pairs.at(-1);
+const shipped = M.atom ?? M.pairs.find((p) => O(p.surface) && Math.abs(O(p.surface).l - O(anchor.value).l) < 0.02 && O(p.surface).c > 0.08) ?? M.pairs.at(-1);
 const BAR = Math.min(0, reads(shipped.ink, shipped.surface).margin);
 // continuity: a state keeps the ink of the state before it while that ink still reads as well as the shipped button,
 // so the words don't flip colour under the pointer
@@ -73,8 +86,13 @@ const inkFor = (surface, prefer) => {
 const TARGET = { deep: 0.15 };
 const pick = (role, before, minStep = 0, keepInk = null) => {
   // Radix's own steps are the brand's family by construction (its ramp drifts in hue as it lightens, by design)
-  const cands = pool[role].filter((c) => /^Radix step/.test(c.from) || sameFamily(c.value));
-  const ok = cands.filter((c) => !before || Math.abs(O(c.value).l - O(before).l) >= minStep);
+  const fam = pool[role].filter((c) => /^Radix step|^the product|^white/.test(c.from) || sameFamily(c.value));
+  // a flood moves away from the words, so they keep reading as it pours (darker under light words, lighter under dark
+  // ones); when the ramp has no room that way (a pale atom under dark words), it turns the other way and the words follow
+  const away = (c) => (O(shipInk).l > O(before).l ? O(c.value).l < O(before).l : O(c.value).l > O(before).l);
+  const far = (c) => !before || Math.abs(O(c.value).l - O(before).l) >= minStep;
+  const cands = role !== 'deep' || !before ? fam : fam.filter(away).some(far) ? fam.filter(away) : fam.filter((c) => !away(c));
+  const ok = cands.filter(far);
   // a glow or a band of light carries no words: it is ranked by source and family only, never by how words read on it
   const carriesWords = !['glow', 'light'].includes(role);
   const ranked = (ok.length ? ok : cands).map((c) => ({ c, read: carriesWords ? reads(inkFor(c.value).value, c.value) : { margin: 0 } }))
@@ -82,6 +100,7 @@ const pick = (role, before, minStep = 0, keepInk = null) => {
       || ((b.read.margin >= BAR) - (a.read.margin >= BAR))
       || (TARGET[role] && before ? Math.abs(Math.abs(O(a.c.value).l - O(before).l) - TARGET[role]) - Math.abs(Math.abs(O(b.c.value).l - O(before).l) - TARGET[role]) : 0)
       || (!!b.c.token - !!a.c.token) || (pool[role].indexOf(a.c) - pool[role].indexOf(b.c)));
+  if (!ranked.length) return null;
   const c = ranked[0].c;
   return { value: c.value, token: c.token ?? null, why: `${c.from}${c.token ? `, the product’s own ${c.token}` : ', derived'}${before && minStep ? `; ${Math.abs(O(c.value).l - O(before).l).toFixed(2)} lighter or darker than before` : ''}${ok.length ? '' : ' (nothing moved far enough; the nearest kept)'}` }; };
 const shadowFor = (surface, height) => { const r = E.shadow.relation; const s = O(surface);
@@ -92,15 +111,16 @@ const state = (fill, height, extra = {}) => ({ fill, ink: (prev = inkFor(fill.va
 // what each suggestion's states need
 const solid = pick('solid');
 const SUGGESTIONS = {
-  pour: () => { const flood = pick('deep', solid.value, 0.12); return { rest: state(solid, 1), pointed: state(pick('solid pointed at', null, 0, M.pairs.find((p) => de(parse(p.surface), parse(E.ramp[8].value)) < 2)?.ink), 1), pressed: state(flood, 1 / 3), done: state(flood, 1) }; },
-  lead: () => ({ rest: state(solid, 1), pointed: state(pick('solid pointed at', null, 0, M.pairs.find((p) => de(parse(p.surface), parse(E.ramp[8].value)) < 2)?.ink), 1), pressed: state(pick('pressed', null, 0, M.pairs.find((p) => de(parse(p.surface), parse(E.ramp[8].value)) < 2)?.ink), 1 / 3), working: state(solid, 1) }),
-  answer: () => ({ rest: state(solid, 1), pointed: state(pick('solid pointed at', null, 0, M.pairs.find((p) => de(parse(p.surface), parse(E.ramp[8].value)) < 2)?.ink), 1), pressed: state(pick('pressed', null, 0, M.pairs.find((p) => de(parse(p.surface), parse(E.ramp[8].value)) < 2)?.ink), 1 / 3), working: state(solid, 1, { line: { ...pick('light'), why: pick('light').why + '; the growing line along the lip' } }) }),
-  sheen: () => ({ rest: state(solid, 1, { light: { ...pick('light'), why: pick('light').why + '; the band of light, at 35% so the words keep their contrast' } }), pointed: state(pick('solid pointed at', null, 0, M.pairs.find((p) => de(parse(p.surface), parse(E.ramp[8].value)) < 2)?.ink), 1), pressed: state(pick('pressed', null, 0, M.pairs.find((p) => de(parse(p.surface), parse(E.ramp[8].value)) < 2)?.ink), 1 / 3) }),
-  beam: () => ({ rest: state(solid, 1), pressed: state(pick('pressed', null, 0, M.pairs.find((p) => de(parse(p.surface), parse(E.ramp[8].value)) < 2)?.ink), 1 / 3), working: state(solid, 1, { glow: pick('glow') }) }),
-  // chrome only reads on a dark ground: the face is the brand family's darkest ramp step that is still clearly purple
-  // (chroma at least 0.08), in either mode, so the button keeps its colour and the ring has a ground
-  metal: () => { const f = E.ramp.filter((r) => O(r.value).c >= 0.08 && O(r.value).l >= 0.18).sort((a, b) => O(a.value).l - O(b.value).l)[0];
-    const face = { value: f.value, token: f.token ?? null, why: `Radix step ${f.step} (${f.job}) as a face: the brand’s darkest step that is still clearly purple, so chrome has a dark ground` };
+  pour: () => { const flood = pick('deep', solid.value, 0.12); return { rest: state(solid, 1), pointed: state(pick('solid pointed at', null, 0, shipInk), 1), pressed: state(flood, 1 / 3), done: state(flood, 1) }; },
+  lead: () => ({ rest: state(solid, 1), pointed: state(pick('solid pointed at', null, 0, shipInk), 1), pressed: state(pick('pressed', null, 0, shipInk), 1 / 3), working: state(solid, 1) }),
+  answer: () => ({ rest: state(solid, 1), pointed: state(pick('solid pointed at', null, 0, shipInk), 1), pressed: state(pick('pressed', null, 0, shipInk), 1 / 3), working: state(solid, 1, { line: { ...pick('light'), why: pick('light').why + '; the growing line along the lip' } }) }),
+  sheen: () => ({ rest: state(solid, 1, { light: { ...pick('light'), why: pick('light').why + '; the band of light, at 35% so the words keep their contrast' } }), pointed: state(pick('solid pointed at', null, 0, shipInk), 1), pressed: state(pick('pressed', null, 0, shipInk), 1 / 3) }),
+  beam: () => ({ rest: state(solid, 1), pressed: state(pick('pressed', null, 0, shipInk), 1 / 3), working: state(solid, 1, { glow: pick('glow') }) }),
+  // chrome only reads on a dark ground: the face is the brand family's darkest ramp step that still clearly carries
+  // the hue (chroma 0.08, or 60% of the ramp's strongest when the brand is paler), in either mode, so the button keeps its colour and the ring
+  // has a ground
+  metal: () => { const top = Math.max(...E.ramp.map((r) => O(r.value).c)); const f = E.ramp.filter((r) => O(r.value).c >= Math.min(0.08, top * 0.6) && O(r.value).l >= 0.18).sort((a, b) => O(a.value).l - O(b.value).l)[0];
+    const face = { value: f.value, token: f.token ?? null, why: `Radix step ${f.step} (${f.job}) as a face: the brand’s darkest step that still clearly carries its hue, so chrome has a dark ground` };
     return { rest: state(face, 1), pressed: state(face, 1 / 3) }; },
 };
 const sets = Object.fromEntries(Object.entries(SUGGESTIONS).map(([k, f]) => { prev = null; return [k, f()]; }));

@@ -321,7 +321,7 @@
     "fill": {
      "value": "#391d69",
      "token": null,
-     "why": "Radix step 12 (high-contrast words) as a face: the brand’s darkest step that is still clearly purple, so chrome has a dark ground"
+     "why": "Radix step 12 (high-contrast words) as a face: the brand’s darkest step that still clearly carries its hue, so chrome has a dark ground"
     },
     "ink": {
      "value": "oklch(0.99 0.005 260)",
@@ -337,7 +337,7 @@
     "fill": {
      "value": "#391d69",
      "token": null,
-     "why": "Radix step 12 (high-contrast words) as a face: the brand’s darkest step that is still clearly purple, so chrome has a dark ground"
+     "why": "Radix step 12 (high-contrast words) as a face: the brand’s darkest step that still clearly carries its hue, so chrome has a dark ground"
     },
     "ink": {
      "value": "oklch(0.99 0.005 260)",

@@ -1,0 +1,402 @@
+{
+ "product": "algorecall",
+ "mode": "light",
+ "brand": {
+  "value": "#bbe1b2",
+  "oklch": "oklch(0.870 0.075 140.0)",
+  "derived": "product"
+ },
+ "page": {
+  "value": "#f8fbf9",
+  "oklch": "oklch(0.985 0.004 163.0)",
+  "token": "--background"
+ },
+ "buttonWords": "17.6px/600",
+ "ramp": [
+  {
+   "step": 1,
+   "job": "app background",
+   "value": "#f6f9f5",
+   "oklch": "oklch(0.979 0.006 137.8)",
+   "token": "--background"
+  },
+  {
+   "step": 2,
+   "job": "subtle background",
+   "value": "#f0f5ef",
+   "oklch": "oklch(0.965 0.010 140.5)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 3,
+   "job": "component at rest",
+   "value": "#e4f0e1",
+   "oklch": "oklch(0.942 0.024 139.4)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 4,
+   "job": "component pointed at",
+   "value": "#d6ead1",
+   "oklch": "oklch(0.915 0.040 139.4)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 5,
+   "job": "component pressed or selected",
+   "value": "#c5e1be",
+   "oklch": "oklch(0.880 0.056 139.4)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 6,
+   "job": "subtle border",
+   "value": "#b0d6a7",
+   "oklch": "oklch(0.836 0.076 139.7)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 7,
+   "job": "border and focus ring",
+   "value": "#94c688",
+   "oklch": "oklch(0.776 0.101 139.6)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 8,
+   "job": "border pointed at",
+   "value": "#76ad69",
+   "oklch": "oklch(0.692 0.112 139.7)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 9,
+   "job": "solid",
+   "value": "#629955",
+   "oklch": "oklch(0.628 0.114 139.7)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 10,
+   "job": "solid pointed at",
+   "value": "#568c49",
+   "oklch": "oklch(0.586 0.113 139.7)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 11,
+   "job": "low-contrast words",
+   "value": "#3f7331",
+   "oklch": "oklch(0.503 0.112 139.4)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 12,
+   "job": "high-contrast words",
+   "value": "#253c1f",
+   "oklch": "oklch(0.328 0.057 139.3)",
+   "derived": "Radix custom palette"
+  }
+ ],
+ "grays": [
+  {
+   "step": 1,
+   "job": "app background",
+   "value": "#f5f8f7",
+   "oklch": "oklch(0.977 0.003 174.5)",
+   "token": "--background"
+  },
+  {
+   "step": 2,
+   "job": "subtle background",
+   "value": "#f1f4f2",
+   "oklch": "oklch(0.964 0.004 157.2)",
+   "token": "--secondary"
+  },
+  {
+   "step": 3,
+   "job": "component at rest",
+   "value": "#e7ebe9",
+   "oklch": "oklch(0.936 0.005 165.0)",
+   "token": "--secondary"
+  },
+  {
+   "step": 4,
+   "job": "component pointed at",
+   "value": "#dfe3e1",
+   "oklch": "oklch(0.912 0.005 165.0)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 5,
+   "job": "component pressed or selected",
+   "value": "#d7dbd9",
+   "oklch": "oklch(0.888 0.005 165.0)",
+   "token": "--icon-stone"
+  },
+  {
+   "step": 6,
+   "job": "subtle border",
+   "value": "#cfd3d1",
+   "oklch": "oklch(0.863 0.005 165.0)",
+   "token": "--icon-stone"
+  },
+  {
+   "step": 7,
+   "job": "border and focus ring",
+   "value": "#c3c8c6",
+   "oklch": "oklch(0.828 0.006 170.4)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 8,
+   "job": "border pointed at",
+   "value": "#afb5b2",
+   "oklch": "oklch(0.767 0.008 164.9)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 9,
+   "job": "solid",
+   "value": "#7d8882",
+   "oklch": "oklch(0.616 0.016 162.2)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 10,
+   "job": "solid pointed at",
+   "value": "#737d78",
+   "oklch": "oklch(0.580 0.014 164.5)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 11,
+   "job": "low-contrast words",
+   "value": "#575f5b",
+   "oklch": "oklch(0.477 0.012 164.5)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 12,
+   "job": "high-contrast words",
+   "value": "#18221d",
+   "oklch": "oklch(0.240 0.017 163.1)",
+   "derived": "Radix custom palette"
+  }
+ ],
+ "states": {
+  "rest": {
+   "fill": {
+    "value": "#bbe1b2",
+    "oklch": "oklch(0.870 0.075 139.7)",
+    "derived": "Radix step 9"
+   },
+   "ink": {
+    "value": "#19201c",
+    "oklch": "oklch(0.235 0.012 163.0)",
+    "token": "--foreground",
+    "lc": 80,
+    "needPx": 14.8,
+    "shortBy": 0,
+    "readsAt": "17.6px/600",
+    "ok": true
+   }
+  },
+  "pointed at": {
+   "fill": {
+    "value": "#568c49",
+    "oklch": "oklch(0.586 0.113 139.7)",
+    "derived": "Radix step 10"
+   },
+   "alsoMaterial": {
+    "value": "#b2d7a9",
+    "oklch": "oklch(0.840 0.074 139.6)",
+    "derived": "Material state layer 8%"
+   },
+   "ink": {
+    "value": "#ffffff",
+    "oklch": "oklch(1.000 0.000 0.0)",
+    "token": "--color-white",
+    "lc": -72.7,
+    "needPx": 15.5,
+    "shortBy": 0,
+    "readsAt": "17.6px/600",
+    "ok": true
+   }
+  },
+  "pressed": {
+   "fill": {
+    "value": "#afd4a7",
+    "oklch": "oklch(0.831 0.073 140.1)",
+    "derived": "Material state layer 10%"
+   },
+   "ink": {
+    "value": "#19201c",
+    "oklch": "oklch(0.235 0.012 163.0)",
+    "token": "--foreground",
+    "lc": 72.9,
+    "needPx": 15.5,
+    "shortBy": 0,
+    "readsAt": "17.6px/600",
+    "ok": true
+   }
+  }
+ },
+ "leonardo": [
+  {
+   "ratioToPage": 1.5,
+   "value": "#b4daab",
+   "oklch": "oklch(0.849 0.076 139.7)",
+   "derived": "Leonardo"
+  },
+  {
+   "ratioToPage": 3,
+   "value": "#789c70",
+   "oklch": "oklch(0.654 0.075 140.0)",
+   "derived": "Leonardo"
+  },
+  {
+   "ratioToPage": 4.5,
+   "value": "#5b7d53",
+   "oklch": "oklch(0.552 0.074 139.7)",
+   "derived": "Leonardo"
+  },
+  {
+   "ratioToPage": 7,
+   "value": "#3e5f36",
+   "oklch": "oklch(0.449 0.075 139.6)",
+   "derived": "Leonardo"
+  }
+ ],
+ "harmony": {
+  "complementary": [
+   {
+    "value": "#ffc0d0",
+    "oklch": "oklch(0.869 0.075 2.0)",
+    "derived": "Adobe Color rule"
+   }
+  ],
+  "analogous": [
+   {
+    "value": "#ccdda6",
+    "oklch": "oklch(0.871 0.075 121.9)",
+    "derived": "Adobe Color rule"
+   },
+   {
+    "value": "#a2e5ce",
+    "oklch": "oklch(0.871 0.075 171.2)",
+    "derived": "Adobe Color rule"
+   }
+  ],
+  "split complementary": [
+   {
+    "value": "#f0c3ed",
+    "oklch": "oklch(0.869 0.075 328.4)",
+    "derived": "Adobe Color rule"
+   },
+   {
+    "value": "#ffc3b5",
+    "oklch": "oklch(0.867 0.072 33.5)",
+    "derived": "Adobe Color rule"
+   }
+  ],
+  "triad": [
+   {
+    "value": "#e2c8fb",
+    "oklch": "oklch(0.871 0.075 307.9)",
+    "derived": "Adobe Color rule"
+   },
+   {
+    "value": "#f7cba1",
+    "oklch": "oklch(0.870 0.074 65.3)",
+    "derived": "Adobe Color rule"
+   }
+  ]
+ },
+ "shadow": {
+  "method": "the product’s own hard lip, learned from its button",
+  "own": [
+   {
+    "x": 0,
+    "y": 11,
+    "blur": 0,
+    "spread": 0,
+    "inset": false,
+    "color": "oklch(0.77 0.105 140)",
+    "token": null
+   },
+   {
+    "x": 0,
+    "y": 1,
+    "blur": 0,
+    "spread": 0,
+    "inset": true,
+    "color": "oklch(0.93 0.075 140)",
+    "token": null
+   }
+  ],
+  "relation": [
+   {
+    "y": 11,
+    "x": 0,
+    "blur": 0,
+    "spread": 0,
+    "inset": false,
+    "dl": -0.1,
+    "cShare": 1.398,
+    "dh": 0.3,
+    "alpha": 1,
+    "token": null
+   },
+   {
+    "y": 1,
+    "x": 0,
+    "blur": 0,
+    "spread": 0,
+    "inset": true,
+    "dl": 0.06,
+    "cShare": 0.998,
+    "dh": 0.3,
+    "alpha": 1,
+    "token": null
+   }
+  ],
+  "states": {
+   "rest": {
+    "height": 1,
+    "shadow": "0px 11px 0px 0px oklch(0.770 0.105 140.0), inset 0px 1px 0px 0px oklch(0.930 0.075 140.0)"
+   },
+   "pointed at": {
+    "height": 1,
+    "shadow": "0px 11px 0px 0px oklch(0.486 0.157 140.0), inset 0px 1px 0px 0px oklch(0.647 0.114 140.0)"
+   },
+   "pressed": {
+    "height": 0.3333333333333333,
+    "shadow": "0px 3.7px 0px 0px oklch(0.731 0.101 140.4), inset 0px 1px 0px 0px oklch(0.892 0.074 140.4)"
+   }
+  },
+  "reproduces": [
+   {
+    "own": "11px oklch(0.77 0.105 140)",
+    "redrawn": "11px oklch(0.770 0.105 140.0)",
+    "colourDiff": 0,
+    "sameOffset": true
+   },
+   {
+    "own": "1px oklch(0.93 0.075 140)",
+    "redrawn": "1px oklch(0.930 0.075 140.0)",
+    "colourDiff": 0,
+    "sameOffset": true
+   }
+  ],
+  "forSurface": {
+   "note": "redraw(surface, height) for any new surface: the same relation applied",
+   "examples": {
+    "step 9": "0px 11px 0px 0px oklch(0.528 0.160 140.0), inset 0px 1px 0px 0px oklch(0.688 0.114 140.0)",
+    "step 10": "0px 11px 0px 0px oklch(0.486 0.157 140.0), inset 0px 1px 0px 0px oklch(0.647 0.114 140.0)",
+    "step 11": "0px 11px 0px 0px oklch(0.405 0.138 139.7), inset 0px 1px 0px 0px oklch(0.563 0.112 139.7)",
+    "step 12": "0px 11px 0px 0px oklch(0.231 0.076 139.6), inset 0px 1px 0px 0px oklch(0.388 0.057 139.6)"
+   }
+  }
+ }
+}

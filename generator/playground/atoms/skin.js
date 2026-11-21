@@ -32,6 +32,9 @@ function colourTokens() {
 
 export function readSkin(el) {
   const cs = getComputedStyle(el), r = el.getBoundingClientRect();
+  // the words are set by the element that holds them, not by the button: algorecall's slab is a regular-weight button
+  // whose pattern name is semibold, and a suggestion that copied the button drew its words lighter than shipped
+  const words = [el, ...el.querySelectorAll('*')].find((e) => [...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())) ?? el, ws = getComputedStyle(words);
   const fill = rgb(cs.backgroundColor) ?? [0, 0, 0], ink = rgb(cs.color) ?? [255, 255, 255];
   const edge = cs.borderTopWidth !== '0px' ? cs.borderTopColor : `color-mix(in oklab, ${cs.backgroundColor} 70%, black)`;
   // the stronger fill: a token that passes both checks, closest in hue
@@ -48,7 +51,7 @@ export function readSkin(el) {
     vars: {
       '--atom-fill': cs.backgroundColor, '--atom-on-fill': cs.color, '--atom-edge': edge, '--atom-deep': deep ?? edge, '--atom-on-deep': onDeep ?? cs.color,
       '--atom-lip': cs.boxShadow === 'none' ? `0 2px 0 ${edge}` : cs.boxShadow, '--atom-radius': cs.borderTopLeftRadius,
-      '--atom-height': `${Math.round(r.height)}px`, '--atom-font': cs.fontFamily, '--atom-size': cs.fontSize, '--atom-weight': cs.fontWeight,
+      '--atom-height': `${Math.round(r.height)}px`, '--atom-font': ws.fontFamily, '--atom-size': ws.fontSize, '--atom-weight': ws.fontWeight,
     },
     deepFrom, measured: { fill, ink, height: Math.round(r.height), width: Math.round(r.width) },
   };

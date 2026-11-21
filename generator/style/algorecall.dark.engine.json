@@ -1,0 +1,402 @@
+{
+ "product": "algorecall",
+ "mode": "dark",
+ "brand": {
+  "value": "#385631",
+  "oklch": "oklch(0.420 0.070 140.0)",
+  "derived": "product"
+ },
+ "page": {
+  "value": "#0b0f0d",
+  "oklch": "oklch(0.165 0.008 163.0)",
+  "token": "--background"
+ },
+ "buttonWords": "17.6px/600",
+ "ramp": [
+  {
+   "step": 1,
+   "job": "app background",
+   "value": "#0b0f0a",
+   "oklch": "oklch(0.162 0.012 139.4)",
+   "token": "--background"
+  },
+  {
+   "step": 2,
+   "job": "subtle background",
+   "value": "#141912",
+   "oklch": "oklch(0.206 0.016 136.8)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 3,
+   "job": "component at rest",
+   "value": "#1d291a",
+   "oklch": "oklch(0.265 0.032 139.4)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 4,
+   "job": "component pointed at",
+   "value": "#253820",
+   "oklch": "oklch(0.317 0.048 139.3)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 5,
+   "job": "component pressed or selected",
+   "value": "#2d4628",
+   "oklch": "oklch(0.365 0.059 140.3)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 6,
+   "job": "subtle border",
+   "value": "#375530",
+   "oklch": "oklch(0.415 0.069 139.8)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 7,
+   "job": "border and focus ring",
+   "value": "#416538",
+   "oklch": "oklch(0.467 0.081 139.5)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 8,
+   "job": "border pointed at",
+   "value": "#4c7741",
+   "oklch": "oklch(0.524 0.094 139.4)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 9,
+   "job": "solid",
+   "value": "#385631",
+   "oklch": "oklch(0.419 0.069 139.8)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 10,
+   "job": "solid pointed at",
+   "value": "#2c4527",
+   "oklch": "oklch(0.361 0.059 140.3)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 11,
+   "job": "low-contrast words",
+   "value": "#a5d59a",
+   "oklch": "oklch(0.824 0.095 139.8)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 12,
+   "job": "high-contrast words",
+   "value": "#cdf5c3",
+   "oklch": "oklch(0.929 0.078 139.4)",
+   "derived": "Radix custom palette"
+  }
+ ],
+ "grays": [
+  {
+   "step": 1,
+   "job": "app background",
+   "value": "#0d0e10",
+   "oklch": "oklch(0.164 0.005 264.4)",
+   "token": "--color-neutral-950"
+  },
+  {
+   "step": 2,
+   "job": "subtle background",
+   "value": "#18191b",
+   "oklch": "oklch(0.213 0.004 264.5)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 3,
+   "job": "component at rest",
+   "value": "#222225",
+   "oklch": "oklch(0.253 0.006 286.0)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 4,
+   "job": "component pointed at",
+   "value": "#29292e",
+   "oklch": "oklch(0.283 0.009 285.8)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 5,
+   "job": "component pressed or selected",
+   "value": "#303136",
+   "oklch": "oklch(0.314 0.009 276.8)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 6,
+   "job": "subtle border",
+   "value": "#393a40",
+   "oklch": "oklch(0.350 0.010 278.3)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 7,
+   "job": "border and focus ring",
+   "value": "#46484f",
+   "oklch": "oklch(0.402 0.012 273.1)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 8,
+   "job": "border pointed at",
+   "value": "#5e606a",
+   "oklch": "oklch(0.491 0.016 276.8)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 9,
+   "job": "solid",
+   "value": "#6c6e79",
+   "oklch": "oklch(0.540 0.017 277.6)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 10,
+   "job": "solid pointed at",
+   "value": "#797b86",
+   "oklch": "oklch(0.585 0.017 277.6)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 11,
+   "job": "low-contrast words",
+   "value": "#b2b3bd",
+   "oklch": "oklch(0.769 0.014 281.5)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 12,
+   "job": "high-contrast words",
+   "value": "#eeeef0",
+   "oklch": "oklch(0.950 0.003 286.3)",
+   "derived": "Radix custom palette"
+  }
+ ],
+ "states": {
+  "rest": {
+   "fill": {
+    "value": "#385631",
+    "oklch": "oklch(0.419 0.069 139.8)",
+    "derived": "Radix step 9"
+   },
+   "ink": {
+    "value": "#f4f8f6",
+    "oklch": "oklch(0.975 0.004 163.0)",
+    "token": "--foreground",
+    "lc": -87.6,
+    "needPx": 14.6,
+    "shortBy": 0,
+    "readsAt": "17.6px/600",
+    "ok": true
+   }
+  },
+  "pointed at": {
+   "fill": {
+    "value": "#2c4527",
+    "oklch": "oklch(0.361 0.059 140.3)",
+    "derived": "Radix step 10"
+   },
+   "alsoMaterial": {
+    "value": "#425f3b",
+    "oklch": "oklch(0.452 0.066 139.6)",
+    "derived": "Material state layer 8%"
+   },
+   "ink": {
+    "value": "#f4f8f6",
+    "oklch": "oklch(0.975 0.004 163.0)",
+    "token": "--foreground",
+    "lc": -93,
+    "needPx": 14.5,
+    "shortBy": 0,
+    "readsAt": "17.6px/600",
+    "ok": true
+   }
+  },
+  "pressed": {
+   "fill": {
+    "value": "#44613d",
+    "oklch": "oklch(0.459 0.066 139.6)",
+    "derived": "Material state layer 10%"
+   },
+   "ink": {
+    "value": "#f4f8f6",
+    "oklch": "oklch(0.975 0.004 163.0)",
+    "token": "--foreground",
+    "lc": -83.5,
+    "needPx": 14.8,
+    "shortBy": 0,
+    "readsAt": "17.6px/600",
+    "ok": true
+   }
+  }
+ },
+ "leonardo": [
+  {
+   "ratioToPage": 1.5,
+   "value": "#2e4c27",
+   "oklch": "oklch(0.382 0.070 139.8)",
+   "derived": "Leonardo"
+  },
+  {
+   "ratioToPage": 3,
+   "value": "#60785a",
+   "oklch": "oklch(0.545 0.054 139.4)",
+   "derived": "Leonardo"
+  },
+  {
+   "ratioToPage": 4.5,
+   "value": "#81947c",
+   "oklch": "oklch(0.645 0.041 139.2)",
+   "derived": "Leonardo"
+  },
+  {
+   "ratioToPage": 7,
+   "value": "#aab8a7",
+   "oklch": "oklch(0.767 0.028 140.2)",
+   "derived": "Leonardo"
+  }
+ ],
+ "harmony": {
+  "complementary": [
+   {
+    "value": "#6d3c48",
+    "oklch": "oklch(0.420 0.070 4.8)",
+    "derived": "Adobe Color rule"
+   }
+  ],
+  "analogous": [
+   {
+    "value": "#465326",
+    "oklch": "oklch(0.419 0.069 122.7)",
+    "derived": "Adobe Color rule"
+   },
+   {
+    "value": "#1c5946",
+    "oklch": "oklch(0.419 0.070 168.8)",
+    "derived": "Adobe Color rule"
+   }
+  ],
+  "split complementary": [
+   {
+    "value": "#623f60",
+    "oklch": "oklch(0.421 0.069 328.7)",
+    "derived": "Adobe Color rule"
+   },
+   {
+    "value": "#6e3e33",
+    "oklch": "oklch(0.420 0.070 33.8)",
+    "derived": "Adobe Color rule"
+   }
+  ],
+  "triad": [
+   {
+    "value": "#57436b",
+    "oklch": "oklch(0.421 0.069 306.6)",
+    "derived": "Adobe Color rule"
+   },
+   {
+    "value": "#684421",
+    "oklch": "oklch(0.420 0.070 63.0)",
+    "derived": "Adobe Color rule"
+   }
+  ]
+ },
+ "shadow": {
+  "method": "the product’s own hard lip, learned from its button",
+  "own": [
+   {
+    "x": 0,
+    "y": 11,
+    "blur": 0,
+    "spread": 0,
+    "inset": false,
+    "color": "oklch(0.32 0.098 140)",
+    "token": null
+   },
+   {
+    "x": 0,
+    "y": 1,
+    "blur": 0,
+    "spread": 0,
+    "inset": true,
+    "color": "oklch(0.48 0.07 140)",
+    "token": null
+   }
+  ],
+  "relation": [
+   {
+    "y": 11,
+    "x": 0,
+    "blur": 0,
+    "spread": 0,
+    "inset": false,
+    "dl": -0.099,
+    "cShare": 1.417,
+    "dh": 0.2,
+    "alpha": 1,
+    "token": null
+   },
+   {
+    "y": 1,
+    "x": 0,
+    "blur": 0,
+    "spread": 0,
+    "inset": true,
+    "dl": 0.061,
+    "cShare": 1.012,
+    "dh": 0.2,
+    "alpha": 1,
+    "token": null
+   }
+  ],
+  "states": {
+   "rest": {
+    "height": 1,
+    "shadow": "0px 11px 0px 0px oklch(0.320 0.098 140.0), inset 0px 1px 0px 0px oklch(0.479 0.069 140.0)"
+   },
+   "pointed at": {
+    "height": 1,
+    "shadow": "0px 11px 0px 0px oklch(0.264 0.084 140.5), inset 0px 1px 0px 0px oklch(0.423 0.059 140.5)"
+   },
+   "pressed": {
+    "height": 0.3333333333333333,
+    "shadow": "0px 3.7px 0px 0px oklch(0.359 0.093 139.8), inset 0px 1px 0px 0px oklch(0.521 0.068 139.8)"
+   }
+  },
+  "reproduces": [
+   {
+    "own": "11px oklch(0.32 0.098 140)",
+    "redrawn": "11px oklch(0.320 0.098 140.0)",
+    "colourDiff": 0,
+    "sameOffset": true
+   },
+   {
+    "own": "1px oklch(0.48 0.07 140)",
+    "redrawn": "1px oklch(0.479 0.069 140.0)",
+    "colourDiff": 0.21,
+    "sameOffset": true
+   }
+  ],
+  "forSurface": {
+   "note": "redraw(surface, height) for any new surface: the same relation applied",
+   "examples": {
+    "step 9": "0px 11px 0px 0px oklch(0.320 0.098 140.0), inset 0px 1px 0px 0px oklch(0.479 0.069 140.0)",
+    "step 10": "0px 11px 0px 0px oklch(0.264 0.084 140.5), inset 0px 1px 0px 0px oklch(0.423 0.059 140.5)",
+    "step 11": "0px 11px 0px 0px oklch(0.726 0.136 140.0), inset 0px 1px 0px 0px oklch(0.885 0.095 140.0)",
+    "step 12": "0px 11px 0px 0px oklch(0.829 0.110 139.6), inset 0px 1px 0px 0px oklch(0.974 0.048 139.6)"
+   }
+  }
+ }
+}

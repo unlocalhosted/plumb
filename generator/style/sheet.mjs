@@ -54,7 +54,7 @@ const side = (m) => `<section class="side" style="--page:${m.page}">
   <h4>Type (layer 1)</h4><p class="meta">${m.type.slice(0, 8).map((t) => `${e(t.family)} ${t.size}/${t.weight} (${t.count})`).join(' · ')}</p>
 </section>`;
 const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${product === 'craftingattention' ? 'Crafting Attention' : product} Style Model</title>
+<title>${({ craftingattention: 'Crafting Attention', algorecall: 'Algorecall' })[product] ?? product} Style Model</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,700&family=Geist:wght@400..700&display=swap">
 <style>
 :root { --paper:#fff; --ink:#121212; --gray:#5a5a5a; --rule:#e2e2e2; --sans:"Libre Franklin",Arial,sans-serif; --serif:"Source Serif 4",Georgia,serif; }
@@ -82,8 +82,8 @@ h1 { font:700 clamp(30px,5vw,44px)/1.1 var(--serif); margin:0; }
 .sh { height:56px; border-radius:6px; } .sh-wrap small, .meta { font:12px/1.45 var(--sans); color:#888; margin:0; }
 </style></head><body><main>
 <p class="kicker">Procedural style · layer 1 · the style model</p>
-<h1>${product === 'craftingattention' ? 'Crafting attention' : product}, as a style model</h1>
-<p class="dek">Read off the running product, not one element: every colour token grouped into hue families and ordered by lightness, the ink it puts on each surface in its own pricing card, its shadows parsed into layers and redrawn, its corners and its type. Light and dark, read ${M.light.read}. This is what every suggestion’s colours, words, edges and shadows will be drawn from.</p>
+<h1>${({ craftingattention: 'Crafting attention', algorecall: 'Algorecall' })[product] ?? product}, as a style model</h1>
+<p class="dek">Read off the running product, not one element: every colour token grouped into hue families and ordered by lightness, the ink it puts on each surface in its own shipped component, its shadows parsed into layers and redrawn, its corners and its type. Light and dark, read ${M.light.read}. This is what every suggestion’s colours, words, edges and shadows will be drawn from.</p>
 <div class="sides">${side(M.light)}${side(M.dark)}</div>
 </main></body></html>`;
 await writeFile(fileURLToPath(new URL(`../../web/public/research/style-${product}.html`, import.meta.url)), html);

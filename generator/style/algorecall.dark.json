@@ -1,0 +1,899 @@
+{
+ "product": "algorecall",
+ "mode": "dark",
+ "read": "2026-11-21",
+ "page": "oklch(0.165 0.008 163)",
+ "atom": {
+  "surface": "oklch(0.42 0.07 140)",
+  "ink": "oklch(0.805 0.048 140)",
+  "size": 17.6,
+  "weight": 600,
+  "text": "Arrays & Hashing",
+  "shadow": {
+   "layers": [
+    {
+     "x": 0,
+     "y": 11,
+     "blur": 0,
+     "spread": 0,
+     "inset": false,
+     "color": "oklch(0.32 0.098 140)",
+     "token": null
+    },
+    {
+     "x": 0,
+     "y": 1,
+     "blur": 0,
+     "spread": 0,
+     "inset": true,
+     "color": "oklch(0.48 0.07 140)",
+     "token": null
+    }
+   ]
+  },
+  "radius": 8.8,
+  "surfaceToken": null,
+  "inkToken": "--hue-lichen-ink"
+ },
+ "families": [
+  {
+   "hue": 8,
+   "name": "red",
+   "steps": [
+    {
+     "l": 0.805,
+     "c": 0.095,
+     "h": 8,
+     "value": "oklch(0.805 0.095 8)",
+     "tokens": [
+      "--hue-rose-ink"
+     ]
+    },
+    {
+     "l": 0.715,
+     "c": 0.123,
+     "h": 8,
+     "value": "oklch(0.715 0.123 8)",
+     "tokens": [
+      "--hue-rose"
+     ]
+    }
+   ]
+  },
+  {
+   "hue": 59,
+   "name": "amber",
+   "steps": [
+    {
+     "l": 0.88,
+     "c": 0.06,
+     "h": 88,
+     "value": "oklch(0.88 0.06 88)",
+     "tokens": [
+      "--difficulty-easy-ink"
+     ]
+    },
+    {
+     "l": 0.86,
+     "c": 0.07,
+     "h": 88,
+     "value": "oklch(0.86 0.07 88)",
+     "tokens": [
+      "--difficulty-easy"
+     ]
+    },
+    {
+     "l": 0.828,
+     "c": 0.189,
+     "h": 84.4,
+     "value": "oklch(0.828 0.189 84.4)",
+     "tokens": [
+      "--color-amber-400"
+     ]
+    },
+    {
+     "l": 0.82,
+     "c": 0.11,
+     "h": 62,
+     "value": "oklch(0.82 0.11 62)",
+     "tokens": [
+      "--difficulty-medium-ink"
+     ]
+    },
+    {
+     "l": 0.805,
+     "c": 0.095,
+     "h": 38,
+     "value": "oklch(0.805 0.095 38)",
+     "tokens": [
+      "--hue-terracotta-ink"
+     ]
+    },
+    {
+     "l": 0.805,
+     "c": 0.088,
+     "h": 78,
+     "value": "oklch(0.805 0.088 78)",
+     "tokens": [
+      "--hue-ochre-ink"
+     ]
+    },
+    {
+     "l": 0.78,
+     "c": 0.13,
+     "h": 62,
+     "value": "oklch(0.78 0.13 62)",
+     "tokens": [
+      "--difficulty-medium"
+     ]
+    },
+    {
+     "l": 0.769,
+     "c": 0.188,
+     "h": 70.1,
+     "value": "oklch(0.769 0.188 70.1)",
+     "tokens": [
+      "--color-amber-500"
+     ]
+    },
+    {
+     "l": 0.76,
+     "c": 0.12,
+     "h": 48,
+     "value": "oklch(0.76 0.12 48)",
+     "tokens": [
+      "--difficulty-hard-ink"
+     ]
+    },
+    {
+     "l": 0.72,
+     "c": 0.13,
+     "h": 27,
+     "value": "oklch(0.72 0.13 27)",
+     "tokens": [
+      "--wrong"
+     ]
+    },
+    {
+     "l": 0.715,
+     "c": 0.123,
+     "h": 38,
+     "value": "oklch(0.715 0.123 38)",
+     "tokens": [
+      "--hue-terracotta"
+     ]
+    },
+    {
+     "l": 0.715,
+     "c": 0.114,
+     "h": 78,
+     "value": "oklch(0.715 0.114 78)",
+     "tokens": [
+      "--hue-ochre"
+     ]
+    },
+    {
+     "l": 0.704,
+     "c": 0.191,
+     "h": 22.2,
+     "value": "oklch(0.704 0.191 22.2)",
+     "tokens": [
+      "--destructive"
+     ]
+    },
+    {
+     "l": 0.666,
+     "c": 0.179,
+     "h": 58.3,
+     "value": "oklch(0.666 0.179 58.3)",
+     "tokens": [
+      "--color-amber-600"
+     ]
+    },
+    {
+     "l": 0.64,
+     "c": 0.13,
+     "h": 47,
+     "value": "oklch(0.64 0.13 47)",
+     "tokens": [
+      "--difficulty-hard"
+     ]
+    }
+   ]
+  },
+  {
+   "hue": 127,
+   "name": "lime",
+   "steps": [
+    {
+     "l": 0.897,
+     "c": 0.196,
+     "h": 126.7,
+     "value": "oklch(0.897 0.196 126.7)",
+     "tokens": [
+      "--color-lime-300"
+     ]
+    }
+   ]
+  },
+  {
+   "hue": 143,
+   "name": "green",
+   "steps": [
+    {
+     "l": 0.805,
+     "c": 0.048,
+     "h": 140,
+     "value": "oklch(0.805 0.048 140)",
+     "tokens": [
+      "--hue-lichen-ink"
+     ]
+    },
+    {
+     "l": 0.74,
+     "c": 0.11,
+     "h": 150,
+     "value": "oklch(0.74 0.11 150)",
+     "tokens": [
+      "--correct"
+     ]
+    },
+    {
+     "l": 0.715,
+     "c": 0.062,
+     "h": 140,
+     "value": "oklch(0.715 0.062 140)",
+     "tokens": [
+      "--hue-lichen"
+     ]
+    }
+   ]
+  },
+  {
+   "hue": 163,
+   "name": "green",
+   "steps": [
+    {
+     "l": 0.805,
+     "c": 0.088,
+     "h": 163,
+     "value": "oklch(0.805 0.088 163)",
+     "tokens": [
+      "--hue-viridian-ink",
+      "--accent-ink"
+     ]
+    },
+    {
+     "l": 0.765,
+     "c": 0.177,
+     "h": 163.2,
+     "value": "oklch(0.765 0.177 163.2)",
+     "tokens": [
+      "--color-emerald-400"
+     ]
+    },
+    {
+     "l": 0.715,
+     "c": 0.114,
+     "h": 163,
+     "value": "oklch(0.715 0.114 163)",
+     "tokens": [
+      "--color-track-emerald",
+      "--hue-viridian",
+      "--accent-fill"
+     ]
+    },
+    {
+     "l": 0.696,
+     "c": 0.17,
+     "h": 162.5,
+     "value": "oklch(0.696 0.17 162.5)",
+     "tokens": [
+      "--color-emerald-500"
+     ]
+    },
+    {
+     "l": 0.596,
+     "c": 0.145,
+     "h": 163.2,
+     "value": "oklch(0.596 0.145 163.2)",
+     "tokens": [
+      "--color-emerald-600"
+     ]
+    },
+    {
+     "l": 0.26,
+     "c": 0.045,
+     "h": 163,
+     "value": "oklch(0.26 0.045 163)",
+     "tokens": [
+      "--accent-soft"
+     ]
+    },
+    {
+     "l": 0.235,
+     "c": 0.06,
+     "h": 163,
+     "value": "oklch(0.235 0.06 163)",
+     "tokens": [
+      "--on-accent"
+     ]
+    }
+   ]
+  },
+  {
+   "hue": 185,
+   "name": "teal",
+   "steps": [
+    {
+     "l": 0.855,
+     "c": 0.138,
+     "h": 181.1,
+     "value": "oklch(0.855 0.138 181.1)",
+     "tokens": [
+      "--chart-1"
+     ]
+    },
+    {
+     "l": 0.704,
+     "c": 0.14,
+     "h": 182.5,
+     "value": "oklch(0.704 0.14 182.5)",
+     "tokens": [
+      "--chart-2"
+     ]
+    },
+    {
+     "l": 0.6,
+     "c": 0.118,
+     "h": 184.7,
+     "value": "oklch(0.6 0.118 184.7)",
+     "tokens": [
+      "--chart-3"
+     ]
+    },
+    {
+     "l": 0.511,
+     "c": 0.096,
+     "h": 186.4,
+     "value": "oklch(0.511 0.096 186.4)",
+     "tokens": [
+      "--chart-4"
+     ]
+    },
+    {
+     "l": 0.437,
+     "c": 0.078,
+     "h": 188.2,
+     "value": "oklch(0.437 0.078 188.2)",
+     "tokens": [
+      "--chart-5"
+     ]
+    }
+   ]
+  },
+  {
+   "hue": 205,
+   "name": "cyan",
+   "steps": [
+    {
+     "l": 0.805,
+     "c": 0.082,
+     "h": 205,
+     "value": "oklch(0.805 0.082 205)",
+     "tokens": [
+      "--hue-teal-ink"
+     ]
+    },
+    {
+     "l": 0.715,
+     "c": 0.106,
+     "h": 205,
+     "value": "oklch(0.715 0.106 205)",
+     "tokens": [
+      "--hue-teal"
+     ]
+    }
+   ]
+  },
+  {
+   "hue": 233,
+   "name": "blue",
+   "steps": [
+    {
+     "l": 0.805,
+     "c": 0.055,
+     "h": 233,
+     "value": "oklch(0.805 0.055 233)",
+     "tokens": [
+      "--hue-steel-ink"
+     ]
+    },
+    {
+     "l": 0.746,
+     "c": 0.16,
+     "h": 232.7,
+     "value": "oklch(0.746 0.16 232.7)",
+     "tokens": [
+      "--color-sky-400"
+     ]
+    },
+    {
+     "l": 0.715,
+     "c": 0.07,
+     "h": 233,
+     "value": "oklch(0.715 0.07 233)",
+     "tokens": [
+      "--hue-steel"
+     ]
+    }
+   ]
+  },
+  {
+   "hue": 262,
+   "name": "indigo",
+   "steps": [
+    {
+     "l": 0.805,
+     "c": 0.116,
+     "h": 262,
+     "value": "oklch(0.805 0.116 262)",
+     "tokens": [
+      "--hue-cobalt-ink"
+     ]
+    },
+    {
+     "l": 0.715,
+     "c": 0.15,
+     "h": 262,
+     "value": "oklch(0.715 0.15 262)",
+     "tokens": [
+      "--color-track-sapphire",
+      "--hue-cobalt"
+     ]
+    }
+   ]
+  },
+  {
+   "hue": 292,
+   "name": "purple",
+   "steps": [
+    {
+     "l": 0.805,
+     "c": 0.095,
+     "h": 292,
+     "value": "oklch(0.805 0.095 292)",
+     "tokens": [
+      "--hue-iris-ink"
+     ]
+    },
+    {
+     "l": 0.715,
+     "c": 0.123,
+     "h": 292,
+     "value": "oklch(0.715 0.123 292)",
+     "tokens": [
+      "--hue-iris"
+     ]
+    }
+   ]
+  },
+  {
+   "hue": 322,
+   "name": "pink",
+   "steps": [
+    {
+     "l": 0.805,
+     "c": 0.088,
+     "h": 322,
+     "value": "oklch(0.805 0.088 322)",
+     "tokens": [
+      "--hue-plum-ink"
+     ]
+    },
+    {
+     "l": 0.715,
+     "c": 0.114,
+     "h": 322,
+     "value": "oklch(0.715 0.114 322)",
+     "tokens": [
+      "--color-track-amethyst",
+      "--hue-plum"
+     ]
+    }
+   ]
+  }
+ ],
+ "neutrals": [
+  {
+   "l": 1,
+   "c": 0,
+   "h": null,
+   "value": "oklch(1 0 0)",
+   "tokens": [
+    "--color-white",
+    "--tw-ring-offset-color"
+   ]
+  },
+  {
+   "l": 0.975,
+   "c": 0.004,
+   "h": 163,
+   "value": "oklch(0.975 0.004 163)",
+   "tokens": [
+    "--foreground",
+    "--card-foreground",
+    "--popover-foreground",
+    "--primary",
+    "--secondary-foreground",
+    "--accent-foreground",
+    "--sidebar-foreground",
+    "--sidebar-primary",
+    "--sidebar-accent-foreground"
+   ]
+  },
+  {
+   "l": 0.805,
+   "c": 0.012,
+   "h": 163,
+   "value": "oklch(0.805 0.012 163)",
+   "tokens": [
+    "--muted-foreground"
+   ]
+  },
+  {
+   "l": 0.63,
+   "c": 0.012,
+   "h": 163,
+   "value": "oklch(0.63 0.012 163)",
+   "tokens": [
+    "--ring",
+    "--sidebar-ring"
+   ]
+  },
+  {
+   "l": 0.409,
+   "c": 0.008,
+   "h": 163,
+   "value": "oklch(0.409 0.008 163)",
+   "tokens": [
+    "--icon-stone"
+   ]
+  },
+  {
+   "l": 0.3,
+   "c": 0.012,
+   "h": 163,
+   "value": "oklch(0.3 0.012 163)",
+   "tokens": [
+    "--border",
+    "--input",
+    "--sidebar-border"
+   ]
+  },
+  {
+   "l": 0.25,
+   "c": 0.012,
+   "h": 163,
+   "value": "oklch(0.25 0.012 163)",
+   "tokens": [
+    "--secondary",
+    "--muted",
+    "--accent",
+    "--sidebar-accent"
+   ]
+  },
+  {
+   "l": 0.2,
+   "c": 0.01,
+   "h": 163,
+   "value": "oklch(0.2 0.01 163)",
+   "tokens": [
+    "--card",
+    "--popover",
+    "--sidebar"
+   ]
+  },
+  {
+   "l": 0.165,
+   "c": 0.008,
+   "h": 163,
+   "value": "oklch(0.165 0.008 163)",
+   "tokens": [
+    "--background",
+    "--primary-foreground",
+    "--sidebar-primary-foreground"
+   ]
+  },
+  {
+   "l": 0.145,
+   "c": 0,
+   "h": 0,
+   "value": "oklch(0.145 0 0)",
+   "tokens": [
+    "--color-neutral-950"
+   ]
+  }
+ ],
+ "translucent": [],
+ "pairs": [
+  {
+   "ink": "oklch(0.975 0.004 163)",
+   "surface": "oklch(0.2 0.01 163)",
+   "inkToken": "--foreground",
+   "surfaceToken": "--card",
+   "surfaceIs": "button.today-lit",
+   "uses": [
+    {
+     "size": 17.6,
+     "weight": 500,
+     "text": "Stack"
+    },
+    {
+     "size": 13.2,
+     "weight": 400,
+     "text": "1 day over"
+    },
+    {
+     "size": 17.6,
+     "weight": 500,
+     "text": "Linked List"
+    },
+    {
+     "size": 13.2,
+     "weight": 400,
+     "text": "due today"
+    },
+    {
+     "size": 17.6,
+     "weight": 500,
+     "text": "Math & Geometry"
+    },
+    {
+     "size": 13.2,
+     "weight": 400,
+     "text": "5 days over"
+    },
+    {
+     "size": 17.6,
+     "weight": 500,
+     "text": "Sliding Window"
+    },
+    {
+     "size": 13.2,
+     "weight": 400,
+     "text": "due today"
+    },
+    {
+     "size": 17.6,
+     "weight": 500,
+     "text": "Two Pointers"
+    },
+    {
+     "size": 13.2,
+     "weight": 400,
+     "text": "2 days over"
+    }
+   ]
+  },
+  {
+   "ink": "oklch(0.805 0.048 140)",
+   "surface": "oklch(0.42 0.07 140)",
+   "inkToken": "--hue-lichen-ink",
+   "surfaceToken": null,
+   "surfaceIs": "button.today-lit",
+   "uses": [
+    {
+     "size": 17.6,
+     "weight": 600,
+     "text": "Arrays & Hashing"
+    },
+    {
+     "size": 13.2,
+     "weight": 400,
+     "text": "3 days over"
+    }
+   ]
+  },
+  {
+   "ink": "oklch(0.975 0.004 163)",
+   "surface": "oklch(0.165 0.008 163)",
+   "inkToken": "--foreground",
+   "surfaceToken": "--background",
+   "surfaceIs": "body",
+   "uses": [
+    {
+     "size": 13.2,
+     "weight": 400,
+     "text": "+3 more"
+    }
+   ]
+  }
+ ],
+ "edges": [
+  {
+   "color": "oklch(0.3 0.012 163)",
+   "token": "--border",
+   "width": 1,
+   "on": "oklch(0.2 0.01 163)",
+   "count": 6
+  }
+ ],
+ "shadows": [
+  {
+   "on": "button",
+   "surface": "oklch(0.42 0.07 140)",
+   "layers": [
+    {
+     "x": 0,
+     "y": 11,
+     "blur": 0,
+     "spread": 0,
+     "inset": false,
+     "color": "oklch(0.32 0.098 140)",
+     "token": null
+    },
+    {
+     "x": 0,
+     "y": 1,
+     "blur": 0,
+     "spread": 0,
+     "inset": true,
+     "color": "oklch(0.48 0.07 140)",
+     "token": null
+    }
+   ],
+   "count": 1
+  },
+  {
+   "on": "span",
+   "surface": "oklch(0 0 0 / 0)",
+   "layers": [
+    {
+     "x": 0,
+     "y": 0,
+     "blur": 0,
+     "spread": 0,
+     "inset": false,
+     "color": "oklch(0 0 0 / 0)",
+     "token": "--color-neutral-950"
+    }
+   ],
+   "count": 6
+  },
+  {
+   "on": "button",
+   "surface": "oklch(0.2 0.01 163)",
+   "layers": [
+    {
+     "x": 0,
+     "y": 9,
+     "blur": 0,
+     "spread": 0,
+     "inset": false,
+     "color": "oklch(0.1 0.014 163)",
+     "token": "--color-neutral-950"
+    },
+    {
+     "x": 0,
+     "y": 1,
+     "blur": 0,
+     "spread": 0,
+     "inset": true,
+     "color": "oklch(0.26 0.01 163)",
+     "token": "--secondary"
+    }
+   ],
+   "count": 1
+  },
+  {
+   "on": "button",
+   "surface": "oklch(0.2 0.01 163)",
+   "layers": [
+    {
+     "x": 0,
+     "y": 5,
+     "blur": 0,
+     "spread": 0,
+     "inset": false,
+     "color": "oklch(0.1 0.014 163)",
+     "token": "--color-neutral-950"
+    },
+    {
+     "x": 0,
+     "y": 1,
+     "blur": 0,
+     "spread": 0,
+     "inset": true,
+     "color": "oklch(0.26 0.01 163)",
+     "token": "--secondary"
+    }
+   ],
+   "count": 1
+  },
+  {
+   "on": "button",
+   "surface": "oklch(0.2 0.01 163)",
+   "layers": [
+    {
+     "x": 0,
+     "y": 11,
+     "blur": 0,
+     "spread": 0,
+     "inset": false,
+     "color": "oklch(0.1 0.014 163)",
+     "token": "--color-neutral-950"
+    },
+    {
+     "x": 0,
+     "y": 1,
+     "blur": 0,
+     "spread": 0,
+     "inset": true,
+     "color": "oklch(0.26 0.01 163)",
+     "token": "--secondary"
+    }
+   ],
+   "count": 2
+  },
+  {
+   "on": "button",
+   "surface": "oklch(0.2 0.01 163)",
+   "layers": [
+    {
+     "x": 0,
+     "y": 3,
+     "blur": 0,
+     "spread": 0,
+     "inset": false,
+     "color": "oklch(0.1 0.014 163)",
+     "token": "--color-neutral-950"
+    },
+    {
+     "x": 0,
+     "y": 1,
+     "blur": 0,
+     "spread": 0,
+     "inset": true,
+     "color": "oklch(0.26 0.01 163)",
+     "token": "--secondary"
+    }
+   ],
+   "count": 1
+  }
+ ],
+ "radii": [
+  {
+   "radius": 33554400,
+   "count": 36
+  },
+  {
+   "radius": 8.8,
+   "count": 7
+  },
+  {
+   "radius": 1.548,
+   "count": 6
+  }
+ ],
+ "type": [
+  {
+   "family": "JetBrains Mono Variable",
+   "size": 13.2,
+   "weight": 400,
+   "count": 7
+  },
+  {
+   "family": "DM Sans Variable",
+   "size": 17.6,
+   "weight": 500,
+   "count": 5
+  },
+  {
+   "family": "Space Grotesk Variable",
+   "size": 17.6,
+   "weight": 600,
+   "count": 1
+  }
+ ]
+}

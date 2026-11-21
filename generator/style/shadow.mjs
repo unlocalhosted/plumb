@@ -21,11 +21,11 @@ const css = (o) => { const g = O(formatHex(gamut(o))); return `oklch(${g.l.toFix
 
 // the product's own control and its shadow: the button's, read by layer 1
 const brand = O(E.brand.value);
-const own = M.shadows.find((s) => s.on === 'a' || s.on === 'button') ?? M.shadows[0];
+const own = M.atom?.shadow ?? M.shadows.find((s) => s.on === 'a' || s.on === 'button') ?? M.shadows[0];
 const hard = own.layers.every((l) => l.blur === 0);
 // height: the rest state is 1; the recipe is each layer's offset per unit of height and its colour's relation to the surface
 const relation = own.layers.map((l) => { const c = O(l.color);
-  return { y: l.y, x: l.x, blur: l.blur, spread: l.spread, dl: +(c.l - brand.l).toFixed(3), cShare: +(c.c / brand.c).toFixed(3), dh: +((c.h ?? brand.h) - brand.h).toFixed(1), alpha: +(c.alpha ?? 1).toFixed(3), token: l.token }; });
+  return { y: l.y, x: l.x, blur: l.blur, spread: l.spread, inset: !!l.inset, dl: +(c.l - brand.l).toFixed(3), cShare: +(c.c / brand.c).toFixed(3), dh: +((c.h ?? brand.h) - brand.h).toFixed(1), alpha: +(c.alpha ?? 1).toFixed(3), token: l.token }; });
 
 // Comeau's layered soft shadow, for a product whose shadows blur
 const comeau = (surface, height) => { const s = O(surface); const n = 4;
@@ -34,9 +34,9 @@ const comeau = (surface, height) => { const s = O(surface); const n = 4;
 // the product's own recipe, redrawn for a surface at a height
 const redraw = (surface, height) => { if (!hard) return comeau(surface, height);
   const s = O(surface);
-  return relation.map((r) => ({ x: r.x * height, y: +(r.y * height).toFixed(1), blur: r.blur, spread: r.spread,
+  return relation.map((r) => ({ inset: r.inset, x: r.x * height, y: r.inset ? r.y : +(r.y * height).toFixed(1), blur: r.blur, spread: r.spread,
     color: css({ mode: 'oklch', l: Math.min(0.99, Math.max(0, s.l + r.dl)), c: s.c * r.cShare, h: (s.h ?? 0) + r.dh, alpha: r.alpha }) })); };
-const text = (layers) => layers.map((l) => `${l.x}px ${l.y}px ${l.blur}px ${l.spread}px ${l.color}`).join(', ');
+const text = (layers) => layers.map((l) => `${l.inset ? 'inset ' : ''}${l.x}px ${l.y}px ${l.blur}px ${l.spread}px ${l.color}`).join(', ');
 
 // heights for the states a control goes through: it rests on its lip, rises a little when pointed at, sits on its lip
 // when pressed (a third of its height left, as crafting attention's own :active does)

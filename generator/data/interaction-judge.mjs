@@ -17,15 +17,16 @@ const [atom = 'buy', mode = 'light'] = process.argv.slice(2);
 const product = atom === 'start' ? 'algorecall' : 'craftingattention';
 const moment = MOMENTS[`${product}/${atom}`];
 const DEV = `${process.env.HOME}/.claude/bin/dev-server`, PG = `${here}../playground/${product}`;
-const up = async () => { try { return (await fetch('http://localhost:4399/')).ok; } catch { return false; } };
+const PORT = product === 'algorecall' ? 4398 : 4399; // each product's playground on its own port (as generator/style/read.mjs)
+const up = async () => { try { return (await fetch(`http://localhost:${PORT}/atoms.html`)).ok; } catch { return false; } };
 const started = !(await up());
 if (started) {
   const root = product === 'algorecall' ? '/Users/vijaysingh/unlocalhosted/algorecall' : '/Users/vijaysingh/unlocalhosted/craftingattention/app';
-  execFileSync(DEV, [PG, `${root}/node_modules/.bin/vite`, '--config', 'vite.config.mjs', '--port', '4399', '--strictPort'], { stdio: 'ignore' });
+  execFileSync(DEV, [PG, `${root}/node_modules/.bin/vite`, '--config', 'vite.config.mjs', '--port', String(PORT), '--strictPort'], { stdio: 'ignore' });
   for (let i = 0; i < 40 && !(await up()); i++) await new Promise((r) => setTimeout(r, 750));
 }
 const engine = (await readFile(`${here}../reads/craft.iife.js`, 'utf8')).replaceAll('{}.url', '"http://plumb.invalid/overlay/src/craft.js"');
-const URL_ = `http://localhost:4399/atoms.html?atom=${atom}${mode === 'dark' ? '&mode=dark' : ''}`;
+const URL_ = `http://localhost:${PORT}/atoms.html?atom=${atom}${mode === 'dark' ? '&mode=dark' : ''}`;
 
 // ── in the page: a recorder on one form's stage ─────────────────────────────────────────────────────────────────
 const RECORD = ({ form, done }) => {

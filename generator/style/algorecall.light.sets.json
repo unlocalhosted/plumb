@@ -1,0 +1,354 @@
+{
+ "product": "algorecall",
+ "mode": "light",
+ "buttonWords": "17.6px/600",
+ "sets": {
+  "pour": {
+   "rest": {
+    "fill": {
+     "value": "#bbe1b2",
+     "token": null,
+     "why": "the product’s own atom, as shipped, derived"
+    },
+    "ink": {
+     "value": "oklch(0.465 0.062 140)",
+     "token": "--hue-lichen-ink",
+     "why": "the product’s own pairing (--hue-lichen-ink on null): APCA Lc 59.8, 0.9px under APCA’s line at 17.6px/600, as shipped"
+    },
+    "shadow": {
+     "value": "0px 11px 0px 0px #90c585, 0px 1px 0px 0px #cef5c6",
+     "why": "the product’s own hard lip, learned from its button, at height 1"
+    }
+   },
+   "pointed": {
+    "fill": {
+     "value": "#cff5c5",
+     "token": null,
+     "why": "Radix’s hover step turned away from the words (lighter, under dark words), derived"
+    },
+    "ink": {
+     "value": "oklch(0.465 0.062 140)",
+     "token": "--hue-lichen-ink",
+     "why": "the same words as the state before (--hue-lichen-ink): APCA Lc 71.2, as readable as the shipped button"
+    },
+    "shadow": {
+     "value": "0px 11px 0px 0px #a4d997, 0px 1px 0px 0px #e7ffdf",
+     "why": "the product’s own hard lip, learned from its button, at height 1"
+    }
+   },
+   "pressed": {
+    "fill": {
+     "value": "#629955",
+     "token": null,
+     "why": "Radix step 9 (solid), derived; 0.24 lighter or darker than before"
+    },
+    "ink": {
+     "value": "oklch(1 0 0)",
+     "token": "--color-white",
+     "why": "the product’s lightest neutral: APCA Lc 66.6, reads at 17.6px/600"
+    },
+    "shadow": {
+     "value": "0px 3.7px 0px 0px #2c8014, 0px 0.3px 0px 0px #74ac67",
+     "why": "the product’s own hard lip, learned from its button, at height 0.33"
+    }
+   },
+   "done": {
+    "fill": {
+     "value": "#629955",
+     "token": null,
+     "why": "Radix step 9 (solid), derived; 0.24 lighter or darker than before"
+    },
+    "ink": {
+     "value": "oklch(1 0 0)",
+     "token": "--color-white",
+     "why": "the same words as the state before (--color-white): APCA Lc 66.6, as readable as the shipped button"
+    },
+    "shadow": {
+     "value": "0px 11px 0px 0px #2c8014, 0px 1px 0px 0px #74ac67",
+     "why": "the product’s own hard lip, learned from its button, at height 1"
+    }
+   }
+  },
+  "lead": {
+   "rest": {
+    "fill": {
+     "value": "#bbe1b2",
+     "token": null,
+     "why": "the product’s own atom, as shipped, derived"
+    },
+    "ink": {
+     "value": "oklch(0.465 0.062 140)",
+     "token": "--hue-lichen-ink",
+     "why": "the product’s own pairing (--hue-lichen-ink on null): APCA Lc 59.8, 0.9px under APCA’s line at 17.6px/600, as shipped"
+    },
+    "shadow": {
+     "value": "0px 11px 0px 0px #90c585, 0px 1px 0px 0px #cef5c6",
+     "why": "the product’s own hard lip, learned from its button, at height 1"
+    }
+   },
+   "pointed": {
+    "fill": {
+     "value": "#cff5c5",
+     "token": null,
+     "why": "Radix’s hover step turned away from the words (lighter, under dark words), derived"
+    },
+    "ink": {
+     "value": "oklch(0.465 0.062 140)",
+     "token": "--hue-lichen-ink",
+     "why": "the same words as the state before (--hue-lichen-ink): APCA Lc 71.2, as readable as the shipped button"
+    },
+    "shadow": {
+     "value": "0px 11px 0px 0px #a4d997, 0px 1px 0px 0px #e7ffdf",
+     "why": "the product’s own hard lip, learned from its button, at height 1"
+    }
+   },
+   "pressed": {
+    "fill": {
+     "value": "#d9ffcf",
+     "token": null,
+     "why": "the press, turned away from the words (lighter, under dark words), derived"
+    },
+    "ink": {
+     "value": "oklch(0.465 0.062 140)",
+     "token": "--hue-lichen-ink",
+     "why": "the same words as the state before (--hue-lichen-ink): APCA Lc 77.1, as readable as the shipped button"
+    },
+    "shadow": {
+     "value": "0px 3.7px 0px 0px #aee2a1, 0px 0.3px 0px 0px #e7ffdf",
+     "why": "the product’s own hard lip, learned from its button, at height 0.33"
+    }
+   },
+   "working": {
+    "fill": {
+     "value": "#bbe1b2",
+     "token": null,
+     "why": "the product’s own atom, as shipped, derived"
+    },
+    "ink": {
+     "value": "oklch(0.465 0.062 140)",
+     "token": "--hue-lichen-ink",
+     "why": "the same words as the state before (--hue-lichen-ink): APCA Lc 59.8, as readable as the shipped button"
+    },
+    "shadow": {
+     "value": "0px 11px 0px 0px #90c585, 0px 1px 0px 0px #cef5c6",
+     "why": "the product’s own hard lip, learned from its button, at height 1"
+    }
+   }
+  },
+  "answer": {
+   "rest": {
+    "fill": {
+     "value": "#bbe1b2",
+     "token": null,
+     "why": "the product’s own atom, as shipped, derived"
+    },
+    "ink": {
+     "value": "oklch(0.465 0.062 140)",
+     "token": "--hue-lichen-ink",
+     "why": "the product’s own pairing (--hue-lichen-ink on null): APCA Lc 59.8, 0.9px under APCA’s line at 17.6px/600, as shipped"
+    },
+    "shadow": {
+     "value": "0px 11px 0px 0px #90c585, 0px 1px 0px 0px #cef5c6",
+     "why": "the product’s own hard lip, learned from its button, at height 1"
+    }
+   },
+   "pointed": {
+    "fill": {
+     "value": "#cff5c5",
+     "token": null,
+     "why": "Radix’s hover step turned away from the words (lighter, under dark words), derived"
+    },
+    "ink": {
+     "value": "oklch(0.465 0.062 140)",
+     "token": "--hue-lichen-ink",
+     "why": "the same words as the state before (--hue-lichen-ink): APCA Lc 71.2, as readable as the shipped button"
+    },
+    "shadow": {
+     "value": "0px 11px 0px 0px #a4d997, 0px 1px 0px 0px #e7ffdf",
+     "why": "the product’s own hard lip, learned from its button, at height 1"
+    }
+   },
+   "pressed": {
+    "fill": {
+     "value": "#d9ffcf",
+     "token": null,
+     "why": "the press, turned away from the words (lighter, under dark words), derived"
+    },
+    "ink": {
+     "value": "oklch(0.465 0.062 140)",
+     "token": "--hue-lichen-ink",
+     "why": "the same words as the state before (--hue-lichen-ink): APCA Lc 77.1, as readable as the shipped button"
+    },
+    "shadow": {
+     "value": "0px 3.7px 0px 0px #aee2a1, 0px 0.3px 0px 0px #e7ffdf",
+     "why": "the product’s own hard lip, learned from its button, at height 0.33"
+    }
+   },
+   "working": {
+    "fill": {
+     "value": "#bbe1b2",
+     "token": null,
+     "why": "the product’s own atom, as shipped, derived"
+    },
+    "ink": {
+     "value": "oklch(0.465 0.062 140)",
+     "token": "--hue-lichen-ink",
+     "why": "the same words as the state before (--hue-lichen-ink): APCA Lc 59.8, as readable as the shipped button"
+    },
+    "shadow": {
+     "value": "0px 11px 0px 0px #90c585, 0px 1px 0px 0px #cef5c6",
+     "why": "the product’s own hard lip, learned from its button, at height 1"
+    },
+    "line": {
+     "value": "#f6f9f5",
+     "token": "--background",
+     "why": "Radix step 1 (app background), the product’s own --background; the growing line along the lip"
+    }
+   }
+  },
+  "sheen": {
+   "rest": {
+    "fill": {
+     "value": "#bbe1b2",
+     "token": null,
+     "why": "the product’s own atom, as shipped, derived"
+    },
+    "ink": {
+     "value": "oklch(0.465 0.062 140)",
+     "token": "--hue-lichen-ink",
+     "why": "the product’s own pairing (--hue-lichen-ink on null): APCA Lc 59.8, 0.9px under APCA’s line at 17.6px/600, as shipped"
+    },
+    "shadow": {
+     "value": "0px 11px 0px 0px #90c585, 0px 1px 0px 0px #cef5c6",
+     "why": "the product’s own hard lip, learned from its button, at height 1"
+    },
+    "light": {
+     "value": "#f6f9f5",
+     "token": "--background",
+     "why": "Radix step 1 (app background), the product’s own --background; the band of light, at 35% so the words keep their contrast"
+    }
+   },
+   "pointed": {
+    "fill": {
+     "value": "#cff5c5",
+     "token": null,
+     "why": "Radix’s hover step turned away from the words (lighter, under dark words), derived"
+    },
+    "ink": {
+     "value": "oklch(0.465 0.062 140)",
+     "token": "--hue-lichen-ink",
+     "why": "the same words as the state before (--hue-lichen-ink): APCA Lc 71.2, as readable as the shipped button"
+    },
+    "shadow": {
+     "value": "0px 11px 0px 0px #a4d997, 0px 1px 0px 0px #e7ffdf",
+     "why": "the product’s own hard lip, learned from its button, at height 1"
+    }
+   },
+   "pressed": {
+    "fill": {
+     "value": "#d9ffcf",
+     "token": null,
+     "why": "the press, turned away from the words (lighter, under dark words), derived"
+    },
+    "ink": {
+     "value": "oklch(0.465 0.062 140)",
+     "token": "--hue-lichen-ink",
+     "why": "the same words as the state before (--hue-lichen-ink): APCA Lc 77.1, as readable as the shipped button"
+    },
+    "shadow": {
+     "value": "0px 3.7px 0px 0px #aee2a1, 0px 0.3px 0px 0px #e7ffdf",
+     "why": "the product’s own hard lip, learned from its button, at height 0.33"
+    }
+   }
+  },
+  "beam": {
+   "rest": {
+    "fill": {
+     "value": "#bbe1b2",
+     "token": null,
+     "why": "the product’s own atom, as shipped, derived"
+    },
+    "ink": {
+     "value": "oklch(0.465 0.062 140)",
+     "token": "--hue-lichen-ink",
+     "why": "the product’s own pairing (--hue-lichen-ink on null): APCA Lc 59.8, 0.9px under APCA’s line at 17.6px/600, as shipped"
+    },
+    "shadow": {
+     "value": "0px 11px 0px 0px #90c585, 0px 1px 0px 0px #cef5c6",
+     "why": "the product’s own hard lip, learned from its button, at height 1"
+    }
+   },
+   "pressed": {
+    "fill": {
+     "value": "#d9ffcf",
+     "token": null,
+     "why": "the press, turned away from the words (lighter, under dark words), derived"
+    },
+    "ink": {
+     "value": "oklch(0.465 0.062 140)",
+     "token": "--hue-lichen-ink",
+     "why": "the same words as the state before (--hue-lichen-ink): APCA Lc 77.1, as readable as the shipped button"
+    },
+    "shadow": {
+     "value": "0px 3.7px 0px 0px #aee2a1, 0px 0.3px 0px 0px #e7ffdf",
+     "why": "the product’s own hard lip, learned from its button, at height 0.33"
+    }
+   },
+   "working": {
+    "fill": {
+     "value": "#bbe1b2",
+     "token": null,
+     "why": "the product’s own atom, as shipped, derived"
+    },
+    "ink": {
+     "value": "oklch(0.465 0.062 140)",
+     "token": "--hue-lichen-ink",
+     "why": "the same words as the state before (--hue-lichen-ink): APCA Lc 59.8, as readable as the shipped button"
+    },
+    "shadow": {
+     "value": "0px 11px 0px 0px #90c585, 0px 1px 0px 0px #cef5c6",
+     "why": "the product’s own hard lip, learned from its button, at height 1"
+    },
+    "glow": {
+     "value": "#f6f9f5",
+     "token": "--background",
+     "why": "Radix step 1 (app background), the product’s own --background"
+    }
+   }
+  },
+  "metal": {
+   "rest": {
+    "fill": {
+     "value": "#3f7331",
+     "token": null,
+     "why": "Radix step 11 (low-contrast words) as a face: the brand’s darkest step that still clearly carries its hue, so chrome has a dark ground"
+    },
+    "ink": {
+     "value": "oklch(1 0 0)",
+     "token": "--color-white",
+     "why": "the product’s lightest neutral: APCA Lc 83.4, reads at 17.6px/600"
+    },
+    "shadow": {
+     "value": "0px 11px 0px 0px #005a00, 0px 1px 0px 0px #508543",
+     "why": "the product’s own hard lip, learned from its button, at height 1"
+    }
+   },
+   "pressed": {
+    "fill": {
+     "value": "#3f7331",
+     "token": null,
+     "why": "Radix step 11 (low-contrast words) as a face: the brand’s darkest step that still clearly carries its hue, so chrome has a dark ground"
+    },
+    "ink": {
+     "value": "oklch(1 0 0)",
+     "token": "--color-white",
+     "why": "the same words as the state before (--color-white): APCA Lc 83.4, as readable as the shipped button"
+    },
+    "shadow": {
+     "value": "0px 3.7px 0px 0px #005a00, 0px 0.3px 0px 0px #508543",
+     "why": "the product’s own hard lip, learned from its button, at height 0.33"
+    }
+   }
+  }
+ }
+}
