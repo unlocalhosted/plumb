@@ -3128,6 +3128,26 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **Still open:** the bar's other checks (progress shows, fits where the original sat, keeps its weight) aren't
   plumber rules yet.
 
+### 51. Colours from the tools designers use: Radix, Leonardo, APCA, Material, Adobe Color (2026-11-21)
+
+**The itch.** The owner: "you should use the existing design tools like color pairing tools for oklch and complementary
+color tools … and those techniques which designers already use", and then, for every aspect, "so many cool design tools
+already made by designers which solve so many concerns".
+
+**What we chose.** Layer 2 runs the tools themselves, not imitations: Radix's custom palette generator (its MIT source,
+compiled unchanged) makes the brand's twelve steps, each with its job; Leonardo places steps at a target contrast
+against the page; APCA's font table says whether the words read at the button's own size and weight; Material's state
+layer makes the pressed fill; Adobe Color's rules on the artist's wheel give the harmony partners; culori maps anything
+off-screen back into gamut. Every value is matched back to crafting attention's tokens and named, or marked derived
+with the tool that made it. The brief now lists a designer's tool for shadows, type, spacing, easing, springs and
+corners too.
+
+**What it showed.** Crafting attention's purple keeps its place as Radix's solid step, and 5 of the 12 steps are its own
+tokens. White words on it read at Lc 79 in APCA, 1.5px short of what semibold 14px needs; in dark mode the dark words
+read at Lc 42, the same number plumber found, so the two agree.
+
+**Proof.** The style sheet, layer 2 sections: `/research/style-craftingattention.html`.
+
 ### 50. From first principles: style is a model, read before anything moves (2026-11-21)
 
 **The itch.** The owner: the suggestions forced the behaviour and made poor choices for colour, words and shadow; "first

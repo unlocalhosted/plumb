@@ -46,12 +46,43 @@ product's own system, and motion only moves between them.
 | 6 Solver | **Pairing solver**: for each state of a suggestion, every candidate set from the model, kept if it passes (APCA contrast for the words' size and weight, 3:1 between states that must be told apart, one family), ranked by closeness to the product's own pairs; each choice carries its reason | the tools above; APCA for contrast |
 | 7 The whole | **State sheet**: every state of a suggestion side by side, each value named with where it came from, then plumber judging each state | plumber's engine |
 
+## The colour techniques we adopt, from the tools designers use
+
+The owner, 2026-11-21: use "the existing design tools like color pairing tools for oklch and complementary color tools …
+and those techniques which designers already use". Each part of the colour work takes its method from one of them,
+run as code, so a suggestion's colours come out the same way a designer would get them from the tool.
+
+| Need | Tool designers use | Its technique, which we run |
+|---|---|---|
+| A full ramp from one brand colour, each step with a job | **Radix Colors custom palette** ([radix-ui.com/colors/custom](https://www.radix-ui.com/colors/custom), MIT source `generate-radix-colors.tsx`) | Match the brand colour to Radix's hand-tuned scales in OKLCH, transpose the nearest scale onto it, keep the brand colour as the solid step (9), derive its hover (10), limit the chroma of the text steps (11–12), and give each of the twelve steps its job: app backgrounds, component rest, hover and pressed, borders, the solid and its hover, low- and high-contrast text |
+| Steps placed by contrast against the page | **Leonardo** (Adobe, [leonardocolor.io](https://leonardocolor.io), Apache-2.0 `@adobe/leonardo-contrast-colors`) | Ask for a colour of a hue at a target contrast ratio against the background (3:1 for a state that must be told apart, 4.5:1 for words) |
+| Words that read on a surface | **APCA** (the contrast model behind WCAG 3 drafts, used by Huetone) | Lc targets by text size and weight; the readable ink is chosen, not assumed |
+| A shade that stays on screen | **oklch.com** (Evil Martians) | Work in OKLCH, show what falls outside sRGB, and map it back by reducing chroma, the CSS Color 4 method (culori's `toGamut`) |
+| Tones for states and roles | **Material Theme Builder** (`@material/material-color-utilities`) | HCT tonal palettes and the state layers: the ink laid over the surface at 8% when pointed at and 10% when pressed |
+| A second colour that goes with the brand | **Adobe Color** harmony rules ([color.adobe.com](https://color.adobe.com)) | Analogous, complementary, split complementary and triad, taken on the artist's wheel (red, yellow, blue), which is what Adobe Color uses; OKLCH keeps the lightness and chroma so the pair carries equal weight |
+
+The same holds beyond colour (the owner: "there are so many cool design tools already made by designers which solve so
+many concerns, use those kind of approaches … for tackling various aspects"):
+
+| Aspect | Tool designers use | Its technique |
+|---|---|---|
+| Shadows | **Josh W. Comeau's shadow palette generator** and **smoothshadows.com** | Layered shadows whose offsets and blurs grow together with height, one light direction for the whole page, the shadow tinted with the hue of the surface it falls on (never grey on colour) |
+| Type scale | **typescale.com** and **Utopia** (utopia.fyi) | A modular ratio between sizes; fluid steps between a small and a large screen |
+| Spacing | **Utopia** space scale | Space steps tied to the type scale, so space grows with the words |
+| Easing | **cubic-bezier.com** and **easings.net** | Named curves with known character: ease-out for things arriving, ease-in for leaving, ease-in-out for moving across |
+| Springs | **Apple's spring parameters** (response and damping, as in SwiftUI) and Motion's spring tool | A spring described by how long it takes and how much it bounces, not by stiffness numbers |
+| Corners | the concentric-radius rule (Apple's design guidance) | An inner corner is the outer corner less the gap between them |
+
+The product's own tokens come first: when a step the technique asks for already exists in the product (the reader finds
+it within a just-noticeable difference), the token is used and named; otherwise the derived value is used and marked.
+
 ## Layers and their proofs
 
 1. **The style model.** The style reader on crafting attention, in light and dark. Proof: a sheet of its families,
    steps, pairs and shadows that matches what a designer would say the product is.
-2. **The shade engine and the role grammar.** Proof: for each family, the full set of roles and state layers, every
-   one either a product token or a derived shade marked as such, and the derived ones sitting on the family's own curve.
+2. **The shade engine and the role grammar**, on the techniques above. Proof: for the brand colour, its twelve steps
+   and their jobs, its state layers and its harmony partners, every one either a product token or a derived value
+   marked as such, beside the product's own ramp.
 3. **The shadow engine.** Proof: the product's shadow re-drawn at rest, pointed at and pressed, next to its own.
 4. **The pairing solver and the state sheet.** Proof: the sheet for the shipped buy button reproduces what it ships;
    then sheets for the existing suggestions, with each of last time's hand choices replaced by the solver's, and the

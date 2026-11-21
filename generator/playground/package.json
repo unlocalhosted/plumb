@@ -3,8 +3,13 @@
   "private": true,
   "description": "Packages the playground's own suggestions use (the effects from libraries.dev, docs/briefs/effect-primitives.md); react and motion come from each product's install (vite.base.mjs)",
   "dependencies": {
+    "@adobe/leonardo-contrast-colors": "^1.1.0",
     "@material/material-color-utilities": "^0.4.0",
+    "@radix-ui/colors": "^3.0.0",
+    "apca-w3": "^0.1.9",
+    "bezier-easing": "^3.2.0",
     "border-beam": "1.4.1",
+    "colorjs.io": "^0.7.1",
     "culori": "^4.0.2",
     "distortion-waves": "0.1.0",
     "metal-fx": "2.0.11"

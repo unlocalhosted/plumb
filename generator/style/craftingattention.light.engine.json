@@ -1,0 +1,316 @@
+{
+ "product": "craftingattention",
+ "mode": "light",
+ "brand": {
+  "value": "#8047e1",
+  "oklch": "oklch(0.550 0.220 295.0)",
+  "token": "--color-focus-ring"
+ },
+ "page": {
+  "value": "#f9fafc",
+  "oklch": "oklch(0.985 0.003 260.0)",
+  "token": "--color-neutral-100"
+ },
+ "buttonWords": "14px/550",
+ "ramp": [
+  {
+   "step": 1,
+   "job": "app background",
+   "value": "#f7f7f9",
+   "oklch": "oklch(0.977 0.003 286.4)",
+   "token": "--ca-paper"
+  },
+  {
+   "step": 2,
+   "job": "subtle background",
+   "value": "#f4f2fa",
+   "oklch": "oklch(0.965 0.011 297.6)",
+   "token": "--home-quiet-surface"
+  },
+  {
+   "step": 3,
+   "job": "component at rest",
+   "value": "#ede9fc",
+   "oklch": "oklch(0.943 0.026 295.6)",
+   "token": "--color-viz-pixel-highlight"
+  },
+  {
+   "step": 4,
+   "job": "component pointed at",
+   "value": "#e4ddff",
+   "oklch": "oklch(0.914 0.047 294.9)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 5,
+   "job": "component pressed or selected",
+   "value": "#dbd0ff",
+   "oklch": "oklch(0.882 0.065 295.8)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 6,
+   "job": "subtle border",
+   "value": "#cec0fe",
+   "oklch": "oklch(0.840 0.087 294.8)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 7,
+   "job": "border and focus ring",
+   "value": "#bdaaf8",
+   "oklch": "oklch(0.783 0.111 294.9)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 8,
+   "job": "border pointed at",
+   "value": "#a88cf1",
+   "oklch": "oklch(0.707 0.146 295.2)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 9,
+   "job": "solid",
+   "value": "#8047e1",
+   "oklch": "oklch(0.551 0.220 295.1)",
+   "token": "--color-focus-ring"
+  },
+  {
+   "step": 10,
+   "job": "solid pointed at",
+   "value": "#7339cf",
+   "oklch": "oklch(0.505 0.215 295.2)",
+   "token": "--ca-violet"
+  },
+  {
+   "step": 11,
+   "job": "low-contrast words",
+   "value": "#6d39c2",
+   "oklch": "oklch(0.488 0.200 295.3)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 12,
+   "job": "high-contrast words",
+   "value": "#391d69",
+   "oklch": "oklch(0.317 0.125 295.2)",
+   "derived": "Radix custom palette"
+  }
+ ],
+ "grays": [
+  {
+   "step": 1,
+   "job": "app background",
+   "value": "#f6f7f8",
+   "oklch": "oklch(0.976 0.002 247.8)",
+   "token": "--ca-paper"
+  },
+  {
+   "step": 2,
+   "job": "subtle background",
+   "value": "#f2f4f6",
+   "oklch": "oklch(0.966 0.003 247.9)",
+   "token": "--color-neutral-200"
+  },
+  {
+   "step": 3,
+   "job": "component at rest",
+   "value": "#e8eaee",
+   "oklch": "oklch(0.937 0.006 264.5)",
+   "token": "--color-neutral-300"
+  },
+  {
+   "step": 4,
+   "job": "component pointed at",
+   "value": "#dfe2e6",
+   "oklch": "oklch(0.912 0.006 255.5)",
+   "token": "--color-surface-hover"
+  },
+  {
+   "step": 5,
+   "job": "component pressed or selected",
+   "value": "#d7dae0",
+   "oklch": "oklch(0.888 0.009 264.5)",
+   "token": "--color-ink-850"
+  },
+  {
+   "step": 6,
+   "job": "subtle border",
+   "value": "#ced2d9",
+   "oklch": "oklch(0.863 0.011 261.8)",
+   "token": "--color-neutral-400"
+  },
+  {
+   "step": 7,
+   "job": "border and focus ring",
+   "value": "#c3c8d0",
+   "oklch": "oklch(0.831 0.012 259.8)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 8,
+   "job": "border pointed at",
+   "value": "#aeb4bf",
+   "oklch": "oklch(0.769 0.017 262.7)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 9,
+   "job": "solid",
+   "value": "#808791",
+   "oklch": "oklch(0.621 0.017 257.2)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 10,
+   "job": "solid pointed at",
+   "value": "#767c86",
+   "oklch": "oklch(0.585 0.017 260.7)",
+   "derived": "Radix custom palette"
+  },
+  {
+   "step": 11,
+   "job": "low-contrast words",
+   "value": "#595e66",
+   "oklch": "oklch(0.480 0.014 259.8)",
+   "token": "--color-text-muted"
+  },
+  {
+   "step": 12,
+   "job": "high-contrast words",
+   "value": "#1d2026",
+   "oklch": "oklch(0.243 0.012 264.3)",
+   "derived": "Radix custom palette"
+  }
+ ],
+ "states": {
+  "rest": {
+   "fill": {
+    "value": "#8047e1",
+    "oklch": "oklch(0.551 0.220 295.1)",
+    "token": "--color-focus-ring"
+   },
+   "ink": {
+    "value": "#fafcff",
+    "oklch": "oklch(0.990 0.005 260.0)",
+    "token": "--color-on-accent",
+    "lc": -79.2,
+    "needPx": 15.5,
+    "shortBy": 1.5,
+    "readsAt": "14px/550",
+    "ok": false
+   }
+  },
+  "pointed at": {
+   "fill": {
+    "value": "#7339cf",
+    "oklch": "oklch(0.505 0.215 295.2)",
+    "token": "--ca-violet"
+   },
+   "alsoMaterial": {
+    "value": "#8a55e3",
+    "oklch": "oklch(0.581 0.206 296.6)",
+    "derived": "Material state layer 8%"
+   },
+   "ink": {
+    "value": "#fafcff",
+    "oklch": "oklch(0.990 0.005 260.0)",
+    "token": "--color-on-accent",
+    "lc": -84.4,
+    "needPx": 15.3,
+    "shortBy": 1.3,
+    "readsAt": "14px/550",
+    "ok": false
+   }
+  },
+  "pressed": {
+   "fill": {
+    "value": "#8c59e4",
+    "oklch": "oklch(0.589 0.202 296.6)",
+    "derived": "Material state layer 10%"
+   },
+   "ink": {
+    "value": "#fafcff",
+    "oklch": "oklch(0.990 0.005 260.0)",
+    "token": "--color-on-accent",
+    "lc": -74,
+    "needPx": 16,
+    "shortBy": 2,
+    "readsAt": "14px/550",
+    "ok": false
+   }
+  }
+ },
+ "leonardo": [
+  {
+   "ratioToPage": 1.5,
+   "value": "#d3c8fa",
+   "oklch": "oklch(0.858 0.070 295.0)",
+   "derived": "Leonardo"
+  },
+  {
+   "ratioToPage": 3,
+   "value": "#9f7fed",
+   "oklch": "oklch(0.674 0.160 295.2)",
+   "derived": "Leonardo"
+  },
+  {
+   "ratioToPage": 4.5,
+   "value": "#8756e4",
+   "oklch": "oklch(0.580 0.205 295.1)",
+   "derived": "Leonardo"
+  },
+  {
+   "ratioToPage": 7,
+   "value": "#6d2eca",
+   "oklch": "oklch(0.483 0.221 295.0)",
+   "derived": "Leonardo"
+  }
+ ],
+ "harmony": {
+  "complementary": [
+   {
+    "value": "#877000",
+    "oklch": "oklch(0.551 0.113 94.7)",
+    "derived": "Adobe Color rule"
+   }
+  ],
+  "analogous": [
+   {
+    "value": "#5a56ed",
+    "oklch": "oklch(0.549 0.220 277.5)",
+    "derived": "Adobe Color rule"
+   },
+   {
+    "value": "#a135c5",
+    "oklch": "oklch(0.550 0.220 316.1)",
+    "derived": "Adobe Color rule"
+   }
+  ],
+  "split complementary": [
+   {
+    "value": "#9c6400",
+    "oklch": "oklch(0.551 0.118 71.4)",
+    "derived": "Adobe Color rule"
+   },
+   {
+    "value": "#707a00",
+    "oklch": "oklch(0.552 0.125 115.3)",
+    "derived": "Adobe Color rule"
+   }
+  ],
+  "triad": [
+   {
+    "value": "#bf4400",
+    "oklch": "oklch(0.552 0.170 41.0)",
+    "derived": "Adobe Color rule"
+   },
+   {
+    "value": "#378700",
+    "oklch": "oklch(0.551 0.169 137.7)",
+    "derived": "Adobe Color rule"
+   }
+  ]
+ }
+}

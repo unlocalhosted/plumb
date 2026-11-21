@@ -11,6 +11,22 @@ const e = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').re
 const ink = (l) => (l > 0.62 ? '#111' : '#fff');
 const ramp = (steps) => `<div class="ramp">${steps.map((s) => `<div class="sw" style="background:${s.value};color:${ink(s.l)}" title="${e(s.tokens.join(', '))}"><b>${s.l.toFixed(2)}</b><span>${e(s.tokens[0])}</span>${s.tokens.length > 1 ? `<i>+${s.tokens.length - 1}</i>` : ''}</div>`).join('')}</div>`;
 const shadowCss = (sh) => sh.layers.map((l) => `${l.inset ? 'inset ' : ''}${l.x}px ${l.y}px ${l.blur}px ${l.spread}px ${l.color ?? 'transparent'}`).join(', ');
+// layer 2, when the engine has run: the ramp the tools make from the brand, each step's job, token or derived
+const E = {}; for (const m of ['light', 'dark']) { try { E[m] = JSON.parse(await readFile(`${here}${product}.${m}.engine.json`, 'utf8')); } catch {} }
+const sw = (x, label, sub) => `<div class="sw" style="background:${x.value};color:${ink(parseFloat(x.oklch.slice(6)))}" title="${e(x.token ?? 'derived by ' + x.derived)}"><b>${e(label)}</b><span>${e(x.token ?? '')}</span>${x.token ? '' : '<i class="dv">derived</i>'}${sub ? `<em>${e(sub)}</em>` : ''}</div>`;
+const engine = (m) => { const x = E[m]; if (!x) return '';
+  const st = Object.entries(x.states).map(([k, v]) => `<div class="state"><button style="background:${v.fill.value};color:${v.ink.value}">Start with an account</button>
+    <small><b>${e(k)}</b> · fill ${e(v.fill.token ?? v.fill.derived)} · words ${e(v.ink.token ?? v.ink.value)} · APCA Lc ${Math.abs(v.ink.lc)}, ${v.ink.ok ? 'reads at ' + x.buttonWords : `needs ${v.ink.needPx}px at this weight, ${v.ink.shortBy}px short`}</small></div>`).join('');
+  return `<h4>Layer 2 · the brand's ramp, made by Radix’s palette generator</h4>
+  <div class="ramp">${x.ramp.map((r) => sw(r, r.step, r.job)).join('')}</div>
+  <p class="meta">${x.ramp.filter((r) => r.token).length} of 12 steps are the product’s own tokens; the rest are derived by the generator and marked.</p>
+  <h4>Steps by contrast against the page · Leonardo</h4>
+  <div class="ramp">${Array.isArray(x.leonardo) ? x.leonardo.map((l) => sw(l, `${l.ratioToPage}:1`)).join('') : e(x.leonardo.error)}</div>
+  <h4>The button’s states · Radix steps, Material’s state layer, APCA for the words</h4>
+  <div class="states">${st}</div>
+  <h4>Harmony partners · Adobe Color’s rules on the artist’s wheel</h4>
+  <div class="ramp">${Object.entries(x.harmony).flatMap(([k, v]) => v.map((c) => sw(c, '', k))).join('')}</div>`; };
+
 const side = (m) => `<section class="side" style="--page:${m.page}">
   <h3>${m.mode === 'dark' ? 'Dark' : 'Light'} <small>page ${e(m.page)}</small></h3>
   <h4>Colour families</h4>
@@ -23,7 +39,8 @@ const side = (m) => `<section class="side" style="--page:${m.page}">
   <div class="shadows">${m.shadows.map((s) => `<div class="sh-wrap"><div class="sh" style="background:${s.surface};box-shadow:${shadowCss(s)}"></div><small>${e(s.on)}: ${s.layers.map((l) => `${l.x} ${l.y} ${l.blur} ${l.spread} ${l.token ?? l.color}`).join(' + ')}</small></div>`).join('')}</div>
   <h4>Corners and type</h4>
   <p class="meta">Radii: ${m.radii.map((r) => `${r.radius}px (${r.count})`).join(', ')}</p>
-  <p class="meta">${m.type.slice(0, 8).map((t) => `${e(t.family)} ${t.size}/${t.weight} (${t.count})`).join(' · ')}</p>
+  ${engine(m.mode)}
+  <h4>Type (layer 1)</h4><p class="meta">${m.type.slice(0, 8).map((t) => `${e(t.family)} ${t.size}/${t.weight} (${t.count})`).join(' · ')}</p>
 </section>`;
 const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${product === 'craftingattention' ? 'Crafting Attention' : product} Style Model</title>
@@ -44,7 +61,9 @@ h1 { font:700 clamp(30px,5vw,44px)/1.1 var(--serif); margin:0; }
 .fam { margin:10px 0 4px; font:600 13px var(--sans); color:#888; }
 .ramp { display:flex; flex-wrap:wrap; gap:3px; }
 .sw { width:68px; height:56px; border-radius:6px; padding:5px; display:flex; flex-direction:column; justify-content:space-between; font:10px/1.2 var(--sans); position:relative; overflow:hidden; }
-.sw b { font-weight:700; } .sw span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; opacity:.85; } .sw i { position:absolute; top:5px; right:5px; font-style:normal; opacity:.7; }
+.sw b { font-weight:700; } .sw em { font-style:normal; font-size:9px; opacity:.8; line-height:1.1; } .sw .dv { position:absolute; top:5px; right:5px; font-style:normal; font-size:9px; opacity:.75; }
+.sw:has(em) { height:84px; width:84px; }
+.states { display:grid; gap:10px; } .state { display:grid; gap:6px; } .state button { all:unset; box-sizing:border-box; width:300px; height:48px; border-radius:5px; display:grid; place-items:center; font:550 14px Geist, sans-serif; } .state small { font:12px/1.4 var(--sans); color:#888; } .sw span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; opacity:.85; } .sw i { position:absolute; top:5px; right:5px; font-style:normal; opacity:.7; }
 .pairs { display:grid; gap:6px; } .pair { border-radius:8px; padding:12px 14px; display:grid; gap:4px; font-family:Geist,var(--sans); box-shadow:inset 0 0 0 1px rgba(128,128,128,.18); }
 .pair span { line-height:1.15; } .pair small { font:11px var(--sans); opacity:.75; }
 .shadows { display:flex; flex-wrap:wrap; gap:28px 24px; padding:6px 0 4px; } .sh-wrap { display:grid; gap:12px; width:240px; }
