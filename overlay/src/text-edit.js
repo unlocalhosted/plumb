@@ -68,7 +68,9 @@ function unfound(found) {
   }
   if (found?.reason === 'not-hydrated') return 'The page is still loading. Double-click again in a moment.';
   if (found?.reason === 'no-fiber') return 'React didn’t draw this text, so React Plumber can’t edit it. Change it where it’s written.';
-  if (found?.reason === 'not-in-your-code' && detail.library) return `This text comes from ${detail.library}, so it can’t be edited here.`;
+  // the library that drew an element didn't write its words, and a framework's name says nothing at all (Next draws MDX)
+  if (found?.reason === 'not-in-your-code' && detail.library && !/^(?:next|react|react-dom)$/.test(detail.library))
+    return `${detail.library} drew this, so React Plumber can’t tell which file its text is in. Change it where it’s written.`;
   return 'React Plumber can’t tell which file this text is in, so it can’t edit it. Text from MDX or Markdown has to be changed in its own file.';
 }
 // Something on the page that already takes typing: its own double-click is its own
