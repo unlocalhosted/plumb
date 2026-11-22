@@ -4380,13 +4380,32 @@ committed until then.
 
 **Media hooks.** The owner's screenshot, and the two options side by side.
 
+### 85. A gate so Plumber can't break the app again (2026-11-22)
+
+- **The itch:** the owner, after entry 81's bugs: "how should i prevent these from happening again ? e2e tests or
+  integration test ? i dont want these things breaking the app again", then "Yes, write them".
+- **How we found the hole:** the suite already booted Next on both bundlers. Its browsers were clean, with no
+  extension, so a failed fetch was never anybody's unhandled rejection. Its caret test compared the textarea's font
+  with the page's and never looked at which letter a key removed.
+- **The system behind it:** the tests checked the mechanism in a friendly browser. The promise to a person is about
+  their app, in their browser: it hears no error of Plumber's, it compiles, and the key takes the letter at the caret.
+- **What we tried, what we chose and why:** end to end for the first and last, because both bugs need a real bundler,
+  a real browser and real clicks. Integration for compiling, which needs no browser. All three install the packed
+  package, so the same files run on any release. The two slow Next files became four, one per bundler, after one took
+  300 s of the runner's 360 s limit.
+- **The fix and the proof:** on 0.6.0 each new file fails (the caret took another character in 84 of 162 readings).
+  On the committed package the gate passed 25 tests with none skipped, in 7.4 minutes on vm-agent, and `npm publish`
+  runs it first. Writing it caught two more bugs of that day's own fixes: the new transport had lost `no-store`, and a
+  refusal credited "next" with the words of an MDX file. Both are fixed. The rest of the suite wasn't run.
+- **Media hooks:** the gate's two runs side by side, red on 0.6.0 and green on the fix.
+
 ## Open gaps
 
 - The fixes of entry 81 (caret, app errors, broken config on Vite) are committed and not published. The site runs
   0.6.0 from npm, so it still has all three bugs.
-- Nothing stops entry 81 from happening again: none of the files in `e2e/` loads an extension or reads where a
-  click puts the caret. Two tests in `e2e/text-edit.test.mjs` still wait for the textarea that was removed, so the
-  suite `npm publish` runs is expected to fail until they are rewritten for the behaviour.
+- The release gate of entry 85 guards Chromium only. Safari and Firefox aren't in it, and the whole suite hasn't run
+  since these fixes. On a Mac `npm test` refuses to start that many browser files, so a publish from the laptop stops
+  there after the gate.
 - **Most checks can't write their fix.** 59 of 258 page checks can, all in craft (59 of 84). The accessibility, forms, components, HTML, experience and anti-slop packs only advise, so "fixes 100+ issues" can't be claimed yet ([entry](#80-no-voice-six-fixes-side-by-side-and-what-100-may-claim-2026-11-22)).
 - **The fix bar flashes a wrong refusal.** Just after a click on an element in Blueprint it can show "Plumber can't write this change in your code yet" for a moment, then offer the fix and write it. Seen in a recorded take on Relay, cause not looked for ([entry](#79-the-launch-clips-first-rough-cut-with-a-voice-2026-11-22)).
 - **The launch film has no vertical cut, and the other use cases have no film yet.** The first film is 16:9, so its small labels can't be read on a phone held upright ([entry](#81-the-first-launch-film-is-rendered-2026-11-22)).
