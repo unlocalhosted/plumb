@@ -4211,6 +4211,24 @@ follows 46 links with no errors. The writing reads weren't independent, because 
   brighter green (`#22c55e`) is offered as a new colour, so the film must not say plumber always knows the brand colour.
 - **Media hooks:** the two buttons side by side, before and after.
 
+### 77. Testing the npm package on our own site (2026-11-22)
+
+**The itch.** The owner: "please install react-plumber from npm and run it on this live site i will test and make copy
+text changes and this way we will also test npm version is working or not".
+
+**How we found what broke.** The site had only ever run the repo's own build through a link. With 0.6.0 from npm in
+its place, we double-clicked words on seven kinds of page, typed, pressed Enter and then Undo, reading the file each
+time.
+
+**The system behind it.** The site's route let Plumber write inside `homepage/` only, so words in `web/` refused
+without saying why. Its root is now the repository, narrowed to the site's folders by `web/plumber.site.mjs`.
+
+**The proof, and what is still broken.** Six of the seven wrote the exact words and undid them. Docs body text can't
+be edited, because MDX lines get no stamp. The owner then found that the caret deletes the character next to where
+it is drawn, which our test missed: it replaced whole runs of text and never placed a caret between letters.
+
+**Media hooks.** The owner's screenshot of the caret on the hero paragraph.
+
 ## Open gaps
 - **The launch video has no agreed look.** Draft 1 (solid yellow, a pipe between page and file) was rejected, and the other six use cases wait for one approved clip ([entry](#76-the-launch-videos-first-draft-is-rejected-2026-11-22)).
 - **A drag in the visual editor can lose its change on release.** In scripted rehearsals on Relay, releasing with Alt held dropped the pending change, and in Blueprint it selected the cause underneath, so Enter didn't sync. Two-finger changes sync. Not fixed, and not tried by hand ([entry](#73-the-visual-editor-could-not-write-what-it-previewed-2026-11-22)).
