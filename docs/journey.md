@@ -4357,6 +4357,9 @@ committed and deployed.
 GitHub counts and the creator's credit. On the live domain 46 pages match the build byte for byte and load with no
 errors, 46 internal links resolve, and the research addresses return 404.
 
+**Decided by the owner, the same day.** Asked whether to capitalise the headline, they said "Keep lowercase".
+The lowercase "a" is on purpose, so copy passes leave it as it is.
+
 **Media hooks.** The live hero on desktop and phone, beside the first deploy's "A design review on every screen."
 
 ## Open gaps
