@@ -315,7 +315,8 @@ body > .fx-burst { z-index: 45 !important; }
 @keyframes toy-trail { 0%, 25% { opacity: 0; } }
 @keyframes toy-press { 50% { scale: .76; translate: 1px 1.5px; } }
 /* the bar's two that do something: the arrow lands on its line, the star turns */
-.bar .tile > path, .bar .star > path { transform-box: fill-box; transform-origin: center; }
+/* the arrow and the star alone: the other marks are placed by their own transform, which a moved origin displaces */
+.bar .get .tile > path, .bar .star > path { transform-box: fill-box; transform-origin: center; }
 .bar .star > path { transition: rotate 520ms var(--pl-spring-pop); }
 @media (hover: hover) and (pointer: fine) {
   .bar .get:hover .tile > path { animation: get-drop 520ms var(--pl-ease-out); }
