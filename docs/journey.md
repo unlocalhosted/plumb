@@ -4124,6 +4124,32 @@ it wasn't needed.
   20 cards that line draws. No automated test was written or run, and a real style attribute wasn't tried.
 - **Media hooks:** the visual editor clip in the showcase set.
 
+### 74. The site goes live at react-plumber.com (2026-11-22)
+
+**The itch.** The owner: "deploy react-plumber to its domain react-plumber.com its available on my cloudflare". The
+domain was on Cloudflare with no address record, and the repo had no way to deploy the site.
+
+**How we found what was in the way.** We read what a production build would publish, then opened each exported page
+in a browser on vm-agent. The public folder held research pages about two private apps (algorecall and
+craftingattention) that had never been pushed to GitHub. The Type page in the design section threw on load and drew
+no specimens.
+
+**The system behind it.** Next publishes whatever is in `web/public`, and that folder is also where we keep research
+pages for ourselves. The Type page looks its tokens up by name at run time, so a build passes when it asks for
+`--pl-text-label` and the token file only has `--pl-card-label`.
+
+**What we chose and why.** Every route pre-renders, so the site is a static export on a Cloudflare Worker, with no
+server to run or patch. The whole research folder is left out of the export: no page links to it, part of it is about
+private apps, and its demos bundle other libraries' components without their licences. The release notes asked for
+licence notices before a deploy, so the export writes them from what it bundled. We built from commit cc4eab3f in a
+clean clone, which kept an unfinished local rewrite of the hero off the domain.
+
+**The fix and the proof.** `npm run export` in `web/` makes the files and `web/wrangler.jsonc` deploys them. The Type
+page asks for the right token. On https://react-plumber.com, a browser on vm-agent opened 46 pages and followed 46
+internal links with no errors, and the research addresses return 404.
+
+**Media hooks.** The live front page at desktop and phone width, and the Type page before (empty) and after.
+
 ## Open gaps
 - **The style tools have run on three products.** Crafting-ui has no labelled action to run on (plumber covers its tokens); a page server must be restarted by hand after new colour sets are written; and the judge ranks a metal edge first for a daily review because the standards check whether a suggestion works, not whether it suits the moment ([entry](#53-the-style-tools-run-on-a-second-product-algorecall-2026-11-21)).
 - **Tests that check wording, layout and time.** 769 tests are left (by `test(` lines). Many still check sentences, exact counts, pixels,
@@ -5740,6 +5766,8 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   `generator/shots/generate-craftingattention.png` (local).
 
 ## Open gaps
+- **The live site has loose ends.** `/demo` says it hasn't moved yet, plain http doesn't redirect to https, `www` and `design.react-plumber.com` aren't set up, and deploys are run by hand ([entry](#74-the-site-goes-live-at-react-plumbercom-2026-11-22)).
+- **The Break it panel asks for a type token that doesn't exist.** `overlay/src/breakit.js` uses `--pl-text-label` in two places, and the Type page still carries a note proposing the rename to `--pl-card-label` ([entry](#74-the-site-goes-live-at-react-plumbercom-2026-11-22)).
 - **CSS rule fixes are narrow.** They cover text size, line height, weight, gap, corners, width, height and padding per side, from rules outside `@media`. Padding set for two sides at once (`padding-x`) still goes to classes, and the change isn't checked against your token scale before it's written ([entry](#63-css-rule-fixes-work-on-the-next-site-2026-11-20)).
 - **The owner's slop checks are untuned on real apps.** Tight letters fire on every heading that sets them (28 on our homepage), the shade count reads greys mixed by opacity as separate shades, and none of the eleven has been run through a full plumber read or the docs' recordings yet ([entry](#56-the-owners-slop-list-becomes-eleven-anti-slop-checks-2026-11-20)).
 - **The mark was never tried among real neighbours** (a row of browser tabs, an npm page, a README header), only on empty tiles. Nobody outside has been asked whether the round leg reads as an R or leans towards a B.
@@ -5789,6 +5817,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- React Plumber has a public site at [react-plumber.com](https://react-plumber.com), so anyone can read what it does, the docs and the design system without cloning the repo ([entry](#74-the-site-goes-live-at-react-plumbercom-2026-11-22)).
 - A padding change made in the visual editor is written to your code on Sync; it used to be refused as if your code had a style attribute there. On main, not released ([entry](#73-the-visual-editor-could-not-write-what-it-previewed-2026-11-22)).
 - The style tools work on a third product, React Plumber's Copy button: flat, in capitals and in its own blue, with all five suggestions passing the judge ([entry](#55-the-style-tools-on-a-third-product-react-plumbers-copy-button-2026-11-21)).
 - The style tools (style reader, colour engine, shadow recipe, pairing solver) now work on a second product: algorecall's start-review slab gets suggestions in its own pale green and dark green words, with its own lip, and all six pass the judge in light and dark ([entry](#53-the-style-tools-run-on-a-second-product-algorecall-2026-11-21)).

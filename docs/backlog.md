@@ -21,6 +21,7 @@ engineer would do." These calls were open questions until then. Each is decided 
 
 | Call | Decision | Why |
 |---|---|---|
+| What react-plumber.com serves | A static export of a commit, without `web/public/research` | Every page pre-renders; the research is unlinked, partly about private apps, and bundles others' components without licences (2026-11-22) |
 | A row's title in a softened colour | Leave it | It is a deliberate fourth level; lifting it is a redesign, not a tidy-up |
 | A small heading in capitals ("Part 01") | A label | What the eye reads is an eyebrow; the tag is for structure, the style for the look |
 | Unsure text places to a model's eye | Not yet | More signals first; a model is the last resort, not the first |
