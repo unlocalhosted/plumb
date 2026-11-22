@@ -4463,8 +4463,33 @@ again and all 25 margins and timings were on their tokens. Each toy now moves th
 
 **Media hooks.** The count falling, and the toy flying to the Copy button's gap.
 
+### 88. The second film will be about craft (2026-11-22)
+
+- **The itch:** the owner on the first launch film: "i love this let's publish one more similar but this time
+  emphasising on craft rules things and then again showing multiple parallels but this time use like maybe different
+  animation later for text and and like again same spirit".
+- **How we found the story:** 13 craft screens were tried on vm-agent in a throwaway copy of the showcase, with Alt+B,
+  the fix and Enter, reading the file and judging the reloaded page each time. The story is numbers that don't line
+  up, with four more fixes beside it. All five changed the file and cleared their finding.
+- **The system behind it:** most craft faults are too small to see in a film. A picture is picked only if the change
+  can be seen enlarged with the words covered, and only if plumber really writes it. That ruled out the running timer,
+  the first idea: plumber flags numbers in lists and tables, and doesn't flag a lone number that ticks.
+- **What we tried, what we chose and why:** round icons (a 4% change, and film 3 already) and soft shadows were too
+  subtle. Bold on hover wasn't written by Enter. The words will act out the fault and snap straight, so the text moves
+  differently from film 1 and for a reason.
+- **The fix and the proof:** a script, a board of real before and after captures, and the run's record, waiting for
+  the owner's OK. The film isn't animated.
+- **Media hooks:** `docs/films/launch-02-draft/board.png` (local, not committed) and `writes.json` beside it.
+
 ## Open gaps
 
+- **Enter can write a different fix from the one in the bar.** On the showcase's calendar (38) the bar offered the
+  hairline fix while the element's card held a pending Sync, both marked ↵, and Enter wrote `text-xs` to another line
+  in two runs of two. The newsletter screen (37) did the same in one run of two (seen 2026-11-22, entry 88).
+- **A size fix writes a class that doesn't exist.** For a 34px amount on the showcase's invoice the bar offered "Use
+  text-2xl--line-height" and Enter wrote it: a line-height token read as a font size (seen 2026-11-22, entry 88).
+- **A lone ticking number isn't flagged.** The tabular figures check reads only cells and list rows, so the showcase's
+  own running timer keeps its wobble after the fix (entry 88).
 - The fixes of entry 81 (caret, app errors, broken config on Vite) are committed and not published. The site runs
   0.6.0 from npm, so it still has all three bugs.
 - The release gate of entry 85 guards Chromium only: Safari and Firefox aren't in it. On a Mac `npm test` refuses to
