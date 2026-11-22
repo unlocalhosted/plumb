@@ -4229,6 +4229,22 @@ it is drawn, which our test missed: it replaced whole runs of text and never pla
 
 **Media hooks.** The owner's screenshot of the caret on the hero paragraph.
 
+### 78. Three style frames for the launch clip, in React (2026-11-22)
+
+- **The itch:** the owner approved the story of the wrong green and picked "lit candy on white" for its look. While a
+  3D renderer was being tried, they wrote: "you dont need blender just use react-motion on my vm-agent".
+- **How we found it:** vm-agent already had Remotion 4.0.529 (React's video renderer) and Motion, in another project's
+  packages.
+- **The system behind it:** the first draft's stage was a page script that moved two boxes about. Each line of the
+  script is now its own shot, a React component with one subject, so a shot can be judged alone before it moves.
+- **What we tried, what we chose and why:** a small path tracer gave grey grounds and warped lettering at draft
+  quality, and was dropped for Remotion, whose type stays sharp. The candy keeps each button's exact colour on its
+  face and puts the light in the rim, body and shadow. A band of shine was tried and removed because it looked cheap.
+- **The fix and the proof:** three 1080p stills for lines 2, 3 and 6, sent for the owner's notes. The app and the
+  code are captured from Relay before and after plumber's own write, and the enlarged buttons are redrawn at the
+  measured proportions and colours. Nothing is animated or rendered as video yet.
+- **Media hooks:** `docs/films/launch-draft/` (local, not committed), beside draft 1 as the before.
+
 ## Open gaps
 - **The launch video has no agreed look.** Draft 1 (solid yellow, a pipe between page and file) was rejected, and the other six use cases wait for one approved clip ([entry](#76-the-launch-videos-first-draft-is-rejected-2026-11-22)).
 - **A drag in the visual editor can lose its change on release.** In scripted rehearsals on Relay, releasing with Alt held dropped the pending change, and in Blueprint it selected the cause underneath, so Enter didn't sync. Two-finger changes sync. Not fixed, and not tried by hand ([entry](#73-the-visual-editor-could-not-write-what-it-previewed-2026-11-22)).

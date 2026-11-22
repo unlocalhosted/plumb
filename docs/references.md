@@ -355,3 +355,11 @@ All free under the Unsplash License, hotlinked from images.unsplash.com as Unspl
 - What it changed: "lollipop" was read as flat candy grounds with toys, and that draft was rejected ("ugly yellow",
   "most basic pipe"). Apple's level is the bar for the next direction, which is not chosen yet.
 - Used in: [journey entry 76](journey.md#76-the-launch-videos-first-draft-is-rejected-2026-11-22).
+
+## 2026-11-22 · Remotion and Motion on vm-agent (shared by the owner, in words)
+- What: "react-motion on my vm-agent", taken to mean [Remotion](https://www.remotion.dev) with React, which is
+  installed there along with [Motion](https://motion.dev).
+- Why: "you dont need blender just use react-motion on my vm-agent".
+- What it changed: the launch video's shots are React components drawn by Remotion on vm-agent. Blender and the path
+  tracer are not used.
+- Used in: [journey entry 78](journey.md#78-three-style-frames-for-the-launch-clip-in-react-2026-11-22).
