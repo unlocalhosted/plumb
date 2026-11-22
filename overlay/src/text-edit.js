@@ -10,8 +10,10 @@
  *             page's own double-click (a word selected) until they are known to be editable
  *  edit       a leaf (the words are the element's only child) becomes contenteditable="plaintext-only" for the edit:
  *             the browser's own caret, selection and wrapping, in the page's font. Words mixed with other elements
- *             get a textarea laid over their line boxes, its own glyphs transparent, so the page re-flows as you type
- *  look       a 1.5px accent ring around the words and a tag under them: where they are written, ↵ apply · Esc
+ *             are edited in place too, kept to their own run (text-run.js). Only where the page can't take a caret
+ *             (SVG text) is a textarea laid over them, its own glyphs transparent
+ *  look       a 1.5px accent line round exactly the words, line by line, and a tag under them: where they are written,
+ *             ↵ apply · Esc
  *  save       Enter, or clicking away, writes the words to source at once; Esc puts them back. Newlines are not text a
  *             JSX run keeps, so Shift+Enter does nothing
  *  after      the write history's toast (history.js) says what was written, with Undo; a dev server without fast
@@ -22,6 +24,7 @@ import { errorIs, request, post } from './api.js';
 import { locate } from './locate.js';
 import { esc } from './choices.js';
 import { Scope } from './scope.js';
+import { TextRun, lineBoxes, outlineOf } from './text-run.js';
 
 const RESUME = 'plumb:text-resume';
 
@@ -36,7 +39,11 @@ function changed(from, to) {
   return !was ? `Added “${cut(now)}”` : !now ? `Removed “${cut(was)}”` : `Changed “${cut(was)}” to “${cut(now)}”`;
 }
 export const TEXT_EDIT_CSS = `
-  .tx-ring { position: fixed; pointer-events: none; border-radius: 3px; box-shadow: 0 0 0 1.5px var(--pl-instrument), 0 0 0 3.5px var(--pl-halo); }
+  .tx-ring { position: fixed; pointer-events: none; color: var(--pl-instrument); }
+  .tx-ring svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .tx-ring path { fill: none; stroke-linejoin: round; }
+  .tx-ring path:first-child { stroke: var(--pl-halo); stroke-width: 5.5px; }
+  .tx-ring path:last-child { stroke: var(--pl-instrument); stroke-width: 1.5px; }
   .tx-tag { position: fixed; pointer-events: none; display: flex; align-items: center; gap: var(--pl-space-3); height: var(--pl-tag-h); padding: 0 var(--pl-space-4);
     border-radius: var(--pl-radius-tag); background: var(--pl-bg-surface); box-shadow: var(--pl-shadow-tag); font: var(--pl-card-meta); color: var(--pl-text-secondary); white-space: nowrap; }
   .tx-tag code { font: var(--pl-card-code); color: var(--pl-text-primary); }
@@ -109,6 +116,7 @@ export class TextEditor {
     this.#ring = Object.assign(document.createElement('div'), { className: 'tx-ring', hidden: true });
     this.#tag = Object.assign(document.createElement('div'), { className: 'tx-tag', hidden: true });
     this.#tag.setAttribute('role', 'status');
+    this.#ring.innerHTML = '<svg aria-hidden="true"><path></path><path></path></svg>';
     root.append(this.#ring, this.#tag);
     this.#resume();
   }
@@ -184,7 +192,7 @@ export class TextEditor {
     const el = node.parentElement;
     const leaf = [...el.childNodes].every((n) => n === node || (n.nodeType === Node.TEXT_NODE && !n.data.trim()));
     const lead = node.data.match(/^\s*/)[0], trail = node.data.match(/\s*$/)[0];
-    const ed = { node, el, target, leaf, lead, trail, before: node.data, area: null, done: false, prior: el.getAttribute('contenteditable'), kids: [...el.childNodes], scope: new Scope() };
+    const ed = { node, el, target, leaf, lead, trail, before: node.data, area: null, run: null, done: false, prior: el.getAttribute('contenteditable'), kids: [...el.childNodes], scope: new Scope() };
     this.#edit = ed;
     this.#send('edit');
     this.#host.editing?.(true, () => this.#rect());
@@ -203,6 +211,11 @@ export class TextEditor {
       if (a === b) (a = lead.length), (b = text.length - trail.length);
       range.setStart(node, a); range.setEnd(node, b);
       sel.removeAllRanges(); sel.addRange(range);
+    } else if ((ed.run = this.#inPlace(el, node))) {
+      this.#scope.listen(el, 'keydown', this.#key);
+      this.#scope.listen(el, 'blur', this.#blur);
+      ed.run.listen(this.#scope);
+      ed.run.selectWord(offset);
     } else {
       const cs = getComputedStyle(el);
       const area = document.createElement('textarea');
@@ -224,14 +237,35 @@ export class TextEditor {
     ed.scope.frames(this.#follow);
   }
 
+  // Words among other elements, edited on the page itself; null where that element can't take a caret.
+  #inPlace(el, node) {
+    if (!(el instanceof HTMLElement)) return null;
+    this.#ring.hidden = false; // its colour is the caret's, and is only computed while it is drawn
+    const run = new TextRun(el, node, getComputedStyle(this.#ring).color);
+    if (run.ready) return run;
+    run.end();
+    return null;
+  }
+
   // The words' box on the page.
   #rect() {
     const ed = this.#edit;
     if (!ed?.node.isConnected) return null;
     if (ed.leaf) return ed.el.getBoundingClientRect();
+    return this.#words().getBoundingClientRect();
+  }
+  #words() {
+    const ed = this.#edit;
+    if (ed.run) return ed.run.range();
     const range = document.createRange();
     range.selectNodeContents(ed.node);
-    return range.getBoundingClientRect();
+    return range;
+  }
+  // What the outline goes round: a block that is all words is its own box, anything inline is its lines
+  #lines(ed, box) {
+    const rects = ed.leaf ? ed.el.getClientRects() : this.#words().getClientRects();
+    const lines = ed.leaf && rects.length < 2 ? [box] : lineBoxes(rects);
+    return lines.length ? lines : [{ left: box.left, right: box.left + Math.max(2, box.width), top: box.top, bottom: box.bottom }];
   }
 
   // Ring, tag and textarea follow the words while the page scrolls or re-flows: every frame of the edit's scope.
@@ -241,8 +275,16 @@ export class TextEditor {
     const r = this.#rect();
     if (r) {
       Object.assign(this.#ring.style, { left: `${r.left - 3}px`, top: `${r.top - 2}px`, width: `${r.width + 6}px`, height: `${r.height + 4}px` });
+      const lines = this.#lines(ed, r), outline = outlineOf(lines, r.left - 3, r.top - 2);
+      for (const path of this.#ring.querySelectorAll('path')) if (path.getAttribute('d') !== outline) path.setAttribute('d', outline);
       this.#ring.hidden = false;
-      const tagTop = r.bottom + 8 + 22 > innerHeight ? r.top - 8 - 22 : r.bottom + 8;
+      // under the paragraph, not over its next line, unless that ends far below the words
+      let below = r.bottom;
+      if (!ed.leaf) {
+        const end = ed.el.getBoundingClientRect().bottom;
+        if (end > below && end - below < 4 * (lines[0].bottom - lines[0].top)) below = end;
+      }
+      const tagTop = below + 8 + 22 > innerHeight ? r.top - 8 - 22 : below + 8;
       Object.assign(this.#tag.style, { left: `${Math.max(8, Math.min(innerWidth - this.#tag.offsetWidth - 8, r.left))}px`, top: `${tagTop}px` });
       if (ed.area) Object.assign(ed.area.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${Math.max(24, r.width + 2)}px`, height: `${r.height}px` });
     }
@@ -265,6 +307,8 @@ export class TextEditor {
 
   #key = (e) => {
     e.stopPropagation();
+    if (e.isComposing || e.keyCode === 229) return; // the keys are the input method's until it commits
+    if (this.#edit?.run?.key(e)) return;
     // in a button or a link, Space presses it rather than typing: the space is put in by hand
     if (e.key === ' ' && this.#edit?.leaf && !e.metaKey && !e.ctrlKey) { e.preventDefault(); document.execCommand('insertText', false, ' '); return; }
     if (e.key === 'Enter') { e.preventDefault(); if (!e.shiftKey) this.#finish(true); }
@@ -277,7 +321,7 @@ export class TextEditor {
     const ed = this.#edit;
     if (!ed || ed.done || this.#phase !== 'editing') return;
     ed.done = true;
-    const typed = norm(ed.leaf ? ed.el.textContent : ed.area.value);
+    const typed = norm(ed.leaf ? ed.el.textContent : ed.run ? ed.run.text : ed.area.value);
     // put the element back the way it was, then show the words that stand
     if (ed.leaf) {
       if (ed.prior === null) ed.el.removeAttribute('contenteditable'); else ed.el.setAttribute('contenteditable', ed.prior);
@@ -286,7 +330,8 @@ export class TextEditor {
       // the original node carries the words again
       const kids = [...ed.el.childNodes];
       if (kids.length !== ed.kids.length || kids.some((n, i) => n !== ed.kids[i])) ed.el.replaceChildren(...ed.kids);
-    } else ed.area.remove();
+    } else if (ed.run) ed.run.end();
+    else ed.area.remove();
     getSelection()?.removeAllRanges();
     const keep = save && typed && typed !== norm(ed.target.from);
     ed.node.data = keep ? ed.lead + typed + ed.trail : ed.before;
