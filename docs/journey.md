@@ -4194,6 +4194,23 @@ follows 46 links with no errors. The writing reads weren't independent, because 
   animatic of one clip, then its render, and only then the other clips.
 - **Media hooks:** `docs/films/showcase-draft/file-in-sync-draft-1.mp4` (local, not committed) as the before.
 
+### 77. The launch clip had no story (2026-11-22)
+
+- **The itch:** the owner, on watching draft 1: "no fucking narration no fucking context", "what would people will get
+  from this ?", "the frames looks broken".
+- **How we found it:** the owner watched the render. Its frames, read again at full size, show a pipe drawn half way, a
+  sidebar cut down to loose numbers, code cut to fragments, and plumber's bar out of frame while it writes.
+- **The system behind it:** the film began from features and a recorder. The script step (every word shown to the owner
+  before code) was skipped by making the film wordless, so nobody had written who it is for, what went wrong or why it
+  matters. The look was then argued over a film with nothing to say.
+- **What we tried, what we chose and why:** the owner had picked "lit candy on white" for the look, and those stills
+  are stopped until a script is approved. The proposed story replaces the corner radius, which few people can see, with
+  one anybody can: AI adds an Invite button in the wrong green, beside the app's own button.
+- **The fix and the proof:** not approved yet. The scene was tried on Relay: for an added button in `#18b070` plumber
+  offers `bg-primary` and writes it. It has a limit: a blue (`#2563eb`) is sent to the purple status colour, and a
+  brighter green (`#22c55e`) is offered as a new colour, so the film must not say plumber always knows the brand colour.
+- **Media hooks:** the two buttons side by side, before and after.
+
 ## Open gaps
 - **The launch video has no agreed look.** Draft 1 (solid yellow, a pipe between page and file) was rejected, and the other six use cases wait for one approved clip ([entry](#76-the-launch-videos-first-draft-is-rejected-2026-11-22)).
 - **A drag in the visual editor can lose its change on release.** In scripted rehearsals on Relay, releasing with Alt held dropped the pending change, and in Blueprint it selected the cause underneath, so Enter didn't sync. Two-finger changes sync. Not fixed, and not tried by hand ([entry](#73-the-visual-editor-could-not-write-what-it-previewed-2026-11-22)).
