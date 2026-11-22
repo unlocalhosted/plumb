@@ -4362,6 +4362,24 @@ The lowercase "a" is on purpose, so copy passes leave it as it is.
 
 **Media hooks.** The live hero on desktop and phone, beside the first deploy's "A design review on every screen."
 
+### 84. The bar's links, in whose style? (2026-11-22)
+
+**The itch.** The owner shared a row of pills (Install package, GitHub with its stars, X, LinkedIn): "add similar
+style on top and add a proper icon for dark and light mode icons". On seeing the first build: "hey fix the style not
+exact bring it to same style of this site the github , x and linked too".
+
+**How we found it.** The owner looked at the running bar before it was committed.
+
+**The system behind it.** The first build made a rule that other companies' logos stay plain ink, because the visual
+language had none for them. That put three black marks in a row of coloured toys, which belonged neither to this
+site's style nor to the screenshot's.
+
+**What we tried.** Two readings of "this site", drawn on the real bar in both schemes: our toys on quiet soft blocks,
+and the screenshot's flat outlined pills. The first is recommended. The owner's pick is open, and the bar isn't
+committed until then.
+
+**Media hooks.** The owner's screenshot, and the two options side by side.
+
 ## Open gaps
 
 - The fixes of entry 81 (caret, app errors, broken config on Vite) are committed and not published. The site runs
