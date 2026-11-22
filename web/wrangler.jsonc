@@ -1,0 +1,15 @@
+// react-plumber.com: the static export of this app on Cloudflare Workers.
+//   npm run export && npx wrangler deploy
+// Build from a clean clone of a commit, so uncommitted work never goes live.
+{
+  "name": "react-plumber",
+  "compatibility_date": "2026-11-21",
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [{ "pattern": "react-plumber.com", "custom_domain": true }],
+  "assets": {
+    "directory": "./out",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page"
+  }
+}

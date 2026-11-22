@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "node scripts/engine.mjs && next dev -p 4330",
     "build": "node scripts/engine.mjs && next build",
+    "export": "node scripts/engine.mjs && SITE_EXPORT=1 next build && node scripts/export.mjs",
     "start": "next start"
   },
   "dependencies": {

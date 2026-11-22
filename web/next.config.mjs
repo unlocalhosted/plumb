@@ -16,6 +16,9 @@ const withMDX = createMDX({ options: { remarkPlugins: ['remark-gfm'] } });
 // the site runs React Plumber on itself in development: withPlumb adds the overlay's route extension (plumb.ts); the
 // site writes JavaScript, so its route is route.plumb.js and that extension is added here, in development only
 const dev = process.env.NODE_ENV !== 'production';
+// `npm run export` makes the files react-plumber.com serves (wrangler.jsonc). Its source maps tell
+// scripts/export.mjs which packages shipped, for the licence notices; that script then deletes them.
+const exported = process.env.SITE_EXPORT === '1';
 
 /** @type {import('next').NextConfig} */
 export default withPlumb(withMDX({
@@ -23,8 +26,11 @@ export default withPlumb(withMDX({
   turbopack: { root },
   // the repository has its own instructions for agents (CLAUDE.md); Next doesn't write a second set
   agentRules: false,
-  // the design section is also design.react-plumber.com: on that host, the site opens at /design
-  async rewrites() {
-    return { beforeFiles: [{ source: '/', has: [{ type: 'host', value: 'design.(?<rest>.*)' }], destination: '/design' }] };
-  },
+  ...(exported ? { output: 'export', productionBrowserSourceMaps: true } : {
+    // the design section is also design.react-plumber.com: on that host, the site opens at /design
+    // (a static export has no rewrites, so this holds under `next dev` and `next start` only)
+    async rewrites() {
+      return { beforeFiles: [{ source: '/', has: [{ type: 'host', value: 'design.(?<rest>.*)' }], destination: '/design' }] };
+    },
+  }),
 }));
