@@ -21,7 +21,7 @@ export function mount(host, root, css) {
     'card-body': 'Round it to the nearest step and all 16 places take it. Nothing else on the page moves.',
     'card-meta': '16 places · 3 files · last changed in Tag.jsx',
     'card-code': 'rounded-[5px] → rounded-tag   Tag.jsx:12',
-    'text-label': 'ON YOUR SCALE',
+    'card-label': 'ON YOUR SCALE',
     'page-display': 'Where your sizes land',
     'page-display-narrow': 'Where your sizes land',
     'page-title': 'Text sizes typed by hand',
@@ -30,9 +30,9 @@ export function mount(host, root, css) {
     'page-meta': 'text-sm · 14px · used in 62 places',
     'page-figure': '1,284',
   };
-  const CAPS = new Set(['text-label']);
+  const CAPS = new Set(['card-label']);
   const FAMILIES = [
-    ['On a card', 'Anything the size of a card or a bar: the fix bar, a toast, a tooltip, the dock. Five steps.', ['card-title', 'card-body', 'card-meta', 'card-code', 'text-label']],
+    ['On a card', 'Anything the size of a card or a bar: the fix bar, a toast, a tooltip, the dock. Five steps.', ['card-title', 'card-body', 'card-meta', 'card-code', 'card-label']],
     ['On a page', 'Anything bigger than a card: the project page, the kit. Each step is a clear jump from the next, so the eye knows what to read first.', ['page-display', 'page-figure', 'page-title', 'page-body', 'page-small', 'page-meta', 'page-display-narrow']],
   ];
   const nice = (name) => name.replace(/^(card|page|text)-/, '').replace(/-/g, ' ');
