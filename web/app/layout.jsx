@@ -1,6 +1,7 @@
 import './globals.css';
 import { Bricolage_Grotesque, Instrument_Sans } from 'next/font/google';
 import { Bar } from '../site/Bar.jsx';
+import { Foot } from '../site/Foot.jsx';
 import { rootTokens } from '../site/tokens.js';
 import { SOFT_CSS } from '../../overlay/src/soft.js';
 import { TOY_DEFS } from '../../overlay/src/toys.js';
@@ -25,6 +26,7 @@ export default async function Layout({ children }) {
         <div dangerouslySetInnerHTML={{ __html: TOY_DEFS }} />
         <Bar />
         {children}
+        <Foot />
         {/* React Plumber on its own site, in development (renders nothing in production) */}
         <PlumbOverlay />
       </body>

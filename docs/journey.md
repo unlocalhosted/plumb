@@ -4319,6 +4319,27 @@ it is drawn, which our test missed: it replaced whole runs of text and never pla
   read back within one step of the product's. It hasn't been published, and a vertical cut isn't made.
 - **Media hooks:** the film itself, with draft 1 (`docs/films/launch-draft/`, local) as the before.
 
+### 82. The site says who made it and who uses it (2026-11-22)
+
+**The itch.** The owner: "Please link React Plumber NPM to the doc site as well, and also start GitHub page, and also
+start showing number of downloads and star count on the homepage as well", then "Also add link to my X and account
+created by something like that".
+
+**How we found what was missing.** The npm package's homepage pointed at the GitHub README, the GitHub repo had no
+website set, and the site had no visible link to either.
+
+**The system behind it.** The links were in the homepage's own navigation, which the site hides in favour of its bar.
+
+**What we chose and why.** The counts are one quiet row under the install command, so Copy stays the loud thing.
+The visitor's browser asks npm and GitHub, because a count built into static files goes stale. When either doesn't
+answer, its link stays and has no number. The credit and the npm, GitHub and X links are a footer on every page.
+
+**The fix and the proof.** Looked at loaded, loading, failing, singular and very large counts, in dark, at phone
+width and with reduced motion. On 22 November it read 838 downloads in the last month and 0 stars. The package's
+homepage changes on npm with the next publish, and the README's links on GitHub with the next push.
+
+**Media hooks.** The hero with its counts, and the footer on a docs page.
+
 ## Open gaps
 
 - The fixes of entry 81 (caret, app errors, broken config on Vite) are committed and not published. The site runs
@@ -5945,6 +5966,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   `generator/shots/generate-craftingattention.png` (local).
 
 ## Open gaps
+- **Two faults on the live homepage.** At 320px wide the bar and the example cards run 17px past the screen, and with reduced motion React reports a hydration mismatch, because six sections read the setting while they render ([entry](#82-the-site-says-who-made-it-and-who-uses-it-2026-11-22)).
 - **Docs can drift from the package again.** Nothing runs their commands at release. The homepage's live-editing clip is from an older overlay, and the overlay's gestures were checked in source, without driving them ([entry](#75-the-docs-said-what-an-older-plumber-did-2026-11-22)).
 - **Data about two private apps waits in unpushed commits.** The style data behind the removed pages, and films and verdicts of both apps, become public with the next push unless the owner has them taken out ([entry](#74-the-site-goes-live-at-react-plumbercom-2026-11-22)).
 - **The live site has loose ends.** `/demo` says it hasn't moved yet, plain http doesn't redirect to https, `www` and `design.react-plumber.com` aren't set up, and deploys are run by hand ([entry](#74-the-site-goes-live-at-react-plumbercom-2026-11-22)).

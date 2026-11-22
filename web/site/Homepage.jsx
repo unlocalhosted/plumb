@@ -11,11 +11,12 @@ import { Slop } from '../../homepage/src/sections/Slop.jsx';
 import { Live } from '../../homepage/src/sections/Live.jsx';
 import { Tokens } from '../../homepage/src/sections/Tokens.jsx';
 import { Install } from '../../homepage/src/sections/Install.jsx';
+import { Proof } from './Proof.jsx';
 
 export function Homepage() {
   return (
     <main className="homepage pb-page-4">
-      <Hero />
+      <Hero proof={<Proof />} />
       <Insights />
       <Slop />
       <Live />

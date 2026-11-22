@@ -8,7 +8,8 @@ import { Review } from './Review.jsx';
 
 export const INSTALL = 'npm install -D @unlocalhosted/react-plumber';
 
-export function Hero() {
+// `proof`: what the site puts under the install (web/site/Proof.jsx).
+export function Hero({ proof = null }) {
   return (
     <section className="hero" aria-labelledby="hero-title">
       <nav className="hero-nav" aria-label="Main">
@@ -25,6 +26,7 @@ export function Hero() {
           <CopyCommand command={INSTALL} />
           <a className="s-btn q hero-docs" href="/docs"><span>Read the docs</span></a>
         </div>
+        {proof}
       </header>
       <Review />
     </section>

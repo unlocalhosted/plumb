@@ -371,3 +371,4 @@ All free under the Unsplash License, hotlinked from images.unsplash.com as Unspl
   app again".
 - What it changed: words are edited on the page's own text, and the overlay no longer uses the page's fetch.
 - Used in: [journey entry 81](journey.md#81-plumbers-failures-became-the-apps-errors-2026-11-22).
+- 2026-11-22 · [Vijay Singh on X (@dprophecyguy)](https://x.com/dprophecyguy) · shared by the owner ("add link to my X and account created by something like that"); handle read from their GitHub profile · used in the site's footer (journey 82)

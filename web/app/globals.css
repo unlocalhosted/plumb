@@ -124,3 +124,14 @@ p.level { margin: -10px 0 18px; max-width: 640px; font: 500 15px/23px var(--pl-s
   .bar .end .disc { display: block; }
   .bar .end .s-btn > span { padding: 10px; }
 }
+
+/* ── the foot of every page (site/Foot.jsx): who makes it, and where else it lives ── */
+.foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 4px 24px; width: 100%; max-width: 1080px; margin: 0 auto; padding: 24px 28px 36px; font: 500 15px/24px var(--pl-sans); color: var(--pl-text-secondary); }
+.foot p { margin: 0; }
+.foot nav { display: flex; flex-wrap: wrap; gap: 4px 20px; }
+.foot a { display: inline-block; padding: 4px 0; font-weight: 700; color: var(--pl-text-primary); text-decoration: underline; text-decoration-color: transparent; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+.foot p a { text-decoration-color: var(--pl-pink); }
+.foot a:focus-visible { outline: 2px solid var(--pl-border-focus); outline-offset: 3px; border-radius: 4px; }
+@media (hover: hover) and (pointer: fine) { .foot a:hover { text-decoration-color: var(--pl-pink); } }
+@media (pointer: coarse) { .foot a { padding: 10px 0; } }
+@media (max-width: 640px) { .foot { padding: 20px 16px 28px; } }
