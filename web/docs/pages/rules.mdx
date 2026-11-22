@@ -1,6 +1,17 @@
-import { RulesReference } from '../reference.jsx'
-import data from '../recordings/reference/rules.json'
+Each finding is named by a rule id, such as `provenance/spacing`. The ids appear in `--json` and `--agent` output, and you pass one to `--rule` or to `plumber accept`.
 
-Every rule Plumber can report, with the message it prints, read from the rule sources. Each finding names its rule with `--verbose` or in `--json`; link here with `/docs/rules#` and the rule id, slashes as dashes.
+| Category | What it reports |
+| --- | --- |
+| `provenance` | Values that aren’t on your tokens. See [How a value is judged](/docs/how-a-value-is-judged). |
+| `existence` | Classes and variables that produce no CSS. |
+| `ownership` | Styles laid over a component from outside it. |
+| `imitation` | Components rebuilt by hand. |
+| `habits` | The [habits](/docs/habits) your team turned on. |
+| `config` | Gaps in the setup, such as a family with no tokens. |
 
-<RulesReference data={data} />
+```sh
+npx plumber check --rule provenance
+npx plumber check --rule habits/hover-gate
+```
+
+[Every check](/docs/what-plumber-checks) lists the checks with what each one catches.

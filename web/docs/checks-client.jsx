@@ -8,12 +8,12 @@ import { Specimen, hasExample } from './examples/system.jsx';
 
 // what each concern is about, in a sentence a person can hold on to
 const ABOUT = {
-  system: 'Values set by hand instead of your theme’s tokens, and Tailwind’s defaults standing in for yours. Read from your code as well as your page.',
-  craft: 'The finish a senior designer checks for: corners that nest, spacing that relates, type that is set, shadows from one light.',
-  access: 'Whether everyone can use it: names for screen readers, contrast, targets big enough to tap, forms that say what they need.',
-  slop: 'The marks a generated screen leaves: badges and dots that mean nothing, glows, two-hue gradients, cards that grow on hover.',
-  words: 'How the words read: one fact a line, no narrating the screen, no subtitle that repeats its heading, lines that break well.',
-  states: 'How it behaves: a press that answers, menus that open on press, motion you can interrupt, loading and empty states.',
+  system: 'Hard-coded values where your theme has tokens, and Tailwind’s defaults used in place of yours. Read from your code as well as your page.',
+  craft: 'Details of finish, such as nested border radii, related spacing, well-set type and shadows that share one light.',
+  access: 'Whether everyone can use the page, including names for screen readers, contrast, tap target size and forms that say what they need.',
+  slop: 'Habits of generated screens, such as badges and dots with no meaning, glows, two-hue gradients and cards that grow on hover.',
+  words: 'How the words read, including repeated headings, text that narrates the screen, crowded lines and bad line breaks.',
+  states: 'How the page behaves, including press feedback, menus, motion you can interrupt, and loading and empty states.',
 };
 const WHERE = { page: 'On the page', code: 'In your code' };
 
@@ -26,7 +26,7 @@ function Card({ c, css }) {
     <li className="ck-card">
       {head}
       <p className="ck-text"><b>What it catches.</b> {c.why || 'See the rule for what it looks for.'}</p>
-      <p className="ck-text"><b>How Plumber fixes it.</b> {c.fix}</p>
+      <p className="ck-text"><b>How to fix it.</b> {c.fix}</p>
       <code className="ck-id">{c.id}</code>
     </li>
   );
@@ -64,7 +64,7 @@ export function ConcernGrid({ css, concern, checks }) {
       <style>{CSS}</style>
       <div className="ck-lead"><Toy name={concern.toy} size={44} /><p>{ABOUT[concern.id]}</p></div>
       <label className="ck-find"><span>Find a check</span><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="contrast, padding, badge…" /><small>{shown.length} of {checks.length}</small></label>
-      {shown.length ? <ul className="ck-grid">{shown.map((c) => <Card key={c.id} c={c} css={css} />)}</ul> : <p className="ck-none">Nothing here matches.</p>}
+      {shown.length ? <ul className="ck-grid">{shown.map((c) => <Card key={c.id} c={c} css={css} />)}</ul> : <p className="ck-none">No checks match your search.</p>}
     </div>
   );
 }

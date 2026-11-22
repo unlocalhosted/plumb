@@ -1,23 +1,40 @@
-import { CliReference } from '../reference.jsx'
-import data from '../recordings/reference/cli.json'
+`npx plumber --help` lists every command and flag for the version you have installed. These are the ones you will use most.
 
-Every `plumber` command and its flags, read from the CLI's own source. Run `npx plumber <command>`; with no command, `plumber` runs `check`.
+| Command | What it does |
+| --- | --- |
+| `plumber` | A few lines about your project, and the next step. |
+| `plumber init` | Asks for your rules, writes the config and records the baseline. |
+| `plumber check` | The report. Once set up, new errors fail. |
+| `plumber doctor` | What is set up, and the command for what isn’t. |
+| `plumber decisions` | Your tokens, where each came from and its reason. |
+| `plumber habits` | Every habit, how often it would break and whether it is on. |
+| `plumber state` | Where your project starts: no system, part of one or a whole one. |
+| `plumber propose` | Tokens drafted from the values your code already uses. |
+| `plumber try` | Judges a snippet from standard input without touching a file. |
+| `plumber baseline` | Records today’s findings as debt. |
+| `plumber accept` | Records an exception, with its reason. |
+| `plumber accept-decisions` | Accepts your current tokens. |
+| `plumber ledger` | Lowers or prunes recorded debt. |
+| `plumber install` | Adds the overlay, the GitHub Action, agent instructions or hooks. |
+| `plumber agent-docs` | Writes `PLUMBER.md` for agents. |
+| `plumber craft` | Runs the page checks in a headless browser. |
 
-<CliReference data={data} />
+Exit codes are 0 for OK, 1 for failing findings and 2 for a usage or config error.
 
 ## plumber craft
 
-The craft rules (type, spacing and shadows judged on the page as it renders, not in the source) run in the browser. `plumber craft` runs them without one: it opens each route of a running dev server in headless Chromium, lets the overlay read every element on the page, off-screen ones too, and prints each finding at the line of JSX that made it.
+`plumber craft` checks the page as it renders. It opens each route of a running dev server in headless Chromium, reads the elements on it, and prints each finding at the line of JSX that made it. It also tries other widths and states, such as dark mode, hover, press and the keyboard.
 
 ```sh
 npx plumber craft --url http://localhost:5173/ --routes / /settings --sarif craft.sarif
 ```
 
-- `--url <address>` is the dev server, with the `plumb()` Vite plugin running.
-- `--routes <path> …` are the routes to open (default `/`). Space or comma separated.
-- `--json` prints every route's findings and the source sites as JSON.
-- `--sarif <file>` writes a SARIF 2.1.0 report, for code scanning.
-- `--timeout <ms>` bounds each route (default 60000).
-- `--root <dir>` is the app's folder, which source paths are relative to (default: the current directory).
+- `--url <address>` is your dev server, with Plumber’s overlay set up.
+- `--routes <path> …` are the routes to open. The default is `/`.
+- `--json` prints the findings as JSON.
+- `--sarif <file>` writes a SARIF 2.1.0 report for code scanning.
+- `--scope <selector>` reads one element.
+- `--timeout <ms>` limits each route. The default is 60000.
+- `--root <dir>` is the app’s folder. The default is the current directory.
 
-It exits 1 when there are findings and 0 when the page is clean. The overlay needs Playwright, an optional dependency: `npm i -D playwright && npx playwright install chromium`, or set `PLUMBER_CHROMIUM` to a Chrome or Chromium you already have. Inside the page, `await window.__plumb.craft()` returns the same findings as plain JSON.
+It exits 1 when there are findings and 0 when there are none. It needs Playwright, which is installed separately: `npm i -D playwright && npx playwright install chromium`. To use a Chrome or Chromium you already have, set `PLUMBER_CHROMIUM` to its path. Inside the page, `await window.__plumb.craft()` returns the findings as plain JSON.

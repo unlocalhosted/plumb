@@ -59,9 +59,9 @@ export function mount(host, root, css) {
     @media (max-width: 820px) { .why { grid-template-columns: repeat(2, minmax(0, 1fr)); } .pair { grid-template-columns: 1fr; } }
   </style>${TOY_DEFS}
   <h2>Where the delight comes from</h2>
-  <p>Taking the raised key apart. It is not the two tones. It is four things the hand and eye read at once.</p>
+  <p>The raised key’s feel comes from four things you notice at once, more than from its two tones.</p>
   <div class="why">
-    <div><small>01</small><b>It is soft</b><span>Round, and calm in colour. Nothing harsh to look at, nothing sharp to touch.</span></div>
+    <div><small>01</small><b>It is soft</b><span>Round, and calm in colour. It has no harsh colours or sharp corners.</span></div>
     <div><small>02</small><b>It is lit</b><span>One light from above: a bright rim on top, a shadow on the ground. That is what makes it a thing and not a picture of one.</span></div>
     <div><small>03</small><b>It has weight</b><span>It sits above the page on a side you can see, and comes straight up to meet your finger.</span></div>
     <div><small>04</small><b>It answers</b><span>It goes down under the finger at once, gives a little, and springs back.</span></div>
@@ -92,7 +92,7 @@ export function mount(host, root, css) {
 
   <h2>And the face</h2>
   <p>The rounded face was the other borrowed part. The site is now set in a face with its own hand: a little crooked, cut heavy, so the titles have character and the toys stay the only round things.</p>
-  <div class="face"><b>Keep your app on your design system.</b><p>Each mark is a place in your code that types a size by hand.</p><small>Bricolage Grotesque, heavy, for what a toy has printed on it · Instrument Sans for sentences</small></div>`;
+  <div class="face"><b>Keep your app on your design system.</b><p>Each mark is a place in your code that hard-codes a font size.</p><small>Bricolage Grotesque, heavy, for what a toy has printed on it · Instrument Sans for sentences</small></div>`;
 
   let rate = 1, held = false; // the timeline's speed and Hold (below)
   let onMotion = () => {};     // the timeline's: a motion just started

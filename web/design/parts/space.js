@@ -140,7 +140,7 @@ export function mount(host, root, css) {
   </div>
 
   <h2>On a card</h2>
-  <p>Every step, drawn at three times its size and hatched like padding. The 6 is off the ladder of 4, kept only until each part moves to 4 or 8.</p>
+  <p>Every step, drawn at three times its size and hatched like padding. The 6 is not a multiple of 4, kept only until each part moves to 4 or 8.</p>
   <div class="panel">${CARD.map(step).join('')}<div class="scale-note">Bands drawn at 3× (2px can’t be seen at its own size).</div></div>
 
   <h2>A card, measured</h2>
@@ -182,8 +182,8 @@ export function mount(host, root, css) {
 
   <h2>What is still open</h2>
   <ul class="open">
-    <li><b>The overlay hard-codes its corners.</b> Counted on 2026-11-11: the radius tokens are used about 45 times, but about 180 corners are written as numbers, many off the scale: 9px (22 times), 5px (14), 10px (10), 4px, 3px and 1px. That is the drift Plumber finds in other apps, in its own code.</li>
-    <li><b>6px is the most-used gap,</b> written as a number 35 times beside the 30 uses of <code>--pl-space-3</code>, which is itself off the ladder of 4.</li>
+    <li><b>The overlay hard-codes its corners.</b> Counted on 2026-11-11: the radius tokens are used about 45 times, but about 180 corners are written as numbers, many off the tokens: 9px (22 times), 5px (14), 10px (10), 4px, 3px and 1px. Plumber reports this kind of drift in other apps.</li>
+    <li><b>6px is the most-used gap,</b> written as a number 35 times beside the 30 uses of <code>--pl-space-3</code>, which is itself not a multiple of 4.</li>
     <li><b>Two names nobody uses.</b> <code>--pl-card-pad</code> and <code>--pl-card-gap</code> say the card’s inset and gap, but every part writes <code>--pl-space-6</code> or a number instead.</li>
     <li><b>The soft blocks’ corners aren’t tokens.</b> Cards are 28px and buttons 13 to 14px, written as numbers in the soft block and the button.</li>
     <li><b>A tag (6) and a pill (7) are a pixel apart,</b> too close to tell, and could be one step.</li>

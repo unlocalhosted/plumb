@@ -1,6 +1,4 @@
-import { LedgerSteps } from '../figures/LedgerSteps.jsx'
-
-The ledger is how Plumber tells drift you already had from drift you just added. It lives in `.plumber/ledger.jsonl`, one entry per line, committed with your code and reviewed like it.
+The ledger records the drift you already had, so Plumber can tell it from drift you just added. It is `.plumber/ledger.jsonl`, with one entry per line. Commit it and review it with your code.
 
 ## What's in it
 
@@ -12,34 +10,28 @@ The ledger is how Plumber tells drift you already had from drift you just added.
 
 An entry is keyed by what was written and where: the rule, the element, the property, the authored text and the file. Moving code up or down a file doesn't change its key; changing the text does.
 
-## A repo's history, step by step
-
-Each step below was run on a copy of a small fixture project, with the real CLI.
-
-<LedgerSteps />
-
 ## How a check uses it
 
 `plumber check` compares today's findings with the ledger:
 
 - A finding covered by **debt** or an **exception** is known. It's summarised in one line, and doesn't fail.
-- A finding the ledger doesn't cover, or **more places** than the ledger allows, is **new**, and fails.
-- Debt that's gone is **stale**: a warning, so you remember to record the progress.
+- A finding the ledger doesn't cover, or **more places** than the ledger allows, is **new**. New errors fail.
+- Debt that's gone is **stale**: a warning, as a reminder to record the progress.
 
 ## Recording progress
 
-The ledger doesn't shrink by itself when you fix things; you lock progress in:
+Fixing code doesn't shrink the ledger. To record the progress, run:
 
 ```sh
 npx plumber ledger --ratchet   # lower each debt count to what's left, drop what's fixed
 npx plumber ledger --prune     # drop entries for findings and tokens that no longer exist
 ```
 
-`baseline` refuses to record more debt than you already had, unless you pass `--force` after a review. So debt only goes one way.
+`baseline` refuses to record more debt than you already had, unless you pass `--force` after a review.
 
 ## Accepting an exception
 
-When a drift is right, say why and record it:
+When a value is off on purpose, record it with the reason:
 
 ```sh
 npx plumber accept --rule provenance/arbitrary --site src/Judged.tsx:6 --why "Matches the printed form's 13px grid"
@@ -49,7 +41,7 @@ The reason is stored with the entry and shown wherever the finding appears. An e
 
 ## In review
 
-Because the ledger is how drift gets let in, CI treats changes to it as design decisions:
+Adding to the ledger lets drift in, so CI treats it as a design decision:
 
 - `plumber check --base main` reports which entries a branch adds. Debt that grows is an error.
 - In the GitHub Action, an added exception or decision needs approval from one of your `ledger-approvers`. See [CI and pull requests](/docs/ci).

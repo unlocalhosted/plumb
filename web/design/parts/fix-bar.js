@@ -176,8 +176,8 @@ export function mount(host, root, css) {
     @media (prefers-reduced-motion: reduce) { .page .chip { transition: none; } .page .chip.click { animation: none; } .fb .name.swap { animation: none; } }
   </style>${TOY_DEFS}
   ${trials}
-  ${scene('one', '1 · A step your scale has (live)', 'The chip’s corner is 5px, between two of your steps. The steps pop out of the chip itself. Moving between them rounds every place on the page and rolls the value in the bar; the outline goes blue once it sits on a step. Enter writes it: the places click in one after another and their marks turn green.', '')}
-  ${scene('two', '2 · A value your scale doesn’t have', '64px is past your largest step, so the fix is a new step. It is named where the steps are: the name is the only thing you type. Enter adds it to your theme.',
+  ${scene('one', '1 · A value with a token (live)', 'The chip’s corner is 5px, between two of your tokens. The tokens pop out of the chip itself. Moving between them rounds every place on the page and rolls the value in the bar; the outline goes blue once it sits on a token. Enter writes it: the places click in one after another and their marks turn green.', '')}
+  ${scene('two', '2 · A value with no token', '64px is past your largest token, so the fix is a new token. It is named where the tokens are: the name is the only thing you type. Enter adds it to your theme.',
     `<div class="page">${rowsOf(false)}</div>
      <div class="on left" style="top: 150px; left: 40px;"><span class="ic" title="Position">${toyOf('position')}</span>${stepper('Spacing', s2)}<span class="name">--spacing-<b>gutter</b></span></div>`
     + bar({ icon: 'position', on: 'toast', cls: 'bottom-[64px]', from: '64', to: 64, name: 'new · gutter', nameHue: 'sky', marks: 1, at: 32, act: 'Add to theme' }))}

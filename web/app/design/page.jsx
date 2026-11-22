@@ -15,7 +15,7 @@ export default function Design() {
   return (
     <main className="wrap">
       <div className="page-title"><Toy name="grid" size={56} /><h1>Design</h1></div>
-      <p className="lede">React Plumber’s design system, one box per part. <b>This site is drawn with it</b>: the same tokens, the same toys, the same buttons the product ships.</p>
+      <p className="lede">React Plumber’s design system, one box per part. <b>This site is drawn with it</b>, using the product’s own tokens, icons and buttons.</p>
       {GROUPS.map(([title, parts, says]) => (
         <section key={title}>
           <h2 className="shelf">{title}<small>{parts.filter((p) => p.ready).length} of {parts.length} drawn</small></h2>

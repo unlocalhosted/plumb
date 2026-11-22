@@ -24,7 +24,7 @@ const TIMING = [0, 500, 1500, 1900, 2700, 3100, 4000, 5300];
 const FIXES = [
   { slop: 'gap-[13px]', fix: 'gap-stack' },
   { slop: 'bg-[#3b78d8]', fix: 'bg-accent' },
-  { slop: 'shadow-lg', fix: 'shadow-[0_10px_15px_-3px_#7a541f4d]' },
+  { slop: 'shadow-lg', fix: 'shadow-warm' },
   { slop: '<PlayIcon />', fix: '<PlayIcon className="translate-x-[2px]" />' },
 ];
 const CHECK = [
@@ -71,12 +71,12 @@ export function Slop() {
   return (
     <section className="slop" aria-labelledby="slop-title">
       <header className="slop-head">
-        <h2 id="slop-title" className="title">Your agent writes the UI. Plumber keeps it yours.</h2>
-        <p className="lead">Agents make up values and miss the details: a grey shadow on a coloured card, an icon centred by its box. <b>Plumber catches both, with the exact fix</b>, so the agent corrects itself before you ever see it.</p>
+        <h2 id="slop-title" className="title">Plumber checks the UI your agent writes.</h2>
+        <p className="lead">Agents make up values and miss the details: a grey shadow on a coloured card, an icon centred by its box. <b>Plumber catches both and says what to change</b>, so the agent can fix them before you review its work.</p>
         <ul className="slop-facts">
-          <li><b>The code, after every edit</b><span>A hook in Claude Code or Cursor runs <code>plumber check</code>: <code>plumber install --hooks</code>.</span></li>
-          <li><b>The page, like a design engineer</b><span><code>plumber craft</code> reads the running page the way the overlay does.</span></li>
-          <li><b>Only what’s new</b><span>Today’s debt is recorded once and left alone.</span></li>
+          <li><b>Code, after every edit</b><span>A hook in Claude Code or Cursor runs <code>plumber check</code>: <code>plumber install --hooks</code>.</span></li>
+          <li><b>The running page</b><span><code>plumber craft</code> reads the running page the way the overlay does.</span></li>
+          <li><b>New problems only</b><span><code>plumber init</code> records the problems you already have as debt.</span></li>
         </ul>
       </header>
 

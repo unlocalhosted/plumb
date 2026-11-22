@@ -72,7 +72,7 @@
    "why": "Keyboard users lose track of focus, and forced-colors mode shows nothing.",
    "where": "code",
    "tile": null,
-   "fix": "Plumber names the line and the safer way to write it; fix it in your code, or send a note to your agent."
+   "fix": "Use the safer form Plumber suggests for that line, or send a note to your agent."
   },
   {
    "id": "habits/hover-gate",
@@ -81,7 +81,7 @@
    "why": "Touch can leave a hover style stuck after a tap.",
    "where": "code",
    "tile": null,
-   "fix": "Plumber names the line and the safer way to write it; fix it in your code, or send a note to your agent."
+   "fix": "Use the safer form Plumber suggests for that line, or send a note to your agent."
   },
   {
    "id": "habits/logical-inline",
@@ -90,7 +90,7 @@
    "why": "It doesn't mirror in right-to-left layouts.",
    "where": "code",
    "tile": null,
-   "fix": "Plumber names the line and the safer way to write it; fix it in your code, or send a note to your agent."
+   "fix": "Use the safer form Plumber suggests for that line, or send a note to your agent."
   },
   {
    "id": "habits/no-ease-in",
@@ -99,7 +99,7 @@
    "why": "Feedback to a person’s hand should begin immediately, without a slow start.",
    "where": "code",
    "tile": null,
-   "fix": "Plumber names the line and the safer way to write it; fix it in your code, or send a note to your agent."
+   "fix": "Use the safer form Plumber suggests for that line, or send a note to your agent."
   },
   {
    "id": "habits/overflow-clip",
@@ -108,7 +108,7 @@
    "why": "It breaks position: sticky inside and still allows script scrolling.",
    "where": "code",
    "tile": null,
-   "fix": "Plumber names the line and the safer way to write it; fix it in your code, or send a note to your agent."
+   "fix": "Use the safer form Plumber suggests for that line, or send a note to your agent."
   },
   {
    "id": "habits/overscroll-contain",
@@ -117,7 +117,7 @@
    "why": "Reaching its edge scrolls the page behind it.",
    "where": "code",
    "tile": null,
-   "fix": "Plumber names the line and the safer way to write it; fix it in your code, or send a note to your agent."
+   "fix": "Use the safer form Plumber suggests for that line, or send a note to your agent."
   },
   {
    "id": "habits/safe-area-fallback",
@@ -126,7 +126,7 @@
    "why": "A safe-area environment variable needs a fallback so unavailable insets cannot invalidate the declaration.",
    "where": "code",
    "tile": null,
-   "fix": "Plumber names the line and the safer way to write it; fix it in your code, or send a note to your agent."
+   "fix": "Use the safer form Plumber suggests for that line, or send a note to your agent."
   },
   {
    "id": "habits/transition-named",
@@ -135,7 +135,7 @@
    "why": "Name the properties that transition so an unrelated change does not start animating.",
    "where": "code",
    "tile": null,
-   "fix": "Plumber names the line and the safer way to write it; fix it in your code, or send a note to your agent."
+   "fix": "Use the safer form Plumber suggests for that line, or send a note to your agent."
   },
   {
    "id": "habits/viewport-dynamic",
@@ -144,7 +144,7 @@
    "why": "Mobile toolbars change the viewport height.",
    "where": "code",
    "tile": null,
-   "fix": "Plumber names the line and the safer way to write it; fix it in your code, or send a note to your agent."
+   "fix": "Use the safer form Plumber suggests for that line, or send a note to your agent."
   },
   {
    "id": "imitation/{Component}",
@@ -168,10 +168,10 @@
    "id": "provenance/arbitrary",
    "concern": "system",
    "name": "Spacing not in your theme",
-   "why": "Off-scale spacing makes layouts drift apart and can't be changed from the theme.",
+   "why": "Spacing outside your tokens makes layouts drift apart and can’t be changed from the theme.",
    "where": "code",
    "tile": "Padding",
-   "fix": "Plumber offers your theme’s nearest steps and swaps the hard-coded value for the one you pick, on the element and in your code, with one Undo."
+   "fix": "Pick one of the nearest tokens. Plumber replaces the hard-coded value in your code, with Undo."
   },
   {
    "id": "provenance/color",
@@ -180,7 +180,7 @@
    "why": "A raw colour won't follow theme or colour-scheme changes.",
    "where": "code",
    "tile": "Colour",
-   "fix": "Plumber offers your theme’s nearest steps and swaps the hard-coded value for the one you pick, on the element and in your code, with one Undo."
+   "fix": "Pick one of the nearest tokens. Plumber replaces the hard-coded value in your code, with Undo."
   },
   {
    "id": "provenance/color/by-value",
@@ -189,16 +189,16 @@
    "why": "If the token changes, this copy stays behind.",
    "where": "code",
    "tile": "Colour",
-   "fix": "Plumber offers your theme’s nearest steps and swaps the hard-coded value for the one you pick, on the element and in your code, with one Undo."
+   "fix": "Pick one of the nearest tokens. Plumber replaces the hard-coded value in your code, with Undo."
   },
   {
    "id": "provenance/color/framework",
    "concern": "system",
    "name": "From Tailwind, not your theme",
-   "why": "Your theme has its own steps; Tailwind’s defaults sit outside them and won’t change when your theme does.",
+   "why": "Your theme has its own tokens. Tailwind’s defaults won’t change when those do.",
    "where": "code",
    "tile": "Colour",
-   "fix": "Plumber offers your theme’s nearest steps and swaps the hard-coded value for the one you pick, on the element and in your code, with one Undo."
+   "fix": "Pick one of the nearest tokens. Plumber replaces the hard-coded value in your code, with Undo."
   },
   {
    "id": "provenance/color/tier",
@@ -207,7 +207,7 @@
    "why": "A named token says what a value is for, so it changes with the design; a raw one doesn't.",
    "where": "code",
    "tile": "Colour",
-   "fix": "Plumber offers your theme’s nearest steps and swaps the hard-coded value for the one you pick, on the element and in your code, with one Undo."
+   "fix": "Pick one of the nearest tokens. Plumber replaces the hard-coded value in your code, with Undo."
   },
   {
    "id": "provenance/elevation",
@@ -216,7 +216,7 @@
    "why": "A hand-written shadow won't match the other surfaces or follow theme changes.",
    "where": "code",
    "tile": "Shadows",
-   "fix": "Plumber offers your theme’s nearest steps and swaps the hard-coded value for the one you pick, on the element and in your code, with one Undo."
+   "fix": "Pick one of the nearest tokens. Plumber replaces the hard-coded value in your code, with Undo."
   },
   {
    "id": "provenance/motion",
@@ -225,25 +225,25 @@
    "why": "A one-off duration or curve makes motion feel inconsistent and ignores the team's timing.",
    "where": "code",
    "tile": "Timing",
-   "fix": "Plumber offers your theme’s nearest steps and swaps the hard-coded value for the one you pick, on the element and in your code, with one Undo."
+   "fix": "Pick one of the nearest tokens. Plumber replaces the hard-coded value in your code, with Undo."
   },
   {
    "id": "provenance/radius",
    "concern": "system",
    "name": "Corner not in your theme",
-   "why": "Off-scale corners make surfaces look unrelated and can't be changed from the theme.",
+   "why": "A border radius outside your tokens makes surfaces look unrelated and can’t be changed from the theme.",
    "where": "code",
    "tile": "Corners",
-   "fix": "Plumber offers your theme’s nearest steps and swaps the hard-coded value for the one you pick, on the element and in your code, with one Undo."
+   "fix": "Pick one of the nearest tokens. Plumber replaces the hard-coded value in your code, with Undo."
   },
   {
    "id": "provenance/type",
    "concern": "system",
    "name": "Type not in your theme",
-   "why": "Sizes and weights off the type scale break the reading rhythm and can't be changed from the theme.",
+   "why": "Sizes and weights outside your tokens break the reading rhythm and can’t be changed from the theme.",
    "where": "code",
    "tile": "Text size",
-   "fix": "Plumber offers your theme’s nearest steps and swaps the hard-coded value for the one you pick, on the element and in your code, with one Undo."
+   "fix": "Pick one of the nearest tokens. Plumber replaces the hard-coded value in your code, with Undo."
   },
   {
    "id": "provenance/z",
@@ -252,7 +252,7 @@
    "why": "A raw z-index competes with every other layer; named layers keep stacking predictable.",
    "where": "code",
    "tile": null,
-   "fix": "Plumber offers your theme’s nearest steps and swaps the hard-coded value for the one you pick, on the element and in your code, with one Undo."
+   "fix": "Pick one of the nearest tokens. Plumber replaces the hard-coded value in your code, with Undo."
   },
   {
    "id": "craft/concentric-radius",
@@ -261,7 +261,7 @@
    "why": "Inner radius = outer radius minus the padding. Then the curves line up.",
    "where": "page",
    "tile": "Corners",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/inner-outer-spacing",
@@ -270,7 +270,7 @@
    "why": "People see things that are close together as one group.",
    "where": "page",
    "tile": "Gap",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/text-opacity",
@@ -279,7 +279,7 @@
    "why": "Opacity changes with whatever is behind the text.",
    "where": "page",
    "tile": "Colour",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/half-pixel",
@@ -288,7 +288,7 @@
    "why": "Text blur when they sit between two pixels.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "craft/hairline",
@@ -297,7 +297,7 @@
    "why": "A hairline should be one screen pixel thick.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "craft/image-outline",
@@ -306,7 +306,7 @@
    "why": "A faint inner outline gives it an edge.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "craft/layered-shadow",
@@ -315,7 +315,7 @@
    "why": "Real shadows have a sharp part and a soft part.",
    "where": "page",
    "tile": "Shadows",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/scale-from-zero",
@@ -324,7 +324,7 @@
    "why": "Start near full size, at 0.95, and fade in.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "craft/z-index-war",
@@ -333,7 +333,7 @@
    "why": "Big numbers fight other components. Give the component its own layer instead.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "craft/content-align",
@@ -342,7 +342,7 @@
    "why": "Line up the words, not the boxes. Let the background stick out.",
    "where": "page",
    "tile": "Shared edges",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/button-padding",
@@ -351,7 +351,7 @@
    "why": "Words are wide, so equal padding looks cramped left and right.",
    "where": "page",
    "tile": "Padding",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/icon-side",
@@ -360,7 +360,7 @@
    "why": "Icons carry their own space inside them.",
    "where": "page",
    "tile": "Padding",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/measure",
@@ -369,7 +369,7 @@
    "why": "Short lines are easier to follow back to the start.",
    "where": "page",
    "tile": "Line length",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/leading",
@@ -378,7 +378,7 @@
    "why": "Bigger text needs less line height, smaller text more.",
    "where": "page",
    "tile": "Line spacing",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/tracking",
@@ -387,7 +387,7 @@
    "why": "Small capitals need a little more space. Big text needs a little less.",
    "where": "page",
    "tile": "Letter spacing",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/tabular-nums",
@@ -396,7 +396,7 @@
    "why": "Tabular numbers make every digit the same width.",
    "where": "page",
    "tile": "Number columns",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/heading-widow",
@@ -405,7 +405,7 @@
    "why": "Balanced lines look intended.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "craft/one-light",
@@ -414,7 +414,7 @@
    "why": "Every shadow on a page should come from the same light.",
    "where": "page",
    "tile": "Shadows",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/border-on-shadow",
@@ -423,7 +423,7 @@
    "why": "A see-through border blends with what’s behind it.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "craft/contrast",
@@ -432,7 +432,7 @@
    "why": "Measured with APCA, which tracks what people can actually read.",
    "where": "page",
    "tile": "Disabled",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/words-on-layers",
@@ -441,7 +441,7 @@
    "why": "Words have to change with what is under them: a fill or layer that slides beneath them takes their contrast with it.",
    "where": "page",
    "tile": "Colour",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/disabled-contrast",
@@ -450,7 +450,7 @@
    "why": "Opacity fades the words along with the button.",
    "where": "page",
    "tile": "Disabled",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/hit-target",
@@ -459,7 +459,7 @@
    "why": "The tap area can be bigger than what’s drawn.",
    "where": "page",
    "tile": "Tap target",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/media-size",
@@ -468,7 +468,7 @@
    "why": "Different sizes in one list look like a mistake.",
    "where": "page",
    "tile": "Controls",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/image-fit",
@@ -477,7 +477,7 @@
    "why": "Its box is set on both sides, and a picture is pulled to fill whatever box it is given.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "craft/flex-min",
@@ -486,7 +486,7 @@
    "why": "A flex item is never narrower than its longest line. A longer name or a narrower screen pushes the rest of the row out.",
    "where": "page",
    "tile": "Controls",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/image-ground",
@@ -495,7 +495,7 @@
    "why": "A picture can load late, or not at all. Then the words sit on the colour under it.",
    "where": "page",
    "tile": "Colour",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/sticky-room",
@@ -504,7 +504,7 @@
    "why": "A sticky element moves only inside its parent’s box. Stretched to the same height, it scrolls away with the page.",
    "where": "page",
    "tile": "Baseline",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/fixed-height",
@@ -513,7 +513,7 @@
    "why": "A box that holds text sets its least height, not its exact height: text grows downward.",
    "where": "page",
    "tile": "Controls",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/scroll-on-demand",
@@ -522,7 +522,7 @@
    "why": "A scrollbar says there is more. Set to scroll, it is drawn whether or not there is.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "craft/declared-gap",
@@ -531,7 +531,7 @@
    "why": "The distance between neighbours is a decision. Left to whatever space remains, it closes to nothing.",
    "where": "page",
    "tile": "Gap",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/list-wrap",
@@ -540,7 +540,7 @@
    "why": "A flex row does not wrap unless it is told to, and a list has whatever length its data has.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "craft/image-stretch",
@@ -549,7 +549,7 @@
    "why": "A flex row stretches its items to its own height, and a picture given only a width is stretched with them.",
    "where": "page",
    "tile": "Baseline",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/background-tile",
@@ -558,7 +558,7 @@
    "why": "A background repeats unless it is told not to. A pattern is meant to; a photo is one picture.",
    "where": "page",
    "tile": "Colour",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/fixed-column",
@@ -567,7 +567,7 @@
    "why": "A fixed column needs a one-column form where it no longer fits. Keep the columns from …px up.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "craft/truncate-intent",
@@ -576,7 +576,7 @@
    "why": "Put the full text in a title or a tooltip.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "craft/scrollbar-gutter",
@@ -585,7 +585,7 @@
    "why": "A stable gutter keeps room for the scrollbar.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "craft/bold-hover",
@@ -594,7 +594,7 @@
    "why": "Bold text is wider than regular text.",
    "where": "page",
    "tile": "Weight",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/hanging-quote",
@@ -603,7 +603,7 @@
    "why": "Hang the quote outside so the letters line up.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "craft/caps-case",
@@ -612,7 +612,7 @@
    "why": "The font’s case feature lifts them.",
    "where": "page",
    "tile": "Number columns",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/gradient-space",
@@ -621,7 +621,7 @@
    "why": "Mixing in OKLCH keeps the colour bright.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "craft/input-zoom",
@@ -630,7 +630,7 @@
    "why": "Safari zooms in when the field is focused, and stays zoomed.",
    "where": "page",
    "tile": "Text size",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/anchor-offset",
@@ -639,7 +639,7 @@
    "why": "scroll-margin-top leaves room for the header.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "craft/middle-truncate",
@@ -648,7 +648,7 @@
    "why": "Cut paths and ids in the middle.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "craft/text-wrap-role",
@@ -657,7 +657,7 @@
    "why": "Pretty wrapping avoids a lonely last word.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "craft/continuous-corners",
@@ -666,7 +666,7 @@
    "why": "Curvature that eases in looks gentler than a circle’s arc.",
    "where": "page",
    "tile": "Corners",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/optical-sizing",
@@ -675,7 +675,7 @@
    "why": "With optical size on, small text gets sturdier shapes and big text finer ones.",
    "where": "page",
    "tile": "Number columns",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/tinted-shadow",
@@ -684,7 +684,7 @@
    "why": "Real shadows on colour take the colour, darker.",
    "where": "page",
    "tile": "Shadows",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/eased-scrim",
@@ -693,7 +693,7 @@
    "why": "An eased fade (more stops, dropping fast then slow) has no visible edge.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "craft/pure-black-white",
@@ -702,7 +702,7 @@
    "why": "Your other surfaces are tinted; this one escaped.",
    "where": "page",
    "tile": "Colour",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/content-size",
@@ -711,7 +711,7 @@
    "why": "Fixed sizes break with real content and translations.",
    "where": "page",
    "tile": "Controls",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/baseline-align",
@@ -720,7 +720,7 @@
    "why": "Tops and centres of different sizes don’t line up to the eye; baselines do.",
    "where": "page",
    "tile": "Baseline",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/icon-cap",
@@ -729,7 +729,7 @@
    "why": "Centring on the line box puts icons low; the eye reads the capitals’ middle.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "craft/trim-leading",
@@ -738,7 +738,7 @@
    "why": "A text box carries invisible space above and below the letters.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "craft/heading-lead",
@@ -747,7 +747,7 @@
    "why": "A heading belongs to what it introduces: give it more space above than below.",
    "where": "page",
    "tile": "Margin",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/pair-spacing",
@@ -756,7 +756,7 @@
    "why": "Past about one line of the heading, the text stops reading as the heading’s.",
    "where": "page",
    "tile": "Margin",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/card-optical-padding",
@@ -765,7 +765,7 @@
    "why": "The first line carries space above its capitals, so equal padding looks bigger on top.",
    "where": "page",
    "tile": "Padding",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/text-collision",
@@ -774,7 +774,7 @@
    "why": "Two texts that touch read as one, or not at all.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "craft/weight-levels",
@@ -783,7 +783,7 @@
    "why": "Two or three weights make a clear hierarchy; every extra level weakens the others.",
    "where": "page",
    "tile": "Weight",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/grey-levels",
@@ -792,7 +792,7 @@
    "why": "Two or three text colours make a clear hierarchy; a fourth reads as a mistake.",
    "where": "page",
    "tile": "Colour",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/rhythm",
@@ -801,7 +801,7 @@
    "why": "Repeating a few gaps down the page is what makes it feel even.",
    "where": "page",
    "tile": "Gap",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/elevation-ladder",
@@ -810,7 +810,7 @@
    "why": "Elevation reads in clear steps. Two heights this close look like one height done twice.",
    "where": "page",
    "tile": "Shadows",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/optical-centre",
@@ -819,7 +819,7 @@
    "why": "The eye centres a shape by its weight, not its box.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "craft/overshoot",
@@ -828,7 +828,7 @@
    "why": "A circle covers less than a square of the same width, so it reads smaller.",
    "where": "page",
    "tile": "Controls",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/stroke-weight",
@@ -837,7 +837,7 @@
    "why": "An icon’s line should weigh what the words beside it weigh.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "craft/scroll-cue",
@@ -846,7 +846,7 @@
    "why": "Without an edge cue, people think they’ve seen everything.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "craft/press-feedback",
@@ -855,7 +855,7 @@
    "why": "A press that shows nothing feels like it didn’t register.",
    "where": "page",
    "tile": "Timing",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/exit-faster",
@@ -864,7 +864,7 @@
    "why": "People are done with it when they close it. Waiting feels slow.",
    "where": "page",
    "tile": "Timing",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/interruptible",
@@ -873,7 +873,7 @@
    "why": "A transition reverses from where it is.",
    "where": "page",
    "tile": "Timing",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/row-lines",
@@ -882,7 +882,7 @@
    "why": "Plans are compared by reading straight across; a part that drifts down breaks the comparison.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "craft/shared-edges",
@@ -891,7 +891,7 @@
    "why": "A card is one column: lines that start on one edge read as one thing.",
    "where": "page",
    "tile": "Shared edges",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/action-fit",
@@ -900,7 +900,7 @@
    "why": "The same action drawn the same way across a row reads as the same choice.",
    "where": "page",
    "tile": "Colour",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/column-edge",
@@ -909,7 +909,7 @@
    "why": "Rows of one column share one edge. A few pixels off reads as a mistake.",
    "where": "page",
    "tile": "Shared edges",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/sibling-match",
@@ -918,7 +918,7 @@
    "why": "Mixed corners make one set of pieces look like two.",
    "where": "page",
    "tile": "Controls",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/dark-elevation",
@@ -927,7 +927,7 @@
    "why": "In the dark, a surface rises by getting lighter, or by a light edge on top.",
    "where": "page",
    "tile": "Colour",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/dark-weight",
@@ -936,7 +936,7 @@
    "why": "Light text glows into a dark ground. Smooth it, or lighten the weight in dark.",
    "where": "page",
    "tile": "Weight",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/skeleton-match",
@@ -945,7 +945,7 @@
    "why": "When the real content lands, everything under it jumps.",
    "where": "page",
    "tile": "Controls",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/spinner-timing",
@@ -954,7 +954,7 @@
    "why": "A blink is worse than nothing. Wait 200ms, then keep it up for 500ms.",
    "where": "page",
    "tile": "Timing",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/menu-pointerdown",
@@ -963,16 +963,16 @@
    "why": "Opening on the press feels instant, and lets people press, drag and release to pick.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "craft/tooltip-delay",
    "concern": "states",
-   "name": "craft/tooltip-delay",
-   "why": "",
+   "name": "Tooltip delay",
+   "why": "A tooltip that shows too soon flickers as the mouse passes. One that waits too long, or waits again for the next tooltip, feels slow.",
    "where": "page",
    "tile": "Timing",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/palette-motion",
@@ -981,7 +981,7 @@
    "why": "A shortcut people use all day shouldn’t make them wait on motion.",
    "where": "page",
    "tile": "Timing",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "craft/submenu-path",
@@ -990,7 +990,7 @@
    "why": "People cut corners. Give it a safe triangle, or 300ms of grace.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "craft/overdrag",
@@ -999,7 +999,7 @@
    "why": "Past its limit, something should give: move less than the pointer, then spring back.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "craft/touch-manipulation",
@@ -1008,7 +1008,7 @@
    "why": "Browsers add a grey tap highlight to custom controls. Turn it off.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "a11y/control-name",
@@ -1017,7 +1017,7 @@
    "why": "Someone who cannot see it hears only its role. Give it words, or an aria-label.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "a11y/image-alt",
@@ -1026,7 +1026,7 @@
    "why": "A screen reader reads out its file name, or nothing. Say what it is for, or mark it as decoration.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "a11y/alt-cliche",
@@ -1035,7 +1035,7 @@
    "why": "A screen reader already announces an image, so it is said twice.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "a11y/svg-name",
@@ -1044,7 +1044,7 @@
    "why": "A screen reader says \"image\" and nothing more.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "a11y/tabindex-positive",
@@ -1053,7 +1053,7 @@
    "why": "Tab stops following the page’s order, and every later change has to keep the numbers right.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "a11y/tabindex-redundant",
@@ -1062,7 +1062,7 @@
    "why": "tabindex=\"0\" adds nothing here, and reads as if it were a custom control.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "a11y/hidden-focusable",
@@ -1071,7 +1071,7 @@
    "why": "Focus lands on something that is announced as nothing.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "a11y/role-presentation-control",
@@ -1080,7 +1080,7 @@
    "why": "A screen reader no longer says it can be pressed or typed into.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "a11y/label-on-generic",
@@ -1089,7 +1089,7 @@
    "why": "A plain box has no name to give: most screen readers never read the label.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "a11y/label-in-name",
@@ -1098,7 +1098,7 @@
    "why": "Someone using voice control says the words they see, and nothing answers.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "a11y/role-in-label",
@@ -1107,7 +1107,7 @@
    "why": "It is read out with its role twice, as in “button, Close button”.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "a11y/link-name-reused",
@@ -1116,7 +1116,7 @@
    "why": "In a list of links, which is how many people move around, they cannot be told apart.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "a11y/heading-skip",
@@ -1125,7 +1125,7 @@
    "why": "People who move by headings hear a level missing and look for what they skipped.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "a11y/heading-h1-many",
@@ -1134,7 +1134,7 @@
    "why": "The h1 is how someone learns what the page is; with several, none of them says it.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "a11y/main-many",
@@ -1143,7 +1143,7 @@
    "why": "\"Skip to main content\" has one place to go.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "a11y/nav-unnamed",
@@ -1152,7 +1152,7 @@
    "why": "They are all read out as \"navigation\", so nobody can tell which is which.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "a11y/iframe-title",
@@ -1161,7 +1161,7 @@
    "why": "A screen reader says \"frame\" and the address, and people have to go in to find out what it is.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "a11y/iframe-scroll",
@@ -1170,7 +1170,7 @@
    "why": "Someone who zooms in cannot reach what no longer fits.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "a11y/table-headers",
@@ -1179,7 +1179,7 @@
    "why": "A screen reader reads each cell with nothing to say what column or row it belongs to.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "a11y/heading-in-summary",
@@ -1188,7 +1188,7 @@
    "why": "Some browsers treat the summary as a button, and the heading stops being one.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "a11y/redundant-role",
@@ -1197,7 +1197,7 @@
    "why": "It adds nothing, and one day it will disagree with the tag.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "a11y/role-on-structure",
@@ -1206,7 +1206,7 @@
    "why": "The list, table or heading it belonged to loses an item, and the count read out is wrong.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "a11y/native-over-role",
@@ -1215,7 +1215,7 @@
    "why": "A <button> does this with the keyboard and focus handling a role has to rebuild by hand.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "a11y/field-autocomplete",
@@ -1224,7 +1224,7 @@
    "why": "With autocomplete set (email, name, one-time code), it is filled in for people who find typing hard.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "forms/nested-form",
@@ -1233,7 +1233,7 @@
    "why": "Browsers do not allow it: which one a button submits depends on how the page was built.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "forms/button-type",
@@ -1242,7 +1242,7 @@
    "why": "A button in a form is a submit button unless it says otherwise.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "forms/submit-missing",
@@ -1251,7 +1251,7 @@
    "why": "Enter in a field does nothing, and a screen reader finds no way to send the form.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "forms/fieldset-legend",
@@ -1260,7 +1260,7 @@
    "why": "A screen reader says \"group\" and never what the fields in it are about.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "forms/field-name",
@@ -1269,7 +1269,7 @@
    "why": "A form sends only named fields: what is typed here is left behind.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "forms/password-no-form",
@@ -1278,7 +1278,7 @@
    "why": "Password managers look for a form to fill and to save from.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "forms/search-landmark",
@@ -1287,7 +1287,7 @@
    "why": "People who jump by landmarks cannot jump to it.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "forms/form-unnamed",
@@ -1296,7 +1296,7 @@
    "why": "They are all read out as \"form\", so nobody can tell which is which.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "forms/get-sensitive",
@@ -1305,7 +1305,7 @@
    "why": "It ends up in the address bar, the history and the server’s logs.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "forms/textarea-resize",
@@ -1314,7 +1314,7 @@
    "why": "A long message is written through a few lines’ window.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "forms/label-unbound",
@@ -1323,7 +1323,7 @@
    "why": "Clicking it does not focus the field, and a screen reader reads the field with no name.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "forms/label-proximity",
@@ -1332,7 +1332,7 @@
    "why": "The eye pairs a label with whatever is closest.",
    "where": "page",
    "tile": "Gap",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "forms/invalid-undescribed",
@@ -1341,7 +1341,7 @@
    "why": "A screen reader says \"invalid\" and not what is wrong.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "forms/required-unmarked",
@@ -1350,7 +1350,7 @@
    "why": "People find out when the form refuses them.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "forms/required-unsaid",
@@ -1359,7 +1359,7 @@
    "why": "A screen reader does not say it is required, and the browser lets it through empty.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "forms/label-overridden",
@@ -1368,7 +1368,7 @@
    "why": "A screen reader says one thing, the screen another; voice control answers to neither.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "forms/autocomplete-off",
@@ -1377,7 +1377,7 @@
    "why": "A password manager cannot fill it, so people choose passwords they can type.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "forms/numeric-keyboard",
@@ -1386,7 +1386,7 @@
    "why": "On a phone people switch keyboards before they can type.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "forms/number-for-code",
@@ -1395,7 +1395,7 @@
    "why": "It drops leading zeros, changes on scroll and shows spinner arrows. It is for amounts.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "forms/split-code",
@@ -1404,7 +1404,7 @@
    "why": "Paste, autofill from a text message and screen readers all expect one field.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "forms/identifier-correction",
@@ -1413,7 +1413,7 @@
    "why": "A phone capitalises and \"fixes\" a username as it is typed.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "forms/invalid-on-load",
@@ -1422,7 +1422,7 @@
    "why": ":invalid is true from the start for a required field. :user-invalid waits for the person.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "forms/submit-disabled",
@@ -1431,7 +1431,7 @@
    "why": "Nothing says why it cannot be pressed, and a disabled button cannot be focused to find out.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "forms/control-hidden",
@@ -1440,7 +1440,7 @@
    "why": "It cannot be reached by keyboard and a screen reader never hears of it.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "forms/name-split",
@@ -1449,7 +1449,7 @@
    "why": "Many names do not divide that way. One field takes them all.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "forms/latin-only",
@@ -1458,7 +1458,7 @@
    "why": "José, Zoë and 李 are told their name is wrong.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "forms/submit-wording",
@@ -1467,7 +1467,7 @@
    "why": "A button that says what happens (\"Save changes\") needs no reading of the form.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "forms/radio-group",
@@ -1476,7 +1476,7 @@
    "why": "A screen reader reads each option and never the question they answer.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "forms/describedby-missing",
@@ -1485,7 +1485,7 @@
    "why": "The help or error it promises is never read out.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "forms/input-type",
@@ -1494,7 +1494,7 @@
    "why": "type=\"email\" brings the right keyboard on a phone and the browser’s own check.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "forms/visual-order",
@@ -1503,7 +1503,7 @@
    "why": "Tab follows the page’s order, so focus jumps against what the eye sees.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "forms/placeholder-instruction",
@@ -1512,7 +1512,7 @@
    "why": "It goes away at the first keystroke, just when it is needed.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "forms/inline-handler",
@@ -1521,7 +1521,7 @@
    "why": "A strict content security policy blocks inline script, and the control stops working.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "components/breadcrumb-list",
@@ -1530,7 +1530,7 @@
    "why": "The order is the meaning: a screen reader says \"list, 4 items\" and people know how deep they are.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "components/breadcrumb-current",
@@ -1539,7 +1539,7 @@
    "why": "A screen reader reads every step the same, so nobody hears where they are.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "components/breadcrumb-separator",
@@ -1548,7 +1548,7 @@
    "why": "A screen reader reads it between every step (\"Home, slash, Docs, slash\").",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "components/link-nested-control",
@@ -1557,7 +1557,7 @@
    "why": "One press cannot mean two things: browsers and screen readers each pick a different one.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "components/carousel-name",
@@ -1566,7 +1566,7 @@
    "why": "A screen reader says \"carousel\" and not what it shows.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "components/dialog-name",
@@ -1575,7 +1575,7 @@
    "why": "A screen reader says \"dialog\" when it opens and nothing about what it asks.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "components/dialog-native",
@@ -1584,7 +1584,7 @@
    "why": "<dialog> keeps focus inside, closes on Esc and returns focus by itself. A role has to rebuild all three.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "components/dialog-aria-extras",
@@ -1593,7 +1593,7 @@
    "why": "It adds nothing, and it stays true if the dialog is ever shown without being modal.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "components/dialog-fake-modal",
@@ -1602,7 +1602,7 @@
    "why": "It was opened with show() or the open attribute. Tab walks out of it into the page behind.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "components/dialog-close",
@@ -1611,7 +1611,7 @@
    "why": "Someone on a touch screen or a screen reader has nothing to press to leave.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "components/dialog-scroll-lock",
@@ -1620,7 +1620,7 @@
    "why": "The scrollbar goes and the page jumps sideways; on iOS the page can still scroll. overscroll-behavior on the dialog does it without either.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "components/dialog-display",
@@ -1629,7 +1629,7 @@
    "why": "A display set on dialog overrides its closed state. Scope it to dialog[open].",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "components/menu-structure",
@@ -1638,7 +1638,7 @@
    "why": "A screen reader counts and moves by menu items; these are left out or announced alone.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "components/nav-as-menu",
@@ -1647,7 +1647,7 @@
    "why": "A menu takes them out of the Tab order and promises arrow keys. Site navigation is a list of links.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "components/popup-expanded",
@@ -1656,7 +1656,7 @@
    "why": "A screen reader cannot tell whether pressing it opened anything.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "components/checked-missing",
@@ -1665,7 +1665,7 @@
    "why": "A screen reader announces it and never whether it is on.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "components/nav-current",
@@ -1674,7 +1674,7 @@
    "why": "A screen reader reads every link the same. aria-current=\"page\" says where you are, and is the hook to style it.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "components/nav-details",
@@ -1683,7 +1683,7 @@
    "why": "Screen readers do not agree on what a summary is. A button with aria-expanded is read the same everywhere.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "components/current-many",
@@ -1692,7 +1692,7 @@
    "why": "Only one can be where you are.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "components/tablist-name",
@@ -1701,7 +1701,7 @@
    "why": "A screen reader says \"tab list\" and not what the tabs switch.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "components/tab-selected",
@@ -1710,7 +1710,7 @@
    "why": "A screen reader cannot say which panel is showing.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "components/tabpanel-name",
@@ -1719,7 +1719,7 @@
    "why": "Point aria-labelledby at its tab, so the panel is announced by the tab’s words.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "components/tabs-as-nav",
@@ -1728,7 +1728,7 @@
    "why": "A tab promises a panel on this page and arrow keys. Links that look like tabs are navigation.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "components/tab-shift",
@@ -1737,7 +1737,7 @@
    "why": "Every tab after it moves when the selection changes.",
    "where": "page",
    "tile": "Controls",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "components/tabs-wrap",
@@ -1746,7 +1746,7 @@
    "why": "The order and the selected tab are hard to follow. Scroll the row or move the extra into a menu.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "components/tab-structure",
@@ -1755,7 +1755,7 @@
    "why": "A screen reader does not count it or tie it to its neighbours.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "components/tabpanel-many",
@@ -1764,7 +1764,7 @@
    "why": "Only the selected tab’s panel should be there; the rest need hidden.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "components/tab-stops",
@@ -1773,7 +1773,7 @@
    "why": "Tabs are one stop: Tab lands on the selected one and arrows move between them.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "components/toolbar-name",
@@ -1782,7 +1782,7 @@
    "why": "A screen reader says \"toolbar\" and not what it is for.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "components/menubar-name",
@@ -1791,7 +1791,7 @@
    "why": "A screen reader says \"menu bar\" and not whose.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "components/pressed-on-action",
@@ -1800,7 +1800,7 @@
    "why": "aria-pressed is for buttons that stay on. This is announced as a toggle.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "components/progress-name",
@@ -1809,7 +1809,7 @@
    "why": "A screen reader says \"40 percent\" and not of what.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "components/progress-tabindex",
@@ -1818,7 +1818,7 @@
    "why": "It cannot be used, so Tab stops on something that does nothing.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "components/progress-native",
@@ -1827,7 +1827,7 @@
    "why": "<progress> says its value by itself; a role needs aria-valuenow kept right by hand.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "components/spinner-silent",
@@ -1836,7 +1836,7 @@
    "why": "Someone who cannot see it does not know anything is loading.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "components/expanded-on-generic",
@@ -1845,7 +1845,7 @@
    "why": "A plain box has no state to announce and cannot be pressed from the keyboard.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "components/expanded-out-of-sync",
@@ -1854,7 +1854,7 @@
    "why": "A screen reader announces the wrong state.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "html/page-lang",
@@ -1863,7 +1863,7 @@
    "why": "A screen reader guesses the accent to read it in, and translation tools guess what to translate from.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "html/viewport-meta",
@@ -1872,7 +1872,7 @@
    "why": "A phone draws it as a 980px desktop page, shrunk.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "html/zoom-disabled",
@@ -1881,7 +1881,7 @@
    "why": "People who need bigger text cannot zoom in.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "html/quirks-mode",
@@ -1890,7 +1890,7 @@
    "why": "The browser lays it out by the rules of the 1990s: boxes and tables size differently.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "html/landmark-main",
@@ -1899,7 +1899,7 @@
    "why": "A screen reader user cannot jump past the header to what the page is about.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "html/banner-many",
@@ -1908,7 +1908,7 @@
    "why": "A landmark that appears twice does not say where anything is.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "html/h1-missing",
@@ -1917,16 +1917,16 @@
    "why": "The h1 is how someone, and a search engine, learns what the page is.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "html/list-fake",
    "concern": "access",
-   "name": "List typed by hand",
+   "name": "List without list markup",
    "why": "A screen reader reads the marks as text and never says “list, 3 items”.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "html/list-structure",
@@ -1935,7 +1935,7 @@
    "why": "On its own it is not announced as part of any list.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "html/pointer-generic",
@@ -1944,7 +1944,7 @@
    "why": "Tab skips it and a screen reader does not say it can be pressed.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "html/link-as-button",
@@ -1953,7 +1953,7 @@
    "why": "It is announced as a link and does something else. An action is a <button>.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "html/boolean-value",
@@ -1962,7 +1962,7 @@
    "why": "The attribute being there is what turns it on; even =\"false\" would.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "html/figure-caption",
@@ -1971,7 +1971,7 @@
    "why": "A figure is for something with a caption. Without one it is a plain image.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "html/pre-no-code",
@@ -1980,7 +1980,7 @@
    "why": "<pre> keeps the spacing; <code> is what says it is code.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "html/pre-scroll-keyboard",
@@ -1989,7 +1989,7 @@
    "why": "Someone on a keyboard cannot reach what runs off the edge.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "html/pre-scroll-region",
@@ -1998,7 +1998,7 @@
    "why": "A screen reader stops on it and says nothing about what it is.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "html/img-size",
@@ -2007,7 +2007,7 @@
    "why": "The page has no room kept for it, so everything below jumps when it arrives.",
    "where": "page",
    "tile": "Controls",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "html/lazy-above-fold",
@@ -2016,7 +2016,7 @@
    "why": "The browser waits for layout before it even asks for it.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "html/eager-below-fold",
@@ -2025,7 +2025,7 @@
    "why": "It competes for the network with what is on screen.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "html/fetchpriority-overused",
@@ -2034,7 +2034,7 @@
    "why": "Priority is shared out: when all are first, none is.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "html/hero-priority",
@@ -2043,7 +2043,7 @@
    "why": "The browser finds out it matters only after layout. fetchpriority=\"high\" tells it at once.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "html/img-oversized",
@@ -2052,7 +2052,7 @@
    "why": "A phone downloads all of it. srcset lets the browser pick a size that fits.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "html/picture-img",
@@ -2061,7 +2061,7 @@
    "why": "The <img> is what is drawn; the sources only offer it other files.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "html/summary-first",
@@ -2070,7 +2070,7 @@
    "why": "Only a first-child summary is the toggle; this one is hidden with the rest.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "html/summary-nested-control",
@@ -2079,7 +2079,7 @@
    "why": "Pressing it also toggles the details, and screen readers announce the pair unpredictably.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "html/summary-no-cue",
@@ -2088,7 +2088,7 @@
    "why": "Nothing shows that this opens.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "html/title-tooltip",
@@ -2097,7 +2097,7 @@
    "why": "A title appears on mouse hover only: not on a keyboard, not on touch.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "html/video-size",
@@ -2106,7 +2106,7 @@
    "why": "The page jumps when its first frame arrives.",
    "where": "page",
    "tile": "Controls",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "html/video-poster",
@@ -2115,7 +2115,7 @@
    "why": "Until someone presses play it is a black box.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "html/video-captions",
@@ -2124,7 +2124,7 @@
    "why": "Someone who cannot hear it, or has the sound off, gets the pictures only.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "html/background-video",
@@ -2133,7 +2133,7 @@
    "why": "A screen reader stops on a video that has nothing to say.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "html/autoplay-sound",
@@ -2142,7 +2142,7 @@
    "why": "It talks over a screen reader, and browsers block it for most people anyway.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "html/iframe-hidden",
@@ -2151,7 +2151,7 @@
    "why": "Focus disappears into something announced as nothing.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "experience/nowrap-sentence",
@@ -2160,7 +2160,7 @@
    "why": "On a narrow screen, or with larger text, the line runs off the side.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "experience/justify-rivers",
@@ -2169,7 +2169,7 @@
    "why": "The spaces stretch to fill each line and open rivers of white down the paragraph.",
    "where": "page",
    "tile": "Baseline",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "experience/caps-long",
@@ -2178,7 +2178,7 @@
    "why": "Capitals have no word shapes, so a sentence of them is read letter by letter.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "experience/page-overflow-x",
@@ -2187,7 +2187,7 @@
    "why": "Everything can be dragged sideways, and on a phone the page loads zoomed out.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "experience/motion-no-opt-out",
@@ -2196,7 +2196,7 @@
    "why": "People who get dizzy from movement set that preference, and this page does not listen.",
    "where": "page",
    "tile": "Timing",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "experience/font-display",
@@ -2205,7 +2205,7 @@
    "why": "On a slow connection the words are invisible for up to three seconds, then appear.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "experience/preconnect-missing",
@@ -2214,7 +2214,7 @@
    "why": "The first of them waits for a lookup, a connection and a handshake that could have started with the page.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "experience/script-blocking",
@@ -2223,7 +2223,7 @@
    "why": "Nothing is drawn until each is fetched and run, in order.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "experience/page-title",
@@ -2232,7 +2232,7 @@
    "why": "The tab, the history and a screen reader’s first words are the address.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "experience/skip-link",
@@ -2241,7 +2241,7 @@
    "why": "Someone on a keyboard presses Tab that many times on every page.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "experience/color-scheme-missing",
@@ -2250,7 +2250,7 @@
    "why": "Scrollbars, form controls and the flash before the page loads stay white.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "experience/link-target-renamed",
@@ -2259,7 +2259,7 @@
    "why": "In a list of links they look like two places.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "experience/button-name-reused",
@@ -2268,7 +2268,7 @@
    "why": "Out of their rows, in a screen reader’s list or said to voice control, they cannot be told apart.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "experience/state-in-label",
@@ -2277,7 +2277,7 @@
    "why": "A screen reader reads the label, then the state: it is heard twice, or two ways that disagree.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "experience/scroll-no-hint",
@@ -2286,7 +2286,7 @@
    "why": "Nothing says it scrolls, so what is past the edge is never found.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "experience/scroll-keyboard",
@@ -2295,7 +2295,7 @@
    "why": "In browsers that do not focus scroll areas themselves, a keyboard cannot reach what is below.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "experience/control-covered",
@@ -2304,7 +2304,7 @@
    "why": "The press lands on what is on top. It looks pressable and is not.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "tells/eyebrow",
@@ -2313,7 +2313,7 @@
    "why": "The heading already says what this part is. The label only repeats it, louder.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "tells/numbering",
@@ -2322,7 +2322,7 @@
    "why": "Numbers tell people to go in sequence. If the parts can be read in any order, they are noise.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "tells/status-chain",
@@ -2331,7 +2331,7 @@
    "why": "Nobody reads a chain. Keep the one fact people act on and put the rest where it is needed.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "tells/flavour-badge",
@@ -2340,7 +2340,7 @@
    "why": "A badge should mean something the app tracks, like a stream that is live. Added for flavour, it teaches people to ignore badges.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "tells/status-dot",
@@ -2349,7 +2349,7 @@
    "why": "A dot says \"this is live\". If nothing real drives it, it claims something untrue.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "tells/emoji",
@@ -2358,7 +2358,7 @@
    "why": "It says nothing the words do not, and it changes look on every system.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "tells/icon-tile",
@@ -2367,7 +2367,7 @@
    "why": "The tile repeats on every item and tells them apart by colour alone. The names already do that.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "tells/chart-type-title",
@@ -2376,7 +2376,7 @@
    "why": "People can see it is a chart. The title should say what it measures.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "tells/reading-instructions",
@@ -2385,7 +2385,7 @@
    "why": "If it needs instructions, change the thing. If it does not, cut them.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "tells/narrating",
@@ -2394,7 +2394,7 @@
    "why": "People can see it. Keep the words they need to act.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "tells/subtitle-echo",
@@ -2403,7 +2403,7 @@
    "why": "A second line that adds no fact is read for nothing. Keep it only if it says something the heading does not.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "tells/em-dash",
@@ -2412,7 +2412,7 @@
    "why": "Generated copy leans on the dash. A full stop or a comma reads as written by a person.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "tells/stock-words",
@@ -2421,7 +2421,7 @@
    "why": "It could sit on any product's page. Say what this one does.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "tells/hue-gradient",
@@ -2430,7 +2430,7 @@
    "why": "A two-hue gradient is the first thing generated pages reach for. A solid colour holds the brand better.",
    "where": "page",
    "tile": "Colour",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "tells/glow",
@@ -2439,7 +2439,7 @@
    "why": "A glow lifts it with no light to explain it. A soft neutral shadow or a border does the job.",
    "where": "page",
    "tile": "Shadows",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "tells/transition-all",
@@ -2448,7 +2448,7 @@
    "why": "Size and layout changes slide when they should snap, and the browser does extra work. Name the properties that should move.",
    "where": "page",
    "tile": "Timing",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "tells/hover-grow",
@@ -2457,7 +2457,7 @@
    "why": "A card that jumps at the pointer feels busy. A colour or shadow change is enough to say it can be clicked.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "tells/heavy-weight",
@@ -2466,7 +2466,7 @@
    "why": "Size and colour carry the order better. Weights of 800 and 900 shout.",
    "where": "page",
    "tile": "Weight",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "tells/caps-subtitle",
@@ -2475,7 +2475,7 @@
    "why": "Capitals make the second line louder than the first. The heading should lead.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "tells/italic-words",
@@ -2484,7 +2484,7 @@
    "why": "Slanting a word for flavour is a template habit. The words should carry the weight on their own.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "tells/display-serif",
@@ -2493,7 +2493,7 @@
    "why": "It is the face generated pages pick for a quick dose of taste, so it reads as a template.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "tells/negative-tracking",
@@ -2502,7 +2502,7 @@
    "why": "Squeezed headings are a template look. The type was spaced by the people who drew it.",
    "where": "page",
    "tile": "Letter spacing",
-   "fix": "Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray."
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
   },
   {
    "id": "tells/divider",
@@ -2511,7 +2511,7 @@
    "why": "Lines cut the page into strips. Space does the same job and keeps it calm.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "tells/bordered-box",
@@ -2520,7 +2520,7 @@
    "why": "Boxes inside boxes make every part shout \"card\". A quiet fill or space groups it.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "tells/detailed-diagram",
@@ -2529,7 +2529,7 @@
    "why": "The more a diagram draws, the less anyone reads it. One idea needs few marks.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "tells/code-breadcrumb",
@@ -2538,7 +2538,7 @@
    "why": "A file path on a page dresses it up as a terminal. People need the name of the thing, not where it lives.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "tells/tag-row",
@@ -2547,7 +2547,7 @@
    "why": "Tags that do nothing when pressed are labels pretending to be data.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong with these words: edit them in place, or send a note to your agent."
+   "fix": "Edit the words in place, or send a note to your agent."
   },
   {
    "id": "tells/busy-card",
@@ -2556,7 +2556,7 @@
    "why": "Each style is another voice. Past three, nothing leads and the box reads as noise.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "tells/many-shades",
@@ -2565,7 +2565,7 @@
    "why": "Each near-same shade asks people to tell it apart. A few steps, used the same way everywhere, read as a system.",
    "where": "page",
    "tile": null,
-   "fix": "Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place."
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   }
  ]
 }

@@ -35,8 +35,8 @@ export function mount(host, root, css) {
   };
   const KINDS = [
     ['Working', 'Paper, the dots turning. No bar and no button: there is nothing to wait out or take back yet.', toy('busy', FIX.writing, { still: true })],
-    ['On your tokens', 'Mint, as everything on your scale is. The tick pops; the names are your code’s, set as code.', toy('done', SAYS.changed[1], { undo: true, still: true })],
-    ['Your own value', 'Butter, as a value typed by hand is: kept as it is, or back after an Undo.', toy('yours', FIX.undone, { still: true })],
+    ['On your tokens', 'Mint, as everything on your tokens is. The tick pops; the names are your code’s, set as code.', toy('done', SAYS.changed[1], { undo: true, still: true })],
+    ['Your own value', 'Butter, as a hard-coded value you keep is: kept as it is, or back after an Undo.', toy('yours', FIX.undone, { still: true })],
     ['It went wrong', 'Coral, the only place coral appears. As many lines as it needs: what happened, what to do.', toy('wrong', FIX.changedSince, { still: true })],
   ];
 
@@ -71,7 +71,7 @@ export function mount(host, root, css) {
   ];
   const QUIET = [
     ['Reading', 'The turning dots, while the history is read.', `<span class="pic sm">${toyOf('loading')}</span><span class="tt-say">Reading the history…</span>`],
-    ['Nothing yet', 'Nobody home, and one line that says what will show up here.', `<span class="pic sm">${toyOf('empty')}</span><span class="tt-say">${T.empty}</span>`],
+    ['Nothing yet', 'An empty picture and one line that says what will show up here.', `<span class="pic sm">${toyOf('empty')}</span><span class="tt-say">${T.empty}</span>`],
     ['Can’t read it', 'The warning sign, and one line: what failed, and what to do.', `<span class="pic sm">${toyOf('error')}</span><span class="tt-say">${T.error}</span>`],
   ];
 
@@ -238,10 +238,10 @@ export function mount(host, root, css) {
 
   <h2>What is still open</h2>
   <ul class="open">
-    <li><b>The toy toast is on this page only.</b> The product still shows today’s. Moving it in is a change to the overlay, after you have judged it here.</li>
+    <li><b>The toy toast is on this page only.</b> The product still shows today’s. Moving it in needs a change to the overlay.</li>
     <li><b>The pictures are on this page only.</b> The product still draws lines. The strip’s bar is also still today’s: a grey line picture at its start and plain-text buttons.</li>
     <li><b>The undo arrow is the one picture not from the icon set.</b> The set has no undo; this is the Undo button’s arrow, in lilac. It should be drawn into the set properly.</li>
-    <li><b>Butter for “your own value” is my reading of the hue table</b>, used for Kept and for Undone. If Undone should be quiet paper, it is one line.</li>
+    <li><b>Butter for “your own value” follows the hue table</b>, used for Kept and for Undone. If Undone should be quiet paper, it is one line.</li>
   </ul>`;
 
   // the two live toasts answer the same buttons. Today's: says it, holds six seconds, leaves. The toy: arrives, its

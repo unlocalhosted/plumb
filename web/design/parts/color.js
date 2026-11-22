@@ -24,12 +24,12 @@ export function mount(host, root, css) {
 
   // what each hue means in the visual language (docs/design/visual-language.md), and a toy that shows it
   const HUES = [
-    ['mint', 'Padding. Things that are on, done, saved, on your scale.', 'padding'],
-    ['butter', 'Margin. Warm objects: cards, keys, alerts. A value typed by hand.', 'margin'],
+    ['mint', 'Padding. Things that are on, done, saved, on your tokens.', 'padding'],
+    ['butter', 'Margin. Warm objects: cards, keys, alerts. A hard-coded value you keep.', 'margin'],
     ['lilac', 'Gap. Names, text, navigation, menus.', 'gap'],
     ['pink', 'Actions: what you press, what is in front, what is current.', 'button'],
     ['sky', 'Measurements and type. Things you type into or look into.', 'input'],
-    ['coral', 'Only “this is wrong”: off your scale, an error.', 'error'],
+    ['coral', 'Only “this is wrong”: off your tokens, an error.', 'error'],
   ];
   // the roles and states a part asks for (--pl-<group>-<role>-<state>), one table per group, read from the token file
   const STATES = [
@@ -46,7 +46,7 @@ export function mount(host, root, css) {
   const GROUPS = [
     ['Ground and words', 'Every surface and every word. Warm neutrals, so the overlay sits apart from whatever page is under it.', (n) => /^(paper|paper-2|desk|rule|ink|ink-2|ink-3)$/.test(n)],
     ['Roles', 'What a colour is for. A part asks for a role (“the action colour”) and never for a hue, so changing which hue acts is one line.', (n) => /^(action|action-soft|on-action|instrument|accent|on-accent|halo)$/.test(n)],
-    ['Verdicts', 'On your scale, off it, or in between. Each is always paired with a shape or a word, never colour alone.', (n) => /^(on|off|soft|soft-text|unknown|on-bg|off-bg|soft-bg)$/.test(n)],
+    ['Verdicts', 'On your tokens, off them, or in between. Each is always paired with a shape or a word, never colour alone.', (n) => /^(on|off|soft|soft-text|unknown|on-bg|off-bg|soft-bg)$/.test(n)],
     ['On your page', 'What Blueprint draws on your app. Outside the six hues on purpose: these sit on any colour, so they are tuned to be seen anywhere.', (n) => /^(heat|sys|scrim)$/.test(n)],
   ];
   const sw = (value, cls = '') => `<i class="sw ${cls}" style="background:${value}"></i>`;
@@ -131,7 +131,7 @@ export function mount(host, root, css) {
   <h2>How the system works</h2>
   <div class="prose">
     <p>Colour is in two layers. <b>Hues</b> are the raw palette: six of them, each with three values (the hue, its <b>soft</b>, its <b>ink</b>), plus seven neutrals for surfaces and words. <b>Roles</b> sit on top and point at a hue by purpose: what the colour is <i>for</i>, never what it looks like. <code>--pl-action</code> says “the thing you can press”, not “pink”.</p>
-    <p>A part takes a role when one exists and a hue only for what the hue itself means (padding is mint everywhere). That one step is what keeps the system in one piece: move a role to another hue and every part follows, with no part edited.</p>
+    <p>A part takes a role when one exists and a hue only for what the hue itself means (padding is mint everywhere). When a role moves to another hue, every part that uses it follows without an edit.</p>
     <p>The dark scheme is the same names with other values. A part never asks which scheme it is in.</p>
   </div>
 

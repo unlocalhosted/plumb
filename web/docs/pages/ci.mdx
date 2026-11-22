@@ -1,4 +1,4 @@
-In CI, Plumber checks each pull request against the branch it merges into. Drift that's new in the changed files fails the check; drift you already had, recorded in the [ledger](/docs/the-ledger), doesn't. Changes to the ledger itself wait for someone you trust to approve them.
+In CI, Plumber checks each pull request against the branch it merges into. Drift that's new in the changed files fails the check; drift you already had, recorded in the [ledger](/docs/the-ledger), doesn't. Additions to the ledger need approval from someone you name.
 
 ## Set it up
 
@@ -6,10 +6,10 @@ In CI, Plumber checks each pull request against the branch it merges into. Drift
 npx plumber install --ci
 ```
 
-That writes `.github/workflows/plumb.yml`, keeping any workflow you already have. It looks like this:
+That writes `.github/workflows/plumb.yml`, if you don't have that file yet. When it detects no agent, it also writes `AGENTS.md`. In an npm project the workflow looks like this:
 
 ```yaml
-name: Plumber
+name: React Plumber
 on:
   pull_request:
   pull_request_review:
@@ -28,17 +28,22 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22.18.0'
-      - uses: unlocalhosted/plumb@<commit>
+      - run: npm ci
+      - uses: unlocalhosted/plumb@v0.6.0
         with:
           base: ${{ github.event.pull_request.base.sha }}
           working-directory: "."
-          ledger-approvers: "@ledger-owner"
+          ledger-approvers: ""
 ```
 
-The installer pins the action to an exact commit. If your project has dependencies, it also adds your package manager's install step before Plumber runs, since Plumber compiles with your own Tailwind.
+The installer uses the release tag of the version you have. Replace the tag with a commit SHA if you want it pinned. The install step matches your package manager and is there because Plumber compiles with your own Tailwind.
+
+<Callout kind="careful" title="Set your approvers">
+`ledger-approvers` starts empty. Until you add at least one GitHub login, a pull request that adds to the ledger fails.
+</Callout>
 
 <Callout kind="careful" title="Fetch the full history">
-Plumber compares against the base commit, so the checkout needs `fetch-depth: 0`. Without it, there's no base to compare with.
+Plumber compares against the base commit, so the checkout needs `fetch-depth: 0`. Without it, the base commit is missing.
 </Callout>
 
 ## Inputs
@@ -50,7 +55,7 @@ Plumber compares against the base commit, so the checkout needs `fetch-depth: 0`
 | `ledger-approvers` | none | GitHub logins, separated by commas or spaces, who can approve ledger changes |
 | `token` | `github.token` | used to comment on the pull request |
 
-## What fails, and what doesn't
+## What fails
 
 The action runs `plumber check --base <base>`:
 
@@ -66,15 +71,15 @@ npx plumber check --base main
 
 ## Ledger changes need approval
 
-Adding to the ledger is how drift gets let in, so it's reviewed like code. If a pull request adds an exception, accepts a changed decision or raises debt, one of your `ledger-approvers` must approve the pull request; if the author is an approver, that's enough. A later "changes requested" or a dismissed review cancels the approval.
+Adding to the ledger lets drift in, so it needs a review. If a pull request adds an exception, accepts a changed decision or raises debt, one of your `ledger-approvers` must approve the pull request; if the author is an approver, that's enough. A later "changes requested" or a dismissed review cancels the approval.
 
-Debt that grows is an error whoever approves. Approval never turns a failing check green.
+Growing debt is an error even with approval, and approval doesn't clear any other error.
 
 <Callout kind="note" title="List people, not teams">
 `ledger-approvers` takes individual logins. GitHub teams aren't supported, so list the team's members.
 </Callout>
 
-## What you'll see
+## What the pull request shows
 
 - **Annotations** on the changed lines: new drift as errors, touched debt and exceptions as notices.
 - **A summary comment** on the pull request, updated on each run: how many findings are new, fixed, debt and exceptions, coverage per family against the base, ledger growth, and whether approval is needed.
@@ -89,4 +94,4 @@ color: 2/2 (100%); +0 pp vs base.
 0 growth lines.
 ```
 
-The check passes only when there's no new error and any ledger change is approved.
+The check passes when there are no new errors and any ledger additions are approved. On pull requests from forks, GitHub's default token is read-only, so the comment can't be posted.

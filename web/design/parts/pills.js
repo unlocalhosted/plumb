@@ -20,8 +20,8 @@ export function mount(host, root, css) {
   ];
 
   // a pill's hue says what it is about (docs/design/visual-language.md, the hue table)
-  const HUE_ROWS = [['sky', '320px', 'a measurement, a size of type'], ['mint', '16px', 'on your scale, done, saved'], ['coral', '13px', 'off your scale: the only "wrong"'],
-    ['butter', '24px', 'margin, or a value typed by hand'], ['lilac', 'gap 8', 'a gap; names and text'], ['pink', 'now', 'what is current, what you press']];
+  const HUE_ROWS = [['sky', '320px', 'a measurement, a size of type'], ['mint', '16px', 'on your tokens, done, saved'], ['coral', '13px', 'off your tokens: the only "wrong"'],
+    ['butter', '24px', 'margin, or a hard-coded value you keep'], ['lilac', 'gap 8', 'a gap; names and text'], ['pink', 'now', 'what is current, what you press']];
   const anatomy = (k) => `<figure class="kind" data-id="${k.id}">
     <div class="big"><div class="zoom">${k.html}</div><svg class="guides" aria-hidden="true"></svg></div>
     <figcaption><h3>${k.name} <span>${k.is}</span></h3><p>${k.says}</p><dl class="sizes"></dl></figcaption></figure>`;

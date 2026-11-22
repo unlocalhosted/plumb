@@ -1,14 +1,20 @@
-import { ConfigReference } from '../reference.jsx'
-import data from '../recordings/reference/config.json'
-
-Every option `plumber.config.ts` (or `.mjs`, `.js`) accepts, read from Plumber's config schema. Most projects need only `decisions` and `habits`; `plumber init` writes a starting config for you.
+Plumber reads `plumber.config.ts`, `.mts`, `.mjs` or `.js` from your project root, or the file you pass to `--config`. The config is optional, and `plumber init` writes one for you.
 
 ```ts
 // plumber.config.ts
 export default {
+  css: 'src/index.css',
   decisions: { spacing: { from: ['theme:--spacing-*'] } },
   habits: ['hover-gate', 'focus-outline', 'transition-named', 'no-ease-in'],
 }
 ```
 
-<ConfigReference data={data} />
+| Option | What it sets |
+| --- | --- |
+| `css` | Your CSS entry. |
+| `source` | Which files are read. Leave it out to read all of your own code. |
+| `decisions` | Where each family’s tokens come from. See [Decisions](/docs/decisions). |
+| `habits` | The [habits](/docs/habits) that run. |
+| `components` | Where your components live. |
+| `classHelpers` | Your own functions that join class names. |
+| `craft` | The numbers and rules the page checks use. `npx plumber spec` prints the values in effect. |

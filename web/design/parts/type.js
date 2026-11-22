@@ -24,9 +24,9 @@ export function mount(host, root, css) {
     'card-label': 'ON YOUR SCALE',
     'page-display': 'Where your sizes land',
     'page-display-narrow': 'Where your sizes land',
-    'page-title': 'Text sizes typed by hand',
-    'page-body': 'Each mark is a place in your code that types a size by hand, next to the size it is closest to.',
-    'page-small': '214 places use your scale. 37 sit just off it.',
+    'page-title': 'Hard-coded font sizes',
+    'page-body': 'Each mark is a place in your code that hard-codes a font size, next to the size it is closest to.',
+    'page-small': '214 places use your tokens. 37 sit just off them.',
     'page-meta': 'text-sm · 14px · used in 62 places',
     'page-figure': '1,284',
   };
@@ -109,9 +109,8 @@ export function mount(host, root, css) {
 
   <h2>What is still open</h2>
   <ul class="open">
-    <li><b>Four sizes within three pixels.</b> 11, 12, 13 and 14 all live on a card. Side by side, 12 and 13 are hard to tell apart; the scale would be clearer with one of them gone.</li>
+    <li><b>Four sizes within three pixels.</b> 11, 12, 13 and 14 all live on a card. Side by side, 12 and 13 are hard to tell apart; the set would be clearer with one of them gone.</li>
     <li><b>Three older names still exist.</b> <code>--pl-text-title</code>, <code>--pl-text-row</code> and <code>--pl-text-reading</code> duplicate card styles and should be removed once nothing uses them.</li>
-    <li><b>The label is the only style not named for where it lives.</b> <code>--pl-text-label</code> should be <code>--pl-card-label</code>.</li>
     <li><b>The round face is on the site and on buttons, not yet in the product’s cards.</b> <code>--pl-round</code> is in the token file; the card and page styles above still name the plain face. Moving titles and names to it is the next step.</li>
     <li><b>No rounded face on some systems.</b> Apple’s systems have one. Where there is none, the list falls back to the system’s plain face, so the feeling is lost there unless the site ships a font of its own.</li>
   </ul>`;

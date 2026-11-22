@@ -143,7 +143,7 @@ export function Review() {
         <div className="rv-count">
           {found > 0 && <span className="chip chip-off"><i />{found} found</span>}
           {fixed.size > 0 && <span className="chip chip-on"><i />{fixed.size} fixed</span>}
-          <span className="rv-count-of">77 patterns checked</span>
+          <span className="rv-count-of">77 craft patterns</span>
           <button type="button" className="rv-pause" onClick={pause} aria-label={touring ? 'Pause the tour' : 'Play the tour'} disabled={reduced}>
             <svg viewBox="0 0 16 16" aria-hidden="true">{touring ? <path d="M5.5 3.5v9M10.5 3.5v9" /> : <path d="M5 3.5v9l7.5-4.5z" />}</svg>
           </button>

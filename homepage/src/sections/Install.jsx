@@ -13,7 +13,7 @@ import './install.css';
 
 const LINES = [
   { cmd: 'npm install -D @unlocalhosted/react-plumber', bold: '@unlocalhosted/react-plumber', what: 'adds React Plumber to your dev dependencies', vis: 'pkg' },
-  { cmd: 'npx plumber init', bold: 'init', what: 'writes your theme and config, and records today’s problems as the baseline', vis: 'init' },
+  { cmd: 'npx plumber init', bold: 'init', what: 'asks for your rules, writes your config and records today’s problems as the baseline', vis: 'init' },
   { cmd: 'npx plumber install --overlay --write', bold: 'install --overlay --write', what: 'wires the overlay into Vite or Next.js, and shows the diff', vis: 'vite' },
 ];
 const HOLD = { every: 3200, held: 1700 };
@@ -37,7 +37,7 @@ export function Install() {
 
   return (
     <section className="ins" aria-labelledby="ins-title">
-      <h2 id="ins-title" className="title">Three commands. Then hold Alt.</h2>
+      <h2 id="ins-title" className="title">Set up in three commands</h2>
       <ol className="ins-lines">
         {LINES.map(l => (
           <li key={l.cmd}>
@@ -53,7 +53,7 @@ export function Install() {
         <p className="display">Run your dev server.<br />Hold <span className="ins-alt" data-held={held}>Alt</span>.</p>
         <span className="ins-vis ins-vis-hold" aria-hidden="true"><Visual kind="hold" held={held} /></span>
       </div>
-      <p className="ins-agent">Working with an agent? <code>npx plumber install --hooks</code> checks every edit it makes.</p>
+      <p className="ins-agent">Working with an agent? <code>npx plumber install --hooks</code> checks each edit in Claude Code or Cursor.</p>
       <p className="ins-req">Vite and Next.js · Tailwind v4 or plain CSS · Node 22.18+</p>
     </section>
   );
@@ -90,13 +90,12 @@ function Copy({ text }) {
 function Visual({ kind, held }) {
   if (kind === 'pkg') return (
     <div className="v"><p className="v-name">package.json</p>
-      <pre><span className="v-p">"devDependencies": {'{'}</span><span className="v-add">+  "@unlocalhosted/react-plumber": "^0.2.0"</span><span className="v-p">{'}'}</span></pre></div>
+      <pre><span className="v-p">"devDependencies": {'{'}</span><span className="v-add">+  "@unlocalhosted/react-plumber": "^0.6.0"</span><span className="v-p">{'}'}</span></pre></div>
   );
   if (kind === 'init') return (
     <div className="v"><p className="v-name">written by init</p>
       <ul className="v-tree">
-        <li><i className="v-ico v-css" />app.css <small>@theme, your steps</small></li>
-        <li><i className="v-ico v-ts" />plumber.config.ts</li>
+                <li><i className="v-ico v-ts" />plumber.config.ts</li>
         <li><i className="v-ico v-dir" />.plumber/ledger.jsonl <small>today’s baseline</small></li>
       </ul></div>
   );
@@ -107,7 +106,7 @@ function Visual({ kind, held }) {
   return (
     <div className="v v-hold" data-held={held}>
       <div className="v-card"><span className="v-outline" /><b>Members</b><span className="v-row" /><span className="v-row" />
-        <span className="v-tag"><code>&lt;MembersCard&gt;</code> · 2 off the scale</span></div>
+        <span className="v-tag"><code>&lt;MembersCard&gt;</code> · 2 off your tokens</span></div>
       <svg className="v-ptr" viewBox="0 0 16 22"><path d="M1 1v17l4.5-4.2 3 7 2.6-1.1-3-6.8H14z" /></svg>
     </div>
   );

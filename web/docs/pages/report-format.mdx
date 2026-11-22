@@ -1,10 +1,7 @@
-import { ReportReference } from '../reference.jsx'
-import data from '../recordings/reference/report.json'
-
-`plumber check --json` prints one report: what was read, every finding, coverage per family, and the ledger's state. This page lists every field, read from Plumber's report schema.
+`plumber check --json` prints one report with what was read, every finding, coverage per family and the state of the ledger.
 
 ```sh
 npx plumber check --json > plumber-report.json
 ```
 
-<ReportReference data={data} />
+The [report schema](https://github.com/unlocalhosted/plumb/blob/main/schema/report.schema.json) describes every field, and ships in the package as `schema/report.schema.json`. [Findings](/docs/findings) explains the fields you will read most.

@@ -108,9 +108,9 @@ export function mount(host, root, css) {
     toy: () => `<div class="stage toy" tabindex="0" aria-label="Picked up: point at it to play"><i class="big">${toyOf('padding')}</i><i class="sm">${toyOf('gap')}</i></div>`,
     arrive: () => `<div class="stage arrive"><span class="chip">Use <b>gap-3</b></span></div>`,
     lands: () => `<div class="stage lands">${['padding', 'gap', 'corner'].map((n) => `<i>${toyOf(n)}</i>`).join('')}</div>`,
-    roll: () => `<div class="stage roll"><span class="sc-count-demo">${count(128, 'on the scale')}</span></div>`,
-    card: () => `<div class="stage card"><div class="mini"><b>Padding</b><span>16px, on the scale</span></div></div>`,
-    press: () => `<div class="stage press"><a class="s-box" data-hue="mint" href="#" onclick="return false"><span class="in"><span class="plate"><i class="toy">${toyOf('padding')}</i></span><b>Padding</b><em>16px, on the scale</em></span></a>
+    roll: () => `<div class="stage roll"><span class="sc-count-demo">${count(128, 'on your tokens')}</span></div>`,
+    card: () => `<div class="stage card"><div class="mini"><b>Padding</b><span>16px, on your tokens</span></div></div>`,
+    press: () => `<div class="stage press"><a class="s-box" data-hue="mint" href="#" onclick="return false"><span class="in"><span class="plate"><i class="toy">${toyOf('padding')}</i></span><b>Padding</b><em>16px, on your tokens</em></span></a>
       <button class="s-btn" type="button"><span>Write</span></button></div>`,
     detent: () => `<div class="stage detent"><span class="track">${[0, 1, 2, 3, 4].map((i) => `<i class="tick" style="left:${i * 25}%"></i>`).join('')}<span class="knob" tabindex="0" role="slider" aria-label="Drag to a step" aria-valuemin="0" aria-valuemax="4" aria-valuenow="1"></span></span></div>`,
     travel: () => `<div class="stage travel"><span class="seg"><i class="fill"></i><span>Body</span><span>Title</span><span>Label</span></span></div>`,
@@ -227,7 +227,7 @@ export function mount(host, root, css) {
   </style>${TOY_DEFS}
   <h2>How the system works</h2>
   <div class="prose">
-    <p>Pieces behave like <b>objects with a little weight</b>. A thing that moves moves as one body; a small thing is quicker and stiffer than a big one; any motion can be stopped from where it is. Under reduced motion nothing moves; states change at once.</p>
+    <p>Pieces move like <b>objects with a little weight</b>. A thing that moves moves as one body; a small thing is quicker and stiffer than a big one; any motion can be stopped from where it is. Under reduced motion nothing moves; states change at once.</p>
     <p>Each moment below is the real piece doing it, next to its curve, drawn from the token. Point at a piece, or press Play: the dot runs along the curve in step with it.</p>
   </div>
   <h2>Moments</h2>

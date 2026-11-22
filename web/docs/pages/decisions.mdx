@@ -1,18 +1,21 @@
-import { DecisionSources } from '../figures/DecisionSources.jsx'
-
-Your decisions are the tokens your theme defines and the reasons written beside them. Plumber doesn't ship a scale of its own. It reads yours, through your own Tailwind, and judges every value against it.
+Decisions are the tokens your theme defines and the reasons written beside them. Plumber reads them through your own Tailwind and judges values against them.
 
 ## Write the reason beside the token
 
-Put a `/* why: … */` comment directly before a token, and Plumber keeps it with that step. When a value drifts, the steps Plumber offers come with the reasons you wrote, so whoever fixes it chooses by meaning rather than by the nearest number.
+Put a `/* why: … */` comment directly before a token, and Plumber keeps it with that token. When a value drifts, the tokens Plumber offers come with those reasons, so whoever fixes it can tell which one is meant for the job.
 
-<DecisionSources />
+```css
+@theme {
+  /* why: Related items use eight pixels. */
+  --spacing-related: 8px;
+}
+```
 
-A few things to know about reasons:
+How reasons are handled:
 
-- **They're optional.** A token with no reason is still on your scale. Plumber just has nothing to say about why.
+- **They're optional.** A token with no reason still counts, and is listed with no reason.
 - **One sentence is kept.** A long reason is cut to its most relevant sentence, at most 100 characters.
-- **A reason shared by more than three tokens** becomes a reason for the group, and isn't shown against each step. Write a reason where it tells one step from its neighbours.
+- **A reason shared by more than three tokens** becomes a reason for the group, and isn't shown against each token. Write reasons that tell a token from the ones beside it.
 - **Aliases don't inherit.** If `--color-primary` points at `--primary`, the reason on `--primary` stays there. Write it where the token is declared.
 
 ## Where decisions come from
@@ -22,9 +25,9 @@ Plumber collects tokens from these sources, in this order. When two define the s
 1. **Presets** it finds in your project, such as shadcn's, or ones you configure.
 2. **Your Tailwind v4 theme**, read through the Tailwind you have installed, with each token's place in your CSS.
 3. **Variables on `:root` or `html`** in your CSS, for any family your config doesn't already cover.
-4. **`decisions.<family>.from`** in `plumber.config.mjs`: theme selectors such as `'theme:--radius-*'`, CSS file globs, DTCG token JSON (where `$description` is the reason), or a function that returns the tokens.
+4. **`decisions.<family>.from`** in `plumber.config.ts`: theme selectors such as `'theme:--radius-*'`, CSS file globs, DTCG token JSON (where `$description` is the reason), or a function that returns the tokens.
 
-Seven families are judged, each from its own namespaces:
+In a Tailwind theme, each family has its own namespaces:
 
 | Family | Tokens |
 | --- | --- |
@@ -36,8 +39,10 @@ Seven families are judged, each from its own namespaces:
 | <Family id="elevation">Elevation</Family> | `--shadow-*`, `--inset-shadow-*`, `--drop-shadow-*` |
 | <Family id="z">Z-index</Family> | `--z-*` |
 
+Tokens with other names are sorted into families by their value, their uses and their name. `plumber decisions` says how each one was read.
+
 <Callout kind="careful" title="Tailwind's defaults stay unless you reset them">
-Adding your own `--radius-lg` doesn't remove Tailwind's other radii. Reset a namespace in your theme with `--radius-*: initial;` so only your steps remain. Defaults that survive count as Tailwind's, not yours, and Plumber flags their use.
+Adding your own `--radius-lg` doesn't remove Tailwind's other radii. Reset a namespace in your theme with `--radius-*: initial;` so that only your tokens remain. Plumber reports the use of any default that survives.
 </Callout>
 
 ## See what Plumber read
@@ -58,8 +63,8 @@ Once your project has a ledger, a new token, or a changed value, is an error in 
 npx plumber accept-decisions
 ```
 
-That records the current decisions in the ledger, so a change to your scale is reviewed like any other change. Editing only a reason doesn't need it. A token that disappears is a warning; after reviewing the removal, `npx plumber ledger --prune` clears it.
+That records the current decisions in the ledger, so that a change to your tokens is reviewed like any other change. Editing only a reason doesn't need it. A token that disappears is a warning; after reviewing the removal, `npx plumber ledger --prune` clears it.
 
-<Callout kind="careful" title="--why applies to every decision, not just the new ones">
+<Callout kind="careful" title="--why applies to every token">
 `accept-decisions` records all of your current decisions at once, and `--why` replaces the accepted reason on each of them. To add one token without rewriting the others' history, leave `--why` off: each token's own `why:` comment is used instead.
 </Callout>

@@ -11,7 +11,7 @@ export function mount(host, root, css) {
     .prose b { color: var(--pl-text-primary); font-weight: 600; }
     .bar { display: flex; justify-content: flex-end; margin: 0 0 8px; }
     .bar button { font: 600 13px var(--pl-sans); padding: 8px 14px; border-radius: 10px; border: 0; background: var(--pl-pink); color: #fff; cursor: pointer; }</style>
-    <div class="prose"><p>Every change plays the same four beats. <b>The guides draw in</b>: hairlines at the edges that change, an I-beam, the value in a pill. <b>The page moves</b> on the overlay’s spring, and the guides and the space’s pattern follow it every frame. <b>The number rolls and lands</b>: coral while it is off your scale, sky once it is on, named by its step. <b>The guides go</b>, and the change stays.</p>
+    <div class="prose"><p>Every change plays the same four beats. <b>The guides draw in</b>: hairlines at the edges that change, an I-beam, the value in a pill. <b>The page moves</b> on the overlay’s spring, and the guides and the space’s pattern follow it every frame. <b>The number rolls and lands</b>: coral while it is off your tokens, sky once it is on one, named by that token. <b>The guides go</b>, and the change stays.</p>
     <p>A length is drawn as a length, a time as a bar that shrinks, a colour as a ring with the swatch crossing over. Press Play on any one.</p></div>
     <div class="bar"><button type="button" class="all">Play all</button></div><div class="board"></div>`;
   const b = mountMotionBoard(root.querySelector('.board'), { tokensCss: css });

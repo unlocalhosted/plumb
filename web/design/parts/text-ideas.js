@@ -29,7 +29,7 @@ const nearest = () => [...STY].sort((a, b) => distance(HARD, a) - distance(HARD,
 const page = (id) => `
   <div class="site" data-page="${id}">
     <nav><b data-style="title">Lumen</b><span data-style="body">Product</span><span data-style="body">Pricing</span><span data-style="body">Docs</span></nav>
-    <header><small data-style="caption">NEW · THEMES 2.0</small><h1 class="hard">Keep every screen on your design system</h1><p data-style="body">Lumen finds the values your team typed by hand and moves them onto your tokens, in your code.</p></header>
+    <header><small data-style="caption">NEW · THEMES 2.0</small><h1 class="hard">Keep every screen on your design system</h1><p data-style="body">Lumen finds the values your team hard-coded and moves them onto your tokens, in your code.</p></header>
     <h2 data-style="heading">How it works</h2>
     <div class="cards">
       <div><h3 data-style="title">Find drift</h3><p data-style="body">Every hard-coded value on the page.</p></div>

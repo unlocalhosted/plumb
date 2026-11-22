@@ -1,4 +1,4 @@
-Coding agents write a lot of styles, and they'll happily invent `p-[13px]` when nothing tells them otherwise. Plumber gives an agent your tokens with their reasons before it writes, checks its edits after, and tells it exactly what to change, or to stop and ask you.
+Coding agents make up values like `p-[13px]` when they don't know your tokens. Plumber gives an agent your tokens and their reasons before it writes, then checks its edits and either names the change to make or tells it to stop and ask you.
 
 ## Set it up
 
@@ -6,7 +6,7 @@ Coding agents write a lot of styles, and they'll happily invent `p-[13px]` when 
 npx plumber install --agent claude
 ```
 
-For Claude Code that writes two things, keeping anything already in your settings:
+For Claude Code this writes two files, and keeps what is already in your settings:
 
 - **`.claude/skills/plumber/SKILL.md`**: how to use Plumber, written for agents.
 - **A hook in `.claude/settings.json`** that runs Plumber after every edit:
@@ -17,7 +17,7 @@ For Claude Code that writes two things, keeping anything already in your setting
     "PostToolUse": [
       {
         "matcher": "Edit|Write|MultiEdit",
-        "hooks": [{ "type": "command", "command": "plumber check --changed --agent --strict-ledger" }]
+        "hooks": [{ "type": "command", "command": "npx --no-install plumber check --changed --agent --strict-ledger" }]
       }
     ]
   }
@@ -35,11 +35,11 @@ Other agents get instructions in the place they read them:
 | Gemini CLI | `gemini` | a block in `GEMINI.md` | no |
 | Windsurf | `windsurf` | `.windsurf/rules/plumber.md` | no |
 
-Pass `--agent` more than once to set up several. `npx plumber install --list` shows what it would write without writing it.
+To add only the hooks for Claude Code and Cursor, run `npx plumber install --hooks`. Pass `--agent` more than once to set up several agents. `npx plumber install --list` shows what it would write without writing it.
 
 ## The loop
 
-1. **Before writing styles**, the agent looks up your tokens instead of guessing (`npx plumber decisions --family spacing`), and can try a snippet without touching a file:
+1. **Before writing styles**, the agent looks up your tokens (`npx plumber decisions --family spacing`), and can try a snippet without touching a file:
 
    ```sh
    echo '<div className="gap-10 text-gray-500" />' | npx plumber try --agent
@@ -55,8 +55,8 @@ Here's that output for a 13px gap:
 Rule: provenance/spacing
 Why: Off-scale spacing makes layouts drift apart and can't be changed from the theme.
 Tokens:
-- 8px: use gap: var(--spacing-related); why: Related items use eight pixels.
-- 16px: use gap: var(--spacing-group); why: (no reason recorded)
+- 8px: use gap-related or gap: var(--spacing-related); why: Related items use eight pixels.
+- 16px: use gap-group or gap: var(--spacing-group); why: (no reason recorded)
 Sites: src/new.css:1:8
 - src/new.css:1:8  `gap: 13px`
   Compiles to: gap: 13px (via stylesheet)
@@ -74,17 +74,17 @@ Each site ends in one of four instructions:
 | **NEEDS-DECISION** | nothing fits: stop and tell you the sites and the value it wanted |
 | **Fix** | a habit or other finding: follow the instruction |
 
-This is where your `why:` comments pay off: they're what the agent chooses by.
+The agent uses your `why:` comments to choose between tokens.
 
-## What an agent must never do
+## What agents are told not to do
 
-The skill and every `--agent` output say the same thing:
+The skill gives agents these limits, and `--agent` output repeats the main ones:
 
 - Never edit the config, the ledger or the theme to make a finding pass. A new token or an exception is your decision.
 - Never run `plumber accept`, `accept-decisions` or `baseline` unless you ask. If something should be an exception, it gives you the `plumber accept … --why` line to run.
 - Never invent a nearby value, like `p-[13px]` or `p-3.25`, to get around a finding.
 
-The hook adds `--strict-ledger`, so if an agent does change the ledger, the check fails.
+The hook runs with `--strict-ledger`, so the check fails if an agent adds to the ledger. A hook runs after the edit and can't undo it.
 
 <Callout kind="note" title="PLUMBER.md">
 `npx plumber agent-docs` writes `PLUMBER.md`: your tokens with their reasons, what callers may set on each component, and the habits in force, in one file an agent can read before it starts. Regenerate it when your decisions change.

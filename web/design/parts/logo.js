@@ -38,8 +38,8 @@ export function mount(host, root, css) {
     ['A solid leg', 'It becomes a third part, and the mark is a plain R. The P inside it is gone.', wrong(`${P('n1')}<path d="${LEG}" fill="${BLUE}"/>`)],
     ['No leg', 'A P at one size and an R at another are two logos. The leg stays, down to 16px.', wrong(P('n2'))],
     ['The leg in the mark’s colours', 'In violet it joins the bowl. Blue is the tool’s colour and keeps it apart.', wrong(`${P('n3')}<path d="${LEG}" fill="#7356f0" fill-opacity=".2" stroke="#7356f0" stroke-width="2"/>`)],
-    ['Guardrails when small', 'The frame and points are for the hero. Small, they are dust.', mark({ h: 96, level: 3 })],
-    ['Stretched or tilted', 'The gap is a measure. It does not survive a squeeze.', wrong(`${P('n5')}<path d="${LEG}" fill="${BLUE}" fill-opacity=".2" stroke="${BLUE}" stroke-width="2"/>`, 'transform:scaleX(1.35) rotate(-6deg)')],
+    ['Guardrails when small', 'The frame and points are for the hero. At small sizes they are too fine to see.', mark({ h: 96, level: 3 })],
+    ['Stretched or tilted', 'Stretching or tilting changes the gap.', wrong(`${P('n5')}<path d="${LEG}" fill="${BLUE}" fill-opacity=".2" stroke="${BLUE}" stroke-width="2"/>`, 'transform:scaleX(1.35) rotate(-6deg)')],
   ];
 
   const tiles = [['#fff', false, false, 'inset 0 0 0 1px color-mix(in oklab, var(--pl-ink) 10%, transparent)'], ['#16151a', true, false, 'none'], ['linear-gradient(#ff7ac0,#d0287f)', false, true, 'none'], ['linear-gradient(#9a7dff,#5232d4)', false, true, 'none'], [BLUE, false, true, 'none']];
@@ -100,7 +100,7 @@ export function mount(host, root, css) {
   <h2>One mark, two letters</h2>
   <p>React Plumber. The P is the thing itself, finished and solid. The R is drawn around it in plumber’s own line, the way plumber draws on your page. You read the P first, then the R.</p>
   <div class="three">
-    <div class="note"><small>01</small><b>A solid P</b><span>A pink stem and a violet bowl, with exactly 4 between them. The space is a decision, and it makes the letter.</span></div>
+    <div class="note"><small>01</small><b>A solid P</b><span>A pink stem and a violet bowl, with exactly 4 between them. That space makes the letter.</span></div>
     <div class="note"><small>02</small><b>A drawn R</b><span>The one part a P lacks to be an R is its leg. It is only ever drawn: an outline in the tool’s blue, never a solid part.</span></div>
     <div class="note"><small>03</small><b>A DOM tree for a leg</b><span>Inside the leg, three nodes, each a child of the one above, joined by pipe elbows. What plumber works on, and how it got its name.</span></div>
   </div>
@@ -114,8 +114,8 @@ export function mount(host, root, css) {
   <ol class="law">
     <li><b>The P is solid. The leg is only drawn.</b><span>An outline with a breath of tint, never a filled part. A solid leg makes it a plain R and the P is lost.</span></li>
     <li><b>The leg is the tool’s blue.</b><span>The colour of plumber’s guardrails, on every surface. It keeps the leg apart from the pink and violet P. In one colour, it takes that colour.</span></li>
-    <li><b>Detail drops away with size. The leg never does.</b><span>First the DOM tree goes, then the dashes. Without the leg a small mark is a different letter.</span></li>
-    <li><b>Guardrails are for the hero.</b><span>The frame, the corner crosses and the points belong to big, quiet places: a homepage, a film title, the top of a README.</span></li>
+    <li><b>Smaller sizes lose detail and keep the leg.</b><span>First the DOM tree goes, then the dashes. Without the leg a small mark is a different letter.</span></li>
+    <li><b>Guardrails at large sizes only.</b><span>The frame, the corner crosses and the points belong to big, quiet places: a homepage, a film title, the top of a README.</span></li>
   </ol>
 
   <h2>A drawing for each size</h2>

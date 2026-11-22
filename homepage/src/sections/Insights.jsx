@@ -84,8 +84,8 @@ export function Insights() {
   return (
     <section className="ins-x" aria-labelledby="insights-title">
       <header className="ins-x-head">
-        <h2 id="insights-title" className="title">It sees what design engineers see.</h2>
-        <p className="lead">Plumber checks your running app for the details experienced people catch and most interfaces ship anyway. <b>It marks them on the page and, where it can, writes the fix.</b> Nine of the 77:</p>
+        <h2 id="insights-title" className="title">It checks what design engineers look for.</h2>
+        <p className="lead">Plumber checks your running app for details that experienced designers catch and that are easy to miss. <b>It marks them on the page and, where it can, writes the fix.</b> Nine of the 77:</p>
         <ul className="ins-x-families" aria-label="The seven families">
           {FAMILIES.map(([name, n]) => <li key={name}>{name} <span className="tabular">{n}</span></li>)}
         </ul>

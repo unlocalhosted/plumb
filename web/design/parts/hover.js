@@ -66,7 +66,7 @@ export function mount(host, root, css) {
   </div>
 
   <h2>On a page</h2>
-  <p>A card from someone's app. Point at its parts: the tag follows, naming each one. Point at the dashed edge, where the padding is off the scale: the hint says what it becomes.</p>
+  <p>A card from someone's app. Point at its parts: the tag follows, naming each one. Point at the dashed edge, where the padding is off your tokens: the hint says what it becomes.</p>
   <div class="panel live">
     <div class="page">
       <div class="app" data-k="card">

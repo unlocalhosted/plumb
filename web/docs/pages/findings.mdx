@@ -1,8 +1,12 @@
-import { FindingAnatomy } from '../figures/FindingAnatomy.jsx'
+A finding says what was written, what is wrong with it, where it is and what to use instead. The reason is printed once per rule, under **Why**, at the end of the report.
 
-Every finding Plumber prints has the same five parts, in the same order, so you can read one at a glance and act on it without opening the docs.
+```text
+  !  gap: 13px                               off your spacing scale      index.css:10
+     → var(--spacing-related) (8px) · var(--spacing-group) (16px)
 
-<FindingAnatomy />
+Why
+  Off-scale spacing makes layouts drift apart and can't be changed from the theme.
+```
 
 ## Severity
 
@@ -12,20 +16,20 @@ Every finding Plumber prints has the same five parts, in the same order, so you 
 | `warn` | worth a look, such as a literal that equals a token | no |
 | `info` | a note, such as a value Plumber couldn't read | no |
 
-The first time you run `plumber check`, with no config and no ledger, it reports everything and exits 0, so it's safe to try on any project. Once you've adopted Plumber, errors fail the check. A problem with the command itself, such as a bad flag, exits 2.
+With no config and no ledger, `plumber check` exits 0 whatever it finds. Once you have either, new errors fail the check. A problem with the command itself, such as a bad flag, exits 2.
 
-## One finding, many sites
+## Findings with several sites
 
-The same drift in several places is one finding: the same rule, family and amount, with every site listed. The terminal shows the first five sites and says how many more there are; `--json` lists them all.
+The same drift in several places is one finding: the same rule, family and amount, with every site listed. The default report shortens long lists. `--all` shows the full report, and `--json` lists every site.
 
-Plumber also keeps quiet about what you've already recorded. Findings fully covered by the [ledger](/docs/the-ledger) show as a single summary line. Add `--verbose` to see them, with each finding's rule id.
+Findings that the [ledger](/docs/the-ledger) fully covers show as one summary line. `--debt` lists the debt, and `--all --verbose` lists every known finding.
 
 ## Status
 
 Every site carries a status from the ledger:
 
-- **new**: not in the ledger. These are what fail a check.
-- **debt**: drift you already had when you adopted Plumber, recorded so it doesn't block you.
+- **new**: not in the ledger. New errors fail a check.
+- **debt**: drift you already had when you adopted Plumber, recorded so that it doesn't block you.
 - **exception**: accepted on purpose, with the reason someone gave.
 
 A finding is new if any of its sites is new.

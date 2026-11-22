@@ -133,7 +133,7 @@ export function mount(host, root, css) {
   </style>
   ${TOY_DEFS}
   ${scene('a', 'A · The same picker', 'The row every other property has. Your colour tokens in role order (text, surface, line, accent, status), your hard-coded colour among them next to its nearest. Each swatch is split: the light value and the dark value. Drag through them, or click for the list. Switch the app to Dark to see what the hard-coded colour does there.')}
-  ${scene('b', 'B · Nearest first', 'No list to read through: your colour, then the three tokens nearest it, said in words (“looks the same”, “close”). Most hard-coded colours are a token typed by hand, so the right one is usually first. Every colour is one click away under it.')}
+  ${scene('b', 'B · Nearest first', 'No list to read through: your colour, then the three tokens nearest it, said in words (“looks the same”, “close”). Most hard-coded colours copy a token, so the right one is usually first. Every colour is one click away under it.')}
   ${scene('c', 'C · Role, then shade', 'Pick what the colour is for, then which shade. Plumber guesses the role from the element (a button’s fill is Accent), so it opens there; the shades are that role’s rest, hover, soft and the colour on it.')}`;
 
   const rel = (stage, el) => { const s = stage.getBoundingClientRect(), b = el.getBoundingClientRect(); return { left: b.left - s.left, top: b.top - s.top, right: b.right - s.left, bottom: b.bottom - s.top, width: b.width, height: b.height }; };

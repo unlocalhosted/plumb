@@ -35,7 +35,7 @@ const STOPS = [ // label, where it sits (a crest or a trough), which side its la
   ['search for Members', [316, 30], 'above'], ['read the file', [388, 196], 'below'], ['read your theme', [460, 30], 'above'], ['edit', [532, 196], 'below'],
   ['you: “closer, but tighter”', [604, 30], 'above', true], ['read again', [676, 196], 'below'], ['edit again', [748, 30], 'above'], ['you check', [808, 196], 'below', true],
 ];
-const KEYS = [['Alt B', 0.29], ['↑ ↓', 0.5], ['A', 0.71]];
+const KEYS = [['Alt B', 0.29], ['↑ ↓', 0.5], ['↵', 0.71]];
 const T = { type: 200, typeEnd: 1500, send: 1600, go: 1700, short: 1400, walk: 8000, wait: 900, hold: 2400, fade: 350 };
 const END = T.go + T.walk + T.wait * STOPS.filter(s => s[3]).length;
 const SAMPLES = 480;
@@ -154,7 +154,7 @@ export function Tokens() {
     <section className="tok" aria-labelledby="tok-title">
       <header className="tok-head">
         <h2 id="tok-title" className="title">A 2px change shouldn’t cost a prompt.</h2>
-        <p className="lead">Ask an agent and it goes the long way: through your files, your theme, an edit, and back to you to check. <b>On the page it’s three keys and no model.</b></p>
+        <p className="lead">Ask an agent and it goes the long way: through your files, your theme, an edit, and back to you to check. <b>On the page it takes a few keys and no model.</b></p>
       </header>
 
       <div ref={area} className="tok-area" style={{ height: H * fit, '--stage-w': `${W * fit}px` }} onPointerDown={() => { swiped.current = true; }} onWheel={() => { swiped.current = true; }}>
@@ -201,7 +201,7 @@ export function Tokens() {
         </div>
       </div>
       <p className="tok-legend"><span><i className="tok-sw-long" />by prompt, a typical loop</span><span><i className="tok-sw-short" />on the page, no model</span></p>
-      <p className="sr-only">Two ways to tighten the Members rows. By prompt, the agent searches for the file, reads it, reads your theme, edits, waits for you, reads and edits again, and waits for you to check. On the page, three keys: Alt B, an arrow to try the step, A to apply. Both end with the same rows on your theme’s related step.</p>
+      <p className="sr-only">Two ways to tighten the Members rows. By prompt, the agent searches for the file, reads it, reads your theme, edits, waits for you, reads and edits again, and waits for you to check. On the page, a few keys: Alt B, an arrow to try the step, Enter to apply. Both end with the same rows on your theme’s related step.</p>
     </section>
   );
 }

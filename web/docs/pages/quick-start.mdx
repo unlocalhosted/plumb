@@ -1,34 +1,33 @@
-Plumber finds where a React and Tailwind v4 (or plain CSS) project drifts from its design system, and lets you fix a drift by pointing at it in the browser. These steps take a couple of minutes on an existing repo. Node 22.18 or newer is required.
+React Plumber finds where a React app on Tailwind v4 or plain CSS drifts from its design system, and lets you fix it in the browser. You need Node 22.18 or newer.
 
-## 1. Find the drift
+## 1. See what is off
 
 ```sh
 npm install -D @unlocalhosted/react-plumber
-npx plumber
-```
-
-`npx plumber` reads your project and reports every value that's off your design system. With no config it changes nothing and exits 0, so it's safe to run anywhere.
-
-## 2. Record where you are
-
-```sh
-npx plumber init
 npx plumber check
 ```
 
-`init` infers where your tokens live, turns on four habits, and records a **baseline** of today's findings. From then on, `check` is green: only drift that's new fails.
+`check` reports the values that aren't on your tokens, along with broken styles and gaps in your setup. Before you set Plumber up it exits 0 and doesn't edit your code. It does write a cache to `.plumber/`.
 
-<Callout kind="careful">
-`init` writes `plumber.config.ts` and `.plumber/ledger.jsonl` to your repo. It refuses to overwrite an existing config unless you pass `--force`, which shows the diff first.
-</Callout>
+`npx plumber` on its own prints a few lines about your project and the next step.
 
-`plumber doctor` checks Node, Tailwind, the CSS entry, config, ledger and cache, with a fix on each line.
-
-## 3. Fix it from the page
+## 2. Choose your rules
 
 ```sh
-npx plumber install --overlay           # print the wiring for Vite or Next.js
-npx plumber install --overlay --write   # make the change, and show the diff
+npx plumber init
+```
+
+In a terminal, `init` asks about your spacing, colours, text and border radius, one question at a time. `--yes` takes every suggested answer. It writes `plumber.config.ts`, turns on four habits and records today’s findings as the **baseline** in `.plumber/ledger.jsonl`. After that, `npx plumber check` fails only on new errors.
+
+<Callout kind="careful">
+`init` writes to your repo, and your answers can add tokens to your theme. Commit your work before you run it. If a config already exists it stops, unless you pass `--force` to replace it.
+</Callout>
+
+## 3. Put it on your page
+
+```sh
+npx plumber install --overlay           # print the setup for Vite or Next.js
+npx plumber install --overlay --write   # make the change and show the diff
 ```
 
 For Vite, the overlay is one plugin, listed **before** `react()`:
@@ -44,20 +43,22 @@ Start your dev server as usual, then:
 
 | Gesture | What happens |
 | --- | --- |
-| Hold **Alt** and hover | The element under the pointer is outlined, with its component and how many values are off the scale. |
-| **Click** while holding Alt | Pins a reading: the exact JSX that made the element, and each off-scale value with the tokens that fit. |
-| **Alt+↑ / Alt+↓** | Steps between the element's JSX and the components above it. |
-| Pick a token | Previews it on the live page. **Before** shows the source version, **Undo** lifts every preview. |
-| **Write** | Writes exactly the previewed edit to the source file. The dev server reloads and the reading updates. |
+| Hold **Alt** (Option on a Mac) | Shows what the element under the pointer is made of, and what is off. |
+| **Alt + click** | Opens that element’s editor and its notes. |
+| **Double-click** words | Edits them in place. **Enter** writes them to your source. |
+| **Alt + B** | Turns Blueprint on, to fix what is off across the page. |
+| **?** | Lists every shortcut. |
 
-<Callout kind="why" title="Plumber only writes where it can prove the position.">
-Plumber writes only to a position it has proven. In development, `plumb()` stamps each JSX tag in your tracked sources with its file, line and column, in the served code only; your files are untouched and production builds carry nothing. Plumber confirms the position against the file on disk before it edits. When it can't prove a position, it says why instead of guessing.
+<Callout kind="why" title="How Plumber finds the line">
+In development, `plumb()` adds the file, line and column to each DOM tag in the code your dev server serves. Your files aren’t changed by this, and production builds don’t get the attribute. Before a write, Plumber checks that position against the file on disk. If it can’t confirm it, it tells you why and doesn’t write.
 </Callout>
 
-## 4. Keep it true in CI
+## 4. Check pull requests
 
 ```sh
 npx plumber install --ci
 ```
 
-This adds the GitHub Action. Pull requests are judged against the baseline, so a repo full of old drift can turn the check on today.
+This adds a GitHub Action that judges each pull request against the baseline, so you can turn it on before the old drift is fixed. Set [who can approve ledger changes](/docs/ci) before your first new token or exception.
+
+`npx plumber doctor` shows which of these steps are done and the command for each one that isn’t.

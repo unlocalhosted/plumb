@@ -27,24 +27,24 @@ export function Live() {
   return (
     <section className="live" aria-labelledby="live-title">
       <header className="live-head">
-        <h2 id="live-title" className="title">Edit directly on your webpage.<br />Changes are synced to src.</h2>
-        <p className="lead">Retype a heading or try a space on your running app. Plumber writes <b>the exact words or class into the exact line of JSX</b> that made it. No prompt, no hunting for the file.</p>
+        <h2 id="live-title" className="title">Edit on the page.<br />Save to your source.</h2>
+        <p className="lead">Retype a heading or try a spacing token on your running app. Plumber writes <b>the exact words or class into the exact line of JSX</b> that made it. You don’t have to write a prompt or find the file.</p>
       </header>
 
       <figure className="live-rec surface">
         <div className="live-bar" aria-hidden="true"><i /><i /><i /><span>localhost:5173</span></div>
         <video ref={video} className="live-video" muted loop playsInline preload="metadata" poster={`${MEDIA}-poster.png`} controls={reduced}
-          aria-label="Recording: the heading Members is double-clicked and retyped as Your team; then Alt+B shows the rows’ 10px gap is off the scale, 12px and 8px are tried live, and 8px is applied.">
+          aria-label="Recording: the heading Members is double-clicked and retyped as Your team; then Alt+B shows the rows’ 10px gap is off your tokens, 12px and 8px are tried live, and 8px is applied.">
           <source src={`${MEDIA}.webm`} type="video/webm" />
           <source src={`${MEDIA}.mp4`} type="video/mp4" />
         </video>
       </figure>
-      <p className="live-caption">Written to <code>App.jsx</code>: <code>Members</code> → <code>Your team</code> · <code>gap-[10px]</code> → <code>gap-related</code>. A real recording of the overlay.</p>
+      <p className="live-caption">Written to <code>App.jsx</code>: <code>Members</code> → <code>Your team</code> · <code>gap-[10px]</code> → <code>gap-related</code>. Recorded on an earlier version of the overlay.</p>
 
       <ul className="live-steps">
         <li><span><kbd>Double-click</kbd></span><b>Edit words</b><span>Type over them. Enter writes the string in your source.</span></li>
-        <li><span><kbd>Alt</kbd><kbd>B</kbd></span><b>Try a space live</b><span>Every place moves as you choose between your theme’s steps.</span></li>
-        <li><span><kbd>A</kbd></span><b>Apply</b><span>One guarded write per file, hot-reloaded, undoable.</span></li>
+        <li><span><kbd>Alt</kbd><kbd>B</kbd></span><b>Try spacing live</b><span>Use ↑ and ↓ to preview your theme’s tokens on every place it occurs.</span></li>
+        <li><span><kbd>Enter</kbd></span><b>Write the fix</b><span>Your file is checked first. The change hot-reloads, with Undo.</span></li>
       </ul>
     </section>
   );

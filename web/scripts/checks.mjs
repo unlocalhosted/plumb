@@ -15,9 +15,9 @@ const BY_OWN = { radius: 'Corners', gap: 'Gap', 'margin-x': 'Shared edges', 'pad
   'font-features': 'Number columns', align: 'Baseline', 'font-weight': 'Weight', 'font-size': 'Text size', motion: 'Timing', size: 'Controls', width: 'Controls' };
 const BY_ID = { 'craft/measure': 'Line length', 'craft/hit-target': 'Tap target', 'craft/disabled-contrast': 'Disabled', 'craft/contrast': 'Disabled', 'craft/shared-edges': 'Shared edges', 'craft/column-edge': 'Shared edges', 'craft/baseline-align': 'Baseline' };
 const WORDS = new Set(['words', 'text', 'sentence', 'subtitle', 'punctuation', 'wording', 'title', 'heading', 'label', 'name', 'alt', 'caption', 'badge', 'dot', 'icon', 'case']);
-const fixOf = (r, tile) => tile ? 'Plumber proposes the value from your theme and shows it landing on the element; take it from the fix bar or the X-ray.'
-  : (r.owns ?? []).some((o) => WORDS.has(o)) ? 'Plumber says what is wrong with these words: edit them in place, or send a note to your agent.'
-  : 'Plumber says what is wrong and where, in plain words; fix it in your code, or send a note to your agent with the place.';
+const fixOf = (r, tile) => tile ? 'Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element.'
+  : (r.owns ?? []).some((o) => WORDS.has(o)) ? 'Edit the words in place, or send a note to your agent.'
+  : 'Fix it at the place Plumber names, or send your agent a note with that place.';
 const clean = (s) => String(s ?? '').replace(/`/g, '').replace(/NaN|undefined/g, '…').trim();
 
 // a check whose name or reason quotes what it found, said with a typical case instead
@@ -29,7 +29,8 @@ const SAID = {
   'html/banner-many': ['More than one page header', null], 'html/eager-below-fold': ['Off-screen images loaded at once', null],
   'forms/submit-wording': ['Button says only “Submit”', null], 'forms/input-type': [null, 'type="email" brings the right keyboard on a phone and the browser’s own check.'],
   'craft/heading-lead': [null, 'A heading belongs to what it introduces: give it more space above than below.'],
-  'html/list-fake': [null, 'A screen reader reads the marks as text and never says “list, 3 items”.'],
+  'craft/tooltip-delay': ['Tooltip delay', 'A tooltip that shows too soon flickers as the mouse passes. One that waits too long, or waits again for the next tooltip, feels slow.'],
+  'html/list-fake': ['List without list markup', 'A screen reader reads the marks as text and never says “list, 3 items”.'],
 };
 const page = [...RULES, ...PACK_RULES].map((r) => {
   // a check's words take what it found; for the list, neutral stand-ins (a 0, an empty list) are enough for its name and why
@@ -52,9 +53,12 @@ const CODE_NAMES = {
 const CODE_WHY = {
   'existence/dead-class': 'Tailwind never made CSS for it, so the style it was meant to apply is missing and nothing warns you.',
   'existence/dead-var': 'The browser drops a declaration whose variable doesn’t exist, so the value you meant never applies.',
+  'provenance/arbitrary': 'Spacing outside your tokens makes layouts drift apart and can’t be changed from the theme.',
+  'provenance/radius': 'A border radius outside your tokens makes surfaces look unrelated and can’t be changed from the theme.',
+  'provenance/type': 'Sizes and weights outside your tokens break the reading rhythm and can’t be changed from the theme.',
   'imitation/{Component}': 'A copy misses the component’s states, its focus ring and every fix made to it later.',
   'ownership/{Component}': 'The component decides this itself; a style laid over it from outside breaks when the component changes.',
-  'provenance/color/framework': 'Your theme has its own steps; Tailwind’s defaults sit outside them and won’t change when your theme does.',
+  'provenance/color/framework': 'Your theme has its own tokens. Tailwind’s defaults won’t change when those do.',
 };
 // how each code check is fixed, in a sentence (their own fix lines are written for the CLI)
 const CODE_FIX = {
@@ -64,7 +68,7 @@ const CODE_FIX = {
   'imitation/{Component}': 'Plumber names the component it copies, so you can use the real one instead.',
   'ownership/{Component}': 'Plumber names the size, variant or prop that does it, instead of styles laid over the component.',
 };
-const HABIT_FIX = 'Plumber names the line and the safer way to write it; fix it in your code, or send a note to your agent.';
+const HABIT_FIX = 'Use the safer form Plumber suggests for that line, or send a note to your agent.';
 // the code checks: your theme against your code (the design system concern), read without a browser
 const FAMILY_TILE = { spacing: 'Padding', color: 'Colour', radius: 'Corners', type: 'Text size', motion: 'Timing', elevation: 'Shadows', z: null };
 const code = JSON.parse(readFileSync(at('../docs/recordings/reference/rules.json'), 'utf8')).rules.filter((r) => r.id.startsWith('provenance/') || CODE_NAMES[r.id]).map((r) => {
@@ -72,7 +76,7 @@ const code = JSON.parse(readFileSync(at('../docs/recordings/reference/rules.json
   const name = kind === 'provenance' ? (r.id === 'provenance/type' ? 'Type not in your theme' : r.id === 'provenance/arbitrary' ? 'Spacing not in your theme' : FIX.what({ family: family === 'elevation' ? 'shadow' : family, rule: r.id, props: [] })) : CODE_NAMES[r.id];
   const tile = kind === 'provenance' ? FAMILY_TILE[family] ?? null : null;
   const why = CODE_WHY[r.id] ?? clean(r.because).replace(/\{[^}]*\}/g, 'it').replace(/^site\.opaque \?.*?: /, '');
-  return { id: r.id, concern: kind === 'habits' ? (/focus|hover|safe-area|viewport|logical/.test(r.id) ? 'access' : 'states') : 'system', name: clean(name), why, where: 'code', tile, fix: kind === 'provenance' ? 'Plumber offers your theme’s nearest steps and swaps the hard-coded value for the one you pick, on the element and in your code, with one Undo.' : CODE_FIX[r.id] ?? HABIT_FIX };
+  return { id: r.id, concern: kind === 'habits' ? (/focus|hover|safe-area|viewport|logical/.test(r.id) ? 'access' : 'states') : 'system', name: clean(name), why, where: 'code', tile, fix: kind === 'provenance' ? 'Pick one of the nearest tokens. Plumber replaces the hard-coded value in your code, with Undo.' : CODE_FIX[r.id] ?? HABIT_FIX };
 });
 // one row per name within a concern: many code checks share a plain name across families
 const seen = new Set(), checks = [...code, ...page].filter((c) => { const k = c.concern + '|' + c.name; if (seen.has(k)) return false; seen.add(k); return true; });

@@ -86,7 +86,7 @@ export function mount(host, root, css) {
 
   <h2>What is still open</h2>
   <ul class="open">
-    <li><b>No search.</b> The plan listed "searching"; there is no search field. The colour picker is found by key and by pointing, nearest first. If a long list ever needs one, it should be this same field.</li>
+    <li><b>No search.</b> There is no search field. The colour picker is found by key and by pointing, nearest first. If a long list ever needs one, it should be this same field.</li>
     <li><b>Corners and type off the tokens.</b> The bar's buttons write their corners as 10px and 11px, between the row token (8) and the card token (12); the name field's type is 12.5px mono and the reason's 13px, neither a type token.</li>
   </ul>`;
 

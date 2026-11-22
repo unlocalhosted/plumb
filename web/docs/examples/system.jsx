@@ -22,9 +22,9 @@ const Code = ({ children, bad }) => <code className="ex-code" data-bad={bad || u
 // each: { theme?: true (offers Change your theme), show(fixed, t) → { scene, code } }
 const EXAMPLES = {
   'provenance/color/by-value': { say: ['#4f46e5, typed', 'primary'], theme: true, show: (fixed, t, T) => ({
-    scene: <div className="ex-row"><figure><Btn bg={T.primary}>Save</Btn><figcaption>Uses your token</figcaption></figure><figure><Btn fix bg={fixed ? T.primary : THEME[0].primary}>Upgrade</Btn><figcaption>{fixed ? 'Uses your token' : 'Same colour, typed by hand'}</figcaption></figure></div>,
+    scene: <div className="ex-row"><figure><Btn bg={T.primary}>Save</Btn><figcaption>Uses your token</figcaption></figure><figure><Btn fix bg={fixed ? T.primary : THEME[0].primary}>Upgrade</Btn><figcaption>{fixed ? 'Uses your token' : 'Same colour, hard-coded'}</figcaption></figure></div>,
     code: fixed ? <Code>bg-primary</Code> : <Code bad>bg-[#4f46e5]</Code>,
-    note: fixed ? 'Both follow the rebrand, because both ask for your primary colour.' : 'Typed by hand, it stayed indigo when your theme was rebranded.' }) },
+    note: fixed ? 'Both follow the rebrand, because both ask for your primary colour.' : 'It was hard-coded, so it stayed indigo when your theme was rebranded.' }) },
   'provenance/color': { say: ['#6b7280', 'muted'], theme: true, show: (fixed, t, T) => ({
     scene: <div className="ex-card" style={{ background: T.surface, color: T.ink }}><b>Usage this month</b><span data-fix style={{ color: fixed ? T.muted : '#6b7280' }}>2,401 of 5,000 requests</span></div>,
     code: fixed ? <Code>text-muted</Code> : <Code bad>text-[#6b7280]</Code>,
@@ -40,7 +40,7 @@ const EXAMPLES = {
   'provenance/arbitrary': { say: ['18px', '16px · space-4'], show: (fixed) => ({
     scene: <div className="ex-stack">{['Profile', 'Billing', 'Team'].map((w, i) => <div key={w} className="ex-box" data-fix={i === 1 || undefined} style={{ padding: i === 1 && !fixed ? 18 : 16 }}>{w}</div>)}</div>,
     code: fixed ? <Code>p-4</Code> : <Code bad>p-[22px]</Code>,
-    note: fixed ? 'All three panels breathe the same.' : 'One panel is 6px roomier than its neighbours: off your steps, and nobody chose it.' }) },
+    note: fixed ? 'All three panels breathe the same.' : 'One panel is 6px roomier than its neighbours: that isn’t one of your spacing tokens.' }) },
   'provenance/radius': { say: ['5px', '12px · card'], show: (fixed) => ({
     scene: <div className="ex-row">{[0, 1, 2].map((i) => <div key={i} className="ex-tile" data-fix={i === 1 || undefined} style={{ borderRadius: i === 1 && !fixed ? 5 : 12 }} />)}</div>,
     code: fixed ? <Code>rounded-card</Code> : <Code bad>rounded-[3px]</Code>,
@@ -52,7 +52,7 @@ const EXAMPLES = {
   'provenance/elevation': { say: ['glow, by hand', 'shadow-card'], theme: true, show: (fixed, t, T) => ({
     scene: <div className="ex-row" style={{ background: t ? '#020617' : '#f3f4f6', padding: 18, borderRadius: 14 }}><div className="ex-tile" data-fix style={{ background: T.surface, boxShadow: fixed ? T.shadow : '0 14px 30px -6px rgb(79 70 229 / .45)' }} /><div className="ex-tile" style={{ background: T.surface, boxShadow: T.shadow }} /></div>,
     code: fixed ? <Code>shadow-card</Code> : <Code bad>shadow-[0_14px_30px_-6px_rgb(79_70_229/.45)]</Code>,
-    note: fixed ? 'Both cards sit at the same height, lit the same way.' : 'A glow written by hand: brighter than every other card, and it doesn’t adapt to the dark theme.' }) },
+    note: fixed ? 'Both cards sit at the same height, lit the same way.' : 'A hard-coded glow: brighter than every other card, and it doesn’t adapt to the dark theme.' }) },
   'provenance/motion': { say: ['437ms', '150ms · fast'], show: (fixed) => ({
     scene: <Presses fixed={fixed} />,
     code: fixed ? <Code>duration-fast</Code> : <Code bad>duration-[440ms]</Code>,
