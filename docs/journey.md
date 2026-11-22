@@ -4343,6 +4343,22 @@ https://react-plumber.com.
 
 **Media hooks.** The hero with its counts, and the footer on a docs page.
 
+### 83. The corrected site and the owner's hero go live (2026-11-22)
+
+**The itch.** The owner, after reading the corrected site: "deploy it to react-plumber.com".
+
+**How we found what to check.** The hero's first letter had turned lowercase while the caret bug was about. Plumber's
+change log showed that it was an edit saved from the owner's browser, so the words shipped as written.
+
+**The system behind it.** The site goes out from a commit, so words edited on the page are public only after they are
+committed and deployed.
+
+**The fix and the proof.** Commit 8255d8cf is live: the owner's hero, the docs corrected against 0.6.0, the npm and
+GitHub counts and the creator's credit. On the live domain 46 pages match the build byte for byte and load with no
+errors, 46 internal links resolve, and the research addresses return 404.
+
+**Media hooks.** The live hero on desktop and phone, beside the first deploy's "A design review on every screen."
+
 ## Open gaps
 
 - The fixes of entry 81 (caret, app errors, broken config on Vite) are committed and not published. The site runs
@@ -6023,6 +6039,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- react-plumber.com has docs that match the npm package, the owner's new hero, live download and star counts, and links to npm, GitHub and the maker, so a newcomer can install it from true instructions and see who is behind it ([entry](#83-the-corrected-site-and-the-owners-hero-go-live-2026-11-22)).
 - The first launch film is rendered, not yet published: in 30 silent seconds AI's wrong green is caught on the page and fixed in the code, six more fixes land side by side, and it ends on "looking for 100+ design issues" ([entry](#81-the-first-launch-film-is-rendered-2026-11-22)).
 - React Plumber has a public site at [react-plumber.com](https://react-plumber.com), so anyone can read what it does, the docs and the design system without cloning the repo ([entry](#74-the-site-goes-live-at-react-plumbercom-2026-11-22)).
 - A padding change made in the visual editor is written to your code on Sync; it used to be refused as if your code had a style attribute there. On main, not released ([entry](#73-the-visual-editor-could-not-write-what-it-previewed-2026-11-22)).
