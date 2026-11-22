@@ -20,8 +20,8 @@ export function Hero({ proof = null }) {
         </span>
       </nav>
       <header className="hero-head" id="top">
-        <h1 id="hero-title" className="display">A design review<br />on every screen.</h1>
-        <p className="lead">Hold Alt on your running app. Plumber finds what a senior design engineer would, names the pattern, <b>and writes the fix into your JSX.</b></p>
+        <h1 id="hero-title" className="display">a design engineer<br />on every screen.</h1>
+        <p className="lead">Plumber acts as your own design engineer. It finds where your frontend drifts away from your actual system <b>and writes the fix into your JSX.</b></p>
         <div className="hero-cta">
           <CopyCommand command={INSTALL} />
           <a className="s-btn q hero-docs" href="/docs"><span>Read the docs</span></a>
