@@ -4498,9 +4498,19 @@ nothing that needed another width, engine or setting could show. The footer's co
 GitHub's hourly allowance ran out, "Star" replaced "0" and three more letters moved the count by 33.
 
 **The fix and the proof.** One batch at the causes, and the recorder now takes three reads with the live counts held
-fixed. Commit cdf69da1 is live: 46 pages match the build byte for byte, 705 loads on the live domain are clean, and
+fixed. Commit cdf69da1 went live: 46 pages match the build byte for byte, 705 loads on the live domain are clean, and
 the game passes there. Firefox can fix 75 of the 80, having no squircles. Plain http still doesn't redirect, which
 is the owner's Cloudflare setting. Real Safari and real phones weren't tried.
+
+**What that release still had wrong.** The GitHub and X marks in the bar sat off their tiles and LinkedIn's tile was
+empty, on all 46 pages. A hover rule for the download arrow, written with the footer's toys (1498d8b2), also moved
+the point the other three marks scale from. The 705 clean loads missed it because the sweep measured layout, errors
+and images, and didn't look at drawings. A screenshot of the live footer showed it.
+
+**The second fix and its proof.** The rule now names the arrow alone (bff74257, live). A new check for drawings
+moved off their transform found those three shapes on the old release and finds none on this one. The bar was looked
+at on the live site in Chromium, Firefox and WebKit in both themes, and the home page screen by screen in Chromium.
+The same build passed 705 loads before it went out, and the game passes on the live domain.
 
 **Media hooks.** A docs page on a phone before and after, and the footer's game on the live site.
 
@@ -6146,6 +6156,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 
 ## Open gaps
 - **The footer's count is a recording.** It has to be recorded again (`node web/scripts/findings.mjs`, with the dev server up) whenever the homepage changes, and nothing enforces that yet. It was read at 1280px, in light, at rest ([entry](#87-the-footer-is-a-demo-on-our-own-faults-2026-11-22)).
+- **The release checks live outside the repo.** The width sweep, the drawing check and the script that plays the footer are one session's temporary files, so the next deploy starts without them.
 - **Docs can drift from the package again.** Nothing runs their commands at release. The homepage's live-editing clip is from an older overlay, and the overlay's gestures were checked in source, without driving them ([entry](#75-the-docs-said-what-an-older-plumber-did-2026-11-22)).
 - **Data about two private apps waits in unpushed commits.** The style data behind the removed pages, and films and verdicts of both apps, become public with the next push unless the owner has them taken out ([entry](#74-the-site-goes-live-at-react-plumbercom-2026-11-22)).
 - **The live site has loose ends.** `/demo` says it hasn't moved yet, plain http doesn't redirect to https, `www` and `design.react-plumber.com` aren't set up, and deploys are run by hand ([entry](#74-the-site-goes-live-at-react-plumbercom-2026-11-22)).
