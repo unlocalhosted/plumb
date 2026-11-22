@@ -1,11 +1,11 @@
 {
  "plumber": "0.6.0",
  "page": "/",
- "recorded": "2026-11-22T08:50",
- "found": 141,
+ "recorded": "2026-11-22T10:38",
+ "found": 143,
  "left": [
   {
-   "n": 7,
+   "n": 8,
    "why": "white words on a coloured block, and gradient-filled headings, read as a grey"
   },
   {
@@ -27,6 +27,10 @@
   {
    "n": 1,
    "why": "a key whose words are drawn with text-fill-color, read by their clipped colour"
+  },
+  {
+   "n": 1,
+   "why": "a round tick waiting unseen at half size, read as a corner nested in the toy’s"
   }
  ],
  "total": 125,
@@ -50,7 +54,7 @@
    "toy": "shadow",
    "rule": "craft/layered-shadow",
    "title": "One 48px blur looks like a smudge. Stack a few smaller ones.",
-   "at": "Review.jsx:127",
+   "at": "Review.jsx:131",
    "sel": [
     "main.homepage > section.hero:nth-of-type(1) > figure.review > div.rv-stage > div.rv-frame:nth-of-type(1)"
    ],
@@ -64,7 +68,7 @@
    "toy": "corner",
    "rule": "craft/continuous-corners",
    "title": "16px round corners on a big surface. A squircle looks softer.",
-   "at": "Review.jsx:127",
+   "at": "Review.jsx:131",
    "sel": [
     "main.homepage > section.hero:nth-of-type(1) > figure.review > div.rv-stage > div.rv-frame:nth-of-type(1)"
    ],
@@ -78,7 +82,7 @@
    "toy": "gap",
    "rule": "craft/inner-outer-spacing",
    "title": "Items here are 9px apart, but the groups are only 3px apart.",
-   "at": "Review.jsx:235",
+   "at": "Review.jsx:239",
    "sel": [
     "main.homepage > section.hero:nth-of-type(1) > figure.review > div.rv-stage > div.rv-frame:nth-of-type(1) > div.rv-fit:nth-of-type(1) > div.rv-cam:nth-of-type(1) > div.rv-scr > aside.rv-side > span.rv-brand:nth-of-type(1)",
     "main.homepage > section.hero:nth-of-type(1) > figure.review > div.rv-stage > div.rv-frame:nth-of-type(1) > div.rv-fit:nth-of-type(1) > div.rv-twin:nth-of-type(2) > div.rv-scr > aside.rv-side > span.rv-brand:nth-of-type(1)"
@@ -94,7 +98,7 @@
    "toy": "gap",
    "rule": "craft/inner-outer-spacing",
    "title": "Items here are 9px apart, but the groups are only 3px apart.",
-   "at": "Review.jsx:236",
+   "at": "Review.jsx:240",
    "sel": [
     "main.homepage > section.hero:nth-of-type(1) > figure.review > div.rv-stage > div.rv-frame:nth-of-type(1) > div.rv-fit:nth-of-type(1) > div.rv-cam:nth-of-type(1) > div.rv-scr > aside.rv-side > span:nth-of-type(2)",
     "main.homepage > section.hero:nth-of-type(1) > figure.review > div.rv-stage > div.rv-frame:nth-of-type(1) > div.rv-fit:nth-of-type(1) > div.rv-cam:nth-of-type(1) > div.rv-scr > aside.rv-side > span:nth-of-type(3)",
@@ -116,7 +120,7 @@
    "toy": "gap",
    "rule": "craft/inner-outer-spacing",
    "title": "Items here are 9px apart, but the groups are only 3px apart.",
-   "at": "Review.jsx:237",
+   "at": "Review.jsx:241",
    "sel": [
     "main.homepage > section.hero:nth-of-type(1) > figure.review > div.rv-stage > div.rv-frame:nth-of-type(1) > div.rv-fit:nth-of-type(1) > div.rv-cam:nth-of-type(1) > div.rv-scr > aside.rv-side > span.rv-side-foot:nth-of-type(6)",
     "main.homepage > section.hero:nth-of-type(1) > figure.review > div.rv-stage > div.rv-frame:nth-of-type(1) > div.rv-fit:nth-of-type(1) > div.rv-twin:nth-of-type(2) > div.rv-scr > aside.rv-side > span.rv-side-foot:nth-of-type(6)"
@@ -132,7 +136,7 @@
    "toy": "shadow",
    "rule": "craft/tinted-shadow",
    "title": "A grey shadow on #b5d7ff looks dirty. Tint it with that colour.",
-   "at": "Review.jsx:245",
+   "at": "Review.jsx:249",
    "sel": [
     "main.homepage > section.hero:nth-of-type(1) > figure.review > div.rv-stage > div.rv-frame:nth-of-type(1) > div.rv-fit:nth-of-type(1) > div.rv-cam:nth-of-type(1) > div.rv-scr > main.rv-main > div.rv-grid > section.rv-video:nth-of-type(1) > small",
     "main.homepage > section.hero:nth-of-type(1) > figure.review > div.rv-stage > div.rv-frame:nth-of-type(1) > div.rv-fit:nth-of-type(1) > div.rv-twin:nth-of-type(2) > div.rv-scr > main.rv-main > div.rv-grid > section.rv-video:nth-of-type(1) > small"
@@ -147,7 +151,7 @@
    "toy": "cursor",
    "rule": "a11y/label-in-name",
    "title": "It shows \"Optically centred\" and is named \"3. Icon looks off-centre. Opti\".",
-   "at": "Review.jsx:170",
+   "at": "Review.jsx:174",
    "sel": [
     "main.homepage > section.hero:nth-of-type(1) > figure.review > div.rv-stage > div.rv-frame:nth-of-type(1) > div.rv-pins:nth-of-type(2) > button.rv-pin:nth-of-type(1)",
     "main.homepage > section.hero:nth-of-type(1) > figure.review > div.rv-stage > div.rv-frame:nth-of-type(1) > div.rv-pins:nth-of-type(2) > button.rv-pin:nth-of-type(2)",
@@ -165,7 +169,7 @@
    "toy": "fill",
    "rule": "craft/contrast",
    "title": "Contrast is 59 on the APCA scale at 11px. Text this size needs 60.",
-   "at": "Insights.jsx:90",
+   "at": "Insights.jsx:91",
    "sel": [
     "main.homepage > section.ins-x:nth-of-type(2) > header.ins-x-head > ul.ins-x-families > li:nth-of-type(1) > span.tabular",
     "main.homepage > section.ins-x:nth-of-type(2) > header.ins-x-head > ul.ins-x-families > li:nth-of-type(2) > span.tabular",
@@ -185,7 +189,7 @@
    "toy": "corner",
    "rule": "craft/continuous-corners",
    "title": "22px round corners on a big surface. A squircle looks softer.",
-   "at": "Insights.jsx:222",
+   "at": "Insights.jsx:224",
    "sel": [
     "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(1)",
     "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(2)",
@@ -207,7 +211,7 @@
    "toy": "shadow",
    "rule": "craft/layered-shadow",
    "title": "One 32px blur looks like a smudge. Stack a few smaller ones.",
-   "at": "Insights.jsx:304",
+   "at": "Insights.jsx:306",
    "sel": [
     "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(1) > div.ins-stage:nth-of-type(1) > div.ins-cam > div.sc > div.sc-video"
    ],
@@ -221,7 +225,7 @@
    "toy": "cursor",
    "rule": "craft/touch-manipulation",
    "title": "Tapping this flashes it grey on a phone.",
-   "at": "Insights.jsx:222",
+   "at": "Insights.jsx:224",
    "sel": [
     "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(1)",
     "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(2)",
@@ -244,7 +248,7 @@
    "toy": "padding",
    "rule": "craft/card-optical-padding",
    "title": "The first letters sit 31px from the top edge, 14px from the side.",
-   "at": "Insights.jsx:349",
+   "at": "Insights.jsx:351",
    "sel": [
     "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(3) > div.ins-stage:nth-of-type(1) > div.ins-cam > div.sc > div.sc-clock"
    ],
@@ -259,7 +263,7 @@
    "toy": "shadow",
    "rule": "craft/layered-shadow",
    "title": "One 30px blur looks like a smudge. Stack a few smaller ones.",
-   "at": "Insights.jsx:350",
+   "at": "Insights.jsx:352",
    "sel": [
     "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(3) > div.ins-stage:nth-of-type(1) > div.ins-cam > div.sc > ul"
    ],
@@ -273,7 +277,7 @@
    "toy": "shadow",
    "rule": "craft/layered-shadow",
    "title": "One 30px blur looks like a smudge. Stack a few smaller ones.",
-   "at": "Insights.jsx:365",
+   "at": "Insights.jsx:367",
    "sel": [
     "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(4) > div.ins-stage:nth-of-type(1) > div.ins-cam > div.sc > div.sc-news-card"
    ],
@@ -287,7 +291,7 @@
    "toy": "fill",
    "rule": "craft/contrast",
    "title": "Contrast is 59 on the APCA scale at 10.5px. Text this size needs 60.",
-   "at": "Insights.jsx:367",
+   "at": "Insights.jsx:369",
    "sel": [
     "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(4) > div.ins-stage:nth-of-type(1) > div.ins-cam > div.sc > div.sc-news-card > small"
    ],
@@ -301,7 +305,7 @@
    "toy": "type",
    "rule": "tells/eyebrow",
    "title": "\"Business\" sits as a small label above the heading.",
-   "at": "Insights.jsx:367",
+   "at": "Insights.jsx:369",
    "sel": [
     "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(4) > div.ins-stage:nth-of-type(1) > div.ins-cam > div.sc > div.sc-news-card > small"
    ],
@@ -315,7 +319,7 @@
    "toy": "type",
    "rule": "craft/text-wrap-role",
    "title": "This heading breaks into 3 uneven lines. Use text-balance.",
-   "at": "Insights.jsx:368",
+   "at": "Insights.jsx:370",
    "sel": [
     "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(4) > div.ins-stage:nth-of-type(1) > div.ins-cam > div.sc > div.sc-news-card > h4"
    ],
@@ -330,7 +334,7 @@
    "toy": "cursor",
    "rule": "a11y/heading-skip",
    "title": "An h4 follows an h2.",
-   "at": "Insights.jsx:368",
+   "at": "Insights.jsx:370",
    "sel": [
     "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(4) > div.ins-stage:nth-of-type(1) > div.ins-cam > div.sc > div.sc-news-card > h4"
    ],
@@ -345,7 +349,7 @@
    "toy": "shadow",
    "rule": "craft/tinted-shadow",
    "title": "A grey shadow on #e9b8c4 looks dirty. Tint it with that colour.",
-   "at": "Insights.jsx:387",
+   "at": "Insights.jsx:389",
    "sel": [
     "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(5) > div.ins-stage:nth-of-type(1) > div.ins-cam > div.sc > div.sc-recipe"
    ],
@@ -359,7 +363,7 @@
    "toy": "padding",
    "rule": "craft/card-optical-padding",
    "title": "The first letters sit 32px from the top edge, 16px from the side.",
-   "at": "Insights.jsx:387",
+   "at": "Insights.jsx:389",
    "sel": [
     "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(5) > div.ins-stage:nth-of-type(1) > div.ins-cam > div.sc > div.sc-recipe"
    ],
@@ -374,7 +378,7 @@
    "toy": "fill",
    "rule": "craft/contrast",
    "title": "Contrast is 59 on the APCA scale at 11px. Text this size needs 60.",
-   "at": "Insights.jsx:387",
+   "at": "Insights.jsx:389",
    "sel": [
     "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(5) > div.ins-stage:nth-of-type(1) > div.ins-cam > div.sc > div.sc-recipe > small"
    ],
@@ -388,7 +392,7 @@
    "toy": "gap",
    "rule": "craft/inner-outer-spacing",
    "title": "Items here are 6px apart, but the groups are only 4px apart.",
-   "at": "Insights.jsx:387",
+   "at": "Insights.jsx:389",
    "sel": [
     "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(5) > div.ins-stage:nth-of-type(1) > div.ins-cam > div.sc > div.sc-recipe > span.sc-rmeta:nth-of-type(2)"
    ],
@@ -403,7 +407,7 @@
    "toy": "fill",
    "rule": "craft/gradient-space",
    "title": "This gradient goes grey in the middle.",
-   "at": "Insights.jsx:402",
+   "at": "Insights.jsx:404",
    "sel": [
     "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(6) > div.ins-stage:nth-of-type(1) > div.ins-cam > div.sc > div.sc-day:nth-of-type(1) > i > b",
     "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(6) > div.ins-stage:nth-of-type(1) > div.ins-cam > div.sc > div.sc-day:nth-of-type(2) > i > b",
@@ -420,7 +424,7 @@
    "toy": "shadow",
    "rule": "craft/layered-shadow",
    "title": "One 30px blur looks like a smudge. Stack a few smaller ones.",
-   "at": "Insights.jsx:416",
+   "at": "Insights.jsx:418",
    "sel": [
     "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(7) > div.ins-stage:nth-of-type(1) > div.ins-cam > div.sc > div.sc-pin"
    ],
@@ -434,7 +438,7 @@
    "toy": "gap",
    "rule": "craft/inner-outer-spacing",
    "title": "Items here are 8px apart, but the groups are only 5px apart.",
-   "at": "Insights.jsx:416",
+   "at": "Insights.jsx:418",
    "sel": [
     "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(7) > div.ins-stage:nth-of-type(1) > div.ins-cam > div.sc > div.sc-pin > span.sc-pin-meta > span.sc-pin-tags"
    ],
@@ -449,7 +453,7 @@
    "toy": "shadow",
    "rule": "craft/layered-shadow",
    "title": "One 22px blur looks like a smudge. Stack a few smaller ones.",
-   "at": "Insights.jsx:432",
+   "at": "Insights.jsx:434",
    "sel": [
     "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(8) > div.ins-stage:nth-of-type(1) > div.ins-cam > div.sc > nav"
    ],
@@ -463,7 +467,7 @@
    "toy": "cursor",
    "rule": "a11y/nav-unnamed",
    "title": "This page has 3 navigations and this one has no name.",
-   "at": "Insights.jsx:432",
+   "at": "Insights.jsx:434",
    "sel": [
     "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(8) > div.ins-stage:nth-of-type(1) > div.ins-cam > div.sc > nav"
    ],
@@ -477,7 +481,7 @@
    "toy": "padding",
    "rule": "craft/hit-target",
    "title": "22×30. People miss anything under 24×24.",
-   "at": "Insights.jsx:104",
+   "at": "Insights.jsx:105",
    "sel": [
     "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-controls:nth-of-type(2) > div.ins-x-dots > button:nth-of-type(1)",
     "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-controls:nth-of-type(2) > div.ins-x-dots > button:nth-of-type(2)",
@@ -500,7 +504,7 @@
    "toy": "shadow",
    "rule": "craft/layered-shadow",
    "title": "One 48px blur looks like a smudge. Stack a few smaller ones.",
-   "at": "Slop.jsx:83",
+   "at": "Slop.jsx:84",
    "sel": [
     "main.homepage > section.slop:nth-of-type(3) > div.session"
    ],
@@ -514,7 +518,7 @@
    "toy": "corner",
    "rule": "craft/continuous-corners",
    "title": "16px round corners on a big surface. A squircle looks softer.",
-   "at": "Slop.jsx:83",
+   "at": "Slop.jsx:84",
    "sel": [
     "main.homepage > section.slop:nth-of-type(3) > div.session"
    ],
@@ -528,7 +532,7 @@
    "toy": "padding",
    "rule": "craft/icon-side",
    "title": "The icon side has the same 10px as the text side. Take 4px off it.",
-   "at": "Slop.jsx:86",
+   "at": "Slop.jsx:87",
    "sel": [
     "main.homepage > section.slop:nth-of-type(3) > div.session > header.session-head > button.session-replay"
    ],
@@ -542,7 +546,7 @@
    "toy": "grid",
    "rule": "craft/baseline-align",
    "title": "Two sizes, centred, so their baselines are 1.4px apart. Align them.",
-   "at": "Slop.jsx:106",
+   "at": "Slop.jsx:107",
    "sel": [
     "main.homepage > section.slop:nth-of-type(3) > div.session > div.session-body > div.hook:nth-of-type(2) > p.hook-head"
    ],
@@ -556,7 +560,7 @@
    "toy": "grid",
    "rule": "craft/baseline-align",
    "title": "Two sizes, centred, so their baselines are 1.4px apart. Align them.",
-   "at": "Slop.jsx:116",
+   "at": "Slop.jsx:117",
    "sel": [
     "main.homepage > section.slop:nth-of-type(3) > div.session > div.session-body > div.hook:nth-of-type(3) > p.hook-head"
    ],
@@ -570,7 +574,7 @@
    "toy": "grid",
    "rule": "craft/baseline-align",
    "title": "Two sizes, centred, so their baselines are 1.3px apart. Align them.",
-   "at": "Slop.jsx:130",
+   "at": "Slop.jsx:131",
    "sel": [
     "main.homepage > section.slop:nth-of-type(3) > div.session > div.session-body > div.hook:nth-of-type(5) > p.hook-head"
    ],
@@ -584,7 +588,7 @@
    "toy": "shadow",
    "rule": "craft/layered-shadow",
    "title": "One 48px blur looks like a smudge. Stack a few smaller ones.",
-   "at": "Live.jsx:34",
+   "at": "Live.jsx:35",
    "sel": [
     "main.homepage > section.live:nth-of-type(4) > figure.live-rec"
    ],
@@ -598,7 +602,7 @@
    "toy": "corner",
    "rule": "craft/continuous-corners",
    "title": "16px round corners on a big surface. A squircle looks softer.",
-   "at": "Live.jsx:34",
+   "at": "Live.jsx:35",
    "sel": [
     "main.homepage > section.live:nth-of-type(4) > figure.live-rec"
    ],
@@ -612,7 +616,7 @@
    "toy": "fill",
    "rule": "craft/contrast",
    "title": "Contrast is 44 on the APCA scale at 13px. Text this size needs 60.",
-   "at": "Live.jsx:42",
+   "at": "Live.jsx:43",
    "sel": [
     "main.homepage > section.live:nth-of-type(4) > p.live-caption"
    ],
@@ -626,7 +630,7 @@
    "toy": "padding",
    "rule": "craft/card-optical-padding",
    "title": "The first letters sit 19px from the top edge, 12px from the side.",
-   "at": "Tokens.jsx:163",
+   "at": "Tokens.jsx:165",
    "sel": [
     "main.homepage > section.tok:nth-of-type(5) > div.tok-area > div.tok-stage > div.tok-prompt:nth-of-type(1)"
    ],
@@ -641,7 +645,7 @@
    "toy": "shadow",
    "rule": "craft/layered-shadow",
    "title": "One 48px blur looks like a smudge. Stack a few smaller ones.",
-   "at": "Tokens.jsx:231",
+   "at": "Tokens.jsx:233",
    "sel": [
     "main.homepage > section.tok:nth-of-type(5) > div.tok-area > div.tok-stage > div.tok-el:nth-of-type(2) > div.tok-card",
     "main.homepage > section.tok:nth-of-type(5) > div.tok-area > div.tok-stage > div.tok-el:nth-of-type(3) > div.tok-card"
@@ -656,7 +660,7 @@
    "toy": "fill",
    "rule": "craft/text-opacity",
    "title": "This text uses opacity 0.4. Use ink-3, the colour it shows as.",
-   "at": "Tokens.jsx:179",
+   "at": "Tokens.jsx:181",
    "sel": [
     "main.homepage > section.tok:nth-of-type(5) > div.tok-area > div.tok-stage > svg.tok-routes > g.tok-stop:nth-of-type(1) > text",
     "main.homepage > section.tok:nth-of-type(5) > div.tok-area > div.tok-stage > svg.tok-routes > g.tok-stop:nth-of-type(2) > text",
@@ -678,7 +682,7 @@
    "toy": "fill",
    "rule": "craft/text-opacity",
    "title": "This text uses opacity 0.8. Use a colour instead.",
-   "at": "Tokens.jsx:194",
+   "at": "Tokens.jsx:196",
    "sel": [
     "main.homepage > section.tok:nth-of-type(5) > div.tok-area > div.tok-stage > svg.tok-routes > text.tok-route-name"
    ],
@@ -693,7 +697,7 @@
    "toy": "fill",
    "rule": "craft/contrast",
    "title": "Contrast is 44 on the APCA scale at 13px. Text this size needs 60.",
-   "at": "Tokens.jsx:203",
+   "at": "Tokens.jsx:205",
    "sel": [
     "main.homepage > section.tok:nth-of-type(5) > p.tok-legend:nth-of-type(1) > span:nth-of-type(1)"
    ],
@@ -707,7 +711,7 @@
    "toy": "fill",
    "rule": "craft/contrast",
    "title": "Contrast is 44 on the APCA scale at 13px. Text this size needs 60.",
-   "at": "Tokens.jsx:203",
+   "at": "Tokens.jsx:205",
    "sel": [
     "main.homepage > section.tok:nth-of-type(5) > p.tok-legend:nth-of-type(1) > span:nth-of-type(2)"
    ],
@@ -721,7 +725,7 @@
    "toy": "fill",
    "rule": "craft/contrast",
    "title": "Contrast is 44 on the APCA scale at 13px. Text this size needs 60.",
-   "at": "Install.jsx:46",
+   "at": "Install.jsx:47",
    "sel": [
     "main.homepage > section.ins:nth-of-type(6) > ol.ins-lines > li:nth-of-type(1) > span.ins-meta:nth-of-type(2) > span.ins-what:nth-of-type(2)",
     "main.homepage > section.ins:nth-of-type(6) > ol.ins-lines > li:nth-of-type(2) > span.ins-meta:nth-of-type(2) > span.ins-what:nth-of-type(2)",
@@ -737,7 +741,7 @@
    "toy": "grid",
    "rule": "craft/flex-min",
    "title": "A part in here is set to scroll sideways, but its box can’t shrink, so it grows instead of scrolling.",
-   "at": "Install.jsx:47",
+   "at": "Install.jsx:48",
    "sel": [
     "main.homepage > section.ins:nth-of-type(6) > ol.ins-lines > li:nth-of-type(1) > span.ins-vis:nth-of-type(3)",
     "main.homepage > section.ins:nth-of-type(6) > ol.ins-lines > li:nth-of-type(2) > span.ins-vis:nth-of-type(3)",
@@ -753,7 +757,7 @@
    "toy": "cursor",
    "rule": "craft/scroll-cue",
    "title": "This area scrolls sideways, but has no scrollbar or fade to say so.",
-   "at": "Install.jsx:93",
+   "at": "Install.jsx:94",
    "sel": [
     "main.homepage > section.ins:nth-of-type(6) > ol.ins-lines > li:nth-of-type(1) > span.ins-vis:nth-of-type(3) > div.v > pre"
    ],
@@ -767,7 +771,7 @@
    "toy": "cursor",
    "rule": "craft/scroll-cue",
    "title": "This area scrolls sideways, but has no scrollbar or fade to say so.",
-   "at": "Install.jsx:104",
+   "at": "Install.jsx:105",
    "sel": [
     "main.homepage > section.ins:nth-of-type(6) > ol.ins-lines > li:nth-of-type(3) > span.ins-vis:nth-of-type(3) > div.v > pre"
    ],
@@ -781,7 +785,7 @@
    "toy": "type",
    "rule": "craft/truncate-intent",
    "title": "This text is cut off and nothing shows the rest.",
-   "at": "Install.jsx:109",
+   "at": "Install.jsx:110",
    "sel": [
     "main.homepage > section.ins:nth-of-type(6) > div.ins-then > span.ins-vis > div.v > div.v-card > span.v-tag:nth-of-type(4)"
    ],
@@ -795,7 +799,7 @@
    "toy": "fill",
    "rule": "craft/contrast",
    "title": "Contrast is 44 on the APCA scale at 13px. Text this size needs 60.",
-   "at": "Install.jsx:57",
+   "at": "Install.jsx:58",
    "sel": [
     "main.homepage > section.ins:nth-of-type(6) > p.ins-req:nth-of-type(2)"
    ],
@@ -882,7 +886,7 @@
    "token": "space-5",
    "rule": "provenance/spacing",
    "title": "10px isn't on your spacing scale",
-   "at": "insights.css:197",
+   "at": "insights.css:202",
    "sel": [
     "main.homepage .sc-prog"
    ],
@@ -916,7 +920,7 @@
    "token": "space-6",
    "rule": "provenance/spacing",
    "title": "14px isn't on your spacing scale",
-   "at": "insights.css:270",
+   "at": "insights.css:275",
    "sel": [
     "main.homepage .sc-tabs-body"
    ],
@@ -933,7 +937,7 @@
    "token": "space-3",
    "rule": "provenance/spacing",
    "title": "5px isn't on your spacing scale",
-   "at": "insights.css:198",
+   "at": "insights.css:203",
    "sel": [
     "main.homepage .sc-times"
    ],
@@ -1103,7 +1107,7 @@
    "token": "dur-dim",
    "rule": "provenance/motion",
    "title": "transition 300ms isn't one of your motion tokens",
-   "at": "insights.css:85",
+   "at": "insights.css:90",
    "sel": [
     "main.homepage .ins-card"
    ],
@@ -1205,7 +1209,7 @@
    "token": "dur-dim",
    "rule": "provenance/motion",
    "title": "transition 200ms isn't one of your motion tokens",
-   "at": "insights.css:108",
+   "at": "insights.css:113",
    "sel": [
     "main.homepage .ins-switch button"
    ],
@@ -1314,36 +1318,36 @@
   "craft/elevation-ladder CopyCommand.jsx:25",
   "craft/elevation-ladder Hero.jsx:27",
   "experience/link-target-renamed Proof.jsx:22",
-  "craft/elevation-ladder Review.jsx:242",
-  "craft/elevation-ladder Review.jsx:247",
-  "craft/weight-levels Review.jsx:249",
-  "craft/elevation-ladder Review.jsx:252",
-  "a11y/svg-name Review.jsx:172",
-  "tells/status-dot Review.jsx:144",
-  "tells/status-dot Review.jsx:145",
-  "craft/elevation-ladder Insights.jsx:236",
-  "experience/button-name-reused Insights.jsx:238",
-  "craft/declared-gap Insights.jsx:329",
-  "tells/status-dot Insights.jsx:349",
-  "craft/weight-levels Insights.jsx:349",
-  "craft/declared-gap Insights.jsx:350",
-  "craft/declared-gap Insights.jsx:350",
-  "craft/weight-levels Insights.jsx:369",
-  "tells/status-chain Insights.jsx:387",
-  "craft/declared-gap Insights.jsx:401",
-  "craft/shared-edges Insights.jsx:222",
-  "craft/weight-levels Insights.jsx:433",
-  "craft/weight-levels Insights.jsx:454",
-  "craft/weight-levels Insights.jsx:454",
-  "craft/inner-outer-spacing Insights.jsx:455",
-  "components/tab-stops Insights.jsx:102",
-  "craft/elevation-ladder Insights.jsx:105",
-  "craft/elevation-ladder Insights.jsx:109",
-  "craft/declared-gap Slop.jsx:84",
-  "html/figure-caption Live.jsx:34",
-  "tells/status-chain Install.jsx:57",
+  "craft/elevation-ladder Review.jsx:246",
+  "craft/elevation-ladder Review.jsx:251",
+  "craft/weight-levels Review.jsx:253",
+  "craft/elevation-ladder Review.jsx:256",
+  "a11y/svg-name Review.jsx:176",
+  "tells/status-dot Review.jsx:148",
+  "tells/status-dot Review.jsx:149",
+  "craft/elevation-ladder Insights.jsx:238",
+  "experience/button-name-reused Insights.jsx:240",
+  "craft/declared-gap Insights.jsx:331",
+  "tells/status-dot Insights.jsx:351",
+  "craft/weight-levels Insights.jsx:351",
+  "craft/declared-gap Insights.jsx:352",
+  "craft/declared-gap Insights.jsx:352",
+  "craft/weight-levels Insights.jsx:371",
+  "tells/status-chain Insights.jsx:389",
+  "craft/declared-gap Insights.jsx:403",
+  "craft/shared-edges Insights.jsx:224",
+  "craft/weight-levels Insights.jsx:435",
+  "craft/weight-levels Insights.jsx:456",
+  "craft/weight-levels Insights.jsx:456",
+  "craft/inner-outer-spacing Insights.jsx:457",
+  "components/tab-stops Insights.jsx:103",
+  "craft/elevation-ladder Insights.jsx:106",
+  "craft/elevation-ladder Insights.jsx:110",
+  "craft/declared-gap Slop.jsx:85",
+  "html/figure-caption Live.jsx:35",
+  "tells/status-chain Install.jsx:58",
   "craft/elevation-ladder Floor.jsx:79",
-  "craft/elevation-ladder Floor.jsx:89",
+  "craft/elevation-ladder Floor.jsx:90",
   "craft/stroke-weight Toy.jsx:5",
   "craft/weight-levels Foot.jsx:33",
   "provenance/spacing tokens.css:38"

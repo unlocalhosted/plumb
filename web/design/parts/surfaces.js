@@ -84,7 +84,9 @@ export function mount(host, root, css) {
     .tr .sw { width: var(--pl-row-h); height: var(--pl-page-space-1); border-radius: var(--pl-radius-row); background: var(--pl-bg-surface); }
     .open { margin-top: var(--pl-space-6); padding: var(--pl-space-6) var(--pl-space-7) var(--pl-space-6) var(--pl-page-space-1); border-radius: var(--pl-radius-card); background: var(--pl-bg-inset); font: var(--pl-page-meta); color: var(--pl-text-secondary); }
     .open li + li { margin-top: var(--pl-space-4); } .open b { color: var(--pl-text-primary); font-weight: 600; }
-    @media (max-width: 720px) { .twin, .rung { grid-template-columns: 1fr; } .tr { grid-template-columns: 1fr var(--pl-page-space-2); } .tr span:last-child { grid-column: 1 / -1; } }
+    /* the two desks side by side only where both fit at their real size */
+    @media (max-width: 1000px) { .twin { grid-template-columns: minmax(0, 1fr); } .desk { min-width: 0; overflow-x: auto; } }
+    @media (max-width: 720px) { .rung { grid-template-columns: minmax(0, 1fr); } .tr { grid-template-columns: 1fr var(--pl-page-space-2); } .tr span:last-child { grid-column: 1 / -1; } }
   </style>${TOY_DEFS}
 
   <h2>Day and night</h2>

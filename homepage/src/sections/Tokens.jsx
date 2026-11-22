@@ -24,6 +24,7 @@
  * ───────────────────────────────────────────────────────── */
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import './tokens.css';
+import { useReduced } from '../reduced.js';
 
 const W = 1104, H = 412;
 const PROMPT = 'The rows in Members feel loose. Tighten them a little?';
@@ -86,13 +87,13 @@ function walk(e, youAt) {
 }
 
 export function Tokens() {
-  const reduced = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduced = useReduced();
   const area = useRef(null), longRef = useRef(null), shortRef = useRef(null);
   const trail = useRef(null), shortLine = useRef(null), longDot = useRef(null), shortDot = useRef(null), typedRef = useRef(null);
   const [fit, setFit] = useState(1);
   const [geo, setGeo] = useState(null);
   // the steps, as one small object: React renders only when one of these changes
-  const [s, setS] = useState(() => step(reduced ? END : 0, null));
+  const [s, setS] = useState(() => step(0, null));
 
   useLayoutEffect(() => {
     // on a phone the drawing keeps a readable size and the strip swipes sideways, rather than shrinking to specks
@@ -114,6 +115,7 @@ export function Tokens() {
   useEffect(() => {
     if (!geo) return;
     const paint = e => {
+      if (!longDot.current || !typedRef.current) return; // a frame can land between leaving the page and the cleanup
       const { f: q } = walk(e, geo.youAt), p = easeOut(clamp((e - T.go) / T.short));
       const lp = geo.longPts[Math.round(q * SAMPLES)], sp = geo.shortPts[Math.round(p * SAMPLES)];
       longDot.current.setAttribute('transform', `translate(${lp.x} ${lp.y})`);

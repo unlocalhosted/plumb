@@ -50,6 +50,7 @@ export function mount(host, root, css) {
     .anat ol b { color: var(--pl-ink); font-weight: 600; }
     .bar { display: inline-flex; align-items: center; gap: 8px; padding: 7px 8px 5px 14px; border-radius: 22px; background: var(--pl-paper); box-shadow: var(--pl-shadow-card); }
     .bar { white-space: nowrap; }
+    @media (max-width: 720px) { .bar { flex-wrap: wrap; max-width: 100%; box-sizing: border-box; } .stage { min-width: 0; } }
     .bar code { font: 600 13px/1 var(--pl-mono); white-space: nowrap; }
     .bar .in { font: 500 12px/1 var(--pl-sans); color: var(--pl-ink-2); }
     .bar .toy { position: relative; display: block; width: 26px; height: 26px; flex: none; transition: scale 300ms var(--pl-spring-pop), rotate 300ms var(--pl-spring-pop); }

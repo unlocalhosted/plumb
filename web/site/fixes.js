@@ -12,7 +12,7 @@ export const TOTAL = record.total;
 const draws = ({ make }) => Object.entries(make.css ?? {}).every(([k, v]) => !k.startsWith('corner-') || CSS.supports(k, v));
 
 export class Fixes {
-  #made = new Map(); #style; #seen; #frame = 0; #able;
+  #made = new Map(); #style; #seen; #frame = 0; #able; #was = new Map();
 
   constructor() {
     this.#able = ITEMS.map(draws);
@@ -34,13 +34,25 @@ export class Fixes {
   /** How many of a toy's are here at all. */
   of(toy) { return ITEMS.filter((item, i) => this.#able[i] && item.toy === toy).length; }
 
+  /** Read what a "take some off" fix takes it off, now, while the element is on the page: the person can leave. */
+  ready(list) {
+    for (const i of list) {
+      const { sel, make } = ITEMS[i];
+      const el = make.was ? document.querySelector(sel[0]) : null;
+      if (el && !this.#was.has(i)) this.#was.set(i, parseFloat(getComputedStyle(el).getPropertyValue(make.was)));
+    }
+  }
+
+  /** A toy's faults this browser can't draw the fix for. */
+  cant(toy) { return ITEMS.filter((item, i) => !this.#able[i] && (!toy || item.toy === toy)).length; }
+
   make(list) {
+    this.ready(list);
     for (const i of list) {
       if (this.#made.has(i)) continue;
-      const { sel, make } = ITEMS[i];
-      // a fix said as "take 7px off" keeps the number it took it off
-      const el = make.was ? document.querySelector(sel[0]) : null;
-      this.#made.set(i, el ? parseFloat(getComputedStyle(el).getPropertyValue(make.was)) : 0);
+      // a fix said as "take 7px off" keeps the number it took it off, and isn't made without it
+      if (ITEMS[i].make.was && !this.#was.has(i)) continue;
+      this.#made.set(i, this.#was.get(i) ?? 0);
     }
     this.#write();
     try { sessionStorage.setItem(AT, JSON.stringify([...this.#made])); } catch {}

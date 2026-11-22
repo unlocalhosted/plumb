@@ -66,6 +66,11 @@
 .ins-x-fill[data-playing='true'] { animation-play-state: running; }
 @keyframes ins-x-fill { from { width: 14px; } to { width: 52px; } }
 .ins-x-dots button:focus-visible { outline: 2px solid var(--pl-border-focus); outline-offset: 1px; border-radius: 99px; }
+/* the narrowest phones: the dots keep their targets and give up their air */
+@media (max-width: 380px) {
+  .ins-x-controls { flex-wrap: wrap; gap: 8px; }
+  .ins-x-dots { gap: 0; padding: 0 6px; }
+}
 .ins-x-play > span { width: 44px; height: 44px; padding: 0; border-radius: 99px; }
 .ins-x-play svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
 .ins-x-play svg path[d^='M5 '] { fill: currentColor; }

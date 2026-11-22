@@ -20,7 +20,11 @@ export default async function Layout({ children }) {
   const tokens = await rootTokens();
   return (
     <html lang="en" data-scheme="light" className={`${round.variable} ${body.variable}`} suppressHydrationWarning>
-      <head><style dangerouslySetInnerHTML={{ __html: tokens + SOFT_CSS }} /></head>
+      <head>
+        {/* the saved scheme, before the first paint: read after, every dark visit flashed light */}
+        <script dangerouslySetInnerHTML={{ __html: "try{var s=localStorage.getItem('plumber:scheme');if(s==='dark'||s==='light')document.documentElement.setAttribute('data-scheme',s)}catch(e){}" }} />
+        <style dangerouslySetInnerHTML={{ __html: tokens + SOFT_CSS }} />
+      </head>
       <body>
         {/* the patterns two toys use (padding's hatch, the checker of see-through), once for the page */}
         <div dangerouslySetInnerHTML={{ __html: TOY_DEFS }} />

@@ -4,7 +4,7 @@
 //   npm run dev                  (Plumber's craft run needs the stamps, so the dev server)
 //   node scripts/findings.mjs
 //
-//   1  the overlay's own craft run reads the page, and `plumber check` the homepage's source (the margins and
+//   1  the overlay's own craft run reads the page three times (a fault counts when every read saw it), and `plumber check` the homepage's source (the margins and
 //      timings the page checks don't judge: only those on an element this page draws)
 //   2  findings that are false here are left out of the count, each kind with its reason (FALSE_HERE)
 //   3  a finding gets a fix where Plumber names one a browser can make (FIX): its CSS, or the value in its action
@@ -27,6 +27,7 @@ const FALSE_HERE = [
   [(f) => f.rule === 'experience/font-display', "next/font's fallback is a local face, so nothing is downloaded"],
   [(f) => f.rule === 'craft/pure-black-white', "white is this site's surface colour (--pl-desk)"],
   [(f) => ['craft/list-wrap', 'craft/scroll-cue'].includes(f.rule) && /ins-x-(track|viewport)/.test(f.cls), 'a carousel is meant to run past its row, and has its dots to say so'],
+  [(f) => f.rule === 'craft/concentric-radius' && f.cls === 'piece-done', 'a round tick waiting unseen at half size, read as a corner nested in the toy’s'],
   [(f) => f.els > 0 && f.shown === 0, 'the element is not shown on this site'],
 ];
 
@@ -67,7 +68,16 @@ const page = await browser.newPage({ viewport: { width: 1280, height: 860 }, red
 await page.goto(URL_, { waitUntil: 'load', timeout: 90000 });
 await page.waitForTimeout(5000);
 const read = () => page.evaluate(async () => JSON.parse(JSON.stringify((await window.__plumb.craft({ timeout: 120000 })).findings)));
-const found = await read();
+// the page moves (demos play, colours pass through shades), so one read can catch a fault that is only a moment:
+// three fresh reads, and a fault counts when all three saw it
+const readKey = (f) => `${f.rule}|${f.file}|${f.line}|${f.column}`;
+const others = [];
+for (let i = 0; i < 2; i++) {
+  others.push(new Set((await read()).map(readKey)));
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(5000);
+}
+const found = (await read()).filter((f) => others.every((seen) => seen.has(readKey(f))));
 
 const placed = await page.evaluate((found) => {
   const steady = (c) => !/^(bare|on|down|hov|translate-)/.test(c) && /^[a-z][\w-]*$/i.test(c);

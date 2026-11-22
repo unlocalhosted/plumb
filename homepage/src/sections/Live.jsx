@@ -8,11 +8,12 @@
  * ───────────────────────────────────────────────────────── */
 import { useEffect, useRef } from 'react';
 import './live.css';
+import { useReduced } from '../reduced.js';
 
 const MEDIA = '/media/live-editing';
 
 export function Live() {
-  const reduced = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduced = useReduced();
   const video = useRef(null);
 
   useEffect(() => {

@@ -18,6 +18,7 @@
  * ───────────────────────────────────────────────────────── */
 import { useEffect, useRef, useState } from 'react';
 import './slop.css';
+import { useReduced } from '../reduced.js';
 
 const TIMING = [0, 500, 1500, 1900, 2700, 3100, 4000, 5300];
 // the agent's edit: four things wrong, two in the code's values, two only visible on the page
@@ -47,13 +48,13 @@ const SAID = [
 ];
 
 export function Slop() {
-  const reduced = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduced = useReduced();
   const session = useRef(null);
-  const [run, setRun] = useState(reduced ? 1 : 0);
-  const [stage, setStage] = useState(reduced ? TIMING.length - 1 : 0);
+  const [run, setRun] = useState(0);
+  const [stage, setStage] = useState(0);
 
   useEffect(() => {
-    if (reduced) return;
+    if (reduced) { setRun(1); setStage(TIMING.length - 1); return; }
     const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setRun(1); io.disconnect(); } }, { threshold: 0.45 });
     io.observe(session.current);
     return () => io.disconnect();

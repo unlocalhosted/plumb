@@ -148,7 +148,10 @@ p.level { margin: -10px 0 18px; max-width: 640px; font: 500 15px/23px var(--pl-s
 .later { display: flex; align-items: center; gap: 14px; margin: 22px 0; padding: 16px 18px; border-radius: 20px; background: var(--pl-lilac-soft); color: var(--pl-lilac-ink); font-size: 15.5px; line-height: 23px; }
 .later .toy { opacity: .7; }
 .later b { font-family: var(--pl-round); font-weight: var(--pl-round-w, 600); }
-.turn { display: flex; justify-content: space-between; gap: 12px; margin-top: 64px; }
+.turn { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; margin-top: 64px; }
+/* a long page name takes a second line rather than pushing a phone sideways */
+.turn > .s-btn { max-width: 100%; }
+.turn > .s-btn > span { white-space: normal; line-height: 1.25; text-wrap: balance; }
 @media (max-width: 860px) { .docs { grid-template-columns: 1fr; gap: 24px; padding: 24px 16px 96px; } .side { position: static; max-height: none; flex-direction: row; flex-wrap: wrap; gap: 14px 22px; } .prose h1 { font-size: 34px; line-height: 38px; } }
 
 /* a phone: the name gives way to the mark (it is still the link's name), then the word Dark to a disc; never the places */

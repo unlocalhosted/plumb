@@ -13,6 +13,8 @@ export function mount(host, root, css) {
 
   root.innerHTML = `<style>${css}${LANGUAGE_CSS}
     :host { display: block; font-family: var(--pl-sans); color: var(--pl-ink); }
+    /* a name waiting to be shown at the right edge takes no room on the page */
+    :host { overflow-x: clip; }
     :host([data-scheme="dark"]) { --pl-paper: #2a2930; --pl-paper-2: #35343c; --pl-rule: #45444d; --pl-ink: #f4f3ef; }
     .band { margin: 28px 0 12px; font: 600 12px/1 var(--pl-sans); letter-spacing: .06em; text-transform: uppercase; color: var(--pl-ink-2); }
     .band:first-of-type { margin-top: 0; }
@@ -20,7 +22,7 @@ export function mount(host, root, css) {
     .set h2 { margin: 0; font: 600 15px/20px var(--pl-sans); }
     .set h2 span { margin-left: 8px; font: 500 12px/1 var(--pl-mono); color: var(--pl-ink-2); }
     .set p { margin: 3px 0 0; font: 400 13px/19px var(--pl-sans); color: var(--pl-ink-2); max-width: 760px; }
-    ol.rules { margin: 10px 0 0; padding: 0 0 0 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 4px 28px; font: 400 13px/19px var(--pl-sans); color: var(--pl-ink-2); }
+    ol.rules { margin: 10px 0 0; padding: 0 0 0 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr)); gap: 4px 28px; font: 400 13px/19px var(--pl-sans); color: var(--pl-ink-2); }
     ol.rules b { color: var(--pl-ink); font-weight: 600; }
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-top: 14px; }
     .toy { position: relative; margin: 0; padding: 14px 12px 11px; border-radius: 14px; background: var(--pl-paper-2); display: flex; flex-direction: column; gap: 10px; outline: none; cursor: default;
@@ -45,6 +47,8 @@ export function mount(host, root, css) {
     .was svg { display: block; width: 100%; height: 100%; }
     .bars { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
     .fb { display: inline-flex; align-items: center; gap: 9px; height: 46px; padding: 0 14px 0 9px; border-radius: 23px; white-space: nowrap; }
+    .fb { max-width: 100%; box-sizing: border-box; }
+    .fb code { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
     .fb i { display: block; width: 28px; height: 28px; }
     .fb svg { display: block; width: 100%; height: 100%; }
     .fb code { font: 600 13px/1 var(--pl-mono); color: var(--pl-ink); }

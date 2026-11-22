@@ -18,6 +18,7 @@
  * Reduced motion: no tour; pressing a pin cuts to its moment with no travel.
  * ───────────────────────────────────────────────────────── */
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useReduced } from '../reduced.js';
 import { toyOf } from '../../../overlay/src/toys.js'; // each mistake wears its property's toy
 
 const W = 1040, H = 470; // the screen is drawn at this size and scaled to fit
@@ -35,17 +36,20 @@ const ISSUES = [
 ];
 
 export function Review() {
-  const reduced = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduced = useReduced();
   const area = useRef(null), screen = useRef(null), twin = useRef(null), timers = useRef({ tour: [], pin: [] });
   const [fit, setFit] = useState(1);
   const [titleW, setTitleW] = useState(640);
   const [geo, setGeo] = useState(null);           // each mistake measured, as written and fixed, in the screen's units
-  const [shown, setShown] = useState(reduced);    // the boxes and pins
+  const [shown, setShown] = useState(false);      // the boxes and pins
   const [fixed, setFixed] = useState(() => new Set());
   const [moment, setMoment] = useState(null);     // { id, step: 1 camera, 2 guides, 3 fixed, 4 out }
-  const [touring, setTouring] = useState(!reduced);
+  const [touring, setTouring] = useState(true);
   const [visible, setVisible] = useState(true);
   const [loop, setLoop] = useState(0);
+
+  // less motion: no tour, and every mistake's pin is there from the start
+  useLayoutEffect(() => { if (reduced) { setShown(true); setTouring(false); } }, [reduced]);
 
   // the screen fits the space the hero leaves it: its width always; on a wide window its height too (one viewport)
   useLayoutEffect(() => {
@@ -66,13 +70,13 @@ export function Review() {
   useEffect(() => {
     let on = true;
     document.fonts.ready.then(() => requestAnimationFrame(() => {
-      if (!on) return;
+      if (!on || !screen.current) return;
       const h = screen.current.querySelector('.rv-title');
       let w = 640;
       for (; w > 380; w -= 4) { h.style.width = `${w}px`; if (lastLine(h).length === 1) break; }
       h.style.width = '';
       setTitleW(w);
-      requestAnimationFrame(() => on && setGeo({ messy: read(screen.current), clean: read(twin.current) }));
+      requestAnimationFrame(() => on && screen.current && twin.current && setGeo({ messy: read(screen.current), clean: read(twin.current) }));
     }));
     return () => { on = false; };
   }, []);

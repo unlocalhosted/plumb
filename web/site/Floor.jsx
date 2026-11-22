@@ -13,19 +13,19 @@ import { Pile } from './pile.js';
 // [toy, its name]
 const PIECES = [['padding', 'Padding'], ['margin', 'Margin'], ['gap', 'Gap'], ['corner', 'Border radius'], ['type', 'Type'],
   ['fill', 'Colour'], ['shadow', 'Shadow'], ['motion', 'Motion'], ['grid', 'Alignment'], ['cursor', 'States and access']];
-const FRESH = { left: TOTAL, able: null, toys: {} };
+const FRESH = { left: TOTAL, able: null, toys: {}, cant: {}, none: 0 };
 
 export function Floor() {
   const stage = useRef(null), pile = useRef(null), eggs = useRef(null), fixes = useRef(null), next = useRef(undefined);
   const path = usePathname(), router = useRouter(), here = useRef(path);
   here.current = path;
   const [pileIs, setPileIs] = useState('waiting');
-  const [{ left, able, toys }, setCount] = useState(FRESH);
+  const [{ left, able, toys, cant, none }, setCount] = useState(FRESH);
   const [found, setFound] = useState(null);
 
   useEffect(() => {
     const f = new Fixes();
-    const count = () => setCount({ left: f.left, able: f.open().length, toys: Object.fromEntries(PIECES.map(([t]) => [t, f.open(t).length])) });
+    const count = () => setCount({ left: f.left, able: f.open().length, none: f.cant(), cant: Object.fromEntries(PIECES.map(([t]) => [t, f.cant(t)])), toys: Object.fromEntries(PIECES.map(([t]) => [t, f.open(t).length])) });
     fixes.current = f;
     eggs.current = new Eggs({
       fixes: f, card: setFound,
@@ -68,7 +68,7 @@ export function Floor() {
       <div className="floor-head">
         <div>
           <p className="floor-title" role="status">
-            {done ? <><b className="floor-n" key={left}>{left}</b> left, and they need code.</> : <>{where} has <b className="floor-n" key={left}>{left}</b> issues.</>}
+            {done ? <><b className="floor-n" key={left}>{left}</b> left, and they need code{none ? ' or a newer browser' : ''}.</> : <>{where} has <b className="floor-n" key={left}>{left}</b> issues.</>}
           </p>
           <p className="floor-how">
             {done ? <>You fixed {TOTAL - left}. For the rest, and for your own app, run <code>npx plumber check</code></>
@@ -83,9 +83,10 @@ export function Floor() {
       <div ref={stage} className="pile">
         {PIECES.slice(1).map(([toy]) => <i key={toy} className="pile-gap" data-guide aria-hidden="true"><b /></i>)}
         {PIECES.map(([toy, name]) => {
-          const n = toys[toy], say = n === undefined ? name : n ? `${name} · ${n} to fix` : `${name} · fixed`;
+          const n = toys[toy], not = cant[toy] > 0;
+          const say = n === undefined ? name : n ? `${name} · ${n} to fix` : not ? `${name} · not in this browser` : `${name} · fixed`;
           return (
-            <button key={toy} type="button" className="piece" data-piece={toy} data-say={say} data-fixed={n === 0 || undefined} aria-label={say}>
+            <button key={toy} type="button" className="piece" data-piece={toy} data-say={say} data-fixed={(n === 0 && !not) || undefined} aria-label={say}>
               <span className="piece-body"><span className="piece-top"><Toy name={toy} size={40} /><i className="piece-done" aria-hidden="true" /></span></span>
             </button>
           );

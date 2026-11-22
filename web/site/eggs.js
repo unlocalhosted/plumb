@@ -98,6 +98,7 @@ export class Eggs {
       run.timeout(() => this.stop(), 2200);
       return;
     }
+    fixes.ready(list);
     const run = new Scope(), still = reduced(), start = scrollY;
     this.#run = run;
     let moved = false, made = false;

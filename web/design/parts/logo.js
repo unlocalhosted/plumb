@@ -50,6 +50,8 @@ export function mount(host, root, css) {
     @media (prefers-color-scheme: dark) { :host(:not([data-scheme="light"])) { --logo-leg: ${BLUE_NIGHT}; } }
     svg { display: block; overflow: visible; }
     .stage { display: grid; place-items: center; min-height: 480px; border-radius: 26px; background: var(--pl-paper-2); }
+    .stage { grid-template-columns: minmax(0, 1fr); }
+    .stage > svg { max-width: 100%; height: auto; }
     .two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 16px; }
     .three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
     .note { padding: 18px 18px 16px; border-radius: 20px; background: var(--pl-paper-2); }

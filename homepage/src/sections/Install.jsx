@@ -10,6 +10,7 @@
  * ───────────────────────────────────────────────────────── */
 import { useEffect, useRef, useState } from 'react';
 import './install.css';
+import { useReduced } from '../reduced.js';
 
 const LINES = [
   { cmd: 'npm install -D @unlocalhosted/react-plumber', bold: '@unlocalhosted/react-plumber', what: 'adds React Plumber to your dev dependencies', vis: 'pkg' },
@@ -19,12 +20,12 @@ const LINES = [
 const HOLD = { every: 3200, held: 1700 };
 
 export function Install() {
-  const reduced = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduced = useReduced();
   const hold = useRef(null);
-  const [held, setHeld] = useState(reduced);
+  const [held, setHeld] = useState(false);
 
   useEffect(() => {
-    if (reduced) return;
+    if (reduced) { setHeld(true); return; }
     let timers = [], interval = 0;
     const press = () => { setHeld(true); timers.push(setTimeout(() => setHeld(false), HOLD.held)); };
     const io = new IntersectionObserver(([e]) => {

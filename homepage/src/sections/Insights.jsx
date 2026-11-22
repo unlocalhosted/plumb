@@ -26,6 +26,7 @@
  * ───────────────────────────────────────────────────────── */
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import './insights.css';
+import { useReduced } from '../reduced.js';
 import { toyOf } from '../../../overlay/src/toys.js'; // each principle wears its property's toy
 import { burst } from '../../../overlay/src/burst.js'; // a fix landing, in pieces of the visual language
 
@@ -38,7 +39,7 @@ const FEEL = 2000;
 const TURN_MS = FEEL + (7000 - 600) + 700; // one example's whole review, for its dot to fill over // the broken scene alone, before anything is marked: a moment to feel that something's off
 
 export function Insights() {
-  const reduced = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduced = useReduced();
   const grid = useRef(null);
   const [live, setLive] = useState(false);
   useEffect(() => {
@@ -117,7 +118,8 @@ export function Insights() {
 /* One insight and its moment. */
 function Card({ card, live, reduced, active, playing, turn, onDone, onHold, onPick, onReplay }) {
   const stage = useRef(null), scene = useRef(null);
-  const [fixed, setFixed] = useState(reduced);
+  const [fixed, setFixed] = useState(false);
+  useLayoutEffect(() => { if (reduced) setFixed(true); }, [reduced]);
   const [step, setStep] = useState(STEP.rest);
   const [cam, setCam] = useState(null);        // the camera's transform, or null at rest
   const [marks, setMarks] = useState(null);    // the guides and the pill, in the stage's pixels

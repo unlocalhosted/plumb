@@ -72,8 +72,9 @@ export function ConcernGrid({ css, concern, checks }) {
 const CSS = `
   .ck { --ck-gap: 10px; }
   .ck-find { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; font: 500 14px var(--pl-sans); color: var(--pl-text-secondary); }
-  .ck-find input { flex: 1; max-width: 360px; font: 500 15px var(--pl-sans); padding: 9px 12px; border-radius: 10px; border: 0; background: var(--pl-bg-inset); color: var(--pl-text-primary); }
+  .ck-find input { flex: 1; min-width: 0; max-width: 360px; font: 500 15px var(--pl-sans); padding: 9px 12px; border-radius: 10px; border: 0; background: var(--pl-bg-inset); color: var(--pl-text-primary); }
   .ck-find input:focus-visible { outline: 2px solid var(--pl-sky); outline-offset: 1px; }
+  .ck-find { flex-wrap: wrap; }
   .ck-find small { font: 500 12px var(--pl-mono); }
   /* the six concerns, as cards you go to */
   .ck .ck-concerns { list-style: none; margin: 22px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
