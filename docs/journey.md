@@ -4148,6 +4148,11 @@ clean clone, which kept an unfinished local rewrite of the hero off the domain.
 page asks for the right token. On https://react-plumber.com, a browser on vm-agent opened 46 pages and followed 46
 internal links with no errors, and the research addresses return 404.
 
+**Afterwards, the same day.** The two private-app pages were still in unpushed commits, and a push would have made
+them public on GitHub. The owner said to take them out, so those commits were rewritten without them (the deployed
+cc4eab3f became cf1a8ab4, which differs only by those two files). Both pages stay on disk, ignored by git. The style
+data they are generated from is still in the unpushed commits and waits for the owner's decision.
+
 **Media hooks.** The live front page at desktop and phone width, and the Type page before (empty) and after.
 
 ## Open gaps
@@ -5766,6 +5771,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   `generator/shots/generate-craftingattention.png` (local).
 
 ## Open gaps
+- **Data about two private apps waits in unpushed commits.** The style data behind the removed pages, and films and verdicts of both apps, become public with the next push unless the owner has them taken out ([entry](#74-the-site-goes-live-at-react-plumbercom-2026-11-22)).
 - **The live site has loose ends.** `/demo` says it hasn't moved yet, plain http doesn't redirect to https, `www` and `design.react-plumber.com` aren't set up, and deploys are run by hand ([entry](#74-the-site-goes-live-at-react-plumbercom-2026-11-22)).
 - **The Break it panel asks for a type token that doesn't exist.** `overlay/src/breakit.js` uses `--pl-text-label` in two places, and the Type page still carries a note proposing the rename to `--pl-card-label` ([entry](#74-the-site-goes-live-at-react-plumbercom-2026-11-22)).
 - **CSS rule fixes are narrow.** They cover text size, line height, weight, gap, corners, width, height and padding per side, from rules outside `@media`. Padding set for two sides at once (`padding-x`) still goes to classes, and the change isn't checked against your token scale before it's written ([entry](#63-css-rule-fixes-work-on-the-next-site-2026-11-20)).
