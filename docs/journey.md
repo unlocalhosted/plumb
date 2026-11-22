@@ -4245,7 +4245,23 @@ it is drawn, which our test missed: it replaced whole runs of text and never pla
   measured proportions and colours. Nothing is animated or rendered as video yet.
 - **Media hooks:** `docs/films/launch-draft/` (local, not committed), beside draft 1 as the before.
 
+### 79. The launch clip's first rough cut, with a voice (2026-11-22)
+
+- **The itch:** the owner approved the story and then the stills ("Yes, rough cut"). The first draft had "no narration
+  no context".
+- **How we found it:** each line was timed to a spoken placeholder, and the cut was read at two frames a second and
+  inside its moves before it was sent.
+- **The system behind it:** one piece carries the story, so there is little to explain: the prompt's button lands in
+  the app, lifts, becomes the value in the code, goes back to the page and is fixed there.
+- **What we tried, what we chose and why:** lines 4 and 5 are one real take (Alt+B, point, click, Enter). Pointing at
+  the button replaced paging through ten other notes. The frames just after the click are cut: for a moment plumber
+  says "Plumber can't write this change in your code yet" and then offers the fix that it does write.
+- **The fix and the proof:** a 29.7 second rough cut at 960 by 540 with all seven lines, and its review in
+  `docs/films/launch-01-review.md`. The final render waits for the owner's notes and voice.
+- **Media hooks:** `docs/films/launch-draft/rough-cut-1.mp4` (local, not committed).
+
 ## Open gaps
+- **The fix bar flashes a wrong refusal.** Just after a click on an element in Blueprint it can show "Plumber can't write this change in your code yet" for a moment, then offer the fix and write it. Seen in a recorded take on Relay, cause not looked for ([entry](#79-the-launch-clips-first-rough-cut-with-a-voice-2026-11-22)).
 - **The launch video has no agreed look.** Draft 1 (solid yellow, a pipe between page and file) was rejected, and the other six use cases wait for one approved clip ([entry](#76-the-launch-videos-first-draft-is-rejected-2026-11-22)).
 - **A drag in the visual editor can lose its change on release.** In scripted rehearsals on Relay, releasing with Alt held dropped the pending change, and in Blueprint it selected the cause underneath, so Enter didn't sync. Two-finger changes sync. Not fixed, and not tried by hand ([entry](#73-the-visual-editor-could-not-write-what-it-previewed-2026-11-22)).
 - **The style tools have run on three products.** Crafting-ui has no labelled action to run on (plumber covers its tokens); a page server must be restarted by hand after new colour sets are written; and the judge ranks a metal edge first for a daily review because the standards check whether a suggestion works, not whether it suits the moment ([entry](#53-the-style-tools-run-on-a-second-product-algorecall-2026-11-21)).
