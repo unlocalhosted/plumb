@@ -45,6 +45,10 @@ export class SourceMapStore {
   }
   async fetch(url, reason) {
     const fresh = new URL(url);
+    // A server component's frame names its chunk on disk (file:///…/.next/dev/server/…), which a page can never fetch.
+    // Asking anyway failed once per element, and anything that wraps the page's fetch (a browser extension) turned
+    // each failure into an unhandled rejection in the app's own error dialog. It is refused here, never asked.
+    if (!/^(?:https?|data|blob):$/.test(fresh.protocol)) refused(reason, { url, error: `A page can’t fetch ${fresh.protocol} addresses.` });
     // Only Next's local static assets are known to accept extra query params.
     // Keep logical URLs unchanged for relative maps and webpack sourceURL keys.
     if (this.refresh && /^https?:$/.test(fresh.protocol) && fresh.pathname.startsWith('/_next/static/') &&
