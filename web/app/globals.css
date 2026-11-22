@@ -31,9 +31,33 @@ a { color: inherit; }
 .bar .name .toy { transition: rotate 420ms var(--pl-spring-pop), scale 420ms var(--pl-spring-pop); transform-origin: 50% 50%; }
 .bar .name:hover .toy { rotate: -7deg; scale: 1.06; } /* the P tips from its centre (the bob it replaced swung from its line) */
 .bar nav { display: flex; align-items: center; gap: 4px; margin-left: 10px; }
-.bar .end { margin-left: auto; }
+.bar .end { display: flex; align-items: center; gap: 8px; margin-left: auto; }
 .bar .end b { font-weight: inherit; }
-.bar .disc { display: none; width: 20px; height: 20px; }
+
+/* the tools at the bar's end (site/Bar.jsx): the site's quiet soft block, one height, one tile in each */
+.bar .tool > span { box-sizing: border-box; height: 38px; padding: 0 13px 0 8px; gap: 8px; }
+.bar .tool.round > span { width: 38px; padding: 0; }
+.bar .tile { display: block; width: 24px; height: 24px; flex: none; }
+.bar .star { display: block; width: 16px; height: 16px; flex: none; margin-inline: 2px -3px; }
+/* the count's room is kept while it loads, so nothing beside it jumps */
+.bar .stars { min-width: 1ch; font-variant-numeric: tabular-nums; opacity: 0; translate: 0 5px; transition: opacity 200ms var(--pl-ease-out), translate 260ms var(--pl-ease-out); }
+.bar .stars[data-in="true"] { opacity: 1; translate: none; }
+/* sun and moon share one place and cross over: one turns away as the other turns in */
+.bar .sky { position: relative; display: block; width: 22px; height: 22px; }
+.bar .sky-toy { position: absolute; inset: 0; width: 100%; height: 100%; transition: opacity 180ms var(--pl-ease-out), rotate 420ms var(--pl-spring-pop), scale 420ms var(--pl-spring-pop); }
+.bar .sun { opacity: 0; rotate: -70deg; scale: .5; }
+:root[data-scheme="dark"] .bar .sun { opacity: 1; rotate: 0deg; scale: 1; }
+:root[data-scheme="dark"] .bar .moon { opacity: 0; rotate: 70deg; scale: .5; }
+/* the name, below the block: on hover, and on the keyboard's focus */
+.bar .tool::after { content: attr(data-say); position: absolute; z-index: 1; top: calc(100% + 9px); left: 50%; translate: -50% 0; padding: 6px 9px; border-radius: 8px; background: var(--pl-text-primary); color: var(--pl-bg-surface);
+  font: 600 12px/16px var(--pl-sans); white-space: nowrap; pointer-events: none; visibility: hidden; opacity: 0; transition: opacity 140ms var(--pl-ease-out), visibility 140ms; }
+.bar .tool.scheme::after { left: auto; right: 0; translate: none; }
+.bar .tool:focus-visible::after { visibility: visible; opacity: 1; }
+@media (hover: hover) and (pointer: fine) { .bar .tool:hover::after { visibility: visible; opacity: 1; transition-delay: 300ms; } }
+@media (max-width: 1099px) { .bar .get-word { display: none; } .bar .tool.get > span { width: 38px; padding: 0; } }
+@media (max-width: 879px) { .bar .who { display: none; } }
+@media (max-width: 719px) { .bar .get, .bar .code { display: none; } }
+@media (prefers-reduced-motion: reduce) { .bar .sky-toy, .bar .stars, .bar .tool::after { transition: none; } .bar .stars { translate: none; } }
 
 
 /* ── a page ── */
@@ -116,13 +140,14 @@ p.level { margin: -10px 0 18px; max-width: 640px; font: 500 15px/23px var(--pl-s
 @media (max-width: 520px) {
   .bar { gap: 8px; }
   .bar nav { margin-left: 0; gap: 2px; }
-  .bar nav .s-btn > span, .bar .end .s-btn > span { padding: 10px 8px; }
+  .bar nav .s-btn > span { padding: 10px 8px; }
   .bar .name .word { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 }
 @media (max-width: 380px) {
-  .bar .end .word { display: none; }
-  .bar .end .disc { display: block; }
-  .bar .end .s-btn > span { padding: 10px; }
+  .bar { gap: 4px; padding: 0 8px; }
+  .bar nav { gap: 0; }
+  .bar nav .s-btn > span { padding: 10px 6px; font-size: 14px; }
+  .bar .tool.round > span { width: 34px; height: 34px; }
 }
 
 /* ── the foot of every page (site/Foot.jsx): who makes it, and where else it lives ── */

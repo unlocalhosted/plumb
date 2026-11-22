@@ -100,6 +100,21 @@ Colour pairings are not left to the eye. They are a list, and the list is checke
 - **Depth:** a second body offset down and right, in ink at about 30%, and only where depth is the meaning (shadow, a
   pressed key).
 
+## Other people's marks
+
+A company's logo (GitHub, X, LinkedIn) isn't ours to invent, but it joins the set as a toy: its own mark, cut out of
+a tile in one of our hues. Never plain ink beside toys, and never a loose shape beside tiles.
+
+- **One tile for every mark in a row:** 24, with a corner of 7, the mark in `--pl-cut` (so it follows the scheme).
+- **The company's shape, in the cut that holds at 20.** Its proportions are kept. Where the published drawing is
+  thinner than 1.5 there, use a published bolder cut of the same shape (X's is bold). A mark that is already a
+  square with a cut in it gives up its square to the tile (LinkedIn's "in").
+- **Sized by eye.** A round mark fills more of the tile than a letter does.
+- It sits on the site's quiet soft block and says its name on hover and on keyboard focus.
+
+(Owner, 2026-11-22: "bring it to same style of this site the github , x and linked too", then "i like A but x and
+github icon might need polish".)
+
 ## Type
 
 Two faces, each with one job.

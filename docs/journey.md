@@ -4378,6 +4378,12 @@ site's style nor to the screenshot's.
 and the screenshot's flat outlined pills. The first is recommended. The owner's pick is open, and the bar isn't
 committed until then.
 
+**The pick and the polish.** The owner: "i like A but x and github icon might need polish". The four links had
+been drawn three ways (a tile, a disc with a hole, a hairline outline). Each is one tile now, with the mark cut out
+of it: GitHub's Invertocat set larger, X in its bold cut, which holds at 20px, and LinkedIn's "in" with the tile as
+its square. Looked at at rest, pointed at, pressed, focused, loading, failing and with 48.2K stars, in both schemes.
+The bar no longer runs past a 320px screen. The example cards there still do.
+
 **Media hooks.** The owner's screenshot, and the two options side by side.
 
 ### 85. A gate so Plumber can't break the app again (2026-11-22)

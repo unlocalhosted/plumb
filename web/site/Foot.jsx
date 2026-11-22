@@ -9,6 +9,7 @@ export function Foot() {
         <a href={NPM_URL}>npm</a>
         <a href={GITHUB_URL}>GitHub</a>
         <a href={AUTHOR.url} rel="me">{`@${AUTHOR.x} on X`}</a>
+        <a href={AUTHOR.linkedin} rel="me">LinkedIn</a>
       </nav>
     </footer>
   );

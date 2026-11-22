@@ -1,11 +1,14 @@
 'use client';
-// The site's one bar: where you are, and light or dark. The scheme is kept on <html data-scheme>, where the design
+// The site's one bar: where you are on the left; on the right where else it lives, and light or dark. The scheme is kept on <html data-scheme>, where the design
 // pages read it, and remembered for the next visit.
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { soften } from '../../overlay/src/soft.js';
 import { markR } from '../../overlay/src/mark.js';
+import { short, useCount } from './counts.js';
+import { Download, GitHub, LinkedIn, Moon, Star, Sun, X } from './marks.jsx';
+import { AUTHOR, GITHUB_URL, NPM_URL } from './project.js';
 
 const PLACES = [['/', 'Home'], ['/docs', 'Docs'], ['/demo', 'Demo'], ['/design', 'Design']];
 
@@ -33,8 +36,25 @@ export function useScheme() {
 // its size calls for; its leg takes the tool's blue for the page's scheme (--rp-leg, app/globals.css)
 const MARK = markR({ h: 26, id: 'bar', leg: 'var(--rp-leg)' });
 
-// light or dark, for a phone too narrow for the word: a disc, half of it the ink
-const DISC = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.600" fill="var(--pl-bg-surface)" stroke="var(--pl-text-primary)" stroke-width="2.200"/><path d="M12 4.400a7.600 7.600 0 0 1 0 15.200z" fill="var(--pl-text-primary)"/></svg>';
+// Where else it lives: the package, the code with its stars, and who makes it. Quiet blocks, each with one tile; each
+// says its name below it when pointed at or focused. As the window narrows the least needed leaves first (X and
+// LinkedIn, which the foot also has, then GitHub and npm, which the hero and the foot have).
+function Elsewhere() {
+  const stars = useCount('stars');
+  const starred = stars == null ? '' : `, ${stars} ${stars === 1 ? 'star' : 'stars'}`;
+  return (
+    <>
+      <a className="s-btn q tool get" href={NPM_URL} aria-label="Install package from npm" data-say="On npm">
+        <span><Download /><b className="get-word">Install package</b></span>
+      </a>
+      <a className="s-btn q tool code" href={GITHUB_URL} aria-label={`GitHub${starred}`} data-say={`GitHub${starred}`}>
+        <span><GitHub /><Star /><b className="stars" data-in={stars !== undefined}>{stars === undefined ? '' : stars === null ? 'Star' : short(stars)}</b></span>
+      </a>
+      <a className="s-btn q tool round who" href={AUTHOR.url} rel="me" aria-label={`${AUTHOR.name} on X`} data-say={`@${AUTHOR.x}`}><span><X /></span></a>
+      <a className="s-btn q tool round who" href={AUTHOR.linkedin} rel="me" aria-label={`${AUTHOR.name} on LinkedIn`} data-say="LinkedIn"><span><LinkedIn /></span></a>
+    </>
+  );
+}
 
 export function Bar() {
   const path = usePathname();
@@ -47,7 +67,13 @@ export function Bar() {
       <nav aria-label="Site">
         {PLACES.map(([href, text]) => <Link key={href} href={href} className={`s-btn ${here(href) ? '' : 'bare'}`} aria-current={here(href) ? 'page' : undefined}><span>{text}</span></Link>)}
       </nav>
-      <span className="end"><button type="button" className="s-btn q" onClick={flip} aria-label={scheme === 'dark' ? 'Switch to light' : 'Switch to dark'}><span><i className="toy disc" aria-hidden="true" dangerouslySetInnerHTML={{ __html: DISC }} /><b className="word">{scheme === 'dark' ? 'Light' : 'Dark'}</b></span></button></span>
+      <span className="end">
+        <Elsewhere />
+        {/* the picture is where a press takes you: a moon by day, a sun by night (swapped by the page's scheme) */}
+        <button type="button" className="s-btn q tool round scheme" onClick={flip} aria-label={scheme === 'dark' ? 'Switch to light' : 'Switch to dark'} data-say={scheme === 'dark' ? 'Light' : 'Dark'}>
+          <span><i className="sky"><Moon /><Sun /></i></span>
+        </button>
+      </span>
     </header>
   );
 }

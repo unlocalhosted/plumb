@@ -11,13 +11,15 @@
 .homepage .proof { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 18px; min-height: 32px; margin: 14px 0 0; padding: 0; list-style: none; }
 .homepage .proof a { display: inline-flex; align-items: center; gap: 7px; min-height: 32px; padding: 0 6px; border-radius: 10px; font: 500 14px/20px var(--pl-sans); color: var(--pl-text-secondary); text-decoration: none; }
 .homepage .proof a:focus-visible { outline: 2px solid var(--pl-border-focus); outline-offset: 2px; }
-.homepage .proof-toy { width: 18px; height: 18px; flex: none; transition: rotate 420ms var(--pl-spring-pop), scale 420ms var(--pl-spring-pop); }
+.homepage .proof svg { width: 18px; height: 18px; flex: none; transition: rotate 420ms var(--pl-spring-pop), scale 420ms var(--pl-spring-pop); }
 .homepage .proof-n { overflow: hidden; font: var(--pl-round-w, 700) 15px/20px var(--pl-round); color: var(--pl-text-primary); font-variant-numeric: tabular-nums; }
 .homepage .proof-n > span { display: block; animation: proof-roll 260ms var(--pl-ease-out) both; }
 @keyframes proof-roll { from { translate: 0 100%; } }
 @media (hover: hover) and (pointer: fine) {
   .homepage .proof a:hover { color: var(--pl-text-primary); }
-  .homepage .proof a:hover .proof-toy { rotate: -7deg; scale: 1.14; }
+  .homepage .proof a:hover svg { rotate: -7deg; scale: 1.14; }
 }
 @media (pointer: coarse) { .homepage .proof a { min-height: 44px; } }
-@media (prefers-reduced-motion: reduce) { .homepage .proof-n > span { animation: none; } .homepage .proof-toy { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .homepage .proof-n > span { animation: none; } .homepage .proof svg { transition: none; } }
+/* from 720 up the bar has the stars (app/globals.css) */
+@media (min-width: 720px) { .homepage .proof-stars { display: none; } }
