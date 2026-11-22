@@ -95,6 +95,7 @@ export function mount(host, root, css) {
     .not b { margin-top: 12px; font: var(--pl-round-w, 600) 15px/19px var(--pl-round); }
     .not span { font: 500 13px/18px var(--pl-sans); color: var(--pl-ink-2); }
     .src { margin-top: 56px; font: 500 13px/20px var(--pl-mono); color: var(--pl-ink-2); }
+    @media (max-width: 380px) { .room { padding: 48px 38px; max-width: 100%; box-sizing: border-box; } }
     @media (max-width: 820px) { .two, .three { grid-template-columns: 1fr; } .sw { grid-template-columns: repeat(2, minmax(0, 1fr)); } .not { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   </style>
   <div class="stage">${mark({ h: 380, level: 3 })}</div>

@@ -65,6 +65,9 @@ const fixOf = (f) => {
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1280, height: 860 }, reducedMotion: 'no-preference' });
+// npm's and GitHub's answers are fixed while recording: the weight check counts every piece of text, and one live
+// number drawn a character longer ("Star" for "0", when GitHub's hourly allowance ran out) moved the count by 33
+await page.route(/api\.(npmjs\.org|github\.com)/, (route) => route.fulfill({ status: 200, headers: { 'access-control-allow-origin': '*' }, contentType: 'application/json', body: route.request().url().includes('npmjs') ? '{"downloads":838}' : '{"stargazers_count":0}' }));
 await page.goto(URL_, { waitUntil: 'load', timeout: 90000 });
 await page.waitForTimeout(5000);
 const read = () => page.evaluate(async () => JSON.parse(JSON.stringify((await window.__plumb.craft({ timeout: 120000 })).findings)));

@@ -62,7 +62,7 @@ export function mount(host, root, css) {
     .bar .toy:hover::after { opacity: 1; translate: -50% 0; }
     .cell.full { grid-column: 1 / -1; }
     .old { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
-    @media (max-width: 640px) { .anat { grid-template-columns: 1fr; } .cell.wide { grid-column: auto; } }
+    @media (max-width: 640px) { .anat { grid-template-columns: minmax(0, 1fr); } .anat .big { padding: 22px 12px; min-width: 0; overflow-x: auto; } .cell.wide { grid-column: auto; } }
   </style>${TOY_DEFS}
 
   <section class="set"><h2>What a button is made of</h2><p>Press this one and hold it.</p>

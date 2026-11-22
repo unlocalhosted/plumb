@@ -194,8 +194,8 @@ export function mount(host, root, css) {
     .open li + li { margin-top: var(--pl-space-4); } .open b { color: var(--pl-text-primary); font-weight: 600; }
     @media (max-width: 720px) { .row { grid-template-columns: 1fr 1fr; } }
     /* a strip or a toast keeps its real size: on a narrow screen it swipes inside its own place */
-    @media (max-width: 720px) { .pair > *, .both > *, .anat > * { min-width: 0; max-width: 100%; box-sizing: border-box; overflow-x: auto; } .both > * { grid-template-columns: max-content; } }
-    @media (max-width: 720px) { .pair, .cells, .row, .anat, .both { grid-template-columns: minmax(0, 1fr); } .means { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 720px) { .pair > *, .both > *, .anat > *, .cells > *, .row > *, .means > * { min-width: 0; max-width: 100%; box-sizing: border-box; overflow-x: auto; } .both > * { grid-template-columns: max-content; } }
+    @media (max-width: 720px) { .pair, .cells, .row, .anat, .both { grid-template-columns: minmax(0, 1fr); } .means { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   </style>${TOY_DEFS}
   <h2>How the system works</h2>
   <div class="prose">

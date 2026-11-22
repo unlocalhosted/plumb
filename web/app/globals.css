@@ -124,6 +124,8 @@ p.level { margin: -10px 0 18px; max-width: 640px; font: 500 15px/23px var(--pl-s
 .prose p { margin: 14px 0; }
 .prose a { font-weight: 700; text-decoration: underline; text-decoration-color: var(--pl-pink); text-decoration-thickness: 2px; text-underline-offset: 3px; }
 .prose a.s-btn { text-decoration: none; }
+/* a long path in a sentence breaks rather than widen a phone's page */
+.prose > p, .prose li, .callout p { overflow-wrap: anywhere; }
 .prose ul, .prose ol { margin: 14px 0; padding-left: 24px; display: flex; flex-direction: column; gap: 6px; }
 .prose li::marker { color: var(--pl-pink); font-weight: 700; }
 .prose strong { font-weight: 800; }
