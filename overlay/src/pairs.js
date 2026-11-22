@@ -20,6 +20,8 @@ export const PAIRS = [
   ...HUES.map((h) => ({ fg: `${h}-on`, bg: h, need: 'bold', use: `words on a ${h} body (a button, a box)` })),
   // a hole cut in a body (butter takes marks in its -on instead, checked above: white vanishes on yellow)
   ...HUES.filter((h) => h !== 'butter').map((h) => ({ fg: 'cut', bg: h, need: 'mark', use: `a cut-out in a ${h} toy` })),
+  // a company whose colour is black (X): its tile is the ink, so it turns over with the scheme
+  { fg: 'cut', bg: 'ink', need: 'mark', use: 'a mark cut out of an ink tile' },
   // a hue's pale, lettered in its ink (pills, callouts, what is not there)
   ...HUES.map((h) => ({ fg: `${h}-ink`, bg: `${h}-soft`, need: 'text', use: `words on ${h}'s pale (a pill, a callout)` })),
   // a hue as a shape on the ground

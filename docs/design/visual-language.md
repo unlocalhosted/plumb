@@ -103,17 +103,21 @@ Colour pairings are not left to the eye. They are a list, and the list is checke
 ## Other people's marks
 
 A company's logo (GitHub, X, LinkedIn) isn't ours to invent, but it joins the set as a toy: its own mark, cut out of
-a tile in one of our hues. Never plain ink beside toys, and never a loose shape beside tiles.
+a tile. Never a loose shape beside tiles.
 
 - **One tile for every mark in a row:** 24, with a corner of 7, the mark in `--pl-cut` (so it follows the scheme).
+- **The tile takes the company's colour, from our palette.** LinkedIn's blue is sky, GitHub's purple is lilac, and
+  X's black is `--pl-ink`, the one tile that is ink (it turns light at night). A hue is never handed out for variety:
+  pink is what you press, so it is never a company's unless the company is pink.
 - **The company's shape, in the cut that holds at 20.** Its proportions are kept. Where the published drawing is
-  thinner than 1.5 there, use a published bolder cut of the same shape (X's is bold). A mark that is already a
+  thinner than 1.5 there, give it weight with a stroke of its own colour and
+  keep its sharp ends (X's); don't swap in a rounded look-alike. A mark that is already a
   square with a cut in it gives up its square to the tile (LinkedIn's "in").
 - **Sized by eye.** A round mark fills more of the tile than a letter does.
 - It sits on the site's quiet soft block and says its name on hover and on keyboard focus.
 
 (Owner, 2026-11-22: "bring it to same style of this site the github , x and linked too", then "i like A but x and
-github icon might need polish".)
+github icon might need polish", then "x is still too stupid like pink doesn't match".)
 
 ## Type
 

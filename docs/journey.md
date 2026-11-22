@@ -4384,6 +4384,11 @@ of it: GitHub's Invertocat set larger, X in its bold cut, which holds at 20px, a
 its square. Looked at at rest, pointed at, pressed, focused, loading, failing and with 48.2K stars, in both schemes.
 The bar no longer runs past a 320px screen. The example cards there still do.
 
+**The colour.** The owner: "x is still too stupid like pink doesn't match". The tiles' hues had been handed out for
+variety, and pink already means "press me" on this site. A company's tile now takes that company's colour from our
+palette, so X is ink, which turns light in dark mode. Its rounded bold look-alike is replaced by X's own sharp mark
+with a little weight added.
+
 **Media hooks.** The owner's screenshot, and the two options side by side.
 
 ### 85. A gate so Plumber can't break the app again (2026-11-22)

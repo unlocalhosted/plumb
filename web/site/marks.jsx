@@ -2,7 +2,8 @@
 // Every link is one tile: the same 24 body and corner, its mark cut out of it and sized by eye, so the four read as
 // one set. The marks are other companies' own, in the cut that holds at 20:
 //   GitHub     the Invertocat as published (Simple Icons, CC0)
-//   X          the bold cut: the published outline is under 1px here and breaks up (Phosphor Icons, MIT)
+//   X          the mark as published, given weight by a stroke of its own colour: its outline is under 1px here
+//              (Simple Icons, CC0). Its tile is the ink, X's own black, which turns over with the scheme
 //   LinkedIn   the "in" alone, the tile being its square (Phosphor Icons, MIT)
 // Phosphor's licence ships with the site (web/licenses/phosphor-icons.txt).
 
@@ -25,8 +26,8 @@ export const GitHub = () => (
   </Tile>
 );
 export const X = () => (
-  <Tile hue="pink">
-    <path transform="translate(2.5 2.5) scale(.0742)" fill="var(--pl-cut)" d="M218.12,209.56l-61-95.8,59.72-65.69a12,12,0,0,0-17.76-16.14L143.81,92.77,106.12,33.56A12,12,0,0,0,96,28H48A12,12,0,0,0,37.88,46.44l61,95.8L39.12,207.93a12,12,0,1,0,17.76,16.14l55.31-60.84,37.69,59.21A12,12,0,0,0,160,228h48a12,12,0,0,0,10.12-18.44ZM166.59,204,69.86,52H89.41l96.73,152Z" />
+  <Tile hue="ink">
+    <path transform="translate(5.2 5.2) scale(.5667)" fill="var(--pl-cut)" stroke="var(--pl-cut)" strokeWidth="1.05" d="M14.234 10.162 22.977 0h-2.072l-7.591 8.824L7.251 0H.258l9.168 13.343L.258 24H2.33l8.016-9.318L16.749 24h6.993zm-2.837 3.299-.929-1.329L3.076 1.56h3.182l5.965 8.532.929 1.329 7.754 11.09h-3.182z" />
   </Tile>
 );
 export const LinkedIn = () => (
