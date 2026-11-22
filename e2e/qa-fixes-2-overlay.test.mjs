@@ -131,7 +131,9 @@ const tidyOpen = async (o, sel) => {
 // Re-review of engine review 2 (docs/research/engine-review-2.md, "Re-review"), the overlay's half: a class added beside
 // one of its family is never written into a variable other elements read (N5); an add into a component's own string,
 // when its classes also come in from a usage the chain did not reach, is refused in plain words (B2); and the recipes are
-// asked with the same chain class-site is, so an element's own classes take a shadow there (N7).
+// asked with the same chain class-site is, so an element's own classes take a shadow there (N7). Alt+click pins the
+// X-ray, which has no shadow picker, so N7 opens the element card the one way left: a script pins the element, then
+// Alt+click on it. It proves the write, and not that a person can reach it (docs/backlog.md).
 const REREVIEW_APP = `const LOOK = 'flex gap-s2 p-[14px] rounded-card bg-surface';
 function QaTile({ className = '' }) {
   return <div id="qa-tile" className={\`flex gap-s2 p-s3 rounded-card bg-surface \${className}\`}><span>tile</span><span>two</span></div>;
@@ -152,10 +154,11 @@ export function App() {
 }
 `;
 
-test('N7: the recipes are asked with the chain class-site gets: a shadow on an element’s own classes is written there, with the hashes it was read at', { timeout: 150000 }, async (t) => {
+test('N7, on the card a script opens: the recipes are asked with the chain class-site gets: a shadow on an element’s own classes is written there, with the hashes it was read at', { timeout: 150000 }, async (t) => {
   const o = await open(t, { app: REREVIEW_APP, query: '' });
   const { page, overlay, card, alt, read, original, posts, errors } = o;
   const gets = []; page.on('request', (r) => { if (r.method() === 'GET' && /\/__plumb\/recipes\?/.test(r.url())) gets.push(new URL(r.url()).searchParams.get('chain')); });
+  await page.locator('#qa-box').evaluate((el) => window.__plumb.overlay.pin(el));
   await alt('#qa-box');
   await card.locator('.drill[data-open="shadow"]').click();
   await overlay.locator('.ec-strip .shot[data-key="y:rest"]').click();

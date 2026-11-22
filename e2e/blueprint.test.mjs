@@ -66,8 +66,13 @@ const footprint = (page) =>
 const say = (overlay) => overlay.locator('.dock .say');
 const hits = (overlay) => overlay.locator('.bp .hit');
 
-// blueprint is off once its layer is put away
-const off = (page) => page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.bp')?.hidden !== false);
+// blueprint is off once its layer is put away and the page is drawn without it: the room it made under the page for
+// its bar is given back as that frame is laid out, one frame after the layer hides. Two frames and no polling: room
+// that is still there then was left behind.
+const off = async (page) => {
+  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.bp')?.hidden !== false);
+  await page.evaluate(() => new Promise((drawn) => requestAnimationFrame(() => requestAnimationFrame(drawn))));
+};
 // the outline drawn for an element, matched by its box
 const outlineOf = (page, id) => page.evaluate((id) => {
   const r = document.getElementById(id).getBoundingClientRect();

@@ -189,7 +189,9 @@ async function iconPass(name) {
   const panel = () => page.evaluate(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.fx')?.innerText.replace(/\s+/g, ' ') ?? '').catch(() => '');
   const until = async (re, timeout = 60000) => { for (const end = Date.now() + timeout; Date.now() < end;) { if (re.test(await panel())) return panel(); await page.waitForTimeout(150); } throw new Error(`timeout ${re}: ${await panel()}`); };
   const pass = /off your icon system|already follow your icon system/;
-  await page.keyboard.press('Alt+B'); await until(/Clean up/);
+  await page.keyboard.press('Alt+B');
+  // the bar has counted the page and is waiting on you; Clean up sits in its ··· menu, and C starts it
+  await page.locator('plumb-overlay').locator('.fx[data-rest][data-settled]').waitFor({ timeout: 60000 });
   await page.keyboard.press('c'); await until(/Apply to this page|already|Next/);
   for (let i = 0; i < 6 && !pass.test(await panel()); i++) { await page.keyboard.press('ArrowRight'); await page.waitForTimeout(1800); }
   const said = await until(pass);
