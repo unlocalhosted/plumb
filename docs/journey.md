@@ -4555,6 +4555,36 @@ The same build passed 705 loads before it went out, and the game passes on the l
   the browser gave each digit before the write and after the reload.
 - **Media hooks:** `docs/films/launch-02-draft/rough-cut-1.mp4` and `rough-stills.jpg` (local, not committed).
 
+### 92. The X-ray card gets a shadow picker (2026-11-23)
+
+- **The itch:** the repair in entry 90 showed that nobody could choose a shadow for one element any more. Since
+  Alt+click started pinning the X-ray card, the old card that held the shadow picker had no control left to open it.
+  The owner: "Yes, shadow first".
+- **The system behind it:** the X-ray card replaced the old card as the one view of an element. It moved spacing,
+  size, corners and type across, but not shadow, motion or layout. The write path for a shadow still worked; it had
+  lost its way in.
+- **What we chose and why:** no new control. Shadow is one more row in the card's Measurements, and it uses the token
+  picker every other value uses: drag through your shadows, click for the list, the arrows to step, then Sync or Esc.
+  Each option is drawn as what it makes, a small piece of the element on its own ground wearing that shadow, and on a
+  dark page both are lifted so the samples still differ. Pointing at an option in the list shows it on the element
+  before you click. A hard-coded shadow sits among your tokens where its depth puts it, so you can always go back to
+  it. The write goes through the same recipe engine the old card used, asked with the same chain and hashes. A row
+  drawn by one line of code changes every copy at once, and the card says how many.
+- **Said before the click:** when a shadow can't be changed from the card, its row says why: a style attribute sets
+  it, a stylesheet rule or a ring class draws it, the theme has no shadow tokens, or the place can't be found.
+- **The fix and the proof:** on a small billing page in Chromium on vm-agent, every case wrote what was picked and
+  nothing else. A component's usage was written (`shadow-rest` to `shadow-raised`), and its Undo put it back. A
+  hard-coded `shadow-[0_3px_9px_…]` became `shadow-float`. Three list rows changed at once, in the same Sync as a
+  corner change. A plain CSS rule became `var(--shadow-float)`. The four refusals said their reasons, the page had no
+  errors, and the card worked dark, at 420 wide and at 1280 by 720. Under Next 16 with Turbopack the overlay loaded
+  with the new file and the app showed none of Plumber's errors; a write there wasn't tried. No tests were written.
+- **Found on the way and fixed:** a card taller than its window was cut off with nothing to scroll. It scrolls now,
+  and Sync stays in view at its foot.
+- **Found on the way, not fixed:** picking the corner token "card" wrote `rounded-2xl`, a Tailwind default of the
+  same 16px. Esc puts back a pending change and also closes the pinned card. In the dark scheme the ruler's size
+  pills show white and empty.
+- **Media hooks:** the list open on the Team plan, light and dark; the three rows outlined as one change.
+
 ## Open gaps
 
 - **A page-wide warning can withdraw an unrelated fix.** A font with no `font-display` turned the z-index fix into
@@ -4573,8 +4603,8 @@ The same build passed 705 loads before it went out, and the game passes on the l
 - The full suite ran once on vm-agent at `ccffe9c4` (2026-11-22): 947 passed, 4 failed in 3 files, 9 skipped, in 23
   minutes. The three files are repaired and pass ([entry 90](#90-repairing-the-three-red-test-files-2026-11-23)).
   The whole suite hasn't been run since.
-- Nobody can pick a shadow, motion or layout for one element by hand: those pickers are on the old element card, and
-  no control on screen opens it. A shadow written from that card is correct when a script opens it (entry 90).
+- A shadow can be picked from the X-ray card again ([entry 92](#92-the-x-ray-card-gets-a-shadow-picker-2026-11-23)).
+  Motion and layout for one element are still only on the old element card, which no control on screen opens.
 - **Most checks can't write their fix.** 59 of 258 page checks can, all in craft (59 of 84). The accessibility, forms, components, HTML, experience and anti-slop packs only advise, so "fixes 100+ issues" can't be claimed yet ([entry](#80-no-voice-six-fixes-side-by-side-and-what-100-may-claim-2026-11-22)).
 - **The fix bar flashes a wrong refusal.** Just after a click on an element in Blueprint it can show "Plumber can't write this change in your code yet" for a moment, then offer the fix and write it. Seen in a recorded take on Relay, cause not looked for ([entry](#79-the-launch-clips-first-rough-cut-with-a-voice-2026-11-22)).
 - **The launch film has no vertical cut, and the other use cases have no film yet.** The first film is 16:9, so its small labels can't be read on a phone held upright ([entry](#81-the-first-launch-film-is-rendered-2026-11-22)).
@@ -6248,6 +6278,9 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - The 152 checks from Chrome's guides are on main, with their tests, after a full suite run; a blocking-script false hit that every Next app would have seen is fixed on the way ([entry](#the-checks-from-chromes-guides-go-to-main-2026-11-14)).
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
+## Shipped · 2026-W48
+- You can pick a shadow for one element again: Alt+click, open Measurements, and choose one of your shadow tokens, each drawn as it looks; Sync writes it in your code, where that element's classes are written. On main, not released ([entry](#92-the-x-ray-card-gets-a-shadow-picker-2026-11-23)).
+
 ## Shipped · 2026-W47
 - react-plumber.com ends on a game: "This LLM-generated page has 125 issues", and a visitor fixes 80 real ones by pressing toys, watching Plumber find and fix each kind. The bar has Install, GitHub, X, LinkedIn and a sun and moon, and every page fits a 320px phone ([entry](#89-made-sure-then-deployed-2026-11-22)).
 - react-plumber.com has docs that match the npm package, the owner's new hero, live download and star counts, and links to npm, GitHub and the maker, so a newcomer can install it from true instructions and see who is behind it ([entry](#83-the-corrected-site-and-the-owners-hero-go-live-2026-11-22)).

@@ -58,10 +58,9 @@ engineer would do." These calls were open questions until then. Each is decided 
   number and needs a ground: the project's own buttons, or a published one (Material's earlier buttons used 64). Say
   which, or leave it to the 24px hit-target check.
 
-- **Shadow, motion and layout for one element (found 2026-11-23).** Alt+click pins the X-ray card, which has none of
-  the three pickers. They still work in the old element card, which no control on screen opens. Either bring them
-  into the X-ray card one at a time, shadow first (a design pass for each), or retire that card with its code and
-  test (the three abilities go with it). Claude recommends bringing shadow back first.
+- **Motion and layout for one element (shadow done 2026-11-23).** The X-ray card has a shadow picker now (journey
+  entry 92). Motion and layout are still only on the old element card, which no control opens. Next: motion, then
+  layout, each as a row of the X-ray card; then the old card and its test can go.
 
 None. (A call is brought here only when it is destructive, outward-facing, costs money, or is taste the owner has
 reserved.)
@@ -152,6 +151,12 @@ reserved.)
 
 ### Blueprint
 
+- **Picking a corner token can write a different name for the same size.** On the billing page, picking "card"
+  (16px) wrote `rounded-2xl`, Tailwind's default of that size (seen 2026-11-23, journey entry 92).
+- **Esc in the X-ray card puts back the pending change and also closes the pinned card.** A second Esc should close
+  it.
+- **In the dark scheme the X-ray's ruler pills are white and empty** (seen 2026-11-23).
+- **The design site's X-ray page doesn't show the Shadow row**: it has no recipe engine to read from.
 - A section that lives in its own file is not counted until it mounts: its problems join the count only once it is
   scrolled into view. (A test used to pin this as expected; it was removed on 2026-11-12 so fixing it fails nothing.)
 
