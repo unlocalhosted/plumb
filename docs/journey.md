@@ -4177,7 +4177,26 @@ follows 46 links with no errors. The writing reads weren't independent, because 
 
 **Media hooks.** The overlay page before and after, and the homepage's three-command section.
 
+### 76. The launch video's first draft is rejected (2026-11-22)
+
+- **The itch:** the owner asked for "atomic videos one use case each but make it visually lollipop", then "a nice
+  motion design + real recording hybrid". On the first draft: "this frame looks ass", "ugly yellow", "this most basic
+  pipe", and "this is going to be our launch video ... try pushing to apple launch videos level".
+- **How we found it:** the owner saw a contact sheet of eight keyframes while the 21 second draft was rendering.
+- **The system behind it:** the clip was built as a screen-recording template: two white rectangles, a connector and a
+  ground picked from the token list, fed by a log of the recording. One template was written for seven clips before
+  anyone had approved one frame. The checks asked whether it was legible and true. None asked whether a frame was good
+  enough to launch with.
+- **What we tried:** the silk wallpaper from the craft films (the owner: "dont use that gradient background"), then a
+  flat hue per clip with toys and a pipe (rejected). The batch of seven was stopped when the owner asked for one video
+  first. The draft's recording is real: a value saved in Board.jsx changes the page, and plumber's fix is written back.
+- **The fix and the proof:** none yet. Proposed to the owner: agree on a direction from three still frames, then an
+  animatic of one clip, then its render, and only then the other clips.
+- **Media hooks:** `docs/films/showcase-draft/file-in-sync-draft-1.mp4` (local, not committed) as the before.
+
 ## Open gaps
+- **The launch video has no agreed look.** Draft 1 (solid yellow, a pipe between page and file) was rejected, and the other six use cases wait for one approved clip ([entry](#76-the-launch-videos-first-draft-is-rejected-2026-11-22)).
+- **A drag in the visual editor can lose its change on release.** In scripted rehearsals on Relay, releasing with Alt held dropped the pending change, and in Blueprint it selected the cause underneath, so Enter didn't sync. Two-finger changes sync. Not fixed, and not tried by hand ([entry](#73-the-visual-editor-could-not-write-what-it-previewed-2026-11-22)).
 - **The style tools have run on three products.** Crafting-ui has no labelled action to run on (plumber covers its tokens); a page server must be restarted by hand after new colour sets are written; and the judge ranks a metal edge first for a daily review because the standards check whether a suggestion works, not whether it suits the moment ([entry](#53-the-style-tools-run-on-a-second-product-algorecall-2026-11-21)).
 - **Tests that check wording, layout and time.** 769 tests are left (by `test(` lines). Many still check sentences, exact counts, pixels,
   fixed waits (55 `waitForTimeout` calls, 69 sleeps) and timings (about 67 asserts). Next: rewrite them to check

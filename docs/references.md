@@ -347,3 +347,11 @@ All free under the Unsplash License, hotlinked from images.unsplash.com as Unspl
 - **What it changed:** three were already checked (eyebrows, section numbering, flavour badges); eleven new
   Anti-slop checks cover the rest, with this list as their source. Used in
   [entry 56](journey.md#56-the-owners-slop-list-becomes-eleven-anti-slop-checks-2026-11-20).
+
+## 2026-11-22 · "Lollipop", and Apple's launch videos (shared by the owner, in words)
+- What: two styles named for React Plumber's showcase and launch video: "visually lollipop", and "apple launch videos
+  level". No link or particular film was given.
+- Why: "this is going to be our launch video , dont act fucking cheap".
+- What it changed: "lollipop" was read as flat candy grounds with toys, and that draft was rejected ("ugly yellow",
+  "most basic pipe"). Apple's level is the bar for the next direction, which is not chosen yet.
+- Used in: [journey entry 76](journey.md#76-the-launch-videos-first-draft-is-rejected-2026-11-22).
