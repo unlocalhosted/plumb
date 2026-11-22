@@ -2,3 +2,6 @@
 node_modules/
 out/
 .wrangler/
+# style sheets of private apps: generated here by generator/style/sheet.mjs, never committed (this repo is public)
+public/research/style-algorecall.html
+public/research/style-craftingattention.html
