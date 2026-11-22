@@ -4467,9 +4467,17 @@ again and all 25 margins and timings were on their tokens. Each toy now moves th
 
 - The fixes of entry 81 (caret, app errors, broken config on Vite) are committed and not published. The site runs
   0.6.0 from npm, so it still has all three bugs.
-- The release gate of entry 85 guards Chromium only. Safari and Firefox aren't in it, and the whole suite hasn't run
-  since these fixes. On a Mac `npm test` refuses to start that many browser files, so a publish from the laptop stops
-  there after the gate.
+- The release gate of entry 85 guards Chromium only: Safari and Firefox aren't in it. On a Mac `npm test` refuses to
+  start that many browser files, so a publish from the laptop stops there after the gate.
+- The full suite ran once on vm-agent at `ccffe9c4` (2026-11-22): 947 passed, 4 failed in 3 files, 9 skipped, in 23
+  minutes (the last recorded full run, 2026-11-20, had 58 files failing). All eight gate files passed. The four fail
+  the same way on `4048901c`, before entry 81's fixes, and block `npm publish` until the tests are repaired:
+  - "Leaving puts the page back exactly" reads the page before Blueprint's bottom padding is cleared. It failed 3 of
+    20 runs on the head and 5 of 20 before; in 24 more runs the padding was late 3 times and never stayed.
+  - The two icon clean-up tests wait for "Clean up" in the bar, which no longer shows it. They pass with that one
+    wait changed.
+  - "N7" waits for the old element card, and Alt+click now opens the X-ray card. What it guarded (a shadow written
+    through the usage chain) has no working test until it is rewritten.
 - **Most checks can't write their fix.** 59 of 258 page checks can, all in craft (59 of 84). The accessibility, forms, components, HTML, experience and anti-slop packs only advise, so "fixes 100+ issues" can't be claimed yet ([entry](#80-no-voice-six-fixes-side-by-side-and-what-100-may-claim-2026-11-22)).
 - **The fix bar flashes a wrong refusal.** Just after a click on an element in Blueprint it can show "Plumber can't write this change in your code yet" for a moment, then offer the fix and write it. Seen in a recorded take on Relay, cause not looked for ([entry](#79-the-launch-clips-first-rough-cut-with-a-voice-2026-11-22)).
 - **The launch film has no vertical cut, and the other use cases have no film yet.** The first film is 16:9, so its small labels can't be read on a phone held upright ([entry](#81-the-first-launch-film-is-rendered-2026-11-22)).
