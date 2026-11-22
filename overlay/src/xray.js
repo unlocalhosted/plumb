@@ -25,6 +25,7 @@ import { gaps, sizing } from './boxmodel.js';
 import { toyOf } from './toys.js';
 import { esc } from './choices.js';
 import { placeOf, atPlace } from './stamp.js';
+import { SHADOW_PICK as SW } from './words.js';
 
 const SIDES = ['top', 'right', 'bottom', 'left'];
 const px = (v) => parseFloat(v) || 0;
@@ -151,7 +152,22 @@ const lum = ([r, g, b]) => [r, g, b].map((v) => { v /= 255; return v <= 0.03928 
 const contrast = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m); return (x + 0.05) / (y + 0.05); };
 
 /** The X-ray of one element: the drawing on it and the card beside it, as html for a positioned layer. */
-export function xray(el, { tokenOf, origin = { left: 0, top: 0 }, room, source, name, fresh = false, zone = null, lit = [] } = {}) {
+/* A shadow, shown as what it makes: a little of the element, on its ground, wearing it. */
+export function shadeOf(el, css) {
+  let g = backdrop(el.parentElement ?? el), f = backdrop(el);
+  // on a dark page both are lifted by one amount, or every sample is the same dark square
+  if (g[0] * 0.2126 + g[1] * 0.7152 + g[2] * 0.0722 < 90) [g, f] = [g, f].map((c, i) => c.slice(0, 3).map((n) => n + (255 - n) * (i ? 0.5 : 0.3)));
+  const under = hex(g), face = hex(f);
+  return `<i class="xr-shade" aria-hidden="true" style="background:${under}"><i style="background:${face};box-shadow:${esc(css || 'none')}"></i></i>`;
+}
+// its row: reading, a token of yours or a hard-coded value (both open the picker), or why it can't be changed here
+function shadowRow(el, s) {
+  if (!s.options) return s.why ? `<span class="xr-val0">${s.css ? shadeOf(el, s.css) : ''}${esc(s.name ?? '')}</span><span class="xr-why">${esc(s.why)}</span>` : `<span class="xr-val0">${SW.reading}</span>`;
+  const o = s.options[s.at ?? s.start];
+  return `<button type="button" class="ch n xr-pick${o.hard ? ' hard' : ''}" data-prop="box-shadow" aria-haspopup="listbox" aria-label="${esc(`${SW.shadow}: ${o.name}${o.hard ? `, ${SW.hard}` : ''}`)}"${o.hard ? ` title="${esc(o.css || o.name)}"` : ''}>${o.none ? '' : shadeOf(el, o.css)}<span>${esc(o.hard ? SW.hard : o.name)}</span></button>`;
+}
+
+export function xray(el, { shadow = null, tokenOf, origin = { left: 0, top: 0 }, room, source, name, fresh = false, zone = null, lit = [] } = {}) {
   const cs = getComputedStyle(el), R = el.getBoundingClientRect();
   const r = { left: R.left - origin.left, top: R.top - origin.top, right: R.right - origin.left, bottom: R.bottom - origin.top, width: R.width, height: R.height };
   room ??= { left: 8, top: 8, right: innerWidth - origin.left - 8, bottom: innerHeight - origin.top - 8 };
@@ -253,6 +269,7 @@ export function xray(el, { tokenOf, origin = { left: 0, top: 0 }, room, source, 
   const rows = [
     ['size', 'Size', `${chip('width', judge('size', r.width), Math.round(r.width))}<span style="color:var(--xr-label)">×</span>${chip('height', judge('size', r.height), Math.round(r.height))}`],
     ['corner', 'Corner', `${chip('border-radius', rj, rad > 500 ? 'full' : rj.n)}${tok(rj)}`],
+    shadow ? ['shadow', SW.shadow, shadowRow(el, shadow)] : null,
     // a row or a grid always has its gap here, even at 0, so a gap can be added from the card
     gj || /flex|grid/.test(cs.display) ? ['gap', 'Gap', (() => { const v = gj ?? judge('spacing', px(cs.columnGap) || px(cs.rowGap)); return `${chip('gap', v, v.n)}${tok(v)}`; })()] : null,
     ['type', 'Type', `${chip('font-size', tj, r1(fs))}<span style="color:var(--xr-label)">/${r1(lh)} · ${cs.fontWeight}</span>${tok(tj)}`],

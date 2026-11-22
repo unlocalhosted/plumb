@@ -917,6 +917,16 @@ export const TIMELINE = {
   valuetext: (i, n, step, from, to, laws) => `Change ${i} of ${n}, ${step}: ${from || 'nothing'} to ${to || 'nothing'}${laws.length ? `, ${laws.join(', ')}` : ''}`,
 };
 
+// the X-ray's Shadow row (xray-shadow.js): your shadow tokens, or why it can't be changed from here
+export const SHADOW_PICK = {
+  shadow: 'Shadow', none: 'None', reading: 'Reading…', hard: 'hard-coded',
+  noTokens: 'Your theme has no shadow tokens yet.',
+  inline: 'A style attribute sets this shadow. Change it there.',
+  elsewhere: 'A stylesheet rule or a ring class draws this shadow. Change it in your code.',
+  unplaced: 'Plumber can’t find where this element’s classes are written.',
+  gone: 'That element isn’t on the page any more. Pick it again.',
+};
+
 // Clean up this page (cleanup.js): the page in passes, each applied as one step
 export const CLEANUP = {
   start: 'Clean up this page',

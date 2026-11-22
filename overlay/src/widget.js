@@ -53,6 +53,7 @@ import { TOY_DEFS } from './toys.js';
 import { classSiteOf, siteMatesOf } from './locate.js';
 import { route as routeStyles, loadProperties, evidenceFor, fileOfBundled, placeRead } from './style-systems.js';
 import { utility } from './craft-read.js';
+import { readShadow, writeShadow } from './xray-shadow.js';
 
 const tokensCss = await send(new URL('./tokens.css', import.meta.url)).then((response) => response.text()).catch((error) => {
   console.warn('[plumb] React Plumber could not load its styles, so it stays hidden. Your app is not affected; reload to try again.', error);
@@ -643,6 +644,8 @@ class PlumbOverlay extends HTMLElement {
       },
       tokenOf: (f, n) => steps(f).find(([px]) => Math.abs(px - n) <= 0.5)?.[1] ?? null,
       scale: steps,
+      // your shadow tokens, read and written by the recipe engine, the route the element card used
+      shadow: { read: readShadow },
       isPage: (r) => !r.target.closest?.('plumb-overlay'),
       // Sync: each change written where the element's value comes from, by the style system that owns it
       // (style-systems.js: a utility class on the element, a rule in your stylesheet, else a class added); one Undo
@@ -654,13 +657,15 @@ class PlumbOverlay extends HTMLElement {
         // one write per element and scope, per system: two writes to one line would trip over each other
         await loadProperties(request);
         const byPart = new Map();
-        for (const g of groups) { const k = `${g.part}|${g.scope}`; (byPart.get(k) ?? byPart.set(k, []).get(k)).push(g); }
+        for (const g of groups.filter((g) => g.prop !== 'box-shadow')) { const k = `${g.part}|${g.scope}`; (byPart.get(k) ?? byPart.set(k, []).get(k)).push(g); }
         const out = [];
         for (const list of byPart.values()) {
           for (const [system, changes] of routeStyles(list)) {
             out.push(...await system.write(changes, { post, request, group, keep: keepFor(changes) }));
           }
         }
+        // a shadow goes through the recipe engine, after the classes: it reads the file as they left it
+        for (const g of groups.filter((g) => g.prop === 'box-shadow')) out.push(await writeShadow(g, { group, keep: keepFor([g]) }));
         return out;
       },
       undo: (r) => post('undo-group', { group: r.group }),
@@ -1074,6 +1079,10 @@ class PlumbOverlay extends HTMLElement {
     // Alt+B: blueprint, with the X-ray of the element under the pointer in place of the heat (owner, 2026-11-13); its
     // list of causes, the fix bar and the clean-up are as they were. The X-ray comes and goes with it (#blueprintState)
     if (event.altKey && event.code === 'KeyB' && !event.repeat) { event.preventDefault(); event.stopPropagation(); this.#disarm(); this.#wholePage(); return; }
+    // an open list is on top of the card: its Esc and Enter reach neither the pin nor Sync
+    if (this.#xray?.listing && (event.key === 'Enter' || event.key === 'Escape')) {
+      event.preventDefault(); event.stopImmediatePropagation(); this.#xray.listKey(event.key); return;
+    }
     // changes the X-ray has collected take Enter (Sync) and Esc (put back) before blueprint's own keys
     // a pinned X-ray card with nothing changed: Enter writes a note for your agent about its element
     if (event.key === 'Enter' && this.#xray?.pinned && !this.#xray.pending && !this.#blueprint?.active && !event.altKey && !event.metaKey && !event.ctrlKey && !this.#typing(event)) {
