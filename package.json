@@ -54,8 +54,9 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "bench:locate": "node bench/locate/run.mjs",
     "test": "npm run build && node scripts/test.mjs",
+    "test:release": "node scripts/test.mjs app-errors host-compile text-caret text-edit.test --here --cores 3",
     "prepack": "npm run build",
-    "prepublishOnly": "npm run build && npm test",
+    "prepublishOnly": "npm run build && npm run test:release && npm test",
     "sm": "node ../sm/src/bin.mjs",
     "contrast": "node scripts/contrast.mjs"
   },

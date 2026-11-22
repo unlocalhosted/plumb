@@ -132,22 +132,21 @@ test('Esc puts the words back and writes nothing; clicking away saves', { timeou
   assert.deepEqual(errors, []);
 });
 
-test('words beside other elements are edited over their own line; a prop is edited where it is passed; an expression says why it can\'t be', { timeout: 120000 }, async (t) => {
+test('words beside other elements are edited where they are; a prop is edited where it is passed; an expression says why it can\'t be', { timeout: 120000 }, async (t) => {
   const launched = await browser(t);
   if (!launched) return;
   const { url, source } = await demo(t);
   const { page, errors, overlay } = await open(t, launched, url);
 
-  // "Plain words," sits beside a <b> and an <em>: a textarea over its line, the page re-flowing behind it
+  // "Plain words," sits beside a <b> and an <em>: edited in place, and only that run of the paragraph
   await dblclickWords(page, '#prose');
-  const area = overlay.locator('.tx-area');
-  await area.waitFor({ timeout: 10000 });
+  await editable(page, '#prose');
   await page.keyboard.press('ControlOrMeta+a');
   await page.keyboard.type('Simple words,');
   assert.match(await page.locator('#prose').textContent(), /^Simple words, bold words/);
   await page.keyboard.press('Enter');
   assert.ok(await fileHas(source, '>Simple words, <b'), 'the run was written beside its siblings');
-  assert.equal(await area.count(), 0);
+  assert.equal(await page.locator('#prose').getAttribute('contenteditable'), null, 'the paragraph is put back');
 
   // once the page has settled after the write: the sync row's title is a prop where the row is used, and is edited
   // there; a grid cell's number is an expression ({i + 1}), and says why it can't be
@@ -188,7 +187,7 @@ test('a note about words that can\'t be edited does not hide the tag of an edit 
   // within those four seconds, other words are edited: the tag is the edit's now
   await page.locator('#prose').scrollIntoViewIfNeeded();
   await dblclickWords(page, '#prose');
-  await overlay.locator('.tx-area').waitFor({ timeout: 10000 });
+  await editable(page, '#prose');
   const tag = overlay.locator('.tx-tag[data-kind="edit"]');
   await tag.waitFor({ timeout: 3000 });
   assert.ok(Date.now() - noted < 3500, 'the edit began while the note still had time left');
