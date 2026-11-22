@@ -4260,7 +4260,24 @@ it is drawn, which our test missed: it replaced whole runs of text and never pla
   `docs/films/launch-01-review.md`. The final render waits for the owner's notes and voice.
 - **Media hooks:** `docs/films/launch-draft/rough-cut-1.mp4` (local, not committed).
 
+### 80. No voice, six fixes side by side, and what "100+" may claim (2026-11-22)
+
+- **The itch:** the owner on rough cut 1: "dont add voice the text is enough, also after showing this change showcase
+  few more example like in parallel and then land that it can fix 100+ issues". Then: "all craft-rules offer write
+  fixes, noo ?"
+- **How we found it:** every rule was read from its syntax tree, helpers and the recommend layer included, for a path
+  that returns a class or a token plumber can write.
+- **The system behind it:** "finds" and "fixes" had never been counted apart. Of 258 page checks, 59 can write a fix.
+  All 59 are craft rules: the other 25 craft rules and the 174 checks of the other six packs only advise.
+- **What we tried, what we chose and why:** the film keeps the owner's approved "looking for 100+ design issues" and
+  doesn't say it fixes 100+. The showcase's "fixed" links didn't switch most examples in a plain capture, so each
+  example was given plumber's own suggested values and judged again. 17 passed, and the six easiest to see are shown.
+- **The fix and the proof:** rough cut 2, 33.4 seconds and silent: the wrong green, six fixes in parallel, then 100+
+  with 246 of plumber's own check names streaming past. Its review is in `docs/films/launch-01-review.md`.
+- **Media hooks:** `docs/films/launch-draft/rough-cut-2.mp4` (local, not committed).
+
 ## Open gaps
+- **Most checks can't write their fix.** 59 of 258 page checks can, all in craft (59 of 84). The accessibility, forms, components, HTML, experience and anti-slop packs only advise, so "fixes 100+ issues" can't be claimed yet ([entry](#80-no-voice-six-fixes-side-by-side-and-what-100-may-claim-2026-11-22)).
 - **The fix bar flashes a wrong refusal.** Just after a click on an element in Blueprint it can show "Plumber can't write this change in your code yet" for a moment, then offer the fix and write it. Seen in a recorded take on Relay, cause not looked for ([entry](#79-the-launch-clips-first-rough-cut-with-a-voice-2026-11-22)).
 - **The launch video has no agreed look.** Draft 1 (solid yellow, a pipe between page and file) was rejected, and the other six use cases wait for one approved clip ([entry](#76-the-launch-videos-first-draft-is-rejected-2026-11-22)).
 - **A drag in the visual editor can lose its change on release.** In scripted rehearsals on Relay, releasing with Alt held dropped the pending change, and in Blueprint it selected the cause underneath, so Enter didn't sync. Two-finger changes sync. Not fixed, and not tried by hand ([entry](#73-the-visual-editor-could-not-write-what-it-previewed-2026-11-22)).

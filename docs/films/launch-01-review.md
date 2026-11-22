@@ -43,3 +43,38 @@ The three worst frames:
 Legibility at phone size: lines 1 to 3 and 5 pass, lines 4 and 6 fail.
 
 Verdict: show the owner. Don't render the final from this cut.
+
+# Rough cut 2 (2026-11-22)
+
+Half resolution, 33.4 s, no audio track. Read from two frames a second and from frames inside the new moves, by the
+person who made it, so the review isn't independent and the motion wasn't judged at speed.
+
+## Story
+
+| time | what the viewer knows by its end | verdict |
+|---|---|---|
+| 0 to 17.3 | AI's wrong green, found on the page | keep |
+| 17.3 to 20.8 | page and code both use your green | keep |
+| 20.8 to 25.7 | plumber fixes other kinds of thing too | keep |
+| 25.7 to 30.4 | it looks for 100+ issues | keep |
+| 30.4 to 33.4 | it is React Plumber | shorten if it drags |
+
+The three fixes that would help most:
+
+1. The button still turns green on the click, before Enter is asked for.
+2. Six changes land within a second, and the scrim and the shadow are the subtle two. A 9:16 cut would show fewer.
+3. It is 33 seconds, over the 30 a feed wants. The time is in holds that are there to be read.
+
+Cringe check: pass. The 100+ is plumber's own check names. Of the 258 page checks, 59 can write a fix (all of them
+craft rules, of 84), so the film says "looking for", never "fixes", 100+.
+
+## Camera
+
+- The parallel fixes: six cards, one beat, each labelled in plumber's own words and turning pink to mint as it lands.
+- The landing: the number is the one loud thing. The names stream above and below it and don't cross it.
+- Each example is a capture of a showcase screen with plumber's suggested values set as its preview sets them, and
+  each was asked again with the finding gone. Their files were not written.
+
+Legibility at phone size: the number and the lines pass. The six labels and the names fail on a phone held upright.
+
+Verdict: show the owner. The final render waits for their OK.
