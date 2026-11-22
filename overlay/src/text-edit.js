@@ -58,6 +58,19 @@ export const TEXT_EDIT_CSS = `
 
 const norm = (v) => v.replace(/\s+/g, ' ').trim();
 const short = (file) => String(file ?? '').split('/').pop();
+// Words whose line can't be found: the reason locate gave, as something the person can act on
+function unfound(found) {
+  const detail = found?.detail ?? {};
+  if (found?.reason === 'resolve-refusal' && /not a tracked project source/.test(String(detail.response ?? ''))) {
+    let file = String(detail.file ?? detail.source ?? '');
+    try { file = decodeURIComponent(new URL(file, location.href).pathname); } catch { /* said as it is */ }
+    return `This text is in ${short(file)}, outside the files React Plumber may edit. Add it to source in plumber.config, or change it in that file.`;
+  }
+  if (found?.reason === 'not-hydrated') return 'The page is still loading. Double-click again in a moment.';
+  if (found?.reason === 'no-fiber') return 'React didn’t draw this text, so React Plumber can’t edit it. Change it where it’s written.';
+  if (found?.reason === 'not-in-your-code' && detail.library) return `This text comes from ${detail.library}, so it can’t be edited here.`;
+  return 'React Plumber can’t tell which file this text is in, so it can’t edit it. Text from MDX or Markdown has to be changed in its own file.';
+}
 // Something on the page that already takes typing: its own double-click is its own
 const ownEditing = (el) => !!el?.closest?.('input, textarea, select, [contenteditable=""], [contenteditable="true"], [contenteditable="plaintext-only"]');
 
@@ -170,8 +183,8 @@ export class TextEditor {
 
   // The string in source that renders these words.
   async #resolve(el, words) {
-    const found = await locate(el);
-    if (!found?.file) return { editable: false, reason: 'Can’t find this text in your code.' };
+    const found = await locate(el, { explain: true });
+    if (!found?.file) return { editable: false, reason: unfound(found) };
     const at = { file: found.file, line: found.line, column: found.column };
     const owners = (found.chain ?? []).filter((c) => c?.file).map((c) => `${c.file}:${c.line}:${c.column}`).join(',');
     try {
@@ -400,7 +413,7 @@ export class TextEditor {
     const hide = () => { this.#tag.hidden = true; notice.end(); };
     // after this click has gone by: the next press anywhere puts the note away, or its time does
     notice.timeout(() => notice.listen(window, 'pointerdown', hide, true), 0);
-    notice.timeout(hide, 4000);
+    notice.timeout(hide, 6000); // two sentences take longer to read than one
   }
 
   destroy() {
