@@ -439,7 +439,10 @@ export class PageGuides {
     if (!first) return;
     if (g.beam) { g.beam.style.left = `${first.x - 14}px`; g.beam.style.top = `${first.y1}px`; g.beam.style.height = `${Math.max(1.5, first.y2 - first.y1)}px`; }
     const py = g.beam ? (first.y1 + first.y2) / 2 : first.r.top - 18, px = g.beam ? Math.max(34, first.x - 46) : first.r.left + first.r.width / 2;
-    g.pill.style.left = `${px}px`; g.pill.style.top = `${py}px`;
+    // whole inside the window: a wide value by the left edge, or a place by the top, would cut the pill
+    const hw = g.pill.offsetWidth / 2 + 6, hh = g.pill.offsetHeight / 2 + 4;
+    const x = Math.max(hw, Math.min(innerWidth - hw, px)), y = py >= hh ? py : g.beam ? hh : first.r.top + first.r.height + hh + 6;
+    g.pill.style.left = `${x}px`; g.pill.style.top = `${y}px`;
   }
   // the page is moving: each number rolls with it; a name crosses over halfway
   move() {

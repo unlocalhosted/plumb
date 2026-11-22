@@ -4416,6 +4416,28 @@ the stars.
   refusal credited "next" with the words of an MDX file. Both are fixed. The rest of the suite wasn't run.
 - **Media hooks:** the gate's two runs side by side, red on 0.6.0 and green on the fix.
 
+### 86. A footer the page lands on (2026-11-22)
+
+**The itch.** The owner: "there is no footer at all and looks so bad we should make it better and add some
+interaction". Then: "the icons go into some cropped boundary let it go till anywhere and fix it", and "can we hide
+easter eggs like clicking on these icons leads to fix on some of the part of the page".
+
+**How we found it.** The owner scrolled to the end: one grey line of links under white space.
+
+**The system behind it.** The footer was built as a place to keep links, so nothing ended the page. The crop came
+from two walls we had drawn ourselves: the footer clipped, and the pieces bounced at the content's width.
+
+**What we chose and why.** The toys lie on a solid lilac ground that carries the links. They can be picked up and
+thrown anywhere in the window, and Clean up does the product's beats: measure the gaps, move, land, burst. A press
+on a toy played that property's fix with the product's own show. Watching it found a bug in the product: the show's
+pill was cut at the window's edge, fixed in the shared module.
+
+**The correction.** The owner: the eggs "should fix a defect for real and it shouldn't just make an issues and then fix
+it to default state", so that they serve "as a demo for plumber like the issues missed by person who was going
+through the page". Our first eggs staged a fault and undid it, which proves nothing about the product.
+
+**Media hooks.** The old one-line footer, the heap falling, and Clean up landing.
+
 ## Open gaps
 
 - The fixes of entry 81 (caret, app errors, broken config on Vite) are committed and not published. The site runs

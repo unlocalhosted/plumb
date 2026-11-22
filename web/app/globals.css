@@ -165,13 +165,90 @@ p.level { margin: -10px 0 18px; max-width: 640px; font: 500 15px/23px var(--pl-s
   .bar .tool.round > span { width: 34px; height: 34px; }
 }
 
-/* ── the foot of every page (site/Foot.jsx): who makes it, and where else it lives ── */
-.foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 4px 24px; width: 100%; max-width: 1080px; margin: 0 auto; padding: 24px 28px 36px; font: 500 15px/24px var(--pl-sans); color: var(--pl-text-secondary); }
-.foot p { margin: 0; }
-.foot nav { display: flex; flex-wrap: wrap; gap: 4px 20px; }
-.foot a { display: inline-block; padding: 4px 0; font-weight: 700; color: var(--pl-text-primary); text-decoration: underline; text-decoration-color: transparent; text-decoration-thickness: 2px; text-underline-offset: 3px; }
-.foot p a { text-decoration-color: var(--pl-pink); }
-.foot a:focus-visible { outline: 2px solid var(--pl-border-focus); outline-offset: 3px; border-radius: 4px; }
-@media (hover: hover) and (pointer: fine) { .foot a:hover { text-decoration-color: var(--pl-pink); } }
-@media (pointer: coarse) { .foot a { padding: 10px 0; } }
-@media (max-width: 640px) { .foot { padding: 20px 16px 28px; } }
+/* ── the foot of every page (site/Foot.jsx): the toys on a floor, and the solid ground under them ── */
+.foot { position: relative; width: 100%; overflow-x: clip; }
+/* the product's guides and burst, over this site's bar */
+body > .mo-page { z-index: 40; }
+body > .fx-burst { z-index: 45 !important; }
+/* the floor: no box round it. The ground's top edge is what the pieces lie on */
+.floor { position: relative; max-width: 1080px; margin: 0 auto; padding: 52px 28px 0; }
+.floor-head { position: relative; z-index: 1; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 18px 24px; }
+.floor-title { margin: 0; font: var(--pl-round-w, 600) 36px/40px var(--pl-round); color: var(--pl-text-primary); text-wrap: balance; font-variant-numeric: tabular-nums; }
+.floor-how { margin: 6px 0 0; font: 500 16px/24px var(--pl-sans); color: var(--pl-text-secondary); }
+.floor-act > span { box-sizing: border-box; min-width: 138px; height: 44px; font-size: 17px; }
+.pile { --piece: 72px; --piece-gap: 16px; position: relative; z-index: 2; height: 214px; margin-top: 0; pointer-events: none; }
+/* off its floor a piece goes anywhere, over anything */
+.pile[data-flying] { z-index: 50; }
+.piece { margin: 0; padding: 0; border: 0; background: none; font: inherit; -webkit-tap-highlight-color: transparent; pointer-events: auto; position: absolute; top: 0; left: 0; width: var(--piece); height: var(--piece); touch-action: none; user-select: none; -webkit-user-select: none; cursor: grab; opacity: 0; }
+.pile[data-ready] .piece { opacity: 1; }
+.piece[data-held] { cursor: grabbing; }
+.piece:focus-visible { outline: none; }
+.piece:focus-visible .piece-top { outline: 2.5px solid var(--pl-sky); outline-offset: 4px; }
+.piece:focus-visible::after { opacity: 1; }
+/* a piece is a soft block: a paper top on its side, and the toy a little loose on it */
+.piece-body { display: block; box-sizing: border-box; height: 100%; padding-top: 5px; border-radius: 22px; background: linear-gradient(180deg, transparent 25%, var(--pl-border-default) 60%); box-shadow: 0 10px 14px -10px rgb(0 0 0 / .32); }
+.piece-top { display: grid; place-items: center; width: 100%; height: 100%; border-radius: 22px; background: linear-gradient(180deg, var(--pl-bg-surface), var(--pl-bg-inset)); translate: 0 -5px; box-shadow: inset 0 1.5px 0 color-mix(in oklab, #fff 70%, transparent), inset 0 0 0 1.5px var(--pl-border-default); transition: translate 240ms var(--pl-spring-pop), scale 240ms var(--pl-spring-pop); }
+:root[data-scheme="dark"] .piece-top { box-shadow: inset 0 1.5px 0 color-mix(in oklab, #fff 14%, transparent), inset 0 0 0 1.5px var(--pl-border-default); }
+.piece-top .toy { pointer-events: none; transition: rotate 420ms var(--pl-spring-pop), scale 420ms var(--pl-spring-pop); }
+.piece::after { content: attr(data-say); position: absolute; left: 50%; bottom: calc(100% + 12px); translate: -50% 0; padding: 6px 9px; border-radius: 8px; background: var(--pl-text-primary); color: var(--pl-bg-surface); font: 600 12px/16px var(--pl-sans); white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity 120ms var(--pl-ease-out); }
+@media (hover: hover) and (pointer: fine) {
+  .piece:hover { z-index: 2147483000 !important; }
+  .piece:hover .piece-top { translate: 0 -9px; }
+  .piece:hover .toy { rotate: -7deg; scale: 1.14; }
+  .piece:not([data-held]):hover::after { opacity: 1; }
+}
+.piece[data-held] .piece-top { translate: 0 -1px; scale: 1.05 .94; }
+.piece[data-held] .toy { scale: 1.08 .9; }
+/* a gap, marked in gap's pattern while it is being put right; its number lands last */
+.pile-gap { position: absolute; top: 0; left: 0; width: var(--piece-gap); height: var(--piece); pointer-events: none; font-style: normal; opacity: 0; transition: opacity 180ms var(--pl-ease-out);
+  background: repeating-linear-gradient(180deg, var(--pl-lilac) 0 4px, transparent 4px 9px) center / 8px 48px no-repeat; }
+.pile[data-state="tidying"] .pile-gap, .pile[data-measured] .pile-gap { opacity: 1; }
+.pile-gap b { position: absolute; left: 50%; bottom: calc(100% + 10px); translate: -50% 6px; padding: 3px 6px; border-radius: 999px; background: var(--pl-lilac); color: var(--pl-lilac-on); font: var(--pl-round-w2, 700) 14px/18px var(--pl-round); opacity: 0; transition: opacity 180ms var(--pl-ease-out), translate 260ms var(--pl-spring-pop); }
+.pile[data-measured] .pile-gap b { opacity: 1; translate: -50% 0; }
+
+/* the ground: one solid block of lilac, lettered in its ink */
+.ground { border-radius: 36px 36px 0 0; background: var(--pl-lilac-face); color: var(--pl-lilac-ink); }
+.ground-in { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1.6fr); gap: 48px 64px; max-width: 1080px; margin: 0 auto; padding: var(--pl-page-space-2) 28px 52px; }
+.foot-name { display: inline-flex; align-items: center; gap: 14px; font: var(--pl-round-w, 600) 30px/1 var(--pl-round); color: inherit; text-decoration: none; }
+.foot-name .toy { transition: rotate 420ms var(--pl-spring-pop), scale 420ms var(--pl-spring-pop); }
+.foot-says { max-width: 310px; margin: 18px 0 0; font: 500 17px/26px var(--pl-sans); text-wrap: pretty; }
+.foot-by { margin-top: var(--pl-page-space-1); }
+.foot-by p { margin: 0 0 12px; font: 500 15px/22px var(--pl-sans); }
+.foot-by p a { font-weight: 700; color: inherit; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+.foot-marks { display: flex; flex-wrap: wrap; gap: 8px; }
+.foot-marks .s-btn > span { box-sizing: border-box; height: 38px; padding: 0 13px 0 8px; }
+.foot-marks .s-btn.only > span { width: 38px; padding: 0; }
+.foot-marks .tile { display: block; width: 24px; height: 24px; flex: none; }
+.foot-map { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px 20px; }
+.foot-group { margin: 0 0 8px; padding-inline: 10px; font: var(--pl-round-w, 600) 20px/26px var(--pl-round); }
+.foot-map ul { display: grid; row-gap: var(--pl-space-2); margin: 0; padding: 0; list-style: none; }
+.foot-place { display: flex; align-items: center; gap: 6px; min-height: 38px; padding: 0 10px; border-radius: 12px; font: 600 16px/22px var(--pl-sans); color: inherit; text-decoration: none; transition: background-color 160ms var(--pl-ease-out), scale 160ms var(--pl-ease-out); }
+.foot-place i { font-style: normal; opacity: 0; translate: -5px 0; transition: opacity 160ms var(--pl-ease-out), translate 260ms var(--pl-spring-pop); }
+.foot-place.away i { translate: -4px 4px; }
+.foot-place:active { scale: .97; }
+.foot-place:focus-visible i { opacity: 1; translate: none; transition: none; }
+.foot a:not(.s-btn):focus-visible { outline: 2px solid currentColor; outline-offset: 2px; border-radius: 12px; }
+@media (hover: hover) and (pointer: fine) {
+  .foot-name:hover .toy { rotate: -7deg; scale: 1.1; }
+  .foot-place:hover { background: color-mix(in oklab, var(--pl-lilac-ink) 10%, transparent); }
+  .foot-place:hover i { opacity: 1; translate: none; }
+}
+@media (pointer: coarse) { .foot-place { min-height: 44px; } }
+@media (max-width: 980px) { .pile { --piece: 64px; --piece-gap: 12px; } }
+@media (max-width: 860px) { .ground-in { grid-template-columns: minmax(0, 1fr); padding: var(--pl-page-space-2) 24px 40px; } .foot-map { margin-inline: -10px; } }
+@media (max-width: 640px) {
+  .floor { padding: 40px 16px 0; }
+  .floor-title { font-size: 28px; line-height: 32px; }
+  .floor-act > span { min-width: 0; }
+  .pile { --piece: 50px; --piece-gap: 10px; height: 190px; }
+  .piece-body, .piece-top { border-radius: 16px; }
+  .piece-top .toy { width: 28px !important; height: 28px !important; }
+  .pile-gap { background-size: 6px 34px; }
+  .pile-gap b { display: none; }
+  .ground { border-radius: 26px 26px 0 0; }
+  .foot-map { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 8px; }
+  .foot-map > div:last-child { grid-column: 1 / -1; }
+  .foot-map > div:last-child ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 8px; }
+}
+@media (max-width: 380px) { .pile { --piece-gap: 8px; } .foot-place, .foot-group { padding-inline: 8px; } .foot-place { font-size: 15px; } }
+@media (prefers-reduced-motion: reduce) { .piece-top, .piece-top .toy, .pile-gap, .pile-gap b, .foot-name .toy, .foot-place, .foot-place i { transition: none; } }
