@@ -20,13 +20,20 @@ const withdrawn = () => new DOMException('The request was withdrawn.', 'AbortErr
 export function send(url, init = {}) {
   if (typeof document === 'undefined' || typeof XMLHttpRequest === 'undefined' || globalThis.__plumbReplay) return fetch(url, init);
   return new Promise((resolve, reject) => {
-    const { method = 'GET', headers = {}, body = null, signal } = init;
+    const { method = 'GET', headers = {}, body = null, signal, cache } = init;
     if (signal?.aborted) { reject(withdrawn()); return; }
     const xhr = new XMLHttpRequest(), out = new Scope();
     const done = (settle, value) => { out.end(); settle(value); };
     xhr.open(method, String(url));
     xhr.responseType = 'arraybuffer';
     for (const [name, value] of Object.entries(headers)) xhr.setRequestHeader(name, value);
+    // fetch's `cache: 'no-store'`: a source map read again after an edit must be the new one, on a host that lets the
+    // browser keep files too. Only to the page's own origin, where the header needs no preflight (the sidecar's
+    // answers say no-store themselves)
+    if (cache === 'no-store') {
+      const to = new URL(url, location.href);
+      if (to.origin === location.origin && /^https?:$/.test(to.protocol)) xhr.setRequestHeader('Cache-Control', 'no-cache');
+    }
     xhr.onerror = () => done(reject, new TypeError('Failed to fetch'));
     xhr.onabort = () => done(reject, withdrawn());
     xhr.onload = () => {
