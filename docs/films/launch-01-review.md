@@ -78,3 +78,23 @@ craft rules, of 84), so the film says "looking for", never "fixes", 100+.
 Legibility at phone size: the number and the lines pass. The six labels and the names fail on a phone held upright.
 
 Verdict: show the owner. The final render waits for their OK.
+
+# The final render (2026-11-22)
+
+`docs/media/launch-01-wrong-green.mp4`: 1920 by 1080, 60 fps, 30.0 s, no audio track, BT.709. The two greens, read
+back from the file, are within one step of the product's. Read at three frames a second all through and at ten a
+second across the twelve changes of shot, by the person who made it. It wasn't watched at speed.
+
+What changed from rough cut 2:
+
+- Enter is the beat the code turns on. The button stays the wrong green through "spots it" and turns on "finds your
+  green", when plumber's own preview turns it.
+- 30 seconds, from 33.4. The first frame already has the app and the first line on it.
+- The mark's two halves close on their gap, then the leg and the name.
+
+What is edited in the recording: only when it is cut. On pointing and on the click, the frames where plumber's pieces
+are still sliding in are left out, and the close-up's frame leaves out the "Hard to read" note plumber shows on
+pointing at that button (a second, true finding that isn't this film's story). No pixel of it is redrawn.
+
+Still open: no 9:16 cut, so the six labels and the streaming names can't be read on a phone held upright. The scrim
+and the shadow are the subtle two of the six. The app and plumber are set in stand-ins for the Mac's system faces.

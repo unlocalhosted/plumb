@@ -4305,6 +4305,20 @@ it is drawn, which our test missed: it replaced whole runs of text and never pla
   edited now say why. No test suite was run, and Safari and Firefox weren't tried.
 - **Media hooks:** the owner's screenshot as the before; the stepped outline round only the editable words as the after.
 
+### 81. The first launch film is rendered (2026-11-22)
+
+- **The itch:** the owner on rough cut 2: "Polish and render".
+- **How we found it:** the last pass read the render at ten frames a second across every change of shot, which caught
+  a tooltip sliding over the button and a doubled word that three frames a second had missed.
+- **The system behind it:** plumber previews a fix when you pick it, so "Press Enter" had nothing left to show on the
+  button. What Enter changes is the file, and the film now shows that.
+- **What we tried, what we chose and why:** holding the button's old colour until Enter would have misdrawn the
+  product. The click was moved onto "finds your green" instead, and the file's one line sits under the close-up and
+  turns on the key. The take was recorded again at three times scale so the close-up stays sharp.
+- **The fix and the proof:** `docs/media/launch-01-wrong-green.mp4`, 30 seconds at 1080p60 with no sound. Its greens
+  read back within one step of the product's. It hasn't been published, and a vertical cut isn't made.
+- **Media hooks:** the film itself, with draft 1 (`docs/films/launch-draft/`, local) as the before.
+
 ## Open gaps
 
 - The fixes of entry 81 (caret, app errors, broken config on Vite) are committed and not published. The site runs
@@ -4314,7 +4328,7 @@ it is drawn, which our test missed: it replaced whole runs of text and never pla
   suite `npm publish` runs is expected to fail until they are rewritten for the behaviour.
 - **Most checks can't write their fix.** 59 of 258 page checks can, all in craft (59 of 84). The accessibility, forms, components, HTML, experience and anti-slop packs only advise, so "fixes 100+ issues" can't be claimed yet ([entry](#80-no-voice-six-fixes-side-by-side-and-what-100-may-claim-2026-11-22)).
 - **The fix bar flashes a wrong refusal.** Just after a click on an element in Blueprint it can show "Plumber can't write this change in your code yet" for a moment, then offer the fix and write it. Seen in a recorded take on Relay, cause not looked for ([entry](#79-the-launch-clips-first-rough-cut-with-a-voice-2026-11-22)).
-- **The launch video has no agreed look.** Draft 1 (solid yellow, a pipe between page and file) was rejected, and the other six use cases wait for one approved clip ([entry](#76-the-launch-videos-first-draft-is-rejected-2026-11-22)).
+- **The launch film has no vertical cut, and the other use cases have no film yet.** The first film is 16:9, so its small labels can't be read on a phone held upright ([entry](#81-the-first-launch-film-is-rendered-2026-11-22)).
 - **A drag in the visual editor can lose its change on release.** In scripted rehearsals on Relay, releasing with Alt held dropped the pending change, and in Blueprint it selected the cause underneath, so Enter didn't sync. Two-finger changes sync. Not fixed, and not tried by hand ([entry](#73-the-visual-editor-could-not-write-what-it-previewed-2026-11-22)).
 - **The style tools have run on three products.** Crafting-ui has no labelled action to run on (plumber covers its tokens); a page server must be restarted by hand after new colour sets are written; and the judge ranks a metal edge first for a daily review because the standards check whether a suggestion works, not whether it suits the moment ([entry](#53-the-style-tools-run-on-a-second-product-algorecall-2026-11-21)).
 - **Tests that check wording, layout and time.** 769 tests are left (by `test(` lines). Many still check sentences, exact counts, pixels,
@@ -5984,6 +5998,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- The first launch film is rendered, not yet published: in 30 silent seconds AI's wrong green is caught on the page and fixed in the code, six more fixes land side by side, and it ends on "looking for 100+ design issues" ([entry](#81-the-first-launch-film-is-rendered-2026-11-22)).
 - React Plumber has a public site at [react-plumber.com](https://react-plumber.com), so anyone can read what it does, the docs and the design system without cloning the repo ([entry](#74-the-site-goes-live-at-react-plumbercom-2026-11-22)).
 - A padding change made in the visual editor is written to your code on Sync; it used to be refused as if your code had a style attribute there. On main, not released ([entry](#73-the-visual-editor-could-not-write-what-it-previewed-2026-11-22)).
 - The style tools work on a third product, React Plumber's Copy button: flat, in capitals and in its own blue, with all five suggestions passing the judge ([entry](#55-the-style-tools-on-a-third-product-react-plumbers-copy-button-2026-11-21)).
