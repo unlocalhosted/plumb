@@ -48,8 +48,14 @@ const creationEvidence = new WeakMap(), ownerEvidence = new WeakMap();
 // Error, so cloning an old element cannot adopt a new map.
 const elementStacks = new WeakMap();
 const defineProperty = Object.defineProperty;
-Object.defineProperty = function (target, key, descriptor) {
-  const result = defineProperty(target, key, descriptor);
+Object.defineProperty = function plumbSees(target, key, descriptor) {
+  let result;
+  try { result = defineProperty(target, key, descriptor); }
+  catch (error) {
+    // the app's mistake: its stack starts at the app's own line, as it does without React Plumber
+    try { Error.captureStackTrace?.(error, plumbSees); } catch { /* the stack stays as it was */ }
+    throw error;
+  }
   if (key === '_debugStack' && descriptor.value instanceof Error &&
     Object.getOwnPropertyDescriptor(target, '$$typeof')?.value === Symbol.for('react.transitional.element')) {
     const props = Object.getOwnPropertyDescriptor(target, 'props')?.value;

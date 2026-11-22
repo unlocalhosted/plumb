@@ -51,10 +51,14 @@
  * Nothing here writes to source.
  * ───────────────────────────────────────────────────────── */
 
+import { send } from './net.js';
 import { locate } from './locate.js';
 import { request } from './api.js';
 
-const tokensCss = await (await fetch(new URL('./tokens.css', import.meta.url))).text();
+const tokensCss = await send(new URL('./tokens.css', import.meta.url)).then((response) => response.text()).catch((error) => {
+  console.warn('[plumb] React Plumber could not load its styles, so it stays hidden. Your app is not affected; reload to try again.', error);
+  return ':host { display: none !important; }'; // a failed top-level await would be the app’s uncaught error
+});
 
 const OURS = 'plumb-overlay, [data-plumb-layer]';
 const SKIP = 'script, style, noscript, template, textarea, code, pre, svg, [contenteditable=""], [contenteditable="true"]';

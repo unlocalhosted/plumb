@@ -1,3 +1,4 @@
+import { send } from './net.js';
 // bippy remains the overlay's source layer. Retain the standalone mapping API
 // for existing HTTP consumers and sourcemap-worker.js; both share HMR invalidation.
 const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
@@ -55,8 +56,8 @@ export class SourceMapStore {
       (typeof location === 'undefined' || fresh.origin === location.origin)) fresh.searchParams.set('__plumb_version', this.refresh);
     let response;
     try {
-      response = await fetch(fresh.href, { cache: 'no-store' });
-      if (!response.ok && fresh.href !== url) response = await fetch(url, { cache: 'no-store' });
+      response = await send(fresh.href, { cache: 'no-store' });
+      if (!response.ok && fresh.href !== url) response = await send(url, { cache: 'no-store' });
     } catch (error) { refused(reason, { url, fetchURL: fresh.href, error: error.message }); }
     if (!response.ok) refused(reason, { url, fetchURL: response.url, status: response.status });
     return response;
@@ -200,7 +201,7 @@ export class SourceMapStore {
       setTimeout(async () => {
         this.traces.delete(key);
         try {
-          const response = await fetch(new URL('/__nextjs_original-stack-frames', url), {
+          const response = await send(new URL('/__nextjs_original-stack-frames', url), {
             method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ frames: wave.map(entry => entry.frame), isServer: false, isEdgeServer: false, isAppDirectory: true }),
           });

@@ -1,3 +1,4 @@
+import { send } from './net.js';
 /* ─────────────────────────────────────────────────────────
  * THEME SOURCE · React Plumber overlay
  *
@@ -19,7 +20,7 @@ export function sourceTexts() {
       seen.add(path);
       let text;
       try {
-        const r = await fetch(`/@fs${path}?raw`);
+        const r = await send(`/@fs${path}?raw`);
         if (!r.ok) return;
         text = JSON.parse(/export default (".*")/s.exec(await r.text())?.[1] ?? '""');
       } catch { return; }

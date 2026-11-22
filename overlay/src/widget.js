@@ -24,6 +24,7 @@ const WALK = { step: 30, pause: 450 };
 const reachable = (el) => { while (el?.ownerSVGElement) el = el.ownerSVGElement; return el; }; // px of scroll per level; ms of stillness that resets the travel
 const TIMING = { hoverRead: 90, light: 120, swap: 140, reread: [250, 600, 1200, 2400], starting: 1000, maxDrawing: 160, healthStarting: 1000, healthReady: 10000, dockFold: 4000, dockCount: 3000, side: 3000 };
 
+import { send } from './net.js';
 import { pageHydrated } from './hydration.js';
 import { markR } from './mark.js';
 import { DOCK, TAG } from './words.js'; // the dock's and the hover tag's words
@@ -53,7 +54,10 @@ import { classSiteOf, siteMatesOf } from './locate.js';
 import { route as routeStyles, loadProperties, evidenceFor, fileOfBundled, placeRead } from './style-systems.js';
 import { utility } from './craft-read.js';
 
-const tokensCss = await (await fetch(new URL('./tokens.css', import.meta.url))).text();
+const tokensCss = await send(new URL('./tokens.css', import.meta.url)).then((response) => response.text()).catch((error) => {
+  console.warn('[plumb] React Plumber could not load its styles, so it stays hidden. Your app is not affected; reload to try again.', error);
+  return ':host { display: none !important; }'; // a failed top-level await would be the app’s uncaught error
+});
 // the element an Alt+click read, kept across a reload: where it is written (its stamp without the file's hash, which a
 // write changes) and which of the elements written there it was
 const stampedAt = (at) => document.querySelectorAll(atPlace(at));

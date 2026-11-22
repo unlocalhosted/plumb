@@ -1,6 +1,7 @@
 // Where questions go: the server this client was loaded from. On Next that is the route's sidecar (hosts/next-dev.ts),
 // another loopback origin; the page's own /__plumb/ (the route) is the door that always answers. When the sidecar stops
 // answering (its process gone, the port closed), every question moves to the door, once, and stays there.
+import { send } from './net.js';
 // the parent of this module's folder, read at run time: a bundler (Next's, when the design site imports a piece that reaches
 // this module) took the literal '../' for a file to bundle and failed the whole site's build
 const UP = ['..', ''].join('/');
@@ -11,13 +12,13 @@ const door = new URL('/__plumb/', location.href).href;
 const clientPath = new URL(base).pathname + 'client.js';
 const script = [...document.querySelectorAll('script[type="module"][src]')].find(script => script.src === base + 'client.js' || new URL(script.src, location.href).pathname === clientPath);
 const token = script?.dataset.plumbToken;
-/** fetch at `base`; a network failure at a sidecar moves base to the door and asks there, once; at the door it fails as it is. */
+/** Ask at `base`; a network failure at a sidecar moves base to the door and asks there, once; at the door it fails as it is. */
 async function reach(path, init) {
-  try { return await fetch(new URL(path, base), init); }
+  try { return await send(new URL(path, base), init); }
   catch (error) {
     if (error?.name === 'AbortError' || base === door) throw error;
     base = door;
-    return fetch(new URL(path, base), init);
+    return send(new URL(path, base), init);
   }
 }
 
@@ -141,13 +142,13 @@ export async function post(method, body) {
   // the key travels in its own header: `key` in a body belongs to the endpoint (set's prop key)
   const key = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const payload = JSON.stringify(body ?? {});
-  const send = () => reach(method, { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': key, ...(token ? { 'x-plumb-token': token } : {}) }, body: payload });
+  const write = () => reach(method, { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': key, ...(token ? { 'x-plumb-token': token } : {}) }, body: payload });
   let response;
-  try { response = await send(); }
+  try { response = await write(); }
   catch (error) {
     // the network dropped: the server may have applied the write; the same key asks for its answer, not a second write
     await new Promise(resolve => setTimeout(resolve, 300));
-    try { response = await send(); } catch (again) { throw unreachable(again); }
+    try { response = await write(); } catch (again) { throw unreachable(again); }
   }
   const result = await response.json().catch(() => ({}));
   if (!response.ok) throw Object.assign(new Error(result.error ?? `React Plumber refused ${method}.`), { status: response.status, code: result.code ?? null });

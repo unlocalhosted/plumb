@@ -149,7 +149,8 @@ export function plumb({ demo, ...options }: PlumbViteOptions = {}): Plugin {
       if (id === '/__plumb/src/sourcemap.js') return { id, external: true };
     },
     load(id) {
-      if (demo && id === entry) return `import ${JSON.stringify(resolve(root, demo.replay))};\n${production ? `await import(${JSON.stringify(client)});` : `const client = '/__plumb/client.js';\nawait import(/* @vite-ignore */ client);`}`;
+      // the replay stands in for the server by replacing fetch, so the client is told to use it (overlay/src/net.js)
+      if (demo && id === entry) return `import ${JSON.stringify(resolve(root, demo.replay))};\nglobalThis.__plumbReplay = true;\n${production ? `await import(${JSON.stringify(client)});` : `const client = '/__plumb/client.js';\nawait import(/* @vite-ignore */ client);`}`;
     },
     async transform(code, id) {
       if (production && id === fileURLToPath(new URL('../../overlay/src/api.js', import.meta.url))) {

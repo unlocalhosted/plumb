@@ -17,6 +17,7 @@
  * Order matters: the first system that owns a property writes it. A utility class on the element wins over any rule,
  * as it does on the page; a stylesheet rule is next; adding a class is the fallback.
  * ───────────────────────────────────────────────────────── */
+import { send } from './net.js';
 import { elementEdit } from './inplace.js';
 import { activeVariants, swapInForce } from './variants.js';
 import { classEditsOf } from './locate.js';
@@ -199,9 +200,9 @@ function sourceAtLine(map, line) {
 }
 export async function fileOfBundled({ bundle, selectorText, nth }) {
   if (!bundles.has(bundle)) bundles.set(bundle, (async () => {
-    const text = await (await fetch(bundle, { cache: 'no-store' })).text();
+    const text = await (await send(bundle, { cache: 'no-store' })).text();
     const ref = [...text.matchAll(/\/\*#\s*sourceMappingURL=([^\s*]+)/g)].at(-1)?.[1];
-    const map = ref ? await (await fetch(new URL(ref, bundle), { cache: 'no-store' })).json() : null;
+    const map = ref ? await (await send(new URL(ref, bundle), { cache: 'no-store' })).json() : null;
     return { text, map };
   })());
   const { text, map } = await bundles.get(bundle);

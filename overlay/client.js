@@ -35,5 +35,6 @@ window.__plumb = {
   },
 };
 
-const health = await request('health', {});
+// still reading (503) or out of reach is a state the dock shows, never an uncaught error in the app
+const health = await request('health', {}).catch(error => ({ status: error.starting ? 'starting' : 'unreachable', message: error.message }));
 console.debug('[plumb] overlay connected', health);
