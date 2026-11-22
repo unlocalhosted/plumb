@@ -4514,6 +4514,29 @@ The same build passed 705 loads before it went out, and the game passes on the l
 
 **Media hooks.** A docs page on a phone before and after, and the footer's game on the live site.
 
+### 90. Repairing the three red test files (2026-11-23)
+
+- **The itch:** the full suite left three files failing, and any failing file stops `npm publish`. The owner: "Yes,
+  repair them".
+- **How we found the causes:** each failure was replayed in a browser on vm-agent with the page recorded as it went.
+  The space under the page came back within 25 ms, one frame after Blueprint's layer hid. Clean up had moved into
+  the bar's ··· menu, and C starts it even while the page is still being counted. For the shadow test, every control
+  a person has was tried on the same element, and none opened a shadow picker.
+- **The system behind it:** the interface moved and the tests kept waiting for what used to be on screen. In the third
+  file that covered a real loss. Alt+click has pinned the X-ray card since `87c63907` (2026-11-20, in the 0.6.0 tag),
+  as the two-views brief asked, and the old element card's shadow, motion and layout pickers didn't move with it.
+- **What we chose and why:** test edits only. The leave test waits two frames and doesn't poll, so space left behind
+  still fails at once. The icon tests wait for the bar to finish counting, then press C. The shadow test opens the
+  old card through a script's pin, the route that is left. It proves the write and says in its name that a script
+  opens the card. Whether the pickers return is the owner's call ([backlog](backlog.md)).
+- **The fix and the proof:** on the suite's commit `ccffe9c4` the three files pass, 8 tests with none skipped. The
+  leave test then passed 40 of 40 runs, the icon file 10 of 10 and the shadow test 10 of 10. Five faults put in on
+  purpose were all caught: space never given back, space given back late, C doing nothing, and a write sent without
+  its chain or without its hashes. The full suite wasn't run again.
+- **A correction:** the note before this said the icon tests passed with only their wait changed. That trial also had
+  a 2.5 second pause. The repaired tests don't need it.
+- **Media hooks:** the old card with its Shadow row beside the X-ray card that Alt+click pins now.
+
 ## Open gaps
 
 - **Enter can write a different fix from the one in the bar.** On the showcase's calendar (38) the bar offered the
@@ -4528,14 +4551,10 @@ The same build passed 705 loads before it went out, and the game passes on the l
 - The release gate of entry 85 guards Chromium only: Safari and Firefox aren't in it. On a Mac `npm test` refuses to
   start that many browser files, so a publish from the laptop stops there after the gate.
 - The full suite ran once on vm-agent at `ccffe9c4` (2026-11-22): 947 passed, 4 failed in 3 files, 9 skipped, in 23
-  minutes (the last recorded full run, 2026-11-20, had 58 files failing). All eight gate files passed. The four fail
-  the same way on `4048901c`, before entry 81's fixes, and block `npm publish` until the tests are repaired:
-  - "Leaving puts the page back exactly" reads the page before Blueprint's bottom padding is cleared. It failed 3 of
-    20 runs on the head and 5 of 20 before; in 24 more runs the padding was late 3 times and never stayed.
-  - The two icon clean-up tests wait for "Clean up" in the bar, which no longer shows it. They pass with that one
-    wait changed.
-  - "N7" waits for the old element card, and Alt+click now opens the X-ray card. What it guarded (a shadow written
-    through the usage chain) has no working test until it is rewritten.
+  minutes. The three files are repaired and pass ([entry 90](#90-repairing-the-three-red-test-files-2026-11-23)).
+  The whole suite hasn't been run since.
+- Nobody can pick a shadow, motion or layout for one element by hand: those pickers are on the old element card, and
+  no control on screen opens it. A shadow written from that card is correct when a script opens it (entry 90).
 - **Most checks can't write their fix.** 59 of 258 page checks can, all in craft (59 of 84). The accessibility, forms, components, HTML, experience and anti-slop packs only advise, so "fixes 100+ issues" can't be claimed yet ([entry](#80-no-voice-six-fixes-side-by-side-and-what-100-may-claim-2026-11-22)).
 - **The fix bar flashes a wrong refusal.** Just after a click on an element in Blueprint it can show "Plumber can't write this change in your code yet" for a moment, then offer the fix and write it. Seen in a recorded take on Relay, cause not looked for ([entry](#79-the-launch-clips-first-rough-cut-with-a-voice-2026-11-22)).
 - **The launch film has no vertical cut, and the other use cases have no film yet.** The first film is 16:9, so its small labels can't be read on a phone held upright ([entry](#81-the-first-launch-film-is-rendered-2026-11-22)).

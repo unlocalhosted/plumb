@@ -58,6 +58,11 @@ engineer would do." These calls were open questions until then. Each is decided 
   number and needs a ground: the project's own buttons, or a published one (Material's earlier buttons used 64). Say
   which, or leave it to the 24px hit-target check.
 
+- **Shadow, motion and layout for one element (found 2026-11-23).** Alt+click pins the X-ray card, which has none of
+  the three pickers. They still work in the old element card, which no control on screen opens. Either bring them
+  into the X-ray card one at a time, shadow first (a design pass for each), or retire that card with its code and
+  test (the three abilities go with it). Claude recommends bringing shadow back first.
+
 None. (A call is brought here only when it is destructive, outward-facing, costs money, or is taste the owner has
 reserved.)
 
