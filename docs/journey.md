@@ -4110,6 +4110,20 @@ it wasn't needed.
 **Media hooks.** The new README hero, `docs/media/blueprint.gif`, recorded on Relay by
 `scripts/record-blueprint.mjs`: the count, the X-ray card on New issue, the corner fix on In review, and its write.
 
+### 73. The visual editor could not write what it previewed (2026-11-22)
+
+- **The itch:** in the visual editor, changing a card's padding and pressing Sync answered "A style attribute on this
+  element sets it. Change it there, or remove it and Sync again." The card has no style attribute in the code.
+- **How we found it:** rehearsing the visual editor's showcase clip on Relay, the demo issue tracker. Each padding
+  edit that reached Sync was refused, with Blueprint on and with Alt held.
+- **The system behind it:** the editor previews an edit as an inline style. Sync decided where the value is written
+  while that preview was still on the element, so it read the preview as the author's own style attribute.
+- **What we chose:** Sync reads where a value comes from with the preview lifted and transitions held, then puts both
+  back. A style attribute that was there before the edit is still refused, because lifting restores it.
+- **The fix and the proof:** the same two rehearsals then wrote `pt-3.5` and `pt-5` into `Board.jsx:34`, reaching the
+  20 cards that line draws. No automated test was written or run, and a real style attribute wasn't tried.
+- **Media hooks:** the visual editor clip in the showcase set.
+
 ## Open gaps
 - **The style tools have run on three products.** Crafting-ui has no labelled action to run on (plumber covers its tokens); a page server must be restarted by hand after new colour sets are written; and the judge ranks a metal edge first for a daily review because the standards check whether a suggestion works, not whether it suits the moment ([entry](#53-the-style-tools-run-on-a-second-product-algorecall-2026-11-21)).
 - **Tests that check wording, layout and time.** 769 tests are left (by `test(` lines). Many still check sentences, exact counts, pixels,
@@ -5775,6 +5789,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- A padding change made in the visual editor is written to your code on Sync; it used to be refused as if your code had a style attribute there. On main, not released ([entry](#73-the-visual-editor-could-not-write-what-it-previewed-2026-11-22)).
 - The style tools work on a third product, React Plumber's Copy button: flat, in capitals and in its own blue, with all five suggestions passing the judge ([entry](#55-the-style-tools-on-a-third-product-react-plumbers-copy-button-2026-11-21)).
 - The style tools (style reader, colour engine, shadow recipe, pairing solver) now work on a second product: algorecall's start-review slab gets suggestions in its own pale green and dark green words, with its own lip, and all six pass the judge in light and dark ([entry](#53-the-style-tools-run-on-a-second-product-algorecall-2026-11-21)).
 - A fix whose class only some of a line's elements carry (a condition on one column, a red date on late cards) is shown and written on those elements; it used to be offered on the first element and refused. The README's hero is re-recorded on Relay ([entry](#72-a-fix-offered-on-the-wrong-element-2026-11-21)).

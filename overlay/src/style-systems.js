@@ -302,6 +302,20 @@ export const cssRules = {
 // the order the systems are asked in: the first that owns a property writes it
 export const SYSTEMS = [utilityClasses, cssRules];
 
+// A Sync arrives with its preview still on the element (an inline value over `befores`, what was there). Where a value
+// comes from is read without it, or every Sync would find that preview and take it for a style attribute of yours.
+// Transitions are held meanwhile: mid-transition the page still computes the preview's value.
+function asWritten(changes, read) {
+  const held = changes.filter((g) => g.els[0] && g.befores?.length).map((g) => ({ el: g.els[0], prop: g.prop, before: g.befores[0] }));
+  const saved = new Map();
+  for (const { el } of held) if (!saved.has(el)) saved.set(el, el.getAttribute('style'));
+  for (const el of saved.keys()) el.style.setProperty('transition', 'none', 'important');
+  for (const { el, prop, before } of held) el.style.setProperty(prop, before); // an empty before removes it
+  try { return read(); } finally {
+    for (const [el, style] of saved) if (style === null) el.removeAttribute('style'); else el.setAttribute('style', style);
+  }
+}
+
 /**
  * Which system writes each change, from what the page proves (evidenceFor): a utility class in force on the element is
  * the class system's; a rule in one of your stylesheets is the rule system's; a style attribute is said, not written
@@ -310,9 +324,9 @@ export const SYSTEMS = [utilityClasses, cssRules];
 export function route(changes, systems = SYSTEMS) {
   const by = new Map(), put = (s, g) => (by.get(s) ?? by.set(s, []).get(s)).push(g);
   const said = { id: 'said', async write(list) { return list.map((g) => ({ id: g.id, state: 'failed', why: g.why })); } };
-  for (const g of changes) {
-    const el = g.els[0];
-    const e = el ? evidenceFor(el, g.prop) : { kind: 'none' };
+  const evidence = asWritten(changes, () => changes.map((g) => (g.els[0] ? evidenceFor(g.els[0], g.prop) : { kind: 'none' })));
+  for (const [i, g] of changes.entries()) {
+    const el = g.els[0], e = evidence[i];
     if (e.kind === 'inline') put(said, { ...g, why: 'A style attribute on this element sets it. Change it there, or remove it and Sync again.' });
     else if (e.kind === 'rule' && e.isClass && hasClassFor(el, g.prop)) put(utilityClasses, { ...g, claim: { system: 'class' } });
     else if (e.kind === 'rule' && (e.file || e.bundle)) put(cssRules, { ...g, claim: { system: 'rule', ...e } });
