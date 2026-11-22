@@ -4481,6 +4481,29 @@ again and all 25 margins and timings were on their tokens. Each toy now moves th
   the owner's OK. The film isn't animated.
 - **Media hooks:** `docs/films/launch-02-draft/board.png` (local, not committed) and `writes.json` beside it.
 
+### 89. Made sure, then deployed (2026-11-22)
+
+**The itch.** The owner: "again make sure everything is working perfectly and then deploy".
+
+**How we found what wasn't.** A sweep of the production build: every page at ten widths, both themes and reduced
+motion in Chromium (705 loads), the main pages in Firefox and WebKit, and the footer's game played in all three.
+
+**What it found, already live since the first two deploys.** The docs' previous and next buttons pushed phones
+sideways on 13 pages. Five design pages and the homepage's carousel did too. A saved dark theme flashed light on
+every page. Reduced motion broke the homepage's first render. In the new work, a fix left part way was recorded and
+never made, Firefox showed a tick for squircles it can't draw, and a late frame crashed a drawing in two engines.
+
+**The system behind it.** Both earlier deploys checked for errors and links at one or two widths in one engine, so
+nothing that needed another width, engine or setting could show. The footer's count had a hidden input too: when
+GitHub's hourly allowance ran out, "Star" replaced "0" and three more letters moved the count by 33.
+
+**The fix and the proof.** One batch at the causes, and the recorder now takes three reads with the live counts held
+fixed. Commit cdf69da1 is live: 46 pages match the build byte for byte, 705 loads on the live domain are clean, and
+the game passes there. Firefox can fix 75 of the 80, having no squircles. Plain http still doesn't redirect, which
+is the owner's Cloudflare setting. Real Safari and real phones weren't tried.
+
+**Media hooks.** A docs page on a phone before and after, and the footer's game on the live site.
+
 ## Open gaps
 
 - **Enter can write a different fix from the one in the bar.** On the showcase's calendar (38) the bar offered the
@@ -6122,7 +6145,6 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   `generator/shots/generate-craftingattention.png` (local).
 
 ## Open gaps
-- **Two faults on the live homepage.** At 320px wide the bar and the example cards run 17px past the screen, and with reduced motion React reports a hydration mismatch, because six sections read the setting while they render ([entry](#82-the-site-says-who-made-it-and-who-uses-it-2026-11-22)).
 - **The footer's count is a recording.** It has to be recorded again (`node web/scripts/findings.mjs`, with the dev server up) whenever the homepage changes, and nothing enforces that yet. It was read at 1280px, in light, at rest ([entry](#87-the-footer-is-a-demo-on-our-own-faults-2026-11-22)).
 - **Docs can drift from the package again.** Nothing runs their commands at release. The homepage's live-editing clip is from an older overlay, and the overlay's gestures were checked in source, without driving them ([entry](#75-the-docs-said-what-an-older-plumber-did-2026-11-22)).
 - **Data about two private apps waits in unpushed commits.** The style data behind the removed pages, and films and verdicts of both apps, become public with the next push unless the owner has them taken out ([entry](#74-the-site-goes-live-at-react-plumbercom-2026-11-22)).
@@ -6177,6 +6199,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- react-plumber.com ends on a game: "This LLM-generated page has 125 issues", and a visitor fixes 80 real ones by pressing toys, watching Plumber find and fix each kind. The bar has Install, GitHub, X, LinkedIn and a sun and moon, and every page fits a 320px phone ([entry](#89-made-sure-then-deployed-2026-11-22)).
 - react-plumber.com has docs that match the npm package, the owner's new hero, live download and star counts, and links to npm, GitHub and the maker, so a newcomer can install it from true instructions and see who is behind it ([entry](#83-the-corrected-site-and-the-owners-hero-go-live-2026-11-22)).
 - The first launch film is rendered, not yet published: in 30 silent seconds AI's wrong green is caught on the page and fixed in the code, six more fixes land side by side, and it ends on "looking for 100+ design issues" ([entry](#81-the-first-launch-film-is-rendered-2026-11-22)).
 - React Plumber has a public site at [react-plumber.com](https://react-plumber.com), so anyone can read what it does, the docs and the design system without cloning the repo ([entry](#74-the-site-goes-live-at-react-plumbercom-2026-11-22)).
