@@ -4155,6 +4155,28 @@ data they are generated from is still in the unpushed commits and waits for the 
 
 **Media hooks.** The live front page at desktop and phone width, and the Type page before (empty) and after.
 
+### 75. The docs said what an older Plumber did (2026-11-22)
+
+**The itch.** The owner, after the first deploy: "please audit it for correctness once and run declaude on the docs
+and copy text everywhere".
+
+**How we found it.** We installed 0.6.0 from npm in a throwaway app and ran the commands the docs give, then read the
+package's source for the keys and rules a command can't show. The Blueprint page described a wireframe with hold-D
+and a punch list, which is retired. The docs counted nine habits where there are fifteen, named `plumb baseline` for
+`plumber baseline`, showed sample output the CLI no longer prints, and had nine placeholders pointing to "the old
+docs". The homepage taught A to apply where the key is Enter, and its agent example ended at "0 new" with a fix the
+check rejects.
+
+**The system behind it.** The docs were copied from the old site and their examples were typed or recorded at 0.1.0.
+No step compares them with the package when it is released.
+
+**The fix and the proof.** All 16 hand-written docs pages were corrected and put through the declauding pass, along
+with the homepage, the design section, the check cards and the top of the README. The placeholders became short
+examples and tables. Each command and flag in the docs is in 0.6.0's help, and the built site opens 46 pages and
+follows 46 links with no errors. The writing reads weren't independent, because no subagent was used.
+
+**Media hooks.** The overlay page before and after, and the homepage's three-command section.
+
 ## Open gaps
 - **The style tools have run on three products.** Crafting-ui has no labelled action to run on (plumber covers its tokens); a page server must be restarted by hand after new colour sets are written; and the judge ranks a metal edge first for a daily review because the standards check whether a suggestion works, not whether it suits the moment ([entry](#53-the-style-tools-run-on-a-second-product-algorecall-2026-11-21)).
 - **Tests that check wording, layout and time.** 769 tests are left (by `test(` lines). Many still check sentences, exact counts, pixels,
@@ -5771,6 +5793,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   `generator/shots/generate-craftingattention.png` (local).
 
 ## Open gaps
+- **Docs can drift from the package again.** Nothing runs their commands at release. The homepage's live-editing clip is from an older overlay, and the overlay's gestures were checked in source, without driving them ([entry](#75-the-docs-said-what-an-older-plumber-did-2026-11-22)).
 - **Data about two private apps waits in unpushed commits.** The style data behind the removed pages, and films and verdicts of both apps, become public with the next push unless the owner has them taken out ([entry](#74-the-site-goes-live-at-react-plumbercom-2026-11-22)).
 - **The live site has loose ends.** `/demo` says it hasn't moved yet, plain http doesn't redirect to https, `www` and `design.react-plumber.com` aren't set up, and deploys are run by hand ([entry](#74-the-site-goes-live-at-react-plumbercom-2026-11-22)).
 - **The Break it panel asks for a type token that doesn't exist.** `overlay/src/breakit.js` uses `--pl-text-label` in two places, and the Type page still carries a note proposing the rename to `--pl-card-label` ([entry](#74-the-site-goes-live-at-react-plumbercom-2026-11-22)).

@@ -17,11 +17,11 @@ export function mount(host, root, css) {
   };
   // what to set in each style, so the specimen reads like the product and shows what the style is for
   const SAY = {
-    'card-title': 'The corner is 5px. Your scale has 6 and 8.',
+    'card-title': 'The corner is 5px. Your tokens are 6 and 8.',
     'card-body': 'Round it to the nearest step and all 16 places take it. Nothing else on the page moves.',
     'card-meta': '16 places · 3 files · last changed in Tag.jsx',
     'card-code': 'rounded-[5px] → rounded-tag   Tag.jsx:12',
-    'card-label': 'ON YOUR SCALE',
+    'card-label': 'ON YOUR TOKENS',
     'page-display': 'Where your sizes land',
     'page-display-narrow': 'Where your sizes land',
     'page-title': 'Hard-coded font sizes',

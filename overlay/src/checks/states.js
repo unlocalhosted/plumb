@@ -74,7 +74,7 @@ export const STATES = {
   },
   'craft/press-feedback': {
     code: ['(nothing on :active)', 'active:scale-[.97] active:bg-indigo-700'],
-    note: ['Pressed, nothing changes: did it register?', 'It gives under the finger the moment it is pressed.'],
+    note: ['It looks the same when pressed, so you can’t tell it registered.', 'It gives under the finger the moment it is pressed.'],
     scene: (s) => {
       scene(s, `<div style="position:relative">${btn('Save changes', 'x')}<i class="fg" style="position:absolute;right:-14px;bottom:-16px;width:22px;height:22px;border-radius:50%;background:rgb(17 24 39 / .18);box-shadow:0 0 0 2px #fff"></i></div>`);
       const x = s.querySelector('.x');
@@ -238,9 +238,9 @@ export const STATES = {
   },
   'components/tab-stops': stops({ ui: tabsUi(), before: ['.t0', '.t1', '.t2'], after: ['.t0'], labels: ['three Tab stops', 'one; arrows move'], code: ['tabindex="0" on every tab', 'tabindex="0" on the selected, -1 on the rest'], note: ['Tab stops on every tab before it reaches the panel.', 'One stop for the set; arrows move between tabs.'] }),
   'components/toolbar-name': spoken({ ui: `<div class="m" style="display:flex;gap:4px;padding:4px;border-radius:9px;background:#f3f4f6;font:700 12px system-ui;color:#374151">${['B', 'I', 'U', 'Link'].map((t) => `<span style="padding:5px 9px;border-radius:6px;background:#fff">${t}</span>`).join('')}</div>`,
-    said: ['toolbar', 'Text formatting, toolbar'], labels: ['no name', 'aria-label'], code: ['<div role="toolbar">', '<div role="toolbar" aria-label="Text formatting">'], note: ['It says “toolbar”, not what for.', 'Named for its job.'] }),
+    said: ['toolbar', 'Text formatting, toolbar'], labels: ['no name', 'aria-label'], code: ['<div role="toolbar">', '<div role="toolbar" aria-label="Text formatting">'], note: ['It says “toolbar” without saying what it is for.', 'Named for its job.'] }),
   'components/menubar-name': spoken({ ui: `<div class="m" style="display:flex;gap:14px;padding:6px 10px;border-radius:8px;background:#f3f4f6;font:600 12px system-ui;color:#374151"><span>File</span><span>Edit</span><span>View</span></div>`,
-    said: ['menu bar', 'Editor, menu bar'], labels: ['no name', 'aria-label'], code: ['<div role="menubar">', '<div role="menubar" aria-label="Editor">'], note: ['It says “menu bar”, not whose.', 'Named, it is clear which menus these are.'] }),
+    said: ['menu bar', 'Editor, menu bar'], labels: ['no name', 'aria-label'], code: ['<div role="menubar">', '<div role="menubar" aria-label="Editor">'], note: ['It says “menu bar” without saying what it belongs to.', 'Named, it is clear which menus these are.'] }),
   'components/pressed-on-action': spoken({ ui: btn('Save', 'm'), said: ['Save, toggle button, not pressed', 'Save, button'], labels: ['said as a toggle', 'an action'], code: ['<button aria-pressed="false">Save</button>', '<button>Save</button>'], note: ['aria-pressed makes an action sound like a switch.', 'An action is a plain button.'] }),
   'components/progress-name': spoken({ ui: `<div class="m" style="width:200px;height:10px;border-radius:5px;background:#e5e7eb"><i style="display:block;width:40%;height:100%;border-radius:5px;background:#4f46e5"></i></div>`,
     said: ['40 percent', 'Uploading report.pdf, 40 percent'], labels: ['40% of what?', 'aria-label'], code: ['<progress value="40" max="100">', '<progress aria-label="Uploading report.pdf" …>'], note: ['A screen reader says “40 percent” and not of what.', 'Named, it says what is uploading.'] }),

@@ -16,7 +16,7 @@ export const SLOP = {
   },
   'tells/numbering': {
     code: ['01 Fast · 02 Private · 03 Simple', 'Fast · Private · Simple'],
-    note: ['Numbers say “read in this order”; these three can be read in any order.', 'Without numbers, nothing claims a sequence that isn’t there.'],
+    note: ['Numbers say “read in this order”; these three can be read in any order.', 'Without numbers, the parts don’t suggest an order.'],
     scene: (s) => {
       scene(s, `<div style="display:flex;gap:8px">${['Fast', 'Private', 'Simple'].map((w, i) => `<div style="width:84px;padding:10px;border-radius:10px;background:#f3f4f6;font:700 13px system-ui;color:#111827">${phrase(`<span style="color:#6366f1">0${i + 1}</span>&nbsp;`, '', 'n')}${w}</div>`).join('')}</div>`);
       const nums = [...s.querySelectorAll('.n')], sets = nums.map(wirePhrase);
