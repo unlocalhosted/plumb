@@ -38,10 +38,25 @@ a { color: inherit; }
 .bar .tool > span { box-sizing: border-box; height: 38px; padding: 0 13px 0 8px; gap: 8px; }
 .bar .tool.round > span { width: 38px; padding: 0; }
 .bar .tile { display: block; width: 24px; height: 24px; flex: none; }
-.bar .star { display: block; width: 16px; height: 16px; flex: none; margin-inline: 2px -3px; }
-/* the count's room is kept while it loads, so nothing beside it jumps */
-.bar .stars { min-width: 1ch; font-variant-numeric: tabular-nums; opacity: 0; translate: 0 5px; transition: opacity 200ms var(--pl-ease-out), translate 260ms var(--pl-ease-out); }
-.bar .stars[data-in="true"] { opacity: 1; translate: none; }
+.bar .star, .bar .fetched { display: block; width: 16px; height: 16px; flex: none; }
+/* GitHub's two counts share one place, as wide as the wider, so nothing beside it moves (its room is also kept
+   while they load). Pointed at, the stars leave over the top and the downloads come in from below, a character at a
+   time, a little blurred on the way; leaving, the same in reverse. They are transitions, so either way can be turned
+   round from the pose on screen. In 260, out 200 (docs/design/interaction-principles.md, 23) */
+.bar .tally { display: grid; justify-items: center; align-items: center; min-width: 48px; height: 22px; clip-path: inset(-1px -3px); font-variant-numeric: tabular-nums; }
+.bar .face { grid-area: 1 / 1; display: flex; align-items: center; gap: 5px; }
+.bar .face b { display: flex; white-space: pre; }
+.bar .cell { display: block; font-style: normal; transition: translate 200ms var(--pl-ease-out), opacity 160ms var(--pl-ease-out), filter 200ms var(--pl-ease-out); transition-delay: calc(var(--i, 0) * 18ms); }
+.bar .pulled .cell { translate: 0 13px; opacity: 0; filter: blur(2px); }
+.bar .tally[data-in="false"] .starred b { opacity: 0; }
+@media (hover: hover) and (pointer: fine) {
+  .bar .code[data-rolls="true"]:hover .starred .cell { translate: 0 -13px; opacity: 0; filter: blur(2px); }
+  .bar .code[data-rolls="true"]:hover .pulled .cell { translate: 0 0; opacity: 1; filter: blur(0); transition-duration: 260ms, 200ms, 260ms; transition-delay: calc(30ms + var(--i, 0) * 28ms); }
+  .bar .code[data-rolls="true"]:not(:hover) .starred .cell { transition-duration: 260ms, 200ms, 260ms; transition-delay: calc(30ms + var(--i, 0) * 28ms); }
+}
+/* by keyboard it is already there: what a key does isn't made to wait */
+.bar .code[data-rolls="true"]:focus-visible .starred .cell { translate: 0 -13px; opacity: 0; transition: none; }
+.bar .code[data-rolls="true"]:focus-visible .pulled .cell { translate: 0 0; opacity: 1; filter: none; transition: none; }
 /* sun and moon share one place and cross over: one turns away as the other turns in */
 .bar .sky { position: relative; display: block; width: 22px; height: 22px; }
 .bar .sky-toy { position: absolute; inset: 0; width: 100%; height: 100%; transition: opacity 180ms var(--pl-ease-out), rotate 420ms var(--pl-spring-pop), scale 420ms var(--pl-spring-pop); }
@@ -57,7 +72,7 @@ a { color: inherit; }
 @media (max-width: 1099px) { .bar .get-word { display: none; } .bar .tool.get > span { width: 38px; padding: 0; } }
 @media (max-width: 879px) { .bar .who { display: none; } }
 @media (max-width: 719px) { .bar .get, .bar .code { display: none; } }
-@media (prefers-reduced-motion: reduce) { .bar .sky-toy, .bar .stars, .bar .tool::after { transition: none; } .bar .stars { translate: none; } }
+@media (prefers-reduced-motion: reduce) { .bar .sky-toy, .bar .tool::after { transition: none; } .bar .code[data-rolls] .face .cell { translate: 0 0; filter: none; transition: none; } }
 
 
 /* ── a page ── */

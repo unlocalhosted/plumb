@@ -4389,6 +4389,12 @@ variety, and pink already means "press me" on this site. A company's tile now ta
 palette, so X is ink, which turns light in dark mode. Its rounded bold look-alike is replaced by X's own sharp mark
 with a little weight added.
 
+**The hover.** The owner: "on hover for github can we transition to downloads from count and animation on text
+transition". Pointed at, the star and its count leave over the top and last month's downloads roll in from below, a
+character at a time, and back down on leaving. The button keeps the wider count's width, so nothing beside it moves.
+By keyboard it swaps at once, reduced motion has no travel, touch keeps the stars, and with npm down it stays on
+the stars.
+
 **Media hooks.** The owner's screenshot, and the two options side by side.
 
 ### 85. A gate so Plumber can't break the app again (2026-11-22)

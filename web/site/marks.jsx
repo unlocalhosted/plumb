@@ -36,6 +36,13 @@ export const LinkedIn = () => (
   </Tile>
 );
 
+// the same arrow with no tile, as small as a star and standing where one does
+export const Fetched = () => (
+  <svg className="fetched" viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M12 3.6v10.6M7 9.6l5 5 5-5M5.4 20.2h13.2" fill="none" stroke="var(--pl-sky)" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 // a star is one butter body
 export const Star = () => (
   <svg className="star" viewBox="0 0 24 24" aria-hidden="true">

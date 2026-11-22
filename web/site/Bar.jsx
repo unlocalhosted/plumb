@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import { soften } from '../../overlay/src/soft.js';
 import { markR } from '../../overlay/src/mark.js';
 import { short, useCount } from './counts.js';
-import { Download, GitHub, LinkedIn, Moon, Star, Sun, X } from './marks.jsx';
+import { Download, Fetched, GitHub, LinkedIn, Moon, Star, Sun, X } from './marks.jsx';
 import { AUTHOR, GITHUB_URL, NPM_URL } from './project.js';
 
 const PLACES = [['/', 'Home'], ['/docs', 'Docs'], ['/demo', 'Demo'], ['/design', 'Design']];
@@ -39,16 +39,33 @@ const MARK = markR({ h: 26, id: 'bar', leg: 'var(--rp-leg)' });
 // Where else it lives: the package, the code with its stars, and who makes it. Quiet blocks, each with one tile; each
 // says its name below it when pointed at or focused. As the window narrows the least needed leaves first (X and
 // LinkedIn, which the foot also has, then GitHub and npm, which the hero and the foot have).
+// A value with its picture, each character on its own wheel (globals.css rolls them).
+const Face = ({ name, picture, text }) => (
+  <span className={`face ${name}`}>
+    <i className="cell">{picture}</i>
+    <b>{[...text].map((ch, i) => <i className="cell" key={i} style={{ '--i': i + 1 }}>{ch}</i>)}</b>
+  </span>
+);
+
+// GitHub's block holds two counts in one place: its stars, and, pointed at, last month's downloads. Both always have
+// their room, so the swap moves nothing beside it. With no downloads to show it stays on the stars.
 function Elsewhere() {
-  const stars = useCount('stars');
+  const stars = useCount('stars'), downloads = useCount('downloads');
+  const pulls = typeof downloads === 'number';
   const starred = stars == null ? '' : `, ${stars} ${stars === 1 ? 'star' : 'stars'}`;
   return (
     <>
       <a className="s-btn q tool get" href={NPM_URL} aria-label="Install package from npm" data-say="On npm">
         <span><Download /><b className="get-word">Install package</b></span>
       </a>
-      <a className="s-btn q tool code" href={GITHUB_URL} aria-label={`GitHub${starred}`} data-say={`GitHub${starred}`}>
-        <span><GitHub /><Star /><b className="stars" data-in={stars !== undefined}>{stars === undefined ? '' : stars === null ? 'Star' : short(stars)}</b></span>
+      <a className="s-btn q tool code" href={GITHUB_URL} aria-label={`GitHub${starred}${pulls ? `. ${downloads} npm downloads last month` : ''}`} data-rolls={pulls} data-say={pulls ? 'Downloads last month' : `GitHub${starred}`}>
+        <span>
+          <GitHub />
+          <span className="tally" data-in={stars !== undefined} aria-hidden="true">
+            <Face name="starred" picture={<Star />} text={stars === undefined ? '' : stars === null ? 'Star' : short(stars)} />
+            {pulls && <Face name="pulled" picture={<Fetched />} text={short(downloads)} />}
+          </span>
+        </span>
       </a>
       <a className="s-btn q tool round who" href={AUTHOR.url} rel="me" aria-label={`${AUTHOR.name} on X`} data-say={`@${AUTHOR.x}`}><span><X /></span></a>
       <a className="s-btn q tool round who" href={AUTHOR.linkedin} rel="me" aria-label={`${AUTHOR.name} on LinkedIn`} data-say="LinkedIn"><span><LinkedIn /></span></a>
