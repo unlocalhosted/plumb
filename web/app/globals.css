@@ -194,7 +194,6 @@ body > .fx-burst { z-index: 45 !important; }
 @media (hover: hover) and (pointer: fine) {
   .piece:hover { z-index: 2147483000 !important; }
   .piece:hover .piece-top { translate: 0 -9px; }
-  .piece:hover .toy { rotate: -7deg; scale: 1.14; }
   .piece:not([data-held]):hover::after { opacity: 1; }
 }
 .piece[data-held] .piece-top { translate: 0 -1px; scale: 1.05 .94; }
@@ -252,3 +251,72 @@ body > .fx-burst { z-index: 45 !important; }
 }
 @media (max-width: 380px) { .pile { --piece-gap: 8px; } .foot-place, .foot-group { padding-inline: 8px; } .foot-place { font-size: 15px; } }
 @media (prefers-reduced-motion: reduce) { .piece-top, .piece-top .toy, .pile-gap, .pile-gap b, .foot-name .toy, .foot-place, .foot-place i { transition: none; } }
+
+/* ── the game on the floor (site/Floor.jsx): the count, what Plumber found, and each toy's own motion ── */
+.floor-n { display: inline-block; color: var(--pl-coral); font-weight: inherit; animation: floor-roll 360ms var(--pl-ease-out) both; }
+@keyframes floor-roll { from { translate: 0 .45em; opacity: 0; filter: blur(2px); } }
+.floor-how code { padding: 2px 7px; border-radius: 8px; background: var(--pl-paper-2); font: 500 14px/1.4 var(--pl-mono); color: var(--pl-text-primary); }
+.piece-top { position: relative; }
+/* its kind is fixed: a mint tick lands on it */
+.piece-done { position: absolute; top: -5px; right: -5px; width: 22px; height: 22px; border-radius: 50%; background: var(--pl-mint); opacity: 0; scale: .5; transition: opacity 180ms var(--pl-ease-out), scale 420ms var(--pl-spring-pop); }
+.piece-done::after { content: ''; position: absolute; left: 7.5px; top: 4.5px; width: 5px; height: 10px; border: solid var(--pl-cut); border-width: 0 2.4px 2.4px 0; rotate: 45deg; }
+.piece[data-fixed] .piece-done { opacity: 1; scale: 1; }
+/* what Plumber found, in its own words, over the page while the fix plays */
+.found { position: fixed; z-index: 55; left: 50%; top: 74px; translate: -50% 0; display: grid; gap: 4px; width: max-content; max-width: min(620px, calc(100vw - 32px)); padding: 12px 18px; border-radius: 16px; background: var(--pl-text-primary); color: var(--pl-bg-surface); text-align: center; pointer-events: none; animation: found-in 260ms var(--pl-ease-out) both; }
+.found b { font: var(--pl-round-w, 700) 17px/22px var(--pl-round); text-wrap: balance; }
+.found span { font: 500 13px/18px var(--pl-sans); }
+.found code { font: 500 12px/18px var(--pl-mono); }
+@keyframes found-in { from { opacity: 0; translate: -50% -10px; } }
+
+/* An icon moves the way its property does (interaction-principles 33b): pointed at, focused, or off fixing it.
+   The shapes are the toys' own (overlay/src/toys.js), by their place in the drawing. */
+.piece .toy svg { overflow: visible; }
+.piece .toy svg * { transform-box: fill-box; transform-origin: center; transition: transform 420ms var(--pl-spring-pop), translate 420ms var(--pl-spring-pop), scale 420ms var(--pl-spring-pop), fill 220ms var(--pl-ease-out), opacity 220ms var(--pl-ease-out); }
+.piece .toy svg g[clip-path] { transform-box: view-box; }
+.piece:is(:hover, :focus-visible, [data-acting]) {
+  /* padding: the space inside grows and what it holds gives way */
+  &[data-piece="padding"] svg > rect:last-of-type { scale: .58; }
+  /* margin: the dots step back from the block */
+  &[data-piece="margin"] svg > rect { scale: .72; }
+  &[data-piece="margin"] svg > circle { scale: 1.3; }
+  /* gap: the two move apart and the stripes stretch to measure it */
+  &[data-piece="gap"] svg > rect:nth-child(1) { translate: -2px 0; }
+  &[data-piece="gap"] svg > rect:nth-child(2) { translate: 2px 0; }
+  &[data-piece="gap"] svg > rect:nth-child(n + 3) { scale: 1.9 1; }
+  /* radius: the corner rounds further, its line with it */
+  &[data-piece="corner"] svg > path:nth-child(1) { d: path("M3.500 20.500V16.500a13 13 0 0 1 13-13h4v17z"); }
+  &[data-piece="corner"] svg > path:nth-child(2) { d: path("M8.500 20.500V17a8.500 8.500 0 0 1 8.500-8.500h3.500"); }
+  /* type: the A goes up a size in its tile */
+  &[data-piece="type"] svg > path { scale: 1.3; transform-origin: 50% 100%; translate: 0 1px; }
+  /* colour: the drop takes another token, and gives */
+  &[data-piece="fill"] svg > path:first-child { fill: var(--pl-sky); scale: 1.12 .92; transform-origin: 50% 100%; }
+  /* shadow: the card lifts, its shadow falls further and softer */
+  &[data-piece="shadow"] svg > rect:last-child { translate: -1.5px -2.5px; }
+  &[data-piece="shadow"] svg > rect:first-child { translate: 1.5px 1.5px; scale: 1.08; opacity: .25; }
+  /* alignment: the odd cell takes its place and the others move round one */
+  &[data-piece="grid"] svg > rect:nth-child(1) { translate: 10.4px 0; }
+  &[data-piece="grid"] svg > rect:nth-child(2) { translate: 0 10.4px; }
+  &[data-piece="grid"] svg > rect:nth-child(4) { translate: -10.4px 0; }
+  &[data-piece="grid"] svg > rect:nth-child(3) { translate: 0 -10.4px; }
+  /* motion: the ball is thrown along its own trail */
+  &[data-piece="motion"] svg > circle:nth-child(n + 4) { animation: toy-throw 620ms var(--pl-ease-out) both; }
+  &[data-piece="motion"] svg > circle:nth-child(-n + 3) { animation: toy-trail 620ms var(--pl-ease-out) both; }
+  &[data-piece="motion"] svg > circle:nth-child(2) { animation-delay: 70ms; }
+  &[data-piece="motion"] svg > circle:nth-child(3) { animation-delay: 140ms; }
+  /* states: the pointer presses, twice */
+  &[data-piece="cursor"] svg > path { animation: toy-press 300ms var(--pl-ease-out) 2; transform-origin: 20% 10%; }
+}
+@keyframes toy-throw { from { translate: -12.5px 11px; scale: .45; } 70% { translate: 1px -1px; scale: 1.08; } }
+@keyframes toy-trail { 0%, 25% { opacity: 0; } }
+@keyframes toy-press { 50% { scale: .76; translate: 1px 1.5px; } }
+/* the bar's two that do something: the arrow lands on its line, the star turns */
+.bar .tile > path, .bar .star > path { transform-box: fill-box; transform-origin: center; }
+.bar .star > path { transition: rotate 520ms var(--pl-spring-pop); }
+@media (hover: hover) and (pointer: fine) {
+  .bar .get:hover .tile > path { animation: get-drop 520ms var(--pl-ease-out); }
+  .bar .code:not([data-rolls="true"]):hover .star > path { rotate: 72deg; }
+}
+@keyframes get-drop { 35% { translate: 0 -3px; } 70% { translate: 0 1px; } }
+@media (prefers-reduced-motion: reduce) {
+  .piece .toy svg *, .floor-n, .found, .piece-done, .bar .tile > path, .bar .star > path { animation: none !important; transition: none !important; }
+}

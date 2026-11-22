@@ -1,0 +1,1351 @@
+{
+ "plumber": "0.6.0",
+ "page": "/",
+ "recorded": "2026-11-22T08:50",
+ "found": 141,
+ "left": [
+  {
+   "n": 7,
+   "why": "white words on a coloured block, and gradient-filled headings, read as a grey"
+  },
+  {
+   "n": 1,
+   "why": "next/font's fallback is a local face, so nothing is downloaded"
+  },
+  {
+   "n": 1,
+   "why": "the element is not shown on this site"
+  },
+  {
+   "n": 4,
+   "why": "white is this site's surface colour (--pl-desk)"
+  },
+  {
+   "n": 2,
+   "why": "a carousel is meant to run past its row, and has its dots to say so"
+  },
+  {
+   "n": 1,
+   "why": "a key whose words are drawn with text-fill-color, read by their clipped colour"
+  }
+ ],
+ "total": 125,
+ "items": [
+  {
+   "toy": "gap",
+   "rule": "craft/inner-outer-spacing",
+   "title": "Items here are 14px apart, but the groups are only 12px apart.",
+   "at": "CopyCommand.jsx:23",
+   "sel": [
+    "#top > div.hero-cta > div.install"
+   ],
+   "make": {
+    "css": {
+     "column-gap": "6px",
+     "row-gap": "6px"
+    }
+   }
+  },
+  {
+   "toy": "shadow",
+   "rule": "craft/layered-shadow",
+   "title": "One 48px blur looks like a smudge. Stack a few smaller ones.",
+   "at": "Review.jsx:127",
+   "sel": [
+    "main.homepage > section.hero:nth-of-type(1) > figure.review > div.rv-stage > div.rv-frame:nth-of-type(1)"
+   ],
+   "make": {
+    "css": {
+     "box-shadow": "0 3px 6px rgb(28 27 25 / 0.18), 0 6px 12px rgb(28 27 25 / 0.16), 0 12px 24px rgb(28 27 25 / 0.12), 0 24px 48px rgb(28 27 25 / 0.04)"
+    }
+   }
+  },
+  {
+   "toy": "corner",
+   "rule": "craft/continuous-corners",
+   "title": "16px round corners on a big surface. A squircle looks softer.",
+   "at": "Review.jsx:127",
+   "sel": [
+    "main.homepage > section.hero:nth-of-type(1) > figure.review > div.rv-stage > div.rv-frame:nth-of-type(1)"
+   ],
+   "make": {
+    "css": {
+     "corner-shape": "squircle"
+    }
+   }
+  },
+  {
+   "toy": "gap",
+   "rule": "craft/inner-outer-spacing",
+   "title": "Items here are 9px apart, but the groups are only 3px apart.",
+   "at": "Review.jsx:235",
+   "sel": [
+    "main.homepage > section.hero:nth-of-type(1) > figure.review > div.rv-stage > div.rv-frame:nth-of-type(1) > div.rv-fit:nth-of-type(1) > div.rv-cam:nth-of-type(1) > div.rv-scr > aside.rv-side > span.rv-brand:nth-of-type(1)",
+    "main.homepage > section.hero:nth-of-type(1) > figure.review > div.rv-stage > div.rv-frame:nth-of-type(1) > div.rv-fit:nth-of-type(1) > div.rv-twin:nth-of-type(2) > div.rv-scr > aside.rv-side > span.rv-brand:nth-of-type(1)"
+   ],
+   "make": {
+    "css": {
+     "column-gap": "2px",
+     "row-gap": "2px"
+    }
+   }
+  },
+  {
+   "toy": "gap",
+   "rule": "craft/inner-outer-spacing",
+   "title": "Items here are 9px apart, but the groups are only 3px apart.",
+   "at": "Review.jsx:236",
+   "sel": [
+    "main.homepage > section.hero:nth-of-type(1) > figure.review > div.rv-stage > div.rv-frame:nth-of-type(1) > div.rv-fit:nth-of-type(1) > div.rv-cam:nth-of-type(1) > div.rv-scr > aside.rv-side > span:nth-of-type(2)",
+    "main.homepage > section.hero:nth-of-type(1) > figure.review > div.rv-stage > div.rv-frame:nth-of-type(1) > div.rv-fit:nth-of-type(1) > div.rv-cam:nth-of-type(1) > div.rv-scr > aside.rv-side > span:nth-of-type(3)",
+    "main.homepage > section.hero:nth-of-type(1) > figure.review > div.rv-stage > div.rv-frame:nth-of-type(1) > div.rv-fit:nth-of-type(1) > div.rv-cam:nth-of-type(1) > div.rv-scr > aside.rv-side > span:nth-of-type(4)",
+    "main.homepage > section.hero:nth-of-type(1) > figure.review > div.rv-stage > div.rv-frame:nth-of-type(1) > div.rv-fit:nth-of-type(1) > div.rv-cam:nth-of-type(1) > div.rv-scr > aside.rv-side > span:nth-of-type(5)",
+    "main.homepage > section.hero:nth-of-type(1) > figure.review > div.rv-stage > div.rv-frame:nth-of-type(1) > div.rv-fit:nth-of-type(1) > div.rv-twin:nth-of-type(2) > div.rv-scr > aside.rv-side > span:nth-of-type(2)",
+    "main.homepage > section.hero:nth-of-type(1) > figure.review > div.rv-stage > div.rv-frame:nth-of-type(1) > div.rv-fit:nth-of-type(1) > div.rv-twin:nth-of-type(2) > div.rv-scr > aside.rv-side > span:nth-of-type(3)",
+    "main.homepage > section.hero:nth-of-type(1) > figure.review > div.rv-stage > div.rv-frame:nth-of-type(1) > div.rv-fit:nth-of-type(1) > div.rv-twin:nth-of-type(2) > div.rv-scr > aside.rv-side > span:nth-of-type(4)",
+    "main.homepage > section.hero:nth-of-type(1) > figure.review > div.rv-stage > div.rv-frame:nth-of-type(1) > div.rv-fit:nth-of-type(1) > div.rv-twin:nth-of-type(2) > div.rv-scr > aside.rv-side > span:nth-of-type(5)"
+   ],
+   "make": {
+    "css": {
+     "column-gap": "2px",
+     "row-gap": "2px"
+    }
+   }
+  },
+  {
+   "toy": "gap",
+   "rule": "craft/inner-outer-spacing",
+   "title": "Items here are 9px apart, but the groups are only 3px apart.",
+   "at": "Review.jsx:237",
+   "sel": [
+    "main.homepage > section.hero:nth-of-type(1) > figure.review > div.rv-stage > div.rv-frame:nth-of-type(1) > div.rv-fit:nth-of-type(1) > div.rv-cam:nth-of-type(1) > div.rv-scr > aside.rv-side > span.rv-side-foot:nth-of-type(6)",
+    "main.homepage > section.hero:nth-of-type(1) > figure.review > div.rv-stage > div.rv-frame:nth-of-type(1) > div.rv-fit:nth-of-type(1) > div.rv-twin:nth-of-type(2) > div.rv-scr > aside.rv-side > span.rv-side-foot:nth-of-type(6)"
+   ],
+   "make": {
+    "css": {
+     "column-gap": "2px",
+     "row-gap": "2px"
+    }
+   }
+  },
+  {
+   "toy": "shadow",
+   "rule": "craft/tinted-shadow",
+   "title": "A grey shadow on #b5d7ff looks dirty. Tint it with that colour.",
+   "at": "Review.jsx:245",
+   "sel": [
+    "main.homepage > section.hero:nth-of-type(1) > figure.review > div.rv-stage > div.rv-frame:nth-of-type(1) > div.rv-fit:nth-of-type(1) > div.rv-cam:nth-of-type(1) > div.rv-scr > main.rv-main > div.rv-grid > section.rv-video:nth-of-type(1) > small",
+    "main.homepage > section.hero:nth-of-type(1) > figure.review > div.rv-stage > div.rv-frame:nth-of-type(1) > div.rv-fit:nth-of-type(1) > div.rv-twin:nth-of-type(2) > div.rv-scr > main.rv-main > div.rv-grid > section.rv-video:nth-of-type(1) > small"
+   ],
+   "make": {
+    "css": {
+     "box-shadow": "oklch(0.3 0.05 253 / 1.00) 0px 0px 0px 1px, oklch(0.3 0.05 253 / 0.24) 0px 2px 6px -2px"
+    }
+   }
+  },
+  {
+   "toy": "cursor",
+   "rule": "a11y/label-in-name",
+   "title": "It shows \"Optically centred\" and is named \"3. Icon looks off-centre. Opti\".",
+   "at": "Review.jsx:170",
+   "sel": [
+    "main.homepage > section.hero:nth-of-type(1) > figure.review > div.rv-stage > div.rv-frame:nth-of-type(1) > div.rv-pins:nth-of-type(2) > button.rv-pin:nth-of-type(1)",
+    "main.homepage > section.hero:nth-of-type(1) > figure.review > div.rv-stage > div.rv-frame:nth-of-type(1) > div.rv-pins:nth-of-type(2) > button.rv-pin:nth-of-type(2)",
+    "main.homepage > section.hero:nth-of-type(1) > figure.review > div.rv-stage > div.rv-frame:nth-of-type(1) > div.rv-pins:nth-of-type(2) > button.rv-pin:nth-of-type(3)",
+    "main.homepage > section.hero:nth-of-type(1) > figure.review > div.rv-stage > div.rv-frame:nth-of-type(1) > div.rv-pins:nth-of-type(2) > button.rv-pin:nth-of-type(4)",
+    "main.homepage > section.hero:nth-of-type(1) > figure.review > div.rv-stage > div.rv-frame:nth-of-type(1) > div.rv-pins:nth-of-type(2) > button.rv-pin:nth-of-type(5)"
+   ],
+   "make": {
+    "attr": {
+     "aria-label": "{text}, {aria-label}"
+    }
+   }
+  },
+  {
+   "toy": "fill",
+   "rule": "craft/contrast",
+   "title": "Contrast is 59 on the APCA scale at 11px. Text this size needs 60.",
+   "at": "Insights.jsx:90",
+   "sel": [
+    "main.homepage > section.ins-x:nth-of-type(2) > header.ins-x-head > ul.ins-x-families > li:nth-of-type(1) > span.tabular",
+    "main.homepage > section.ins-x:nth-of-type(2) > header.ins-x-head > ul.ins-x-families > li:nth-of-type(2) > span.tabular",
+    "main.homepage > section.ins-x:nth-of-type(2) > header.ins-x-head > ul.ins-x-families > li:nth-of-type(3) > span.tabular",
+    "main.homepage > section.ins-x:nth-of-type(2) > header.ins-x-head > ul.ins-x-families > li:nth-of-type(4) > span.tabular",
+    "main.homepage > section.ins-x:nth-of-type(2) > header.ins-x-head > ul.ins-x-families > li:nth-of-type(5) > span.tabular",
+    "main.homepage > section.ins-x:nth-of-type(2) > header.ins-x-head > ul.ins-x-families > li:nth-of-type(6) > span.tabular",
+    "main.homepage > section.ins-x:nth-of-type(2) > header.ins-x-head > ul.ins-x-families > li:nth-of-type(7) > span.tabular"
+   ],
+   "make": {
+    "css": {
+     "color": "color-mix(in oklab, #f24a9f 82%, #1d1b17)"
+    }
+   }
+  },
+  {
+   "toy": "corner",
+   "rule": "craft/continuous-corners",
+   "title": "22px round corners on a big surface. A squircle looks softer.",
+   "at": "Insights.jsx:222",
+   "sel": [
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(1)",
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(2)",
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(3)",
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(4)",
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(5)",
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(6)",
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(7)",
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(8)",
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(9)"
+   ],
+   "make": {
+    "css": {
+     "corner-shape": "squircle"
+    }
+   }
+  },
+  {
+   "toy": "shadow",
+   "rule": "craft/layered-shadow",
+   "title": "One 32px blur looks like a smudge. Stack a few smaller ones.",
+   "at": "Insights.jsx:304",
+   "sel": [
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(1) > div.ins-stage:nth-of-type(1) > div.ins-cam > div.sc > div.sc-video"
+   ],
+   "make": {
+    "css": {
+     "box-shadow": "0 2.3px 4px rgb(0 0 0 / 0.18), 0 4.5px 8px rgb(0 0 0 / 0.16), 0 9px 16px rgb(0 0 0 / 0.12), 0 18px 32px rgb(0 0 0 / 0.04)"
+    }
+   }
+  },
+  {
+   "toy": "cursor",
+   "rule": "craft/touch-manipulation",
+   "title": "Tapping this flashes it grey on a phone.",
+   "at": "Insights.jsx:222",
+   "sel": [
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(1)",
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(2)",
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(3)",
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(4)",
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(5)",
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(6)",
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(7)",
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(8)",
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(9)"
+   ],
+   "make": {
+    "css": {
+     "touch-action": "manipulation",
+     "-webkit-tap-highlight-color": "transparent"
+    }
+   }
+  },
+  {
+   "toy": "padding",
+   "rule": "craft/card-optical-padding",
+   "title": "The first letters sit 31px from the top edge, 14px from the side.",
+   "at": "Insights.jsx:349",
+   "sel": [
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(3) > div.ins-stage:nth-of-type(1) > div.ins-cam > div.sc > div.sc-clock"
+   ],
+   "make": {
+    "css": {
+     "padding-top": "calc(var(--was) - 17px)"
+    },
+    "was": "padding-top"
+   }
+  },
+  {
+   "toy": "shadow",
+   "rule": "craft/layered-shadow",
+   "title": "One 30px blur looks like a smudge. Stack a few smaller ones.",
+   "at": "Insights.jsx:350",
+   "sel": [
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(3) > div.ins-stage:nth-of-type(1) > div.ins-cam > div.sc > ul"
+   ],
+   "make": {
+    "css": {
+     "box-shadow": "0 2.3px 4px rgb(0 0 0 / 0.18), 0 4.5px 8px rgb(0 0 0 / 0.16), 0 9px 15px rgb(0 0 0 / 0.12), 0 18px 30px rgb(0 0 0 / 0.04)"
+    }
+   }
+  },
+  {
+   "toy": "shadow",
+   "rule": "craft/layered-shadow",
+   "title": "One 30px blur looks like a smudge. Stack a few smaller ones.",
+   "at": "Insights.jsx:365",
+   "sel": [
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(4) > div.ins-stage:nth-of-type(1) > div.ins-cam > div.sc > div.sc-news-card"
+   ],
+   "make": {
+    "css": {
+     "box-shadow": "0 2.3px 4px rgb(0 0 0 / 0.18), 0 4.5px 8px rgb(0 0 0 / 0.16), 0 9px 15px rgb(0 0 0 / 0.12), 0 18px 30px rgb(0 0 0 / 0.04)"
+    }
+   }
+  },
+  {
+   "toy": "fill",
+   "rule": "craft/contrast",
+   "title": "Contrast is 59 on the APCA scale at 10.5px. Text this size needs 60.",
+   "at": "Insights.jsx:367",
+   "sel": [
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(4) > div.ins-stage:nth-of-type(1) > div.ins-cam > div.sc > div.sc-news-card > small"
+   ],
+   "make": {
+    "css": {
+     "color": "color-mix(in oklab, #3391ee 82%, #1d1b17)"
+    }
+   }
+  },
+  {
+   "toy": "type",
+   "rule": "tells/eyebrow",
+   "title": "\"Business\" sits as a small label above the heading.",
+   "at": "Insights.jsx:367",
+   "sel": [
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(4) > div.ins-stage:nth-of-type(1) > div.ins-cam > div.sc > div.sc-news-card > small"
+   ],
+   "make": {
+    "css": {
+     "display": "none"
+    }
+   }
+  },
+  {
+   "toy": "type",
+   "rule": "craft/text-wrap-role",
+   "title": "This heading breaks into 3 uneven lines. Use text-balance.",
+   "at": "Insights.jsx:368",
+   "sel": [
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(4) > div.ins-stage:nth-of-type(1) > div.ins-cam > div.sc > div.sc-news-card > h4"
+   ],
+   "make": {
+    "css": {
+     "text-wrap": "balance",
+     "text-wrap-style": "balance"
+    }
+   }
+  },
+  {
+   "toy": "cursor",
+   "rule": "a11y/heading-skip",
+   "title": "An h4 follows an h2.",
+   "at": "Insights.jsx:368",
+   "sel": [
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(4) > div.ins-stage:nth-of-type(1) > div.ins-cam > div.sc > div.sc-news-card > h4"
+   ],
+   "make": {
+    "attr": {
+     "aria-level": "3",
+     "role": "heading"
+    }
+   }
+  },
+  {
+   "toy": "shadow",
+   "rule": "craft/tinted-shadow",
+   "title": "A grey shadow on #e9b8c4 looks dirty. Tint it with that colour.",
+   "at": "Insights.jsx:387",
+   "sel": [
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(5) > div.ins-stage:nth-of-type(1) > div.ins-cam > div.sc > div.sc-recipe"
+   ],
+   "make": {
+    "css": {
+     "box-shadow": "oklch(0.3 0.05 2 / 0.25) 0px 2px 4px 0px, oklch(0.3 0.05 2 / 0.50) 0px 18px 32px -10px"
+    }
+   }
+  },
+  {
+   "toy": "padding",
+   "rule": "craft/card-optical-padding",
+   "title": "The first letters sit 32px from the top edge, 16px from the side.",
+   "at": "Insights.jsx:387",
+   "sel": [
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(5) > div.ins-stage:nth-of-type(1) > div.ins-cam > div.sc > div.sc-recipe"
+   ],
+   "make": {
+    "css": {
+     "padding-top": "calc(var(--was) - 16px)"
+    },
+    "was": "padding-top"
+   }
+  },
+  {
+   "toy": "fill",
+   "rule": "craft/contrast",
+   "title": "Contrast is 59 on the APCA scale at 11px. Text this size needs 60.",
+   "at": "Insights.jsx:387",
+   "sel": [
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(5) > div.ins-stage:nth-of-type(1) > div.ins-cam > div.sc > div.sc-recipe > small"
+   ],
+   "make": {
+    "css": {
+     "color": "color-mix(in oklab, #f24a9f 82%, #1d1b17)"
+    }
+   }
+  },
+  {
+   "toy": "gap",
+   "rule": "craft/inner-outer-spacing",
+   "title": "Items here are 6px apart, but the groups are only 4px apart.",
+   "at": "Insights.jsx:387",
+   "sel": [
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(5) > div.ins-stage:nth-of-type(1) > div.ins-cam > div.sc > div.sc-recipe > span.sc-rmeta:nth-of-type(2)"
+   ],
+   "make": {
+    "css": {
+     "column-gap": "2px",
+     "row-gap": "2px"
+    }
+   }
+  },
+  {
+   "toy": "fill",
+   "rule": "craft/gradient-space",
+   "title": "This gradient goes grey in the middle.",
+   "at": "Insights.jsx:402",
+   "sel": [
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(6) > div.ins-stage:nth-of-type(1) > div.ins-cam > div.sc > div.sc-day:nth-of-type(1) > i > b",
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(6) > div.ins-stage:nth-of-type(1) > div.ins-cam > div.sc > div.sc-day:nth-of-type(2) > i > b",
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(6) > div.ins-stage:nth-of-type(1) > div.ins-cam > div.sc > div.sc-day:nth-of-type(3) > i > b",
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(6) > div.ins-stage:nth-of-type(1) > div.ins-cam > div.sc > div.sc-day:nth-of-type(4) > i > b"
+   ],
+   "make": {
+    "css": {
+     "background-image": "linear-gradient(90deg in oklch, rgb(47, 111, 228), rgb(245, 165, 36))"
+    }
+   }
+  },
+  {
+   "toy": "shadow",
+   "rule": "craft/layered-shadow",
+   "title": "One 30px blur looks like a smudge. Stack a few smaller ones.",
+   "at": "Insights.jsx:416",
+   "sel": [
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(7) > div.ins-stage:nth-of-type(1) > div.ins-cam > div.sc > div.sc-pin"
+   ],
+   "make": {
+    "css": {
+     "box-shadow": "0 2.3px 4px rgb(60 50 40 / 0.18), 0 4.5px 8px rgb(60 50 40 / 0.16), 0 9px 15px rgb(60 50 40 / 0.12), 0 18px 30px rgb(60 50 40 / 0.04)"
+    }
+   }
+  },
+  {
+   "toy": "gap",
+   "rule": "craft/inner-outer-spacing",
+   "title": "Items here are 8px apart, but the groups are only 5px apart.",
+   "at": "Insights.jsx:416",
+   "sel": [
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(7) > div.ins-stage:nth-of-type(1) > div.ins-cam > div.sc > div.sc-pin > span.sc-pin-meta > span.sc-pin-tags"
+   ],
+   "make": {
+    "css": {
+     "column-gap": "2px",
+     "row-gap": "2px"
+    }
+   }
+  },
+  {
+   "toy": "shadow",
+   "rule": "craft/layered-shadow",
+   "title": "One 22px blur looks like a smudge. Stack a few smaller ones.",
+   "at": "Insights.jsx:432",
+   "sel": [
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(8) > div.ins-stage:nth-of-type(1) > div.ins-cam > div.sc > nav"
+   ],
+   "make": {
+    "css": {
+     "box-shadow": "0 1.3px 3px rgb(0 0 0 / 0.18), 0 2.5px 6px rgb(0 0 0 / 0.16), 0 5px 11px rgb(0 0 0 / 0.12), 0 10px 22px rgb(0 0 0 / 0.04)"
+    }
+   }
+  },
+  {
+   "toy": "cursor",
+   "rule": "a11y/nav-unnamed",
+   "title": "This page has 3 navigations and this one has no name.",
+   "at": "Insights.jsx:432",
+   "sel": [
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-viewport:nth-of-type(1) > div.ins-x-track > article.ins-card:nth-of-type(8) > div.ins-stage:nth-of-type(1) > div.ins-cam > div.sc > nav"
+   ],
+   "make": {
+    "attr": {
+     "aria-label": "Example tabs"
+    }
+   }
+  },
+  {
+   "toy": "padding",
+   "rule": "craft/hit-target",
+   "title": "22×30. People miss anything under 24×24.",
+   "at": "Insights.jsx:104",
+   "sel": [
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-controls:nth-of-type(2) > div.ins-x-dots > button:nth-of-type(1)",
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-controls:nth-of-type(2) > div.ins-x-dots > button:nth-of-type(2)",
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-controls:nth-of-type(2) > div.ins-x-dots > button:nth-of-type(3)",
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-controls:nth-of-type(2) > div.ins-x-dots > button:nth-of-type(4)",
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-controls:nth-of-type(2) > div.ins-x-dots > button:nth-of-type(5)",
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-controls:nth-of-type(2) > div.ins-x-dots > button:nth-of-type(6)",
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-controls:nth-of-type(2) > div.ins-x-dots > button:nth-of-type(7)",
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-controls:nth-of-type(2) > div.ins-x-dots > button:nth-of-type(8)",
+    "main.homepage > section.ins-x:nth-of-type(2) > div.ins-x-controls:nth-of-type(2) > div.ins-x-dots > button:nth-of-type(9)"
+   ],
+   "make": {
+    "css": {
+     "min-width": "24px",
+     "min-height": "24px"
+    }
+   }
+  },
+  {
+   "toy": "shadow",
+   "rule": "craft/layered-shadow",
+   "title": "One 48px blur looks like a smudge. Stack a few smaller ones.",
+   "at": "Slop.jsx:83",
+   "sel": [
+    "main.homepage > section.slop:nth-of-type(3) > div.session"
+   ],
+   "make": {
+    "css": {
+     "box-shadow": "0 3px 6px rgb(28 27 25 / 0.18), 0 6px 12px rgb(28 27 25 / 0.16), 0 12px 24px rgb(28 27 25 / 0.12), 0 24px 48px rgb(28 27 25 / 0.04)"
+    }
+   }
+  },
+  {
+   "toy": "corner",
+   "rule": "craft/continuous-corners",
+   "title": "16px round corners on a big surface. A squircle looks softer.",
+   "at": "Slop.jsx:83",
+   "sel": [
+    "main.homepage > section.slop:nth-of-type(3) > div.session"
+   ],
+   "make": {
+    "css": {
+     "corner-shape": "squircle"
+    }
+   }
+  },
+  {
+   "toy": "padding",
+   "rule": "craft/icon-side",
+   "title": "The icon side has the same 10px as the text side. Take 4px off it.",
+   "at": "Slop.jsx:86",
+   "sel": [
+    "main.homepage > section.slop:nth-of-type(3) > div.session > header.session-head > button.session-replay"
+   ],
+   "make": {
+    "css": {
+     "padding-left": "6px"
+    }
+   }
+  },
+  {
+   "toy": "grid",
+   "rule": "craft/baseline-align",
+   "title": "Two sizes, centred, so their baselines are 1.4px apart. Align them.",
+   "at": "Slop.jsx:106",
+   "sel": [
+    "main.homepage > section.slop:nth-of-type(3) > div.session > div.session-body > div.hook:nth-of-type(2) > p.hook-head"
+   ],
+   "make": {
+    "css": {
+     "align-items": "baseline"
+    }
+   }
+  },
+  {
+   "toy": "grid",
+   "rule": "craft/baseline-align",
+   "title": "Two sizes, centred, so their baselines are 1.4px apart. Align them.",
+   "at": "Slop.jsx:116",
+   "sel": [
+    "main.homepage > section.slop:nth-of-type(3) > div.session > div.session-body > div.hook:nth-of-type(3) > p.hook-head"
+   ],
+   "make": {
+    "css": {
+     "align-items": "baseline"
+    }
+   }
+  },
+  {
+   "toy": "grid",
+   "rule": "craft/baseline-align",
+   "title": "Two sizes, centred, so their baselines are 1.3px apart. Align them.",
+   "at": "Slop.jsx:130",
+   "sel": [
+    "main.homepage > section.slop:nth-of-type(3) > div.session > div.session-body > div.hook:nth-of-type(5) > p.hook-head"
+   ],
+   "make": {
+    "css": {
+     "align-items": "baseline"
+    }
+   }
+  },
+  {
+   "toy": "shadow",
+   "rule": "craft/layered-shadow",
+   "title": "One 48px blur looks like a smudge. Stack a few smaller ones.",
+   "at": "Live.jsx:34",
+   "sel": [
+    "main.homepage > section.live:nth-of-type(4) > figure.live-rec"
+   ],
+   "make": {
+    "css": {
+     "box-shadow": "0 3px 6px rgb(28 27 25 / 0.18), 0 6px 12px rgb(28 27 25 / 0.16), 0 12px 24px rgb(28 27 25 / 0.12), 0 24px 48px rgb(28 27 25 / 0.04)"
+    }
+   }
+  },
+  {
+   "toy": "corner",
+   "rule": "craft/continuous-corners",
+   "title": "16px round corners on a big surface. A squircle looks softer.",
+   "at": "Live.jsx:34",
+   "sel": [
+    "main.homepage > section.live:nth-of-type(4) > figure.live-rec"
+   ],
+   "make": {
+    "css": {
+     "corner-shape": "squircle"
+    }
+   }
+  },
+  {
+   "toy": "fill",
+   "rule": "craft/contrast",
+   "title": "Contrast is 44 on the APCA scale at 13px. Text this size needs 60.",
+   "at": "Live.jsx:42",
+   "sel": [
+    "main.homepage > section.live:nth-of-type(4) > p.live-caption"
+   ],
+   "make": {
+    "css": {
+     "color": "var(--pl-text-secondary)"
+    }
+   }
+  },
+  {
+   "toy": "padding",
+   "rule": "craft/card-optical-padding",
+   "title": "The first letters sit 19px from the top edge, 12px from the side.",
+   "at": "Tokens.jsx:163",
+   "sel": [
+    "main.homepage > section.tok:nth-of-type(5) > div.tok-area > div.tok-stage > div.tok-prompt:nth-of-type(1)"
+   ],
+   "make": {
+    "css": {
+     "padding-top": "calc(var(--was) - 7px)"
+    },
+    "was": "padding-top"
+   }
+  },
+  {
+   "toy": "shadow",
+   "rule": "craft/layered-shadow",
+   "title": "One 48px blur looks like a smudge. Stack a few smaller ones.",
+   "at": "Tokens.jsx:231",
+   "sel": [
+    "main.homepage > section.tok:nth-of-type(5) > div.tok-area > div.tok-stage > div.tok-el:nth-of-type(2) > div.tok-card",
+    "main.homepage > section.tok:nth-of-type(5) > div.tok-area > div.tok-stage > div.tok-el:nth-of-type(3) > div.tok-card"
+   ],
+   "make": {
+    "css": {
+     "box-shadow": "0 3px 6px rgb(28 27 25 / 0.18), 0 6px 12px rgb(28 27 25 / 0.16), 0 12px 24px rgb(28 27 25 / 0.12), 0 24px 48px rgb(28 27 25 / 0.04)"
+    }
+   }
+  },
+  {
+   "toy": "fill",
+   "rule": "craft/text-opacity",
+   "title": "This text uses opacity 0.4. Use ink-3, the colour it shows as.",
+   "at": "Tokens.jsx:179",
+   "sel": [
+    "main.homepage > section.tok:nth-of-type(5) > div.tok-area > div.tok-stage > svg.tok-routes > g.tok-stop:nth-of-type(1) > text",
+    "main.homepage > section.tok:nth-of-type(5) > div.tok-area > div.tok-stage > svg.tok-routes > g.tok-stop:nth-of-type(2) > text",
+    "main.homepage > section.tok:nth-of-type(5) > div.tok-area > div.tok-stage > svg.tok-routes > g.tok-stop:nth-of-type(3) > text",
+    "main.homepage > section.tok:nth-of-type(5) > div.tok-area > div.tok-stage > svg.tok-routes > g.tok-stop:nth-of-type(4) > text",
+    "main.homepage > section.tok:nth-of-type(5) > div.tok-area > div.tok-stage > svg.tok-routes > g.tok-stop:nth-of-type(5) > text",
+    "main.homepage > section.tok:nth-of-type(5) > div.tok-area > div.tok-stage > svg.tok-routes > g.tok-stop:nth-of-type(6) > text",
+    "main.homepage > section.tok:nth-of-type(5) > div.tok-area > div.tok-stage > svg.tok-routes > g.tok-stop:nth-of-type(7) > text",
+    "main.homepage > section.tok:nth-of-type(5) > div.tok-area > div.tok-stage > svg.tok-routes > g.tok-stop:nth-of-type(8) > text"
+   ],
+   "make": {
+    "css": {
+     "opacity": "1",
+     "fill": "#a5a4a2"
+    }
+   }
+  },
+  {
+   "toy": "fill",
+   "rule": "craft/text-opacity",
+   "title": "This text uses opacity 0.8. Use a colour instead.",
+   "at": "Tokens.jsx:194",
+   "sel": [
+    "main.homepage > section.tok:nth-of-type(5) > div.tok-area > div.tok-stage > svg.tok-routes > text.tok-route-name"
+   ],
+   "make": {
+    "css": {
+     "opacity": "1",
+     "fill": "#4a4945"
+    }
+   }
+  },
+  {
+   "toy": "fill",
+   "rule": "craft/contrast",
+   "title": "Contrast is 44 on the APCA scale at 13px. Text this size needs 60.",
+   "at": "Tokens.jsx:203",
+   "sel": [
+    "main.homepage > section.tok:nth-of-type(5) > p.tok-legend:nth-of-type(1) > span:nth-of-type(1)"
+   ],
+   "make": {
+    "css": {
+     "color": "var(--pl-text-secondary)"
+    }
+   }
+  },
+  {
+   "toy": "fill",
+   "rule": "craft/contrast",
+   "title": "Contrast is 44 on the APCA scale at 13px. Text this size needs 60.",
+   "at": "Tokens.jsx:203",
+   "sel": [
+    "main.homepage > section.tok:nth-of-type(5) > p.tok-legend:nth-of-type(1) > span:nth-of-type(2)"
+   ],
+   "make": {
+    "css": {
+     "color": "var(--pl-text-secondary)"
+    }
+   }
+  },
+  {
+   "toy": "fill",
+   "rule": "craft/contrast",
+   "title": "Contrast is 44 on the APCA scale at 13px. Text this size needs 60.",
+   "at": "Install.jsx:46",
+   "sel": [
+    "main.homepage > section.ins:nth-of-type(6) > ol.ins-lines > li:nth-of-type(1) > span.ins-meta:nth-of-type(2) > span.ins-what:nth-of-type(2)",
+    "main.homepage > section.ins:nth-of-type(6) > ol.ins-lines > li:nth-of-type(2) > span.ins-meta:nth-of-type(2) > span.ins-what:nth-of-type(2)",
+    "main.homepage > section.ins:nth-of-type(6) > ol.ins-lines > li:nth-of-type(3) > span.ins-meta:nth-of-type(2) > span.ins-what:nth-of-type(2)"
+   ],
+   "make": {
+    "css": {
+     "color": "var(--pl-text-secondary)"
+    }
+   }
+  },
+  {
+   "toy": "grid",
+   "rule": "craft/flex-min",
+   "title": "A part in here is set to scroll sideways, but its box can’t shrink, so it grows instead of scrolling.",
+   "at": "Install.jsx:47",
+   "sel": [
+    "main.homepage > section.ins:nth-of-type(6) > ol.ins-lines > li:nth-of-type(1) > span.ins-vis:nth-of-type(3)",
+    "main.homepage > section.ins:nth-of-type(6) > ol.ins-lines > li:nth-of-type(2) > span.ins-vis:nth-of-type(3)",
+    "main.homepage > section.ins:nth-of-type(6) > ol.ins-lines > li:nth-of-type(3) > span.ins-vis:nth-of-type(3)"
+   ],
+   "make": {
+    "css": {
+     "min-width": "0"
+    }
+   }
+  },
+  {
+   "toy": "cursor",
+   "rule": "craft/scroll-cue",
+   "title": "This area scrolls sideways, but has no scrollbar or fade to say so.",
+   "at": "Install.jsx:93",
+   "sel": [
+    "main.homepage > section.ins:nth-of-type(6) > ol.ins-lines > li:nth-of-type(1) > span.ins-vis:nth-of-type(3) > div.v > pre"
+   ],
+   "make": {
+    "css": {
+     "mask-image": "linear-gradient(90deg, #000 calc(100% - 24px), transparent)"
+    }
+   }
+  },
+  {
+   "toy": "cursor",
+   "rule": "craft/scroll-cue",
+   "title": "This area scrolls sideways, but has no scrollbar or fade to say so.",
+   "at": "Install.jsx:104",
+   "sel": [
+    "main.homepage > section.ins:nth-of-type(6) > ol.ins-lines > li:nth-of-type(3) > span.ins-vis:nth-of-type(3) > div.v > pre"
+   ],
+   "make": {
+    "css": {
+     "mask-image": "linear-gradient(90deg, #000 calc(100% - 24px), transparent)"
+    }
+   }
+  },
+  {
+   "toy": "type",
+   "rule": "craft/truncate-intent",
+   "title": "This text is cut off and nothing shows the rest.",
+   "at": "Install.jsx:109",
+   "sel": [
+    "main.homepage > section.ins:nth-of-type(6) > div.ins-then > span.ins-vis > div.v > div.v-card > span.v-tag:nth-of-type(4)"
+   ],
+   "make": {
+    "attr": {
+     "title": "{text}"
+    }
+   }
+  },
+  {
+   "toy": "fill",
+   "rule": "craft/contrast",
+   "title": "Contrast is 44 on the APCA scale at 13px. Text this size needs 60.",
+   "at": "Install.jsx:57",
+   "sel": [
+    "main.homepage > section.ins:nth-of-type(6) > p.ins-req:nth-of-type(2)"
+   ],
+   "make": {
+    "css": {
+     "color": "var(--pl-text-secondary)"
+    }
+   }
+  },
+  {
+   "toy": "corner",
+   "rule": "craft/continuous-corners",
+   "title": "36px round corners on a big surface. A squircle looks softer.",
+   "at": "Foot.jsx:27",
+   "sel": [
+    "footer.foot > div.ground:nth-of-type(2)"
+   ],
+   "make": {
+    "css": {
+     "corner-shape": "squircle"
+    }
+   }
+  },
+  {
+   "toy": "shadow",
+   "rule": "craft/tinted-shadow",
+   "title": "A grey shadow on #d1cfff looks dirty. Tint it with that colour.",
+   "at": "Foot.jsx:35",
+   "sel": [
+    "footer.foot > div.ground:nth-of-type(2) > div.ground-in > div.foot-who > div.foot-by > span.foot-marks > a.s-btn:nth-of-type(1)"
+   ],
+   "make": {
+    "css": {
+     "box-shadow": "oklch(0.3 0.05 287 / 0.28) 0px 9px 12px -9px"
+    }
+   }
+  },
+  {
+   "toy": "cursor",
+   "rule": "a11y/label-in-name",
+   "title": "It shows \"@dprophecyguy\" and is named \"Vijay Singh on X\".",
+   "at": "Foot.jsx:35",
+   "sel": [
+    "footer.foot > div.ground:nth-of-type(2) > div.ground-in > div.foot-who > div.foot-by > span.foot-marks > a.s-btn:nth-of-type(1)"
+   ],
+   "make": {
+    "attr": {
+     "aria-label": "{text}, {aria-label}"
+    }
+   }
+  },
+  {
+   "toy": "shadow",
+   "rule": "craft/tinted-shadow",
+   "title": "A grey shadow on #d1cfff looks dirty. Tint it with that colour.",
+   "at": "Foot.jsx:36",
+   "sel": [
+    "footer.foot > div.ground:nth-of-type(2) > div.ground-in > div.foot-who > div.foot-by > span.foot-marks > a.s-btn:nth-of-type(2)"
+   ],
+   "make": {
+    "css": {
+     "box-shadow": "oklch(0.3 0.05 287 / 0.28) 0px 9px 12px -9px"
+    }
+   }
+  },
+  {
+   "toy": "shadow",
+   "rule": "craft/tinted-shadow",
+   "title": "A grey shadow on #d1cfff looks dirty. Tint it with that colour.",
+   "at": "Foot.jsx:37",
+   "sel": [
+    "footer.foot > div.ground:nth-of-type(2) > div.ground-in > div.foot-who > div.foot-by > span.foot-marks > a.s-btn:nth-of-type(3)"
+   ],
+   "make": {
+    "css": {
+     "box-shadow": "oklch(0.3 0.05 287 / 0.28) 0px 9px 12px -9px"
+    }
+   }
+  },
+  {
+   "toy": "margin",
+   "from": 10,
+   "to": 12,
+   "token": "space-5",
+   "rule": "provenance/spacing",
+   "title": "10px isn't on your spacing scale",
+   "at": "insights.css:197",
+   "sel": [
+    "main.homepage .sc-prog"
+   ],
+   "make": {
+    "css": {
+     "margin-top": "var(--pl-space-5)"
+    }
+   }
+  },
+  {
+   "toy": "margin",
+   "from": 10,
+   "to": 12,
+   "token": "space-5",
+   "rule": "provenance/spacing",
+   "title": "10px isn't on your spacing scale",
+   "at": "slop.css:32",
+   "sel": [
+    "main.homepage .turn-line i"
+   ],
+   "make": {
+    "css": {
+     "margin-right": "var(--pl-space-5)"
+    }
+   }
+  },
+  {
+   "toy": "margin",
+   "from": 14,
+   "to": 16,
+   "token": "space-6",
+   "rule": "provenance/spacing",
+   "title": "14px isn't on your spacing scale",
+   "at": "insights.css:270",
+   "sel": [
+    "main.homepage .sc-tabs-body"
+   ],
+   "make": {
+    "css": {
+     "margin-top": "var(--pl-space-6)"
+    }
+   }
+  },
+  {
+   "toy": "margin",
+   "from": 5,
+   "to": 6,
+   "token": "space-3",
+   "rule": "provenance/spacing",
+   "title": "5px isn't on your spacing scale",
+   "at": "insights.css:198",
+   "sel": [
+    "main.homepage .sc-times"
+   ],
+   "make": {
+    "css": {
+     "margin-top": "var(--pl-space-3)"
+    }
+   }
+  },
+  {
+   "toy": "margin",
+   "from": 3,
+   "to": 4,
+   "token": "space-2",
+   "rule": "provenance/spacing",
+   "title": "3px isn't on your spacing scale",
+   "at": "slop.css:69",
+   "sel": [
+    "main.homepage .hook-findings span"
+   ],
+   "make": {
+    "css": {
+     "margin-top": "var(--pl-space-2)"
+    }
+   }
+  },
+  {
+   "toy": "margin",
+   "from": 1,
+   "to": 2,
+   "token": "space-1",
+   "rule": "provenance/spacing",
+   "title": "1px isn't on your spacing scale",
+   "at": "tokens.css:24",
+   "sel": [
+    "main.homepage .tok-caret"
+   ],
+   "make": {
+    "css": {
+     "margin-left": "var(--pl-space-1)"
+    }
+   }
+  },
+  {
+   "toy": "motion",
+   "from": 150,
+   "to": 160,
+   "token": "dur-dim",
+   "rule": "provenance/motion",
+   "title": "transition 150ms isn't one of your motion tokens",
+   "at": "hero.css:60",
+   "sel": [
+    "main.homepage .rv-pin"
+   ],
+   "make": {
+    "css": {
+     "transition-duration": "var(--pl-dur-dim)"
+    }
+   }
+  },
+  {
+   "toy": "motion",
+   "from": 150,
+   "to": 160,
+   "token": "dur-dim",
+   "rule": "provenance/motion",
+   "title": "transition 150ms isn't one of your motion tokens",
+   "at": "hero.css:110",
+   "sel": [
+    "main.homepage .rv-pause"
+   ],
+   "make": {
+    "css": {
+     "transition-duration": "var(--pl-dur-dim)"
+    }
+   }
+  },
+  {
+   "toy": "motion",
+   "from": 150,
+   "to": 160,
+   "token": "dur-dim",
+   "rule": "provenance/motion",
+   "title": "transition 150ms isn't one of your motion tokens",
+   "at": "install.css:18",
+   "sel": [
+    "main.homepage .ins-copy"
+   ],
+   "make": {
+    "css": {
+     "transition-duration": "var(--pl-dur-dim)"
+    }
+   }
+  },
+  {
+   "toy": "motion",
+   "from": 150,
+   "to": 160,
+   "token": "dur-dim",
+   "rule": "provenance/motion",
+   "title": "transition 150ms isn't one of your motion tokens",
+   "at": "slop.css:21",
+   "sel": [
+    "main.homepage .session-replay"
+   ],
+   "make": {
+    "css": {
+     "transition-duration": "var(--pl-dur-dim)"
+    }
+   }
+  },
+  {
+   "toy": "motion",
+   "from": 250,
+   "to": 160,
+   "token": "dur-dim",
+   "rule": "provenance/motion",
+   "title": "transition 250ms isn't one of your motion tokens",
+   "at": "hero.css:52",
+   "sel": [
+    "main.homepage .rv-pins"
+   ],
+   "make": {
+    "css": {
+     "transition-duration": "var(--pl-dur-dim)"
+    }
+   }
+  },
+  {
+   "toy": "motion",
+   "from": 300,
+   "to": 160,
+   "token": "dur-dim",
+   "rule": "provenance/motion",
+   "title": "transition 300ms isn't one of your motion tokens",
+   "at": "hero.css:65",
+   "sel": [
+    "main.homepage .rv-pin > b"
+   ],
+   "make": {
+    "css": {
+     "transition-duration": "var(--pl-dur-dim)"
+    }
+   }
+  },
+  {
+   "toy": "motion",
+   "from": 300,
+   "to": 160,
+   "token": "dur-dim",
+   "rule": "provenance/motion",
+   "title": "transition 300ms isn't one of your motion tokens",
+   "at": "hero.css:69",
+   "sel": [
+    "main.homepage .rv-pin > span"
+   ],
+   "make": {
+    "css": {
+     "transition-duration": "var(--pl-dur-dim)"
+    }
+   }
+  },
+  {
+   "toy": "motion",
+   "from": 300,
+   "to": 160,
+   "token": "dur-dim",
+   "rule": "provenance/motion",
+   "title": "transition 300ms isn't one of your motion tokens",
+   "at": "insights.css:85",
+   "sel": [
+    "main.homepage .ins-card"
+   ],
+   "make": {
+    "css": {
+     "transition-duration": "var(--pl-dur-dim)"
+    }
+   }
+  },
+  {
+   "toy": "motion",
+   "from": 300,
+   "to": 160,
+   "token": "dur-dim",
+   "rule": "provenance/motion",
+   "title": "transition 300ms isn't one of your motion tokens",
+   "at": "slop.css:41",
+   "sel": [
+    "main.homepage .step .code li"
+   ],
+   "make": {
+    "css": {
+     "transition-duration": "var(--pl-dur-dim)"
+    }
+   }
+  },
+  {
+   "toy": "motion",
+   "from": 300,
+   "to": 160,
+   "token": "dur-dim",
+   "rule": "provenance/motion",
+   "title": "transition 300ms isn't one of your motion tokens",
+   "at": "slop.css:64",
+   "sel": [
+    "main.homepage .hook-findings li"
+   ],
+   "make": {
+    "css": {
+     "transition-duration": "var(--pl-dur-dim)"
+    }
+   }
+  },
+  {
+   "toy": "motion",
+   "from": 300,
+   "to": 160,
+   "token": "dur-dim",
+   "rule": "provenance/motion",
+   "title": "transition 300ms isn't one of your motion tokens",
+   "at": "tokens.css:20",
+   "sel": [
+    "main.homepage .tok-prompt"
+   ],
+   "make": {
+    "css": {
+     "transition-duration": "var(--pl-dur-dim)"
+    }
+   }
+  },
+  {
+   "toy": "motion",
+   "from": 300,
+   "to": 160,
+   "token": "dur-dim",
+   "rule": "provenance/motion",
+   "title": "transition 300ms isn't one of your motion tokens",
+   "at": "tokens.css:53",
+   "sel": [
+    "main.homepage .tok-el-label"
+   ],
+   "make": {
+    "css": {
+     "transition-duration": "var(--pl-dur-dim)"
+    }
+   }
+  },
+  {
+   "toy": "motion",
+   "from": 300,
+   "to": 160,
+   "token": "dur-dim",
+   "rule": "provenance/motion",
+   "title": "transition 300ms isn't one of your motion tokens",
+   "at": "tokens.css:98",
+   "sel": [
+    "main.homepage .tok-badge"
+   ],
+   "make": {
+    "css": {
+     "transition-duration": "var(--pl-dur-dim)"
+    }
+   }
+  },
+  {
+   "toy": "motion",
+   "from": 200,
+   "to": 160,
+   "token": "dur-dim",
+   "rule": "provenance/motion",
+   "title": "transition 200ms isn't one of your motion tokens",
+   "at": "insights.css:108",
+   "sel": [
+    "main.homepage .ins-switch button"
+   ],
+   "make": {
+    "css": {
+     "transition-duration": "var(--pl-dur-dim)"
+    }
+   }
+  },
+  {
+   "toy": "motion",
+   "from": 200,
+   "to": 160,
+   "token": "dur-dim",
+   "rule": "provenance/motion",
+   "title": "transition 200ms isn't one of your motion tokens",
+   "at": "tokens.css:26",
+   "sel": [
+    "main.homepage .tok-send"
+   ],
+   "make": {
+    "css": {
+     "transition-duration": "var(--pl-dur-dim)"
+    }
+   }
+  },
+  {
+   "toy": "motion",
+   "from": 200,
+   "to": 160,
+   "token": "dur-dim",
+   "rule": "provenance/motion",
+   "title": "transition 200ms isn't one of your motion tokens",
+   "at": "tokens.css:70",
+   "sel": [
+    "main.homepage .tok-stop > circle"
+   ],
+   "make": {
+    "css": {
+     "transition-duration": "var(--pl-dur-dim)"
+    }
+   }
+  },
+  {
+   "toy": "motion",
+   "from": 200,
+   "to": 160,
+   "token": "dur-dim",
+   "rule": "provenance/motion",
+   "title": "transition 200ms isn't one of your motion tokens",
+   "at": "tokens.css:71",
+   "sel": [
+    "main.homepage .tok-stop text"
+   ],
+   "make": {
+    "css": {
+     "transition-duration": "var(--pl-dur-dim)"
+    }
+   }
+  },
+  {
+   "toy": "motion",
+   "from": 200,
+   "to": 160,
+   "token": "dur-dim",
+   "rule": "provenance/motion",
+   "title": "transition 200ms isn't one of your motion tokens",
+   "at": "tokens.css:83",
+   "sel": [
+    "main.homepage .tok-key rect"
+   ],
+   "make": {
+    "css": {
+     "transition-duration": "var(--pl-dur-dim)"
+    }
+   }
+  },
+  {
+   "toy": "motion",
+   "from": 200,
+   "to": 160,
+   "token": "dur-dim",
+   "rule": "provenance/motion",
+   "title": "transition 200ms isn't one of your motion tokens",
+   "at": "tokens.css:90",
+   "sel": [
+    "main.homepage .tok-dot-long, .tok-dot-short"
+   ],
+   "make": {
+    "css": {
+     "transition-duration": "var(--pl-dur-dim)"
+    }
+   }
+  }
+ ],
+ "code": [
+  "experience/link-target-renamed Bar.jsx:85",
+  "craft/elevation-ladder Bar.jsx:85",
+  "craft/elevation-ladder Bar.jsx:58",
+  "craft/elevation-ladder Bar.jsx:61",
+  "craft/elevation-ladder Bar.jsx:70",
+  "craft/elevation-ladder Bar.jsx:71",
+  "craft/elevation-ladder Bar.jsx:90",
+  "experience/preconnect-missing Homepage.jsx:18",
+  "experience/skip-link Homepage.jsx:18",
+  "craft/elevation-ladder CopyCommand.jsx:25",
+  "craft/elevation-ladder Hero.jsx:27",
+  "experience/link-target-renamed Proof.jsx:22",
+  "craft/elevation-ladder Review.jsx:242",
+  "craft/elevation-ladder Review.jsx:247",
+  "craft/weight-levels Review.jsx:249",
+  "craft/elevation-ladder Review.jsx:252",
+  "a11y/svg-name Review.jsx:172",
+  "tells/status-dot Review.jsx:144",
+  "tells/status-dot Review.jsx:145",
+  "craft/elevation-ladder Insights.jsx:236",
+  "experience/button-name-reused Insights.jsx:238",
+  "craft/declared-gap Insights.jsx:329",
+  "tells/status-dot Insights.jsx:349",
+  "craft/weight-levels Insights.jsx:349",
+  "craft/declared-gap Insights.jsx:350",
+  "craft/declared-gap Insights.jsx:350",
+  "craft/weight-levels Insights.jsx:369",
+  "tells/status-chain Insights.jsx:387",
+  "craft/declared-gap Insights.jsx:401",
+  "craft/shared-edges Insights.jsx:222",
+  "craft/weight-levels Insights.jsx:433",
+  "craft/weight-levels Insights.jsx:454",
+  "craft/weight-levels Insights.jsx:454",
+  "craft/inner-outer-spacing Insights.jsx:455",
+  "components/tab-stops Insights.jsx:102",
+  "craft/elevation-ladder Insights.jsx:105",
+  "craft/elevation-ladder Insights.jsx:109",
+  "craft/declared-gap Slop.jsx:84",
+  "html/figure-caption Live.jsx:34",
+  "tells/status-chain Install.jsx:57",
+  "craft/elevation-ladder Floor.jsx:79",
+  "craft/elevation-ladder Floor.jsx:89",
+  "craft/stroke-weight Toy.jsx:5",
+  "craft/weight-levels Foot.jsx:33",
+  "provenance/spacing tokens.css:38"
+ ]
+}

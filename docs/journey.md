@@ -4438,6 +4438,31 @@ through the page". Our first eggs staged a fault and undid it, which proves noth
 
 **Media hooks.** The old one-line footer, the heap falling, and Clean up landing.
 
+### 87. The footer is a demo on our own faults (2026-11-22)
+
+**The itch.** The owner: the eggs "should fix a defect for real", as "a demo for plumber like the issues missed by
+person who was going through the page". Then: "we would say that this LLM generated site had 118 issues which we
+haven't fixed and you can fix them yourself", and "if the site doesn't have all the issues listed for all the icon
+categories stage them subtly".
+
+**How we found the faults.** We ran Plumber on our own homepage: the page checks, and the source check for margins
+and timings. All ten toys had real findings, so none was staged. The 118 was two pages added together. The homepage
+alone had 141 findings, 16 of them false on this site (each kind is recorded with its reason), which leaves 125.
+
+**The system behind it.** A demo that stages its fault proves only that it can undo itself. A count typed into copy
+goes stale with the next change to the page, so the count and the fixes are a recording (`web/scripts/findings.mjs`).
+
+**What we tried and chose.** Each fix is made and Plumber reads the page again. 80 are confirmed. The second read
+caught fixes that made new faults: "use weight 800" trips Plumber's own "800 and 900 shout", moving a shadow's level
+trips the next level, and one margin broke a baseline. Those joined the 45 that need code. Faults that surfaced
+under a fixed one, with the same values as before, are not counted.
+
+**The fix and the proof.** A toy shows one real fault with the product's own show, fixes its kind, and the count
+falls from 125 to 45 and stays down for the visit. After pressing all ten, Plumber found none of the 55 page faults
+again and all 25 margins and timings were on their tokens. Each toy now moves the way its property does on hover.
+
+**Media hooks.** The count falling, and the toy flying to the Copy button's gap.
+
 ## Open gaps
 
 - The fixes of entry 81 (caret, app errors, broken config on Vite) are committed and not published. The site runs
@@ -6065,6 +6090,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 
 ## Open gaps
 - **Two faults on the live homepage.** At 320px wide the bar and the example cards run 17px past the screen, and with reduced motion React reports a hydration mismatch, because six sections read the setting while they render ([entry](#82-the-site-says-who-made-it-and-who-uses-it-2026-11-22)).
+- **The footer's count is a recording.** It has to be recorded again (`node web/scripts/findings.mjs`, with the dev server up) whenever the homepage changes, and nothing enforces that yet. It was read at 1280px, in light, at rest ([entry](#87-the-footer-is-a-demo-on-our-own-faults-2026-11-22)).
 - **Docs can drift from the package again.** Nothing runs their commands at release. The homepage's live-editing clip is from an older overlay, and the overlay's gestures were checked in source, without driving them ([entry](#75-the-docs-said-what-an-older-plumber-did-2026-11-22)).
 - **Data about two private apps waits in unpushed commits.** The style data behind the removed pages, and films and verdicts of both apps, become public with the next push unless the owner has them taken out ([entry](#74-the-site-goes-live-at-react-plumbercom-2026-11-22)).
 - **The live site has loose ends.** `/demo` says it hasn't moved yet, plain http doesn't redirect to https, `www` and `design.react-plumber.com` aren't set up, and deploys are run by hand ([entry](#74-the-site-goes-live-at-react-plumbercom-2026-11-22)).

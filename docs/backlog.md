@@ -21,6 +21,7 @@ engineer would do." These calls were open questions until then. Each is decided 
 
 | Call | Decision | Why |
 |---|---|---|
+| The footer's game | Only true findings on our homepage, none staged; false ones left out of the count | It is a public claim about an LLM-made page and a demo of the product: it has to hold when a visitor checks it (2026-11-22) |
 | What react-plumber.com serves | A static export of a commit, without `web/public/research` | Every page pre-renders; the research is unlinked, partly about private apps, and bundles others' components without licences (2026-11-22) |
 | A row's title in a softened colour | Leave it | It is a deliberate fourth level; lifting it is a redesign, not a tidy-up |
 | A small heading in capitals ("Part 01") | A label | What the eye reads is an eyebrow; the tag is for structure, the style for the look |
@@ -548,3 +549,4 @@ one-bar and new-token tests are fixed and pass there on their own; the steady li
   - The published package names a private app in code comments (13 files in 0.6.0). The owner decides.
   - Editing in Safari and Firefox hasn't been tried, and the release gate doesn't cover them.
 - The overlay's own words still say "off the scale" and "typed by hand" where the owner's words are "off your tokens" and "hard-coded" (seen on the design pages, which draw the product's strings and token notes).
+- Found running 0.6.0 on our own homepage (2026-11-22): white or gradient-filled words are read as a grey (7 false findings there); contrast reads 0 where `-webkit-text-fill-color` draws the words; a white page counts as "pure white outside your surface colour" when white is the surface; a carousel's track is told to wrap; "Use weight 800" trips the anti-slop "800 and 900 shout"; the elevation ladder's suggested level makes the next finding; five declared-gap fixes don't clear their own finding.

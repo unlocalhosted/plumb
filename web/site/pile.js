@@ -236,10 +236,11 @@ export class Pile {
   lead(name, point) {
     const p = this.#pieces.find((q) => q.name === name);
     if (!p || this.#still) return () => {};
-    p.led = point; p.under = false; p.el.style.zIndex = ++this.#top;
+    p.led = point; p.under = false; p.el.style.zIndex = ++this.#top; p.el.dataset.acting = '';
     this.#run();
     return () => {
       if (p.led !== point) return;
+      delete p.el.dataset.acting;
       p.led = null; p.landed = false; p.due = 0;
       if (!p.home) { p.vx *= 0.2; p.vy = Math.min(0, p.vy); this.#lift(p); }
       this.#run();
