@@ -78,7 +78,15 @@ export function handler(options: SessionOptions, token: string) {
         const page = pageUrl(request, url);
         const at = await sidecar(page.origin);
         if (!await canReach(page, request, at)) return route(request);
-        const bridge = `// React Plumber: the overlay from its sidecar, or from this route when the sidecar cannot be reached\ntry { await import(${JSON.stringify(`${at}/__plumb/client.js`)}); } catch { await import('/__plumb/client.js?direct=1'); }\n`;
+        // A copy that got as far as defining the overlay is never loaded again (the second define threw in the app), and
+        // an overlay that can't load is a warning: nothing here may become the app's uncaught error
+        const bridge = `// React Plumber: the overlay from its sidecar, or from this route when the sidecar cannot be reached
+const failed = (error) => console.warn('[plumb] React Plumber could not start on this page. Your app is not affected; reload to try again.', error);
+try { await import(${JSON.stringify(`${at}/__plumb/client.js`)}); } catch (error) {
+  if (customElements.get('plumb-overlay')) failed(error);
+  else try { await import('/__plumb/client.js?direct=1'); } catch (again) { failed(again); }
+}
+`;
         return new Response(bridge, { status: 200, headers: { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-store' } });
       } catch { /* no sidecar: the route serves the client itself */ }
     }

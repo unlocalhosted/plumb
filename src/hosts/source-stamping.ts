@@ -96,6 +96,7 @@ export async function storeIndex(root: string, path: string, index: SourceIndex)
 export function sourceStamping(options: SessionOptions, production = false): Plugin {
   let root: string;
   let config: ReturnType<typeof loadConfig> | undefined;
+  let told = ''; // the failure already said in the terminal
   return {
     name: 'plumb',
     enforce: 'pre',
@@ -119,12 +120,21 @@ export function sourceStamping(options: SessionOptions, production = false): Plu
       const file = id.replace(/[?#].*$/, '');
       if (!isAbsolute(file) || !/\.[cm]?[jt]sx?$/.test(file) || !code.includes('<')) return null;
       // Yours by the rule (inside the repository, neither installed nor generated), or by the config's `source`.
-      const loaded = await (config ??= loadConfig(root, options.config));
-      const identity = await stampedSource(root, file, loaded.value, async () => (await projectSourceFiles(root, loaded.value, [file])).includes(file));
-      const stamped = identity && stampJSX(code, file, identity.path);
-      if (!stamped) return null;
-      void storeIndex(root, identity.path, stamped.index);
-      return stamped.code === null ? null : { code: stamped.code, map: stamped.map };
+      try {
+        const loaded = await (config ??= loadConfig(root, options.config));
+        const identity = await stampedSource(root, file, loaded.value, async () => (await projectSourceFiles(root, loaded.value, [file])).includes(file));
+        const stamped = identity && stampJSX(code, file, identity.path);
+        if (!stamped) return null;
+        void storeIndex(root, identity.path, stamped.index);
+        return stamped.code === null ? null : { code: stamped.code, map: stamped.map };
+      } catch (error) {
+        // Never break the host's own compile, as on Next (next-stamp-loader.ts): a typo in plumber.config failed every
+        // file of the app. The file is served as it was written, and the config is read again for the next one.
+        config = undefined;
+        const why = error instanceof Error ? error.message : String(error);
+        if (why !== told) { told = why; this.warn(`[plumb] React Plumber couldn't stamp your code, so it can't edit it. Your app runs as usual. Fix this, then restart the dev server: ${why}`); }
+        return null;
+      }
     },
   };
 }
