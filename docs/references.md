@@ -363,3 +363,11 @@ All free under the Unsplash License, hotlinked from images.unsplash.com as Unspl
 - What it changed: the launch video's shots are React components drawn by Remotion on vm-agent. Blender and the path
   tracer are not used.
 - Used in: [journey entry 78](journey.md#78-three-style-frames-for-the-launch-clip-in-react-2026-11-22).
+
+## 2026-11-22 · The caret screenshot and the "Failed to fetch" error (shared by the owner)
+- What: a screenshot of the hero paragraph being edited with the caret on the wrong letter, and Next's copied error
+  ("TypeError: Failed to fetch", through a browser extension's wrapped fetch).
+- Why: "there is a bug where the cursor is deleting the character next to it"; "i dont want these things breaking the
+  app again".
+- What it changed: words are edited on the page's own text, and the overlay no longer uses the page's fetch.
+- Used in: [journey entry 81](journey.md#81-plumbers-failures-became-the-apps-errors-2026-11-22).

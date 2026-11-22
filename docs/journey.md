@@ -4276,7 +4276,42 @@ it is drawn, which our test missed: it replaced whole runs of text and never pla
   with 246 of plumber's own check names streaming past. Its review is in `docs/films/launch-01-review.md`.
 - **Media hooks:** `docs/films/launch-draft/rough-cut-2.mp4` (local, not committed).
 
+### 81. Plumber's failures became the app's errors (2026-11-22)
+
+- **The itch:** testing 0.6.0 on our own site, the owner found "the cursor is deleting the character next to it", then
+  "as i run alt+b on this page ... i start seeing issues in next js from 1 to 9" and double-click "not working
+  anymore". Then: "i dont want any of such infra level issue in like tooling itself. this breaks confidence and people
+  just throw tooling away".
+- **How we found it:** Next's log had the owner's full stacks: Plumber fetching a `file:` address of a server chunk,
+  80 times for one Alt+B on /docs. With Next's error dialog open, a double-click lands on the dialog and does nothing.
+  A sweep on vm-agent then drove throwaway apps (Next 15 and 16 on Turbopack and webpack, Vite 8) through the overlay's
+  gestures and its failures, with a real extension that wraps fetch.
+- **The system behind it:** three separate ones.
+  - The caret: text mixed with other elements was edited in a transparent copy over the run's bounding box. The copy
+    centred and wrapped the words by itself, so its second line was 80 to 135px from the page's. The outline through
+    the paragraph was the same box.
+  - The errors: the overlay used the app's fetch. Whatever wraps that fetch holds a promise of its own, and each failed
+    request of Plumber's rejected it, in the app.
+  - Compiling: on Vite, Plumber's transform threw when plumber.config had a typo, so every file of the app failed.
+- **What we tried, what we chose and why:** copying more font properties onto the textarea had already shipped in
+  0.6.0 and couldn't fix a second layout, so the page's own words are edited now. For the errors we first tried a
+  listener that held back errors whose stack was only Plumber's. It leaked 53 in one run: listeners on the window run
+  in the order they were added, and the framework's come first. It could also have hidden a real error, so it was
+  deleted, and the overlay got a transport of its own.
+- **The fix and the proof:** the caret was wrong in 6 of 16 click-and-delete readings at each of three widths and is
+  wrong in none; 37 further editing cases (edges, spaces, undo, IME) pass. On Next 16 with Turbopack, the same sweep
+  with the same extension put 196 errors into the app on 0.6.0 and none on the fix. Across the five hosts the fix put
+  none in 125 runs, the app's own errors still show, and all five compile with a broken config. Words that can't be
+  edited now say why. No test suite was run, and Safari and Firefox weren't tried.
+- **Media hooks:** the owner's screenshot as the before; the stepped outline round only the editable words as the after.
+
 ## Open gaps
+
+- The fixes of entry 81 (caret, app errors, broken config on Vite) are committed and not published. The site runs
+  0.6.0 from npm, so it still has all three bugs.
+- Nothing stops entry 81 from happening again: none of the files in `e2e/` loads an extension or reads where a
+  click puts the caret. Two tests in `e2e/text-edit.test.mjs` still wait for the textarea that was removed, so the
+  suite `npm publish` runs is expected to fail until they are rewritten for the behaviour.
 - **Most checks can't write their fix.** 59 of 258 page checks can, all in craft (59 of 84). The accessibility, forms, components, HTML, experience and anti-slop packs only advise, so "fixes 100+ issues" can't be claimed yet ([entry](#80-no-voice-six-fixes-side-by-side-and-what-100-may-claim-2026-11-22)).
 - **The fix bar flashes a wrong refusal.** Just after a click on an element in Blueprint it can show "Plumber can't write this change in your code yet" for a moment, then offer the fix and write it. Seen in a recorded take on Relay, cause not looked for ([entry](#79-the-launch-clips-first-rough-cut-with-a-voice-2026-11-22)).
 - **The launch video has no agreed look.** Draft 1 (solid yellow, a pipe between page and file) was rejected, and the other six use cases wait for one approved clip ([entry](#76-the-launch-videos-first-draft-is-rejected-2026-11-22)).

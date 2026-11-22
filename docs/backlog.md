@@ -536,4 +536,14 @@ one-bar and new-token tests are fixed and pass there on their own; the steady li
 - A page-wide finding on algorecall's showcase names its sticky header (line 58), not the root `<div>` on line 57: the root is probably not among the judged elements while its children animate in. Right file; not checked further.
 - `cleanup-spacing-proofs` "one rhythm for the site" is a race on main too (2026-11-15: main failed 2 of 3 runs alone on the test server, this branch 1 of 3): page two's reload is aborted, likely by the dev server reloading it after page one's write at the same moment. Not looked at.
 - Found auditing 0.6.0 (2026-11-22): `npx plumber` still says "run npx plumber init" after init has run; `install --hooks` prints a diff with `npx --no-install npx plumber` though the file it writes is right; `init --force` replaced a config without showing the diff its message promises.
+- Found testing 0.6.0 on our site (2026-11-22, journey 81):
+  - A release gate is proposed and not built. End to end: the packed package on Next 15 and 16 (both bundlers) and
+    Vite 8, every gesture and failure, with a fetch-wrapping extension; it fails on any error the app sees. Integration,
+    no browser: a broken plumber.config or an unreadable file never stops the app compiling. Behaviour: click between
+    two letters, press Backspace, read which went.
+  - MDX body text can't be edited. It takes three layers: a compile-time plugin that stamps positions (tried read-only:
+    109 of 109 elements on two pages carry one), the app's MDX components passing that attribute on and `source`
+    taking `.mdx`, and a Markdown-aware writer. The writer is the risky one.
+  - A plain double-click on words in a link or button does nothing and doesn't mention Alt + double-click.
+  - Pasting into an edit among other elements, and editing in Safari and Firefox, haven't been tried.
 - The overlay's own words still say "off the scale" and "typed by hand" where the owner's words are "off your tokens" and "hard-coded" (seen on the design pages, which draw the product's strings and token notes).
