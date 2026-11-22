@@ -12,3 +12,25 @@
   3. The wide cut's small labels won't read on an upright phone, as in film 1.
 - **Cringe check:** passes. The words make no claim the five proofs don't cover, apart from the owner's closing line.
 - **Verdict:** show the script to the owner. Build after their OK.
+
+## Draft gate (rough cut 1, 2026-11-23; self-reviewed, not independent)
+
+Judged from stills at each beat, three frames a second, and 36 frames at the transitions. It wasn't watched at speed.
+
+### Story
+
+- **The question:** asked on the first frame, answered at 14 s. Every line is held long enough to read at three words
+  a second.
+- **Beats kept:** right but crooked, why (four 1s beside four 0s), the rows pulled out, the catch, the write, four
+  more, the owner's line.
+- **Cringe check:** passes.
+
+### Camera
+
+- **The component's body is the subject.** No craft rule page is in any sampled frame.
+- **The three worst frames, fixed:** an empty beat as the 1 and the 0 lifted (3.9 to 4.5 s), the money crossing the
+  Alt+B key (9.6 s), and double images at the cuts (10.7 and 13.4 s).
+- **Legibility at 400 px wide:** the lines and the column read. Plumber's bar, the file's line and the four labels
+  fail, so a phone needs the tall cut.
+- **Still weak:** the corners and the play button are small changes, and the recording is the quietest part.
+- **Verdict:** show the rough cut. The full render waits for the owner's OK.

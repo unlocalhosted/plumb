@@ -4537,8 +4537,28 @@ The same build passed 705 loads before it went out, and the game passes on the l
   a 2.5 second pause. The repaired tests don't need it.
 - **Media hooks:** the old card with its Shadow row beside the X-ray card that Alt+click pins now.
 
+### 91. The film shows the component, without the page round it (2026-11-23)
+
+- **The itch:** while film 2's rough cut was being built, the owner: "hey dont use this frame straight from the page of
+  craft rule bring the body component out and use it".
+- **How we found it:** the board and the first take were screenshots of craft rule pages, so they carried the
+  showcase's list, rule title, dotted board and switch.
+- **The system behind it:** the capture scripts opened a rule's page because that is where each example lives. A film
+  needs the example as a component in someone's app, so the capture needed a stage of its own.
+- **What we tried, what we chose and why:** cropping would have kept the board and cut plumber's bar. A throwaway copy
+  of the showcase now gets an entry that mounts one component alone on white, and all five fixes were made again there.
+  On that stage plumber first withheld the z-index fix. It said the fix would hide text while its font loads. The capture's
+  own stand-in font had no `font-display`, and the check blamed that page-wide warning on the fix. The capture now
+  sets it. The check's mistake is in the backlog.
+- **The fix and the proof:** all five wrote with Alt+B and Enter, and each finding went from 1 to 0 after a reload,
+  with no page errors. The rough cut is 27.6 s at 960 × 540, silent. The enlarged column is drawn from the positions
+  the browser gave each digit before the write and after the reload.
+- **Media hooks:** `docs/films/launch-02-draft/rough-cut-1.mp4` and `rough-stills.jpg` (local, not committed).
+
 ## Open gaps
 
+- **A page-wide warning can withdraw an unrelated fix.** A font with no `font-display` turned the z-index fix into
+  advice (seen 2026-11-23, [entry 91](#91-the-film-shows-the-component-without-the-page-round-it-2026-11-23)).
 - **Enter can write a different fix from the one in the bar.** On the showcase's calendar (38) the bar offered the
   hairline fix while the element's card held a pending Sync, both marked ↵, and Enter wrote `text-xs` to another line
   in two runs of two. The newsletter screen (37) did the same in one run of two (seen 2026-11-22, entry 88).

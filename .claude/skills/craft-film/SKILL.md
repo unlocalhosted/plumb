@@ -139,6 +139,12 @@ holds the date and what they said.
 
 ### The stage
 
+- **The example is its component's body, taken out of the craft rule page.** A launch film never shows a frame of
+  `/rule/N`: no list, rule title, dotted board, switch or lesson. Mount the component alone on white in a throwaway
+  copy, and record the gesture and prove the write there. This holds for the examples running side by side too.
+  Why: "dont use this frame straight from the page of craft rule bring the body component out and use it".
+  *Inferred:* the viewer should see a part of an app like their own.
+  <!-- 2026-11-23: on launch film 2 -->
 - **The stage is a deep silk wallpaper** (`principles/silk-deep.svg`: indigo, violet and magenta folds, shaded, lit
   on their crests, a vignette and grain), the way screen recorders frame a recording. Its folds fall away to the
   right so the words sit on calm ground. Never flat white, never big blobs of colour.
@@ -185,3 +191,5 @@ holds the date and what they said.
 - 2026-11-15 · the closing line, in the owner's words.
 - 2026-11-15 · "you just put a boring blue box … people need constant dopamine hit and delight" → marks drawn with
   plumber's own pieces: dashed rings, toys on every tag, counting values.
+- 2026-11-23 · "dont use this frame straight from the page of craft rule bring the body component out and use it" →
+  every example is mounted alone on white, recorded and proven there.
