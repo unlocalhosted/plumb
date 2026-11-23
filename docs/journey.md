@@ -4714,6 +4714,25 @@ The same build passed 705 loads before it went out, and the game passes on the l
 - **Not done:** near pairs still aren't merged, and the overlay doesn't offer this yet; it's the command line only.
 - **Media hooks:** a before/after of one Tegaki component's class list, and the written theme block.
 
+### 97. Near pairs fold into one role (2026-11-23)
+
+- **The itch:** after entry 96, Tegaki's roles ran to `faint-4`: five grey text pairs where a system has three. That is
+  the app's own drift, given names. The owner: "Merge near pairs".
+- **What we chose and why:** two pairs for the same job become one role when both their light colours and their dark
+  colours are within 0.12 of each other (OKLab ΔE). That is not a new number: it is the colour clean-up's keep reach
+  for a grey that drifted from a level, chosen there for similarity and cognitive load. The pair used most wins, since
+  that is the choice the code made; the others fold into it. A hover colour never folds into a resting one, or the
+  hover would stop showing. See-through colours (`amber-500/15`) are kept apart, because what they look like depends on
+  what is under them. Pairs that share a light colour now share a level's name (`muted`, `muted-2`).
+- **The fix and the proof:** on the copy of Tegaki, 25 roles became 20 and cover 285 places instead of 274; 16 near
+  pairs folded, the largest move 0.116 (`amber-600 / amber-400` into `text-warning`). Written, 256 class pairs in 19
+  files moved, Tailwind built every class, no malformed class in the changed lines, and 15 `dark:` colour classes are
+  left where there were 22. The proposal lists each fold and how far it moves, so a person sees the change before
+  writing. Not run in a browser. No tests were written.
+- **Not done:** a folded place changes colour a little (up to 0.12), and nothing yet checks that its words still have
+  enough contrast. A role named for hover is also used for focus (`focus:border-line-hover`).
+- **Media hooks:** the fold table on Tegaki, and one component's class list before and after.
+
 ### 96. The element card is retired, and grid columns move to the X-ray card (2026-11-23)
 
 - **The itch:** with shadow, motion and layout in the X-ray card (entries 92 to 94), the old element card was code no
@@ -6434,6 +6453,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
 - The X-ray card is the one card for an element: its Layout row now changes a grid's columns (chips, + and −, lines to drag on the page), and the old element card is gone. On main, not released ([entry](#96-the-element-card-is-retired-and-grid-columns-move-to-the-x-ray-card-2026-11-23)).
+- Colours that drifted apart become one role: near light/dark pairs fold into the one used most, each move listed before anything is written (Tegaki: 25 roles became 20). On main, not released ([entry](#97-near-pairs-fold-into-one-role-2026-11-23)).
 - You can turn colours written twice for light and dark into roles: `plumber propose --roles` writes each role into your theme with its dark value, and moves every place onto it (`text-zinc-900 dark:text-zinc-100` becomes `text-fg`). On main, not released ([entry](#96-the-roles-get-written-2026-11-23)).
 - You can see which light and dark colour pairs in your code are one role: `plumber propose --family color` lists each pair written by hand with `dark:`, the role it would become and how many places it covers. On main, not released ([entry](#95-light-and-dark-by-hand-become-roles-2026-11-23)).
 - You can lay out one element again: Alt+click something with two or more parts, open Measurements, and pick stacked, side by side, two columns, lined up or fit as many as fit, shown on the page as you point; Sync writes the classes. On main, not released ([entry](#94-the-x-ray-card-gets-a-layout-picker-2026-11-23)).

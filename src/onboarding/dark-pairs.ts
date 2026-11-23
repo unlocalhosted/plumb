@@ -1,6 +1,7 @@
 import { relative, resolve } from 'node:path';
 import type { Declaration, Report } from '../report.js';
 import { darkCondition } from './harvest.js';
+import { oklab } from '../rules/families.js';
 
 /**
  * Light and dark pairs: an element that sets a colour for light mode and again with `dark:` is a role written out by
@@ -25,6 +26,8 @@ export interface PairRole {
   /** The class the places would use instead (`text-muted`). */
   replacement: string;
   places: PairPlace[];
+  /** Near pairs folded into this one: their colours, places, and how far each moves (OKLab ΔE, the larger of light and dark). */
+  merged: { light: string; dark: string; places: number; moves: number }[];
 }
 export interface DarkPairs {
   /** Places that set a colour twice, light and dark. */
@@ -39,6 +42,12 @@ export interface DarkPairs {
   darkWhen: { selector: string } | { media: string } | null;
 }
 
+/**
+ * Two pairs for the same job are one role when both their light colours and their dark colours sit within this
+ * distance (OKLab ΔE). It is the colour clean-up's keep reach for greys (overlay/src/colours.js REACH.keep.grey): a
+ * grey this close to a level is that level drifted, by similarity, and one fewer level is less to tell apart.
+ */
+export const NEAR = 0.12;
 const JOB: Record<string, Job> = { color: 'text', 'background-color': 'surface', 'border-color': 'line' };
 const PREFIX: Record<Job, string> = { text: 'text', surface: 'bg', line: 'border' };
 const NEUTRAL = /^(slate|gray|grey|zinc|neutral|stone|white|black)\b/;
@@ -86,7 +95,7 @@ export function darkPairs(report: Report): DarkPairs {
   const lights = new Map<string, Declaration[]>();
   for (const d of colours) if (!isDark(d)) { const list = lights.get(d.site.file) ?? []; list.push(d); lights.set(d.site.file, list); }
   const taken = new Set<Declaration>();
-  const groups = new Map<string, { job: Job; light: string; dark: string; lightValue: string; darkValue: string; places: PairPlace[] }>();
+  const groups = new Map<string, { job: Job; light: string; dark: string; lightValue: string; darkValue: string; places: PairPlace[]; merged: PairRole['merged'] }>();
   let pairs = 0, unpaired = 0;
   let darkWhen: DarkPairs['darkWhen'] = null;
 
@@ -106,12 +115,33 @@ export function darkPairs(report: Report): DarkPairs {
     const job = JOB[dark.prop]!, light = colourOf(split(twin.site.text).utility), darkColour = colourOf(utility);
     const key = `${job}|${light}|${darkColour}`; // the role is the pair; hover: and the rest are only where it is used
     let group = groups.get(key);
-    if (!group) groups.set(key, group = { job, light, dark: darkColour, lightValue: twin.resolved ?? twin.value, darkValue: dark.resolved ?? dark.value, places: [] });
+    if (!group) groups.set(key, group = { job, light, dark: darkColour, lightValue: twin.resolved ?? twin.value, darkValue: dark.resolved ?? dark.value, places: [], merged: [] });
     group.places.push({ file: path(dark.site.file), line: dark.site.line, light: twin.site.text, dark: dark.site.text, lightAt: { line: twin.site.line, column: twin.site.column }, darkAt: { line: dark.site.line, column: dark.site.column } });
   }
 
-  const kept = [...groups.values()].filter(g => g.places.length >= 2);
-  const once = [...groups.values()].filter(g => g.places.length < 2).reduce((n, g) => n + g.places.length, 0);
+  // near pairs fold into the pair used most: that is the choice the code made, the others drifted from it
+  const palette = new Map(report.decisions.filter(d => d.origin === 'framework').map(d => [d.name, d.resolved ?? d.value]));
+  const labOf = (colour: string) => {
+    const m = /^([a-z]+(?:-\d{2,3})?)(?:\/(\d+))?$/.exec(colour);
+    if (!m || m[2]) return undefined; // see-through colours are kept apart: their colour depends on what is under them
+    const value = palette.get(`--color-${m[1]}`);
+    return value ? oklab(value) : undefined;
+  };
+  const dE = (a: number[], b: number[]) => Math.hypot(a[0]! - b[0]!, a[1]! - b[1]!, a[2]! - b[2]!);
+  type Group = { job: Job; light: string; dark: string; lightValue: string; darkValue: string; places: PairPlace[]; merged: PairRole['merged'] };
+  const anchors: (Group & { labs?: [number[], number[]] })[] = [];
+  for (const g of [...groups.values()].sort((a, b) => b.places.length - a.places.length)) {
+    const l = labOf(g.light), d = labOf(g.dark);
+    // a hover colour never folds into a resting one, or the hover would stop showing
+    const hover = (x: Group) => x.places.filter(p => STATE.test(p.light)).length * 2 > x.places.length;
+    const home = l && d && anchors.find(a => a.job === g.job && hover(a) === hover(g) && a.labs && dE(a.labs[0], l) <= NEAR && dE(a.labs[1], d) <= NEAR);
+    if (home) {
+      home.places.push(...g.places);
+      home.merged.push({ light: g.light, dark: g.dark, places: g.places.length, moves: Math.round(Math.max(dE(home.labs![0], l), dE(home.labs![1], d)) * 1000) / 1000 });
+    } else anchors.push({ ...g, merged: [], ...(l && d ? { labs: [l, d] as [number[], number[]] } : {}) });
+  }
+  const kept: Group[] = anchors.filter(g => g.places.length >= 2);
+  const once = anchors.filter(g => g.places.length < 2).reduce((n, g) => n + g.places.length, 0);
   // names: the project's own colour names are never reused
   const taken_ = new Set(report.decisions.filter(d => d.family === 'color').map(d => d.name.replace(/^--color-/, '')));
   const claim = (base: string) => { let name = base, n = 2; while (taken_.has(name)) name = `${base}-${n++}`; taken_.add(name); return name; };
@@ -127,7 +157,9 @@ export function darkPairs(report: Report): DarkPairs {
     for (const g of hovered.sort((a, b) => b.places.length - a.places.length)) roles.push(role(g, claim(`${NAMES[job][0]}-hover`)));
     // the rest by level; two pairs with the same light colour: the one used more takes the plainer name
     const plain = greys.filter(g => !inverse.includes(g) && !hovered.includes(g)).sort((a, b) => (job === 'text' ? step(b.light)! - step(a.light)! : step(a.light)! - step(b.light)!) || b.places.length - a.places.length);
-    plain.forEach((g, i) => roles.push(role(g, claim(NAMES[job][i] ?? `${NAMES[job].at(-1)}-${i - NAMES[job].length + 2}`))));
+    // a level is a light colour: pairs that share one share its name (muted, muted-2), the next colour is the next level
+    const levels = [...new Set(plain.map(g => g.light))];
+    plain.forEach(g => { const i = levels.indexOf(g.light); roles.push(role(g, claim(NAMES[job][i] ?? `${NAMES[job].at(-1)}-${i - NAMES[job].length + 2}`))); });
     for (const g of inverse) roles.push(role(g, claim(INVERSE[job])));
     for (const g of mine.filter(g => !greys.includes(g)).sort((a, b) => b.places.length - a.places.length)) {
       const hue = STATUS.find(([re]) => re.test(g.light))?.[1] ?? g.light.replace(/-\d.*$/, '');
@@ -137,7 +169,7 @@ export function darkPairs(report: Report): DarkPairs {
   return { pairs, roles: roles.sort((a, b) => b.places.length - a.places.length), once, unpaired, darkWhen };
 
   function role(g: (typeof kept)[number], name: string): PairRole {
-    return { name, job: g.job, light: g.light, dark: g.dark, lightValue: g.lightValue, darkValue: g.darkValue, replacement: `${PREFIX[g.job]}-${name}`, places: g.places };
+    return { name, job: g.job, light: g.light, dark: g.dark, lightValue: g.lightValue, darkValue: g.darkValue, replacement: `${PREFIX[g.job]}-${name}`, places: g.places, merged: g.merged };
   }
 }
 
@@ -153,6 +185,11 @@ export function formatDarkPairs(found: DarkPairs, table: (rows: string[][]) => s
       : 'No pair is used at more than one place, so no role is proposed.',
   ];
   if (found.roles.length) lines.push('', ...table([['Role', 'Light / dark', 'Places', 'Instead of'], ...found.roles.map(r => [r.replacement, `${r.light} / ${r.dark}`, String(r.places.length), `${r.places[0]!.light} ${r.places[0]!.dark}`])]));
+  const folds = found.roles.flatMap(r => r.merged.map(m => ({ r, m })));
+  if (folds.length) {
+    lines.push('', `${folds.length} near pairs fold into a role, each within ${NEAR} of it in light and in dark (the clean-up's reach for a grey that drifted):`);
+    lines.push(...table([['Into', 'Was', 'Places', 'Moves by'], ...folds.map(({ r, m }) => [r.replacement, `${m.light} / ${m.dark}`, String(m.places), String(m.moves)])]));
+  }
   if (found.once) lines.push('', `${found.once} pairs are used at one place only and stay as they are.`);
   return lines.join('\n') + '\n';
 }
@@ -202,10 +239,10 @@ export async function planRoles(root: string, found: DarkPairs, target: string, 
   const byFile = new Map<string, { at: At; length: number; next: string; expect: string }[]>();
   let skipped = 0;
   for (const r of roles) for (const p of r.places) {
-    const lightClass = p.light;
-    if (!lightClass.endsWith(r.light)) { skipped++; continue; }
+    const lightClass = p.light, colour = colourOf(split(lightClass).utility);
+    if (!lightClass.endsWith(colour)) { skipped++; continue; }
     const list = byFile.get(p.file) ?? [];
-    list.push({ at: p.lightAt, length: lightClass.length, next: lightClass.slice(0, lightClass.length - r.light.length) + r.name, expect: lightClass });
+    list.push({ at: p.lightAt, length: lightClass.length, next: lightClass.slice(0, lightClass.length - colour.length) + r.name, expect: lightClass });
     list.push({ at: p.darkAt, length: p.dark.length, next: '', expect: p.dark });
     byFile.set(p.file, list);
   }
