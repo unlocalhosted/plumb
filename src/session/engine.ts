@@ -570,7 +570,9 @@ export class Session extends EventEmitter {
           if (name === undefined || path !== undefined && this.dependencies.has(path) || !/(?:^|\/)(?:node_modules|\.git|dist|build|\.next|\.cache|\.plumb-cache|\.plumber\/cache|\.plumb\/cache)(?:\/|$)/.test(name) && !/(?:^|\/)\.plumb(?:er)?\/serve\.json$/.test(name)) {
             if (path && (tracked(name!) || this.dependencies.has(path) || this.directories.has(path))) this.events.add(path);
             if (this.debounce) clearTimeout(this.debounce);
-            this.debounce = setTimeout(() => { void this.refresh().catch(error => this.emit('diagnostic', error)); }, 5);
+            // during a many-file write the files it writes are reconciled once at its end (manyFiles); a refresh for each
+            // one would analyse the whole app between every two writes (161 files took two minutes), so it waits
+            this.debounce = setTimeout(() => { if (this.deferred) { this.refreshAfterWrite = true; return; } void this.refresh().catch(error => this.emit('diagnostic', error)); }, 5);
           }
         }));
         this.native = true;
@@ -590,6 +592,8 @@ export class Session extends EventEmitter {
     const base = this.options.pollInterval ?? 250;
     const wait = Math.min(Math.max(base, this.pollCost * (this.native ? 20 : 4)), this.native ? 10000 : 2000);
     this.timer = setTimeout(() => {
+      // a many-file write reconciles its own files when it ends; the net waits for it, as the watcher does
+      if (this.deferred) { this.refreshAfterWrite = true; if (!this.closed) this.poll(); return; }
       const start = performance.now();
       void this.refresh().catch(error => this.emit('diagnostic', error)).finally(() => {
         this.pollCost = performance.now() - start;
@@ -599,6 +603,7 @@ export class Session extends EventEmitter {
   }
   /** Files written inside a many-file write (a rename, its undo), reconciled once when it ends instead of one by one. */
   private deferred: Set<string> | null = null;
+  private refreshAfterWrite = false;
   private async settleWritten(path: string): Promise<void> { if (this.deferred) this.deferred.add(path); else await this.reconcile([path]); }
   /** One many-file write: the host holds hot updates until it ends (one page update, never a half-written page), and the
    * written files are reconciled together at the end. */
@@ -611,6 +616,8 @@ export class Session extends EventEmitter {
     finally {
       const written = [...this.deferred]; this.deferred = null;
       if (written.length) await this.serialize(() => this.reconcile(written)).catch(() => {});
+      // what the watcher saw meanwhile (other files, or ones changed by hand), once
+      if (this.refreshAfterWrite) { this.refreshAfterWrite = false; void this.refresh().catch(error => this.emit('diagnostic', error)); }
       if (!outer) { this.transaction = false; this.emit('transaction', { phase: 'end', ...end(result) }); }
     }
   }

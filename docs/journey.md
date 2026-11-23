@@ -4815,6 +4815,26 @@ The same build passed 705 loads before it went out, and the game passes on the l
   rename as still done; nothing says it is working.
 - **Media hooks:** the bar with both entries, the rename list open.
 
+### 102. A many-file write stops re-reading the whole app between files (2026-11-23)
+
+- **The itch:** entry 101's Undo of a rename took about three minutes for 161 files, and the panel showed the rename
+  as still done, with nothing saying it was working. The owner: "Yes, fix Undo".
+- **How we found it:** timed and profiled on vm-agent, straight against the server with no browser: the rename itself
+  took 128 seconds, so the write was slow, not just the Undo. Most of it was the whole app's stylesheets read again
+  and again.
+- **The system behind it:** a write of many files holds its own analysis until it ends (one check of all the files it
+  wrote). But plumber also watches the project's files, and each file the write changed woke the watcher, which
+  re-analysed the whole app five milliseconds later, in between the write's own files: up to one full analysis per
+  file. Second, the change log keeps 2,000 changes; once full, every write rewrote the whole log file.
+- **The fix and the proof:** while a many-file write runs, the watcher (and the slower safety-net check, for the same
+  reason) notes what it saw and waits, and refreshes once after the write ends. The log, when full, is trimmed to
+  three quarters, so it is rewritten once every 500 writes instead of every write. Straight against the server: the
+  rename went from 128 to 15 seconds, its Undo of 494 changes to 16, steady over two runs. In Chromium on
+  terminal-dreams the Undo took 51 seconds (Next recompiling the files is the rest), said "Putting your colour names
+  back in 161 files…" while it ran, and left the clone clean. The roles step's Undo says the same kind of line. No tests
+  were written; the safety-net change made no measurable difference on its own.
+- **Not done:** each write still ends with one full analysis, about 5 seconds of re-reading stylesheets here.
+
 ### 96. The element card is retired, and grid columns move to the X-ray card (2026-11-23)
 
 - **The itch:** with shadow, motion and layout in the X-ray card (entries 92 to 94), the old element card was code no
@@ -6572,6 +6592,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 ## Shipped · 2026-W48
 - A link to react-plumber.com now shows a picture of the site, and the launch film where an app plays one: pushed and deployed from a clean commit ([entry](#103-pushed-and-deployed-2026-11-23)).
 - The X-ray card is the one card for an element: its Layout row now changes a grid's columns (chips, + and −, lines to drag on the page), and the old element card is gone. On main, not released ([entry](#96-the-element-card-is-retired-and-grid-columns-move-to-the-x-ray-card-2026-11-23)).
+- Big writes are much faster: renaming colours across 161 files takes about 15 seconds instead of two minutes, its Undo about 16 instead of three, and the panel says it is putting things back while it does. On main, not released ([entry](#102-a-many-file-write-stops-re-reading-the-whole-app-between-files-2026-11-23)).
 - You can rename your colour tokens by their job from Clean up again: the colour pass's bar offers it, and its list keeps the button in view. On main, not released ([entry](#101-renaming-colours-can-be-reached-again-2026-11-23)).
 - You can make light and dark roles from Clean up: the colour pass offers them, lists each role with its light and dark swatch, writes the theme and every file at once, and takes it all back with one Undo. On main, not released ([entry](#100-the-roles-step-seen-on-a-real-page-2026-11-23)).
 - Colours that drifted apart become one role: near light/dark pairs fold into the one used most, each move listed before anything is written (Tegaki: 25 roles became 20). On main, not released ([entry](#97-near-pairs-fold-into-one-role-2026-11-23)).

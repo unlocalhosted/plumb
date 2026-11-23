@@ -494,6 +494,8 @@ export class Cleanup {
   #namesHtml() {
     const N = W.colour.names, rn = this.#namesPlan(), plan = rn.plan;
     if (!plan && !rn.done) return '';
+    // an undo of many files takes a while: it says so while it runs, never the old result with a dead button
+    if (rn.done && rn.busy) return `<div class="names"><div class="sub" role="status">${esc(N.undoing(rn.done.files))}</div></div>`;
     if (rn.done) return `<div class="names"><div class="sub">${esc(N.done(rn.done.names, rn.done.files))}</div><div class="nacts"><button type="button" class="cu-btn soft" data-cu="names-undo"${rn.busy ? ' disabled' : ''}>${esc(N.undo)}</button></div></div>`;
     const ORDER = ['fg', 'muted', 'faint', 'on-accent', 'ground', 'surface', 'sunken', 'line', 'accent', 'success', 'warning', 'danger', 'info'], rank = (n) => { const i = ORDER.indexOf(n.replace(/-(hover|active|soft|strong|disabled|\d)$/, '')); return i < 0 ? ORDER.length : i; };
     const pairs = Object.entries(plan.map).sort((a, b) => rank(a[1]) - rank(b[1]) || a[1].localeCompare(b[1])), [from, to] = pairs.find(([k]) => k === 'fg' || k === 'foreground') ?? pairs[0];
@@ -534,6 +536,7 @@ export class Cleanup {
   #rolesHtml() {
     const N = W.colour.roles, dk = this.#rolesPlan(), plan = dk.plan;
     if (!plan && !dk.done) return '';
+    if (dk.done && dk.busy) return `<div class="names"><div class="sub" role="status">${esc(N.undoing(dk.done.files))}</div></div>`;
     if (dk.done) return `<div class="names"><div class="sub">${esc(N.done(dk.done.roles, dk.done.places, dk.done.files))}</div><div class="nacts"><button type="button" class="cu-btn soft" data-cu="roles-undo"${dk.busy ? ' disabled' : ''}>${esc(N.undo)}</button></div></div>`;
     if (!dk.open) return `<div class="names quiet"><div class="nacts"><button type="button" class="cu-btn quiet" data-cu="roles-open">${esc(N.open)}</button></div></div>`;
     const roles = plan.roles, places = roles.reduce((n, r) => n + r.places.length, 0), first = roles[0], folds = roles.reduce((n, r) => n + (r.merged?.length ?? 0), 0);

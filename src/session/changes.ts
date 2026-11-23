@@ -171,7 +171,9 @@ export class ChangeLog {
     if (!made.length) return made;
     lockSync(this.path, () => {
       this.load();
-      if (this.records.length + made.length > LIMIT) { this.records = [...this.records, ...made].slice(-LIMIT); this.save(); }
+      // full: trimmed to three quarters, so the whole file is rewritten once every quarter of the limit, not on every
+      // write after it fills (161 files written in one rename rewrote two thousand records 161 times)
+      if (this.records.length + made.length > LIMIT) { this.records = [...this.records, ...made].slice(-Math.floor(LIMIT * 3 / 4)); this.save(); }
       else { appendFileSync(this.path, made.map(r => JSON.stringify(r) + '\n').join('')); this.records.push(...made); this.seen = this.signature(); }
     });
     return made;
