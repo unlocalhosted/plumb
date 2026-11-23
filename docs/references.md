@@ -374,3 +374,13 @@ All free under the Unsplash License, hotlinked from images.unsplash.com as Unspl
 - 2026-11-22 · [Vijay Singh on X (@dprophecyguy)](https://x.com/dprophecyguy) · shared by the owner ("add link to my X and account created by something like that"); handle read from their GitHub profile · used in the site's footer (journey 82)
 - 2026-11-22 · a screenshot of a header's pills (Install package, GitHub 19, X, LinkedIn; the site isn't named) · shared by the owner: "add similar style on top and add a proper icon for dark and light mode icons" · used for the site's top bar (journey 84)
 - 2026-11-22 · [Simple Icons](https://simpleicons.org) (CC0) and [Phosphor Icons](https://phosphoricons.com) (MIT) · found by us, for the GitHub, X and LinkedIn marks in that bar (journey 84)
+
+## 2026-11-23 · Emil Kowalski on primitives and roles (shared by the owner)
+- What: a post on X by Emil Kowalski (@emilkowalski): tokens in two layers, raw primitives (`sand.1000`) under
+  role tokens (`content-tertiary`, pointing at a different primitive in dark mode), so people and agents pick by
+  job and themes switch without `dark:` on every element.
+- Why: "see if we can adapt something meaningful in our platform".
+- What it changed: plumber already writes systems this way (the colour system's primitives and roles). It added
+  four gaps to the backlog's colour clean-up: `dark:` pairs not offered as role tokens, raw ramp steps not flagged,
+  tokens used against their job not flagged, and two craft suggestions that write `dark:` themselves.
+- Used in: backlog, Clean-up: colour.

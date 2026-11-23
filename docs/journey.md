@@ -4667,6 +4667,30 @@ The same build passed 705 loads before it went out, and the game passes on the l
   sketches of "Lined up" and "Fit as many as fit" look alike.
 - **Media hooks:** the list open on the two plans, with "Stacked" shown on the page.
 
+### 95. Light and dark by hand become roles (2026-11-23)
+
+- **The itch:** the owner shared Emil Kowalski's post on tokens in two layers: raw colours underneath, roles on top
+  that point at a different raw colour in dark mode. The owner: "see if we can adapt something meaningful in our
+  platform".
+- **How we found it:** plumber already writes systems that way when it makes one. What it didn't do was read a
+  project that switches themes by hand, writing `text-zinc-600 dark:text-zinc-400` at every place. On Tegaki's
+  website (a real app glyphwrite keeps a copy of), 302 places do this.
+- **The system behind it:** each pair already holds both values of one role. Written out at every place, the role
+  has no name, nothing keeps two places in step, and anyone (or any agent) picks colours by value instead of by job.
+- **What we chose and why:** `plumber propose` now reads the pairs. Each `dark:` colour class is matched with the
+  light class it replaces on the same element, for the same property under the same hover or press state. Pairs are
+  grouped by their two colours and named by job and level in plumber's own words: `fg`, `muted`, `faint` for text,
+  `surface`, `surface-hover`, `sunken` for backgrounds, `line` for borders, an `-inverse` for dark buttons, and the
+  status word for red, green and amber. A pair used at one place stays as it is, because a role for one place adds a
+  name and removes nothing. Hover is only where a role is used: grouping by hover first split one colour into two
+  roles.
+- **The fix and the proof:** on Tegaki, 25 roles would carry 274 of the 302 places. The biggest are `text-fg`
+  (zinc-900 / zinc-100, 57 places) and `bg-surface-hover` (zinc-100 / zinc-800, 48). Run with
+  `plumber propose --family color`. It only reads so far. No tests were written.
+- **Not done:** it doesn't write the roles or swap the classes yet. Near pairs aren't merged: Tegaki has five grey text
+  pairs where a system would have three, so names run to `faint-3`, and that drift is the next thing to judge.
+- **Media hooks:** the propose table on Tegaki, the 302 places next to the 25 roles.
+
 ## Open gaps
 
 - **A page-wide warning can withdraw an unrelated fix.** A font with no `font-display` turned the z-index fix into
@@ -6363,6 +6387,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
+- You can see which light and dark colour pairs in your code are one role: `plumber propose --family color` lists each pair written by hand with `dark:`, the role it would become and how many places it covers. On main, not released ([entry](#95-light-and-dark-by-hand-become-roles-2026-11-23)).
 - You can lay out one element again: Alt+click something with two or more parts, open Measurements, and pick stacked, side by side, two columns, lined up or fit as many as fit, shown on the page as you point; Sync writes the classes. On main, not released ([entry](#94-the-x-ray-card-gets-a-layout-picker-2026-11-23)).
 - You can give one element a move again: Alt+click, open Measurements, and pick from the moves that suit it, each playing as you point at it; Sync writes it with your own curve where one is close. On main, not released ([entry](#93-the-x-ray-card-gets-a-motion-picker-2026-11-23)).
 - You can pick a shadow for one element again: Alt+click, open Measurements, and choose one of your shadow tokens, each drawn as it looks; Sync writes it in your code, where that element's classes are written. On main, not released ([entry](#92-the-x-ray-card-gets-a-shadow-picker-2026-11-23)).

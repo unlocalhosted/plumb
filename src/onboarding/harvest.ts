@@ -44,7 +44,7 @@ interface Accumulator {
   frameworkKey?: string; frameworkValue?: string;
 }
 
-const darkCondition = /(?:^|[^\w-])\.dark\b|\[data-(?:theme|mode)[~|^$*]?=["']?dark|prefers-color-scheme\s*:\s*dark|\.theme-dark|\[class[~|^$*]?=["']?dark/i;
+export const darkCondition = /(?:^|[^\w-])\.dark\b|\[data-(?:theme|mode)[~|^$*]?=["']?dark|prefers-color-scheme\s*:\s*dark|\.theme-dark|\[class[~|^$*]?=["']?dark/i;
 const bodyOwner = /(?:^|[\s>+~,])(?:p|body)$/i;
 const easingKeyword = /^(?:ease|ease-in|ease-out|ease-in-out|linear)$/;
 const time = /^(-?(?:\d*\.)?\d+)(ms|s)$/;

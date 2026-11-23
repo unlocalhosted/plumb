@@ -248,8 +248,11 @@ async function main(): Promise<void> {
       process.stdout.write(text);
       return;
     }
-    const { proposal } = await withCliProgress(options.root, !!args.values.json, () => loadProposal(options.root, { ...(options.config ? { config: options.config } : {}), ...(family ? { family: family as never } : {}) }));
-    process.stdout.write(args.values.json ? `${JSON.stringify(proposal, null, 2)}\n` : formatProposal(proposal, rows => table(rows, [{ width: 18 }, { weight: 1 }, { width: 5, align: 'right' }, { width: 4, align: 'right' }, { width: 22, ink: 'dim' }, { weight: 2, ink: 'dim' }])));
+    const { proposal, report } = await withCliProgress(options.root, !!args.values.json, () => loadProposal(options.root, { ...(options.config ? { config: options.config } : {}), ...(family ? { family: family as never } : {}) }));
+    // light and dark set by hand at each place: one role per pair (colour only)
+    const { darkPairs, formatDarkPairs } = await import('./onboarding/dark-pairs.js');
+    const pairs = report && (!family || family === 'color') ? darkPairs(report) : null;
+    process.stdout.write(args.values.json ? `${JSON.stringify(pairs ? { ...proposal, darkPairs: pairs } : proposal, null, 2)}\n` : formatProposal(proposal, rows => table(rows, [{ width: 18 }, { weight: 1 }, { width: 5, align: 'right' }, { width: 4, align: 'right' }, { width: 22, ink: 'dim' }, { weight: 2, ink: 'dim' }])) + (pairs ? formatDarkPairs(pairs, rows => table(rows, [{ width: 22 }, { width: 26 }, { width: 6, align: 'right' }, { weight: 1, ink: 'dim' }])) : ''));
     return;
   }
   if (command === 'craft') {
