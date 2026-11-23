@@ -4653,6 +4653,8 @@ The same build passed 705 loads before it went out, and the game passes on the l
   its parent's, a badge over a menu, a missing heading step, a line running past its edge. Three were redrawn after
   the first sheet (the corner read as a circle, the blur was cut off square, the missing step was noisy). Sheet:
   `docs/films/launch-02-draft/principle-icons.jpg` (local).
+- **Rendered (2026-11-23):** the owner: "Polish and render". `docs/media/launch-02-craft-details.mp4`, 27.6 s,
+  1920 × 1080 at 60 fps, silent, rendered on vm-agent in 123 s. Nine frames were checked at full size.
 
 ### 94. The X-ray card gets a layout picker (2026-11-23)
 
@@ -6501,6 +6503,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - You can pick a shadow for one element again: Alt+click, open Measurements, and choose one of your shadow tokens, each drawn as it looks; Sync writes it in your code, where that element's classes are written. On main, not released ([entry](#92-the-x-ray-card-gets-a-shadow-picker-2026-11-23)).
 
 ## Shipped · 2026-W47
+- The second launch film shows a badge poking through an open menu, the real Enter fix, four more fixes with their guides, and 24 principles falling into a bento grid beside 100+ ([entry](#93-rough-cut-2-the-badge-that-showed-through-the-menu-2026-11-23)).
 - react-plumber.com ends on a game: "This LLM-generated page has 125 issues", and a visitor fixes 80 real ones by pressing toys, watching Plumber find and fix each kind. The bar has Install, GitHub, X, LinkedIn and a sun and moon, and every page fits a 320px phone ([entry](#89-made-sure-then-deployed-2026-11-22)).
 - react-plumber.com has docs that match the npm package, the owner's new hero, live download and star counts, and links to npm, GitHub and the maker, so a newcomer can install it from true instructions and see who is behind it ([entry](#83-the-corrected-site-and-the-owners-hero-go-live-2026-11-22)).
 - The first launch film is rendered, not yet published: in 30 silent seconds AI's wrong green is caught on the page and fixed in the code, six more fixes land side by side, and it ends on "looking for 100+ design issues" ([entry](#81-the-first-launch-film-is-rendered-2026-11-22)).
