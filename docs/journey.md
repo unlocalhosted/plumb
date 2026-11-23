@@ -4644,6 +4644,10 @@ The same build passed 705 loads before it went out, and the game passes on the l
 - **The owner's note on rough cut 2:** "this is great only 1 feedback is the last rules marquee text while showing
   100+ can we make it better like maybe falling bento grids ?". In rough cut 3 the check names fall as 24 tiles in
   two bento grids beside 100+, each in its pack's hue, piling up from the bottom; all nod once when 100+ lands.
+- **The owner's next note:** "lets create good looking icons for these principles we show into bento grids ...
+  these plain cards looks boring". The overlay already had a toy set drawn to the visual language (`overlay/src/toys.js`,
+  76 toys). Rough cut 4 picks 24 checks that set covers and puts each check's toy on a white plate on its tile: a
+  corner for the corner check, layers for z-index, a dialog for a dialog with no name. No new icon was drawn.
 
 ### 94. The X-ray card gets a layout picker (2026-11-23)
 
