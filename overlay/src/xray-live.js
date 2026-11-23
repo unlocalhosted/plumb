@@ -29,18 +29,19 @@
  *                    everywhere(el): the elements on this page that component draws
  *   tokenOf(f, px)   the token name for a px value of a family (spacing, radius, size, type), or null
  *   scale(f)         [[px, name], …] your steps for a family
- *   shadow           { read(el, lifted) }: your shadow tokens and the one it wears (xray-shadow.js; optional: no row
- *                    without it). A shadow changed arrives in write() with `pick`, the option chosen
+ *   recipes          { shadow: { read(el, lifted) }, motion: { read(el) } }: your shadows and the moves on offer, and
+ *                    what it has (xray-recipes.js; optional: no rows without it). One changed arrives in write() with
+ *                    `pick`, the option chosen
  *   write(groups)    → [{ id, state: 'ok' | 'moved' | 'failed', cls, where, why }] for each change written
  *   scopeInfo(el, p) → { scopes, mates, where }: where the part's classes are written and every element that line
  *                    draws (asked once per element; optional)
  *   undo(result)     puts one written change back in your code
  *   watch            the element whose re-renders are watched (default: container); isPage(node): one of the page's
  * ───────────────────────────────────────────────────────── */
-import { xray, shadeOf, zonesOf, zoneAt, placeCard, contextOf } from './xray.js';
+import { xray, shadeOf, moveOf, playMotion, zonesOf, zoneAt, placeCard, contextOf } from './xray.js';
 import { sizing } from './boxmodel.js';
 import { Scope } from './scope.js';
-import { SHADOW_PICK } from './words.js';
+import { SHADOW_PICK, MOTION_PICK } from './words.js';
 import { picker } from './picker.js';
 import { burst } from './burst.js';
 import { button, KEEP_ICON } from './kit.js';
@@ -230,6 +231,7 @@ export const XRAY_LIVE_CSS = `
   .xr-list .xr-shade { width: 48px; height: 32px; }
   .xr-list .xr-shade > i { top: 5px; transform: scale(.65); }
   .xr-card .xr-rows .xr-row button.ch.n.xr-pick { flex-wrap: nowrap; flex-direction: row; padding: 2px 8px 2px 3px; white-space: nowrap; appearance: none; border: 0; margin: 0; display: inline-flex; align-items: center; gap: 6px; max-width: 100%; min-height: 26px; font: inherit; color: inherit; cursor: pointer; touch-action: none; }
+  .xr-card .xr-rows .xr-row button.ch.n.xr-pick:not(:has(.xr-shade)) { padding-inline: 8px; }
   .xr-card button.xr-pick > span { font: 600 12px/1 var(--pl-sans); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .xr-card button.xr-pick.hard > span { color: var(--pl-text-hard-coded); }
   .xr-card .xr-rows .xr-row button.ch.n.xr-pick:is(:hover, [data-held]), .xr-card .xr-rows .xr-row button.ch.n.xr-pick:is(:hover, [data-held]) > span { scale: none; background: var(--pl-sky-soft); color: var(--pl-sky-ink); }
@@ -244,6 +246,16 @@ export const XRAY_LIVE_CSS = `
   .xr-list.shades { min-width: 196px; max-width: 280px; box-sizing: border-box; overscroll-behavior: contain; }
   .xr-list.shades button { justify-content: flex-start; align-items: center; min-height: 34px; padding-block: 4px; text-align: start; }
   .xr-list.shades button > span { margin-inline-start: auto; }
+  .xr-list.shades .gh { padding: 8px 8px 4px; font: 600 11px/1 var(--pl-sans); color: var(--xr-label); }
+  .xr-list.shades button > b { font: inherit; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .xr-mo { flex: none; position: relative; display: grid; place-items: center; width: 34px; height: 22px; border-radius: 6px; overflow: hidden; }
+  .xr-mo > i { width: 18px; height: 11px; border-radius: 3px; box-shadow: 0 1px 2px rgb(0 0 0 / .18);
+    animation: xr-mo calc(var(--d) / .3) var(--e) infinite; }
+  .xr-mo.in > i { animation-name: xr-mo-in; }
+  .xr-list .xr-mo { width: 48px; height: 32px; } .xr-list .xr-mo > i { width: 26px; height: 16px; }
+  @keyframes xr-mo { 0%, 15% { transform: var(--r); opacity: var(--o0); } 45%, 80% { transform: var(--a); opacity: var(--o1); } 100% { transform: var(--r); opacity: var(--o0); } }
+  @keyframes xr-mo-in { 0%, 10% { transform: var(--r); opacity: var(--o0); } 40%, 100% { transform: var(--a); opacity: var(--o1); } }
+  @media (prefers-reduced-motion: reduce) { .xr-mo > i { animation: none; transform: var(--a); opacity: var(--o1); } }
   .xr-list.shades button:hover { background: var(--pl-bg-surface-hover); }
   .xr-list.shades button[aria-selected="true"] { background: var(--pl-sky-soft); }
   .xr-list.shades button:focus-visible { outline: 2px solid var(--pl-border-focus); outline-offset: -2px; }
@@ -263,7 +275,18 @@ export const XRAY_LIVE_CSS = `
 `;
 
 const PAIR = { top: 'bottom', bottom: 'top', left: 'right', right: 'left' }, LINKS = ['one', 'pair', 'all'], SIZINGS = ['fixed', 'fill', 'fit'];
-const SHADOW = 'box-shadow';
+const SHADOW = 'box-shadow', MOTION = '--plumb-motion';
+// The values that are recipes, not numbers: what the adapter's `recipes` calls them, how an option is drawn, and how it
+// is shown on the page. A shadow stays on the element while it is in hand; a motion plays (its pending mark is a custom
+// property of ours, so a re-render finds it again)
+const RECIPES = {
+  [SHADOW]: { key: 'shadow', words: SHADOW_PICK, choice: 'use', still: true, value: (x) => x.value,
+    lead: (el, x) => (x.none ? '' : shadeOf(el, x.css)), show: () => {},
+    wear: (t, x, c) => { const v = x ? x.value ?? '' : c?.value ?? ''; if (v) t.style.setProperty(SHADOW, v); else t.style.removeProperty(SHADOW); } },
+  [MOTION]: { key: 'motion', words: { ...MOTION_PICK, list: 'Moves for this element' }, value: (x) => x.recipe,
+    lead: (el, x) => (x.css ? moveOf(el, x.css) : ''), show: (t, x) => playMotion(t, x.css),
+    wear: (t, x) => { if (x?.css) playMotion(t, x.css); } },
+};
 const TOYS = { padding: 'padding', margin: 'margin', width: 'width', height: 'height', 'border-radius': 'corner', gap: 'gap', 'font-size': 'type' };
 const PREFIX = { 'padding-top': 'pt', 'padding-right': 'pr', 'padding-bottom': 'pb', 'padding-left': 'pl', 'margin-top': 'mt', 'margin-right': 'mr', 'margin-bottom': 'mb', 'margin-left': 'ml', gap: 'gap', width: 'w', height: 'h', 'border-radius': 'rounded', 'font-size': 'text', flex: 'flex' };
 const ICON = { ok: '✓', moved: '↪', failed: '!', undone: '↺' };
@@ -469,7 +492,7 @@ export function mountXray(o) {
     const sided = prop.match(/^(padding|margin)-(top|right|bottom|left)$/); if (!sided) return [prop];
     return link === 'all' ? ['top', 'right', 'bottom', 'left'].map((k) => `${sided[1]}-${k}`) : link === 'pair' ? [prop, `${sided[1]}-${PAIR[sided[2]]}`] : [prop];
   };
-  const count = () => new Set([...changes].flatMap(([k, m]) => [...m].map(([q, c]) => `${k.slice(0, k.lastIndexOf('#'))}|${q}|${q === SHADOW ? c.scope : ''}`))).size;
+  const count = () => new Set([...changes].flatMap(([k, m]) => [...m].map(([q, c]) => `${k.slice(0, k.lastIndexOf('#'))}|${q}|${RECIPES[q] ? c.scope : ''}`))).size;
   const reach = () => changes.size;
   const unseen = () => [...changes.keys()].filter((k) => !elOf(k)).length;
   // the scope: 'one' just this; 'page' every place here its line draws; 'all' the component, everywhere it's used
@@ -502,64 +525,68 @@ export function mountXray(o) {
   const nearest = (S, v) => S.reduce((b, x) => (Math.abs(x.v - v) < Math.abs(b.v - v) ? x : b), S[0]);
   const say = (x, px, py) => { const s = box(); live.hidden = false; const n = shown ? targets(shown).length : 1; live.innerHTML = `<b>${x.v}</b>${x.hard ? '<i class="off">off scale</i>' : `<i>${esc(x.name)}</i>`}${n > 1 ? `<span class="x">×${n}</span>` : ''}`; live.style.left = `${px - s.left + 16}px`; live.style.top = `${py - s.top + 14}px`; };
 
-  // ── shadow: one of your tokens, for every element its line of code draws ──
+  // ── a shadow or a motion: one of yours, for every element its line of code draws ──
   // what the adapter read for an element ({} until it answers); read when its row is on screen, again after a write
-  let shades = new WeakMap(), shadeList = null;
-  const pickedOn = (el) => changes.get(placeKey(el))?.get(SHADOW);
-  const readShade = (el) => {
-    if (!o.shadow || shades.has(el)) return;
-    const asked = {};
-    shades.set(el, asked);
+  let shades = { [SHADOW]: new WeakMap(), [MOTION]: new WeakMap() }, shadeList = null;
+  const forget = () => { shades = { [SHADOW]: new WeakMap(), [MOTION]: new WeakMap() }; shadeList?.end(); if (RECIPES[inHand?.prop]) { hand.innerHTML = ''; inHand = null; } };
+  const pickedOn = (el, prop) => changes.get(placeKey(el))?.get(prop);
+  const readShade = (el, prop) => {
+    const kind = RECIPES[prop], adapter = o.recipes?.[kind.key];
+    if (!adapter || shades[prop].has(el)) return;
+    const asked = {}, table = shades[prop];
+    table.set(el, asked);
     const lifted = (fn) => {
-      const c = pickedOn(el);
+      const c = pickedOn(el, prop);
       if (!c) return fn();
-      el.style.setProperty(SHADOW, c.before);
-      try { return fn(); } finally { el.style.setProperty(SHADOW, c.value); }
+      el.style.setProperty(prop, c.before);
+      try { return fn(); } finally { el.style.setProperty(prop, c.value); }
     };
-    life.wait(o.shadow.read(el, lifted)).catch((error) => ({ why: error?.message ?? String(error) })).then((s) => {
-      if (shades.get(el) !== asked) return;
-      shades.set(el, s);
+    life.wait(adapter.read(el, lifted)).catch((error) => ({ why: error?.message ?? String(error) })).then((s) => {
+      if (table.get(el) !== asked) return;
+      table.set(el, s);
       if (shown === el) refresh();
     });
   };
-  const shadeNow = (el) => {
-    const s = o.shadow ? shades.get(el) ?? {} : null;
+  const shadeNow = (el, prop) => {
+    const s = o.recipes?.[RECIPES[prop].key] ? shades[prop].get(el) ?? {} : null;
     if (!s?.options) return s;
-    const c = pickedOn(el), i = c ? s.options.findIndex((x) => x.recipe === c.pick?.recipe) : -1;
+    const c = pickedOn(el, prop), i = c ? s.options.findIndex((x) => x.recipe === c.pick?.recipe) : -1;
     return { ...s, at: i < 0 ? s.start : i };
   };
   // the option in hand on every place it reaches; the one it started with is no change at all
-  const setShade = (el, s, i) => {
+  const setShade = (el, prop, s, i) => {
     const x = s.options[i];
     for (const t of s.mates) {
       if (!t.isConnected) continue;
-      const k = placeKey(t), m = changes.get(k) ?? new Map(), was = m.get(SHADOW);
+      const k = placeKey(t), m = changes.get(k) ?? new Map(), was = m.get(prop);
       if (i === s.start) {
         if (!was) continue;
-        if (was.before) t.style.setProperty(SHADOW, was.before); else t.style.removeProperty(SHADOW);
-        m.delete(SHADOW);
+        if (was.before) t.style.setProperty(prop, was.before); else t.style.removeProperty(prop);
+        m.delete(prop);
         if (!m.size) changes.delete(k);
       } else if (x.recipe) {
-        m.set(SHADOW, { before: was ? was.before : t.style.getPropertyValue(SHADOW), value: x.value, scope: s.site, pick: { el, name: x.name, recipe: x.recipe } });
+        const value = RECIPES[prop].value(x);
+        m.set(prop, { before: was ? was.before : t.style.getPropertyValue(prop), value, scope: s.site, pick: { el, name: x.name, recipe: x.recipe, choice: RECIPES[prop].choice } });
         changes.set(k, m);
-        t.style.setProperty(SHADOW, x.value);
+        t.style.setProperty(prop, value);
       }
+      RECIPES[prop].show(t, x);
     }
   };
-  function holdShade(el) {
-    if (inHand?.el === el && inHand.prop === SHADOW) return;
-    const s = shadeNow(el);
+  function holdShade(el, prop) {
+    if (inHand?.el === el && inHand.prop === prop) return;
+    const s = shadeNow(el, prop), kind = RECIPES[prop];
     if (!s?.options) return;
     shadeList?.end();
     hand.innerHTML = ''; inHand = null;
     let made = false;
     const p = picker(C, {
-      name: SHADOW_PICK.shadow, toy: 'shadow', options: s.options, into: hand, keys: 'row', start: s.start,
-      mark: () => '', format: () => '', lead: (x) => (x.none ? '' : shadeOf(el, x.css)),
-      apply: (x) => { if (made && el.isConnected) { setShade(el, s, s.options.indexOf(x)); draw(el); } },
+      name: kind.words[kind.key], toy: kind.key, options: s.options, into: hand, keys: 'row', start: s.start,
+      mark: () => '', format: () => '', lead: (x) => kind.lead(el, x),
+      apply: (x) => { if (made && el.isConnected) { setShade(el, prop, s, s.options.indexOf(x)); draw(el); } },
     });
     if (s.mates.length > 1) p.row.querySelector('.scrub').insertAdjacentHTML('afterend', `<span class="side" data-s="scope">×${s.mates.length}</span>`);
-    hand.insertAdjacentHTML('beforeend', '<div class="say"><span data-s="value" data-on>value</span><span class="how">↕ change · click for your tokens</span></div>');
+    hand.insertAdjacentHTML('beforeend', `<div class="say"><span data-s="value" data-on>${prop === SHADOW ? 'value' : 'move'}</span><span class="how">↕ change · click for ${prop === SHADOW ? 'your tokens' : 'the moves'}</span></div>`);
     p.row.insertAdjacentHTML('afterbegin', '<i class="thumb" aria-hidden="true"></i>');
     p.row.dataset.seg = 'value';
     p.row.classList.add('shadow-pick');
@@ -567,21 +594,21 @@ export function mountXray(o) {
     let pressed = null;
     val.addEventListener('pointerdown', (e) => { pressed = { x: e.clientX, y: e.clientY }; val.focus({ preventScroll: true }); });
     val.addEventListener('click', (e) => { if (!e.detail || (pressed && Math.abs(e.clientX - pressed.x) + Math.abs(e.clientY - pressed.y) < 4)) openShades(el, val); });
-    inHand = { el, prop: SHADOW, p, S: s.options, sided: false, sized: false, segs: ['value'], scopes: [], seg: 'value', tx: 0, ty: 0, axis: null, idle: 0, shade: s };
+    inHand = { el, prop, p, S: s.options, sided: false, sized: false, segs: ['value'], scopes: [], seg: 'value', tx: 0, ty: 0, axis: null, idle: 0, shade: s };
     if (s.at !== s.start) p.set(s.at);
     made = true;
     draw(el);
     thumbAt(0, 0, true);
   }
-  // a press on the row: a drag steps through your tokens, a click lists them
-  function pressShade(e, el, at) {
+  // a press on the row: a drag steps through the options, a click lists them
+  function pressShade(e, el, at, prop) {
     e.preventDefault(); e.stopPropagation();
-    holdShade(el);
+    holdShade(el, prop);
     const h = inHand;
-    if (h?.prop !== SHADOW) return;
+    if (h?.prop !== prop) return;
     const x0 = e.clientX, y0 = e.clientY, from = h.p.at(), press = life.child();
     let moved = false;
-    held = { prop: SHADOW, chip: true };
+    held = { prop, chip: true };
     const end = () => { press.end(); held = null; justDragged = false; };
     press.listen(window, 'pointermove', (m) => {
       const dx = m.clientX - x0, dy = m.clientY - y0;
@@ -593,28 +620,33 @@ export function mountXray(o) {
     press.listen(window, 'pointerup', () => {
       end();
       // the row may have been drawn again under the press
-      if (!moved) openShades(el, at.isConnected ? at : body.querySelector('.xr-pick'));
+      if (!moved) openShades(el, at.isConnected ? at : body.querySelector(`.xr-pick[data-prop="${prop}"]`));
       else { refresh(); h.p.row.querySelector('.val').focus({ preventScroll: true }); }
     }, true);
   }
   function openShades(el, at) {
-    const h = inHand;
-    if (h?.prop !== SHADOW || !at) return;
+    const h = inHand, kind = RECIPES[h?.prop];
+    if (!kind || !at) return;
     shadeList?.end();
     C.querySelector(':scope > .xr-list')?.remove();
     const open = shadeList = life.child(), list = document.createElement('div'), s = box(), b = at.getBoundingClientRect();
-    list.className = 'xr-list shades'; list.setAttribute('role', 'listbox'); list.setAttribute('aria-label', 'Your shadow tokens');
-    list.innerHTML = h.S.map((x, i) => `<button type="button" role="option" data-i="${i}" class="${x.hard ? 'hard' : ''}" aria-selected="${i === h.p.at()}">${shadeOf(el, x.css)}${esc(x.name)}${x.hard ? `<span>${SHADOW_PICK.hard}</span>` : ''}</button>`).join('');
+    list.className = 'xr-list shades'; list.setAttribute('role', 'listbox'); list.setAttribute('aria-label', kind.words.list ?? `Your ${kind.key} tokens`);
+    let group = null;
+    list.innerHTML = h.S.map((x, i) => {
+      const head = x.group && x.group !== group ? `<div class="gh" role="presentation">${esc(kind.words[group = x.group])}</div>` : '';
+      return `${head}<button type="button" role="option" data-i="${i}" class="${x.hard ? 'hard' : ''}" aria-selected="${i === h.p.at()}">${kind.lead(el, x, true)}<b>${esc(x.name)}</b>${x.hard ? `<span>${SHADOW_PICK.hard}</span>` : x.tag ? `<span>${esc(x.tag)}</span>` : ''}</button>`;
+    }).join('');
     C.append(list);
     const w = list.offsetWidth, tall = list.offsetHeight, below = b.bottom - s.top + 6;
     list.style.left = `${Math.max(8, Math.min(b.left - s.left, s.width - w - 8))}px`;
     list.style.top = `${below + tall > s.height - 8 ? Math.max(8, b.top - s.top - tall - 6) : below}px`;
     // pointed at, an option is on the element at once; leaving puts back the one in hand
-    const wear = (x) => { for (const t of h.shade.mates) { const c = pickedOn(t), v = x ? x.value ?? '' : c?.value ?? ''; if (v) t.style.setProperty(SHADOW, v); else t.style.removeProperty(SHADOW); } };
-    const point = (e) => { const i = e.target.closest?.('[data-i]')?.dataset.i; if (i !== undefined) wear(h.S[i]); };
+    let pointedAt = null;
+    const wear = (x) => { for (const t of h.shade.mates) kind.wear(t, x, pickedOn(t, h.prop)); };
+    const point = (e) => { const i = e.target.closest?.('[data-i]')?.dataset.i; if (i !== undefined && i !== pointedAt) { pointedAt = i; wear(h.S[i]); } };
     open.listen(list, 'pointerover', point);
     open.listen(list, 'focusin', point);
-    open.listen(list, 'pointerleave', () => wear(null));
+    open.listen(list, 'pointerleave', () => { pointedAt = null; wear(null); });
     open.listen(list, 'keydown', (e) => {
       const all = [...list.querySelectorAll('button')], i = all.indexOf(e.target), step = { ArrowDown: 1, ArrowUp: -1 }[e.key];
       if (step) { e.preventDefault(); e.stopPropagation(); all[Math.max(0, Math.min(all.length - 1, i + step))].focus(); }
@@ -628,7 +660,7 @@ export function mountXray(o) {
       h.p.row.querySelector('.val').focus({ preventScroll: true });
     });
     open.listen(window, 'pointerdown', (e) => { if (!e.composedPath().includes(list)) open.end(); }, true);
-    open.onEnd(() => { wear(null); list.remove(); if (shadeList === open) shadeList = null; });
+    open.onEnd(() => { if (kind.still) wear(null); list.remove(); if (shadeList === open) shadeList = null; });
     list.querySelector('[aria-selected="true"]')?.focus({ preventScroll: true });
   }
 
@@ -640,13 +672,13 @@ export function mountXray(o) {
     const zs = zonesOf(el), inProp = held?.prop ?? zone?.prop;
     const lit = inProp ? zs.filter((q) => q.prop !== inProp && linkedOf(inProp).includes(q.prop)) : [];
     const z = (zone && zs.find((q) => q.prop === zone.prop)) || zone;
-    const x = xray(el, { shadow: shadeNow(el), tokenOf: o.tokenOf, origin: { left: s.left, top: s.top }, room: { left: 12, top: 12, right: s.width - 12, bottom: s.height - 96 }, name, source, zone: z, lit });
+    const x = xray(el, { shadow: shadeNow(el, SHADOW), motion: shadeNow(el, MOTION), tokenOf: o.tokenOf, origin: { left: s.left, top: s.top }, room: { left: 12, top: 12, right: s.width - 12, bottom: s.height - 96 }, name, source, zone: z, lit });
     const same = el === shown;
     if (!same) hold(null);
     layer.toggleAttribute('data-still', same);
     layer.innerHTML = x.page;
     // the other places the change will reach, outlined
-    const others = (inHand?.el === el && inHand.prop === SHADOW ? inHand.shade.mates : targets(el)).filter((t) => t !== el && t.isConnected);
+    const others = (inHand?.el === el && RECIPES[inHand.prop] ? inHand.shade.mates : targets(el)).filter((t) => t !== el && t.isConnected);
     if (others.length) layer.insertAdjacentHTML('beforeend', `<svg class="xr-on xr-peers" aria-hidden="true">${others.slice(0, 200).map((t) => { const r = t.getBoundingClientRect(), rad = Math.min(parseFloat(getComputedStyle(t).borderTopLeftRadius) || 0, r.height / 2); return `<rect x="${r.left - s.left - 2}" y="${r.top - s.top - 2}" width="${r.width + 4}" height="${r.height + 4}" rx="${rad + 2}" fill="color-mix(in oklab, var(--pl-sky) 7%, transparent)" stroke="var(--pl-sky)" stroke-width="1.5" stroke-dasharray="4 3"/>`; }).join('')}</svg>`);
     card.toggleAttribute('data-still', same);
     const foot = pendHtml();
@@ -660,7 +692,7 @@ export function mountXray(o) {
     const head = body.querySelector('.xr-head b');
     head?.querySelector('.xr-many')?.remove();
     const info = infos.get(el);
-    const reached = inHand?.el === el && inHand.prop === SHADOW ? inHand.shade.mates.length : 0;
+    const reached = inHand?.el === el && RECIPES[inHand.prop] ? inHand.shade.mates.length : 0;
     if (head && reached > 1) head.insertAdjacentHTML('beforeend', ` <span class="xr-many" data-scope="page">×${reached}</span>`);
     else if (head && !reached && (scopesOf(el).length > 1 || peers(el).length > 1)) head.insertAdjacentHTML('beforeend', ` <span class="xr-many" data-scope="${scope}"${info?.where ? ` title="Written at ${esc(info.where)}"` : ''}>${scope === 'all' ? `everywhere · ${o.component(el)?.uses ?? '?'} uses` : scope === 'page' ? `×${peers(el).length}${info?.where ? ` · ${esc(tail(info.where))}` : ' here'}` : 'just this one'}</span>`);
     for (const ch of card.querySelectorAll('[data-prop]')) {
@@ -700,7 +732,7 @@ export function mountXray(o) {
     // something deliberate (a click, a part held, changes waiting, a note) shows it at once; a pass over the page waits
     const show = ready || !!pinned || !!held || changes.size > 0;
     if (!show) { clearTimeout(restT); restT = setTimeout(() => { ready = true; restAt = ptNow; if (shown?.isConnected && !o.paused?.()) draw(shown); }, REST); }
-    if (!!noting || !show) shrink(); else { card.hidden = false; if (card.hasAttribute('data-details')) readShade(el); }
+    if (!!noting || !show) shrink(); else { card.hidden = false; if (card.hasAttribute('data-details')) { readShade(el, SHADOW); readShade(el, MOTION); } }
     // the value's highlight is measured once the card shows: measured while it was hidden, it sat at the row's start
     if (!card.hidden) thumbAt(0, 0, true);
     if (first && !card.hidden) { card.removeAttribute('data-enter'); void card.offsetWidth; card.setAttribute('data-enter', ''); grow(el); }
@@ -855,7 +887,7 @@ export function mountXray(o) {
     addEventListener('pointermove', move, true); addEventListener('pointerup', up, true);
   };
   // a keyboard's press on the Shadow row
-  life.listen(card, 'click', (e) => { const ch = e.target.closest?.('.xr-pick'); if (ch && !e.detail && shown) { holdShade(shown); openShades(shown, body.querySelector('.xr-pick')); } });
+  life.listen(card, 'click', (e) => { const ch = e.target.closest?.('.xr-pick'); if (ch && !e.detail && shown) { const prop = ch.dataset.prop; holdShade(shown, prop); openShades(shown, body.querySelector(`.xr-pick[data-prop="${prop}"]`)); } });
   const signOf = (z) => {
     const IN = { top: [0, 1], bottom: [0, -1], left: [1, 0], right: [-1, 0] };
     if (z.side) { const [ux, uy] = IN[z.side], k = z.box === 'margin' ? -1 : 1; return (dx, dy) => k * (dx * ux + dy * uy); }
@@ -880,7 +912,7 @@ export function mountXray(o) {
   on(card, 'pointerdown', (e) => {
     if (e.target.closest('.xr-hand')) return;
     const ch = e.target.closest('[data-prop]'); if (!ch || !shown) return;
-    if (ch.dataset.prop === SHADOW) { if (e.button === 0) pressShade(e, shown, ch); return; }
+    if (RECIPES[ch.dataset.prop]) { if (e.button === 0) pressShade(e, shown, ch, ch.dataset.prop); return; }
     drag(e, shown, ch.dataset.prop, (dx) => dx, familyOf(ch.dataset.prop) === 'size' ? 2 : 0.5, true);
   });
 
@@ -890,7 +922,7 @@ export function mountXray(o) {
   const sizingOf = (el, prop) => { const t = sizing(el, getComputedStyle(el), prop === 'width' ? 'w' : 'h'); return /^Fill/.test(t) ? 'fill' : /^Hug/.test(t) ? 'fit' : 'fixed'; };
   function hold(el, prop) {
     if (inHand && inHand.el === el && inHand.prop === prop) return;
-    if (prop === SHADOW) { holdShade(el); return; }
+    if (RECIPES[prop]) { holdShade(el, prop); return; }
     shadeList?.end();
     hand.innerHTML = ''; inHand = null;
     if (!el || !prop) return;
@@ -951,7 +983,7 @@ export function mountXray(o) {
     t.style.transform = `translateX(${tx.toFixed(1)}px)`; t.style.width = `${Math.max(0, tw).toFixed(1)}px`;
     t.dataset.on = h.seg; t.toggleAttribute('data-pulled', pull !== 0);
   };
-  function resync() { if (!inHand || inHand.prop === SHADOW) return; const i = inHand.S.indexOf(nearest(inHand.S, read(inHand.el, inHand.prop))); if (i !== inHand.p.at()) inHand.p.set(i); }
+  function resync() { if (!inHand || RECIPES[inHand.prop]) return; const i = inHand.S.indexOf(nearest(inHand.S, read(inHand.el, inHand.prop))); if (i !== inHand.p.at()) inHand.p.set(i); }
   // a new scope: the places it takes in get the value; the places it lets go of go back to how they were
   const rescope = (h, next) => {
     const v = h.el.style.getPropertyValue(h.prop) || null, before = new Set(targets(h.el));
@@ -1036,6 +1068,7 @@ export function mountXray(o) {
   // ── Sync, and what came of it, one line per change ─────────
   let results = null, syncing = false;
   const classOf = (prop, value) => {
+    if (prop === MOTION) return value;
     if (prop === SHADOW) return value.match(/^var\(--([\w-]+)/)?.[1] ?? value;
     if (prop === 'flex') return value === '1 1 0%' ? 'flex-1' : 'flex-none';
     if (value === '100%') return `${PREFIX[prop]}-full`;
@@ -1073,7 +1106,7 @@ export function mountXray(o) {
       // the failed ones stay pending
       for (const r of out) if (r.state !== 'failed') for (const k of r.keys) { const m = changes.get(k); m?.delete(r.prop); if (m && !m.size) changes.delete(k); if (o.dropPreviewOnWrite) { const el = elOf(k); el?.style.removeProperty(r.prop); } }
       // written: what your code says now is read afresh
-      if (out.some((r) => r.state !== 'failed')) { shades = new WeakMap(); shadeList?.end(); if (inHand?.prop === SHADOW) { hand.innerHTML = ''; inHand = null; } }
+      if (out.some((r) => r.state !== 'failed')) forget();
       results = [...(results ?? []).filter((r) => !out.some((x) => x.id === r.id)), ...out];
       refresh();
       const firstOk = out.find((r) => r.state !== 'failed'), panel = card.querySelector('.xr-res');
@@ -1083,7 +1116,7 @@ export function mountXray(o) {
   };
   const undo = (id) => {
     const r = results?.find((x) => x.id === id); if (!r) return;
-    Promise.resolve(o.undo(r)).then(() => { r.state = 'undone'; shades = new WeakMap(); if (inHand?.prop === SHADOW) { hand.innerHTML = ''; inHand = null; } refresh(); }, (error) => { r.state = 'failed'; r.why = `Couldn't put it back: ${error?.message ?? error}`; refresh(); });
+    Promise.resolve(o.undo(r)).then(() => { r.state = 'undone'; forget(); refresh(); }, (error) => { r.state = 'failed'; r.why = `Couldn't put it back: ${error?.message ?? error}`; refresh(); });
   };
   const putBack = () => {
     shadeList?.end();
@@ -1163,7 +1196,7 @@ export function mountXray(o) {
     // the list of shadows is the top layer while it is open: Esc closes it and nothing else, Enter takes the one in focus
     get listing() { return !!shadeList; },
     listKey(key) {
-      const at = C.getRootNode().activeElement, val = inHand?.prop === SHADOW ? inHand.p.row.querySelector('.val') : null;
+      const at = C.getRootNode().activeElement, val = RECIPES[inHand?.prop] ? inHand.p.row.querySelector('.val') : null;
       if (key === 'Enter' && at?.closest?.('.xr-list.shades')) { at.click(); return; }
       shadeList?.end();
       val?.focus({ preventScroll: true });

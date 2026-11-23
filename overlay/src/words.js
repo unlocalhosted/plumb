@@ -917,12 +917,24 @@ export const TIMELINE = {
   valuetext: (i, n, step, from, to, laws) => `Change ${i} of ${n}, ${step}: ${from || 'nothing'} to ${to || 'nothing'}${laws.length ? `, ${laws.join(', ')}` : ''}`,
 };
 
-// the X-ray's Shadow row (xray-shadow.js): your shadow tokens, or why it can't be changed from here
+// the X-ray's Shadow row (xray-recipes.js): your shadow tokens, or why it can't be changed from here
 export const SHADOW_PICK = {
   shadow: 'Shadow', none: 'None', reading: 'Reading…', hard: 'hard-coded',
   noTokens: 'Your theme has no shadow tokens yet.',
   inline: 'A style attribute sets this shadow. Change it there.',
   elsewhere: 'A stylesheet rule or a ring class draws this shadow. Change it in your code.',
+  unplaced: 'Plumber can’t find where this element’s classes are written.',
+  gone: 'That element isn’t on the page any more. Pick it again.',
+};
+// the X-ray's Motion row (xray-recipes.js): what the element does when pointed at, pressed or shown
+export const MOTION_PICK = {
+  motion: 'Motion', none: 'None', reading: 'Reading…', hard: 'hard-coded',
+  pointed: 'When pointed at or pressed', shown: 'When it appears',
+  yours: 'yours', uses: (name) => `uses your ${name}`,
+  triggers: { hover: 'on hover', press: 'on press', focus: 'on focus', enter: 'on entrance' },
+  now: (trigger, ms) => `Moves ${trigger}${ms ? ` · ${ms}ms` : ''}`,
+  props: 'Set in its motion props',
+  nothing: 'Plumber has no motion to offer for this element.',
   unplaced: 'Plumber can’t find where this element’s classes are written.',
   gone: 'That element isn’t on the page any more. Pick it again.',
 };

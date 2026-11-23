@@ -1,17 +1,18 @@
-/* THE X-RAY'S SHADOW · which of your shadow tokens should this element wear?
+/* THE X-RAY'S RECIPES · which of your shadows, and which motion, should this element have?
  *
- * The X-ray's adapter for one property (xray-live.js draws it, with the same picker and Sync as a corner or a gap).
- * Nothing about a shadow is worked out here: the recipe engine says what the element wears and what your theme has
+ * The X-ray's adapter for the two values that are recipes rather than numbers (xray-live.js draws them, with the same
+ * picker and Sync as a corner or a gap). Nothing about a shadow or a motion is worked out here: the recipe engine says what the element wears and what your theme has
  * (GET recipes), whether it can be written (POST recipes/preview), and writes it (POST recipes/apply). It is asked with
  * the chain and the hashes class-site read, so a class passed in from a usage is read, and written, there.
  *
- *   read(el, lifted)  → { options, start, mates } to pick from, or { name, css, why } when it can't be changed here.
+ *   readShadow(el, lifted), readMotion(el)
+ *                     → { options, start, mates } to pick from, or { name, css, why } when it can't be changed here.
  *                       `lifted(fn)` runs fn with a preview of ours lifted, so what is read is your code's value
- *   write(group)      → { id, state: 'ok' | 'failed', cls, where, why, group }
+ *   writeRecipe(group) → { id, state: 'ok' | 'failed', cls, where, why, group }; the group's `pick` says the recipe
  */
 import { request, post } from './api.js';
 import { classSiteOf, siteMatesOf } from './locate.js';
-import { SHADOW_PICK as W } from './words.js';
+import { SHADOW_PICK as W, MOTION_PICK as M } from './words.js';
 
 const CLEAR = /(?:rgba\(0, 0, 0, 0\)|transparent) 0px 0px 0px(?: 0px)?/g;
 // a computed shadow without the empty layers Tailwind composes it from
@@ -91,8 +92,42 @@ export async function readShadow(el, lifted = (fn) => fn()) {
   return { options, start: options.indexOf(now), mates: [el, ...mates], site: `${site.file}:${site.line}:${site.column}` };
 }
 
+// What it can do instead, grouped by when it plays: yours first, then the moves the engine knows, each written with your
+// own curve where one is close. A move that needs a library the project lacks, or animates layout, isn't offered.
+const PLAYS = { hover: 'pointed', press: 'pointed', focus: 'pointed', enter: 'shown' };
+// What each of the engine's own moves is for (its pack's summary says so), and so where it is offered: a press on what
+// can be pressed, a focus ring on what takes focus, the floating entrances on what floats over the page.
+const pressable = (el) => el.matches('a[href], button, summary, label, [role="button"], [role="link"], [role="tab"], [tabindex]') || getComputedStyle(el).cursor === 'pointer';
+const floating = (el) => /^(fixed|absolute|sticky)$/.test(getComputedStyle(el).position) || el.matches('[role="dialog"], [role="menu"], [role="tooltip"], [role="status"], [popover], dialog');
+const FOR = { press: pressable, 'focus-ring': (el) => el.matches(':is(a[href], button, input, select, textarea, [tabindex])'), pop: floating, 'grow-from-trigger': floating, toast: floating, sheet: floating };
+export async function readMotion(el) {
+  const p = await placeOfClasses(el);
+  const locked = (why, name = M.none) => ({ why: why === W.unplaced ? M.unplaced : why === W.gone ? M.gone : why, name });
+  if (p.why) return locked(p.why);
+  const { data, site } = p, worn = data.element.motion ?? {};
+  const offer = (r, tag) => ({ name: r.name, recipe: r.token ?? r.id, css: r.css, group: PLAYS[r.model?.trigger], tag });
+  const fit = (r, pack) => r.kind === 'motion' && !r.blocked && PLAYS[r.model?.trigger] && r.model.changes?.length && (!pack || (FOR[r.id] ?? (() => true))(el));
+  const moves = [
+    ...data.yours.filter(fit).map((r) => offer(r, M.yours)),
+    // a move new to the project says nothing more; one written with a curve of yours says which
+    ...data.packs.filter((x) => fit(x.recipe, true)).map((x) => offer(x.recipe, x.verdict.kind !== 'new' && x.nearest ? M.uses(x.nearest.name) : '')),
+  ].sort((a, b) => (a.group === b.group ? 0 : a.group === 'pointed' ? -1 : 1));
+  if (!moves.length) return locked(M.nothing);
+  const trigger = worn.trigger ?? worn.model?.trigger, ms = worn.model?.timing?.duration;
+  const now = worn.source === 'none' ? { name: M.none, none: true }
+    : worn.source === 'motion-props' ? { name: M.props, now: true }
+    : { name: M.now(M.triggers[trigger] ?? '', ms ? Math.round(ms) : 0), now: true };
+  const options = [now, ...moves].map((x, i) => ({ ...x, v: i }));
+  // said before the click: the one check the write itself makes
+  const plan = await post('recipes/preview', { ...p.at, recipe: moves[0].recipe, ...p.forwards, ...p.reading });
+  if (!plan.ok) return locked(plan.refused ?? M.unplaced, now.name);
+  let mates = siteMatesOf(el, site);
+  if (!data.idioms.tailwind && plan.uses?.class) mates = [...document.querySelectorAll(`.${CSS.escape(plan.uses.class)}`)].filter((x) => x !== el);
+  return { options, start: 0, mates: [el, ...mates], site: `${site.file}:${site.line}:${site.column}` };
+}
+
 // Read again as it is written: another change in the same Sync may have just moved the file on.
-export async function writeShadow(g, { group, keep }) {
+export async function writeRecipe(g, { group, keep }) {
   const fail = (why) => ({ id: g.id, state: 'failed', why });
   try {
     const el = g.pick?.el?.isConnected ? g.pick.el : g.els[0];
@@ -101,7 +136,7 @@ export async function writeShadow(g, { group, keep }) {
     if (p.why) return fail(p.why);
     const where = `${p.site.file}:${p.site.at ?? p.site.line}`, id = group();
     keep({ state: 'ok', cls: g.pick.name, where, group: id });
-    await post('recipes/apply', { ...p.at, hash: p.data.hash, recipe: g.pick.recipe, choice: 'use', ...p.forwards, ...p.reading, trace: { group: id, meta: { step: W.shadow, laws: [] } } });
+    await post('recipes/apply', { ...p.at, hash: p.data.hash, recipe: g.pick.recipe, ...(g.pick.choice ? { choice: g.pick.choice } : {}), ...p.forwards, ...p.reading, trace: { group: id, meta: { step: g.prop === 'box-shadow' ? W.shadow : M.motion, laws: [] } } });
     return { id: g.id, state: 'ok', cls: g.pick.name, where, group: id };
   } catch (error) { return fail(error?.message ?? String(error)); }
 }

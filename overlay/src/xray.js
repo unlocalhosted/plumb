@@ -25,7 +25,7 @@ import { gaps, sizing } from './boxmodel.js';
 import { toyOf } from './toys.js';
 import { esc } from './choices.js';
 import { placeOf, atPlace } from './stamp.js';
-import { SHADOW_PICK as SW } from './words.js';
+import { SHADOW_PICK as SW, MOTION_PICK as MW } from './words.js';
 
 const SIDES = ['top', 'right', 'bottom', 'left'];
 const px = (v) => parseFloat(v) || 0;
@@ -160,6 +160,29 @@ export function shadeOf(el, css) {
   const under = hex(g), face = hex(f);
   return `<i class="xr-shade" aria-hidden="true" style="background:${under}"><i style="background:${face};box-shadow:${esc(css || 'none')}"></i></i>`;
 }
+/* A motion, shown as what it does: a little of the element on its ground, playing it over and over (still, at its end,
+ * under reduced motion). The page's own easing and time; the keyframes hold its rest and its end a moment each. */
+export function moveOf(el, css = {}) {
+  const lift = (c) => (c[0] * 0.2126 + c[1] * 0.7152 + c[2] * 0.0722 < 90 ? c.slice(0, 3).map((n) => n + (255 - n) * 0.3) : c);
+  const rest = css.rest ?? {}, end = css.active ?? {}, ms = parseFloat(css.transitionDuration) * (/[^m]s$/.test(css.transitionDuration ?? '') ? 1000 : 1) || 200;
+  const vars = `--r:${rest.transform ?? 'none'};--a:${end.transform ?? 'none'};--o0:${rest.opacity ?? 1};--o1:${end.opacity ?? 1};--d:${Math.round(ms)}ms;--e:${css.transitionTimingFunction ?? 'ease'}`;
+  return `<i class="xr-mo${css.trigger === 'enter' ? ' in' : ''}" aria-hidden="true" style="background:${hex(lift(backdrop(el.parentElement ?? el)))}"><i style="background:${hex(lift(backdrop(el)))};${esc(vars)}"></i></i>`;
+}
+// Plays a motion on the element itself, once, as a preview: there and back for a state, in for an entrance.
+export function playMotion(el, css) {
+  if (!el?.animate || !css || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const ms = parseFloat(css.transitionDuration) * (/[^m]s$/.test(css.transitionDuration ?? '') ? 1000 : 1) || 200, easing = css.transitionTimingFunction || 'ease';
+  const rest = { transform: 'none', ...css.rest }, end = { transform: 'none', ...css.active };
+  if (css.trigger === 'enter') { el.animate([rest, end], { duration: ms, easing }); return; }
+  const hold = css.trigger === 'press' ? 140 : 520, total = ms * 2 + hold;
+  el.animate([{ ...rest, offset: 0, easing }, { ...end, offset: ms / total }, { ...end, offset: (ms + hold) / total, easing }, { ...rest, offset: 1 }], { duration: total });
+}
+// a recipe's row (a shadow, a motion): reading, the one it has (opens the picker), or why it can't be changed here
+function motionRow(s) {
+  if (!s.options) return `<span class="xr-val0">${esc(s.why ? s.name ?? '' : MW.reading)}</span>${s.why ? `<span class="xr-why">${esc(s.why)}</span>` : ''}`;
+  const o = s.options[s.at ?? s.start];
+  return `<button type="button" class="ch n xr-pick" data-prop="--plumb-motion" aria-haspopup="listbox" aria-label="${esc(`${MW.motion}: ${o.name}`)}"><span>${esc(o.name)}</span></button>`;
+}
 // its row: reading, a token of yours or a hard-coded value (both open the picker), or why it can't be changed here
 function shadowRow(el, s) {
   if (!s.options) return s.why ? `<span class="xr-val0">${s.css ? shadeOf(el, s.css) : ''}${esc(s.name ?? '')}</span><span class="xr-why">${esc(s.why)}</span>` : `<span class="xr-val0">${SW.reading}</span>`;
@@ -167,7 +190,7 @@ function shadowRow(el, s) {
   return `<button type="button" class="ch n xr-pick${o.hard ? ' hard' : ''}" data-prop="box-shadow" aria-haspopup="listbox" aria-label="${esc(`${SW.shadow}: ${o.name}${o.hard ? `, ${SW.hard}` : ''}`)}"${o.hard ? ` title="${esc(o.css || o.name)}"` : ''}>${o.none ? '' : shadeOf(el, o.css)}<span>${esc(o.hard ? SW.hard : o.name)}</span></button>`;
 }
 
-export function xray(el, { shadow = null, tokenOf, origin = { left: 0, top: 0 }, room, source, name, fresh = false, zone = null, lit = [] } = {}) {
+export function xray(el, { shadow = null, motion = null, tokenOf, origin = { left: 0, top: 0 }, room, source, name, fresh = false, zone = null, lit = [] } = {}) {
   const cs = getComputedStyle(el), R = el.getBoundingClientRect();
   const r = { left: R.left - origin.left, top: R.top - origin.top, right: R.right - origin.left, bottom: R.bottom - origin.top, width: R.width, height: R.height };
   room ??= { left: 8, top: 8, right: innerWidth - origin.left - 8, bottom: innerHeight - origin.top - 8 };
@@ -270,6 +293,7 @@ export function xray(el, { shadow = null, tokenOf, origin = { left: 0, top: 0 },
     ['size', 'Size', `${chip('width', judge('size', r.width), Math.round(r.width))}<span style="color:var(--xr-label)">×</span>${chip('height', judge('size', r.height), Math.round(r.height))}`],
     ['corner', 'Corner', `${chip('border-radius', rj, rad > 500 ? 'full' : rj.n)}${tok(rj)}`],
     shadow ? ['shadow', SW.shadow, shadowRow(el, shadow)] : null,
+    motion ? ['motion', MW.motion, motionRow(motion)] : null,
     // a row or a grid always has its gap here, even at 0, so a gap can be added from the card
     gj || /flex|grid/.test(cs.display) ? ['gap', 'Gap', (() => { const v = gj ?? judge('spacing', px(cs.columnGap) || px(cs.rowGap)); return `${chip('gap', v, v.n)}${tok(v)}`; })()] : null,
     ['type', 'Type', `${chip('font-size', tj, r1(fs))}<span style="color:var(--xr-label)">/${r1(lh)} · ${cs.fontWeight}</span>${tok(tj)}`],

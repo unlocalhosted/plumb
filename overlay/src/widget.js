@@ -53,7 +53,7 @@ import { TOY_DEFS } from './toys.js';
 import { classSiteOf, siteMatesOf } from './locate.js';
 import { route as routeStyles, loadProperties, evidenceFor, fileOfBundled, placeRead } from './style-systems.js';
 import { utility } from './craft-read.js';
-import { readShadow, writeShadow } from './xray-shadow.js';
+import { readShadow, readMotion, writeRecipe } from './xray-recipes.js';
 
 const tokensCss = await send(new URL('./tokens.css', import.meta.url)).then((response) => response.text()).catch((error) => {
   console.warn('[plumb] React Plumber could not load its styles, so it stays hidden. Your app is not affected; reload to try again.', error);
@@ -644,8 +644,8 @@ class PlumbOverlay extends HTMLElement {
       },
       tokenOf: (f, n) => steps(f).find(([px]) => Math.abs(px - n) <= 0.5)?.[1] ?? null,
       scale: steps,
-      // your shadow tokens, read and written by the recipe engine, the route the element card used
-      shadow: { read: readShadow },
+      // your shadow tokens and the moves on offer, read and written by the recipe engine, the route the element card used
+      recipes: { shadow: { read: readShadow }, motion: { read: readMotion } },
       isPage: (r) => !r.target.closest?.('plumb-overlay'),
       // Sync: each change written where the element's value comes from, by the style system that owns it
       // (style-systems.js: a utility class on the element, a rule in your stylesheet, else a class added); one Undo
@@ -657,15 +657,15 @@ class PlumbOverlay extends HTMLElement {
         // one write per element and scope, per system: two writes to one line would trip over each other
         await loadProperties(request);
         const byPart = new Map();
-        for (const g of groups.filter((g) => g.prop !== 'box-shadow')) { const k = `${g.part}|${g.scope}`; (byPart.get(k) ?? byPart.set(k, []).get(k)).push(g); }
+        for (const g of groups.filter((g) => !g.pick)) { const k = `${g.part}|${g.scope}`; (byPart.get(k) ?? byPart.set(k, []).get(k)).push(g); }
         const out = [];
         for (const list of byPart.values()) {
           for (const [system, changes] of routeStyles(list)) {
             out.push(...await system.write(changes, { post, request, group, keep: keepFor(changes) }));
           }
         }
-        // a shadow goes through the recipe engine, after the classes: it reads the file as they left it
-        for (const g of groups.filter((g) => g.prop === 'box-shadow')) out.push(await writeShadow(g, { group, keep: keepFor([g]) }));
+        // a shadow or a motion goes through the recipe engine, after the classes: it reads the file as they left it
+        for (const g of groups.filter((g) => g.pick)) out.push(await writeRecipe(g, { group, keep: keepFor([g]) }));
         return out;
       },
       undo: (r) => post('undo-group', { group: r.group }),
