@@ -4641,6 +4641,9 @@ The same build passed 705 loads before it went out, and the game passes on the l
   11.3px apart, the icon moved 1px, a 22px corner. The rough cut was checked from stills and frames at each
   transition, not watched at speed.
 - **Media hooks:** `docs/films/launch-02-draft/rough-cut-2.mp4` (local, not committed); the layer shot at 7.5 s.
+- **The owner's note on rough cut 2:** "this is great only 1 feedback is the last rules marquee text while showing
+  100+ can we make it better like maybe falling bento grids ?". In rough cut 3 the check names fall as 24 tiles in
+  two bento grids beside 100+, each in its pack's hue, piling up from the bottom; all nod once when 100+ lands.
 
 ### 94. The X-ray card gets a layout picker (2026-11-23)
 
