@@ -508,7 +508,30 @@ export function mountXray(o) {
   };
   // the card's Sync takes Enter while it owns the screen with changes waiting: the host says so, and the bar's resting ↵
   // steps back (said again wherever the changes or the owner change)
-  const markKeys = () => o.root?.host?.toggleAttribute?.('data-xr-keys', !!count() && !o.paused?.());
+  const markKeys = () => { o.root?.host?.toggleAttribute?.('data-xr-keys', !!count() && !o.paused?.()); keep(); };
+  // Changes waiting to sync outlive a reload (a write elsewhere reloads the page; they were lost with it, journey 107):
+  // kept for this tab by their place in the code, and drawn again on that page when the X-ray starts. A shadow, motion
+  // or layout pick holds the element it was made on, so only plain properties are kept
+  const KEPT = 'plumber:xray-changes';
+  // the X-ray ending (Blueprint left, by the person or by plumber's own re-read) takes the changes off the page but
+  // keeps them: only Sync and Put back end them
+  let ending = false;
+  const keep = () => {
+    if (ending) return;
+    try {
+      const list = [...changes].filter(([k]) => !loose.has(k)).flatMap(([k, m]) => [...m].filter(([p]) => !RECIPES[p]).map(([p, c]) => [k, p, c.before, c.value, c.scope]));
+      if (list.length) sessionStorage.setItem(KEPT, JSON.stringify({ path: location.pathname, list })); else sessionStorage.removeItem(KEPT);
+    } catch { /* storage refused: the changes live on the page only, as before */ }
+  };
+  // drawn on whichever of their places the page has now; a place rendered later is drawn by the next pass
+  const redraw = () => { for (const [k, m] of changes) { const el = elOf(k); if (el) for (const [p, c] of m) if (!RECIPES[p] && el.style.getPropertyValue(p) !== c.value) el.style.setProperty(p, c.value); } refresh(); };
+  const restore = () => {
+    let saved = null; try { saved = JSON.parse(sessionStorage.getItem(KEPT) ?? 'null'); } catch { /* unreadable: nothing kept */ }
+    if (!saved?.list?.length || saved.path !== location.pathname) return;
+    for (const [k, p, before, value, scope] of saved.list) { if (!changes.has(k)) changes.set(k, new Map()); changes.get(k).set(p, { before, value, scope }); }
+    redraw(); life.timeout(redraw, 600); life.timeout(redraw, 2000);
+    markKeys();
+  };
   const count = () => new Set([...changes].flatMap(([k, m]) => [...m].map(([q, c]) => `${k.slice(0, k.lastIndexOf('#'))}|${q}|${RECIPES[q] ? c.scope : ''}`))).size;
   const reach = () => changes.size;
   const unseen = () => [...changes.keys()].filter((k) => !elOf(k)).length;
@@ -1258,6 +1281,7 @@ export function mountXray(o) {
   on(window, 'resize', follow);
   on(window, 'scroll', scrolled, true);
 
+  restore();
   return {
     get pending() { return count(); },
     get pinned() { return !!pinned; },
@@ -1285,6 +1309,6 @@ export function mountXray(o) {
     showResults(list) { results = list.map((r) => ({ keys: [], els: [], befores: [], ...r })); lastCard = ''; card.hidden = false; if (shown) draw(shown); else { body.innerHTML = resultsHtml(); lastCard = ''; const s = box(); card.style.transform = `translate(${Math.max(12, s.width - (card.offsetWidth || 292) - 24)}px, 24px)`; } },
     get shown() { return shown; },
     putBack, sync,
-    destroy() { putBack(); o.root?.host?.removeAttribute?.('data-xr-keys'); linesOff(); life.end(); for (const f of off) f(); clearTimeout(waiting); clearTimeout(warm); clearTimeout(queued); layer.remove(); card.remove(); live.remove(); C.querySelector(':scope > .xr-list')?.remove(); C.querySelector(':scope > .xr-note')?.remove(); },
+    destroy() { ending = true; putBack(); o.root?.host?.removeAttribute?.('data-xr-keys'); linesOff(); life.end(); for (const f of off) f(); clearTimeout(waiting); clearTimeout(warm); clearTimeout(queued); layer.remove(); card.remove(); live.remove(); C.querySelector(':scope > .xr-list')?.remove(); C.querySelector(':scope > .xr-note')?.remove(); },
   };
 }
