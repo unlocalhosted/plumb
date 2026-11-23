@@ -4851,7 +4851,7 @@ is the launch film the owner already approved ("wrong green"), cut to 1280 by 72
 needed. Every page now names both in its share tags.
 
 **What it won't do.** X and most chat apps show the picture and ignore the video tag; a film plays inline only where
-a site reads it. Deployed the same day ([entry](#103-pushed-and-deployed-2026-11-23)).
+a site reads it. Deployed the same day ([entry](#103-pushed-and-deployed-2026-11-23)). A second deploy six minutes later (Cloudflare version 35d98721) replaced that one: the release before it plus only these files, so the other sessions' overlay changes are on GitHub but not on the site. Every page's tags, the picture and the film were checked on the live site.
 
 **Media hooks.** `web/public/share.png`, and the film at `web/public/media/launch.mp4`.
 
