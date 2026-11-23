@@ -34,3 +34,13 @@ Judged from stills at each beat, three frames a second, and 36 frames at the tra
   fail, so a phone needs the tall cut.
 - **Still weak:** the corners and the play button are small changes, and the recording is the quietest part.
 - **Verdict:** show the rough cut. The full render waits for the owner's OK.
+
+## Draft gate, rough cut 2 (2026-11-23; self-reviewed, not independent)
+
+- **Story:** the question (why is a badge on top of a menu?) is planted at 0 s and answered at 7 s by the numbers.
+  The fix lands at 14 s. The cringe check passes.
+- **Camera:** the page is seen whole first, then close. The layer shot reads at full size. One bad frame was fixed:
+  the badge showed above the menu after the layers closed up.
+- **Still weak:** the recording is small in its full view, the layer slabs have no thickness, and the play icon's
+  1px move is the smallest change. At 400px wide plumber's bar and the guides' pills can't be read.
+- **Verdict:** show the owner. The full render waits for their OK.

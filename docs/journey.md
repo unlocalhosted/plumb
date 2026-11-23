@@ -4624,6 +4624,24 @@ The same build passed 705 loads before it went out, and the game passes on the l
   errors. No tests were written.
 - **Media hooks:** the list open on a button with "Press down" playing on it.
 
+### 93. Rough cut 2: the badge that showed through the menu (2026-11-23)
+
+- **The itch:** the owner approved script 2 with "Yes, rough cut 2".
+- **What we made:** the sites page opens at its normal size, then the camera moves in on the badge. The page comes
+  apart into three candy layers (page, menu, badge) with their numbers, 999 against 50. Then the real take: Alt+B,
+  plumber's note on the badge, Enter. 999 rolls to 10, the badge sinks under the menu, and the code line turns from
+  `z-[999]` to `z-10`. Four more fixes play at once, each with the design site's guides: the corner's curve, two
+  baselines meeting, the icon's edge moving 1px, and the colons of a number column falling into line.
+- **What went wrong on the way:** the first layer shot tipped the whole page, so the layers blurred together and the
+  number tags didn't draw. Cutting the page down to the corner the three layers share, and drawing the tags flat on
+  top, made it read. After the layers closed up, the badge still showed above the menu: it stayed at its sunk height
+  while the menu came back down. It now stays under the menu.
+- **The fix and the proof:** the four parallel fixes and the badge fix were made again on the bare components with
+  Alt+B and Enter, and each finding went from 1 to 0 after a reload. Every value in a guide is measured: baselines
+  11.3px apart, the icon moved 1px, a 22px corner. The rough cut was checked from stills and frames at each
+  transition, not watched at speed.
+- **Media hooks:** `docs/films/launch-02-draft/rough-cut-2.mp4` (local, not committed); the layer shot at 7.5 s.
+
 ## Open gaps
 
 - **A page-wide warning can withdraw an unrelated fix.** A font with no `font-display` turned the z-index fix into
