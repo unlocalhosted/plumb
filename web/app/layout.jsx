@@ -13,7 +13,15 @@ import { PlumbOverlay } from '@unlocalhosted/react-plumber/next/overlay';
 const round = Bricolage_Grotesque({ subsets: ['latin'], axes: ['opsz'], variable: '--font-round', display: 'swap' });
 const body = Instrument_Sans({ subsets: ['latin'], variable: '--font-body', display: 'swap' });
 
-export const metadata = { title: { default: 'React Plumber', template: '%s · React Plumber' }, description: 'Keep your app on your design system.' };
+// what a shared link shows: the picture drawn at app/share (scripts/share.mjs photographs it) and the launch film
+const SHARE = { url: '/share.png', width: 1200, height: 630, alt: 'React Plumber: a design engineer on every screen. Ten toys stand on a lilac ground.' };
+export const metadata = {
+  metadataBase: new URL('https://react-plumber.com'),
+  title: { default: 'React Plumber', template: '%s · React Plumber' },
+  description: 'Keep your app on your design system.',
+  openGraph: { type: 'website', siteName: 'React Plumber', images: [SHARE], videos: [{ url: 'https://react-plumber.com/media/launch.mp4', type: 'video/mp4', width: 1280, height: 720 }] },
+  twitter: { card: 'summary_large_image', images: [SHARE] },
+};
 
 export default async function Layout({ children }) {
   // the site is drawn with the product's own tokens: the overlay's token file, put on this page's root

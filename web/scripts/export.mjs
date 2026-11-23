@@ -1,4 +1,5 @@
 // The last step of `npm run export`: makes out/ fit to be public.
+//   share     the share picture's page is left out (its photograph, public/share.png, ships)
 //   research  left out: no page links to it, some of it is about private apps, and its demos bundle other people's
 //             components without their licences
 //   notices   every package in the shipped scripts gets its licence in out/third-party-notices.txt; a package with
@@ -9,6 +10,8 @@ import path from 'node:path';
 
 const web = path.resolve(import.meta.dirname, '..'), out = path.join(web, 'out');
 rmSync(path.join(out, 'research'), { recursive: true, force: true });
+// the share picture's drawing board: its photograph is public/share.png
+for (const f of readdirSync(out)) if (/^share(\.html|\.txt|$)|^__next\.share/.test(f)) rmSync(path.join(out, f), { recursive: true, force: true });
 
 const read = (...at) => readFileSync(path.join(...at), 'utf8').trim();
 const files = readdirSync(out, { recursive: true });

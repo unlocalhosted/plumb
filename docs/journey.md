@@ -4839,6 +4839,22 @@ The same build passed 705 loads before it went out, and the game passes on the l
   The untracked test `e2e/element-layout.test.mjs` opens the old card and will fail.
 - **Media hooks:** + on the plans' grid, and a column line dragged.
 
+### 102. A link to the site shows something (2026-11-23)
+
+**The itch.** The owner: "generate an og image and video for react-plumber.com". A shared link showed a bare title,
+because no page had a share picture or a video.
+
+**What we chose.** The picture is drawn with the site's own pieces: the mark, the owner's lowercase headline, and the
+footer's ten toys standing on its lilac ground, with the address. It is a page only the dev server shows
+(`web/app/share`), photographed at 1200 by 630 by `web/scripts/share.mjs`; the export leaves the page out. The video
+is the launch film the owner already approved ("wrong green"), cut to 1280 by 720 at 2 MB, so no new script was
+needed. Every page now names both in its share tags.
+
+**What it won't do.** X and most chat apps show the picture and ignore the video tag; a film plays inline only where
+a site reads it. It isn't deployed yet.
+
+**Media hooks.** `web/public/share.png`, and the film at `web/public/media/launch.mp4`.
+
 ## Open gaps
 
 - **A page-wide warning can withdraw an unrelated fix.** A font with no `font-display` turned the z-index fix into
