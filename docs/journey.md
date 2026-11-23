@@ -4642,6 +4642,28 @@ The same build passed 705 loads before it went out, and the game passes on the l
   transition, not watched at speed.
 - **Media hooks:** `docs/films/launch-02-draft/rough-cut-2.mp4` (local, not committed); the layer shot at 7.5 s.
 
+### 94. The X-ray card gets a layout picker (2026-11-23)
+
+- **The itch:** layout was the last thing only the unreachable old element card could do. The owner: "Yes, layout
+  next".
+- **What we chose and why:** a Layout row for any element with two or more parts, on the same picker and Sync as
+  shadow and motion. It offers the five layouts the old card knew: stacked, side by side, two columns, lined up, and
+  fit as many as fit. Each is drawn as four little parts laid out that way. Pointing at one lays the element out that
+  way on the page, and Esc puts it back. The old card's layout piece (`layoutcard.js`) does the reading, the showing
+  and the class changes as it is, and the owner's uncommitted edits to it were left alone. The card says before the
+  click when the layout can't change: a plain stylesheet sets it, or its classes are written somewhere a change can't
+  reach.
+- **The fix and the proof:** on the billing page in Chromium on vm-agent, the two plans' `grid grid-cols-2` became
+  `flex flex-col` on Sync, the row then read "Stacked", and Undo put the grid back. A list row became stacked on all
+  three rows at once from one line. A button with one part has no Layout row. On plain CSS the row said why it can't
+  change. The shadow cases were run again after the shared code changed, and still write what they did; the page had
+  no errors. No tests were written.
+- **Found on the way and fixed:** right after a Sync the row read the page before it had the new code, and showed the
+  old layout. The rows are now read again once the page has updated.
+- **Not done:** the old card's grid column chips and its draggable column lines aren't in the X-ray card yet. The
+  sketches of "Lined up" and "Fit as many as fit" look alike.
+- **Media hooks:** the list open on the two plans, with "Stacked" shown on the page.
+
 ## Open gaps
 
 - **A page-wide warning can withdraw an unrelated fix.** A font with no `font-display` turned the z-index fix into
@@ -4660,9 +4682,10 @@ The same build passed 705 loads before it went out, and the game passes on the l
 - The full suite ran once on vm-agent at `ccffe9c4` (2026-11-22): 947 passed, 4 failed in 3 files, 9 skipped, in 23
   minutes. The three files are repaired and pass ([entry 90](#90-repairing-the-three-red-test-files-2026-11-23)).
   The whole suite hasn't been run since.
-- A shadow and a motion can be picked from the X-ray card again ([entry 92](#92-the-x-ray-card-gets-a-shadow-picker-2026-11-23),
-  [entry 93](#93-the-x-ray-card-gets-a-motion-picker-2026-11-23)). Layout for one element is still only on the old
-  element card, which no control on screen opens.
+- A shadow, a motion and a layout can be picked from the X-ray card again (entries
+  [92](#92-the-x-ray-card-gets-a-shadow-picker-2026-11-23), [93](#93-the-x-ray-card-gets-a-motion-picker-2026-11-23)
+  and [94](#94-the-x-ray-card-gets-a-layout-picker-2026-11-23)). The old element card's grid column chips and lines
+  aren't in it yet.
 - **Most checks can't write their fix.** 59 of 258 page checks can, all in craft (59 of 84). The accessibility, forms, components, HTML, experience and anti-slop packs only advise, so "fixes 100+ issues" can't be claimed yet ([entry](#80-no-voice-six-fixes-side-by-side-and-what-100-may-claim-2026-11-22)).
 - **The fix bar flashes a wrong refusal.** Just after a click on an element in Blueprint it can show "Plumber can't write this change in your code yet" for a moment, then offer the fix and write it. Seen in a recorded take on Relay, cause not looked for ([entry](#79-the-launch-clips-first-rough-cut-with-a-voice-2026-11-22)).
 - **The launch film has no vertical cut, and the other use cases have no film yet.** The first film is 16:9, so its small labels can't be read on a phone held upright ([entry](#81-the-first-launch-film-is-rendered-2026-11-22)).
@@ -6337,6 +6360,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
+- You can lay out one element again: Alt+click something with two or more parts, open Measurements, and pick stacked, side by side, two columns, lined up or fit as many as fit, shown on the page as you point; Sync writes the classes. On main, not released ([entry](#94-the-x-ray-card-gets-a-layout-picker-2026-11-23)).
 - You can give one element a move again: Alt+click, open Measurements, and pick from the moves that suit it, each playing as you point at it; Sync writes it with your own curve where one is close. On main, not released ([entry](#93-the-x-ray-card-gets-a-motion-picker-2026-11-23)).
 - You can pick a shadow for one element again: Alt+click, open Measurements, and choose one of your shadow tokens, each drawn as it looks; Sync writes it in your code, where that element's classes are written. On main, not released ([entry](#92-the-x-ray-card-gets-a-shadow-picker-2026-11-23)).
 
