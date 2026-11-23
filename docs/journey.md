@@ -4602,6 +4602,28 @@ The same build passed 705 loads before it went out, and the game passes on the l
   waits for the owner's OK.
 - **Media hooks:** rough cut 1 against cut 2 at the opening (close-up first, then the normal view first).
 
+### 93. The X-ray card gets a motion picker (2026-11-23)
+
+- **The itch:** after shadow (entry 92), motion was the second thing only the unreachable old card could do. The
+  owner: "Yes, motion next".
+- **What made it different from shadow:** a project's own motion tokens are mostly curves, which aren't moves. The
+  useful choices are the moves the recipe engine knows, like "Lift on hover" or "Fade and rise", written with your
+  own curve where one is close.
+- **What we chose and why:** a Motion row under Shadow, on the same picker and Sync. Its list is grouped by when the
+  move plays: when pointed at or pressed, and when it appears. Your own moves come first, marked yours. Each option
+  is a small piece of the element playing that move, or standing at its end pose under reduced motion. Pointing at
+  one plays it on the element itself. An element is offered only the moves that suit it: a press only on what can be
+  pressed, a focus ring only on what takes focus, and the toast, sheet and popover entrances only on what floats over
+  the page. The shadow row's code became one piece for both, and the adapter is now `xray-recipes.js`.
+- **The fix and the proof:** on the billing page in Chromium on vm-agent, every pick wrote to its code and nothing
+  else. "Lift on hover" on a component usage wrote `transition-transform duration-150 ease-in-out
+  hover:-translate-y-0.5` there, the row then read "Moves on hover · 150ms", and Undo put it back. "Fade and rise" on
+  three list rows added `--animate-fade-rise` and its keyframes to the theme and the class to the one line. On plain
+  CSS it wrote a transition and a `:hover` rule. A button already moving read "Moves on hover · 200ms". A card was
+  offered 2 moves, a button 3 and a fixed toast 7. The shadow cases from entry 92 still pass, and the page had no
+  errors. No tests were written.
+- **Media hooks:** the list open on a button with "Press down" playing on it.
+
 ## Open gaps
 
 - **A page-wide warning can withdraw an unrelated fix.** A font with no `font-display` turned the z-index fix into
@@ -4620,8 +4642,9 @@ The same build passed 705 loads before it went out, and the game passes on the l
 - The full suite ran once on vm-agent at `ccffe9c4` (2026-11-22): 947 passed, 4 failed in 3 files, 9 skipped, in 23
   minutes. The three files are repaired and pass ([entry 90](#90-repairing-the-three-red-test-files-2026-11-23)).
   The whole suite hasn't been run since.
-- A shadow can be picked from the X-ray card again ([entry 92](#92-the-x-ray-card-gets-a-shadow-picker-2026-11-23)).
-  Motion and layout for one element are still only on the old element card, which no control on screen opens.
+- A shadow and a motion can be picked from the X-ray card again ([entry 92](#92-the-x-ray-card-gets-a-shadow-picker-2026-11-23),
+  [entry 93](#93-the-x-ray-card-gets-a-motion-picker-2026-11-23)). Layout for one element is still only on the old
+  element card, which no control on screen opens.
 - **Most checks can't write their fix.** 59 of 258 page checks can, all in craft (59 of 84). The accessibility, forms, components, HTML, experience and anti-slop packs only advise, so "fixes 100+ issues" can't be claimed yet ([entry](#80-no-voice-six-fixes-side-by-side-and-what-100-may-claim-2026-11-22)).
 - **The fix bar flashes a wrong refusal.** Just after a click on an element in Blueprint it can show "Plumber can't write this change in your code yet" for a moment, then offer the fix and write it. Seen in a recorded take on Relay, cause not looked for ([entry](#79-the-launch-clips-first-rough-cut-with-a-voice-2026-11-22)).
 - **The launch film has no vertical cut, and the other use cases have no film yet.** The first film is 16:9, so its small labels can't be read on a phone held upright ([entry](#81-the-first-launch-film-is-rendered-2026-11-22)).
@@ -6296,6 +6319,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
+- You can give one element a move again: Alt+click, open Measurements, and pick from the moves that suit it, each playing as you point at it; Sync writes it with your own curve where one is close. On main, not released ([entry](#93-the-x-ray-card-gets-a-motion-picker-2026-11-23)).
 - You can pick a shadow for one element again: Alt+click, open Measurements, and choose one of your shadow tokens, each drawn as it looks; Sync writes it in your code, where that element's classes are written. On main, not released ([entry](#92-the-x-ray-card-gets-a-shadow-picker-2026-11-23)).
 
 ## Shipped · 2026-W47

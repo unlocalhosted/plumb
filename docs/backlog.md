@@ -58,9 +58,9 @@ engineer would do." These calls were open questions until then. Each is decided 
   number and needs a ground: the project's own buttons, or a published one (Material's earlier buttons used 64). Say
   which, or leave it to the 24px hit-target check.
 
-- **Motion and layout for one element (shadow done 2026-11-23).** The X-ray card has a shadow picker now (journey
-  entry 92). Motion and layout are still only on the old element card, which no control opens. Next: motion, then
-  layout, each as a row of the X-ray card; then the old card and its test can go.
+- **Layout for one element (shadow and motion done 2026-11-23).** The X-ray card picks a shadow and a motion now
+  (journey entries 92 and 93). Layout is still only on the old element card, which no control opens. Next: layout as
+  a row of the X-ray card; then the old card and its test can go.
 
 None. (A call is brought here only when it is destructive, outward-facing, costs money, or is taste the owner has
 reserved.)
