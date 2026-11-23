@@ -4956,6 +4956,33 @@ other sessions' unsaved edits that would have gone into it.
 
 **Media hooks.** The release page, https://github.com/unlocalhosted/plumb/releases/tag/v0.7.0.
 
+### 105. A size fix stops writing a class that doesn't exist (2026-11-23)
+
+**The itch.** Proving launch film 2's fixes, the bar on the showcase's invoice offered "Use text-2xl--line-height"
+for a 34px amount, and Enter wrote it. No such class exists, so the amount silently lost its size. A tool whose promise
+is "take the fix" can't write broken code.
+
+**How we found it.** Seen in the film's proof run (entry 88), then picked from the backlog as the cheapest fix with the
+most at stake. `plumber check --json` on the showcase, before the change: 48 suggested fixes named a class like
+`text-sm--line-height`. Both answers for the invoice's 34px were among them.
+
+**The system behind it.** Tailwind v4 keeps each text size's line height beside it, as `--text-2xl--line-height`. The
+server's list of nearby type tokens took every type token with a value, companions included, and turned the nearest
+into a class by its prefix. For 34px the nearest was a line height of 32px, so the class became
+`text-2xl--line-height`. The same mix-up hid real findings: a 28px font size equals `text-xl`'s line height, so it was
+counted as on the scale and never flagged.
+
+**What we chose.** A companion is offered only for its own property. The first try left companions out everywhere,
+which also took away a right answer: for a 34px line height, `leading-(--text-2xl--line-height)` is the theme's own
+line height and still fits.
+
+**The fix and the proof.** One check in `src/rules/provenance.ts`. On the showcase: wrong class suggestions 48 → 0.
+The invoice's 34px now offers `text-3xl` or `text-2xl`, and its line height keeps the companion. Two new findings, both
+right: a 28px size in the long-read screen and the clip page, which were passing before because they equalled a line
+height.
+
+**Media hooks.** The fix bar on the invoice screen, before ("Use text-2xl--line-height") and after ("Use text-3xl").
+
 ## Open gaps
 
 - **A page-wide warning can withdraw an unrelated fix.** A font with no `font-display` turned the z-index fix into
@@ -4963,8 +4990,6 @@ other sessions' unsaved edits that would have gone into it.
 - **Enter can write a different fix from the one in the bar.** On the showcase's calendar (38) the bar offered the
   hairline fix while the element's card held a pending Sync, both marked ↵, and Enter wrote `text-xs` to another line
   in two runs of two. The newsletter screen (37) did the same in one run of two (seen 2026-11-22, entry 88).
-- **A size fix writes a class that doesn't exist.** For a 34px amount on the showcase's invoice the bar offered "Use
-  text-2xl--line-height" and Enter wrote it: a line-height token read as a font size (seen 2026-11-22, entry 88).
 - **A lone ticking number isn't flagged.** The tabular figures check reads only cells and list rows, so the showcase's
   own running timer keeps its wobble after the fix (entry 88).
 - The fixes of entry 81 (caret, app errors, broken config on Vite) are committed and not published. The site runs
@@ -6651,6 +6676,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
+- A size fix no longer writes a class that doesn't exist: plumber offered `text-2xl--line-height` (a line height) for a 34px text size; it now offers your real size steps, and 28px sizes that hid behind a line height are flagged. On main, not released ([entry](#105-a-size-fix-stops-writing-a-class-that-doesnt-exist-2026-11-23)).
 - React Plumber 0.7.0 is tagged and on GitHub's releases, after a full run on vm-agent left no failure that survives a run alone; the package is packed from the release commit, and npm publish is the owner's step ([entry](#104-070-is-cut-2026-11-23)).
 - A link to react-plumber.com now shows a picture of the site, and the launch film where an app plays one: pushed and deployed from a clean commit ([entry](#103-pushed-and-deployed-2026-11-23)).
 - The X-ray card is the one card for an element: its Layout row now changes a grid's columns (chips, + and −, lines to drag on the page), and the old element card is gone. In 0.7.0, on GitHub; npm publish is the owner's step ([entry](#96-the-element-card-is-retired-and-grid-columns-move-to-the-x-ray-card-2026-11-23)).

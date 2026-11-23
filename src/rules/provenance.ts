@@ -207,6 +207,9 @@ function* familySteps(family: JudgedFamily, declarations: Declaration[], record:
     }
     return suggestions.get(d.name)!;
   };
+  // A Tailwind companion (`--text-2xl--line-height`) is part of its step, offered only for its own property: for a size
+  // it became the class `text-2xl--line-height`, which doesn't exist (a 34px size, nearest to its 32px line height)
+  const fits = (d: Decision, prop: string) => !(d.family === 'type' && /^--.+--/.test(d.name)) || d.name.endsWith(`--${prop}`);
   const project = decisions.filter(decision => origins.includes(decision.origin) && decision.resolved !== undefined && suggestible(decision))
     .sort((a,b) => Number(a.tier === 'semantic') - Number(b.tier === 'semantic') || Number(a.origin !== 'project') - Number(b.origin !== 'project') || a.name.localeCompare(b.name));
   function distinctAmounts(pool: Decision[], prop: string): Decision[] {
@@ -221,7 +224,7 @@ function* familySteps(family: JudgedFamily, declarations: Declaration[], record:
   const matches = new Map<string, Decision | undefined>();
   function matching(value: string, prop: string): Decision | undefined {
     const key = JSON.stringify([value, prop]);
-    if (!matches.has(key)) matches.set(key, distinctAmounts(project.filter(decision => equal(value, decision.resolved!, prop)), prop)[0]);
+    if (!matches.has(key)) matches.set(key, distinctAmounts(project.filter(decision => fits(decision, prop) && equal(value, decision.resolved!, prop)), prop)[0]);
     return matches.get(key);
   }
   const nearestColors = new Map<string, Decision[]>();
@@ -229,7 +232,7 @@ function* familySteps(family: JudgedFamily, declarations: Declaration[], record:
   const choicePools = new Map<string, Decision[]>();
   const choiceLadders = new Map<string, Decision[]>();
   function closest(value: string, prop: string): Decision[] {
-    if (!choicePools.has(prop)) choicePools.set(prop, distinctAmounts(project.filter(d => callers.allows(d)), prop));
+    if (!choicePools.has(prop)) choicePools.set(prop, distinctAmounts(project.filter(d => fits(d, prop) && callers.allows(d)), prop));
     const pool = choicePools.get(prop)!;
     if (family === 'color') {
       const lab = oklab(value);
@@ -339,7 +342,7 @@ function* familySteps(family: JudgedFamily, declarations: Declaration[], record:
         const frameworkTime = family === 'motion' && (declaration.origin === 'class' || declaration.origin === 'arbitrary') && value !== undefined ? decisions.find(d => d.origin === 'framework' && d.resolved !== undefined && equal(value, d.resolved, declaration.prop)) : undefined;
         if (frameworkTime && !origins.includes('framework')) { rule = 'provenance/motion/framework'; adopt = adoptable(frameworkTime.name); title = `\`${declaration.site.text}\` uses Tailwind's default timing (\`${frameworkTime.name}\`), not your theme`; because = `Your theme defines its own ${scales[family]}; Tailwind's defaults sit outside it.`; nearest = closest(value!, declaration.prop); break; }
         if (match) {
-          if (!callers.allows(match)) { rule = `provenance/${family}/tier`; title = `\`${match.name}\` is a raw ${familyNames[family]} token; use a named one`; because = "A named token says what a value is for, so it changes with the design; a raw one doesn't."; nearest = source?.callers === undefined ? callers.semanticsFor(match).filter(suggestible) : project.filter(decision => callers.allows(decision) && equal(decision.resolved!, match.resolved!, declaration.prop)); break; }
+          if (!callers.allows(match)) { rule = `provenance/${family}/tier`; title = `\`${match.name}\` is a raw ${familyNames[family]} token; use a named one`; because = "A named token says what a value is for, so it changes with the design; a raw one doesn't."; nearest = source?.callers === undefined ? callers.semanticsFor(match).filter(suggestible) : project.filter(decision => fits(decision, declaration.prop) && callers.allows(decision) && equal(decision.resolved!, match.resolved!, declaration.prop)); break; }
           if (identityFor(declaration.prop) === 'reference') { rule = `provenance/${family}/by-value`; severity = 'warn'; title = `${value} matches \`${match.name}\` but doesn't use it`; because = 'If the token changes, this copy stays behind.'; nearest = [match]; break; }
           continue;
         }
