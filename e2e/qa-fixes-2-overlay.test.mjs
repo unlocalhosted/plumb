@@ -102,12 +102,11 @@ async function open(t, { viewport = { width: 1280, height: 900 }, app = null, qu
   const overlay = page.locator('plumb-overlay'), card = overlay.locator('.ec');
   const settle = () => page.waitForFunction(() => window.__plumb.overlay.progress?.done, null, { timeout: 20000 });
   const altAt = async (x, y) => { await page.mouse.move(x, y); await page.keyboard.down('Alt'); await page.mouse.down(); await page.mouse.up(); await page.keyboard.up('Alt'); };
-  const alt = async (sel, at = { x: 4, y: 4 }, opened = '.ec .drill') => {
+  const alt = async (sel, at = { x: 4, y: 4 }, opened = '.xr-card:not([hidden])') => {
     await page.locator(sel).evaluate((n) => n.scrollIntoView({ block: 'center' }));
     const b = await page.locator(sel).boundingBox();
     await altAt(b.x + at.x, b.y + at.y);
     await overlay.locator(opened).first().waitFor({ timeout: 20000 });
-    await settle();
   };
   // the server's trace, as History reads it
   const trace = async () => (await (await fetch(new URL('__plumb/trace', url), { headers: { Origin: new URL(url).origin, 'Sec-Fetch-Site': 'same-origin' } })).json()).changes;
@@ -131,9 +130,8 @@ const tidyOpen = async (o, sel) => {
 // Re-review of engine review 2 (docs/research/engine-review-2.md, "Re-review"), the overlay's half: a class added beside
 // one of its family is never written into a variable other elements read (N5); an add into a component's own string,
 // when its classes also come in from a usage the chain did not reach, is refused in plain words (B2); and the recipes are
-// asked with the same chain class-site is, so an element's own classes take a shadow there (N7). Alt+click pins the
-// X-ray, which has no shadow picker, so N7 opens the element card the one way left: a script pins the element, then
-// Alt+click on it. It proves the write, and not that a person can reach it (docs/backlog.md).
+// asked with the same chain class-site is, so an element's own classes take a shadow there (N7). The shadow is picked
+// where a person picks it now: the X-ray card Alt+click pins, its Shadow row (the element card is retired).
 const REREVIEW_APP = `const LOOK = 'flex gap-s2 p-[14px] rounded-card bg-surface';
 function QaTile({ className = '' }) {
   return <div id="qa-tile" className={\`flex gap-s2 p-s3 rounded-card bg-surface \${className}\`}><span>tile</span><span>two</span></div>;
@@ -154,18 +152,23 @@ export function App() {
 }
 `;
 
-test('N7, on the card a script opens: the recipes are asked with the chain class-site gets: a shadow on an element’s own classes is written there, with the hashes it was read at', { timeout: 150000 }, async (t) => {
+test('N7: the recipes are asked with the chain class-site gets: a shadow on an element’s own classes is written there, with the hashes it was read at', { timeout: 150000 }, async (t) => {
   const o = await open(t, { app: REREVIEW_APP, query: '' });
   const { page, overlay, card, alt, read, original, posts, errors } = o;
   const gets = []; page.on('request', (r) => { if (r.method() === 'GET' && /\/__plumb\/recipes\?/.test(r.url())) gets.push(new URL(r.url()).searchParams.get('chain')); });
-  await page.locator('#qa-box').evaluate((el) => window.__plumb.overlay.pin(el));
+  // the card's measurements open, as a person leaves them once opened (the X-ray reads it when Alt is pressed)
+  await page.evaluate(() => localStorage.setItem('plumb:xray-details', '1'));
   await alt('#qa-box');
-  await card.locator('.drill[data-open="shadow"]').click();
-  await overlay.locator('.ec-strip .shot[data-key="y:rest"]').click();
-  await card.locator('.writes .edit').first().waitFor({ timeout: 20000 });
-  assert.equal(await card.locator('.use').isDisabled(), false, (await card.innerText()).replace(/\s+/g, ' '));
-  await card.locator('.use').click();
-  await overlay.locator('.fx .said').filter({ hasText: /uses .* now/ }).waitFor({ timeout: 20000 });
+  const xr = overlay.locator('.xr-card');
+  const pick = xr.locator('.xr-pick[data-prop="box-shadow"]');
+  await pick.waitFor({ timeout: 20000 }).catch(async (e) => { throw new Error(`${e.message}\nThe card said: ${(await xr.innerText()).replace(/\s+/g, ' ')}`); });
+  // the card takes the pointer once the pointer is over it: the hand goes there first, then presses
+  const b = await pick.boundingBox();
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 6 });
+  await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
+  await overlay.locator('.xr-list.shades button').filter({ hasText: 'shadow-rest' }).click();
+  await page.keyboard.press('Enter');
+  await xr.locator('.xr-res').filter({ hasText: /Synced/ }).waitFor({ timeout: 20000 });
   const line = (await read()).split('\n').find((l) => l.includes('id="qa-box"'));
   assert.match(line, /flex gap-s2 p-s3 rounded-card bg-surface shadow-rest \$\{className\}/, line);
   const preview = posts.find((p) => p.path === 'recipes/preview'), apply = posts.find((p) => p.path === 'recipes/apply');
