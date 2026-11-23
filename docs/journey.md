@@ -4835,6 +4835,26 @@ The same build passed 705 loads before it went out, and the game passes on the l
   were written; the safety-net change made no measurable difference on its own.
 - **Not done:** each write still ends with one full analysis, about 5 seconds of re-reading stylesheets here.
 
+### 103. A write answers before the app is analysed again (2026-11-23)
+
+- **The itch:** entry 102 left one full analysis at the end of every big write. The owner: "remove the last 5 second
+  analysis too".
+- **How we found it:** the "about 5 seconds" was wrong. It was timed on a one-line stylesheet edit; after a rename
+  across 161 files the analysis takes about 14 seconds, because a renamed token changes what a stylesheet defines and
+  the whole app is analysed again. Profiled on vm-agent, that time is spread over many steps (components, findings,
+  presets, stylesheets); no single piece was worth cutting. A per-stylesheet cache was tried and dropped: the session
+  writes no caches, so it never hit. One real waste was found and kept fixed: turning each CSS selector back into text
+  was a full parser round trip per selector, now remembered (about 2.0 to 0.4 seconds over five analyses).
+- **What we chose and why:** the write answers once its files are written; the analysis of what they changed runs
+  right after, first in the session's queue, so every later question waits for it and none can read the app as it was
+  before the write. A question in that window may answer "busy", which the overlay already treats as reading.
+- **The fix and the proof:** straight against the server on terminal-dreams: the rename answers in 2.5 seconds (was
+  15), its Undo of 494 changes in 3 (was 16); the report asked afterwards sees the new names, and after the Undo it is
+  identical to the one from before the rename (827 findings, 37,556 declarations). In Chromium the panel said the
+  rename was done 10 seconds after the click, the Undo took 22 (was 51), and for twenty seconds after the rename the
+  overlay stayed ready with no errors. No tests were written.
+- **Not done:** the analysis itself still takes about 14 seconds after a big rename; the page's marks catch up then.
+
 ### 96. The element card is retired, and grid columns move to the X-ray card (2026-11-23)
 
 - **The itch:** with shadow, motion and layout in the X-ray card (entries 92 to 94), the old element card was code no
@@ -6592,6 +6612,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 ## Shipped · 2026-W48
 - A link to react-plumber.com now shows a picture of the site, and the launch film where an app plays one: pushed and deployed from a clean commit ([entry](#103-pushed-and-deployed-2026-11-23)).
 - The X-ray card is the one card for an element: its Layout row now changes a grid's columns (chips, + and −, lines to drag on the page), and the old element card is gone. On main, not released ([entry](#96-the-element-card-is-retired-and-grid-columns-move-to-the-x-ray-card-2026-11-23)).
+- Big writes answer at once: renaming colours across 161 files is done in about 2.5 seconds and undone in 3; plumber re-reads the app right after, without making you wait for it. On main, not released ([entry](#103-a-write-answers-before-the-app-is-analysed-again-2026-11-23)).
 - Big writes are much faster: renaming colours across 161 files takes about 15 seconds instead of two minutes, its Undo about 16 instead of three, and the panel says it is putting things back while it does. On main, not released ([entry](#102-a-many-file-write-stops-re-reading-the-whole-app-between-files-2026-11-23)).
 - You can rename your colour tokens by their job from Clean up again: the colour pass's bar offers it, and its list keeps the button in view. On main, not released ([entry](#101-renaming-colours-can-be-reached-again-2026-11-23)).
 - You can make light and dark roles from Clean up: the colour pass offers them, lists each role with its light and dark swatch, writes the theme and every file at once, and takes it all back with one Undo. On main, not released ([entry](#100-the-roles-step-seen-on-a-real-page-2026-11-23)).

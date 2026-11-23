@@ -26,7 +26,19 @@ function print(rules: Rule[]): string {
   } }).code.toString();
 }
 const sentinel = parseCss('.plumb { --plumb: 0; }', 'plumb.css').rules[0]!;
+/** Printing a selector is a full Lightning CSS round trip; the same selectors come back in every analysis. Bounded: let
+ * go whole when it grows past what one large app needs. */
+const printed = new Map<string, string>();
 export function selectorText(selector: Selector): string {
+  const key = JSON.stringify(selector);
+  const known = printed.get(key);
+  if (known !== undefined) return known;
+  const text = printSelector(selector);
+  if (printed.size > 50000) printed.clear();
+  printed.set(key, text);
+  return text;
+}
+function printSelector(selector: Selector): string {
   if (sentinel.type !== 'style') throw new Error('Expected style rule');
   // Lightning CSS 1.33 serializes this pseudo's `type: string[]` payload
   // over the selector-component discriminator. It cannot round-trip its own

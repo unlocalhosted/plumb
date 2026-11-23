@@ -615,7 +615,10 @@ export class Session extends EventEmitter {
     try { result = await run(); return result; }
     finally {
       const written = [...this.deferred]; this.deferred = null;
-      if (written.length) await this.serialize(() => this.reconcile(written)).catch(() => {});
+      // the files are written: the answer goes back now, and the analysis of what they changed (a full one when a theme
+      // changed, about four seconds on a real app) runs right after, first in the queue, so every later question still
+      // waits for it and none reads the app as it was before the write
+      if (written.length) void this.serialize(() => this.reconcile(written)).catch(error => this.emit('diagnostic', error));
       // what the watcher saw meanwhile (other files, or ones changed by hand), once
       if (this.refreshAfterWrite) { this.refreshAfterWrite = false; void this.refresh().catch(error => this.emit('diagnostic', error)); }
       if (!outer) { this.transaction = false; this.emit('transaction', { phase: 'end', ...end(result) }); }
