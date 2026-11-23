@@ -8,7 +8,7 @@ export const commandFlags: Record<string, readonly string[]> = {
   check: [...report, 'base', 'changed', 'agent', 'sarif', 'format', 'strict-ledger', 'watch', 'all', 'broken', 'family', 'file', 'rule', 'new', 'debt', 'no-open'],
   presets: report,
   state: report,
-  propose: [...report, 'family', 'write', 'yes', 'decline'],
+  propose: [...report, 'family', 'write', 'yes', 'decline', 'roles'],
   habits: report,
   decisions: [...report, 'family'],
   spec: [...report, 'rule'],

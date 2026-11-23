@@ -1,4 +1,4 @@
-import { relative } from 'node:path';
+import { relative, resolve } from 'node:path';
 import type { Declaration, Report } from '../report.js';
 import { darkCondition } from './harvest.js';
 
@@ -9,7 +9,9 @@ import { darkCondition } from './harvest.js';
  * theme switches by itself. Primitives stay where they are; the role is the layer on top. Reads only.
  */
 export type Job = 'text' | 'surface' | 'line';
-export interface PairPlace { file: string; line: number; light: string; dark: string }
+export interface At { line: number; column: number }
+/** One element's pair: the classes as written and where each starts (1-based), so a write can check them first. */
+export interface PairPlace { file: string; line: number; light: string; dark: string; lightAt: At; darkAt: At }
 export interface PairRole {
   /** The role's name, without `--color-` (`muted`, `surface-2`, `danger`). */
   name: string;
@@ -33,6 +35,8 @@ export interface DarkPairs {
   once: number;
   /** `dark:` colours with no light class beside them to pair with. */
   unpaired: number;
+  /** How the project turns dark: a selector (`.dark`, `[data-theme="dark"]`) or the system setting. */
+  darkWhen: { selector: string } | { media: string } | null;
 }
 
 const JOB: Record<string, Job> = { color: 'text', 'background-color': 'surface', 'border-color': 'line' };
@@ -63,6 +67,16 @@ function step(colour: string): number | null {
   return m ? Number(m[1]) : null;
 }
 const STATE = /(^|:)(hover|active|focus|focus-visible|group-hover|peer-hover|data-\[[^\]]*\]|aria-[a-z]+):/;
+/** The dark variant's own condition: `:where(.dark, .dark *)` gives `.dark`; a colour-scheme media query gives itself. */
+function darkWhenOf(d: Declaration): DarkPairs['darkWhen'] {
+  const media = d.when.find(c => c.kind === 'media' && /prefers-color-scheme\s*:\s*dark/.test(c.text));
+  if (media) return { media: media.text };
+  for (const c of d.when) {
+    const m = /:where\(\s*([^,()]+?)\s*,/.exec(c.text);
+    if (m && darkCondition.test(m[1]!)) return { selector: m[1]!.trim() };
+  }
+  return null;
+}
 const isDark = (d: Declaration) => d.when.some(condition => darkCondition.test(condition.text));
 
 export function darkPairs(report: Report): DarkPairs {
@@ -74,6 +88,7 @@ export function darkPairs(report: Report): DarkPairs {
   const taken = new Set<Declaration>();
   const groups = new Map<string, { job: Job; light: string; dark: string; lightValue: string; darkValue: string; places: PairPlace[] }>();
   let pairs = 0, unpaired = 0;
+  let darkWhen: DarkPairs['darkWhen'] = null;
 
   for (const dark of colours) {
     if (!isDark(dark)) continue;
@@ -87,11 +102,12 @@ export function darkPairs(report: Report): DarkPairs {
       .sort((a, b) => (Math.abs(a.site.line - dark.site.line) - Math.abs(b.site.line - dark.site.line)) || (Math.abs(a.site.column - dark.site.column) - Math.abs(b.site.column - dark.site.column)))[0];
     if (!twin) { unpaired++; continue; }
     taken.add(twin); pairs++;
+    darkWhen ??= darkWhenOf(dark);
     const job = JOB[dark.prop]!, light = colourOf(split(twin.site.text).utility), darkColour = colourOf(utility);
     const key = `${job}|${light}|${darkColour}`; // the role is the pair; hover: and the rest are only where it is used
     let group = groups.get(key);
     if (!group) groups.set(key, group = { job, light, dark: darkColour, lightValue: twin.resolved ?? twin.value, darkValue: dark.resolved ?? dark.value, places: [] });
-    group.places.push({ file: path(dark.site.file), line: dark.site.line, light: twin.site.text, dark: dark.site.text });
+    group.places.push({ file: path(dark.site.file), line: dark.site.line, light: twin.site.text, dark: dark.site.text, lightAt: { line: twin.site.line, column: twin.site.column }, darkAt: { line: dark.site.line, column: dark.site.column } });
   }
 
   const kept = [...groups.values()].filter(g => g.places.length >= 2);
@@ -118,7 +134,7 @@ export function darkPairs(report: Report): DarkPairs {
       roles.push(role(g, claim(job === 'text' ? hue : job === 'surface' ? `${hue}-soft` : `${hue}-line`)));
     }
   }
-  return { pairs, roles: roles.sort((a, b) => b.places.length - a.places.length), once, unpaired };
+  return { pairs, roles: roles.sort((a, b) => b.places.length - a.places.length), once, unpaired, darkWhen };
 
   function role(g: (typeof kept)[number], name: string): PairRole {
     return { name, job: g.job, light: g.light, dark: g.dark, lightValue: g.lightValue, darkValue: g.darkValue, replacement: `${PREFIX[g.job]}-${name}`, places: g.places };
@@ -139,4 +155,105 @@ export function formatDarkPairs(found: DarkPairs, table: (rows: string[][]) => s
   if (found.roles.length) lines.push('', ...table([['Role', 'Light / dark', 'Places', 'Instead of'], ...found.roles.map(r => [r.replacement, `${r.light} / ${r.dark}`, String(r.places.length), `${r.places[0]!.light} ${r.places[0]!.dark}`])]));
   if (found.once) lines.push('', `${found.once} pairs are used at one place only and stay as they are.`);
   return lines.join('\n') + '\n';
+}
+
+// ── writing: the roles into the theme, each place onto its role ─────────────
+
+/** A colour as a class spells it, as CSS: `zinc-600` → `var(--color-zinc-600)`, `amber-500/15` → a 15% mix. */
+function cssOf(colour: string): string | null {
+  const m = /^([a-z]+(?:-\d{2,3})?)(?:\/(\d+))?$/.exec(colour);
+  if (!m) return null; // an arbitrary value ([#123456]) is left to the person
+  const base = `var(--color-${m[1]})`;
+  return m[2] ? `color-mix(in oklab, ${base} ${m[2]}%, transparent)` : base;
+}
+
+export interface RolesPlan {
+  theme: { file: string; before: string; hash: string | null; after: string; added: string[] };
+  sources: { file: string; before: string; hash: string; after: string; swaps: number }[];
+  roles: PairRole[];
+  /** Places whose classes weren't where the reading said (the file changed, or the class is built at runtime). */
+  skipped: number;
+}
+
+/** The edits that write the roles. Reads the files; writes nothing. `target`: the theme stylesheet, relative to root. */
+export async function planRoles(root: string, found: DarkPairs, target: string, shape: 'theme' | 'shadcn' | 'root'): Promise<RolesPlan | { refused: string }> {
+  const { readSource, readSourceIfExists } = await import('../write/source-file.js');
+  if (!found.darkWhen) return { refused: 'The project’s dark mode could not be read from its dark: classes, so the roles have nowhere to switch.' };
+  if (shape === 'root') return { refused: 'The project has no Tailwind theme block (@theme) for role classes like text-fg to come from.' };
+  const roles = found.roles.filter(r => cssOf(r.light) && cssOf(r.dark));
+  if (!roles.length) return { refused: 'No pair is used at more than one place.' };
+
+  // the theme: light values where the theme's colours live, dark values under the project's own dark condition
+  const current = await readSourceIfExists(root, resolve(root, target));
+  const before = current?.text ?? '', hash = current?.hash ?? null;
+  const why = (r: PairRole) => `  /* ${r.job === 'text' ? 'words' : r.job === 'surface' ? 'backgrounds' : 'borders'}: ${r.light} in light, ${r.dark} in dark, at ${r.places.length} places */`;
+  const head = `/* React Plumber: light and dark roles. Each was a pair written at every place; it now switches here. */`;
+  const variable = (r: PairRole) => shape === 'shadcn' ? `--${r.name}` : `--color-${r.name}`;
+  const lightLines = roles.flatMap(r => [why(r), `  ${variable(r)}: ${cssOf(r.light)};`]);
+  const darkLines = roles.map(r => `  ${variable(r)}: ${cssOf(r.dark)};`);
+  const blocks: string[] = [head];
+  if (shape === 'shadcn') blocks.push(':root {', ...lightLines, '}', '@theme inline {', ...roles.map(r => `  --color-${r.name}: var(--${r.name});`), '}');
+  else blocks.push('@theme {', ...lightLines, '}');
+  if ('selector' in found.darkWhen) blocks.push(`${found.darkWhen.selector} {`, ...darkLines, '}');
+  else blocks.push(`@media ${found.darkWhen.media} {`, '  :root {', ...darkLines.map(l => `  ${l}`), '  }', '}');
+  const after = (before.trimEnd() ? before.trimEnd() + '\n\n' : '') + blocks.join('\n') + '\n';
+
+  // the places: the light class becomes the role, the dark: class goes
+  const byFile = new Map<string, { at: At; length: number; next: string; expect: string }[]>();
+  let skipped = 0;
+  for (const r of roles) for (const p of r.places) {
+    const lightClass = p.light;
+    if (!lightClass.endsWith(r.light)) { skipped++; continue; }
+    const list = byFile.get(p.file) ?? [];
+    list.push({ at: p.lightAt, length: lightClass.length, next: lightClass.slice(0, lightClass.length - r.light.length) + r.name, expect: lightClass });
+    list.push({ at: p.darkAt, length: p.dark.length, next: '', expect: p.dark });
+    byFile.set(p.file, list);
+  }
+  const sources: RolesPlan['sources'] = [];
+  for (const [file, edits] of byFile) {
+    const source = await readSource(root, resolve(root, file));
+    const lines = source.text.split('\n');
+    const starts: number[] = []; let offset = 0;
+    for (const line of lines) { starts.push(offset); offset += line.length + 1; }
+    const located = edits.map(e => ({ ...e, index: starts[e.at.line - 1]! + e.at.column - 1 }));
+    // each place's two edits stand or fall together: if either class isn't there as read, neither changes
+    const ok = (e: (typeof located)[number]) => source.text.slice(e.index, e.index + e.length) === e.expect;
+    const kept: typeof located = [];
+    for (let i = 0; i < located.length; i += 2) { if (ok(located[i]!) && ok(located[i + 1]!)) kept.push(located[i]!, located[i + 1]!); else skipped++; }
+    // a use of a shared string is read at the use, where the classes aren't written: it moves when the string does
+    // a class string shared by several elements (`className={btn}`) is read once per element but written once; any
+    // other overlap means the reading is wrong there, and the file is left alone
+    const unique = [...new Map(kept.map(e => [`${e.index}|${e.length}`, e])).values()].sort((a, b) => b.index - a.index);
+    if (unique.some((e, i) => i && e.index + e.length > unique[i - 1]!.index)) { skipped += kept.length / 2; continue; }
+    let text = source.text;
+    for (const e of unique) {
+      let start = e.index, end = e.index + e.length;
+      if (!e.next) { // a removed class takes one space with it, the one before it when there is one
+        if (/[ \t]/.test(text[start - 1] ?? '')) start--; else if (/[ \t]/.test(text[end] ?? '')) end++;
+      }
+      text = text.slice(0, start) + e.next + text.slice(end);
+    }
+    if (unique.length) sources.push({ file, before: source.text, hash: source.hash, after: text, swaps: unique.filter(e => e.next).length });
+  }
+  return { theme: { file: target, before, hash, after, added: blocks }, sources, roles, skipped };
+}
+
+/** Writes the plan as one transaction: every file must still hold what it was planned from, or none is written. */
+export async function applyRoles(root: string, plan: RolesPlan): Promise<void> {
+  const { Transaction } = await import('../write/source-file.js');
+  const tx = new Transaction(root);
+  await tx.run(async () => {
+    await tx.write(resolve(root, plan.theme.file), { expectHash: plan.theme.hash, next: plan.theme.after });
+    for (const s of plan.sources) await tx.write(resolve(root, s.file), { expectHash: s.hash, next: s.after });
+  });
+}
+
+export function describeRoles(plan: RolesPlan): string {
+  const swaps = plan.sources.reduce((n, s) => n + s.swaps, 0);
+  return [
+    `+++ ${plan.theme.file}`, ...plan.theme.added.map(l => `+ ${l}`), '',
+    `Wrote ${plan.roles.length} roles to ${plan.theme.file}, and moved ${swaps} class pairs in ${plan.sources.length} files onto them.`,
+    ...(plan.skipped ? [`${plan.skipped} more places use a class string kept in a variable; they follow the string where it was moved, and are left as they are where it wasn’t.`] : []),
+    'git diff shows every change; git checkout puts it back.',
+  ].join('\n') + '\n';
 }

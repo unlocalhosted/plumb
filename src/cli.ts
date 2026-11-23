@@ -48,7 +48,7 @@ Usage: plumber [check] [--json] [--verbose] [--root <dir>] [--config <path>]
        ${onboardingPage() ? 'plumber [--yes] [--no-open]       open a page about your project; --yes sets it up here instead' : 'plumber [--yes]                   your project in a few lines; --yes sets it up here'}
        plumber check --watch [--json|--agent] [--root <dir>]
        plumber state [--json] [--root <dir>] [--config <path>]
-       plumber propose [--family <name>] [--write] [--decline <scale>=<value>] [--json] [--root <dir>] [--config <path>]
+       plumber propose [--family <name>] [--write] [--roles] [--decline <scale>=<value>] [--json] [--root <dir>] [--config <path>]
        plumber habits [--json] [--root <dir>] [--config <path>]
        plumber decisions [--family <name>] [--json] [--root <dir>] [--config <path>]
        plumber spec [--rule <id>] [--json] [--root <dir>] [--config <path>]
@@ -104,7 +104,7 @@ async function main(): Promise<void> {
           lang: { type: 'string' }, as: { type: 'string' }, port: { type: 'string' }, stdio: { type: 'boolean' }, watch: { type: 'boolean' },
           markdown: { type: 'boolean' }, since: { type: 'string' }, strict: { type: 'boolean' }, list: { type: 'boolean' },
           url: { type: 'string' }, routes: { type: 'string', multiple: true }, timeout: { type: 'string' }, 'no-pairs': { type: 'boolean' }, 'no-probe': { type: 'boolean' }, judge: { type: 'boolean' }, probe: { type: 'string', multiple: true }, 'probe-budget': { type: 'string' }, scope: { type: 'string' }, 'record-probe': { type: 'string' }, max: { type: 'string' },
-          'no-open': { type: 'boolean' }, overlay: { type: 'boolean' }, write: { type: 'boolean' }, origin: { type: 'string' }, 'served-root': { type: 'string' },
+          'no-open': { type: 'boolean' }, overlay: { type: 'boolean' }, write: { type: 'boolean' }, roles: { type: 'boolean' }, origin: { type: 'string' }, 'served-root': { type: 'string' },
       } as const;
       // Probe command with all value-taking flags known; --agent is an install
       // target only for install, and remains a boolean report flag elsewhere.
@@ -240,6 +240,17 @@ async function main(): Promise<void> {
     if (args.values.decline?.length) {
       const { declineValues } = await import('./onboarding/decline.js');
       process.stdout.write(await declineValues(options.root, args.values.decline));
+      return;
+    }
+    if (args.values.roles) {
+      // colours set light and dark by hand at each place, written as one role each and the places moved onto them
+      const { darkPairs, planRoles, applyRoles, describeRoles } = await import('./onboarding/dark-pairs.js');
+      const { proposal, report } = await analyzing(() => loadProposal(options.root, options.config ? { config: options.config } : {}));
+      if (!report || !proposal.target || !proposal.shape) { process.stdout.write(`Nothing to write. ${proposal.blocked?.sentence ?? 'The project has no theme stylesheet to write to.'}\n`); return; }
+      const plan = await planRoles(options.root, darkPairs(report), proposal.target.file, proposal.shape);
+      if ('refused' in plan) { process.stdout.write(`Nothing to write. ${plan.refused}\n`); return; }
+      await applyRoles(options.root, plan);
+      process.stdout.write(describeRoles(plan));
       return;
     }
     if (args.values.write) {

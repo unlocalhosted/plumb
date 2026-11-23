@@ -4691,6 +4691,25 @@ The same build passed 705 loads before it went out, and the game passes on the l
   pairs where a system would have three, so names run to `faint-3`, and that drift is the next thing to judge.
 - **Media hooks:** the propose table on Tegaki, the 302 places next to the 25 roles.
 
+### 96. The roles get written (2026-11-23)
+
+- **The itch:** the owner, on the roles from entry 95: "Write them".
+- **What we chose and why:** `plumber propose --roles` writes each role into the project's theme, light value in
+  `@theme` and dark value under the project's own dark switch, read from its `dark:` classes (`[data-theme="dark"]`
+  on Tegaki, `.dark` or the system setting elsewhere). The role points at the colour the code already used, so nothing
+  on the page changes colour. At each place the light class becomes the role, keeping its hover or press, and the
+  `dark:` class goes: `text-zinc-900 dark:text-zinc-100` becomes `text-fg`. Every file must still be as it was read, or
+  nothing is written. Near pairs are left apart, as decided before.
+- **Found on the way and fixed:** a class string kept in a variable (`className={btn}`) is read once for each element
+  that uses it, so it was edited twice in the same spot and came out as `hover:bg-surface-hoverhover`. Each spot is now
+  edited once, and a file with any other overlap is left alone.
+- **The fix and the proof:** on a copy of Tegaki's website, 25 roles were written and 245 class pairs in 19 files moved
+  onto them. Tailwind's own compiler built every role class (`.text-fg { color: var(--color-fg) }`) and the dark block.
+  A sweep of the 143 changed lines found no malformed class. The 22 `dark:` colour classes left are the pairs used
+  once. The site itself wasn't run in a browser (it needs its workspace packages built). No tests were written.
+- **Not done:** near pairs still aren't merged, and the overlay doesn't offer this yet; it's the command line only.
+- **Media hooks:** a before/after of one Tegaki component's class list, and the written theme block.
+
 ### 96. The element card is retired, and grid columns move to the X-ray card (2026-11-23)
 
 - **The itch:** with shadow, motion and layout in the X-ray card (entries 92 to 94), the old element card was code no
@@ -6411,6 +6430,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
 - The X-ray card is the one card for an element: its Layout row now changes a grid's columns (chips, + and −, lines to drag on the page), and the old element card is gone. On main, not released ([entry](#96-the-element-card-is-retired-and-grid-columns-move-to-the-x-ray-card-2026-11-23)).
+- You can turn colours written twice for light and dark into roles: `plumber propose --roles` writes each role into your theme with its dark value, and moves every place onto it (`text-zinc-900 dark:text-zinc-100` becomes `text-fg`). On main, not released ([entry](#96-the-roles-get-written-2026-11-23)).
 - You can see which light and dark colour pairs in your code are one role: `plumber propose --family color` lists each pair written by hand with `dark:`, the role it would become and how many places it covers. On main, not released ([entry](#95-light-and-dark-by-hand-become-roles-2026-11-23)).
 - You can lay out one element again: Alt+click something with two or more parts, open Measurements, and pick stacked, side by side, two columns, lined up or fit as many as fit, shown on the page as you point; Sync writes the classes. On main, not released ([entry](#94-the-x-ray-card-gets-a-layout-picker-2026-11-23)).
 - You can give one element a move again: Alt+click, open Measurements, and pick from the moves that suit it, each playing as you point at it; Sync writes it with your own curve where one is close. On main, not released ([entry](#93-the-x-ray-card-gets-a-motion-picker-2026-11-23)).
