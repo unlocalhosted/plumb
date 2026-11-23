@@ -122,7 +122,10 @@ export const CLEANUP_CSS = `
   .cu .names .nm { font: 550 12px/1.3 var(--pl-mono, ui-monospace, monospace); } .cu .names .nm small { font-family: var(--pl-sans, system-ui); }
   .cu .names .error { padding: 0; }
   /* a role's swatch: its light colour and its dark one, split corner to corner */
-  .cu .names .sw.dk { background: linear-gradient(135deg, var(--l) 50%, var(--d) 50%); }
+  .cu .names .sw.dk { width: 18px; height: 18px; border-radius: 5px; background: linear-gradient(135deg, var(--l) 50%, var(--d) 50%); }
+  .cu > .body > .names:first-child { border-top: 0; margin-top: 0; }
+  /* four roles in view, the rest a scroll away, so the button under the list stays on screen */
+  .cu .names .nlist.dk { max-height: 168px; }
   .cu .ladder .sp-ic { display: inline-grid; place-items: center; width: 16px; height: 16px; color: var(--pl-text-secondary); } .cu .ladder .sp-ic svg { width: 16px; height: 16px; display: block; }
 ${SHOW_CSS}
 `;
@@ -369,7 +372,8 @@ export class Cleanup {
   // The two setup screens (the census command, renaming colour tokens) keep the panel's own body: null here.
   bar() {
     const s = this.#state, k = PASSES[this.#pass], S = this.#words, W2 = W;
-    if (s === 'noCensus' || (k === 'colour' && this.#rn?.open)) return null;
+    // the colour names and the light and dark roles open as a list: the bar steps aside for the panel's body
+    if (s === 'noCensus' || (k === 'colour' && (this.#rn?.open || this.#dk?.open || this.#dk?.busy))) return null;
     const TOY = { text: 'type', spacing: 'gap', colour: 'fill', icons: 'icon', radius: 'corner', sizes: 'size', shadows: 'shadow', speeds: 'motion', states: 'opacity' };
     const strip = `<span class="passes" role="list" aria-label="${esc(W2.passes)}">${PASSES.map((p, i) => {
       const st = this.#done.get(p), kind = i === this.#pass ? 'now' : st === 'done' ? 'done' : st === 'kept' ? 'kept' : st ? 'skipped' : 'soon';
@@ -402,6 +406,11 @@ export class Cleanup {
       acts = (!sw && this.#pageOnly ? b(this.#site?.running ? W.siteBusy : W.readSite, 'site', { quiet: true }) : '') + b(W2.preview, 'preview', { quiet: true, key: 'P' })
         + (n > 1 ? b(W.applyAll(n), 'apply-all', { key: '↵' }) + b(W.applyThis, 'apply', { quiet: true }) : b('Apply', 'apply', { key: '↵' })) + b('Skip', 'skip', { quiet: true, key: '→' });
     }
+    // the colour pass offers the project's light and dark roles once the server has them (a quiet entry, never the action)
+    // once made, the bar says so with its Undo, and the pass goes on
+    const dk = k === 'colour' && ['nothing', 'done', 'ready'].includes(s) ? this.#rolesPlan() : null;
+    if (dk?.done) { more = W.colour.roles.done(dk.done.roles, dk.done.places, dk.done.files); acts = b(W.colour.roles.undo, 'roles-undo', { quiet: true }) + acts; }
+    else if (dk?.plan) acts = b(W.colour.roles.open, 'roles-open', { quiet: true }) + acts;
     // in preview the detail is what changes: the styles as chips, rolling to their values, and how to compare
     const detail = s === 'preview' ? `<span class="roles">${chipsHtml(this.#steps().map((x) => x.chip))}</span><span class="cmp">${W2.holdSpace}</span>` : esc(more);
     return `<div class="one cu-one"><i class="ic big${pop ? ' pop' : ''}">${toyOf(s === 'done' && pop ? 'checkbox' : TOY[k])}</i><span class="lines"><span class="hl">${esc(say)}</span>`
@@ -446,7 +455,9 @@ export class Cleanup {
   #swapHtml(acts, close) {
     const html = this.#swapBody(acts, close);
     if (PASSES[this.#pass] !== 'colour' || this.#state === 'writing' || this.#state === 'reading') return html;
-    const names = this.#namesHtml() + this.#rolesHtml(), at = html.lastIndexOf('<div class="acts"');
+    // the roles list open is the panel's one job: the pass's own words step back, so its button stays in view
+    if (this.#dk?.open || this.#dk?.busy) return `<div class="body">${this.#rolesHtml()}</div>`;
+    const names = this.#namesHtml(), at = html.lastIndexOf('<div class="acts"');
     return names && at > 0 ? html.slice(0, at) + names + html.slice(at) : html + names;
   }
   #swapBody(acts, close) {
@@ -522,10 +533,12 @@ export class Cleanup {
     // each swatch is the role in both schemes: its light colour, then its dark one (interaction-principles 18c)
     const css = (c) => (/^[a-z]+(-\d{2,3})?(\/\d+)?$/.test(c) ? `var(--color-${c.replace(/\/\d+$/, '')})` : 'transparent');
     const rows = roles.map((r) => `<li><span class="sw dk" aria-hidden="true" style="--l:${esc(css(r.light))};--d:${esc(css(r.dark))}"></span><span class="nm">${esc(r.replacement)}<small>${esc(N.row(r.light, r.dark, r.places.length))}${r.merged?.length ? ` ${esc(N.near(r.merged.length))}` : ''}</small></span></li>`).join('');
-    return `<div class="names"><div class="nhead">${esc(N.head(places, roles.length))}</div><div class="sub">${esc(N.sub(`${first.places[0].light} ${first.places[0].dark}`, first.replacement))}</div><ol class="ladder nlist" aria-label="${esc(N.list)}">${rows}</ol>`
-      + (folds ? `<div class="sub">${esc(N.moves(folds))}</div>` : '') + `<div class="sub">${esc(N.everywhere)}</div>`
-      + (dk.err ? `<div class="error">${esc(dk.err)}</div>` : '')
-      + `<div class="nacts"><button type="button" class="cu-btn soft" data-cu="roles-go"${dk.busy ? ' disabled' : ''}>${esc(dk.busy ? N.going : dk.err ? N.retry : N.go)}</button><button type="button" class="cu-btn quiet" data-cu="roles-close"${dk.busy ? ' disabled' : ''}>${esc(N.notNow)}</button></div></div>`;
+    // the problem, then the action, then the detail: the panel has a fixed height, and the button must stay in view
+    const acts = `<div class="nacts"><button type="button" class="cu-btn soft" data-cu="roles-go"${dk.busy ? ' disabled' : ''}>${esc(dk.busy ? N.going : dk.err ? N.retry : N.go)}</button><button type="button" class="cu-btn quiet" data-cu="roles-close"${dk.busy ? ' disabled' : ''}>${esc(N.notNow)}</button></div>`;
+    return `<div class="names"><div class="nhead">${esc(N.head(places, roles.length))}</div><div class="sub">${esc(N.sub(`${first.places[0].light} ${first.places[0].dark}`, first.places[0].light.replace(/(?:[a-z]+-\d{2,3}|white|black)(?:\/\d+)?$/, first.name)))}</div>`
+      + `<div class="sub">${esc(folds ? `${N.moves(folds)} ${N.everywhere}` : N.everywhere)}</div>`
+      + (dk.err ? `<div class="error">${esc(dk.err)}</div>` : '') + acts
+      + `<ol class="ladder nlist dk" aria-label="${esc(N.list)}">${rows}</ol></div>`;
   }
   async #makeRoles() {
     const dk = this.#dk; if (!dk?.plan || dk.busy) return;

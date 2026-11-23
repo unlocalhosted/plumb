@@ -4775,6 +4775,28 @@ The same build passed 705 loads before it went out, and the game passes on the l
 - **Not done:** seeing the step on a page (on vm-agent); the places aren't marked on the page when a row is pointed at,
   and a fold isn't played as a transition yet (principle 35b).
 
+### 100. The roles step, seen on a real page (2026-11-23)
+
+- **The itch:** entry 99 hadn't been seen running. The owner: "Yes, on vm-agent".
+- **How we found it:** Tegaki's website (an open-source handwriting library's site, kept in glyphwrite as a
+  reference, and the only app here with many light/dark pairs: about 300, where our own apps have 2 to 6) ran on
+  vm-agent with the overlay added through a small Astro integration, since Astro serves no index.html for the
+  plugin's own tags. Chromium walked the step: open, make roles, Undo. Asked "why are we at tegaki?", the owner
+  agreed: "use if it makes sense". Its screenshots stay out of this public repo.
+- **What was wrong, and the fixes:** three things only a real page showed. Clean up now runs as a one-line bar, and
+  the colour pass's follow-on steps (renaming, and the new roles) lived only in the old body, so the roles entry never
+  appeared; the bar now carries "Make light and dark roles…" as a quiet button. Opened, the list sat under the whole
+  colour pass and its button fell below the panel's fixed height; the open list is now the panel's one job, with the
+  problem, then the button, then the roles as detail. After the write, nothing led on to the next pass; the bar now
+  says what was made, with Undo and Next pass. The example also lost the hover (`text-fg` for a `hover:` pair); it
+  now keeps it.
+- **The fix and the proof:** the walk on Tegaki's studio: the entry shows, 285 places and 20 roles listed, "Made 20
+  roles. 256 places in 20 files now switch with your theme.", 21 files changed, and after Undo only the Astro patch is
+  left. No page errors. Before and after, with the overlay hidden, light and dark differ only where the handwriting
+  animation was mid-stroke, and in two folds the step announced: the "Ask an agent" border and the selected tab moved
+  one zinc step in dark. No tests were written. The rename step has the same hidden-entry problem and isn't fixed here.
+- **Media hooks:** the bar with the entry, the open list, the bar after the write (kept outside the repo).
+
 ### 96. The element card is retired, and grid columns move to the X-ray card (2026-11-23)
 
 - **The itch:** with shadow, motion and layout in the X-ray card (entries 92 to 94), the old element card was code no
@@ -6495,6 +6517,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
 - The X-ray card is the one card for an element: its Layout row now changes a grid's columns (chips, + and −, lines to drag on the page), and the old element card is gone. On main, not released ([entry](#96-the-element-card-is-retired-and-grid-columns-move-to-the-x-ray-card-2026-11-23)).
+- You can make light and dark roles from Clean up: the colour pass offers them, lists each role with its light and dark swatch, writes the theme and every file at once, and takes it all back with one Undo. On main, not released ([entry](#100-the-roles-step-seen-on-a-real-page-2026-11-23)).
 - Colours that drifted apart become one role: near light/dark pairs fold into the one used most, each move listed before anything is written (Tegaki: 25 roles became 20). On main, not released ([entry](#97-near-pairs-fold-into-one-role-2026-11-23)).
 - You can turn colours written twice for light and dark into roles: `plumber propose --roles` writes each role into your theme with its dark value, and moves every place onto it (`text-zinc-900 dark:text-zinc-100` becomes `text-fg`). On main, not released ([entry](#96-the-roles-get-written-2026-11-23)).
 - You can see which light and dark colour pairs in your code are one role: `plumber propose --family color` lists each pair written by hand with `dark:`, the role it would become and how many places it covers. On main, not released ([entry](#95-light-and-dark-by-hand-become-roles-2026-11-23)).
