@@ -250,6 +250,12 @@ export const XRAY_LIVE_CSS = `
   .xr-lay > i { width: 24px; height: 16px; gap: 2px; overflow: hidden; }
   .xr-lay b { display: block; flex: 1 0 var(--w, 4px); min-width: 4px; min-height: 3px; border-radius: 1.5px; background: var(--pl-lilac); }
   .xr-list .xr-lay { width: 48px; height: 32px; } .xr-list .xr-lay > i { width: 34px; height: 22px; gap: 3px; }
+  .xr-hand .xr-cols { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 8px 2px 0; }
+  .xr-hand .xr-cols .k { margin-inline-end: 4px; font: 600 11px/1 var(--pl-sans); color: var(--xr-label); }
+  .xr-hand .xr-cols button { all: unset; box-sizing: border-box; min-width: 26px; height: 24px; padding: 0 7px; border-radius: 7px; text-align: center; cursor: pointer;
+    background: var(--pl-bg-inset); font: 600 11px/24px var(--pl-mono); color: var(--pl-text-primary); }
+  @media (hover: hover) and (pointer: fine) { .xr-hand .xr-cols button:hover { background: var(--pl-lilac-soft); color: var(--pl-lilac-ink); } }
+  .xr-hand .xr-cols button:focus-visible { outline: 2px solid var(--pl-border-focus); outline-offset: 1px; }
   .xr-list.shades .gh { padding: 8px 8px 4px; font: 600 11px/1 var(--pl-sans); color: var(--xr-label); }
   .xr-list.shades button > b { font: inherit; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .xr-mo { flex: none; position: relative; display: grid; place-items: center; width: 34px; height: 22px; border-radius: 6px; overflow: hidden; }
@@ -292,8 +298,8 @@ const RECIPES = {
     wear: (t, x) => { if (x?.css) playMotion(t, x.css); } },
   // a layout is shown by the adapter, which holds the element as written and puts it back exactly
   [LAYOUT]: { key: 'layout', toy: 'grid', words: LAYOUT_PICK, value: (x) => x.recipe, applies: (el) => [...el.children].filter((k) => k.getClientRects().length).length >= 2,
-    lead: (el, x) => layoutOf(x.s), show: (t, x, o) => o.recipes?.layout?.show?.(t, x?.recipe ?? null),
-    wear: (t, x, c, o) => o.recipes?.layout?.show?.(t, x ? x.recipe ?? null : c?.pick?.recipe ?? null), clear: (t, o) => o.recipes?.layout?.show?.(t, null) },
+    lead: (el, x) => layoutOf(x.s), show: (t, x, o) => o.recipes?.layout?.show?.(t, x),
+    wear: (t, x, c, o) => o.recipes?.layout?.show?.(t, x ?? c?.pick ?? null), clear: (t, o) => o.recipes?.layout?.show?.(t, null) },
 };
 const TOYS = { padding: 'padding', margin: 'margin', width: 'width', height: 'height', 'border-radius': 'corner', gap: 'gap', 'font-size': 'type' };
 const PREFIX = { 'padding-top': 'pt', 'padding-right': 'pr', 'padding-bottom': 'pb', 'padding-left': 'pl', 'margin-top': 'mt', 'margin-right': 'mr', 'margin-bottom': 'mb', 'margin-left': 'ml', gap: 'gap', width: 'w', height: 'h', 'border-radius': 'rounded', 'font-size': 'text', flex: 'flex' };
@@ -536,7 +542,7 @@ export function mountXray(o) {
   // ── a shadow or a motion: one of yours, for every element its line of code draws ──
   // what the adapter read for an element ({} until it answers); read when its row is on screen, again after a write
   let shades = { [SHADOW]: new WeakMap(), [MOTION]: new WeakMap(), [LAYOUT]: new WeakMap() }, shadeList = null;
-  const forgetNow = () => { shades = { [SHADOW]: new WeakMap(), [MOTION]: new WeakMap(), [LAYOUT]: new WeakMap() }; shadeList?.end(); if (RECIPES[inHand?.prop]) { hand.innerHTML = ''; inHand = null; } };
+  const forgetNow = () => { linesOff(); shades = { [SHADOW]: new WeakMap(), [MOTION]: new WeakMap(), [LAYOUT]: new WeakMap() }; shadeList?.end(); if (RECIPES[inHand?.prop]) { hand.innerHTML = ''; inHand = null; } };
   // after a write the page takes the new code in a moment later (a hot update or a reload): what is read from the page
   // itself, a layout, is read again once it has
   const forget = () => { forgetNow(); life.timeout(() => { forgetNow(); refresh(); }, 1500); };
@@ -561,7 +567,10 @@ export function mountXray(o) {
   const shadeNow = (el, prop) => {
     const kind = RECIPES[prop], s = o.recipes?.[kind.key] && (!kind.applies || kind.applies(el)) ? shades[prop].get(el) ?? {} : null;
     if (!s?.options) return s;
-    const c = pickedOn(el, prop), i = c ? s.options.findIndex((x) => x.recipe === c.pick?.recipe) : -1;
+    const c = pickedOn(el, prop);
+    // columns set by hand are a layout of their own, after the row's
+    if (c?.pick?.recipe === 'custom') return { ...s, options: [...s.options, { ...c.pick, v: s.options.length }], at: s.options.length };
+    const i = c ? s.options.findIndex((x) => x.recipe === c.pick?.recipe) : -1;
     return { ...s, at: i < 0 ? s.start : i };
   };
   // the option in hand on every place it reaches; the one it started with is no change at all
@@ -577,7 +586,7 @@ export function mountXray(o) {
         if (!m.size) changes.delete(k);
       } else if (x.recipe) {
         const value = RECIPES[prop].value(x);
-        m.set(prop, { before: was ? was.before : t.style.getPropertyValue(prop), value, scope: s.site, pick: { el, name: x.name, recipe: x.recipe, choice: RECIPES[prop].choice } });
+        m.set(prop, { before: was ? was.before : t.style.getPropertyValue(prop), value, scope: s.site, pick: { el, name: x.name, recipe: x.recipe, choice: RECIPES[prop].choice, ...(x.s ? { s: x.s } : {}) } });
         changes.set(k, m);
         t.style.setProperty(prop, value);
       }
@@ -609,9 +618,49 @@ export function mountXray(o) {
     inHand = { el, prop, p, S: s.options, sided: false, sized: false, segs: ['value'], scopes: [], seg: 'value', tx: 0, ty: 0, axis: null, idle: 0, shade: s };
     if (s.at !== s.start) p.set(s.at);
     made = true;
+    if (prop === LAYOUT) columnsIn(el, s);
     draw(el);
     thumbAt(0, 0, true);
   }
+  // A grid's columns, under the layout in hand: one chip per column (a click gives the next size), + and −, and the
+  // lines on the element to drag. Columns set by hand are one more layout, pending like the others.
+  let linesOn = null;
+  const linesOff = () => { if (linesOn) o.recipes?.layout?.lines?.(linesOn, false); linesOn = null; };
+  function columnsIn(el, s) {
+    const x = s.options[s.at ?? s.start], cols = x?.s?.mode === 'grid' ? x.s.cols ?? [] : null;
+    linesOff();
+    hand.querySelector('.xr-cols')?.remove();
+    if (!cols || !o.recipes?.layout?.step) return;
+    const W = o.recipes.layout.words ?? {};
+    hand.insertAdjacentHTML('beforeend', `<div class="xr-cols" role="group" aria-label="${esc(W.columns ?? 'Columns')}"><span class="k">${esc(W.columns ?? 'Columns')}</span>`
+      + cols.map((c, i) => `<button type="button" data-col="${i}" title="${esc(W.next ?? '')}">${esc(c.replace('repeat(auto-fit,minmax(200px,1fr))', 'fit'))}</button>`).join('')
+      + `<button type="button" data-col="add" aria-label="${esc(W.add ?? 'Add a column')}" title="${esc(W.add ?? '')}">+</button>${cols.length > 1 ? `<button type="button" data-col="remove" aria-label="${esc(W.remove ?? 'Remove the last column')}" title="${esc(W.remove ?? '')}">−</button>` : ''}</div>`);
+    o.recipes.layout.lines?.(el, true); linesOn = el;
+  }
+  // a layout of the element's own (its columns changed here, or a line dragged on the page) as the one pending
+  const ownLayout = (el, s1) => {
+    const s = shadeNow(el, LAYOUT); if (!s?.options) return;
+    const own = { name: o.recipes.layout.name?.(s1) ?? 'Columns', recipe: 'custom', s: s1 };
+    const base = s.options.filter((x) => x.recipe !== 'custom'), all = { ...s, options: [...base, { ...own, v: base.length }] };
+    setShade(el, LAYOUT, all, base.length);
+    if (inHand?.prop === LAYOUT) { hand.innerHTML = ''; inHand = null; holdShade(el, LAYOUT); }
+    refresh();
+  };
+  life.listen(hand, 'click', (e) => {
+    const b = e.target.closest?.('[data-col]'); if (!b || inHand?.prop !== LAYOUT) return;
+    e.stopPropagation();
+    const s = shadeNow(inHand.el, LAYOUT), x = s.options[s.at ?? s.start], k = b.dataset.col;
+    ownLayout(inHand.el, o.recipes.layout.step(x.s, k === 'add' || k === 'remove' ? k : Number(k)));
+  });
+  o.recipes?.layout?.dragged?.((el, s1) => { if (el.isConnected) ownLayout(el, s1); });
+  // a column line held: the card stays on the layout while the hand crosses the page
+  life.listen(C.getRootNode(), 'pointerdown', (e) => {
+    if (!e.composedPath().some((n) => n.classList?.contains('lay-line'))) return;
+    held = { prop: LAYOUT };
+    const drop = life.child();
+    drop.listen(window, 'pointerup', () => { held = null; drop.end(); }, true);
+    drop.listen(window, 'pointercancel', () => { held = null; drop.end(); }, true);
+  }, true);
   // a press on the row: a drag steps through the options, a click lists them
   function pressShade(e, el, at, prop) {
     e.preventDefault(); e.stopPropagation();
@@ -679,7 +728,7 @@ export function mountXray(o) {
   // ── the drawing and the card ───────────────────────────────
   let zone = null, justDragged = false, warm = 0, pending;
   const draw = (el) => {
-    if (!el) { shadeList?.end(); layer.innerHTML = ''; shrink(); shown = null; zone = null; ready = false; clearTimeout(restT); return; }
+    if (!el) { shadeList?.end(); linesOff(); layer.innerHTML = ''; shrink(); shown = null; zone = null; ready = false; clearTimeout(restT); return; }
     const s = box(), [name, source] = o.name(el);
     const zs = zonesOf(el), inProp = held?.prop ?? zone?.prop;
     const lit = inProp ? zs.filter((q) => q.prop !== inProp && linkedOf(inProp).includes(q.prop)) : [];
@@ -934,8 +983,8 @@ export function mountXray(o) {
   const sizingOf = (el, prop) => { const t = sizing(el, getComputedStyle(el), prop === 'width' ? 'w' : 'h'); return /^Fill/.test(t) ? 'fill' : /^Hug/.test(t) ? 'fit' : 'fixed'; };
   function hold(el, prop) {
     if (inHand && inHand.el === el && inHand.prop === prop) return;
-    if (RECIPES[prop]) { holdShade(el, prop); return; }
-    shadeList?.end();
+    if (RECIPES[prop]) { if (prop !== LAYOUT) linesOff(); holdShade(el, prop); return; }
+    shadeList?.end(); linesOff();
     hand.innerHTML = ''; inHand = null;
     if (!el || !prop) return;
     const sided = sidesSaid(prop) !== null, sized = prop === 'width' || prop === 'height', now = read(el, prop), S = optionsFor(familyOf(prop), now);
@@ -1229,6 +1278,6 @@ export function mountXray(o) {
     showResults(list) { results = list.map((r) => ({ keys: [], els: [], befores: [], ...r })); lastCard = ''; card.hidden = false; if (shown) draw(shown); else { body.innerHTML = resultsHtml(); lastCard = ''; const s = box(); card.style.transform = `translate(${Math.max(12, s.width - (card.offsetWidth || 292) - 24)}px, 24px)`; } },
     get shown() { return shown; },
     putBack, sync,
-    destroy() { putBack(); life.end(); for (const f of off) f(); clearTimeout(waiting); clearTimeout(warm); clearTimeout(queued); layer.remove(); card.remove(); live.remove(); C.querySelector(':scope > .xr-list')?.remove(); C.querySelector(':scope > .xr-note')?.remove(); },
+    destroy() { putBack(); linesOff(); life.end(); for (const f of off) f(); clearTimeout(waiting); clearTimeout(warm); clearTimeout(queued); layer.remove(); card.remove(); live.remove(); C.querySelector(':scope > .xr-list')?.remove(); C.querySelector(':scope > .xr-note')?.remove(); },
   };
 }

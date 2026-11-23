@@ -132,23 +132,56 @@ export async function readMotion(el) {
 
 // ── layout: the element card's own layouts and their class writes (layoutcard.js), one per element ──
 // One per element: it holds the layout as written and shows the one in hand inline, put back exactly on close.
-const layouts = new WeakMap(), nowhere = document.createElement('div');
+// Its column lines are drawn in a layer of its own in the overlay, shown only while its layout is in hand; a line dragged
+// there is said back as the layout it makes (layoutHost).
+const layouts = new WeakMap(), lines = new WeakMap(), nowhere = document.createElement('div');
+let overlayRoot = null, onDragged = null, quiet = false;
+export function layoutHost(root, dragged) { overlayRoot = root; onDragged = dragged; }
 const layoutFor = (el) => {
   let lay = layouts.get(el);
-  if (!lay) { lay = new Layout(nowhere, { target: () => el, redraw() {}, restrip() {} }); layouts.set(el, lay); }
+  if (!lay) {
+    const layer = Object.assign(document.createElement('div'), { hidden: true });
+    (overlayRoot ?? nowhere).append(layer);
+    lay = new Layout(layer, { target: () => el, redraw: () => { if (!quiet && lay.state) onDragged?.(el, structuredClone(lay.state)); }, restrip() {} });
+    layouts.set(el, lay); lines.set(el, layer);
+  }
   if (!lay.state) lay.open();
   return lay;
 };
+// the layout a pick stands for: one of the old card's by its id, or a state of its own (columns changed by hand)
+function put(lay, pick) {
+  quiet = true;
+  try {
+    if (typeof pick === 'string') lay.take(`l:${pick}`);
+    else if (pick?.s) { Object.assign(lay.state, structuredClone(pick.s)); lay.peek(''); }
+  } finally { quiet = false; }
+}
+// the column lines of an element's grid, on the page while its layout is in hand
+export function layoutLines(el, on) {
+  const layer = lines.get(el); if (!layer) return;
+  layer.hidden = !on;
+  if (on) layouts.get(el)?.follow();
+}
+const NEXT_TRACK = { auto: '1fr', '1fr': '2fr', '2fr': '160px', '160px': 'auto' };
+// a grid's columns changed by one step: the next size of one (as the old card's chips did), or one added or taken away
+export function stepColumns(s, step) {
+  const cols = [...(s.cols ?? ['1fr'])];
+  if (step === 'add') cols.push('1fr');
+  else if (step === 'remove') { if (cols.length > 1) cols.pop(); }
+  else cols[step] = NEXT_TRACK[cols[step]] ?? 'auto';
+  return { ...s, mode: 'grid', cols };
+}
+export const columnsName = (s) => LW.now.grid(s.cols?.length ?? 1);
 const visibleKids = (el) => [...el.children].filter((k) => { const r = k.getBoundingClientRect(); return r.width || r.height; }).length;
 export const holdsParts = (el) => visibleKids(el) >= 2;
 const sameAs = (a, b) => a.mode === b.mode && (a.mode !== 'flex' || (a.dir === b.dir && a.wrap === b.wrap)) && (a.mode !== 'grid' || (JSON.stringify(a.cols) === JSON.stringify(b.cols) && !!a.sub === !!b.sub));
 const nowName = (s) => s.mode === 'grid' ? (s.sub ? LW.now.sub : LW.now.grid(s.cols?.length ?? 1)) : s.mode === 'flex' ? (s.dir === 'column' ? LW.now.column : s.wrap === 'wrap' ? LW.now.wrap : LW.now.row) : LW.now.block;
 // the class changes a layout makes, each in the string its classes are written in (throws the reason when it can't be)
-async function layoutEdits(el, id) {
+async function layoutEdits(el, pick) {
   const lay = layoutFor(el);
-  lay.take(`l:${id}`);
+  put(lay, pick);
   const writes = lay.writes();
-  lay.close();
+  quiet = true; lay.close(); quiet = false;
   const out = [];
   for (const e of writes) out.push(...await classEditsOf(e.el, e.from, e.to));
   return out;
@@ -176,11 +209,12 @@ export async function readLayout(el) {
   const mates = site && !site.refused ? siteMatesOf(el, site) : [];
   return { options, start: 0, mates: [el, ...mates], site: site?.file ? `${site.file}:${site.line}:${site.column}` : 'layout', kids: visibleKids(el) };
 }
-// the layout in hand on the element, or as it is written (null)
-export function showLayout(el, id) {
+// the layout in hand on the element (an option of the row), or as it is written (null, or the one it has now)
+export function showLayout(el, x) {
   if (!el.isConnected) return;
   const lay = layoutFor(el);
-  if (id) lay.take(`l:${id}`); else { lay.close(); lay.open(); }
+  quiet = true; lay.close(); lay.open(); quiet = false;
+  if (x && !x.now) put(lay, x.recipe === 'custom' ? { s: x.s } : x.recipe);
 }
 async function writeLayout(g, { group, keep }) {
   const fail = (why) => ({ id: g.id, state: 'failed', why });
@@ -188,7 +222,7 @@ async function writeLayout(g, { group, keep }) {
   if (!el) return fail(LW.gone);
   try {
     showLayout(el, null);
-    const edits = await layoutEdits(el, g.pick.recipe), id = group(), byFile = new Map();
+    const edits = await layoutEdits(el, g.pick.recipe === 'custom' ? { s: g.pick.s } : g.pick.recipe), id = group(), byFile = new Map();
     for (const { file, hash, edit } of edits) { if (!byFile.has(file)) byFile.set(file, { hash, edits: [] }); byFile.get(file).edits.push(edit); }
     const where = edits[0] ? `${edits[0].file}:${edits[0].edit.line}` : '';
     keep({ state: 'ok', cls: g.pick.name, where, group: id });
@@ -197,7 +231,7 @@ async function writeLayout(g, { group, keep }) {
       if (r?.refused?.length) { await post('undo-group', { group: id }).catch(() => {}); return fail(r.refused.map((x) => x.reason).join(' ')); }
     }
     return { id: g.id, state: 'ok', cls: g.pick.name, where, group: id };
-  } catch (error) { showLayout(el, g.pick.recipe); return fail(error?.message ?? String(error)); }
+  } catch (error) { showLayout(el, g.pick); return fail(error?.message ?? String(error)); }
 }
 
 // Read again as it is written: another change in the same Sync may have just moved the file on.

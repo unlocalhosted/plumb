@@ -27,7 +27,7 @@ const TIMING = { hoverRead: 90, light: 120, swap: 140, reread: [250, 600, 1200, 
 import { send } from './net.js';
 import { pageHydrated } from './hydration.js';
 import { markR } from './mark.js';
-import { DOCK, TAG } from './words.js'; // the dock's and the hover tag's words
+import { DOCK, TAG, FIX } from './words.js'; // the dock's and the hover tag's words
 import { NAME_TAG_CSS } from './nametag.js'; // the hover tag's look, shared with the design site
 import { locate, componentOf } from './locate.js';
 import { errorIs, request, post, forgetResolved } from './api.js';
@@ -53,7 +53,7 @@ import { TOY_DEFS } from './toys.js';
 import { classSiteOf, siteMatesOf } from './locate.js';
 import { route as routeStyles, loadProperties, evidenceFor, fileOfBundled, placeRead } from './style-systems.js';
 import { utility } from './craft-read.js';
-import { readShadow, readMotion, readLayout, showLayout, writeRecipe } from './xray-recipes.js';
+import { readShadow, readMotion, readLayout, showLayout, layoutLines, layoutHost, stepColumns, columnsName, writeRecipe } from './xray-recipes.js';
 
 const tokensCss = await send(new URL('./tokens.css', import.meta.url)).then((response) => response.text()).catch((error) => {
   console.warn('[plumb] React Plumber could not load its styles, so it stays hidden. Your app is not affected; reload to try again.', error);
@@ -600,7 +600,7 @@ class PlumbOverlay extends HTMLElement {
       // the page's element under the pointer: through blueprint's glass and marks, never the overlay's own panels
       // plumber's own pieces: the bar, its lists, the choice beside a fix, the dock, the pills and cards. Blueprint's bar
       // lives inside its layer, which the page is read through, so the X-ray looked through the bar to the page under it
-      ours: (e) => e.composedPath().some((n) => n.matches?.('.fx, .fx-pop, .dock, .bp-hint, .xr-note, .xr-list, .tx-toast, .rd, .rd-callout')),
+      ours: (e) => e.composedPath().some((n) => n.matches?.('.fx, .fx-pop, .dock, .bp-hint, .xr-note, .xr-list, .tx-toast, .rd, .rd-callout, .lay-h')),
       partAt: (e) => {
         const first = e.composedPath()[0];
         if (e.composedPath().includes(self) && !first?.closest?.('.glass, .bp')) return null;
@@ -645,7 +645,9 @@ class PlumbOverlay extends HTMLElement {
       tokenOf: (f, n) => steps(f).find(([px]) => Math.abs(px - n) <= 0.5)?.[1] ?? null,
       scale: steps,
       // your shadow tokens and the moves on offer, read and written by the recipe engine, the route the element card used
-      recipes: { shadow: { read: readShadow }, motion: { read: readMotion }, layout: { read: readLayout, show: showLayout } },
+      recipes: { shadow: { read: readShadow }, motion: { read: readMotion }, layout: { read: readLayout, show: showLayout, lines: layoutLines, step: stepColumns, name: columnsName,
+        words: { columns: FIX.card.columns, next: FIX.card.nextTrack, add: FIX.card.addColumn, remove: FIX.card.removeColumn },
+        dragged: (fn) => layoutHost(this.#root, fn) } },
       isPage: (r) => !r.target.closest?.('plumb-overlay'),
       // Sync: each change written where the element's value comes from, by the style system that owns it
       // (style-systems.js: a utility class on the element, a rule in your stylesheet, else a class added); one Undo
@@ -1272,6 +1274,16 @@ class PlumbOverlay extends HTMLElement {
     return `<span class="path" title="Two-finger scroll walks up and down the tree">${parts.join('<span class="sep">›</span>')}</span>`;
   }
 
+  // an element's card, asked for by Blueprint (an Alt+click inside an element read alone, ⌥↑): the X-ray's, pinned
+  pinXray(element) {
+    if (!element?.isConnected) return;
+    // the X-ray steps aside while Blueprint reads one element: Blueprint steps aside for the card instead
+    if (this.#blueprint?.active) this.#blueprint.leave({ instant: true });
+    if (!this.#xray) this.#toggleXray();
+    this.#xrayByAlt = false; this.#disarm();
+    this.#xray?.hold(element);
+    if (!this.#blueprint?.active) this.#pinXray();
+  }
   #onClick = event => {
     if (this.#ours(event)) return;
     event.preventDefault(); event.stopPropagation();
@@ -1292,8 +1304,7 @@ class PlumbOverlay extends HTMLElement {
         if (!this.#blueprint?.active) this.#pinXray();
         return;
       }
-      this.#disarm();
-      this.#blueprint.enterAt(element, { card: true, box: walked });
+      this.pinXray(element);
     }
   };
 

@@ -32,7 +32,7 @@ import { TextEditor, TEXT_EDITOR_CSS } from './texteditor.js';
 import { burst } from './burst.js'; // a fix landing, in pieces of the visual language
 import { SPRING, FIX_BUTTONS_CSS, FIX_NOTE_CSS, FIX_FIELD_CSS, fieldSays, shake, fit, fitFor } from './field.js'; // the fill-in parts, shared with the design site
 import { errorIs } from './api.js';
-import { ElementCard, ELEMENT_CARD_CSS } from './elementcard.js';
+import { LAYOUT_CSS } from './layoutcard.js'; // the column lines the X-ray's Layout row draws on a grid
 import { esc } from './choices.js';
 import { groundIsDark } from './geometry.js';
 import { FIX, CLEANUP, written } from './words.js'; // every sentence the panel says
@@ -69,7 +69,7 @@ const BAR_ICON = {
 
 const TOOL_TOY = { history: 'progress', help: 'tooltip', pick: 'search' };
 
-const FIX_CSS_BASE = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
+const FIX_CSS_BASE = TEXT_EDITOR_CSS + LAYOUT_CSS + `
   /* the old pieces this panel replaces stay out of sight */
   .bpp, .cg, .sel { display: none !important; }
   /* the room under the page, drawn as margin: butter dots, 1.25 radius every 6px, as the X-ray draws margin */
@@ -612,24 +612,6 @@ export class FixPanel {
       climb: (el) => this.#host.climb?.(el),
       bar: () => this.rect,
     });
-    // Alt+click on anything else: its own card, Shadow › and Motion › on the recipe engine (elementcard.js)
-    this.#card = new ElementCard(root, {
-      apply: (at, body, said, meta) => this.#host.recipe(at, body, said, meta),
-      swaps: (writes, said, meta) => this.#host.swaps(writes, said, meta),
-      batch: (steps, said, meta) => this.#host.batch(steps, said, meta),
-      bar: () => this.rect,
-      said: (text, undo, group = null) => { this.#last = { text, undo, group, key: null }; this.#html = ''; this.render(); this.#host.announce?.(text); },
-      problems: () => this.#problemsIn(this.#card.target),
-      show: () => this.#handOver(this.#card),
-      // a card closed lets go of its element too: the next Esc leaves Blueprint (F3-06), never a silent deselect
-      closed: () => { this.#host.release?.(); this.#html = ''; this.render(); },
-      elsewhere: (el) => stampMates(el),
-      dark: () => darkGround(),
-      why: (el) => this.#host.why?.(el) ?? Promise.resolve(null),
-      // working in the card: the cause Blueprint would put in hand once the element is read isn't, and one in hand is put down
-      release: () => { this.#host.unwant?.(); this.release(); },
-      climb: (el) => this.#host.climb?.(el),
-    });
     // the clean-up: while it runs, the panel's body, clicks and keys are its own (cleanup.js)
     this.#cleanup = new Cleanup({
       // while it runs, the problems' heat steps back (nothing lit): the page shows the clean-up's marks, not the fixes'
@@ -697,18 +679,18 @@ export class FixPanel {
     this.#choice.addEventListener('keydown', onKey);
   }
   get rect() { return this.#el.hidden ? null : this.#el.getBoundingClientRect(); }
-  #editor; #card; #cleanup; #quiet = false; #tools = false; #concern = null; #menu = null; // #concern: the concern picked (null: all); #menu: the bar's list open above its line ('concern' | 'more' | null)
+  #editor; #cleanup; #quiet = false; #tools = false; #concern = null; #menu = null; // #concern: the concern picked (null: all); #menu: the bar's list open above its line ('concern' | 'more' | null)
   // #tools: the bar's ··· is open (its tools shown inline)
   // Alt+click on words opens their editor; a cause in hand is put down first
-  edit(el) { if (this.#holding) this.release(); this.#card.close(); this.#editor.edit(el); this.#html = ''; this.render(); }
-  // Alt+click on anything else opens its card beside it. One owner of the screen: a cause in hand is put down first, and the panel is its one line while the card is open
-  card(el) { if (this.#holding) this.release(); this.#editor.close(); this.#card.edit(el); this.#html = ''; this.render(); }
-  get carding() { return this.#card.open; }
+  edit(el) { if (this.#holding) this.release(); this.#editor.edit(el); this.#html = ''; this.render(); }
+  // Alt+click on anything else pins the X-ray's card on it (the element card is retired: shadow, motion and layout are
+  // rows of the X-ray's card)
+  get carding() { return false; }
   // the words' card is open (not an element's)
   get texting() { return this.#editor.open; }
-  get editing() { return this.#editor.open ? this.#editor.target : this.#card.open ? this.#card.target : null; }
+  get editing() { return this.#editor.open ? this.#editor.target : null; }
   // a file was written or undone: the element in the editor (or the card) is read again
-  changed() { this.#editor.changed(); this.#card.changed(); }
+  changed() { this.#editor.changed(); }
   get holding() { return this.#holding; }
   // for the one owner of the screen (widget.js #owner): Clean up running is a task; a menu or the pop card open is a pop-up
   get cleaning() { return this.#cleanup.running; }
@@ -718,7 +700,7 @@ export class FixPanel {
   #handOver(card) { const el = card.target; card.close(); if (!el || !this.holdEl(el, 'none')) this.hold(0); }
 
   // each opening starts unread: the last one's count and its settled mark never stand in for this reading
-  show(on) { if (on) { const rest = undoing_(); if (rest) queueMicrotask(() => this.#undo(rest)); this.#el.dataset.scheme = darkGround() ? 'dark' : 'light'; this.#el.classList.toggle('pl-dark', this.#el.dataset.scheme === 'dark'); this.#el.classList.toggle('pl-light', this.#el.dataset.scheme !== 'dark'); this.#choice.dataset.scheme = this.#el.dataset.scheme; this.#choice.className = `fx fx-on ${this.#el.dataset.scheme === 'dark' ? 'pl-dark' : 'pl-light'}`; for (const w of written_()) if (!this.#taken.has(w.key)) this.#taken.set(w.key, { key: w.key, members: [] }); } if (on !== this.#on) { this.#groups = []; this.#progress = null; this.#steady = null; this.#steadyGroups = null; this.#notice = null; clearTimeout(this.#noticeTimer); this.#el.removeAttribute('data-settled'); this.#send(on ? (this.#flight?.kind === 'undoing' ? 'openUndoing' : this.#flight?.kind === 'writing' ? 'openWriting' : 'open') : 'close'); } this.#el.hidden = !on; if (!on) { this.#scrollHome(); this.#choice.hidden = true; this.#onHtml = ""; this.#editor.close(); this.#card.close(); this.#letGo(false); this.#done = false; const last = this.#last; if (last?.undo?.length || last?.group) this.#host.handOff?.({ undo: last.undo ?? [], trace: { group: last.group ?? null } }, last.text); this.#last = null; this.#resumeAt = null; if (this.#cleanup.running) this.#cleanup.stop(); } else this.#cleanup.resume(); this.render(); }
+  show(on) { if (on) { const rest = undoing_(); if (rest) queueMicrotask(() => this.#undo(rest)); this.#el.dataset.scheme = darkGround() ? 'dark' : 'light'; this.#el.classList.toggle('pl-dark', this.#el.dataset.scheme === 'dark'); this.#el.classList.toggle('pl-light', this.#el.dataset.scheme !== 'dark'); this.#choice.dataset.scheme = this.#el.dataset.scheme; this.#choice.className = `fx fx-on ${this.#el.dataset.scheme === 'dark' ? 'pl-dark' : 'pl-light'}`; for (const w of written_()) if (!this.#taken.has(w.key)) this.#taken.set(w.key, { key: w.key, members: [] }); } if (on !== this.#on) { this.#groups = []; this.#progress = null; this.#steady = null; this.#steadyGroups = null; this.#notice = null; clearTimeout(this.#noticeTimer); this.#el.removeAttribute('data-settled'); this.#send(on ? (this.#flight?.kind === 'undoing' ? 'openUndoing' : this.#flight?.kind === 'writing' ? 'openWriting' : 'open') : 'close'); } this.#el.hidden = !on; if (!on) { this.#scrollHome(); this.#choice.hidden = true; this.#onHtml = ""; this.#editor.close(); this.#letGo(false); this.#done = false; const last = this.#last; if (last?.undo?.length || last?.group) this.#host.handOff?.({ undo: last.undo ?? [], trace: { group: last.group ?? null } }, last.text); this.#last = null; this.#resumeAt = null; if (this.#cleanup.running) this.#cleanup.stop(); } else this.#cleanup.resume(); this.render(); }
   // the reader handed on the page: causes, most places first; a cause taken stays taken until it is written
   // While a cause is in hand the page is read as previewed (its fix, and what that fix also mends, gone from it): the
   // causes stay as they were read before, and the new reading is taken when the cause is put down
@@ -826,8 +808,7 @@ export class FixPanel {
     const live = this.#live();
     // nothing is put in hand while a write or an undo is out (the one that lands moves the panel on itself)
     if (!live.length || this.#flight || !this.#send('hold')) return;
-    // a cause in hand owns the screen: a card open is closed first, and so is an open list
-    if (this.#card.open) { this.#card.close(); this.#html = ''; }
+    // a cause in hand owns the screen: an open list is closed first
     if (this.#menu) { this.#menu = null; this.#html = ''; }
     if (this.#editor.open) { this.#editor.close(); this.#html = ''; }
     this.#notice = null;
@@ -1154,12 +1135,8 @@ export class FixPanel {
       if (this.#editor.key(k)) return true;
       if (k === '.' && this.#live().length) { this.#handOver(this.#editor); return true; }
     }
-    if (!this.#holding && this.#card.open) {
-      if (this.#card.key(k)) return true;
-      if (k === '.' && this.#live().length) { this.#handOver(this.#card); return true; }
-    }
     if (!this.#holding) {
-      if ((k === 'c' || k === 'C') && !this.#editor.open && !this.#card.open) { this.#host.claim?.('task'); this.#cleanup.start(); return true; }
+      if ((k === 'c' || k === 'C') && !this.#editor.open) { this.#host.claim?.('task'); this.#cleanup.start(); return true; }
       if (k === 'Enter' && this.#live().length) { this.hold(0); return true; }
       return false;
     }
@@ -1194,7 +1171,7 @@ export class FixPanel {
   }
 
   // a card open owns the screen: the host says so, and Blueprint's pills step aside under it (N-11)
-  #cardFlag() { const h = this.#el.getRootNode()?.host, on = !!(this.#editor?.open || this.#card?.open); if (h && h.hasAttribute('data-card') !== on) h.toggleAttribute('data-card', on); }
+  #cardFlag() { const h = this.#el.getRootNode()?.host, on = !!this.#editor?.open; if (h && h.hasAttribute('data-card') !== on) h.toggleAttribute('data-card', on); }
   // the choice, on the page beside the element in hand: below it when there is room, else above; never over the bar
   #placeOn() {
     const body = this.#onBody, at = this.#onAt;
@@ -1399,7 +1376,6 @@ export class FixPanel {
     const to = this.#el.scrollHeight;
     if (!still && from && from !== to) { this.#el.style.height = `${from}px`; void this.#el.offsetHeight; this.#el.style.height = `${to}px`; this.#life.timeout(() => (this.#el.style.height = ''), TIMING.open + 20); }
     // the bar changed size: what is placed clear of it is placed again (now, and once its height has moved)
-    if (from !== to && this.#card.open) { this.#card.place(); if (!still) this.#life.timeout(() => this.#card.place(), TIMING.open + 40); }
   }
   // The count rolls when it changes: a fix taken, the number goes down by it, the new value coming in from above (going
   // down) or below (going up), short, with a touch of blur (interaction principles 23 and the visual language's

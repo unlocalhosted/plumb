@@ -201,7 +201,6 @@ export class Blueprint {
     this.#glass.on();
     this.#fix.show(true);
     if (scope && hasText(scope) && !box) this.#fix.edit(scope);
-    else if (scope && card) this.#fix.card(scope);
     this.#set('entering');
     if (instant || still()) return this.#on();
     // one frame at opacity 0 before the fade, so the transition has somewhere to start
@@ -562,7 +561,7 @@ export class Blueprint {
   resumed(text, undo, at, group = null) { this.#fix.resumed(text, undo, at, group); }
   // Alt+click: that element and what's inside it are read, never the whole page (Alt+B is the whole page). Another
   // element outside the one being read is read in its place.
-  // `card`: an Alt+click, which opens anything that isn't words in its own card (elementcard.js) beside it. The card
+  // `card`: an Alt+click on anything that isn't words, or a level climbed to: the X-ray's card is pinned on it. The card
   // owns the screen: no cause is put in hand while it is open (the panel is its one line; '.' hands over to the fixes).
   // Without a card (a script's pin, a pick from a list) the element's own cause is put in hand once it is read
   // `box`: the element as a box even when it holds words (a level climbed or walked up to); `trail`: a climb, which keeps
@@ -572,8 +571,10 @@ export class Blueprint {
     if (this.active && this.#scope && !this.#scope.contains(el)) this.leave({ instant: true });
     // words: their own values open in the fix panel (texteditor.js), problem or not
     if (hasText(el) && !box) { this.#want = null; return this.active ? this.#fix.edit(el) : this.enter({ scope: el }); }
-    this.#want = card ? null : el;
-    if (this.active) { if (card) this.#fix.card(el); else this.#holdWanted(this.#settled); } else this.enter({ scope: el, card, box });
+    // an element's card is the X-ray's now (the element card is retired): Blueprint steps aside for it
+    if (card) { if (this.active) this.leave({ instant: true }); this.#host.pinXray?.(el); return; }
+    this.#want = el;
+    if (this.active) this.#holdWanted(this.#settled); else this.enter({ scope: el, box });
   }
   // ⌥↑ ⌥↓ and the card's levels (docs/briefs/qa-fixes.md, cause 4): up from words is the element that holds them, up
   // from an element its parent (never <body>); down retraces the way up, one level at a time
