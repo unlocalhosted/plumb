@@ -4646,8 +4646,13 @@ The same build passed 705 loads before it went out, and the game passes on the l
   two bento grids beside 100+, each in its pack's hue, piling up from the bottom; all nod once when 100+ lands.
 - **The owner's next note:** "lets create good looking icons for these principles we show into bento grids ...
   these plain cards looks boring". The overlay already had a toy set drawn to the visual language (`overlay/src/toys.js`,
-  76 toys). Rough cut 4 picks 24 checks that set covers and puts each check's toy on a white plate on its tile: a
-  corner for the corner check, layers for z-index, a dialog for a dialog with no name. No new icon was drawn.
+  76 toys). The first try put those existing toys on the tiles, and the owner rejected it: "dont use fucking existing
+  icons man you have to generate new icons based on the principle". Reusing them dodged the drawing work, and a toy
+  shows the component, not what's wrong with it. Rough cut 4 has 24 new icons, one for each principle, each showing
+  its fault by the visual language's rules, with coral only on the part that's wrong: an inner corner as round as
+  its parent's, a badge over a menu, a missing heading step, a line running past its edge. Three were redrawn after
+  the first sheet (the corner read as a circle, the blur was cut off square, the missing step was noisy). Sheet:
+  `docs/films/launch-02-draft/principle-icons.jpg` (local).
 
 ### 94. The X-ray card gets a layout picker (2026-11-23)
 
