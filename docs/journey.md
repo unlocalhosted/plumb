@@ -4915,6 +4915,28 @@ full test run, on an older commit, had 29 files that failed both times it ran, a
 
 **Media hooks.** The live homepage, and a link to it pasted in a chat to show the picture.
 
+
+### 104. 0.7.0 is cut (2026-11-23)
+
+**The itch.** The owner chose "Suite first, then release". npm still served 0.6.0, so a week of work (the pickers in
+the X-ray card, light and dark roles, the overlay no longer breaking apps) reached nobody who installs Plumber.
+
+**How we found where it stood.** One full run on vm-agent at `c7dd062d`: 944 tests passed and 7 failed, in 3 of 195
+files, in 30 minutes. The run before it, on an older commit, had 58 failing files. Run alone, all three passed. Two
+had only failed under load: a progress bar step drawn too briefly to be seen, and a clean-up racing a cache write.
+The third was a saved expectation from before propose began reporting light and dark pairs; it was regenerated, and
+the only change is that new field.
+
+**What shipped.** It is 0.7.0, not 0.6.1: 0.6.1 was tagged on GitHub but never published, and what came since is
+new features. The changelog, the version and the packaging test moved together. The tag `v0.7.0` and a GitHub
+release are up. The package was packed on vm-agent from the release commit, because the laptop's checkout carries
+other sessions' unsaved edits that would have gone into it.
+
+**What is left.** Publishing to npm is the owner's step: this laptop isn't logged in to npm. The package is
+`unlocalhosted-react-plumber-0.7.0.tgz` at the repo root, which git ignores.
+
+**Media hooks.** The release page, https://github.com/unlocalhosted/plumb/releases/tag/v0.7.0.
+
 ## Open gaps
 
 - **A page-wide warning can withdraw an unrelated fix.** A font with no `font-display` turned the z-index fix into
@@ -6610,18 +6632,19 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
+- React Plumber 0.7.0 is tagged and on GitHub's releases, after a full run on vm-agent left no failure that survives a run alone; the package is packed from the release commit, and npm publish is the owner's step ([entry](#104-070-is-cut-2026-11-23)).
 - A link to react-plumber.com now shows a picture of the site, and the launch film where an app plays one: pushed and deployed from a clean commit ([entry](#103-pushed-and-deployed-2026-11-23)).
-- The X-ray card is the one card for an element: its Layout row now changes a grid's columns (chips, + and −, lines to drag on the page), and the old element card is gone. On main, not released ([entry](#96-the-element-card-is-retired-and-grid-columns-move-to-the-x-ray-card-2026-11-23)).
-- Big writes answer at once: renaming colours across 161 files is done in about 2.5 seconds and undone in 3; plumber re-reads the app right after, without making you wait for it. On main, not released ([entry](#103-a-write-answers-before-the-app-is-analysed-again-2026-11-23)).
-- Big writes are much faster: renaming colours across 161 files takes about 15 seconds instead of two minutes, its Undo about 16 instead of three, and the panel says it is putting things back while it does. On main, not released ([entry](#102-a-many-file-write-stops-re-reading-the-whole-app-between-files-2026-11-23)).
-- You can rename your colour tokens by their job from Clean up again: the colour pass's bar offers it, and its list keeps the button in view. On main, not released ([entry](#101-renaming-colours-can-be-reached-again-2026-11-23)).
-- You can make light and dark roles from Clean up: the colour pass offers them, lists each role with its light and dark swatch, writes the theme and every file at once, and takes it all back with one Undo. On main, not released ([entry](#100-the-roles-step-seen-on-a-real-page-2026-11-23)).
-- Colours that drifted apart become one role: near light/dark pairs fold into the one used most, each move listed before anything is written (Tegaki: 25 roles became 20). On main, not released ([entry](#97-near-pairs-fold-into-one-role-2026-11-23)).
-- You can turn colours written twice for light and dark into roles: `plumber propose --roles` writes each role into your theme with its dark value, and moves every place onto it (`text-zinc-900 dark:text-zinc-100` becomes `text-fg`). On main, not released ([entry](#96-the-roles-get-written-2026-11-23)).
-- You can see which light and dark colour pairs in your code are one role: `plumber propose --family color` lists each pair written by hand with `dark:`, the role it would become and how many places it covers. On main, not released ([entry](#95-light-and-dark-by-hand-become-roles-2026-11-23)).
-- You can lay out one element again: Alt+click something with two or more parts, open Measurements, and pick stacked, side by side, two columns, lined up or fit as many as fit, shown on the page as you point; Sync writes the classes. On main, not released ([entry](#94-the-x-ray-card-gets-a-layout-picker-2026-11-23)).
-- You can give one element a move again: Alt+click, open Measurements, and pick from the moves that suit it, each playing as you point at it; Sync writes it with your own curve where one is close. On main, not released ([entry](#93-the-x-ray-card-gets-a-motion-picker-2026-11-23)).
-- You can pick a shadow for one element again: Alt+click, open Measurements, and choose one of your shadow tokens, each drawn as it looks; Sync writes it in your code, where that element's classes are written. On main, not released ([entry](#92-the-x-ray-card-gets-a-shadow-picker-2026-11-23)).
+- The X-ray card is the one card for an element: its Layout row now changes a grid's columns (chips, + and −, lines to drag on the page), and the old element card is gone. In 0.7.0, on GitHub; npm publish is the owner's step ([entry](#96-the-element-card-is-retired-and-grid-columns-move-to-the-x-ray-card-2026-11-23)).
+- Big writes answer at once: renaming colours across 161 files is done in about 2.5 seconds and undone in 3; plumber re-reads the app right after, without making you wait for it. In 0.7.0, on GitHub; npm publish is the owner's step ([entry](#103-a-write-answers-before-the-app-is-analysed-again-2026-11-23)).
+- Big writes are much faster: renaming colours across 161 files takes about 15 seconds instead of two minutes, its Undo about 16 instead of three, and the panel says it is putting things back while it does. In 0.7.0, on GitHub; npm publish is the owner's step ([entry](#102-a-many-file-write-stops-re-reading-the-whole-app-between-files-2026-11-23)).
+- You can rename your colour tokens by their job from Clean up again: the colour pass's bar offers it, and its list keeps the button in view. In 0.7.0, on GitHub; npm publish is the owner's step ([entry](#101-renaming-colours-can-be-reached-again-2026-11-23)).
+- You can make light and dark roles from Clean up: the colour pass offers them, lists each role with its light and dark swatch, writes the theme and every file at once, and takes it all back with one Undo. In 0.7.0, on GitHub; npm publish is the owner's step ([entry](#100-the-roles-step-seen-on-a-real-page-2026-11-23)).
+- Colours that drifted apart become one role: near light/dark pairs fold into the one used most, each move listed before anything is written (Tegaki: 25 roles became 20). In 0.7.0, on GitHub; npm publish is the owner's step ([entry](#97-near-pairs-fold-into-one-role-2026-11-23)).
+- You can turn colours written twice for light and dark into roles: `plumber propose --roles` writes each role into your theme with its dark value, and moves every place onto it (`text-zinc-900 dark:text-zinc-100` becomes `text-fg`). In 0.7.0, on GitHub; npm publish is the owner's step ([entry](#96-the-roles-get-written-2026-11-23)).
+- You can see which light and dark colour pairs in your code are one role: `plumber propose --family color` lists each pair written by hand with `dark:`, the role it would become and how many places it covers. In 0.7.0, on GitHub; npm publish is the owner's step ([entry](#95-light-and-dark-by-hand-become-roles-2026-11-23)).
+- You can lay out one element again: Alt+click something with two or more parts, open Measurements, and pick stacked, side by side, two columns, lined up or fit as many as fit, shown on the page as you point; Sync writes the classes. In 0.7.0, on GitHub; npm publish is the owner's step ([entry](#94-the-x-ray-card-gets-a-layout-picker-2026-11-23)).
+- You can give one element a move again: Alt+click, open Measurements, and pick from the moves that suit it, each playing as you point at it; Sync writes it with your own curve where one is close. In 0.7.0, on GitHub; npm publish is the owner's step ([entry](#93-the-x-ray-card-gets-a-motion-picker-2026-11-23)).
+- You can pick a shadow for one element again: Alt+click, open Measurements, and choose one of your shadow tokens, each drawn as it looks; Sync writes it in your code, where that element's classes are written. In 0.7.0, on GitHub; npm publish is the owner's step ([entry](#92-the-x-ray-card-gets-a-shadow-picker-2026-11-23)).
 
 ## Shipped · 2026-W47
 - The second launch film shows a badge poking through an open menu, the real Enter fix, four more fixes with their guides, and 24 principles falling into a bento grid beside 100+ ([entry](#93-rough-cut-2-the-badge-that-showed-through-the-menu-2026-11-23)).
@@ -6629,7 +6652,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - react-plumber.com has docs that match the npm package, the owner's new hero, live download and star counts, and links to npm, GitHub and the maker, so a newcomer can install it from true instructions and see who is behind it ([entry](#83-the-corrected-site-and-the-owners-hero-go-live-2026-11-22)).
 - The first launch film is rendered, not yet published: in 30 silent seconds AI's wrong green is caught on the page and fixed in the code, six more fixes land side by side, and it ends on "looking for 100+ design issues" ([entry](#81-the-first-launch-film-is-rendered-2026-11-22)).
 - React Plumber has a public site at [react-plumber.com](https://react-plumber.com), so anyone can read what it does, the docs and the design system without cloning the repo ([entry](#74-the-site-goes-live-at-react-plumbercom-2026-11-22)).
-- A padding change made in the visual editor is written to your code on Sync; it used to be refused as if your code had a style attribute there. On main, not released ([entry](#73-the-visual-editor-could-not-write-what-it-previewed-2026-11-22)).
+- A padding change made in the visual editor is written to your code on Sync; it used to be refused as if your code had a style attribute there. In 0.7.0 ([entry](#73-the-visual-editor-could-not-write-what-it-previewed-2026-11-22)).
 - The style tools work on a third product, React Plumber's Copy button: flat, in capitals and in its own blue, with all five suggestions passing the judge ([entry](#55-the-style-tools-on-a-third-product-react-plumbers-copy-button-2026-11-21)).
 - The style tools (style reader, colour engine, shadow recipe, pairing solver) now work on a second product: algorecall's start-review slab gets suggestions in its own pale green and dark green words, with its own lip, and all six pass the judge in light and dark ([entry](#53-the-style-tools-run-on-a-second-product-algorecall-2026-11-21)).
 - A fix whose class only some of a line's elements carry (a condition on one column, a red date on late cards) is shown and written on those elements; it used to be offered on the first element and refused. The README's hero is re-recorded on Relay ([entry](#72-a-fix-offered-on-the-wrong-element-2026-11-21)).
