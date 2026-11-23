@@ -4585,6 +4585,23 @@ The same build passed 705 loads before it went out, and the game passes on the l
   pills show white and empty.
 - **Media hooks:** the list open on the Team plan, light and dark; the three rows outlined as one change.
 
+### 92. Rough cut 1's notes: a new hero, still words, guides on every fix (2026-11-23)
+
+- **The itch:** the owner on rough cut 1. Start from the normal view, "then showed the numbers in details". Leave the
+  words alone: "dont fuck up the title … lets keep it same". The 1 and 0 comparison "was spot on". Call the parallels
+  "it knows and looks for similar design engineering principles". Show each parallel fix "with the emphasis on what
+  changed with guardrails", using the design site's change motion. And the tabular numbers are "overused by a lot of
+  other people on social media".
+- **The system behind it:** the cut opened on a close-up because the fault was easiest to see there, so the viewer
+  never saw the component first. The words were made to act out each fault, which moved the eye off the demo. The
+  parallels showed an image swap where the site already has a way to show a change happening. The hero was picked
+  for being visible and provable. I didn't check whether it was already a common tip.
+- **What we chose and why:** a new hero, a "Live" badge showing through an open Sort menu (`z-[999]` against the
+  menu's 50). It's a bug developers meet, it can be seen at normal size, and its cause can be built as candy layers
+  stacked by their numbers, the way the 1 and 0 were. The fix was already proven on the bare component. Script 2
+  waits for the owner's OK.
+- **Media hooks:** rough cut 1 against cut 2 at the opening (close-up first, then the normal view first).
+
 ## Open gaps
 
 - **A page-wide warning can withdraw an unrelated fix.** A font with no `font-display` turned the z-index fix into

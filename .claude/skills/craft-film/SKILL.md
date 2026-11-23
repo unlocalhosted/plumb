@@ -139,6 +139,21 @@ holds the date and what they said.
 
 ### The stage
 
+- **Launch films open on the component at its normal size, then move in on the detail.** Never open on a close-up.
+  Why: "i would've like if you have started from default view and then showed the numbers in details".
+  <!-- 2026-11-23: on launch film 2, rough cut 1 -->
+- **Launch films keep their words still.** They arrive word by word, as film 1's do, and don't act out the fault.
+  Why: "dont fuck up the title i understand you are trying to sell the illusion but i think lets keep it same".
+  <!-- 2026-11-23 -->
+- **A fix shown beside others still shows what changed,** with the design site's change motion
+  (`overlay/src/show-motion.js`: guides in, the move, the number landing, guides out), or a drawing that explains it
+  better, like the 1 and 0 candy. Never a bare swap of before and after.
+  Why: "dont just show tranisition of elements show these never fix things without the emphasis on what changed with
+  guardrails". The candy comparison "was spot on".
+  <!-- 2026-11-23 -->
+- **The hero isn't a tip everyone already posts.** Tabular numbers were dropped for that.
+  Why: "this primary example of tabular number is overused by a lot of other people on social media".
+  <!-- 2026-11-23 -->
 - **The example is its component's body, taken out of the craft rule page.** A launch film never shows a frame of
   `/rule/N`: no list, rule title, dotted board, switch or lesson. Mount the component alone on white in a throwaway
   copy, and record the gesture and prove the write there. This holds for the examples running side by side too.
@@ -193,3 +208,5 @@ holds the date and what they said.
   plumber's own pieces: dashed rings, toys on every tag, counting values.
 - 2026-11-23 · "dont use this frame straight from the page of craft rule bring the body component out and use it" →
   every example is mounted alone on white, recorded and proven there.
+- 2026-11-23 · rough cut 1 of launch film 2: normal view first, still words, guides on every fix, a hero nobody
+  overuses.
