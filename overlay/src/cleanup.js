@@ -373,7 +373,7 @@ export class Cleanup {
   bar() {
     const s = this.#state, k = PASSES[this.#pass], S = this.#words, W2 = W;
     // the colour names and the light and dark roles open as a list: the bar steps aside for the panel's body
-    if (s === 'noCensus' || (k === 'colour' && (this.#rn?.open || this.#dk?.open || this.#dk?.busy))) return null;
+    if (s === 'noCensus' || (k === 'colour' && (this.#rn?.open || this.#rn?.busy || this.#dk?.open || this.#dk?.busy))) return null;
     const TOY = { text: 'type', spacing: 'gap', colour: 'fill', icons: 'icon', radius: 'corner', sizes: 'size', shadows: 'shadow', speeds: 'motion', states: 'opacity' };
     const strip = `<span class="passes" role="list" aria-label="${esc(W2.passes)}">${PASSES.map((p, i) => {
       const st = this.#done.get(p), kind = i === this.#pass ? 'now' : st === 'done' ? 'done' : st === 'kept' ? 'kept' : st ? 'skipped' : 'soon';
@@ -410,7 +410,11 @@ export class Cleanup {
     // once made, the bar says so with its Undo, and the pass goes on
     const dk = k === 'colour' && ['nothing', 'done', 'ready'].includes(s) ? this.#rolesPlan() : null;
     if (dk?.done) { more = W.colour.roles.done(dk.done.roles, dk.done.places, dk.done.files); acts = b(W.colour.roles.undo, 'roles-undo', { quiet: true }) + acts; }
-    else if (dk?.plan) acts = b(W.colour.roles.open, 'roles-open', { quiet: true }) + acts;
+    else if (dk?.plan) acts = b(W.colour.roles.bar, 'roles-open', { quiet: true }) + acts;
+    // the colour names, the same way: offered while there is a plan, said with its Undo once renamed
+    const rn = dk ? this.#namesPlan() : null;
+    if (rn?.done) { more = `${more ? `${more} ` : ''}${W.colour.names.done(rn.done.names, rn.done.files)}`; acts = b(W.colour.names.undo, 'names-undo', { quiet: true }) + acts; }
+    else if (rn?.plan) acts = b(W.colour.names.bar, 'names-open', { quiet: true }) + acts;
     // in preview the detail is what changes: the styles as chips, rolling to their values, and how to compare
     const detail = s === 'preview' ? `<span class="roles">${chipsHtml(this.#steps().map((x) => x.chip))}</span><span class="cmp">${W2.holdSpace}</span>` : esc(more);
     return `<div class="one cu-one"><i class="ic big${pop ? ' pop' : ''}">${toyOf(s === 'done' && pop ? 'checkbox' : TOY[k])}</i><span class="lines"><span class="hl">${esc(say)}</span>`
@@ -457,6 +461,7 @@ export class Cleanup {
     if (PASSES[this.#pass] !== 'colour' || this.#state === 'writing' || this.#state === 'reading') return html;
     // the roles list open is the panel's one job: the pass's own words step back, so its button stays in view
     if (this.#dk?.open || this.#dk?.busy) return `<div class="body">${this.#rolesHtml()}</div>`;
+    if (this.#rn?.open || this.#rn?.busy) return `<div class="body">${this.#namesHtml()}</div>`;
     const names = this.#namesHtml(), at = html.lastIndexOf('<div class="acts"');
     return names && at > 0 ? html.slice(0, at) + names + html.slice(at) : html + names;
   }
@@ -497,9 +502,11 @@ export class Cleanup {
     const rows = pairs.map(([old, next]) => `<li><span class="sw" aria-hidden="true" style="background:${esc(plan.css.get(old) ?? 'transparent')}"></span><span class="nm">${esc(next)}<small>${esc(N.was(old))}</small></span></li>`).join('');
     const keptNames = plan.kept.map((k) => k.short);
     const kept = keptNames.length ? `<div class="sub">${esc(N.kept(keptNames.length > 1 ? `${keptNames.slice(0, -1).join(', ')} and ${keptNames.at(-1)}` : keptNames[0]))}</div>` : '';
-    return `<div class="names"><div class="nhead">${esc(N.head(pairs.length))}</div><div class="sub">${esc(N.sub(from, to))}</div><ol class="ladder nlist" aria-label="${esc(N.list)}">${rows}</ol>${kept}<div class="sub">${esc(N.everywhere)}</div>`
+    // the problem, then the action, then the detail: the panel has a fixed height, and the button must stay in view
+    return `<div class="names"><div class="nhead">${esc(N.head(pairs.length))}</div><div class="sub">${esc(N.sub(from, to))}</div>${kept}<div class="sub">${esc(N.everywhere)}</div>`
       + (rn.err ? `<div class="error">${esc(rn.err)}</div>` : '')
-      + `<div class="nacts"><button type="button" class="cu-btn soft" data-cu="names-go"${rn.busy ? ' disabled' : ''}>${esc(rn.busy ? N.renaming : rn.err ? N.retry : N.rename)}</button><button type="button" class="cu-btn quiet" data-cu="names-close"${rn.busy ? ' disabled' : ''}>${esc(N.notNow)}</button></div></div>`;
+      + `<div class="nacts"><button type="button" class="cu-btn soft" data-cu="names-go"${rn.busy ? ' disabled' : ''}>${esc(rn.busy ? N.renaming : rn.err ? N.retry : N.rename)}</button><button type="button" class="cu-btn quiet" data-cu="names-close"${rn.busy ? ' disabled' : ''}>${esc(N.notNow)}</button></div>`
+      + `<ol class="ladder nlist dk" aria-label="${esc(N.list)}">${rows}</ol></div>`;
   }
   async #rename() {
     const rn = this.#rn; if (!rn?.plan || rn.busy) return;

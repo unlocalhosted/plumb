@@ -1059,6 +1059,7 @@ export const CLEANUP = {
       head: (n) => `${n} of your colour names can take Plumber’s role names`,
       sub: (from, to) => `For example, ${from} becomes ${to}. Every colour stays the same; only the names change.`,
       open: 'Rename my colours…',
+      bar: 'Rename colours…', // in the clean-up bar, beside Next pass
       list: 'New colour names',
       was: (old) => `was ${old}`,
       kept: (names) => `${names} keep${names.includes(',') || names.includes(' and ') ? '' : 's'} ${names.includes(',') || names.includes(' and ') ? 'their names' : 'its name'}.`,
@@ -1075,6 +1076,7 @@ export const CLEANUP = {
     // colours set twice by hand at each place, for light and dark (src/onboarding/dark-pairs.ts): one role each
     roles: {
       open: 'Make light and dark roles…',
+      bar: 'Light and dark roles…', // in the clean-up bar, beside Next pass
       head: (places, roles) => `${places} places set a colour twice, once for light and once for dark. ${roles} ${roles === 1 ? 'role covers' : 'roles cover'} them.`,
       sub: (from, to) => `For example, ${from} becomes ${to}. Your theme switches it, so each place names its colour once.`,
       list: 'Light and dark roles',

@@ -4797,6 +4797,24 @@ The same build passed 705 loads before it went out, and the game passes on the l
   one zinc step in dark. No tests were written. The rename step has the same hidden-entry problem and isn't fixed here.
 - **Media hooks:** the bar with the entry, the open list, the bar after the write (kept outside the repo).
 
+### 101. Renaming colours can be reached again (2026-11-23)
+
+- **The itch:** entry 100 found that "Rename my colours…" had the same fault as the roles step: it lived only in the
+  old panel body, which the one-line bar never shows, so nobody could reach it. The owner: "Yes, fix it".
+- **What we chose and why:** the same shape as the roles. The colour pass's bar offers it as a quiet button while
+  there are names to change; opened, its list is the panel's one job, with "Rename everywhere" above the names, not
+  under them; once renamed, the bar says so with Undo. With both entries in the bar, Next pass was pushed off its
+  right edge, so the bar's buttons got shorter labels of their own ("Rename colours…", "Light and dark roles…"); the
+  longer words stay where there is room.
+- **The fix and the proof:** on a throwaway clone of terminal-dreams on vm-agent (Next 16 with Turbopack; plumber
+  wired by its own installer, linked from the vm's build): the bar showed both entries, the list opened with its
+  button inside the panel, "Renamed 4 colour names in 161 files" (`text` to `fg`, `bg` to `ground`, `code-border` to
+  `line`, `error` to `danger`), and Undo put all 161 back. A last check measured every bar button inside the bar. No
+  page errors. No tests were written.
+- **Found, not fixed:** that Undo took about three minutes for 161 files, one at a time, while the panel showed the
+  rename as still done; nothing says it is working.
+- **Media hooks:** the bar with both entries, the rename list open.
+
 ### 96. The element card is retired, and grid columns move to the X-ray card (2026-11-23)
 
 - **The itch:** with shadow, motion and layout in the X-ray card (entries 92 to 94), the old element card was code no
@@ -6517,6 +6535,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
 - The X-ray card is the one card for an element: its Layout row now changes a grid's columns (chips, + and −, lines to drag on the page), and the old element card is gone. On main, not released ([entry](#96-the-element-card-is-retired-and-grid-columns-move-to-the-x-ray-card-2026-11-23)).
+- You can rename your colour tokens by their job from Clean up again: the colour pass's bar offers it, and its list keeps the button in view. On main, not released ([entry](#101-renaming-colours-can-be-reached-again-2026-11-23)).
 - You can make light and dark roles from Clean up: the colour pass offers them, lists each role with its light and dark swatch, writes the theme and every file at once, and takes it all back with one Undo. On main, not released ([entry](#100-the-roles-step-seen-on-a-real-page-2026-11-23)).
 - Colours that drifted apart become one role: near light/dark pairs fold into the one used most, each move listed before anything is written (Tegaki: 25 roles became 20). On main, not released ([entry](#97-near-pairs-fold-into-one-role-2026-11-23)).
 - You can turn colours written twice for light and dark into roles: `plumber propose --roles` writes each role into your theme with its dark value, and moves every place onto it (`text-zinc-900 dark:text-zinc-100` becomes `text-fg`). On main, not released ([entry](#96-the-roles-get-written-2026-11-23)).
