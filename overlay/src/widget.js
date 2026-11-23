@@ -1085,12 +1085,14 @@ class PlumbOverlay extends HTMLElement {
     if (this.#xray?.listing && (event.key === 'Enter' || event.key === 'Escape')) {
       event.preventDefault(); event.stopImmediatePropagation(); this.#xray.listKey(event.key); return;
     }
-    // changes the X-ray has collected take Enter (Sync) and Esc (put back) before blueprint's own keys
+    // changes the X-ray has collected take Enter (Sync) and Esc (put back) before blueprint's own keys, while the X-ray
+    // owns the screen. A fix in hand owns it after them: Enter takes the fix the bar shows, and the changes wait for the
+    // card to come back (they synced instead, on another line, while the bar offered its fix with ↵; journey 106)
     // a pinned X-ray card with nothing changed: Enter writes a note for your agent about its element
     if (event.key === 'Enter' && this.#xray?.pinned && !this.#xray.pending && !this.#blueprint?.active && !event.altKey && !event.metaKey && !event.ctrlKey && !this.#typing(event)) {
       event.preventDefault(); event.stopPropagation(); this.#xray.note(); return;
     }
-    if (this.#xray?.pending && (event.key === 'Enter' || event.key === 'Escape') && !event.altKey && !event.metaKey && !event.ctrlKey && !this.#typing(event)) {
+    if (this.#xray?.pending && this.#owner() === 'idle' && (event.key === 'Enter' || event.key === 'Escape') && !event.altKey && !event.metaKey && !event.ctrlKey && !this.#typing(event)) {
       event.preventDefault(); event.stopPropagation();
       if (event.key === 'Enter') this.#xray.sync(); else this.#xray.putBack();
       return;

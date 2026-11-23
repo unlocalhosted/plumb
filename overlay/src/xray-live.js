@@ -506,6 +506,9 @@ export function mountXray(o) {
     const sided = prop.match(/^(padding|margin)-(top|right|bottom|left)$/); if (!sided) return [prop];
     return link === 'all' ? ['top', 'right', 'bottom', 'left'].map((k) => `${sided[1]}-${k}`) : link === 'pair' ? [prop, `${sided[1]}-${PAIR[sided[2]]}`] : [prop];
   };
+  // the card's Sync takes Enter while it owns the screen with changes waiting: the host says so, and the bar's resting ↵
+  // steps back (said again wherever the changes or the owner change)
+  const markKeys = () => o.root?.host?.toggleAttribute?.('data-xr-keys', !!count() && !o.paused?.());
   const count = () => new Set([...changes].flatMap(([k, m]) => [...m].map(([q, c]) => `${k.slice(0, k.lastIndexOf('#'))}|${q}|${RECIPES[q] ? c.scope : ''}`))).size;
   const reach = () => changes.size;
   const unseen = () => [...changes.keys()].filter((k) => !elOf(k)).length;
@@ -529,6 +532,7 @@ export function mountXray(o) {
       Object.assign(m.get(prop), { value: val, scope });
       t.style.setProperty(prop, val);
     }
+    markKeys();
   };
   const optionsFor = (family, n) => {
     const S = (o.scale(family) ?? []).map(([v, name]) => ({ name, v }));
@@ -592,6 +596,7 @@ export function mountXray(o) {
       }
       RECIPES[prop].show(t, x, o);
     }
+    markKeys();
   };
   function holdShade(el, prop) {
     if (inHand?.el === el && inHand.prop === prop) return;
@@ -1139,9 +1144,11 @@ export function mountXray(o) {
   };
   function pendHtml() {
     const n = count(), res = results ? resultsHtml() : '';
+    markKeys();
     if (!n) return res;
-    const at = reach(), gone = unseen();
-    return res + `<div class="xr-pend"><span>${n} change${n > 1 ? 's' : ''}${at > n ? ` · ${at} places` : ''}${gone ? ` · ${gone} not on screen` : ''}</span><span class="sp"></span><button type="button" class="back" title="Esc">Put back</button><button type="button" class="sync"${syncing ? ' disabled' : ''}>${syncing ? 'Syncing…' : 'Sync <kbd>↵</kbd>'}</button></div>`;
+    // ↵ and Esc are the card's only while it owns the screen; with a fix in hand they are the bar's, so the card says none
+    const at = reach(), gone = unseen(), keys = !o.paused?.();
+    return res + `<div class="xr-pend"><span>${n} change${n > 1 ? 's' : ''}${at > n ? ` · ${at} places` : ''}${gone ? ` · ${gone} not on screen` : ''}</span><span class="sp"></span><button type="button" class="back"${keys ? ' title="Esc"' : ''}>Put back</button><button type="button" class="sync"${syncing ? ' disabled' : ''}>${syncing ? 'Syncing…' : `Sync${keys ? ' <kbd>↵</kbd>' : ''}`}</button></div>`;
   }
   function resultsHtml() {
     const ok = results.filter((r) => r.state === 'ok' || r.state === 'moved').length;
@@ -1165,7 +1172,7 @@ export function mountXray(o) {
       const out = [...groups.values()].map((g) => ({ ...g, ...(said.find((r) => r.id === g.id) ?? { state: 'failed', why: 'No answer for this change.' }) }));
       // the written ones leave the pending list (their inline preview goes: the page now draws them from your code);
       // the failed ones stay pending
-      for (const r of out) if (r.state !== 'failed') for (const k of r.keys) { const m = changes.get(k); m?.delete(r.prop); if (m && !m.size) changes.delete(k); if (o.dropPreviewOnWrite) { const el = elOf(k); el?.style.removeProperty(r.prop); } }
+      for (const r of out) if (r.state !== 'failed') for (const k of r.keys) { const m = changes.get(k); m?.delete(r.prop); if (m && !m.size) changes.delete(k); if (o.dropPreviewOnWrite) { const el = elOf(k); el?.style.removeProperty(r.prop); } } markKeys();
       // written: what your code says now is read afresh
       if (out.some((r) => r.state !== 'failed')) forget();
       results = [...(results ?? []).filter((r) => !out.some((x) => x.id === r.id)), ...out];
@@ -1183,7 +1190,7 @@ export function mountXray(o) {
     shadeList?.end();
     if (!count()) return false;
     for (const [k, m] of changes) { const el = elOf(k); if (el) for (const [prop, { before }] of m) { if (before) el.style.setProperty(prop, before); else el.style.removeProperty(prop); RECIPES[prop]?.clear?.(el, o); } }
-    changes.clear();
+    changes.clear(); markKeys();
     // the row in hand says the value put back, not the one taken away
     if (inHand?.el?.isConnected) { const { el, prop } = inHand; hand.innerHTML = ''; inHand = null; hold(el, prop); }
     refresh();
@@ -1273,11 +1280,11 @@ export function mountXray(o) {
     // let go (a fix put down, a selection cleared): what was drawn for it goes too, unless changes wait on it
     release() { const was = pinned; pinned = null; if (was && shown === was && !changes.size && !held) { ready = false; draw(null); } },
     // something else took the screen (a card opened): out of the way at once
-    hide() { card.removeAttribute('data-reach'); pinned = null; if (!changes.size) draw(null); },
+    hide() { card.removeAttribute('data-reach'); pinned = null; if (!changes.size) draw(null); else refresh(); markKeys(); },
     // results from before a reload (a write the dev server reloaded the page for), said again
     showResults(list) { results = list.map((r) => ({ keys: [], els: [], befores: [], ...r })); lastCard = ''; card.hidden = false; if (shown) draw(shown); else { body.innerHTML = resultsHtml(); lastCard = ''; const s = box(); card.style.transform = `translate(${Math.max(12, s.width - (card.offsetWidth || 292) - 24)}px, 24px)`; } },
     get shown() { return shown; },
     putBack, sync,
-    destroy() { putBack(); linesOff(); life.end(); for (const f of off) f(); clearTimeout(waiting); clearTimeout(warm); clearTimeout(queued); layer.remove(); card.remove(); live.remove(); C.querySelector(':scope > .xr-list')?.remove(); C.querySelector(':scope > .xr-note')?.remove(); },
+    destroy() { putBack(); o.root?.host?.removeAttribute?.('data-xr-keys'); linesOff(); life.end(); for (const f of off) f(); clearTimeout(waiting); clearTimeout(warm); clearTimeout(queued); layer.remove(); card.remove(); live.remove(); C.querySelector(':scope > .xr-list')?.remove(); C.querySelector(':scope > .xr-note')?.remove(); },
   };
 }

@@ -101,6 +101,8 @@ const FIX_CSS_BASE = TEXT_EDITOR_CSS + LAYOUT_CSS + `
   /* Space held: the page takes the clicks; the bar says so and the marks step back (U53) */
   .fx .using { display: none; font: 600 12px/1 var(--pl-sans); color: var(--pl-text-secondary); }
   :host([data-bp-pass]) .fx .using { display: inline; }
+  /* changes waiting in the X-ray card take Enter (its Sync): the bar's resting button keeps its click, not the key */
+  :host([data-xr-keys]) .fx .start kbd { display: none; }
   :host([data-bp-pass]) .bp > :is(svg, .labels) { opacity: .2; transition: opacity 120ms var(--pl-ease-out, ease-out); }
   .fx .one .onav button:disabled { opacity: .35; cursor: default; background: none; } /* pale is for what is not there */
   .fx .one .tb { flex: none; }

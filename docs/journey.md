@@ -4983,13 +4983,43 @@ height.
 
 **Media hooks.** The fix bar on the invoice screen, before ("Use text-2xl--line-height") and after ("Use text-3xl").
 
+### 106. Enter takes the fix the bar shows (2026-11-23)
+
+**The itch.** Proving launch film 2's fixes, the bar on the showcase's calendar offered the hairline fix with ↵, and
+the X-ray card beside it held a text size change waiting to sync, also with ↵. Enter wrote the card's `text-xs`, on
+another line, in two runs of two. The person pressed the key the bar told them to and got a different change.
+
+**How we found it.** Seen in the film's proof run (entry 88). Rehearsed by hand on the calendar: pick `xs` in the
+card's text size, Alt+click the row with the heavy line so the bar holds its fix, press Enter.
+
+**The system behind it.** Plumber already has one owner of the screen: a fix in hand is the task, and the X-ray card
+steps aside for it. The Enter key never asked who owned the screen. It checked first whether the card had changes
+waiting and synced them, so a card that had stepped aside still took the key. And both pieces drew ↵, so nothing on
+screen said which one would get it.
+
+**What we chose.** Enter follows the owner of the screen. With a fix in hand, Enter takes that fix, and the card's
+changes keep waiting. With nothing in hand, Enter syncs the card. Only the owner shows ↵: the card's Sync drops it
+while a fix is in hand, and the bar's resting Fix button drops it while the card has changes waiting. Putting the
+waiting changes first, or asking which one, were both worse: the bar is what the person just picked, and a question
+in the way of a key press breaks the flow.
+
+**The fix and the proof.** Three small changes in the overlay: the key routing in `widget.js`, the card's Sync row in
+`xray-live.js`, and the bar's button in `fixpanel.js`. Rehearsed on the calendar: with `xs` waiting in the card and
+the hairline fix in hand, Enter wrote `border-b-0 shadow-[inset_0_-0.5px_0_…]` to the row and not `text-xs`. Before
+the fix in hand, only the card's Sync showed ↵. After it, only the bar did.
+
+**Found on the way.** The write reloaded the showcase page, and the card's waiting change was lost with it: those
+changes live only on the page.
+
+**Media hooks.** The calendar with the card's "1 change · 7 places · Sync" and the bar's "Line too heavy" both on
+screen, one ↵ between them.
+
 ## Open gaps
 
 - **A page-wide warning can withdraw an unrelated fix.** A font with no `font-display` turned the z-index fix into
   advice (seen 2026-11-23, [entry 91](#91-the-film-shows-the-component-without-the-page-round-it-2026-11-23)).
-- **Enter can write a different fix from the one in the bar.** On the showcase's calendar (38) the bar offered the
-  hairline fix while the element's card held a pending Sync, both marked ↵, and Enter wrote `text-xs` to another line
-  in two runs of two. The newsletter screen (37) did the same in one run of two (seen 2026-11-22, entry 88).
+- **Changes waiting in the X-ray card are lost when a write reloads the page.** They live only on the page; on the
+  showcase, taking a fix from the bar reloaded it and the card's waiting change was gone ([entry 106](#106-enter-takes-the-fix-the-bar-shows-2026-11-23)).
 - **A lone ticking number isn't flagged.** The tabular figures check reads only cells and list rows, so the showcase's
   own running timer keeps its wobble after the fix (entry 88).
 - The fixes of entry 81 (caret, app errors, broken config on Vite) are committed and not published. The site runs
@@ -6676,6 +6706,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
+- Enter takes the fix the bar shows, even while the X-ray card has a change waiting; only the one that will get Enter shows ↵. On main, not released ([entry](#106-enter-takes-the-fix-the-bar-shows-2026-11-23)).
 - A size fix no longer writes a class that doesn't exist: plumber offered `text-2xl--line-height` (a line height) for a 34px text size; it now offers your real size steps, and 28px sizes that hid behind a line height are flagged. On main, not released ([entry](#105-a-size-fix-stops-writing-a-class-that-doesnt-exist-2026-11-23)).
 - React Plumber 0.7.0 is tagged and on GitHub's releases, after a full run on vm-agent left no failure that survives a run alone; the package is packed from the release commit, and npm publish is the owner's step ([entry](#104-070-is-cut-2026-11-23)).
 - A link to react-plumber.com now shows a picture of the site, and the launch film where an app plays one: pushed and deployed from a clean commit ([entry](#103-pushed-and-deployed-2026-11-23)).
