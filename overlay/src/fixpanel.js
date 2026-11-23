@@ -622,6 +622,7 @@ export class FixPanel {
       // the one write of text styles (blueprint.js): remembered across the reload it may cause, its files read again
       write: (w, said, meta) => this.#host.applyStyles(w, said, meta),
       rename: (map, said, meta) => this.#host.renameColours(map, said, meta),
+      darkRoles: (said, meta) => this.#host.darkRoles(said, meta),
       undo: (group) => this.#host.undoGroup(group),
       close: () => this.#cleanup.stop(),
       url: () => location.origin + '/',

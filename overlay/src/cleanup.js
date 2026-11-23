@@ -121,6 +121,8 @@ export const CLEANUP_CSS = `
   .cu .names .sw { width: 14px; height: 14px; border-radius: 4px; justify-self: center; box-shadow: inset 0 0 0 1px var(--pl-border-default); }
   .cu .names .nm { font: 550 12px/1.3 var(--pl-mono, ui-monospace, monospace); } .cu .names .nm small { font-family: var(--pl-sans, system-ui); }
   .cu .names .error { padding: 0; }
+  /* a role's swatch: its light colour and its dark one, split corner to corner */
+  .cu .names .sw.dk { background: linear-gradient(135deg, var(--l) 50%, var(--d) 50%); }
   .cu .ladder .sp-ic { display: inline-grid; place-items: center; width: 16px; height: 16px; color: var(--pl-text-secondary); } .cu .ladder .sp-ic svg { width: 16px; height: 16px; display: block; }
 ${SHOW_CSS}
 `;
@@ -189,6 +191,7 @@ export class Cleanup {
     import('./states-pass.js').then((m) => { this.#swaps.states = new m.StatesPass(); }, () => {})]);
   // renaming the colour tokens by job: null until the colour step reads a plan; then { plan, open, busy, done, err }
   #rn = null;
+  #dk = null; // light and dark roles: { plan, open, busy, done, err } (src/onboarding/dark-pairs.ts, read from the server once)
   // One run at a time (docs/state-machines/cleanup-spec.md): every move the person makes (start, a pass read, Esc out of
   // the preview, Apply, Undo, stop) is a new run; an answer that comes back for an older run changes nothing on screen
   #run = 0;
@@ -210,7 +213,7 @@ export class Cleanup {
   get previewing() { return this.#state === 'preview'; }
 
   async start() {
-    this.#pass = 0; this.#done.clear(); this.#saved = null; this.#rn = null;
+    this.#pass = 0; this.#done.clear(); this.#saved = null; this.#rn = null; this.#dk = null;
     await this.#read();
   }
   stop() { this.#run++; this.#settle(); keep(null); this.#listen(false); this.#held = false; this.#preview.clear((el, f) => f()); for (const sw of Object.values(this.#swaps)) sw.clear(); this.#send('stop'); this.#p = null; this.#host.render(); }
@@ -443,7 +446,7 @@ export class Cleanup {
   #swapHtml(acts, close) {
     const html = this.#swapBody(acts, close);
     if (PASSES[this.#pass] !== 'colour' || this.#state === 'writing' || this.#state === 'reading') return html;
-    const names = this.#namesHtml(), at = html.lastIndexOf('<div class="acts"');
+    const names = this.#namesHtml() + this.#rolesHtml(), at = html.lastIndexOf('<div class="acts"');
     return names && at > 0 ? html.slice(0, at) + names + html.slice(at) : html + names;
   }
   #swapBody(acts, close) {
@@ -502,6 +505,48 @@ export class Cleanup {
     } else { keep(null); rn.err = r?.why || N.failed; }
     rn.busy = false; this.#host.render();
   }
+  // colours set twice at each place, light and dark, as one role each: the project's plan, asked for once; the step
+  // shows only when there is one
+  #rolesPlan() {
+    if (this.#dk) return this.#dk;
+    this.#dk = { plan: null, open: false, busy: false, done: null, err: null };
+    this.#life.wait(request('dark-roles', {}, { throws: true })).then((plan) => { if (this.#dk && plan?.roles?.length) { this.#dk.plan = plan; this.#host.render(); } }, () => {});
+    return this.#dk;
+  }
+  #rolesHtml() {
+    const N = W.colour.roles, dk = this.#rolesPlan(), plan = dk.plan;
+    if (!plan && !dk.done) return '';
+    if (dk.done) return `<div class="names"><div class="sub">${esc(N.done(dk.done.roles, dk.done.places, dk.done.files))}</div><div class="nacts"><button type="button" class="cu-btn soft" data-cu="roles-undo"${dk.busy ? ' disabled' : ''}>${esc(N.undo)}</button></div></div>`;
+    if (!dk.open) return `<div class="names quiet"><div class="nacts"><button type="button" class="cu-btn quiet" data-cu="roles-open">${esc(N.open)}</button></div></div>`;
+    const roles = plan.roles, places = roles.reduce((n, r) => n + r.places.length, 0), first = roles[0], folds = roles.reduce((n, r) => n + (r.merged?.length ?? 0), 0);
+    // each swatch is the role in both schemes: its light colour, then its dark one (interaction-principles 18c)
+    const css = (c) => (/^[a-z]+(-\d{2,3})?(\/\d+)?$/.test(c) ? `var(--color-${c.replace(/\/\d+$/, '')})` : 'transparent');
+    const rows = roles.map((r) => `<li><span class="sw dk" aria-hidden="true" style="--l:${esc(css(r.light))};--d:${esc(css(r.dark))}"></span><span class="nm">${esc(r.replacement)}<small>${esc(N.row(r.light, r.dark, r.places.length))}${r.merged?.length ? ` ${esc(N.near(r.merged.length))}` : ''}</small></span></li>`).join('');
+    return `<div class="names"><div class="nhead">${esc(N.head(places, roles.length))}</div><div class="sub">${esc(N.sub(`${first.places[0].light} ${first.places[0].dark}`, first.replacement))}</div><ol class="ladder nlist" aria-label="${esc(N.list)}">${rows}</ol>`
+      + (folds ? `<div class="sub">${esc(N.moves(folds))}</div>` : '') + `<div class="sub">${esc(N.everywhere)}</div>`
+      + (dk.err ? `<div class="error">${esc(dk.err)}</div>` : '')
+      + `<div class="nacts"><button type="button" class="cu-btn soft" data-cu="roles-go"${dk.busy ? ' disabled' : ''}>${esc(dk.busy ? N.going : dk.err ? N.retry : N.go)}</button><button type="button" class="cu-btn quiet" data-cu="roles-close"${dk.busy ? ' disabled' : ''}>${esc(N.notNow)}</button></div></div>`;
+  }
+  async #makeRoles() {
+    const dk = this.#dk; if (!dk?.plan || dk.busy) return;
+    dk.busy = true; dk.err = null; this.#host.render();
+    const N = W.colour.roles, group = `cleanup-roles-${Date.now().toString(36)}`, plan = dk.plan;
+    const r = await answered(this.#host.darkRoles(N.done(plan.roles.length, 0, 0), { step: W.pass.colour, laws: ['similarity'], group }), group);
+    if (r?.ok || r?.landed) {
+      dk.done = { roles: r.roles ?? plan.roles.length, places: r.places ?? 0, files: r.files ?? 0, group }; dk.open = false;
+      const said = N.done(dk.done.roles, dk.done.places, dk.done.files);
+      this.#host.wrote?.({ undo: r.undo ?? [], trace: { group } }, said);
+      this.#host.announce?.(said);
+    } else dk.err = r?.why || N.failed;
+    dk.busy = false; this.#host.render();
+  }
+  async #rolesUndo() {
+    const dk = this.#dk; if (!dk?.done || dk.busy) return;
+    dk.busy = true; this.#host.render();
+    try { await this.#host.undo(dk.done.group); this.#host.announce?.(W.colour.roles.undone); this.#dk = null; this.#host.render(); return; }
+    catch (error) { dk.busy = false; dk.err = error?.message || W.colour.roles.failed; }
+    this.#host.render();
+  }
   // the server reads the theme again after an undo: ask until the names the undo took away are gone (about 5 seconds at most)
   async #settledTheme(gone) {
     for (let i = 0; i < 10; i++) {
@@ -533,6 +578,10 @@ export class Cleanup {
     else if (act === 'names-close') { this.#rn.open = false; this.#rn.err = null; this.#host.render(); }
     else if (act === 'names-go') this.#rename();
     else if (act === 'names-undo') this.#renameUndo();
+    else if (act === 'roles-open') { this.#dk.open = true; this.#host.render(); }
+    else if (act === 'roles-close') { this.#dk.open = false; this.#dk.err = null; this.#host.render(); }
+    else if (act === 'roles-go') this.#makeRoles();
+    else if (act === 'roles-undo') this.#rolesUndo();
     else if (act === 'site') this.#readSite();
     else if (act === 'retry') { if (this.#sw) this.#readPass(this.#pass); else this.#read(); }
     else if (act === 'copy') { const t = this.#el?.querySelector?.('.cmd code')?.textContent ?? ''; navigator.clipboard?.writeText(t).catch(() => {}); this.#host.announce?.(W.copied); }

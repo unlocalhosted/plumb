@@ -75,6 +75,9 @@ export const methods = [
   { http: 'trace', engine: 'trace' },
   { http: 'rhythm', engine: 'rhythm' },
   { http: 'palette', engine: 'palette' },
+  // colours set light and dark by hand at each place, as one role per pair; then written, one Undo for all of it
+  { http: 'dark-roles', engine: 'darkRoles', patient: true },
+  { http: 'dark-roles-apply', engine: 'darkRolesApply', post: true, traced: true, patient: true },
   { http: 'icons', engine: 'icons' },
   { http: 'try', engine: 'try', post: true },
   { http: 'refresh', engine: 'refresh', patient: true },

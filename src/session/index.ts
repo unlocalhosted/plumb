@@ -168,6 +168,8 @@ export class Session extends EventEmitter {
   trace(...args: Parameters<Engine['trace']>) { return this.call('trace', args); }
   rhythm(...args: Parameters<Engine['rhythm']>) { return this.call('rhythm', args); }
   palette(...args: Parameters<Engine['palette']>) { return this.call('palette', args); }
+  darkRoles(...args: Parameters<Engine['darkRoles']>) { return this.call('darkRoles', args); }
+  darkRolesApply(...args: Parameters<Engine['darkRolesApply']>) { return this.call('darkRolesApply', args); }
   icons(...args: Parameters<Engine['icons']>) { return this.call('icons', args); }
   undoChange(...args: Parameters<Engine['undoChange']>) { return this.call('undoChange', args); }
   undoGroup(...args: Parameters<Engine['undoGroup']>) { return this.call('undoGroup', args); }

@@ -125,6 +125,7 @@ export class Blueprint {
       fromCode: (mark, places) => this.#fromCode(mark, places),
       applyStyles: (write, said, meta) => this.#applyStyles(write, said, meta),
       renameColours: (map, said, meta) => this.#renameColours(map, said, meta),
+      darkRoles: (said, meta) => this.#darkRoles(said, meta),
       scope: () => this.#scope,
       set: (at, key, token, said) => this.#setProp(at, key, token, said),
       recipe: (at, body, said, meta) => this.#applyRecipe(at, body, said, meta),
@@ -382,6 +383,18 @@ export class Blueprint {
   }
   // The colour tokens renamed by job across the project (POST rename): like the text styles, a theme write that may
   // reload the page, so the overlay is told to come back with its Undo before the write goes out
+  // colours set light and dark by hand, written as one role each (POST dark-roles-apply): the theme and every file
+  // that sets them, one Undo for all of it
+  async #darkRoles(said, meta) {
+    const trace = traceOf(meta);
+    this.#host.remember?.(said, undefined, null, trace.group);
+    try {
+      const answer = await post('dark-roles-apply', { trace });
+      this.invalidate({});
+      this.#host.remember?.(said, answer.undo ?? [], null, trace.group);
+      return { ok: true, undo: answer.undo ?? [], group: trace.group, roles: answer.roles ?? 0, places: answer.places ?? 0, files: answer.files ?? 0 };
+    } catch (error) { this.#host.forgetResume?.(); return { ok: false, why: errorIs(error, 'stale-file') ? FIX.changedSince : error?.message ?? FIX.couldNot }; }
+  }
   async #renameColours(map, said, meta) {
     const trace = traceOf(meta);
     this.#host.remember?.(said, undefined, null, trace.group);

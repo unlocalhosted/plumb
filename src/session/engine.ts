@@ -74,6 +74,8 @@ import type { InstalledIconSet } from './icon-sets.js';
 import { indexProject } from '../recipes/project.js';
 import type { ProjectIndex } from '../recipes/project.js';
 import { recipesPlan, recipesPreview, recipesView } from '../recipes/service.js';
+import { darkPairs, planRoles } from '../onboarding/dark-pairs.js';
+import type { DarkPairs } from '../onboarding/dark-pairs.js';
 import type { PlanParams, RecipeContext } from '../recipes/service.js';
 export type { TextRun, TextResult } from './text.js';
 
@@ -2051,6 +2053,41 @@ export class Session extends EventEmitter {
     if (!kept) throw new UsageError('There is no census of the project yet.\n  → plumber census --url <your dev server>', 'no-census');
     if (!kept.colours) throw new UsageError('The census was taken before colours were read.\n  → plumber census --url <your dev server>', 'no-census');
     return { colours: kept.colours.map(row => ({ prop: row.prop, oklab: row.oklab, cls: row.cls, ...(row.data ? { data: true } : {}), route: row.route ?? '' })), routes: kept.census.routes.length };
+  }
+  /** Colours set twice by hand at each place, light and `dark:`, read as one role per pair (src/onboarding/dark-pairs.ts). Reads only. */
+  async darkRoles(): Promise<DarkPairs & { target: string | null }> {
+    const report = await this.report();
+    const entry = report.tailwind.entry;
+    return { ...darkPairs(report), target: entry ? relative(this.root, entry).replaceAll('\\', '/') : null };
+  }
+  /** The roles written: each into the theme with its dark value, every place moved onto it, one Undo for all of it.
+   * Each file must still be as the plan read it; if one can't be written, the ones before it go back. */
+  async darkRolesApply(): Promise<{ revision: number; roles: number; places: number; files: number; skipped: number; undo: UndoHandle[]; labels: string[] }> {
+    const report = await this.report();
+    const entry = report.tailwind.entry;
+    if (!entry) throw new UsageError('This project has no Tailwind stylesheet for the roles to go in.');
+    const target = relative(this.root, entry).replaceAll('\\', '/');
+    const shape = /@theme\s+inline\b/.test(await readFile(entry, 'utf8').catch(() => '')) ? 'shadcn' : 'theme';
+    const read = async (file: string) => { try { const got = await this.readForWrite(file); return got; } catch { return undefined; } };
+    const plan = await planRoles(this.root, darkPairs(report), target, shape, read);
+    if ('refused' in plan) throw new UsageError(plan.refused);
+    const files = [{ file: plan.theme.file, before: plan.theme.before, after: plan.theme.after, label: `${plan.roles.length} light and dark roles` }, ...plan.sources.map(x => ({ file: x.file, before: x.before, after: x.after, label: `${x.swaps} classes moved onto roles` }))];
+    const done: UndoHandle[] = [];
+    await this.manyFiles(async () => {
+      for (const f of files) {
+        this.progress();
+        try {
+          done.push(await this.serialize(async () => {
+            const current = await this.readForWrite(f.file);
+            if (current.text !== f.before) throw stale();
+            const committed = await this.commit(f.file, current, f.after);
+            return this.record(this.editable(f.file), f.before, committed.hash, 1, f.label);
+          }));
+        } catch (error) { await this.putBack(done, error); }
+      }
+    }, () => ({ results: { tokens: [], css: [], swaps: [], accepts: [] }, undo: done, labels: done.map(h => h.label) }));
+    const undo = this.asOneWrite(done, 'Light and dark roles');
+    return { revision: this.revision, roles: plan.roles.length, places: plan.sources.reduce((n, x) => n + x.swaps, 0), files: files.length, skipped: plan.skipped, undo: [undo], labels: [undo.label] };
   }
   /** The site's icons as the census read them: every icon place (an svg's origin, size, stroke, gap, the class that sizes it; an emoji
    * standing in for one) on every route, and the icon sets the project has installed (overlay/src/icons.js reads them). */

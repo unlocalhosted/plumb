@@ -4756,6 +4756,23 @@ The same build passed 705 loads before it went out, and the game passes on the l
   and `amber-700` stayed `text-warning-2`. No tests were written.
 - **Not done:** the ground is a guess per app, not per place. Large text, which needs only 3:1, is judged as body text.
 
+### 99. Light and dark roles in Clean up (2026-11-23)
+
+- **The itch:** the roles lived only on the command line. The owner: "Yes, the overlay".
+- **What we chose and why:** not a tenth pass. Roles are a choice about colour for the whole project, like renaming
+  your colour tokens by their job, which already sits at the foot of the colour pass as a quiet entry that opens a list
+  and writes everywhere with one Undo. The roles follow it there: "Make light and dark roles…" opens the list, each
+  row with a swatch split corner to corner into the role's light and dark colour (the colour picker's rule: every
+  swatch shows both), the class it becomes, and how many places; then how many near colours move a little, and one
+  button, "Make roles everywhere". After it: what was made, and Undo. The server gained two calls, one that reads the
+  roles and one that writes the theme and every file as one Undo, and puts the files back if one can't be written.
+- **The fix and the proof:** through the server on the copy of Tegaki: 20 roles read, 256 class pairs in 20 files
+  written, one Undo, and after the Undo the copy was clean (`git diff` empty). The overlay's changes parse. The panel
+  was not seen running: the laptop had 83 MB free and 12.6 GB of swap in use, so Tegaki and a browser weren't started
+  on it. No tests were written.
+- **Not done:** seeing the step on a page (on vm-agent); the places aren't marked on the page when a row is pointed at,
+  and a fold isn't played as a transition yet (principle 35b).
+
 ### 96. The element card is retired, and grid columns move to the X-ray card (2026-11-23)
 
 - **The itch:** with shadow, motion and layout in the X-ray card (entries 92 to 94), the old element card was code no

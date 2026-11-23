@@ -274,6 +274,8 @@ async function dispatchOnce(session: Session, method: string, params: Record<str
   if (method === 'trace') return session.trace(text(params, 'group', true));
   if (method === 'rhythm') return session.rhythm();
   if (method === 'palette') return session.palette();
+  if (method === 'dark-roles') return session.darkRoles();
+  if (method === 'dark-roles-apply') return session.darkRolesApply();
   if (method === 'icons') return session.icons();
   if (method === 'undo-change') return session.undoChange(text(params, 'id')!);
   if (method === 'undo-group') return session.undoGroup(text(params, 'group')!);

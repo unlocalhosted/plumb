@@ -242,15 +242,18 @@ export interface RolesPlan {
 }
 
 /** The edits that write the roles. Reads the files; writes nothing. `target`: the theme stylesheet, relative to root. */
-export async function planRoles(root: string, found: DarkPairs, target: string, shape: 'theme' | 'shadcn' | 'root'): Promise<RolesPlan | { refused: string }> {
+export type ReadFile = (file: string) => Promise<{ text: string; hash: string } | undefined>;
+export async function planRoles(root: string, found: DarkPairs, target: string, shape: 'theme' | 'shadcn' | 'root', read?: ReadFile): Promise<RolesPlan | { refused: string }> {
   const { readSource, readSourceIfExists } = await import('../write/source-file.js');
+  const readIf: ReadFile = read ?? ((file) => readSourceIfExists(root, resolve(root, file)));
+  const readMust = async (file: string) => { const got = read ? await read(file) : await readSource(root, resolve(root, file)); if (!got) throw new Error(`${file} can't be read.`); return got; };
   if (!found.darkWhen) return { refused: 'The project’s dark mode could not be read from its dark: classes, so the roles have nowhere to switch.' };
   if (shape === 'root') return { refused: 'The project has no Tailwind theme block (@theme) for role classes like text-fg to come from.' };
   const roles = found.roles.filter(r => cssOf(r.light) && cssOf(r.dark));
   if (!roles.length) return { refused: 'No pair is used at more than one place.' };
 
   // the theme: light values where the theme's colours live, dark values under the project's own dark condition
-  const current = await readSourceIfExists(root, resolve(root, target));
+  const current = await readIf(target);
   const before = current?.text ?? '', hash = current?.hash ?? null;
   const why = (r: PairRole) => `  /* ${r.job === 'text' ? 'words' : r.job === 'surface' ? 'backgrounds' : 'borders'}: ${r.light} in light, ${r.dark} in dark, at ${r.places.length} places */`;
   const head = `/* React Plumber: light and dark roles. Each was a pair written at every place; it now switches here. */`;
@@ -277,7 +280,7 @@ export async function planRoles(root: string, found: DarkPairs, target: string, 
   }
   const sources: RolesPlan['sources'] = [];
   for (const [file, edits] of byFile) {
-    const source = await readSource(root, resolve(root, file));
+    const source = await readMust(file);
     const lines = source.text.split('\n');
     const starts: number[] = []; let offset = 0;
     for (const line of lines) { starts.push(offset); offset += line.length + 1; }
