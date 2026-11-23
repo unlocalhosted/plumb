@@ -842,7 +842,15 @@
       }
     ],
     "skipped": [],
-    "notes": []
+    "notes": [],
+    "darkPairs": {
+      "pairs": 0,
+      "roles": [],
+      "once": 0,
+      "unpaired": 0,
+      "refused": [],
+      "darkWhen": null
+    }
   },
   "onboard-framework": {
     "schemaVersion": 1,
@@ -1261,7 +1269,15 @@
       }
     ],
     "skipped": [],
-    "notes": []
+    "notes": [],
+    "darkPairs": {
+      "pairs": 0,
+      "roles": [],
+      "once": 0,
+      "unpaired": 0,
+      "refused": [],
+      "darkWhen": null
+    }
   },
   "onboard-partial": {
     "schemaVersion": 1,
@@ -1502,7 +1518,15 @@
         "reason": "Your theme already has colour tokens."
       }
     ],
-    "notes": []
+    "notes": [],
+    "darkPairs": {
+      "pairs": 0,
+      "roles": [],
+      "once": 0,
+      "unpaired": 0,
+      "refused": [],
+      "darkWhen": null
+    }
   },
   "onboard-chaos": {
     "schemaVersion": 1,
@@ -1774,7 +1798,15 @@
     ],
     "notes": [
       "--radius is set 2 times: 8px in src/legacy.css:3, 6px in src/index.css:19. Your cascade ends on 6px, so that is the one used."
-    ]
+    ],
+    "darkPairs": {
+      "pairs": 0,
+      "roles": [],
+      "once": 0,
+      "unpaired": 0,
+      "refused": [],
+      "darkWhen": null
+    }
   },
   "onboard-clean": {
     "schemaVersion": 1,
@@ -1805,7 +1837,15 @@
         "reason": "Your theme already has type tokens."
       }
     ],
-    "notes": []
+    "notes": [],
+    "darkPairs": {
+      "pairs": 0,
+      "roles": [],
+      "once": 0,
+      "unpaired": 0,
+      "refused": [],
+      "darkWhen": null
+    }
   },
   "onboard-v3": {
     "schemaVersion": 1,
