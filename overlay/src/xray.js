@@ -25,7 +25,7 @@ import { gaps, sizing } from './boxmodel.js';
 import { toyOf } from './toys.js';
 import { esc } from './choices.js';
 import { placeOf, atPlace } from './stamp.js';
-import { SHADOW_PICK as SW, MOTION_PICK as MW } from './words.js';
+import { SHADOW_PICK as SW, MOTION_PICK as MW, LAYOUT_PICK as LW } from './words.js';
 
 const SIDES = ['top', 'right', 'bottom', 'left'];
 const px = (v) => parseFloat(v) || 0;
@@ -177,6 +177,18 @@ export function playMotion(el, css) {
   const hold = css.trigger === 'press' ? 140 : 520, total = ms * 2 + hold;
   el.animate([{ ...rest, offset: 0, easing }, { ...end, offset: ms / total }, { ...end, offset: (ms + hold) / total, easing }, { ...rest, offset: 1 }], { duration: total });
 }
+/* A layout, shown as what it makes: four parts laid out that way, so two layouts that differ look different even for an
+ * element of two parts (side by side wraps where two columns don't). */
+export function layoutOf(s) {
+  const k = 4, cols = s.mode === 'grid' ? (s.cols?.[0]?.startsWith('repeat') ? 3 : s.cols?.length ?? 2) : 1;
+  const how = s.mode === 'grid' ? `display:grid;grid-template-columns:repeat(${Math.min(cols, 4)},1fr)` : s.mode === 'flex' ? `display:flex;flex-direction:${s.dir === 'column' ? 'column' : 'row'};flex-wrap:${s.wrap === 'wrap' ? 'wrap' : 'nowrap'}${s.dir === 'column' ? '' : ';--w:9px'}` : 'display:flex;flex-direction:column';
+  return `<i class="xr-lay" aria-hidden="true"><i style="${how}">${'<b></b>'.repeat(k)}</i></i>`;
+}
+function layoutRow(s) {
+  if (!s.options) return `<span class="xr-val0">${esc(s.why ? s.name ?? '' : LW.reading)}</span>${s.why ? `<span class="xr-why">${esc(s.why)}</span>` : ''}`;
+  const o = s.options[s.at ?? s.start];
+  return `<button type="button" class="ch n xr-pick" data-prop="--plumb-layout" aria-haspopup="listbox" aria-label="${esc(`${LW.layout}: ${o.name}`)}">${layoutOf(o.s)}<span>${esc(o.name)}</span></button>`;
+}
 // a recipe's row (a shadow, a motion): reading, the one it has (opens the picker), or why it can't be changed here
 function motionRow(s) {
   if (!s.options) return `<span class="xr-val0">${esc(s.why ? s.name ?? '' : MW.reading)}</span>${s.why ? `<span class="xr-why">${esc(s.why)}</span>` : ''}`;
@@ -190,7 +202,7 @@ function shadowRow(el, s) {
   return `<button type="button" class="ch n xr-pick${o.hard ? ' hard' : ''}" data-prop="box-shadow" aria-haspopup="listbox" aria-label="${esc(`${SW.shadow}: ${o.name}${o.hard ? `, ${SW.hard}` : ''}`)}"${o.hard ? ` title="${esc(o.css || o.name)}"` : ''}>${o.none ? '' : shadeOf(el, o.css)}<span>${esc(o.hard ? SW.hard : o.name)}</span></button>`;
 }
 
-export function xray(el, { shadow = null, motion = null, tokenOf, origin = { left: 0, top: 0 }, room, source, name, fresh = false, zone = null, lit = [] } = {}) {
+export function xray(el, { shadow = null, motion = null, layout = null, tokenOf, origin = { left: 0, top: 0 }, room, source, name, fresh = false, zone = null, lit = [] } = {}) {
   const cs = getComputedStyle(el), R = el.getBoundingClientRect();
   const r = { left: R.left - origin.left, top: R.top - origin.top, right: R.right - origin.left, bottom: R.bottom - origin.top, width: R.width, height: R.height };
   room ??= { left: 8, top: 8, right: innerWidth - origin.left - 8, bottom: innerHeight - origin.top - 8 };
@@ -294,6 +306,7 @@ export function xray(el, { shadow = null, motion = null, tokenOf, origin = { lef
     ['corner', 'Corner', `${chip('border-radius', rj, rad > 500 ? 'full' : rj.n)}${tok(rj)}`],
     shadow ? ['shadow', SW.shadow, shadowRow(el, shadow)] : null,
     motion ? ['motion', MW.motion, motionRow(motion)] : null,
+    layout ? ['grid', LW.layout, layoutRow(layout)] : null,
     // a row or a grid always has its gap here, even at 0, so a gap can be added from the card
     gj || /flex|grid/.test(cs.display) ? ['gap', 'Gap', (() => { const v = gj ?? judge('spacing', px(cs.columnGap) || px(cs.rowGap)); return `${chip('gap', v, v.n)}${tok(v)}`; })()] : null,
     ['type', 'Type', `${chip('font-size', tj, r1(fs))}<span style="color:var(--xr-label)">/${r1(lh)} · ${cs.fontWeight}</span>${tok(tj)}`],

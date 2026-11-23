@@ -31,17 +31,17 @@
  *   scale(f)         [[px, name], …] your steps for a family
  *   recipes          { shadow: { read(el, lifted) }, motion: { read(el) } }: your shadows and the moves on offer, and
  *                    what it has (xray-recipes.js; optional: no rows without it). One changed arrives in write() with
- *                    `pick`, the option chosen
+ *                    `pick`, the option chosen; layout: { read(el), show(el, id | null) } likewise
  *   write(groups)    → [{ id, state: 'ok' | 'moved' | 'failed', cls, where, why }] for each change written
  *   scopeInfo(el, p) → { scopes, mates, where }: where the part's classes are written and every element that line
  *                    draws (asked once per element; optional)
  *   undo(result)     puts one written change back in your code
  *   watch            the element whose re-renders are watched (default: container); isPage(node): one of the page's
  * ───────────────────────────────────────────────────────── */
-import { xray, shadeOf, moveOf, playMotion, zonesOf, zoneAt, placeCard, contextOf } from './xray.js';
+import { xray, shadeOf, moveOf, playMotion, layoutOf, zonesOf, zoneAt, placeCard, contextOf } from './xray.js';
 import { sizing } from './boxmodel.js';
 import { Scope } from './scope.js';
-import { SHADOW_PICK, MOTION_PICK } from './words.js';
+import { SHADOW_PICK, MOTION_PICK, LAYOUT_PICK } from './words.js';
 import { picker } from './picker.js';
 import { burst } from './burst.js';
 import { button, KEEP_ICON } from './kit.js';
@@ -246,6 +246,10 @@ export const XRAY_LIVE_CSS = `
   .xr-list.shades { min-width: 196px; max-width: 280px; box-sizing: border-box; overscroll-behavior: contain; }
   .xr-list.shades button { justify-content: flex-start; align-items: center; min-height: 34px; padding-block: 4px; text-align: start; }
   .xr-list.shades button > span { margin-inline-start: auto; }
+  .xr-lay { flex: none; display: grid; place-items: center; width: 34px; height: 22px; border-radius: 6px; background: var(--pl-bg-inset); }
+  .xr-lay > i { width: 24px; height: 16px; gap: 2px; overflow: hidden; }
+  .xr-lay b { display: block; flex: 1 0 var(--w, 4px); min-width: 4px; min-height: 3px; border-radius: 1.5px; background: var(--pl-lilac); }
+  .xr-list .xr-lay { width: 48px; height: 32px; } .xr-list .xr-lay > i { width: 34px; height: 22px; gap: 3px; }
   .xr-list.shades .gh { padding: 8px 8px 4px; font: 600 11px/1 var(--pl-sans); color: var(--xr-label); }
   .xr-list.shades button > b { font: inherit; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .xr-mo { flex: none; position: relative; display: grid; place-items: center; width: 34px; height: 22px; border-radius: 6px; overflow: hidden; }
@@ -275,7 +279,7 @@ export const XRAY_LIVE_CSS = `
 `;
 
 const PAIR = { top: 'bottom', bottom: 'top', left: 'right', right: 'left' }, LINKS = ['one', 'pair', 'all'], SIZINGS = ['fixed', 'fill', 'fit'];
-const SHADOW = 'box-shadow', MOTION = '--plumb-motion';
+const SHADOW = 'box-shadow', MOTION = '--plumb-motion', LAYOUT = '--plumb-layout';
 // The values that are recipes, not numbers: what the adapter's `recipes` calls them, how an option is drawn, and how it
 // is shown on the page. A shadow stays on the element while it is in hand; a motion plays (its pending mark is a custom
 // property of ours, so a re-render finds it again)
@@ -286,6 +290,10 @@ const RECIPES = {
   [MOTION]: { key: 'motion', words: { ...MOTION_PICK, list: 'Moves for this element' }, value: (x) => x.recipe,
     lead: (el, x) => (x.css ? moveOf(el, x.css) : ''), show: (t, x) => playMotion(t, x.css),
     wear: (t, x) => { if (x?.css) playMotion(t, x.css); } },
+  // a layout is shown by the adapter, which holds the element as written and puts it back exactly
+  [LAYOUT]: { key: 'layout', toy: 'grid', words: LAYOUT_PICK, value: (x) => x.recipe, applies: (el) => [...el.children].filter((k) => k.getClientRects().length).length >= 2,
+    lead: (el, x) => layoutOf(x.s), show: (t, x, o) => o.recipes?.layout?.show?.(t, x?.recipe ?? null),
+    wear: (t, x, c, o) => o.recipes?.layout?.show?.(t, x ? x.recipe ?? null : c?.pick?.recipe ?? null), clear: (t, o) => o.recipes?.layout?.show?.(t, null) },
 };
 const TOYS = { padding: 'padding', margin: 'margin', width: 'width', height: 'height', 'border-radius': 'corner', gap: 'gap', 'font-size': 'type' };
 const PREFIX = { 'padding-top': 'pt', 'padding-right': 'pr', 'padding-bottom': 'pb', 'padding-left': 'pl', 'margin-top': 'mt', 'margin-right': 'mr', 'margin-bottom': 'mb', 'margin-left': 'ml', gap: 'gap', width: 'w', height: 'h', 'border-radius': 'rounded', 'font-size': 'text', flex: 'flex' };
@@ -527,12 +535,15 @@ export function mountXray(o) {
 
   // ── a shadow or a motion: one of yours, for every element its line of code draws ──
   // what the adapter read for an element ({} until it answers); read when its row is on screen, again after a write
-  let shades = { [SHADOW]: new WeakMap(), [MOTION]: new WeakMap() }, shadeList = null;
-  const forget = () => { shades = { [SHADOW]: new WeakMap(), [MOTION]: new WeakMap() }; shadeList?.end(); if (RECIPES[inHand?.prop]) { hand.innerHTML = ''; inHand = null; } };
+  let shades = { [SHADOW]: new WeakMap(), [MOTION]: new WeakMap(), [LAYOUT]: new WeakMap() }, shadeList = null;
+  const forgetNow = () => { shades = { [SHADOW]: new WeakMap(), [MOTION]: new WeakMap(), [LAYOUT]: new WeakMap() }; shadeList?.end(); if (RECIPES[inHand?.prop]) { hand.innerHTML = ''; inHand = null; } };
+  // after a write the page takes the new code in a moment later (a hot update or a reload): what is read from the page
+  // itself, a layout, is read again once it has
+  const forget = () => { forgetNow(); life.timeout(() => { forgetNow(); refresh(); }, 1500); };
   const pickedOn = (el, prop) => changes.get(placeKey(el))?.get(prop);
   const readShade = (el, prop) => {
     const kind = RECIPES[prop], adapter = o.recipes?.[kind.key];
-    if (!adapter || shades[prop].has(el)) return;
+    if (!adapter || shades[prop].has(el) || (kind.applies && !kind.applies(el))) return;
     const asked = {}, table = shades[prop];
     table.set(el, asked);
     const lifted = (fn) => {
@@ -548,7 +559,7 @@ export function mountXray(o) {
     });
   };
   const shadeNow = (el, prop) => {
-    const s = o.recipes?.[RECIPES[prop].key] ? shades[prop].get(el) ?? {} : null;
+    const kind = RECIPES[prop], s = o.recipes?.[kind.key] && (!kind.applies || kind.applies(el)) ? shades[prop].get(el) ?? {} : null;
     if (!s?.options) return s;
     const c = pickedOn(el, prop), i = c ? s.options.findIndex((x) => x.recipe === c.pick?.recipe) : -1;
     return { ...s, at: i < 0 ? s.start : i };
@@ -570,7 +581,7 @@ export function mountXray(o) {
         changes.set(k, m);
         t.style.setProperty(prop, value);
       }
-      RECIPES[prop].show(t, x);
+      RECIPES[prop].show(t, x, o);
     }
   };
   function holdShade(el, prop) {
@@ -581,12 +592,13 @@ export function mountXray(o) {
     hand.innerHTML = ''; inHand = null;
     let made = false;
     const p = picker(C, {
-      name: kind.words[kind.key], toy: kind.key, options: s.options, into: hand, keys: 'row', start: s.start,
-      mark: () => '', format: () => '', lead: (x) => kind.lead(el, x),
+      name: kind.words[kind.key], toy: kind.toy ?? kind.key, options: s.options, into: hand, keys: 'row', start: s.start,
+      mark: () => '', format: () => '', lead: (x) => kind.lead(el, x, false, s),
       apply: (x) => { if (made && el.isConnected) { setShade(el, prop, s, s.options.indexOf(x)); draw(el); } },
     });
     if (s.mates.length > 1) p.row.querySelector('.scrub').insertAdjacentHTML('afterend', `<span class="side" data-s="scope">×${s.mates.length}</span>`);
-    hand.insertAdjacentHTML('beforeend', `<div class="say"><span data-s="value" data-on>${prop === SHADOW ? 'value' : 'move'}</span><span class="how">↕ change · click for ${prop === SHADOW ? 'your tokens' : 'the moves'}</span></div>`);
+    const said = { [SHADOW]: ['value', 'your tokens'], [MOTION]: ['move', 'the moves'], [LAYOUT]: ['layout', 'the layouts'] }[prop];
+    hand.insertAdjacentHTML('beforeend', `<div class="say"><span data-s="value" data-on>${said[0]}</span><span class="how">↕ change · click for ${said[1]}</span></div>`);
     p.row.insertAdjacentHTML('afterbegin', '<i class="thumb" aria-hidden="true"></i>');
     p.row.dataset.seg = 'value';
     p.row.classList.add('shadow-pick');
@@ -634,7 +646,7 @@ export function mountXray(o) {
     let group = null;
     list.innerHTML = h.S.map((x, i) => {
       const head = x.group && x.group !== group ? `<div class="gh" role="presentation">${esc(kind.words[group = x.group])}</div>` : '';
-      return `${head}<button type="button" role="option" data-i="${i}" class="${x.hard ? 'hard' : ''}" aria-selected="${i === h.p.at()}">${kind.lead(el, x, true)}<b>${esc(x.name)}</b>${x.hard ? `<span>${SHADOW_PICK.hard}</span>` : x.tag ? `<span>${esc(x.tag)}</span>` : ''}</button>`;
+      return `${head}<button type="button" role="option" data-i="${i}" class="${x.hard ? 'hard' : ''}" aria-selected="${i === h.p.at()}">${kind.lead(el, x, true, h.shade)}<b>${esc(x.name)}</b>${x.hard ? `<span>${SHADOW_PICK.hard}</span>` : x.tag ? `<span>${esc(x.tag)}</span>` : ''}</button>`;
     }).join('');
     C.append(list);
     const w = list.offsetWidth, tall = list.offsetHeight, below = b.bottom - s.top + 6;
@@ -642,7 +654,7 @@ export function mountXray(o) {
     list.style.top = `${below + tall > s.height - 8 ? Math.max(8, b.top - s.top - tall - 6) : below}px`;
     // pointed at, an option is on the element at once; leaving puts back the one in hand
     let pointedAt = null;
-    const wear = (x) => { for (const t of h.shade.mates) kind.wear(t, x, pickedOn(t, h.prop)); };
+    const wear = (x) => { for (const t of h.shade.mates) kind.wear(t, x, pickedOn(t, h.prop), o); };
     const point = (e) => { const i = e.target.closest?.('[data-i]')?.dataset.i; if (i !== undefined && i !== pointedAt) { pointedAt = i; wear(h.S[i]); } };
     open.listen(list, 'pointerover', point);
     open.listen(list, 'focusin', point);
@@ -660,7 +672,7 @@ export function mountXray(o) {
       h.p.row.querySelector('.val').focus({ preventScroll: true });
     });
     open.listen(window, 'pointerdown', (e) => { if (!e.composedPath().includes(list)) open.end(); }, true);
-    open.onEnd(() => { if (kind.still) wear(null); list.remove(); if (shadeList === open) shadeList = null; });
+    open.onEnd(() => { if (kind.still || kind.clear) wear(null); list.remove(); if (shadeList === open) shadeList = null; });
     list.querySelector('[aria-selected="true"]')?.focus({ preventScroll: true });
   }
 
@@ -672,7 +684,7 @@ export function mountXray(o) {
     const zs = zonesOf(el), inProp = held?.prop ?? zone?.prop;
     const lit = inProp ? zs.filter((q) => q.prop !== inProp && linkedOf(inProp).includes(q.prop)) : [];
     const z = (zone && zs.find((q) => q.prop === zone.prop)) || zone;
-    const x = xray(el, { shadow: shadeNow(el, SHADOW), motion: shadeNow(el, MOTION), tokenOf: o.tokenOf, origin: { left: s.left, top: s.top }, room: { left: 12, top: 12, right: s.width - 12, bottom: s.height - 96 }, name, source, zone: z, lit });
+    const x = xray(el, { shadow: shadeNow(el, SHADOW), motion: shadeNow(el, MOTION), layout: shadeNow(el, LAYOUT), tokenOf: o.tokenOf, origin: { left: s.left, top: s.top }, room: { left: 12, top: 12, right: s.width - 12, bottom: s.height - 96 }, name, source, zone: z, lit });
     const same = el === shown;
     if (!same) hold(null);
     layer.toggleAttribute('data-still', same);
@@ -732,7 +744,7 @@ export function mountXray(o) {
     // something deliberate (a click, a part held, changes waiting, a note) shows it at once; a pass over the page waits
     const show = ready || !!pinned || !!held || changes.size > 0;
     if (!show) { clearTimeout(restT); restT = setTimeout(() => { ready = true; restAt = ptNow; if (shown?.isConnected && !o.paused?.()) draw(shown); }, REST); }
-    if (!!noting || !show) shrink(); else { card.hidden = false; if (card.hasAttribute('data-details')) { readShade(el, SHADOW); readShade(el, MOTION); } }
+    if (!!noting || !show) shrink(); else { card.hidden = false; if (card.hasAttribute('data-details')) { readShade(el, SHADOW); readShade(el, MOTION); readShade(el, LAYOUT); } }
     // the value's highlight is measured once the card shows: measured while it was hidden, it sat at the row's start
     if (!card.hidden) thumbAt(0, 0, true);
     if (first && !card.hidden) { card.removeAttribute('data-enter'); void card.offsetWidth; card.setAttribute('data-enter', ''); grow(el); }
@@ -1068,7 +1080,7 @@ export function mountXray(o) {
   // ── Sync, and what came of it, one line per change ─────────
   let results = null, syncing = false;
   const classOf = (prop, value) => {
-    if (prop === MOTION) return value;
+    if (prop === MOTION || prop === LAYOUT) return value;
     if (prop === SHADOW) return value.match(/^var\(--([\w-]+)/)?.[1] ?? value;
     if (prop === 'flex') return value === '1 1 0%' ? 'flex-1' : 'flex-none';
     if (value === '100%') return `${PREFIX[prop]}-full`;
@@ -1121,7 +1133,7 @@ export function mountXray(o) {
   const putBack = () => {
     shadeList?.end();
     if (!count()) return false;
-    for (const [k, m] of changes) { const el = elOf(k); if (el) for (const [prop, { before }] of m) { if (before) el.style.setProperty(prop, before); else el.style.removeProperty(prop); } }
+    for (const [k, m] of changes) { const el = elOf(k); if (el) for (const [prop, { before }] of m) { if (before) el.style.setProperty(prop, before); else el.style.removeProperty(prop); RECIPES[prop]?.clear?.(el, o); } }
     changes.clear();
     // the row in hand says the value put back, not the one taken away
     if (inHand?.el?.isConnected) { const { el, prop } = inHand; hand.innerHTML = ''; inHand = null; hold(el, prop); }

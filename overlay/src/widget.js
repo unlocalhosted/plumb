@@ -53,7 +53,7 @@ import { TOY_DEFS } from './toys.js';
 import { classSiteOf, siteMatesOf } from './locate.js';
 import { route as routeStyles, loadProperties, evidenceFor, fileOfBundled, placeRead } from './style-systems.js';
 import { utility } from './craft-read.js';
-import { readShadow, readMotion, writeRecipe } from './xray-recipes.js';
+import { readShadow, readMotion, readLayout, showLayout, writeRecipe } from './xray-recipes.js';
 
 const tokensCss = await send(new URL('./tokens.css', import.meta.url)).then((response) => response.text()).catch((error) => {
   console.warn('[plumb] React Plumber could not load its styles, so it stays hidden. Your app is not affected; reload to try again.', error);
@@ -645,7 +645,7 @@ class PlumbOverlay extends HTMLElement {
       tokenOf: (f, n) => steps(f).find(([px]) => Math.abs(px - n) <= 0.5)?.[1] ?? null,
       scale: steps,
       // your shadow tokens and the moves on offer, read and written by the recipe engine, the route the element card used
-      recipes: { shadow: { read: readShadow }, motion: { read: readMotion } },
+      recipes: { shadow: { read: readShadow }, motion: { read: readMotion }, layout: { read: readLayout, show: showLayout } },
       isPage: (r) => !r.target.closest?.('plumb-overlay'),
       // Sync: each change written where the element's value comes from, by the style system that owns it
       // (style-systems.js: a utility class on the element, a rule in your stylesheet, else a class added); one Undo

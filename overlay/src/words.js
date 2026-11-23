@@ -926,6 +926,13 @@ export const SHADOW_PICK = {
   unplaced: 'Plumber can’t find where this element’s classes are written.',
   gone: 'That element isn’t on the page any more. Pick it again.',
 };
+// the X-ray's Layout row (xray-recipes.js): how an element lays out what is inside it
+export const LAYOUT_PICK = {
+  layout: 'Layout', reading: 'Reading…', list: 'Layouts for this element',
+  now: { block: 'One under another', column: 'Stacked', row: 'Side by side, on one line', wrap: 'Side by side, wrapping', grid: (n) => `${n} column${n === 1 ? '' : 's'}`, sub: 'Lined up' },
+  css: 'Its layout is set in a stylesheet, not in classes, so it can’t be changed from here yet.',
+  gone: 'That element isn’t on the page any more. Pick it again.',
+};
 // the X-ray's Motion row (xray-recipes.js): what the element does when pointed at, pressed or shown
 export const MOTION_PICK = {
   motion: 'Motion', none: 'None', reading: 'Reading…', hard: 'hard-coded',
