@@ -4691,6 +4691,30 @@ The same build passed 705 loads before it went out, and the game passes on the l
   pairs where a system would have three, so names run to `faint-3`, and that drift is the next thing to judge.
 - **Media hooks:** the propose table on Tegaki, the 302 places next to the 25 roles.
 
+### 96. The element card is retired, and grid columns move to the X-ray card (2026-11-23)
+
+- **The itch:** with shadow, motion and layout in the X-ray card (entries 92 to 94), the old element card was code no
+  control opened. The owner chose to retire it: "Yes, retire it".
+- **What moved first:** its grid column controls. With a grid's layout in hand, the X-ray card shows a chip per
+  column (a click gives the next size), + and −, and the lines on the element to drag. Each change is pending like
+  any other, so Sync writes it and Esc puts it back.
+- **What went:** the element card (`elementcard.js`), its size handles (`sizecard.js`) and "Tidy this card"
+  (`tidycard.js`). An Alt+click inside an element Blueprint reads alone, and a level climbed to with ⌥↑, now pin the
+  X-ray card; Blueprint steps aside for it. `layoutcard.js` stays, since the X-ray card uses its layouts; the
+  owner's uncommitted edits to it were left alone, and its spacing part is no longer used.
+- **A slip in the shared folder:** another session's commit (`adfaec13`) took in this change's staged deletions, so
+  for a few minutes `main` deleted the card while the fix bar still imported it. `1101c664` is the rest, and `main`
+  builds again.
+- **The fix and the proof:** on the billing page in Chromium on vm-agent, + on the two plans' grid showed three
+  columns, a dragged line made `1.3fr 0.7fr 1fr`, and Sync wrote `grid-cols-[1.3fr_0.7fr_1fr]`. An Alt+click inside
+  a list Blueprint was reading alone left Blueprint and pinned the X-ray card. The shadow, motion and layout cases
+  all wrote what they did before. The test that opened the old card (N7) now picks its shadow in the X-ray card and
+  checks the same chain and hashes; it passes, and of the six test files that open cards or Alt+click, the other five
+  pass too.
+- **Lost with the card:** "Tidy this card" and the card's size handles; the X-ray card has its own size controls.
+  The untracked test `e2e/element-layout.test.mjs` opens the old card and will fail.
+- **Media hooks:** + on the plans' grid, and a column line dragged.
+
 ## Open gaps
 
 - **A page-wide warning can withdraw an unrelated fix.** A font with no `font-display` turned the z-index fix into
@@ -4709,10 +4733,9 @@ The same build passed 705 loads before it went out, and the game passes on the l
 - The full suite ran once on vm-agent at `ccffe9c4` (2026-11-22): 947 passed, 4 failed in 3 files, 9 skipped, in 23
   minutes. The three files are repaired and pass ([entry 90](#90-repairing-the-three-red-test-files-2026-11-23)).
   The whole suite hasn't been run since.
-- A shadow, a motion and a layout can be picked from the X-ray card again (entries
-  [92](#92-the-x-ray-card-gets-a-shadow-picker-2026-11-23), [93](#93-the-x-ray-card-gets-a-motion-picker-2026-11-23)
-  and [94](#94-the-x-ray-card-gets-a-layout-picker-2026-11-23)). The old element card's grid column chips and lines
-  aren't in it yet.
+- The element card is retired; shadow, motion, layout and grid columns are rows of the X-ray card
+  ([entry 96](#96-the-element-card-is-retired-and-grid-columns-move-to-the-x-ray-card-2026-11-23)). "Tidy this card"
+  went with it, and the untracked `e2e/element-layout.test.mjs` still opens the old card.
 - **Most checks can't write their fix.** 59 of 258 page checks can, all in craft (59 of 84). The accessibility, forms, components, HTML, experience and anti-slop packs only advise, so "fixes 100+ issues" can't be claimed yet ([entry](#80-no-voice-six-fixes-side-by-side-and-what-100-may-claim-2026-11-22)).
 - **The fix bar flashes a wrong refusal.** Just after a click on an element in Blueprint it can show "Plumber can't write this change in your code yet" for a moment, then offer the fix and write it. Seen in a recorded take on Relay, cause not looked for ([entry](#79-the-launch-clips-first-rough-cut-with-a-voice-2026-11-22)).
 - **The launch film has no vertical cut, and the other use cases have no film yet.** The first film is 16:9, so its small labels can't be read on a phone held upright ([entry](#81-the-first-launch-film-is-rendered-2026-11-22)).
@@ -6387,6 +6410,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
+- The X-ray card is the one card for an element: its Layout row now changes a grid's columns (chips, + and −, lines to drag on the page), and the old element card is gone. On main, not released ([entry](#96-the-element-card-is-retired-and-grid-columns-move-to-the-x-ray-card-2026-11-23)).
 - You can see which light and dark colour pairs in your code are one role: `plumber propose --family color` lists each pair written by hand with `dark:`, the role it would become and how many places it covers. On main, not released ([entry](#95-light-and-dark-by-hand-become-roles-2026-11-23)).
 - You can lay out one element again: Alt+click something with two or more parts, open Measurements, and pick stacked, side by side, two columns, lined up or fit as many as fit, shown on the page as you point; Sync writes the classes. On main, not released ([entry](#94-the-x-ray-card-gets-a-layout-picker-2026-11-23)).
 - You can give one element a move again: Alt+click, open Measurements, and pick from the moves that suit it, each playing as you point at it; Sync writes it with your own curve where one is close. On main, not released ([entry](#93-the-x-ray-card-gets-a-motion-picker-2026-11-23)).

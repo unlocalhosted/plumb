@@ -58,11 +58,6 @@ engineer would do." These calls were open questions until then. Each is decided 
   number and needs a ground: the project's own buttons, or a published one (Material's earlier buttons used 64). Say
   which, or leave it to the 24px hit-target check.
 
-- **Retire the old element card? (2026-11-23)** Shadow, motion and layout are now rows of the X-ray card (journey
-  entries 92 to 94). The old card still holds the grid column chips and draggable column lines, its spacing bands and
-  "Tidy this card", and no control opens it. Either move those across too and then delete the card with its test, or
-  keep it for a script's pin. Claude recommends moving the column controls across and retiring it.
-
 None. (A call is brought here only when it is destructive, outward-facing, costs money, or is taste the owner has
 reserved.)
 
