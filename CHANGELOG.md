@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.7.0 · 2026-11-23
+
+Everything since 0.6.1, as a person using it sees it. 0.6.1 was tagged on GitHub but never published to npm, so its
+one fix ships here too.
+
+- **The X-ray card is the one card for an element.** Alt+click an element and open Measurements to change it there:
+  pick one of your shadow tokens, each drawn as it looks; pick a move that suits the element (a press on what can be
+  pressed, a focus ring on what takes focus), each playing on the element as you point at it; or lay out its parts
+  stacked, side by side, in two columns, lined up or as many as fit. On a grid, each column is a chip you can resize,
+  + and − add and remove columns, and the column lines can be dragged on the page. Every change waits for Sync, which
+  writes it where that element's classes are written, and Esc puts it back. The old element card is gone, and with it
+  "Tidy this card" and its size handles.
+- **Light and dark colours written twice become roles.** `plumber propose --family color` lists each pair written by
+  hand with `dark:`, the role it would become and how many places it covers. `plumber propose --roles` writes each
+  role into your theme with its dark value and moves every place onto it (`text-zinc-900 dark:text-zinc-100` becomes
+  `text-fg`). Pairs that drifted a little apart fold into the one used most, and a fold that would make words harder
+  to read is never made. Clean up's colour pass offers the same step: each role with its light and dark swatch, every
+  file written at once, and one Undo for all of it. Renaming colour tokens by their job can be reached from that bar
+  again.
+- **Plumber stays out of your app's way.** A typo in `plumber.config` no longer breaks every file of a Vite app: the
+  file is served as written and the terminal says why. On Next, an overlay that can't load is a console warning
+  instead of an error in your app, and only one overlay loads. The overlay's requests no longer go through your
+  page's `fetch`, so one that failed can't show in Next's error dialog when a browser extension wraps `fetch`, and
+  server components no longer set off failed requests for files on disk (80 on one page before, none now).
+- **Editing words is more exact.** Words beside other elements (a paragraph with a bold word in it) are edited on the
+  page itself, so the caret sits where you click and Backspace takes the letter beside it. Text that can't be edited
+  says why: it is outside your editable files, drawn by a library, still loading, or has no file to trace to, as with
+  MDX.
+- **A padding change made in the visual editor is written on Sync.** It used to be refused as if your code had a style
+  attribute there.
+- **A fix lands on the element it is about** (from 0.6.1). When one line of code draws several elements and a class
+  is added only to some of them by a condition, the finding is shown, and its fix written, on the elements that carry
+  the class.
+
 ## 0.6.1 · 2026-11-21
 
 - **A fix lands on the element it is about.** When one line of code draws several elements and a class is added only
