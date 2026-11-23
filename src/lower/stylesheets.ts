@@ -42,7 +42,9 @@ function delimiter(css: string, start: number, target: '{' | '}'): number {
 // Read only the leading declaration run identified by Lightning CSS. Its
 // declaration AST lacks property locations and normalizes values. Keep authored
 // values/positions, including the final declaration without a semicolon.
-function declarationsAt(css: string, offset: number, nested: boolean, limit = Infinity): RawDeclaration[] {
+// `code`: the stylesheet with its comments and strings blanked (cssCode), same length; given by a caller that reads many
+// blocks of one stylesheet, so it is blanked once, not once per block (112,000 times on a real app's compiled CSS)
+function declarationsAt(css: string, offset: number, nested: boolean, limit = Infinity, code?: string): RawDeclaration[] {
   if (nested) offset = declarationStart(css, offset);
   if (!nested) offset = delimiter(css, offset, '{') + 1;
   const declarations: RawDeclaration[] = [];
@@ -63,7 +65,8 @@ function declarationsAt(css: string, offset: number, nested: boolean, limit = In
     if (char === '(' || char === '[') depth++;
     if (char === ')' || char === ']') depth--;
     if (char === '{') {
-      if (braces || /^\s*--[\w-]+\s*:/.test(cssCode(css.slice(start, offset)))) { depth++; braces++; continue; }
+      // start and offset both sit outside any comment or string, so the blanked whole, sliced, is the slice blanked
+      if (braces || /^\s*--[\w-]+\s*:/.test(code ? code.slice(start, offset) : cssCode(css.slice(start, offset)))) { depth++; braces++; continue; }
       if (depth === 0) break;
     }
     if (char === '}' && braces) { braces--; depth--; continue; }
@@ -73,7 +76,19 @@ function declarationsAt(css: string, offset: number, nested: boolean, limit = In
   return declarations;
 }
 
+// a pure function of the selector, and the same selectors come back every time a stylesheet is lowered: one parser round
+// trip each, not one per lowering. Bounded: let go whole past what one large app needs. Callers spread the list, never
+// change it.
+const conditionsOf = new Map<string, Condition[]>();
 function selectorConditions(selector: string): Condition[] {
+  const known = conditionsOf.get(selector);
+  if (known) return known;
+  const made = readSelectorConditions(selector);
+  if (conditionsOf.size > 50000) conditionsOf.clear();
+  conditionsOf.set(selector, made);
+  return made;
+}
+function readSelectorConditions(selector: string): Condition[] {
   const rule = parseCss(`${selector} {}`, 'selector.css').rules[0];
   if (rule?.type !== 'style') return [{ kind: 'selector', text: selector }];
   function positive(selector: Selector): string[] {
@@ -92,8 +107,9 @@ export function lowerStylesheet(css: string, filename: string, locate?: (offset:
   const source = { file: filename, text: css, lineStarts: lineStarts(css) };
   const declarations: Declaration[] = [];
   const offset = (loc: { line: number; column: number }) => source.lineStarts[loc.line]! + loc.column - 1;
+  let blanked: string | undefined;
   function block(start: number, nested: boolean, when: Condition[], origin: Declaration['origin'] = 'stylesheet'): void {
-    for (const raw of declarationsAt(css, start, nested)) {
+    for (const raw of declarationsAt(css, start, nested, Infinity, blanked ??= cssCode(css))) {
       const mapped = locate?.(raw.offset, raw);
       const site = mapped?.site ?? sourceSite(source, raw.offset, raw.text);
       const owner = when.find(condition => condition.kind === 'selector')?.text ?? filename;
@@ -170,7 +186,8 @@ async function compiler(entry: string): Promise<{ compile(css: string, options: 
 function mapLocations(css: string, filename: string, map: DecodedSourceMap, embedded?: EmbeddedStylesheet): (offset: number, raw: RawDeclaration) => { site: Site; origin?: Declaration['origin']; authoredCss?: string } {
   const starts = lineStarts(css);
   const mappings = map.mappings.map(item => ({ ...item, offset: starts[item.generatedPosition.line - 1]! + item.generatedPosition.column }));
-  const sources = new Map<string, { file: string; text: string; lineStarts: number[] }>();
+  // per authored stylesheet, worked out once and not per compiled declaration: its @apply rules and its blanked text
+  const sources = new Map<string, { file: string; text: string; lineStarts: number[]; applies: RegExpExecArray[]; code: string }>();
   return (offset, raw) => {
     let low = 0, high = mappings.length;
     while (low < high) { const middle = (low + high) >>> 1; if (mappings[middle]!.offset <= offset) low = middle + 1; else high = middle; }
@@ -178,12 +195,11 @@ function mapLocations(css: string, filename: string, map: DecodedSourceMap, embe
     if (!original?.source.content || !original.source.url) return { site: { file: filename, line: 1, column: 1, text: raw.text } };
     const url = original.source.url;
     let source = sources.get(url);
-    if (!source) { source = { file: url.startsWith('file:') ? fileURLToPath(url) : resolve(url), text: original.source.content, lineStarts: lineStarts(original.source.content) }; sources.set(url, source); }
+    if (!source) { const text = original.source.content; source = { file: url.startsWith('file:') ? fileURLToPath(url) : resolve(url), text, lineStarts: lineStarts(text), applies: [...text.matchAll(/@apply\s+[^;]+;/g)], code: cssCode(text) }; sources.set(url, source); }
     let position = source.lineStarts[original.line - 1]! + original.column;
-    const applies = [...source.text.matchAll(/@apply\s+[^;]+;/g)];
-    const apply = applies.find(match => position >= match.index && position < match.index + match[0].length);
+    const apply = source.applies.find(match => position >= match.index && position < match.index + match[0].length);
     if (apply) position = apply.index;
-    const authored = apply ? undefined : declarationsAt(source.text, position, true, 1)[0];
+    const authored = apply ? undefined : declarationsAt(source.text, position, true, 1, source.code)[0];
     const authoredText = authored?.prop === raw.prop ? authored.text : raw.text;
     const site = embedded && source.file === filename
       ? sourceSite(embedded.source, embedded.offsets[position] ?? embedded.site.column - 1, apply?.[0] ?? authoredText)

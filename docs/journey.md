@@ -4855,6 +4855,25 @@ The same build passed 705 loads before it went out, and the game passes on the l
   overlay stayed ready with no errors. No tests were written.
 - **Not done:** the analysis itself still takes about 14 seconds after a big rename; the page's marks catch up then.
 
+### 104. The re-read after a big write gets a third faster (2026-11-23)
+
+- **The itch:** entry 103 took the re-read off the wait, but it still took about 14 seconds after a 161-file rename,
+  so the page's marks lagged. The owner: "make the 14 second re-read faster too".
+- **How we found it:** profiled on vm-agent, one thread at a time, then counted. Reading stylesheets back to their
+  source blanked out comments and strings in a 2 to 8 KB stretch 112,000 times per re-read (213 MB of text): once for
+  every compiled declaration, to find the declaration it came from, plus a fresh list of every `@apply` each time.
+  Turning a selector into its conditions ran the CSS parser once per selector, every lowering. The first fix (blanking
+  once per compiled stylesheet) changed nothing measurable, because that path was not the one the time was on; the
+  count showed the source-mapping path was.
+- **What we chose and why:** work that depends only on a stylesheet is done once per stylesheet (its blanked text, its
+  `@apply` rules); a selector's conditions are remembered, bounded like the selector text. Each is exact: blanking
+  keeps every position, and the stretches read always start and end outside comments and strings.
+- **The fix and the proof:** on terminal-dreams the re-read after the rename went from about 14.5 to 9.4 seconds, and
+  after its Undo the report was identical to the one from before (827 findings, 37,556 declarations). No tests were
+  written; not walked in the browser, as nothing the overlay shows changed.
+- **Not done:** the rest is mostly the work itself: the 161 changed components read again (about 3 seconds), their
+  classes collected (about 2), the compiled Tailwind CSS parsed (about 2.6), findings judged again (about 2).
+
 ### 96. The element card is retired, and grid columns move to the X-ray card (2026-11-23)
 
 - **The itch:** with shadow, motion and layout in the X-ray card (entries 92 to 94), the old element card was code no
@@ -6635,6 +6654,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - React Plumber 0.7.0 is tagged and on GitHub's releases, after a full run on vm-agent left no failure that survives a run alone; the package is packed from the release commit, and npm publish is the owner's step ([entry](#104-070-is-cut-2026-11-23)).
 - A link to react-plumber.com now shows a picture of the site, and the launch film where an app plays one: pushed and deployed from a clean commit ([entry](#103-pushed-and-deployed-2026-11-23)).
 - The X-ray card is the one card for an element: its Layout row now changes a grid's columns (chips, + and −, lines to drag on the page), and the old element card is gone. In 0.7.0, on GitHub; npm publish is the owner's step ([entry](#96-the-element-card-is-retired-and-grid-columns-move-to-the-x-ray-card-2026-11-23)).
+- After a big write, plumber's marks catch up about a third sooner: the re-read after renaming colours across 161 files takes 9.4 seconds instead of 14.5. On main, not released ([entry](#104-the-re-read-after-a-big-write-gets-a-third-faster-2026-11-23)).
 - Big writes answer at once: renaming colours across 161 files is done in about 2.5 seconds and undone in 3; plumber re-reads the app right after, without making you wait for it. In 0.7.0, on GitHub; npm publish is the owner's step ([entry](#103-a-write-answers-before-the-app-is-analysed-again-2026-11-23)).
 - Big writes are much faster: renaming colours across 161 files takes about 15 seconds instead of two minutes, its Undo about 16 instead of three, and the panel says it is putting things back while it does. In 0.7.0, on GitHub; npm publish is the owner's step ([entry](#102-a-many-file-write-stops-re-reading-the-whole-app-between-files-2026-11-23)).
 - You can rename your colour tokens by their job from Clean up again: the colour pass's bar offers it, and its list keeps the button in view. In 0.7.0, on GitHub; npm publish is the owner's step ([entry](#101-renaming-colours-can-be-reached-again-2026-11-23)).
