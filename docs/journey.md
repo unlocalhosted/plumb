@@ -4851,9 +4851,29 @@ is the launch film the owner already approved ("wrong green"), cut to 1280 by 72
 needed. Every page now names both in its share tags.
 
 **What it won't do.** X and most chat apps show the picture and ignore the video tag; a film plays inline only where
-a site reads it. It isn't deployed yet.
+a site reads it. Deployed the same day ([entry](#103-pushed-and-deployed-2026-11-23)).
 
 **Media hooks.** `web/public/share.png`, and the film at `web/public/media/launch.mp4`.
+
+
+### 103. Pushed and deployed (2026-11-23)
+
+**The itch.** The owner asked "next deploy ?". Two days of work (79 commits) sat on the laptop, and the site still
+showed no share picture.
+
+**What held it.** The commits carry copies of the owner's two private apps: their colours, shadows and icon sets, a
+judged start page and two short screen recordings. GitHub already had 148 files naming those apps, so the names were
+out; what was new was their design systems and the recordings. Asked about that, the owner said "yeah its fine".
+
+**What shipped.** `main` was pushed to GitHub at `ecaa2ebe`. The site was built from that commit on vm-agent, not
+from the laptop's checkout, which has other sessions' unsaved work, and put on Cloudflare. Five pages answer, the
+share picture and the launch film are served, every page names them in its share tags, and the research pages and
+the picture's own page stay off the site.
+
+**What it isn't.** The npm package is still 0.6.0; this was the site and the code on GitHub, not a release. The last
+full test run, on an older commit, had 29 files that failed both times it ran, and it hasn't run since.
+
+**Media hooks.** The live homepage, and a link to it pasted in a chat to show the picture.
 
 ## Open gaps
 
@@ -6550,6 +6570,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
+- A link to react-plumber.com now shows a picture of the site, and the launch film where an app plays one: pushed and deployed from a clean commit ([entry](#103-pushed-and-deployed-2026-11-23)).
 - The X-ray card is the one card for an element: its Layout row now changes a grid's columns (chips, + and −, lines to drag on the page), and the old element card is gone. On main, not released ([entry](#96-the-element-card-is-retired-and-grid-columns-move-to-the-x-ray-card-2026-11-23)).
 - You can rename your colour tokens by their job from Clean up again: the colour pass's bar offers it, and its list keeps the button in view. On main, not released ([entry](#101-renaming-colours-can-be-reached-again-2026-11-23)).
 - You can make light and dark roles from Clean up: the colour pass offers them, lists each role with its light and dark swatch, writes the theme and every file at once, and takes it all back with one Undo. On main, not released ([entry](#100-the-roles-step-seen-on-a-real-page-2026-11-23)).
