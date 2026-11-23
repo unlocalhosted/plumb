@@ -38,6 +38,8 @@ export interface DarkPairs {
   once: number;
   /** `dark:` colours with no light class beside them to pair with. */
   unpaired: number;
+  /** Near text pairs kept apart because folding them would cost contrast, with the ratio before and after. */
+  refused: { light: string; dark: string; into: string; mode: 'light' | 'dark'; before: number; after: number }[];
   /** How the project turns dark: a selector (`.dark`, `[data-theme="dark"]`) or the system setting. */
   darkWhen: { selector: string } | { media: string } | null;
 }
@@ -48,6 +50,15 @@ export interface DarkPairs {
  * grey this close to a level is that level drifted, by similarity, and one fewer level is less to tell apart.
  */
 export const NEAR = 0.12;
+/** WCAG 2.2 SC 1.4.3: words need 4.5:1 against what is behind them. A source scan can't see the size, so body text's. */
+export const TEXT_CONTRAST = 4.5;
+/** OKLab to WCAG relative luminance, through linear sRGB (Björn Ottosson's OKLab matrices). */
+function luminance([L, a, b]: number[]): number {
+  const l = (L! + 0.3963377774 * a! + 0.2158037573 * b!) ** 3, m = (L! - 0.1055613458 * a! - 0.0638541728 * b!) ** 3, s = (L! - 0.0894841775 * a! - 1.291485548 * b!) ** 3;
+  const clamp = (x: number) => Math.min(1, Math.max(0, x));
+  return 0.2126 * clamp(4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s) + 0.7152 * clamp(-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s) + 0.0722 * clamp(-0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s);
+}
+const contrast = (x: number[], y: number[]) => { const a = luminance(x), b = luminance(y); return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05); };
 const JOB: Record<string, Job> = { color: 'text', 'background-color': 'surface', 'border-color': 'line' };
 const PREFIX: Record<Job, string> = { text: 'text', surface: 'bg', line: 'border' };
 const NEUTRAL = /^(slate|gray|grey|zinc|neutral|stone|white|black)\b/;
@@ -130,14 +141,31 @@ export function darkPairs(report: Report): DarkPairs {
   const dE = (a: number[], b: number[]) => Math.hypot(a[0]! - b[0]!, a[1]! - b[1]!, a[2]! - b[2]!);
   type Group = { job: Job; light: string; dark: string; lightValue: string; darkValue: string; places: PairPlace[]; merged: PairRole['merged'] };
   const anchors: (Group & { labs?: [number[], number[]] })[] = [];
-  for (const g of [...groups.values()].sort((a, b) => b.places.length - a.places.length)) {
+  // a hover colour never folds into a resting one, or the hover would stop showing
+  const hover = (x: Group) => x.places.filter(p => STATE.test(p.light)).length * 2 > x.places.length;
+  const byUse = [...groups.values()].sort((a, b) => b.places.length - a.places.length);
+  // what words sit on: the page's main surface, the resting background pair used most (white and near-black if none)
+  const main = byUse.find(g => g.job === 'surface' && !hover(g) && labOf(g.light) && labOf(g.dark) && (step(g.light) ?? 0) < 600);
+  const ground: number[][] = main ? [labOf(main.light)!, labOf(main.dark)!] : [[1, 0, 0], [0.145, 0, 0]];
+  // words on a filled control (a dark button in light mode) are judged on the inverse surface used most
+  const fill = byUse.find(g => g.job === 'surface' && !hover(g) && labOf(g.light) && labOf(g.dark) && (step(g.light) ?? 0) >= 600);
+  const inverseGround: number[][] | null = fill ? [labOf(fill.light)!, labOf(fill.dark)!] : null;
+  const refused: DarkPairs['refused'] = [];
+  for (const g of byUse) {
     const l = labOf(g.light), d = labOf(g.dark);
-    // a hover colour never folds into a resting one, or the hover would stop showing
-    const hover = (x: Group) => x.places.filter(p => STATE.test(p.light)).length * 2 > x.places.length;
-    const home = l && d && anchors.find(a => a.job === g.job && hover(a) === hover(g) && a.labs && dE(a.labs[0], l) <= NEAR && dE(a.labs[1], d) <= NEAR);
+    const near = l && d ? anchors.filter(a => a.job === g.job && hover(a) === hover(g) && a.labs && dE(a.labs[0], l) <= NEAR && dE(a.labs[1], d) <= NEAR) : [];
+    // words never fold into a colour that drops them below 4.5:1 where they met it, or lowers them where they didn't
+    // light-mode words lighter than mid-grey (OKLab L 0.75, past zinc-400) can't be read on the page: they sit on a fill
+    const under = l && l[0]! > 0.75 ? inverseGround : ground;
+    const losses = (a: (typeof anchors)[number]) => g.job !== 'text' || !under ? [] : (['light', 'dark'] as const).flatMap((mode, i) => {
+      const before = contrast([l!, d!][i]!, under[i]!), after = contrast(a.labs![i]!, under[i]!);
+      return after < TEXT_CONTRAST && after < before ? [{ light: g.light, dark: g.dark, into: a.light + ' / ' + a.dark, mode, before: Math.round(before * 10) / 10, after: Math.round(after * 10) / 10 }] : [];
+    });
+    const home = near.find(a => !losses(a).length);
+    if (!home && near.length) refused.push(...losses(near[0]!));
     if (home) {
       home.places.push(...g.places);
-      home.merged.push({ light: g.light, dark: g.dark, places: g.places.length, moves: Math.round(Math.max(dE(home.labs![0], l), dE(home.labs![1], d)) * 1000) / 1000 });
+      home.merged.push({ light: g.light, dark: g.dark, places: g.places.length, moves: Math.round(Math.max(dE(home.labs![0], l!), dE(home.labs![1], d!)) * 1000) / 1000 });
     } else anchors.push({ ...g, merged: [], ...(l && d ? { labs: [l, d] as [number[], number[]] } : {}) });
   }
   const kept: Group[] = anchors.filter(g => g.places.length >= 2);
@@ -166,7 +194,7 @@ export function darkPairs(report: Report): DarkPairs {
       roles.push(role(g, claim(job === 'text' ? hue : job === 'surface' ? `${hue}-soft` : `${hue}-line`)));
     }
   }
-  return { pairs, roles: roles.sort((a, b) => b.places.length - a.places.length), once, unpaired, darkWhen };
+  return { pairs, roles: roles.sort((a, b) => b.places.length - a.places.length), once, unpaired, refused, darkWhen };
 
   function role(g: (typeof kept)[number], name: string): PairRole {
     return { name, job: g.job, light: g.light, dark: g.dark, lightValue: g.lightValue, darkValue: g.darkValue, replacement: `${PREFIX[g.job]}-${name}`, places: g.places, merged: g.merged };
@@ -190,6 +218,7 @@ export function formatDarkPairs(found: DarkPairs, table: (rows: string[][]) => s
     lines.push('', `${folds.length} near pairs fold into a role, each within ${NEAR} of it in light and in dark (the clean-up's reach for a grey that drifted):`);
     lines.push(...table([['Into', 'Was', 'Places', 'Moves by'], ...folds.map(({ r, m }) => [r.replacement, `${m.light} / ${m.dark}`, String(m.places), String(m.moves)])]));
   }
+  if (found.refused.length) lines.push('', `${found.refused.length} near text pairs stay apart: folded, their words would fall below ${TEXT_CONTRAST}:1 on the surface they sit on (WCAG 1.4.3).`, ...found.refused.map(r => `  ${r.light} / ${r.dark} into ${r.into}: ${r.before}:1 to ${r.after}:1 in ${r.mode}`));
   if (found.once) lines.push('', `${found.once} pairs are used at one place only and stay as they are.`);
   return lines.join('\n') + '\n';
 }

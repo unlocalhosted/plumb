@@ -4733,6 +4733,24 @@ The same build passed 705 loads before it went out, and the game passes on the l
   enough contrast. A role named for hover is also used for focus (`focus:border-line-hover`).
 - **Media hooks:** the fold table on Tegaki, and one component's class list before and after.
 
+### 98. A fold never makes words harder to read (2026-11-23)
+
+- **The itch:** entry 97 left a gap: a folded text colour moves a little, and nothing checked that its words could
+  still be read. The owner: "Yes, add it".
+- **What we chose and why:** a text pair doesn't fold if the move would drop its words below 4.5:1 where they met it,
+  or lower them further where they didn't (WCAG 2.2, 1.4.3, body text, since a source scan can't see the size). If its
+  nearest role fails, the next near role is tried; if all fail, it stays its own role, and the proposal says so with
+  both ratios. A scan of the source can't see what is behind each word, so words are judged on the app's main surface
+  (its resting background pair used most), and words paler than mid-grey on the dark fill it uses most, in light mode
+  and in dark. Two first tries were wrong. Judging pale text on white refused `zinc-100` button text at "1.1:1", which
+  sits on a dark button. Picking whichever ground a colour stands out from more put amber warnings on the dark fill
+  and refused a fold that made them more readable.
+- **The fix and the proof:** the sums give Tailwind's known ratios (zinc-500 on white 4.83:1, amber-600 3.19:1). On
+  Tegaki every fold keeps its words at 4.5:1 or better, so nothing is refused. A planted case, nine places of
+  `amber-600` outnumbering Tegaki's `amber-700`, would have pulled readable warnings (5.1:1) to 3.2:1; it was refused,
+  and `amber-700` stayed `text-warning-2`. No tests were written.
+- **Not done:** the ground is a guess per app, not per place. Large text, which needs only 3:1, is judged as body text.
+
 ### 96. The element card is retired, and grid columns move to the X-ray card (2026-11-23)
 
 - **The itch:** with shadow, motion and layout in the X-ray card (entries 92 to 94), the old element card was code no
