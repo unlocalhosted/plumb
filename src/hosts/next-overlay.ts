@@ -25,8 +25,12 @@ const connect = async () => {
   try { socket = new WebSocket(\`\${location.protocol === 'https:' ? 'wss' : 'ws'}://\${location.host}\${path}\`); } catch { return; }
   socket.onmessage = (event) => {
     let message; try { message = JSON.parse(event.data); } catch { return; }
-    // the first sync: the host's client has compared its bundle hash (a changed one reloads the page); the overlay's ready waits for it
-    if ((message?.type ?? message?.action) === 'sync' && !synced) { synced = true; dispatchEvent(new Event('plumb:host-synced')); }
+    // the first sync: the host's client has compared its bundle hash (a changed one reloads the page); the overlay's ready
+    // waits for it. Turbopack's sync carries no hash (it never reloads on one) and comes only after Next has asked the npm
+    // registry for its latest version, which kept ready() waiting its whole 10 s on Next 16 (journey 112): there,
+    // "turbopack-connected", sent at once, is the same news
+    const kind = message?.type ?? message?.action;
+    if ((kind === 'sync' || kind === 'turbopack-connected') && !synced) { synced = true; dispatchEvent(new Event('plumb:host-synced')); }
     if (!kinds.has(message?.type ?? message?.action)) return;
     clearTimeout(timer); timer = setTimeout(invalidateSourceMaps, 80);
   };
