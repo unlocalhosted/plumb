@@ -75,7 +75,11 @@ export const seconds = (ms: number): string => `${(ms / 1000).toFixed(ms < 9950 
  * The same story with no browser to open (a pipe, CI, --no-open): the 3 biggest causes, one sentence or two each, and
  * exactly one next step. Whether the project is set up decides which step (docs/design/onboarding.md, sections 1 and 5).
  */
-export function plainVersion(report: Report, setUp: boolean): string {
+export function plainVersion(report: Report, gaps: boolean | { devConfig: boolean; config: boolean; state: boolean }): string {
+  const setUp = typeof gaps === 'boolean' ? gaps : isSetUp(gaps);
+  // init writes the config and records today's state but leaves the dev server alone: after it, the one step left is
+  // that one, and the line said "run plumber init" again (audit of 0.6.0)
+  const onlyDevConfig = typeof gaps !== 'boolean' && gaps.devConfig && !gaps.config && !gaps.state;
   const causes = (report.causes ?? []).slice(0, 3);
   const open = report.causes?.length ?? 0;
   // what would fail a pull request: new problems the ledger doesn't know (a value off your theme warns, it doesn't fail)
@@ -86,7 +90,7 @@ export function plainVersion(report: Report, setUp: boolean): string {
     if (setUp) lines.push(fresh ? `  ${count(fresh, 'new problem')} since you set up. ${open === 1 ? '1 cause is' : `${open} causes are`} open, the biggest:` : `  Nothing new since you set up. ${open === 1 ? '1 cause is' : `${open} causes are`} still open${open === 1 ? ':' : ', the biggest:'}`);
     for (const cause of causes) lines.push(wrap('  ' + sayCause(cause, report)));
   }
-  lines.push('', setUp ? 'Next: press Alt+B on your page to fix it there.' : onboardingPage() ? `Next: run ${runnerOf(report.root)} plumber in a terminal to see this in your browser, or ${runnerOf(report.root)} plumber --yes to set it up here.` : `Next: run ${runnerOf(report.root)} plumber init and answer a few questions, or ${runnerOf(report.root)} plumber --yes to set it up here.`);
+  lines.push('', setUp ? 'Next: press Alt+B on your page to fix it there.' : onlyDevConfig ? `Next: run ${runnerOf(report.root)} plumber install --overlay --write to add Plumber to your dev server, then press Alt+B on your page.` : onboardingPage() ? `Next: run ${runnerOf(report.root)} plumber in a terminal to see this in your browser, or ${runnerOf(report.root)} plumber --yes to set it up here.` : `Next: run ${runnerOf(report.root)} plumber init and answer a few questions, or ${runnerOf(report.root)} plumber --yes to set it up here.`);
   return lines.join('\n') + '\n';
 }
 
@@ -125,7 +129,7 @@ export async function runBare(context: PathContext): Promise<void> {
   const ready = await projectGates(context.root, context.config, page || context.yes === true);
   await context.prepare();
   if (context.yes) { process.stdout.write(await setUp(context, ready)); return; }
-  if (!page) { process.stdout.write(plainVersion(await context.report(), isSetUp(await setupGaps(context.root, context.config, ready)))); return; }
+  if (!page) { process.stdout.write(plainVersion(await context.report(), await setupGaps(context.root, context.config, ready))); return; }
   const started = performance.now();
   process.stdout.write('Plumber · reading your app…\n');
   const daemon = await serve({ root: context.root, ...(context.config === undefined ? {} : { config: context.config }), page: true, port: 7331, portSearch: 40 });

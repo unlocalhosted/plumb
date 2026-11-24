@@ -72,7 +72,9 @@ const labels: Record<string, string> = { color: 'colour', z: 'z-index' };
 
 export async function initProject(root: string, options: InitOptions, print: (text: string) => void): Promise<{ message: string; entries: import('../ledger/types.js').LedgerEntry[]; moves: never[] }> {
   const loaded = await loadConfig(root, options.config);
-  if (loaded.path && !options.force) throw new UsageError(`Config already exists: ${pathFrom(root, loaded.path)}.\n  Review the diff before replacing it.\n  → plumber init --force`);
+  // said as it is: --force replaces the file and prints what changed after writing; there is no look before it (it said
+  // "Review the diff before replacing it", and no diff came before the replacing; audit of 0.6.0)
+  if (loaded.path && !options.force) throw new UsageError(`Config already exists: ${pathFrom(root, loaded.path)}.\n  --force replaces it with a new one and prints what changed; anything you wrote in it by hand goes.\n  → plumber init --force`);
   const ledger = await readLedger(root); // Refuse malformed state before writing config.
   const scratch = await mkdtemp(join(tmpdir(), 'plumb-init-'));
   let undoTheme: (() => Promise<Rollback>) | undefined;

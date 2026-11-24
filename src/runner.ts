@@ -21,8 +21,9 @@ export function runnerOf(root: string): string {
 
 /** Text with every `plumber <command>` written the way this project runs it (`pnpm exec plumber init`). */
 export function runnable(text: string, runner: string): string {
-  // a command, or bare `plumber` (the page) at the end of a line or before a flag
-  return text.replace(new RegExp(`(^|[^\\w./@-])(?<!npx |exec |yarn |bunx )plumber(?=(?: (?:${COMMANDS})\\b| --|$))`, 'gm'), `$1${runner} plumber`);
+  // a command, or bare `plumber` (the page) at the end of a line or before a flag; one a runner already starts is left
+  // alone (a hook's `npx --no-install plumber` was printed as `npx --no-install npx plumber`)
+  return text.replace(new RegExp(`(^|[^\\w./@-])(?<!npx |exec |yarn |bunx |--no-install )plumber(?=(?: (?:${COMMANDS})\\b| --|$))`, 'gm'), `$1${runner} plumber`);
 }
 
 /** The runner the CLI prints with, set once at its start for words meant for a person; unset (an API caller, JSON),

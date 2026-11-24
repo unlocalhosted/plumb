@@ -5171,6 +5171,32 @@ Next 16.4.6, `ready()` in 632 ms (was 10.7 s); Next 15.5.28, 217 ms. Both still 
 
 **Media hooks.** None; the timings are the proof.
 
+### 113. Three setup messages say what is true (2026-11-24)
+
+**The itch.** Auditing 0.6.0 found three things the command line said wrong while setting up: `npx plumber` told you
+to run `plumber init` after you had; `install --hooks` printed `npx --no-install npx plumber`; and `init` refused
+to replace a config with "Review the diff before replacing it", when no diff was offered before the replacing.
+
+**How we found it.** Tried each in a throwaway copy of the ledger example, before and after.
+
+**The system behind it.** Three separate small causes. "Set up" means three things: plumber in your dev server's
+config, a plumber config, and today's findings recorded. Init does the last two, and the "Next" line only knew
+"set up or not", so it offered init again. The CLI rewrites every `plumber <command>` it prints into one your
+project can run, and it left alone only commands that `npx `, `exec `, `yarn ` or `bunx ` already start. A hook's
+`npx --no-install plumber` got a second `npx`. And `--force` prints its diff after writing, never before.
+
+**What we chose.** The "Next" line names the step that is missing: after init it says to run
+`plumber install --overlay --write`. The rewrite leaves a command alone when `--no-install` already starts it. The
+refusal now says what `--force` does: it replaces the file, prints what changed, and loses anything written by hand.
+Showing the diff before replacing would mean running all of init, its questions included, only to refuse.
+
+**The fix and the proof.** In `src/onboarding/path.ts`, `src/runner.ts` and `src/adoption/init.ts`. In the copy,
+with plumber taken out of its Vite config after init: the bare command said "Next: run npx plumber install --overlay
+--write to add Plumber to your dev server, then press Alt+B on your page"; the hooks diff showed
+`npx --no-install plumber check --changed --agent --strict-ledger`; `init` printed the new refusal.
+
+**Media hooks.** None.
+
 ## Open gaps
 
 - **A shadow, motion or layout pick waiting in the X-ray card is still lost on a reload** ([entry 107](#107-changes-waiting-in-the-x-ray-card-survive-a-reload-2026-11-23)).
@@ -6860,6 +6886,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
+- Setting up says what is true: after `plumber init`, plumber names the one step left (adding it to your dev server), the hooks diff prints a command you can run, and `init` says plainly what `--force` replaces. On main, not released ([entry](#113-three-setup-messages-say-what-is-true-2026-11-24)).
 - On Next 16, plumber is ready in about half a second instead of 10, so `plumber craft` and checks no longer wait ten seconds per page. On main, not released ([entry](#112-ready-stops-waiting-10-seconds-on-next-16-2026-11-24)).
 - A corner, spacing or size picked in the X-ray card is written by the name you picked (`rounded-card`), not by Tailwind's class of the same size. On main, not released ([entry](#111-a-picked-step-is-written-by-its-own-name-2026-11-24)).
 - A fix is no longer held back by an unrelated page-wide warning (a font with no `font-display`, a page with no h1). On main, not released ([entry](#110-a-page-wide-warning-stops-withdrawing-an-unrelated-fix-2026-11-24)).

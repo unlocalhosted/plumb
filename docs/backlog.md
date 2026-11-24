@@ -540,7 +540,6 @@ one-bar and new-token tests are fixed and pass there on their own; the steady li
 - On pages past React's 10,000 recorded creations (development), a part a library draws is not placed, so its findings drop from that run (two on algorecall's problems page, 2026-11-15). Could be placed another way (the owner's file and the component's name, when only one usage matches); not built.
 - A page-wide finding on algorecall's showcase names its sticky header (line 58), not the root `<div>` on line 57: the root is probably not among the judged elements while its children animate in. Right file; not checked further.
 - `cleanup-spacing-proofs` "one rhythm for the site" is a race on main too (2026-11-15: main failed 2 of 3 runs alone on the test server, this branch 1 of 3): page two's reload is aborted, likely by the dev server reloading it after page one's write at the same moment. Not looked at.
-- Found auditing 0.6.0 (2026-11-22): `npx plumber` still says "run npx plumber init" after init has run; `install --hooks` prints a diff with `npx --no-install npx plumber` though the file it writes is right; `init --force` replaced a config without showing the diff its message promises.
 - Found testing 0.6.0 on our site (2026-11-22, journey 81):
   - MDX body text can't be edited. It takes three layers: a compile-time plugin that stamps positions (tried read-only:
     109 of 109 elements on two pages carry one), the app's MDX components passing that attribute on and `source`
