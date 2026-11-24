@@ -366,7 +366,8 @@ export class Session extends EventEmitter {
           for (const path of message.analysis.dependencies) this.dependencies.add(path);
         }
         if (message.judged) this.lastStats = { ...(this.lastStats as object ?? {}), judged: message.judged };
-        if (message.error) pending.reject(failure(message.error)); else pending.resolve(message.result);
+        // an error whose message is empty is still an error, never an answer of nothing
+        if ('error' in message) pending.reject(failure(message.error || 'The analysis failed without saying why.')); else pending.resolve(message.result);
       });
       worker.on('error', error => { rejectReady(error); if (this.worker === worker) this.rejectPending(error); });
       // Any exit of the current worker while the Session is open leaves it lost: what was asked of it fails now, and the

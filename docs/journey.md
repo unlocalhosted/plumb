@@ -5527,15 +5527,42 @@ hard-coded.
 
 **Media hooks.** The card with the shadow picker open over the team card.
 
+### 129. The full suite before 0.8.0, and an undo that could stop halfway (2026-11-24)
+
+**The itch.** The owner, before tonight's publish: "Yes, run it" (the full suite on vm-agent).
+
+**How we found it.** The full run at `bcf782f6`: 195 files in 18 minutes, 949 tests passed, 2 failed, 9 skipped. Both
+failing files passed when run alone. One was the text-caret file, whose own clean-up raced a busy machine (a folder
+"not empty" while the server was still writing its cache). The other, recipes R1, came back under load: five copies at
+once failed 1 run in 15, then 3 and 4 in 20. Each time the server's undo answered 500 ("reading 'hash'") with the
+batch half undone: the component file back, the stylesheet not.
+
+**The system behind it.** Plumber builds the whole-app report in the background and lets it give way to requests
+through a pause hook. The hook sat on state every analysis shares, so an undo's own analysis asked the background
+build whether to pause. When a write arrived during the undo, the build was out of date, and its "start over" signal
+was thrown into the undo instead. That signal had no message, and the session reads a reply with an empty error as a
+success, so the undo got an answer of nothing and crashed after its first file was already put back.
+
+**What we chose.** The hook now acts only for the background build's own work, known by the async context it runs in.
+A request's analysis never pauses for the build or inherits its "start over". As a second guard, a reply that carries
+an error is an error even when its message is empty, and the "start over" signal now says what it is.
+
+**The fix and the proof.** In `src/session/worker.ts` and `src/session/engine.ts`. A temporary log on the box's copy
+showed the empty error and its stack (the background build's check, reached from a request). After the fix, the same
+five-at-once load ran 30 times with no failure, the recipes file passed 14 of 14, and nine files that depend on the
+background build (session, history, class-site, reading-cache, apply-all) passed 43 of 43.
+
+**Media hooks.** The before and after counts under load: 8 failures in 55 runs, then 0 in 30.
+
 ## Open gaps
 
 - The fixes of entry 81 (caret, app errors, broken config on Vite) are committed and not published. The site runs
   0.6.0 from npm, so it still has all three bugs.
 - The release gate of entry 85 guards Chromium only: Safari and Firefox aren't in it. On a Mac `npm test` refuses to
   start that many browser files, so a publish from the laptop stops there after the gate.
-- The full suite ran once on vm-agent at `ccffe9c4` (2026-11-22): 947 passed, 4 failed in 3 files, 9 skipped, in 23
-  minutes. The three files are repaired and pass ([entry 90](#90-repairing-the-three-red-test-files-2026-11-23)).
-  The whole suite hasn't been run since.
+- The full suite ran on vm-agent at `bcf782f6` (2026-11-24): 949 passed, 2 failed, 9 skipped, in 18 minutes. Both
+  files pass alone; the undo race behind one is fixed ([entry 129](#129-the-full-suite-before-080-and-an-undo-that-could-stop-halfway-2026-11-24)).
+  The text-caret file's clean-up can still race a busy machine.
 - The element card is retired; shadow, motion, layout and grid columns are rows of the X-ray card
   ([entry 96](#96-the-element-card-is-retired-and-grid-columns-move-to-the-x-ray-card-2026-11-23)). "Tidy this card"
   went with it, and the untracked `e2e/element-layout.test.mjs` still opens the old card.
@@ -7211,6 +7238,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
+- An undo made while another write to the same files arrives goes back whole or not at all; it could stop halfway on a busy machine. On main, not released ([entry](#129-the-full-suite-before-080-and-an-undo-that-could-stop-halfway-2026-11-24)).
 - The design site's X-ray page shows the Shadow row: point at a card and pick one of the theme's shadows, as in the product. On main, not deployed ([entry](#128-the-design-sites-x-ray-shows-the-shadow-row-2026-11-24)).
 - A number that counts on its own (a timer, a live counter) is now told to use tabular figures, so it stops shifting as it changes. On main, not released ([entry](#127-a-number-that-ticks-is-told-to-keep-its-digits-one-width-2026-11-24)).
 - Double-clicking a button's words now tells you to hold Alt to edit them, instead of doing nothing. On main, not released ([entry](#126-a-double-click-on-a-buttons-words-says-how-to-edit-them-2026-11-24)).

@@ -2,6 +2,7 @@ import { isLedgerPath } from '../paths.js';
 import { resolutions } from '../collect/resolved.js';
 import { environment } from '../paths.js';
 import { parentPort, workerData } from 'node:worker_threads';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { analyze } from '../index.js';
 import { projectSpec } from '../craft-spec.js';
 import type { CheckOptions } from '../index.js';
@@ -130,7 +131,11 @@ function settle(view: Report): void {
 // otherwise every SLICE_MS, so a page is answered as fast as with nothing building. An edit makes it start over; a
 // request that needs the report makes it run straight through and waits for it.
 const SLICE_MS = 10;
-class Stale extends Error {}
+class Stale extends Error { constructor() { super('The whole-app report was started over by a newer edit.'); } }
+// The background build's own work, told apart from a request's: the pause hook sits on the shared state every analysis
+// reads, and a request that took the build's pause waited behind the build, or was thrown its Stale after an edit (an
+// undo answered with nothing, half done: recipes R1 under load, 2026-11-24).
+const backgroundWork = new AsyncLocalStorage<object>();
 let waiting = 0;
 let wakers: (() => void)[] = [];
 function wake(): void { const list = wakers; wakers = []; for (const resolve of list) resolve(); }
@@ -154,6 +159,7 @@ function buildLater(): void {
     check(); sliceStart = performance.now();
   };
   const pause = () => {
+    if (backgroundWork.getStore() !== job) return undefined;
     check();
     if (job.urgent) return undefined;
     if (waiting === 0 && performance.now() - sliceStart < SLICE_MS) return undefined;
@@ -164,7 +170,7 @@ function buildLater(): void {
     await resume();
     state.pause = pause;
     try {
-      const view = (await analyze({ ...options, ledger: false }, undefined, state)).report;
+      const view = (await backgroundWork.run(job, () => analyze({ ...options, ledger: false }, undefined, state))).report;
       // handed over between requests, never in the middle of one
       if (!job.urgent) await resume();
       check(); settle(view); releaseLater();

@@ -31,6 +31,8 @@ Everything since 0.7.0, as a person using it sees it.
 - **Plain words.** Plumber says "hard-coded" and "off your tokens" everywhere it used to say "typed by hand" and "off
   the scale". After `plumber init` it names the one step left (adding it to your dev server), and `init` says plainly
   what `--force` replaces. Double-clicking a button's words says to hold Alt to edit them, instead of doing nothing.
+- **An undo goes back whole.** An undo made while another write to the same files arrived could, on a busy machine,
+  put one file back and stop with an error. It now goes back whole or not at all.
 - **Re-reading after a big write is faster.** Mapping compiled CSS back to its source works each stylesheet out once
   instead of once per declaration.
 
