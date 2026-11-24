@@ -8,7 +8,7 @@
  * ───────────────────────────────────────────────────────── */
 import { say } from './words.js';
 import { trimmed, hiddenFromAT, drawn } from './a11y-rules.js';
-import { rgb } from './craft-read.js';
+import { rgb, inkCss } from './craft-read.js';
 import { TELLS, hasSpecific } from './pack-tells.js';
 
 const found = (rule, el, n, { value = el.localName, confidence = 0.8, advice }) => [{
@@ -70,7 +70,7 @@ export const eyebrow = rule('eyebrow', 'case', 'p,div,span,small,strong,em,h5,h6
   // two kinds: small capitals spaced out, or (the owner's list, 2026-11-20) a small label in a colour, or in a coloured
   // pill, over a heading at least twice its size
   const caps = s.textTransform === 'uppercase' && tracking >= size * 0.04;
-  const tinted = !caps && ((lch(s.color)?.C ?? 0) >= 0.06 || (lch(s.backgroundColor)?.C ?? 0) >= 0.04 || (lch(facts.style(el.parentElement ?? el).backgroundColor)?.C ?? 0) >= 0.04 && trimmed(el.parentElement?.textContent ?? '') === text);
+  const tinted = !caps && ((lch(inkCss(el, s) ?? 'transparent')?.C ?? 0) >= 0.06 || (lch(s.backgroundColor)?.C ?? 0) >= 0.04 || (lch(facts.style(el.parentElement ?? el).backgroundColor)?.C ?? 0) >= 0.04 && trimmed(el.parentElement?.textContent ?? '') === text);
   if (!caps && !tinted) return;
   // the label is the innermost element that holds the words: a pill around it is the same label
   if ([...el.children].some((k) => trimmed(k.textContent) === text)) return;

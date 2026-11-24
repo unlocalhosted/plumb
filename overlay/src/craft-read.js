@@ -26,6 +26,23 @@ export const COLOUR = /(?:rgba?|oklch|oklab|color)\([^)]*\)/g;
 // A computed colour → [r, g, b, a] in sRGB 0–255; null for anything else (a colour the page never resolved). Chromium
 // keeps a colour in the space it was written in: rgb()/rgba(), oklch() (Tailwind v4's palette), oklab() (color-mix in
 // oklab) and color(srgb …) all come back from getComputedStyle as they are, so all of them are read here.
+/**
+ * The colour words are drawn in, as CSS, or null when no one colour draws them. `-webkit-text-fill-color` paints over
+ * `color` when it holds a colour of its own; a clear fill draws nothing; `background-clip: text`, on the words or an
+ * inline parent round them, means a background (a gradient, a picture) paints them. Read as `color` alone, white words
+ * with a fill of their own were taken for grey and gradient words scored a contrast of 0 (our homepage, 0.6.0).
+ */
+export function inkCss(el, cs) {
+  const clipped = (s) => /text/.test(`${s.backgroundClip} ${s.webkitBackgroundClip ?? ''} ${s.getPropertyValue('-webkit-background-clip')}`);
+  const fill = cs.webkitTextFillColor || cs.getPropertyValue('-webkit-text-fill-color');
+  if (fill && fill !== cs.color) { const f = rgb(fill); if (f) return f[3] > 0 ? fill : null; }
+  for (let n = el; n && n !== document.body; n = n.parentElement) {
+    const s = n === el ? cs : getComputedStyle(n);
+    if (clipped(s) && s.backgroundImage !== 'none') return null;
+    if (!/^inline/.test(s.display) && n !== el) break;
+  }
+  return cs.color;
+}
 export function rgb(s) {
   const m = String(s ?? '').trim().match(/^(rgba?|oklch|oklab|color)\(([^)]+)\)$/);
   if (!m) return null;

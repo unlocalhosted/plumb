@@ -5197,6 +5197,32 @@ with plumber taken out of its Vite config after init: the bare command said "Nex
 
 **Media hooks.** None.
 
+### 114. Words are judged in the ink they are drawn in (2026-11-24)
+
+**The itch.** Running 0.6.0 on our own homepage gave false colour findings: white words drawn with
+`-webkit-text-fill-color` were taken for grey, and words whose `color` is clear scored a contrast of Lc 0
+(`Install.jsx:54`, "Run your dev server. Hold Alt."). Gradient headlines, which generated landing pages use all the
+time, are drawn the same way.
+
+**How we found it.** Listed the homepage's words drawn other than by `color`: a gradient line, the line under it,
+and an "Alt" key whose `color` is clear and whose fill is near-white.
+
+**The system behind it.** Every colour check read `color`, but a browser draws the words in
+`-webkit-text-fill-color` when that holds a colour, and with `background-clip: text` a background paints them. Clear
+`color` read as "no colour", which turned into the ground colour, so the contrast came out 0.
+
+**What we chose.** One reader, `inkCss`, says what colour the words are drawn in: the fill colour when it has one,
+nothing when the fill is clear, nothing when a background is clipped to the words (on them or on an inline parent),
+otherwise `color`. The contrast rule, the colour census the grey and palette checks are built on, and the tinted-label
+tell read it. A gradient's own checks (its hue, its colour space) still speak.
+
+**The fix and the proof.** In `overlay/src/craft-read.js`, used in `craft-rules.js`, `colours.js` and
+`tells-rules.js`. Our site still runs 0.6.0 from npm, so the proof is on the ledger example, with the homepage's cases
+added to its source for the run: near-white fill words on a dark panel got no contrast finding, gradient words got
+none (only the gradient checks), and a deliberately dim line was still flagged.
+
+**Media hooks.** None.
+
 ## Open gaps
 
 - **A shadow, motion or layout pick waiting in the X-ray card is still lost on a reload** ([entry 107](#107-changes-waiting-in-the-x-ray-card-survive-a-reload-2026-11-23)).
@@ -6886,6 +6912,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
+- Gradient and fill-coloured words are no longer read as grey or as zero contrast: plumber judges words in the ink they are drawn in. On main, not released ([entry](#114-words-are-judged-in-the-ink-they-are-drawn-in-2026-11-24)).
 - Setting up says what is true: after `plumber init`, plumber names the one step left (adding it to your dev server), the hooks diff prints a command you can run, and `init` says plainly what `--force` replaces. On main, not released ([entry](#113-three-setup-messages-say-what-is-true-2026-11-24)).
 - On Next 16, plumber is ready in about half a second instead of 10, so `plumber craft` and checks no longer wait ten seconds per page. On main, not released ([entry](#112-ready-stops-waiting-10-seconds-on-next-16-2026-11-24)).
 - A corner, spacing or size picked in the X-ray card is written by the name you picked (`rounded-card`), not by Tailwind's class of the same size. On main, not released ([entry](#111-a-picked-step-is-written-by-its-own-name-2026-11-24)).

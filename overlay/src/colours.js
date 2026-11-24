@@ -29,7 +29,7 @@
  * ───────────────────────────────────────────────────────── */
 import { oklab, toRgb } from './craft-headless.js';
 import { apca, colourClass } from './craft-rules.js';
-import { SPEC, utility } from './craft-read.js';
+import { SPEC, utility, inkCss } from './craft-read.js';
 import { STAMP_ATTRIBUTE, STAMPED, stampOf } from './stamp.js';
 import { controlAround, controlKind } from './roles.js';
 
@@ -315,7 +315,7 @@ function drawn(el, cs) {
   const out = {};
   if (cs.display === 'none' || cs.visibility === 'hidden' || !el.getClientRects().length) return out;
   const words = [...el.childNodes].some((n) => n.nodeType === 3 && /\S/.test(n.nodeValue ?? '')) || /^(input|textarea|select)$/.test(el.localName);
-  if (words) { const c = toRgb(cs.color); if (c && c[3] > 0) out.text = c; }
+  if (words) { const ink = inkCss(el, cs), c = ink && toRgb(ink); if (c && c[3] > 0) out.text = c; }
   const bg = toRgb(cs.backgroundColor);
   if (cs.backgroundImage && cs.backgroundImage !== 'none') out.image = cs.backgroundImage;
   else if (bg && bg[3] > 0) out.bg = bg;

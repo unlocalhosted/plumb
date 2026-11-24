@@ -57,7 +57,7 @@
  * `theme.spec(this.id)` and never holds a threshold, a target or a tier of its own. Every rule says nothing when its
  * evidence is ambiguous: unequal insets, a running animation, a disabled control, a scale or rotation.
  * ───────────────────────────────────────────────────────── */
-import { rgb, utility, classesOf, elevation, COLOUR } from './craft-read.js';
+import { rgb, inkCss, utility, classesOf, elevation, COLOUR } from './craft-read.js';
 import { TIER } from './craft-facets.js';
 import { say } from './words.js';
 import { controlAround, controlKind, roleOf } from './roles.js';
@@ -947,8 +947,9 @@ export const contrast = {
       if (n !== el && picturesIn(facts, n).some((m) => !el.contains(m.el) && under(m))) return [];
       if (alpha(rgb(ns.backgroundColor)) > 0.5) break;
     }
-    const ground = facts.ground(el), c = rgb(s.color);
-    if (!c) return [];
+    // the ink as drawn: a fill colour of its own, or none when a gradient paints the words (nothing one colour to judge)
+    const ink = inkCss(el, s), ground = facts.ground(el), c = ink && rgb(ink);
+    if (!c || alpha(c) === 0) return [];
     // the text as it shows: its own alpha and every fade on the way up
     let fade = 1, muted = 1;
     for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
