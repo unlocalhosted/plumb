@@ -312,6 +312,7 @@ async function dispatchOnce(session: Session, method: string, params: Record<str
   if (method === 'system-page') return session.projectSystem();
   if (method === 'health') return session.health();
   if (method === 'refresh') return session.refresh();
+  if (method === 'heal') return session.healNow();
   if (method === 'try') {
     if (typeof params.code !== 'string') throw new UsageError('code must be a string.');
     const lang = text(params, 'lang', true), as = text(params, 'as', true);

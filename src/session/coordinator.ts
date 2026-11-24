@@ -19,6 +19,8 @@ try {
   session.on('written', value => port.postMessage({ event: 'written', value }));
   // the reading table was kept: the host's health says so without waiting for the next question
   session.on('kept', value => { void snapshot().then(state => port.postMessage({ event: 'kept', value, ...state })); });
+  // a stopped session's next try, and each try that fails: the host's health says so without waiting for a question
+  session.on('healing', () => { void snapshot().then(state => port.postMessage({ event: 'healing', ...state })); });
   session.on('diagnostic', error => { void snapshot().then(state => port.postMessage({ event: 'diagnostic', value: error, ...state })); });
   async function execute(call: Call) {
     if (Date.now() >= call.deadline) { port.postMessage({ id: call.id, busy: true }); return; }

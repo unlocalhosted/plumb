@@ -69,7 +69,8 @@ export class Session extends EventEmitter {
         if (message.started) { clearTimeout(pending.timer); return; }
         this.pending.delete(message.id); clearTimeout(pending.timer);
         if (message.busy) pending.reject(new BusyError());
-        else if (message.error) pending.reject(failure(message.error));
+        // an error whose message is empty is still an error, never an answer of nothing
+        else if ('error' in message) pending.reject(failure(message.error || 'Plumber failed without saying why.'));
         else pending.resolve(message.result);
       });
       worker.on('error', error => { this.lose(worker, error); reject(error); });
@@ -187,6 +188,8 @@ export class Session extends EventEmitter {
     const status = life.kind === 'ready' ? this.snapshot.status : life.kind === 'starting' ? 'starting' : 'failed';
     return Promise.resolve({ ...this.snapshot, status, ...(life.kind === 'lost' ? { diagnostic: life.error.message } : {}) });
   }
+  /** Try a stopped session again now, instead of waiting for its next try (the dock's "Try now"). */
+  healNow() { return this.call('healNow', []); }
   get stats(): unknown { return this.lastStats; }
   async close(): Promise<void> {
     const life = this.life;

@@ -31,6 +31,11 @@ Everything since 0.7.0, as a person using it sees it.
 - **Plain words.** Plumber says "hard-coded" and "off your tokens" everywhere it used to say "typed by hand" and "off
   the scale". After `plumber init` it names the one step left (adding it to your dev server), and `init` says plainly
   what `--force` replaces. Double-clicking a button's words says to hold Alt to edit them, instead of doing nothing.
+- **Plumber says when something is wrong, and recovers.** If its reading thread stops (say its files vanish during a
+  reinstall), it tries again on its own, and the dock says "Plumber stopped." with the cause in plain words, a
+  countdown to the next try, Try now, and "Back" when it is. It used to say "Checking your project…" forever. A failure
+  in your code names the cause and waits for your fix. A long start says why it may take a while, and a lost dev
+  server is named after 30 seconds.
 - **An undo goes back whole.** An undo made while another write to the same files arrived could, on a busy machine,
   put one file back and stop with an error. It now goes back whole or not at all.
 - **Re-reading after a big write is faster.** Mapping compiled CSS back to its source works each stylesheet out once

@@ -89,6 +89,7 @@ export const methods = [
   { http: 'census', post: true, read: true, rpc: false },
   { http: 'census-status', read: true, rpc: false },
   { http: 'health' },
+  { http: 'heal', engine: 'healNow', post: true },
 ] as const satisfies readonly Row[];
 
 type Entry = (typeof methods)[number];

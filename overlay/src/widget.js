@@ -22,7 +22,17 @@
 const WALK = { step: 30, pause: 450 };
 // what a pointer reaches: an icon's <path> or <text> is its <svg> (a box-shadow or a layout is the svg's, never a part's)
 const reachable = (el) => { while (el?.ownerSVGElement) el = el.ownerSVGElement; return el; }; // px of scroll per level; ms of stillness that resets the travel
-const TIMING = { hoverRead: 90, light: 120, swap: 140, reread: [250, 600, 1200, 2400], starting: 1000, maxDrawing: 160, healthStarting: 1000, healthReady: 10000, dockFold: 4000, dockCount: 3000, side: 3000 };
+// Why plumber stopped, in a person's words: the server's own message stays in the dock's tooltip. Its known causes are
+// named for what they mean to you; anything else is its first sentence, short.
+function plainReason(message = '') {
+  const m = String(message);
+  if (/Cannot find module .*(react-plumber|plumb)\/dist|ERR_MODULE_NOT_FOUND/.test(m)) return 'Its own files went missing for a moment, likely a reinstall or rebuild.';
+  if (/worker exited|Session is closed/i.test(m)) return 'Its reading thread stopped.';
+  if (/heap out of memory|ERR_WORKER_OUT_OF_MEMORY|out of memory/i.test(m)) return 'It ran out of memory reading your app.';
+  const first = m.split(/\n|(?<=\.)\s/)[0].replace(/[.\s]+$/, '');
+  return first ? `${first.length > 90 ? `${first.slice(0, 88)}…` : first}.` : 'It didn’t say why.';
+}
+const TIMING = { hoverRead: 90, light: 120, swap: 140, reread: [250, 600, 1200, 2400], starting: 1000, maxDrawing: 160, healthStarting: 1000, healthReady: 10000, dockFold: 4000, dockCount: 3000, startLong: 45, startStuck: 180, lostLong: 30, side: 3000 };
 
 import { send } from './net.js';
 import { pageHydrated } from './hydration.js';
@@ -111,7 +121,7 @@ const css = `
      slide out while it is pointed at or focused, or while one of them is open; in Blueprint the bar carries them */
   /* folded, not removed: a folded tool keeps its place in the tab order (focus comes back to History when it closes), and
      a focused one unfolds the dock */
-  :host(:not([data-blueprint])) .dock:not(:hover):not(:focus-within):not(:has(button[aria-pressed="true"])) > button {
+  :host(:not([data-blueprint])) .dock:not(:hover):not(:focus-within):not(:has(button[aria-pressed="true"])) > button:not(.retry) {
     max-width: 0; min-width: 0; padding-inline: 0; margin-inline-start: calc(-1 * var(--pl-space-3)); border: 0; opacity: 0; overflow: hidden; pointer-events: none; }
   .dock > button { transition: opacity 160ms var(--pl-ease-out); }
   :host([data-blueprint]) .dock { display: none; }
@@ -149,7 +159,18 @@ const css = `
   .dock[data-refused] .say { color: var(--pl-off); }
   .dock:is([data-state="starting"], [data-state="reading"]) .bob { animation: pl-breathe 1.6s ease-in-out infinite; }
   .dock[data-state="select"] .bob { color: var(--pl-instrument); }
-  .dock[data-state="failed"] .bob, .dock[data-state="failed"] .say { color: var(--pl-off); }
+  .dock:is([data-state="failed"], [data-state="stopped"], [data-state="broken"]) .bob, .dock:is([data-state="failed"], [data-state="stopped"], [data-state="broken"]) .say { color: var(--pl-off); }
+  /* stopped: the one-line pill opens into a small card, so the cause and what happens next can be read whole */
+  .dock:is([data-state="stopped"], [data-state="broken"]) { height: auto; min-height: var(--pl-tag-h); padding-block: var(--pl-space-2); white-space: normal; max-width: min(380px, calc(100vw - 2 * var(--pl-space-6))); }
+  .dock:is([data-state="stopped"], [data-state="broken"]) .say { display: grid; gap: 2px; min-width: 0; text-wrap: pretty; }
+  .dock:is([data-state="stopped"], [data-state="broken"]) .say b { font-weight: 600; }
+  .dock:is([data-state="stopped"], [data-state="broken"]) .say .why { color: var(--pl-text-secondary); }
+  .dock[data-state="stopped"] .say .count { font: inherit; letter-spacing: inherit; white-space: nowrap; }
+  .dock:is([data-state="stopped"], [data-state="broken"]) .bob { align-self: start; margin-block-start: 2px; }
+  .dock .act.retry { flex: none; align-self: center; }
+  .dock[data-state="back"] .bob { color: var(--pl-instrument); }
+  .dock .act.retry { color: var(--pl-text-primary); background: var(--pl-bg-inset); }
+  @media (hover: hover) and (pointer: fine) { .dock .act.retry:not(:disabled):hover { background: var(--pl-bg-surface-hover); } }
   .dock[data-state="lost"] { opacity: 0.72; }
   @keyframes pl-breathe { 50% { opacity: 0.35; } }
   @media (prefers-reduced-motion: reduce) { .dock:is([data-state="starting"], [data-state="reading"]) .bob { animation: none; } }
@@ -351,6 +372,7 @@ class PlumbOverlay extends HTMLElement {
       <section class="w" hidden></section>
       <div class="dock" role="toolbar" aria-label="React Plumber" data-state="starting" data-enter>
         <span class="bob">${ICON.bob}</span><span class="say" role="status" aria-live="polite"></span>
+        <button class="act retry" type="button" hidden title="${DOCK.retryTitle}">${DOCK.retryNow}</button>
         <button class="history" type="button" aria-pressed="false" aria-label="${DOCK.history}" title="${DOCK.historyTitle}">${HISTORY_ICON}</button>
         <button class="help" type="button" aria-pressed="false" aria-label="${DOCK.help}" title="${DOCK.helpTitle}">${HELP_ICON}</button>
         <button class="bp-toggle" type="button" aria-pressed="false" aria-label="Blueprint" title="${DOCK.blueprintTitle}">${ICON.blueprint}</button>
@@ -358,6 +380,7 @@ class PlumbOverlay extends HTMLElement {
       </div>
       <span class="announce" aria-live="polite" style="position:fixed;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)"></span>`;
     this.#$('.pick').addEventListener('click', () => this.#armed && this.#sticky ? this.#disarm() : this.#arm(true));
+    this.#$('.retry').addEventListener('click', () => this.#retryNow());
     this.#blueprint = new Blueprint(this, this.#root, {
       onState: state => this.#blueprintState(state),
       // the list (or a click blueprint took) picked an element: the X-ray shows it and holds it
@@ -880,8 +903,16 @@ class PlumbOverlay extends HTMLElement {
   // Health never queues behind reads, so asking is cheap: every second while starting or unreachable, then every ten.
   async #poll() {
     let next = this.#health;
-    try { const h = await request('health', {}); next = h?.status === 'ready' ? 'ready' : h?.status === 'failed' ? 'failed' : 'starting'; this.#reason = h?.diagnostic ?? h?.error ?? ''; this.#reading = h?.wholeApp === 'building'; }
+    try {
+      const h = await request('health', {});
+      // 'invalid': it was running and stopped. It says whether it is trying again on its own or waits for your fix
+      next = h?.status === 'ready' ? 'ready' : h?.status === 'invalid' ? (h.needs === 'edit' ? 'broken' : 'stopped') : h?.status === 'failed' ? 'failed' : 'starting';
+      this.#reason = h?.diagnostic ?? h?.error ?? ''; this.#reading = h?.wholeApp === 'building'; this.#heal = h?.healing ?? null;
+    }
     catch (error) { next = error?.failed ? 'failed' : error?.starting ? 'starting' : 'lost'; this.#reason = error?.message ?? ''; }
+    if (next === 'lost' && this.#health !== 'lost') this.#lostSince = performance.now();
+    // back from a stop: said once, then the dock folds as usual
+    if (next === 'ready' && (this.#health === 'stopped' || this.#health === 'broken')) { this.#backAt = performance.now(); this.#readyAt = 0; }
     if (!this.isConnected) return;
     // the engine is ready before the page is: until React has hydrated it there is nothing to read (bounded: a page
     // without React, or one that takes longer than half a minute, is shown ready as it is)
@@ -889,9 +920,17 @@ class PlumbOverlay extends HTMLElement {
     if (next !== this.#health) this.#blueprint?.healthChanged(next);
     if (next === 'ready' && this.#health !== 'ready') this.#ready?.read();
     this.#health = next; this.#dock();
-    this.#healthTimer = setTimeout(() => this.#poll(), next === 'failed' || next === 'ready' && !this.#reading ? TIMING.healthReady : TIMING.healthStarting);
+    this.#healthTimer = setTimeout(() => this.#poll(), next === 'failed' || next === 'broken' || next === 'ready' && !this.#reading ? TIMING.healthReady : TIMING.healthStarting);
   }
-  #reason = '';
+  #reason = ''; #heal = null; #lostSince = 0; #backAt = 0; #retrying = false;
+  /** "Try now": the server starts its reading again at once; the dock says it is trying until health answers. */
+  async #retryNow() {
+    if (this.#retrying) return;
+    this.#retrying = true; this.#dock();
+    try { await post('heal', {}); } catch { /* health says how it went */ }
+    this.#retrying = false;
+    clearTimeout(this.#healthTimer); this.#poll();
+  }
   // ready for pages while the whole-app list is still being read (the worker's `wholeApp`): the line says so until it is done
   #reading = false; #readingSince = 0;
   // the fix bar has the count while Blueprint is on: one number, one place
@@ -903,28 +942,43 @@ class PlumbOverlay extends HTMLElement {
     const p = this.#blueprint?.active ? this.#bp.progress : null;
     if (p?.total && p.read === p.total) dock.dataset.inView = String(p.drift ?? 0); else delete dock.dataset.inView;
     const say = dock.querySelector('.say'), pick = dock.querySelector('.pick');
-    const selecting = this.#armed && this.#health !== 'failed';
+    const selecting = this.#armed && !['failed', 'stopped', 'broken'].includes(this.#health);
     const reading = this.#health === 'ready' && this.#reading && !this.#pinned?.state?.file && !this.#blueprint?.active;
     if (reading && !this.#readingSince) this.#readingSince = performance.now(); else if (!reading) this.#readingSince = 0;
-    const state = selecting ? 'select' : reading ? 'reading' : this.#health;
-    const seconds = Math.round((performance.now() - this.#startedAt) / 1000);
+    const back = this.#health === 'ready' && this.#backAt && performance.now() - this.#backAt < TIMING.dockFold && !this.#blueprint?.active && !this.#pinned;
+    const state = selecting ? 'select' : back ? 'back' : reading ? 'reading' : this.#health;
+    const now = performance.now(), seconds = Math.round((now - this.#startedAt) / 1000);
+    const count = (s) => ` <span class="count">${s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${s % 60}s`}</span>`;
+    // a start that runs long says why it may, then where to look; the count keeps going
+    const startWords = seconds >= TIMING.startStuck ? DOCK.startingStuck : seconds >= TIMING.startLong ? DOCK.startingLong : DOCK.starting;
+    const retryIn = this.#heal?.at ? Math.max(0, Math.ceil((this.#heal.at - Date.now()) / 1000)) : null;
+    const trying = this.#retrying || this.#heal?.now || retryIn === 0;
+    const lostFor = Math.round((now - this.#lostSince) / 1000);
     const text = {
       select: DOCK.select,
-      starting: `${DOCK.starting}${performance.now() - this.#startedAt > TIMING.dockCount ? ` <span class="count">${seconds}s</span>` : ''}`,
+      starting: `${startWords}${now - this.#startedAt > TIMING.dockCount ? count(seconds) : ''}`,
       failed: DOCK.failed,
-      lost: 'Reconnecting…',
+      // the problem first, then why in plain words, then what happens next
+      stopped: `<b>${DOCK.stopped}</b> <span class="why">${esc(plainReason(this.#reason))} <span class="count">${trying ? DOCK.retrying : retryIn !== null ? DOCK.retryIn(retryIn) : DOCK.retrying}</span></span>`,
+      broken: `<b>${DOCK.needsEdit}</b> <span class="why">${esc(plainReason(this.#reason))} ${DOCK.needsEditNext}</span>`,
+      back: DOCK.back,
+      lost: lostFor >= TIMING.lostLong ? DOCK.lostLong : `Reconnecting…${lostFor * 1000 > TIMING.dockCount ? count(lostFor) : ''}`,
       reading: `${DOCK.reading}${performance.now() - this.#readingSince > TIMING.dockCount ? ` <span class="count">${Math.round((performance.now() - this.#readingSince) / 1000)}s</span>` : ''}`,
       ready: this.#pinned?.state?.file ? `<code>${esc(this.#pinned.state.file.split('/').pop())}:${this.#pinned.state.line}</code>` : this.#blueprint?.active ? this.#blueprintSays() : DOCK.idle,
     }[state];
     if (dock.dataset.state !== state || say.innerHTML !== text) { dock.dataset.state = state; say.innerHTML = text; }
-    dock.title = state === 'failed' ? this.#reason : state === 'reading' ? DOCK.readingTitle : '';
-    pick.disabled = state === 'failed' || state === 'lost';
+    // the server's own words stay one hover away, for the terminal-minded and for a bug report
+    dock.title = state === 'failed' || state === 'stopped' || state === 'broken' ? this.#reason : state === 'reading' ? DOCK.readingTitle : '';
+    const retry = dock.querySelector('.retry');
+    retry.hidden = !(state === 'stopped' || state === 'broken');
+    retry.disabled = trying; retry.setAttribute('aria-busy', String(trying));
+    pick.disabled = state === 'failed' || state === 'lost' || state === 'stopped' || state === 'broken';
     pick.setAttribute('aria-pressed', String(selecting));
     // Ready is said once, then the line folds away so the dock stays small; hover or focus brings it back. A pinned
     // reading keeps its file on show.
     if (state === 'ready' && !this.#readyAt) { this.#readyAt = performance.now(); this.#foldTimer = setTimeout(() => this.#dock(), TIMING.dockFold); }
     dock.toggleAttribute('data-fold', state === 'ready' && !this.#pinned && !this.#blueprint?.active && performance.now() - this.#readyAt >= TIMING.dockFold);
-    if (state === 'starting' || state === 'reading') { clearTimeout(this.#countTimer); this.#countTimer = setTimeout(() => this.#dock(), 1000); }
+    if (state === 'starting' || state === 'reading' || state === 'stopped' || state === 'lost' || state === 'back') { clearTimeout(this.#countTimer); this.#countTimer = setTimeout(() => this.#dock(), 1000); }
   }
   #countTimer = 0;
 

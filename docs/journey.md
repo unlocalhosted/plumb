@@ -5554,6 +5554,47 @@ background build (session, history, class-site, reading-cache, apply-all) passed
 
 **Media hooks.** The before and after counts under load: 8 failures in 55 runs, then 0 in 30.
 
+### 130. Plumber says when it has stopped, and starts again on its own (2026-11-24)
+
+**The itch.** The owner, on crafting-ui's glyphwrite page: "react-plumber never finishes it just keep checking for
+10-15 and so many minutes". Then: "apart from happy path add graceful handling and feedback and ux improvement for
+gaps and errorneous states".
+
+**How we found it.** The dock said "Checking your project…" with a count that kept going. The server's health said
+`invalid`, with "Cannot find module …/plumb/dist/session/worker.js". crafting-ui runs plumber from this repo's build
+folder. Every build empties that folder first, and today's rebuilds did it while the dev server was running. A file
+change made plumber restart its reading thread inside that gap, and the thread's file wasn't there.
+
+**The system behind it.** Two things. A failed restart was never tried again: the session stayed failed until a file
+of the app changed. And the dock knew three states, starting, failed at start and lost, so "stopped after it was
+running" was shown as starting, forever.
+
+**What we chose.** The session tries a stopped thread again on its own, after 2 seconds, then 4, 8 and so on up to a
+minute. A failure in your code (a broken config) still waits for your fix, since retrying can't help it. Health says
+which of the two it is and when the next try is, and a new `heal` request tries at once. The dock gets the states
+around them:
+
+- **Stopped:** the pill opens into a small card. "Plumber stopped." comes first, then the cause in plain words ("Its
+  own files went missing for a moment, likely a reinstall or rebuild.") and "Trying again in 8s", with **Try now**
+  beside it. The server's own message stays in the tooltip.
+- **Needs your fix:** "Plumber can't read your project." with the cause and "Save a fix and it reads it again."
+- **Back:** "Back. Plumber is ready again." for a few seconds, then the dock folds as usual.
+- **A long start:** after 45 seconds "Still checking. A large app takes a minute…", after 3 minutes it points to the
+  dev server's terminal. The count shows minutes past 60 seconds.
+- **Lost:** "Reconnecting…" counts, and after 30 seconds asks "Can't reach your dev server. Is it still running?"
+
+A reply with an empty error is now an error in the host as well as in the engine (entry 129 fixed the engine only).
+
+**The fix and the proof.** In `src/session/engine.ts`, `index.ts`, `server.ts`, `methods.ts`, `coordinator.ts`, and
+the dock in `overlay/src/widget.js` with its words in `words.js`. On crafting-ui, with plumber's thread file hidden
+and a new file added to make it restart: the dock said it stopped and why, counted down, and with the file back,
+Try now brought it back within a second. A second time it healed on its own with no click, about 13 seconds later,
+said "Back", then folded. With the dev server stopped, the dock went from "Reconnecting…" to the dev-server question
+at 30 seconds, and was ready again after a restart. Not tried by hand: the needs-your-fix card and the long-start
+words.
+
+**Media hooks.** The stopped card with Try now on the glyphwrite page, then "Back".
+
 ## Open gaps
 
 - The fixes of entry 81 (caret, app errors, broken config on Vite) are committed and not published. The site runs
@@ -7238,6 +7279,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
+- When plumber stops, the dock says so and why in plain words, counts down to its next try, offers Try now and says when it's back, instead of "Checking your project…" forever. It also tries again on its own. On main, not released ([entry](#130-plumber-says-when-it-has-stopped-and-starts-again-on-its-own-2026-11-24)).
 - An undo made while another write to the same files arrives goes back whole or not at all; it could stop halfway on a busy machine. On main, not released ([entry](#129-the-full-suite-before-080-and-an-undo-that-could-stop-halfway-2026-11-24)).
 - The design site's X-ray page shows the Shadow row: point at a card and pick one of the theme's shadows, as in the product. On main, not deployed ([entry](#128-the-design-sites-x-ray-shows-the-shadow-row-2026-11-24)).
 - A number that counts on its own (a timer, a live counter) is now told to use tabular figures, so it stops shifting as it changes. On main, not released ([entry](#127-a-number-that-ticks-is-told-to-keep-its-digits-one-width-2026-11-24)).

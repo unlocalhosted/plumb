@@ -559,8 +559,42 @@ export class Session extends EventEmitter {
       if (!local) await this.retainLocations(new Set());
       this.failure = undefined; this.failurePaths = [];
       this.revision++; this.pageGeneration++; this.emit('change', changed); this.keepLater(true);
-    } catch (error) { this.failure = error as Error; this.failurePaths = changed; throw error; }
+    } catch (error) { this.failure = error as Error; this.failurePaths = changed; this.healLater(); throw error; }
     return changed;
+  }
+  /** A thread that could not start (its file missing for a moment while plumber's own build is rewritten, a crash) is
+   * tried again on its own, a little later each time, instead of leaving the session failed until a file of the app
+   * changes. A failure in your code (a broken config) waits for your edit, as before. */
+  private healTimer: ReturnType<typeof setTimeout> | undefined;
+  private healDelay = 0; private healAt = 0; private healTries = 0; private healing = false;
+  private healLater(): void {
+    if (this.closed || this.healTimer || !this.failure || this.failure instanceof UsageError) return;
+    this.healDelay = Math.min(60_000, this.healDelay ? this.healDelay * 2 : 2_000);
+    this.healAt = Date.now() + this.healDelay;
+    this.healTimer = setTimeout(() => { this.healTimer = undefined; void this.heal(); }, this.healDelay);
+    this.healTimer.unref?.();
+    this.emit('healing');
+  }
+  private heal(): Promise<void> {
+    return this.serialize(async () => {
+      if (this.closed || !this.failure) return;
+      this.healing = true; this.healTries++; this.emit('healing');
+      try {
+        await this.worker.terminate(); this.rejectPending(new Error('Session inputs changed.')); await this.restart();
+        await this.retainLocations(new Set());
+        this.failure = undefined; this.failurePaths = []; this.healDelay = 0; this.healAt = 0; this.healTries = 0;
+        this.revision++; this.pageGeneration++; this.emit('change', []); this.keepLater(true);
+      } catch (error) { this.failure = error as Error; this.healLater(); }
+      finally { this.healing = false; }
+    });
+  }
+  /** Try a stopped session again now. A failure in your code is tried too: you may have just fixed it. */
+  async healNow(): Promise<{ status: string }> {
+    if (!this.failure) return { status: 'ready' };
+    if (this.healTimer) { clearTimeout(this.healTimer); this.healTimer = undefined; }
+    this.healDelay = 0;
+    await this.heal();
+    return { status: this.failure ? 'invalid' : 'ready' };
   }
   private observe(): void {
     if (!(this.options.polling ?? environment('POLLING') === '1')) {
@@ -2348,7 +2382,8 @@ export class Session extends EventEmitter {
     return Promise.resolve({ ...this.healthSnapshot, ...(this.kept ? { kept: this.kept } : {}), ...(this.warm ? { warm: (({ table: _table, ...said }) => said)(this.warm) } : {}), work: { ...this.healthSnapshot.work, reconciliations: this.reconciliations, recipeIndexes: this.recipeIndexes }, status: this.failure ? 'invalid' : 'ready', root: this.root,
       ...(this.outsideSources.size ? { outsideSource: [...this.outsideSources].filter(file => !this.sourceFiles.has(file)) } : {}),
       revision: this.revision, pid: process.pid, rss: process.memoryUsage().rss,
-      ...(this.failure ? { diagnostic: this.failure.message } : {}) });
+      ...(this.failure ? { diagnostic: this.failure.message, needs: this.failure instanceof UsageError ? 'edit' : 'retry',
+        healing: this.healing ? { now: true, tries: this.healTries } : this.healTimer ? { at: this.healAt, tries: this.healTries } : null } : {}) });
   }
   get stats(): unknown { return this.lastStats; }
   private file(file: string): string {
@@ -2389,7 +2424,7 @@ export class Session extends EventEmitter {
   private position(value: number): number { if (!Number.isSafeInteger(value) || value < 1) throw new UsageError('Line and column must be positive integers.'); return value; }
   async close(): Promise<void> {
     if (this.closed) return; this.closed = true;
-    if (this.timer) clearInterval(this.timer); if (this.debounce) clearTimeout(this.debounce); if (this.keepTimer) clearTimeout(this.keepTimer);
+    if (this.timer) clearInterval(this.timer); if (this.debounce) clearTimeout(this.debounce); if (this.keepTimer) clearTimeout(this.keepTimer); if (this.healTimer) clearTimeout(this.healTimer);
     for (const watcher of this.watchers) watcher.close();
     this.rejectPending(new Error('Session is closed.')); if (this.worker) await this.worker.terminate(); this.removeAllListeners();
   }

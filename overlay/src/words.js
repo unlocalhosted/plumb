@@ -827,7 +827,21 @@ export const TAG = {
 
 export const DOCK = {
   starting: 'Checking your project…',
+  // a start that runs long says why it may, then where to look
+  startingLong: 'Still checking. A large app takes a minute…',
+  startingStuck: 'Still checking. Your dev server’s terminal may say why…',
   failed: 'Couldn’t start. Check your dev server’s terminal.',
+  // stopped after it was running: what happened in plain words, and that it is trying again on its own
+  stopped: 'Plumber stopped.',
+  retryIn: (s) => `Trying again in ${s}s`,
+  retrying: 'Trying again…',
+  retryNow: 'Try now',
+  retryTitle: 'Start plumber’s reading again now',
+  // stopped by something in your code: it waits for your fix
+  needsEdit: 'Plumber can’t read your project.',
+  needsEditNext: 'Save a fix and it reads it again.',
+  back: 'Back. Plumber is ready again.',
+  lostLong: 'Can’t reach your dev server. Is it still running?',
   select: 'Click an element to inspect it · Esc',
   idle: 'Hold Alt to inspect',
   // ready for pages, still reading every file for the whole-app list (setup steps, the project page)
