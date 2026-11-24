@@ -25,8 +25,8 @@ Tried as an agent would, on a copy of the ledger example with no plumber setup, 
    the overlay's fix bar. An agent must turn each sentence into an edit by hand.
 6. **The page checks are slow and need a URL.** One page took 44 seconds, and the agent has to know the dev server's
    address and that one is running.
-7. **No tool server.** `plumber serve --stdio` speaks JSON-RPC but not MCP, so Claude Code, Cursor and others can't
-   add plumber as tools. Agents only read CLI text.
+7. **Agents only read CLI text.** That stays: the owner ruled out an MCP server (2026-11-24, "no mcp server"). The
+   command line and the instructions file are the agent's way in, so they have to carry everything.
 8. **The person's notes don't reach the agent.** The X-ray's ↵ opens "a note for your agent" with the file and line;
    where it goes and how an agent picks it up isn't part of any agent instruction.
 
@@ -36,7 +36,7 @@ Plumber's agent surface grew as text output for a CI-like loop (check, edit, che
 chose its rules. The writers, the page judgement and the person's choices all live in the overlay and the dev server,
 and the agent can't reach them. An agent without setup is not a case the instructions cover.
 
-## Six layers
+## Five layers
 
 1. **Output an agent can trust.** Errors exit non-zero. Findings come ranked by what they cost a person (broken
    before inconsistent, many places before one), with a limit (`--top 10`) and a line saying how many are left. Dead
@@ -46,11 +46,9 @@ and the agent can't reach them. An agent without setup is not a case the instruc
    `plumber install --agent` path works without `init`.
 3. **Edits, not sentences.** Every finding plumber can write carries the edit as data (file, line, before, after) in
    `--json` and `--agent`, and `plumber apply <key>` writes it with the writer the fix bar uses, with undo.
-4. **An MCP server.** `plumber mcp` with a handful of tools: check, try, why, craft a page, apply, undo. One line to
-   add it to Claude Code or Cursor.
-5. **Page checks an agent can use.** Find the running dev server, reuse the warm server for speed, and return a
+4. **Page checks an agent can use.** Find the running dev server, reuse the warm server for speed, and return a
    before and after screenshot so the agent can see what changed.
-6. **The person's notes reach the agent.** The ↵ note lands where the agent reads (a notes file, and the MCP server),
+5. **The person's notes reach the agent.** The ↵ note lands in a notes file the agent's instructions tell it to read,
    with the element's file and line.
 
 ## Open choices for the owner
@@ -58,5 +56,4 @@ and the agent can't reach them. An agent without setup is not a case the instruc
 - Should an agent write fixes through plumber (`apply`, same writer and undo as the fix bar), or only be told the
   edit to make by hand? Recommended: through plumber, so a fix is written the same way whoever takes it.
 - With no setup, should an agent see only the top 10 by default? Recommended: yes, with the count of the rest.
-- MCP server before or after the edits-as-data layer? Recommended: after, since the tools would hand out the same
-  edits.
+- **Decided by the owner:** no MCP server. Agents use the CLI and the instructions file.
