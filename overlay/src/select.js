@@ -21,6 +21,7 @@ import { LANGUAGE_CSS } from './language.js';
 import { facetOf } from './craft-facets.js';
 import { PRIMITIVES_CSS, stepper, swatches } from './editor-primitives.js';
 import { esc } from './choices.js';
+import { pageHasUtilities } from './style-systems.js';
 import { planOf, moved, preview, glide, GLIDE, GLYPHS, SPACING_PROPS, swapPlanOf, classSwapOf, swapPreview, swapRelease, swapTake, TRIAL, FACET_SAID, glyphOf } from './inplace.js';
 import { scrub, SCRUB_CSS, cursorOf } from './scrub.js';
 
@@ -102,7 +103,10 @@ export class Selection {
     if (!p) return { mark: m, ready: false, whyNot: m.whyNot ?? (suggest?.kind === 'advice' ? 'advice' : null), suggest };
     // `filling`: the options' exact edits are still being read from the element; until then "no option writes" is not
     // known, and the bar said "can't write this change" for a moment before offering it (seen on Relay, 2026-11-22)
-    if (p.kind === 'swap') return { mark: m, ready: true, kind: 'swap', filling: !!p.filling, options: p.options.map((o) => ({ label: o.label, n: o.n, swatch: o.swatch, ok: !!o.write, cls: o.write?.to ?? null })), at: p.at, now: p.now, suggest };
+    // on a page with no utility classes a craft fix is written as CSS in the rule that styles the element
+    // (blueprint.js #asRules): the bar names that, not a class that would never be written
+    const css = (o) => (o.styles && Object.keys(o.styles).length && !pageHasUtilities() ? Object.entries(o.styles).map(([k, v]) => `${k}: ${v}`).join('; ') : null);
+    if (p.kind === 'swap') return { mark: m, ready: true, kind: 'swap', filling: !!p.filling, options: p.options.map((o) => ({ label: css(o) ?? o.label, n: o.n, swatch: o.swatch, ok: !!o.write, cls: css(o) ?? o.write?.to ?? null })), at: p.at, now: p.now, suggest };
     return { mark: m, ready: true, kind: 'space', prop: p.main.prop, options: p.steps.map((x) => ({ label: x.token, n: x.n, ok: true })), at: p.at, now: { label: `${p.main.from.n}px`, n: p.main.from.n }, suggest };
   }
   // Pick an option of the current plan by its index: the page glides to it
@@ -238,13 +242,13 @@ export class Selection {
       const memo = this.#memo;
       // the sidebar keeps the classes as written: the preview is put back while it records them, then shown again
       swapPreview(el, null, false, memo);
-      this.#changes.put(el, el.localName, problem.key, { label: FACET_SAID[plan.facet] ?? plan.facet ?? 'class', from: plan.now?.label ?? opt.write.from, to: opt.label, write: opt.write, undo: () => swapPreview(el, null, false, memo), release: () => swapRelease(el, memo) });
+      this.#changes.put(el, el.localName, problem.key, { label: FACET_SAID[plan.facet] ?? plan.facet ?? 'class', from: plan.now?.label ?? opt.write.from, to: opt.label, write: opt.write, styles: opt.styles, undo: () => swapPreview(el, null, false, memo), release: () => swapRelease(el, memo) });
       swapPreview(el, opt.write, true, memo, opt.styles); swapTake(el, memo);
       // the same edit at every other place of the cause whose classes carry it
       for (const g of this.#group) {
         if (!String(opt.write.from).split(/\s+/).filter(Boolean).every((c) => g.el.classList.contains(c))) continue;
         const m = {};
-        this.#changes.put(g.el, g.el.localName, g.key ?? problem.key, { label: FACET_SAID[plan.facet] ?? plan.facet ?? 'class', from: plan.now?.label ?? opt.write.from, to: opt.label, write: opt.write, undo: () => swapPreview(g.el, null, false, m), release: () => swapRelease(g.el, m) });
+        this.#changes.put(g.el, g.el.localName, g.key ?? problem.key, { label: FACET_SAID[plan.facet] ?? plan.facet ?? 'class', from: plan.now?.label ?? opt.write.from, to: opt.label, write: opt.write, styles: opt.styles, undo: () => swapPreview(g.el, null, false, m), release: () => swapRelease(g.el, m) });
         swapPreview(g.el, opt.write, true, m, opt.styles); swapTake(g.el, m);
       }
       this.#memo = {};

@@ -337,6 +337,10 @@ export function route(changes, systems = SYSTEMS) {
   return by;
 }
 /** Whether the page has utility classes (a Tailwind build: its utilities layer, or its --tw- variables). */
+// asked on every draw of the fix bar: a page that has utilities keeps them, so a yes is remembered; a no is asked
+// again (the stylesheets may still be arriving)
+let utilitiesSeen = false;
+export const pageHasUtilities = () => utilitiesSeen || (utilitiesSeen = hasUtilities());
 export function hasUtilities() {
   return [...document.styleSheets].some((sh) => { try { return [...sh.cssRules].some((r) => r.name === 'utilities' || /--tw-/.test(r.cssText)); } catch { return false; } });
 }

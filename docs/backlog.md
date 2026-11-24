@@ -479,8 +479,10 @@ and none in `web/design/parts`.
 - **Probe, same day: plain CSS already works on the command line.** A four-file React project with `.css` files and
   `:root` variable tokens got four right findings with fixes (`padding: 18px` → `var(--spacing-4)` or `-6`, a 9px
   corner, a 15px size, `margin: 0 0 7px`). Two limits: tokens named `--space-*` were not seen as spacing until renamed
-  `--spacing-*` (the config's `decisions.<family>.from` may cover it; not tried), and the live overlay can't write a
-  fix into a `.css` file (journey: the homepage's cards "can't take a size class"). CSS in template strings is still
+  `--spacing-*` (the config's `decisions.<family>.from` may cover it; not tried), and the live overlay couldn't write a
+  fix into a `.css` file (journey: the homepage's cards "can't take a size class"). Since journey 122 the fix bar
+  writes a fix that says what it sets into the rule that styles the element, on a page with no utility classes; a fix
+  that sets nothing (advice, a structural change) still can't be written there. CSS in template strings is still
   unread apart from a literal `<style>`.
 - **On the site's homepage, same day.** The check read all nine of the homepage's plain stylesheets, and every one of its
   22 findings came from one blind spot: the site puts the overlay's token file on the page at runtime, read as text
@@ -544,4 +546,4 @@ one-bar and new-token tests are fixed and pass there on their own; the steady li
   - A plain double-click on words in a link or button does nothing and doesn't mention Alt + double-click.
   - The published package names a private app in code comments (13 files in 0.6.0). The owner decides.
   - Editing in Safari and Firefox hasn't been tried, and the release gate doesn't cover them.
-- Found running 0.6.0 on our own homepage (2026-11-22): the elevation ladder's suggested level makes the next finding; five declared-gap fixes don't clear their own finding there, because the homepage is plain CSS and a `gap-…` class does nothing on it (checked 2026-11-24 on the ledger example: with Tailwind, both forms of the gap fix clear their finding). It is the CSS-write gap under "Plumber on its own design pages".
+- Found running 0.6.0 on our own homepage (2026-11-22): the elevation ladder's suggested level makes the next finding. (The five gap fixes that didn't clear there were class fixes on a plain-CSS page; since journey 122 they are written into the stylesheet. Not checked on the homepage itself, which runs 0.6.0 from npm.)

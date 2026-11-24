@@ -37,7 +37,7 @@ import { FixPanel, FIX_CSS } from './fixpanel.js'; // the one place you act: a c
 import { FIX } from './words.js';
 import { hasText } from './texteditor.js';
 import { errorIs, post, request } from './api.js';
-import { hasUtilities, rolesAsRules } from './style-systems.js';
+import { hasUtilities, rolesAsRules, route as routeStyles, loadProperties, evidenceFor, cssRules } from './style-systems.js';
 import { locate, classEditsOf, classSiteOf } from './locate.js';
 
 const FADE_IN = 160, FADE_OUT = 120; // ms, the same as --pl-dur-dim and --pl-dur-undim
@@ -508,12 +508,50 @@ export class Blueprint {
     if (!left && !refused.length && undo.length) this.#host.remember?.(said, undo, at, trace.group);
     return { count: left + refused.length, why: leftWhy ?? why, refused, undo, group: trace.group };
   }
+  // one element's fix written as declarations in the rules that style it: one result for the element, ok when every
+  // property landed; what couldn't be placed says why
+  async #asRules(b, trace) {
+    const changes = Object.entries(b.styles).map(([prop, value], id) => ({ id, prop, value, els: [b.el], scope: 'one', befores: [''] }));
+    // the server's undo for each write joins the fix's own, so the bar's Undo takes the stylesheet edit back too
+    const sent = async (method, body) => { const answer = await post(method, body); if (answer?.undo?.length) (this.#undos ??= []).push(...answer.undo); return answer; };
+    const ctx = { post: sent, request, group: () => trace.group, keep: () => {} };
+    // where each value comes from, read with the fix's preview taken off (it is inline, and would be taken for yours).
+    // A property nothing sets yet (a gap the row never had) goes into the rule that styles the element: one that sets
+    // another of the fix's properties, else its layout or its box
+    const saved = b.el.getAttribute('style');
+    for (const c of changes) b.el.style.removeProperty(c.prop);
+    const own = (e) => e.kind === 'rule' && (e.file || e.bundle);
+    const found = changes.map((c) => evidenceFor(b.el, c.prop));
+    const home = [...found, ...['display', 'justify-content', 'align-items', 'padding-top', 'padding-left', 'margin-top', 'background-color', 'color', 'font-size'].map((p) => evidenceFor(b.el, p))].find(own) ?? null;
+    if (saved === null) b.el.removeAttribute('style'); else b.el.setAttribute('style', saved);
+    const toRules = [], rest = [];
+    for (const [i, c] of changes.entries()) {
+      const e = found[i];
+      if (own(e)) toRules.push({ ...c, claim: { system: 'rule', ...e } });
+      else if (e.kind === 'none' && home) toRules.push({ ...c, claim: { system: 'rule', ...home } });
+      else rest.push(c);
+    }
+    const results = [];
+    try {
+      if (toRules.length) results.push(...await cssRules.write(toRules, ctx));
+      for (const [system, list] of routeStyles(rest)) results.push(...await system.write(list, ctx));
+    } catch (error) { return { el: b.el, ok: false, why: error?.message ?? 'Couldn’t apply.' }; }
+    const failed = results.find((r) => r.state !== 'ok');
+    if (!failed) for (const file of new Set(results.map((r) => r.where?.split(' in ').pop()).filter(Boolean))) this.invalidate({ file });
+    return failed ? { el: b.el, ok: false, why: failed.why ?? 'This change couldn’t be placed.' } : { el: b.el, ok: true };
+  }
   async #apply(batch) {
     // Changes accepted as part of a fix are that fix's step; accepted on their own, one step of their own
     const trace = this.#trace ?? traceOf({ step: FIX.card.steps.fix });
     try { sessionStorage.setItem('plumb:wrote', JSON.stringify({ t: Date.now(), drift: this.#lastDrift })); } catch {}
     const out = [], files = new Map(); // file → { hash, edits: [{ line, column, from, to }], els: [] }
+    // a page with no utility classes: a fix's class does nothing there (a `gap-6` on a plain-CSS page). What the fix
+    // sets is written where the element gets it instead, the rule in your stylesheet, as the X-ray's Sync does
+    // (style-systems.js). On our homepage five gap fixes were written as classes and never showed (journey 122)
+    const plain = !hasUtilities();
+    if (plain && batch.some((b) => Object.keys(b.styles ?? {}).length)) await loadProperties(request);
     for (const b of batch) {
+      if (plain && Object.keys(b.styles ?? {}).length && !b.props.length) { out.push(await this.#asRules(b, trace)); continue; }
       // every change on the element as one class edit against its classes as written
       const edit = elementEdit(b.classes, b.writes ?? [], b.props, activeVariants(b.el)); // edited where it shows, the rest kept
       if (!edit) { out.push({ el: b.el, ok: false, why: 'This change can’t be written as classes here.' }); continue; }

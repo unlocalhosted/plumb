@@ -5373,6 +5373,33 @@ for where a value stands. Code comments keep their old words; they are not read 
 
 **Media hooks.** None.
 
+### 122. The fix bar writes into plain stylesheets (2026-11-24)
+
+**The itch.** On a page styled from `.css` files, the fix bar wrote its fixes as Tailwind classes. Nothing compiles
+those there, so the fix did nothing: five gap fixes on our homepage never showed. Every project that isn't all
+Tailwind meets this.
+
+**How we found it.** Followed a fix from the bar to the server: it became a class edit, always. The X-ray card,
+meanwhile, already wrote a property into the stylesheet rule that sets it (`style-systems.js`), and the server could
+add a declaration to a rule as well as change one.
+
+**The system behind it.** Two writers, one per surface. The bar's craft fixes already said which CSS they set (a gap
+fix sets `column-gap: 8px`), but that was only used to preview the fix on the page, never to write it.
+
+**What we chose.** On a page with no utility classes, a fix that says what it sets is written as those declarations,
+through the same router the X-ray uses. A property some rule already sets is changed in that rule. A property nothing
+sets yet, like a row's first gap, is added to the rule that styles the element (the one that sets another of the
+fix's properties, else its layout or box). The bar names the CSS ("Use column-gap: 8px"), not a class that would
+never be written, and the server's undo joins the fix's, so Undo takes it back. Pages with Tailwind are unchanged.
+
+**The fix and the proof.** In `overlay/src/blueprint.js`, `select.js`, `changes.js` and `style-systems.js`. On a small
+plain-CSS React app with a `.row { display: flex; justify-content: space-between }` and no gap: the bar offered
+"Use column-gap: 8px"; Enter wrote `column-gap: 8px` at the end of the `.row` rule, with no class added to the JSX;
+both rows measured 8px; the bar said "Changed gap to column-gap: 8px at 2 places", and Undo took the declaration
+back out of the file.
+
+**Media hooks.** The `.row` rule before and after, and the bar's "Use column-gap: 8px".
+
 ## Open gaps
 
 - **A shadow, motion or layout pick waiting in the X-ray card is still lost on a reload** ([entry 107](#107-changes-waiting-in-the-x-ray-card-survive-a-reload-2026-11-23)).
@@ -7062,6 +7089,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
+- On a page styled with plain CSS, the fix bar writes its fixes into your stylesheet (`column-gap: 8px` in `.row`) instead of adding Tailwind classes that do nothing there, and Undo takes them back. On main, not released ([entry](#122-the-fix-bar-writes-into-plain-stylesheets-2026-11-24)).
 - Plumber says "hard-coded" and "off your tokens" everywhere it used to say "typed by hand" and "off the scale". On main, not released ([entry](#121-plumber-says-hard-coded-and-your-tokens-everywhere-2026-11-24)).
 - The fix bar no longer flashes "can't write this change" before offering a fix it can write. On main, not released ([entry](#120-the-fix-bar-stops-refusing-a-fix-it-is-about-to-offer-2026-11-24)).
 - The X-ray's size pills and its other small badges can be read in the dark scheme (they were white on white). On main, not released ([entry](#119-the-x-rays-pills-can-be-read-in-the-dark-scheme-2026-11-24)).

@@ -171,7 +171,7 @@ export class Changes {
     this.#busy = true; this.render();
     // what is sent, exactly: a change made while it is written (a new step, another fix) is not part of it, and stays
     for (const [el, i] of this.#items) this.#sending.set(el, { props: new Map([...i.props].map(([prop, c]) => [prop, c.to])), swaps: new Map(i.swaps) });
-    const batch = [...this.#items].map(([el, i]) => ({ el, name: i.name, classes: i.classes, props: [...i.props].map(([prop, c]) => ({ prop, from: c.from, to: c.to })), writes: [...i.swaps.values()].map((c) => c.write), site: i.site ?? null }));
+    const batch = [...this.#items].map(([el, i]) => ({ el, name: i.name, classes: i.classes, props: [...i.props].map(([prop, c]) => ({ prop, from: c.from, to: c.to })), writes: [...i.swaps.values()].map((c) => c.write), styles: Object.assign({}, ...[...i.swaps.values()].map((c) => c.styles ?? {})), site: i.site ?? null }));
     const results = (await this.#onAccept?.(batch).catch((error) => batch.map((b) => ({ el: b.el, ok: false, why: error?.message })))) ?? [];
     for (const r of results) {
       const item = this.#items.get(r.el);
