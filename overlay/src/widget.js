@@ -519,7 +519,7 @@ class PlumbOverlay extends HTMLElement {
   #pinXray() {
     this.#xrayPinOff?.();
     const done = () => { this.#xrayPinOff?.(); if (this.#xray && !this.#blueprint?.active && !this.#armed) this.#toggleXray(); };
-    const down = (e) => { if (e.altKey || this.#ours(e)) return; done(); };
+    const down = (e) => { if (e.altKey || this.#ours(e) || this.#xray?.pending) return; done(); };
     // an Esc already taken (Put back, a list closing) is that one's: the first Esc puts the changes back, a second one
     // closes the card. Both used to happen on one press, whichever listener heard it first
     const key = (e) => { if (e.key === 'Escape' && !e.defaultPrevented && !this.#xray?.pending && !this.#typing(e)) done(); };
@@ -1158,7 +1158,9 @@ class PlumbOverlay extends HTMLElement {
   #disarm = () => {
     if (!this.#armed) return;
     this.#armed = false; this.#sticky = false; this.#byPointer = false; clearTimeout(this.#hoverTimer); this.removeAttribute('data-walking'); this.#walkBox(null);
-    if (this.#xrayByAlt) { this.#xrayByAlt = false; if (this.#xray && !this.#blueprint?.active) this.#toggleXray(); }
+    // an X-ray Alt opened goes with Alt, unless changes are waiting in it: then it stays, pinned, for Sync or Put back (a
+    // drag made with Alt held lost its change the moment Alt was let go, seen on Relay 2026-11-22)
+    if (this.#xrayByAlt) { this.#xrayByAlt = false; if (this.#xray && !this.#blueprint?.active) { if (this.#xray.pending) this.#pinXray(); else this.#toggleXray(); } }
     this.removeAttribute('data-armed');
     this.#blueprint?.yieldInput(false);
     this.#hover?.controller.abort();

@@ -959,6 +959,10 @@ export function mountXray(o) {
   };
   on(E, 'pointermove', track);
   if (E !== window) on(E, 'pointerleave', () => { if (!pinned && !held && !noting && !count()) draw(null); });
+  // the click that ends a drag is the drag's, whoever handles clicks: with clicks off (the widget's mount) it went on to
+  // Blueprint, which selected the cause under the pointer, so Enter took that instead of the drag's change (Relay,
+  // 2026-11-22)
+  if (o.clicks === false) on(E, 'click', (e) => { if (justDragged) { justDragged = false; e.preventDefault?.(); e.stopImmediatePropagation?.(); } }, true);
   if (o.clicks !== false) on(E, 'click', (e) => {
     if (justDragged) { justDragged = false; e.preventDefault?.(); e.stopPropagation?.(); return; }
     if (noting || ourUI(e)) return;

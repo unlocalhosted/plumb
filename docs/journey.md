@@ -5421,6 +5421,29 @@ the card, reloaded; the logo wore the shadow again and the card said "1 change Â
 
 **Media hooks.** None.
 
+### 124. A drag keeps its change when you let go (2026-11-24)
+
+**The itch.** A drag in the X-ray could lose its change on release: with Alt held, the change was dropped; in
+Blueprint, the release selected the cause under the pointer, so Enter went to that instead of syncing (seen in
+scripted rehearsals on Relay, 2026-11-22).
+
+**How we found it.** Read what happens on each release.
+
+**The system behind it.** Two separate leaks. The X-ray swallows the click that ends a drag, but only when it handles
+clicks itself, and plumber mounts it with clicks off, so that click went on to Blueprint. And an X-ray opened by
+holding Alt closes when Alt is let go; closing takes waiting changes off the page.
+
+**What we chose.** The drag's closing click is swallowed whoever handles clicks. Letting go of Alt with changes
+waiting pins the card instead of closing it, and a plain click elsewhere doesn't close it while changes wait: Sync,
+Put back or Esc decide.
+
+**The fix and the proof.** In `overlay/src/xray-live.js` and `overlay/src/widget.js`. On the ledger example in
+Blueprint: dragged the logo's left padding from the card and let go over the "Get started" button; the change stayed
+("1 change Â· Sync â†µ") and the bar stayed at rest, with no cause put in hand. The Alt case isn't tried by hand: the
+browser driver can't hold Alt through a drag.
+
+**Media hooks.** None.
+
 ## Open gaps
 
 - **A lone ticking number isn't flagged.** The tabular figures check reads only cells and list rows, so the showcase's
@@ -5438,7 +5461,6 @@ the card, reloaded; the logo wore the shadow again and the card said "1 change Â
 - **Most checks can't write their fix.** 59 of 258 page checks can, all in craft (59 of 84). The accessibility, forms, components, HTML, experience and anti-slop packs only advise, so "fixes 100+ issues" can't be claimed yet ([entry](#80-no-voice-six-fixes-side-by-side-and-what-100-may-claim-2026-11-22)).
 - **The fix bar flashes a wrong refusal.** Just after a click on an element in Blueprint it can show "Plumber can't write this change in your code yet" for a moment, then offer the fix and write it. Seen in a recorded take on Relay, cause not looked for ([entry](#79-the-launch-clips-first-rough-cut-with-a-voice-2026-11-22)).
 - **The launch film has no vertical cut, and the other use cases have no film yet.** The first film is 16:9, so its small labels can't be read on a phone held upright ([entry](#81-the-first-launch-film-is-rendered-2026-11-22)).
-- **A drag in the visual editor can lose its change on release.** In scripted rehearsals on Relay, releasing with Alt held dropped the pending change, and in Blueprint it selected the cause underneath, so Enter didn't sync. Two-finger changes sync. Not fixed, and not tried by hand ([entry](#73-the-visual-editor-could-not-write-what-it-previewed-2026-11-22)).
 - **The style tools have run on three products.** Crafting-ui has no labelled action to run on (plumber covers its tokens); a page server must be restarted by hand after new colour sets are written; and the judge ranks a metal edge first for a daily review because the standards check whether a suggestion works, not whether it suits the moment ([entry](#53-the-style-tools-run-on-a-second-product-algorecall-2026-11-21)).
 - **Tests that check wording, layout and time.** 769 tests are left (by `test(` lines). Many still check sentences, exact counts, pixels,
   fixed waits (55 `waitForTimeout` calls, 69 sleeps) and timings (about 67 asserts). Next: rewrite them to check
@@ -7109,6 +7131,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped Â· 2026-W48
+- A drag in the X-ray keeps its change when you let go: the release no longer selects what's underneath, and letting go of Alt keeps the card open while changes wait. On main, not released ([entry](#124-a-drag-keeps-its-change-when-you-let-go-2026-11-24)).
 - A shadow, motion or layout picked in the X-ray card survives a reload, like sizes and spacing do. On main, not released ([entry](#123-a-shadow-motion-or-layout-pick-survives-a-reload-too-2026-11-24)).
 - On a page styled with plain CSS, the fix bar writes its fixes into your stylesheet (`column-gap: 8px` in `.row`) instead of adding Tailwind classes that do nothing there, and Undo takes them back. On main, not released ([entry](#122-the-fix-bar-writes-into-plain-stylesheets-2026-11-24)).
 - Plumber says "hard-coded" and "off your tokens" everywhere it used to say "typed by hand" and "off the scale". On main, not released ([entry](#121-plumber-says-hard-coded-and-your-tokens-everywhere-2026-11-24)).
