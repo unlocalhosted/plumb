@@ -18,8 +18,8 @@ Tried as an agent would, on a copy of the ledger example with no plumber setup, 
    `data-[state=closed]:data-[state=closed]:animate-pulse`: a pulsing animation in place of an exit, with its variant
    written twice. Fixed on 2026-11-24 (journey 131). The better answer for `animate-in`/`animate-out` is still missing:
    they come from an animation plugin that isn't installed, and plumber says "define it in a stylesheet".
-4. **An error can exit 0.** With Tailwind's package missing, `check --agent` printed "Tailwind is not installed" and
-   exited 0, which an agent reads as clean.
+4. ~~**An error can exit 0.**~~ Checked again: "Tailwind is not installed" exits 2, a usage error. The first reading
+   came from a pipe in the test command, not from plumber.
 5. **The page checks give words, not edits.** `craft --url` found 72 problems on the ledger page, all with a sentence
    ("Add aria-hidden="true"…") and none with the edit as data, although plumber writes 59 kinds of page fix itself from
    the overlay's fix bar. An agent must turn each sentence into an edit by hand.
@@ -38,7 +38,7 @@ and the agent can't reach them. An agent without setup is not a case the instruc
 
 ## Five layers
 
-1. **Output an agent can trust.** Errors exit non-zero. Findings come ranked by what they cost a person (broken
+1. **Output an agent can trust.** Findings come ranked by what they cost a person (broken
    before inconsistent, many places before one), with a limit (`--top 10`) and a line saying how many are left. Dead
    plugin classes name the plugin.
 2. **No setup needed.** The skill says plumber works in any React app with no setup, and that setup only records the
