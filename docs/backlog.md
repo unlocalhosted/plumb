@@ -147,8 +147,6 @@ reserved.)
 
 ### Blueprint
 
-- **Picking a corner token can write a different name for the same size.** On the billing page, picking "card"
-  (16px) wrote `rounded-2xl`, Tailwind's default of that size (seen 2026-11-23, journey entry 92).
 - **Esc in the X-ray card puts back the pending change and also closes the pinned card.** A second Esc should close
   it.
 - **In the dark scheme the X-ray's ruler pills are white and empty** (seen 2026-11-23).

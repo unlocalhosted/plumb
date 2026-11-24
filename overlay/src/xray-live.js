@@ -519,7 +519,7 @@ export function mountXray(o) {
   const keep = () => {
     if (ending) return;
     try {
-      const list = [...changes].filter(([k]) => !loose.has(k)).flatMap(([k, m]) => [...m].filter(([p]) => !RECIPES[p]).map(([p, c]) => [k, p, c.before, c.value, c.scope]));
+      const list = [...changes].filter(([k]) => !loose.has(k)).flatMap(([k, m]) => [...m].filter(([p]) => !RECIPES[p]).map(([p, c]) => [k, p, c.before, c.value, c.scope, c.step ?? null]));
       if (list.length) sessionStorage.setItem(KEPT, JSON.stringify({ path: location.pathname, list })); else sessionStorage.removeItem(KEPT);
     } catch { /* storage refused: the changes live on the page only, as before */ }
   };
@@ -528,7 +528,7 @@ export function mountXray(o) {
   const restore = () => {
     let saved = null; try { saved = JSON.parse(sessionStorage.getItem(KEPT) ?? 'null'); } catch { /* unreadable: nothing kept */ }
     if (!saved?.list?.length || saved.path !== location.pathname) return;
-    for (const [k, p, before, value, scope] of saved.list) { if (!changes.has(k)) changes.set(k, new Map()); changes.get(k).set(p, { before, value, scope }); }
+    for (const [k, p, before, value, scope, step] of saved.list) { if (!changes.has(k)) changes.set(k, new Map()); changes.get(k).set(p, { before, value, scope, step }); }
     redraw(); life.timeout(redraw, 600); life.timeout(redraw, 2000);
     markKeys();
   };
@@ -546,13 +546,15 @@ export function mountXray(o) {
   const tail = (w) => (!w ? '' : / in /.test(w) ? String(w) : String(w).split('/').pop());
   const scopeSaid = (el) => scope === 'all' ? `all ${o.component(el)?.uses ?? ''}`.trim() : scope === 'page' ? `×${peers(el).length}` : 'this';
   const read = (el, prop) => { const cs = getComputedStyle(el); return prop === 'width' ? el.getBoundingClientRect().width : prop === 'height' ? el.getBoundingClientRect().height : prop === 'gap' ? parseFloat(cs.columnGap) || parseFloat(cs.rowGap) || 0 : parseFloat(cs.getPropertyValue(prop)) || 0; };
-  const set = (el, prop, v) => {
+  // step: the name of the step picked (`card`), kept with the change so Sync writes that name: looked up again by its
+  // value, a 16px corner found Tailwind's `2xl` before your `card` (journey 111). A drag or a typed value has none
+  const set = (el, prop, v, step = null) => {
     for (const t of targets(el)) {
       const k = placeKey(t), val = typeof v === 'number' ? `${v}px` : v;
       if (!changes.has(k)) changes.set(k, new Map());
       const m = changes.get(k);
       if (!m.has(prop)) m.set(prop, { before: t.style.getPropertyValue(prop) });
-      Object.assign(m.get(prop), { value: val, scope });
+      Object.assign(m.get(prop), { value: val, scope, step });
       t.style.setProperty(prop, val);
     }
     markKeys();
@@ -1030,7 +1032,7 @@ export function mountXray(o) {
     const p = picker(C, {
       name: prop.replace('-', ' '), toy: TOYS[prop.split('-')[0]] ?? TOYS[prop] ?? 'size', options: S, into: hand, keys: 'row', start: S.indexOf(nearest(S, now)),
       mark: () => '', format: (x) => `${x.v}px`,
-      apply: (x) => { const qs = linkedOf(prop); if (qs.every((q) => Math.abs(read(el, q) - x.v) < 0.5)) return; for (const q of qs) set(el, q, x.v); if (inHand?.sized) { inHand.sizing = 'fixed'; showSeg(); } draw(el); },
+      apply: (x) => { const qs = linkedOf(prop); if (qs.every((q) => Math.abs(read(el, q) - x.v) < 0.5)) return; for (const q of qs) set(el, q, x.v, x.hard ? null : x.name); if (inHand?.sized) { inHand.sizing = 'fixed'; showSeg(); } draw(el); },
     });
     const segs = [...(scopes.length > 1 ? ['scope'] : []), ...(sided || sized ? ['mode'] : []), 'value'];
     const label = (prop === 'border-radius' ? 'corner' : prop === 'font-size' ? 'text size' : prop);
@@ -1137,7 +1139,7 @@ export function mountXray(o) {
     list.style.left = `${b.left - s.left}px`; list.style.top = `${b.bottom - s.top + 6}px`;
     C.append(list);
     list.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: 'nearest' });
-    list.addEventListener('click', (e) => { const x = S[Number(e.target.closest('[data-i]')?.dataset.i)]; if (!x) return; for (const q of linkedOf(prop)) set(el, q, x.v); list.remove(); draw(el); resync(); });
+    list.addEventListener('click', (e) => { const x = S[Number(e.target.closest('[data-i]')?.dataset.i)]; if (!x) return; for (const q of linkedOf(prop)) set(el, q, x.v, x.hard ? null : x.name); list.remove(); draw(el); resync(); });
     const away = (e) => { if (!e.composedPath().includes(list)) { list.remove(); removeEventListener('pointerdown', away, true); } };
     addEventListener('pointerdown', away, true);
   }
@@ -1156,13 +1158,13 @@ export function mountXray(o) {
 
   // ── Sync, and what came of it, one line per change ─────────
   let results = null, syncing = false;
-  const classOf = (prop, value) => {
+  const classOf = (prop, value, step = null) => {
     if (prop === MOTION || prop === LAYOUT) return value;
     if (prop === SHADOW) return value.match(/^var\(--([\w-]+)/)?.[1] ?? value;
     if (prop === 'flex') return value === '1 1 0%' ? 'flex-1' : 'flex-none';
     if (value === '100%') return `${PREFIX[prop]}-full`;
     if (value === 'fit-content') return `${PREFIX[prop]}-fit`;
-    const n = parseFloat(value), t = o.tokenOf(familyOf(prop), n);
+    const n = parseFloat(value), t = step ?? o.tokenOf(familyOf(prop), n);
     return t ? `${PREFIX[prop]}-${t}` : `${PREFIX[prop]}-[${value}]`;
   };
   function pendHtml() {
@@ -1186,7 +1188,7 @@ export function mountXray(o) {
     for (const [k, m] of changes) for (const [prop, c] of m) {
       const part = k.slice(0, k.lastIndexOf('#')), id = `${part}|${prop}|${c.scope}`;
       if (only && !only.includes(id)) continue;
-      if (!groups.has(id)) { const el = elOf(k); groups.set(id, { id, part, name: el ? o.name(el)[0] : part, prop, value: c.value, pick: c.pick, scope: c.scope, cls: classOf(prop, c.value), keys: [], befores: [], els: [] }); }
+      if (!groups.has(id)) { const el = elOf(k); groups.set(id, { id, part, name: el ? o.name(el)[0] : part, prop, value: c.value, pick: c.pick, scope: c.scope, cls: classOf(prop, c.value, c.step), keys: [], befores: [], els: [] }); }
       const g = groups.get(id); g.keys.push(k); g.befores.push(c.before); const el = elOf(k); if (el) g.els.push(el);
     }
     syncing = true; refresh();

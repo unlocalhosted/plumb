@@ -5127,6 +5127,28 @@ component.
 
 **Media hooks.** The fix bar on the badge screen: advice about fonts before, the z-index fix after.
 
+### 111. A picked step is written by its own name (2026-11-24)
+
+**The itch.** Picking the "card" corner (16px) in the X-ray card wrote `rounded-2xl`, Tailwind's own class of that
+size (seen on the billing page, entry 92). The page looked right, but the code lost the name that says what the
+corner is for.
+
+**How we found it.** Picked from the backlog as the one open bug that writes the wrong thing into your code.
+Reproduced on the ledger example, whose theme has `--radius-card: 12px` beside Tailwind's `rounded-xl` at 12px: the
+card's corner list shows both.
+
+**The system behind it.** A pick kept only its value. Sync turned the value back into a class by asking for the first
+step of that size, and Tailwind's steps came before the theme's own.
+
+**What we chose.** The change keeps the name of the step that was picked, and Sync writes that name. A value with no
+step behind it (a drag, a typed number) is still looked up by size. The name is kept across a reload too, with the rest
+of the change (entry 107).
+
+**The fix and the proof.** In `overlay/src/xray-live.js`. On the ledger page: picking `card` for the "Get started"
+link's corner and pressing Sync turned `rounded` into `rounded-card` in `App.jsx`.
+
+**Media hooks.** The corner list with `card` and `xl` both at 12, and the one-line diff.
+
 ## Open gaps
 
 - **A shadow, motion or layout pick waiting in the X-ray card is still lost on a reload** ([entry 107](#107-changes-waiting-in-the-x-ray-card-survive-a-reload-2026-11-23)).
@@ -6816,6 +6838,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
+- A corner, spacing or size picked in the X-ray card is written by the name you picked (`rounded-card`), not by Tailwind's class of the same size. On main, not released ([entry](#111-a-picked-step-is-written-by-its-own-name-2026-11-24)).
 - A fix is no longer held back by an unrelated page-wide warning (a font with no `font-display`, a page with no h1). On main, not released ([entry](#110-a-page-wide-warning-stops-withdrawing-an-unrelated-fix-2026-11-24)).
 - On Next 15, plumber hears your saves again and is ready in about a tenth of a second instead of 10. On main, not released ([entry](#109-plumber-hears-saves-on-next-15-2026-11-24)).
 - The X-ray card no longer covers the element it describes, so a click on a chart's axis label reaches the label and its fix goes in the bar. On main, not released ([entry](#108-the-x-ray-card-stops-covering-the-element-it-describes-2026-11-24)).
