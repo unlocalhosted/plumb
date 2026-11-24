@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.8.0 · 2026-11-24
+
+Everything since 0.7.0, as a person using it sees it.
+
+- **Fixes land on plain-CSS pages.** On a page styled with `.css` files, the fix bar used to add Tailwind classes
+  that did nothing there. It now writes the fix into the stylesheet rule that styles the element (`column-gap: 8px`
+  in `.row`), names the CSS it sets, and Undo takes it back out of the file. A fix that only gives advice, or changes
+  structure, still can't be written into a stylesheet.
+- **Fewer fixes that backfire.** A size fix no longer offers a class that doesn't exist (`text-2xl--line-height` for a 34px
+  text size). A fix is tried against every check about what it changes, so plumber no longer offers "Use weight 800"
+  and then flags the extra-heavy weight it wrote. Shadow levels a hair apart are told to take the page's most-used
+  level at once, instead of one step at a time, each fix making the next finding. A page-wide warning (a font with no
+  `font-display`, a page with no h1) no longer holds back an unrelated fix, and the fix bar no longer flashes "can't
+  write this change" before offering a fix it can write.
+- **Fewer wrong findings.** Words drawn in a gradient or a fill colour are judged in that ink, not read as grey or as
+  zero contrast. White is fine where the theme's surface is white. A carousel's track inside a sideways scroller
+  isn't told to wrap.
+- **A number that ticks is flagged.** A running timer or a live counter whose digits jump as it changes is told to
+  use tabular figures, as numbers in a table or a list already were.
+- **The X-ray card keeps what you did.** Changes waiting for Sync (sizes, spacing, and a picked shadow, move or
+  layout) survive a reload, a fix taken elsewhere, and closing Blueprint. A drag keeps its change when you let go. Sync writes a picked
+  step by its own name (`rounded-card`), not Tailwind's class of the same size. The card no longer covers the element
+  it describes, and its pills can be read in the dark scheme.
+- **Keys do one thing at a time.** Enter takes the fix the bar shows, even while the X-ray card has a change waiting,
+  and only the thing Enter will act on shows ↵. In the X-ray card, the first Esc puts your changes back and the
+  second closes the card.
+- **Next.js is fast again.** On Next 15, plumber hears your saves again. On Next 15 and 16 it is ready in under a
+  second instead of 10, so `plumber craft` and checks no longer wait ten seconds per page.
+- **Plain words.** Plumber says "hard-coded" and "off your tokens" everywhere it used to say "typed by hand" and "off
+  the scale". After `plumber init` it names the one step left (adding it to your dev server), and `init` says plainly
+  what `--force` replaces. Double-clicking a button's words says to hold Alt to edit them, instead of doing nothing.
+- **Re-reading after a big write is faster.** Mapping compiled CSS back to its source works each stylesheet out once
+  instead of once per declaration.
+
 ## 0.7.0 · 2026-11-23
 
 Everything since 0.6.1, as a person using it sees it. 0.6.1 was tagged on GitHub but never published to npm, so its
