@@ -5149,6 +5149,28 @@ link's corner and pressing Sync turned `rounded` into `rounded-card` in `App.jsx
 
 **Media hooks.** The corner list with `card` and `xl` both at 12, and the one-line diff.
 
+### 112. ready() stops waiting 10 seconds on Next 16 (2026-11-24)
+
+**The itch.** `window.__plumb.ready()` took 10.6 s on every Next 16 page, so `plumber craft` and the tests paid ten
+seconds per page.
+
+**How we found it.** Measured with the Next probe from entry 109, after Next 15 dropped to 0.2 s.
+
+**The system behind it.** `ready()` waits for Next's first "sync" message, because on webpack a sync with another
+bundle hash reloads the page. The page's listener said so with a one-time event. My first guess was the Next 16 sync
+itself: on Turbopack it comes only after Next asks the npm registry for its latest version, and it carries no hash.
+So `turbopack-connected`, sent at once, now counts too. That alone changed nothing (10.7 s). The real cause was a
+race: Turbopack's first message comes before plumber's overlay code has loaded, so the event fired with nobody
+listening, and `ready()` waited out its limit for one that never came again.
+
+**What we chose.** The page keeps "synced" on the window as well as saying it, and `ready()` reads it. Both changes
+stay, since the Turbopack sync really is late and empty.
+
+**The fix and the proof.** In `src/hosts/next-overlay.ts` and `overlay/src/hydration.js`. Same probe on vm-agent:
+Next 16.4.6, `ready()` in 632 ms (was 10.7 s); Next 15.5.28, 217 ms. Both still showed both saves on the page.
+
+**Media hooks.** None; the timings are the proof.
+
 ## Open gaps
 
 - **A shadow, motion or layout pick waiting in the X-ray card is still lost on a reload** ([entry 107](#107-changes-waiting-in-the-x-ray-card-survive-a-reload-2026-11-23)).
@@ -6838,6 +6860,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
+- On Next 16, plumber is ready in about half a second instead of 10, so `plumber craft` and checks no longer wait ten seconds per page. On main, not released ([entry](#112-ready-stops-waiting-10-seconds-on-next-16-2026-11-24)).
 - A corner, spacing or size picked in the X-ray card is written by the name you picked (`rounded-card`), not by Tailwind's class of the same size. On main, not released ([entry](#111-a-picked-step-is-written-by-its-own-name-2026-11-24)).
 - A fix is no longer held back by an unrelated page-wide warning (a font with no `font-display`, a page with no h1). On main, not released ([entry](#110-a-page-wide-warning-stops-withdrawing-an-unrelated-fix-2026-11-24)).
 - On Next 15, plumber hears your saves again and is ready in about a tenth of a second instead of 10. On main, not released ([entry](#109-plumber-hears-saves-on-next-15-2026-11-24)).
