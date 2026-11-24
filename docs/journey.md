@@ -5465,6 +5465,23 @@ the page has one level there, not three.
 
 **Media hooks.** None.
 
+### 126. A double-click on a button's words says how to edit them (2026-11-24)
+
+**The itch.** Testing 0.6.0 on our site (entry 81): a plain double-click on the words of a link or button did nothing,
+and nothing said that Alt + double-click edits them.
+
+**How we found it.** From the backlog; read the double-click handler. It leaves a control's double-click to the page
+on purpose, since clicking a control does something, but it did so in silence.
+
+**What we chose.** The control's double-click stays the page's. Beside the words, for a moment, plumber says "To
+change these words, hold Alt and double-click", at most three times a session, since double-clicking a control can be
+part of using the app. A link that navigates on the first click leaves before any of this.
+
+**The fix and the proof.** In `overlay/src/widget.js` and `overlay/src/text-edit.js`. On the ledger example, a
+double-click on the "Start now" button showed the note under it, in the same tag the editor uses for its refusals.
+
+**Media hooks.** The note under "Start now".
+
 ## Open gaps
 
 - **A lone ticking number isn't flagged.** The tabular figures check reads only cells and list rows, so the showcase's
@@ -7152,6 +7169,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
+- Double-clicking a button's words now tells you to hold Alt to edit them, instead of doing nothing. On main, not released ([entry](#126-a-double-click-on-a-buttons-words-says-how-to-edit-them-2026-11-24)).
 - Taking the shadow-level fixes ends the findings instead of starting new ones: levels a hair apart are told to take the page's most-used one, all at once. On main, not released ([entry](#125-shadow-levels-a-hair-apart-become-one-level-at-once-2026-11-24)).
 - A drag in the X-ray keeps its change when you let go: the release no longer selects what's underneath, and letting go of Alt keeps the card open while changes wait. On main, not released ([entry](#124-a-drag-keeps-its-change-when-you-let-go-2026-11-24)).
 - A shadow, motion or layout picked in the X-ray card survives a reload, like sizes and spacing do. On main, not released ([entry](#123-a-shadow-motion-or-layout-pick-survives-a-reload-too-2026-11-24)).

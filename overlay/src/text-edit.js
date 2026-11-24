@@ -49,7 +49,7 @@ export const TEXT_EDIT_CSS = `
   .tx-tag code { font: var(--pl-card-code); color: var(--pl-text-primary); }
   .tx-tag kbd { font: 500 10px/13px var(--pl-mono); color: var(--pl-text-secondary); }
   .tx-tag[data-kind="saving"] { color: var(--pl-instrument); }
-  .tx-tag[data-kind="refused"] { color: var(--pl-text-primary); max-width: min(420px, calc(100vw - 32px)); height: auto; min-height: var(--pl-tag-h); padding-block: var(--pl-space-3); white-space: normal; }
+  .tx-tag:is([data-kind="refused"], [data-kind="hint"]) { color: var(--pl-text-primary); max-width: min(420px, calc(100vw - 32px)); height: auto; min-height: var(--pl-tag-h); padding-block: var(--pl-space-3); white-space: normal; }
   .tx-tag[data-kind="error"] { color: var(--pl-off); }
   .tx-area { position: fixed; margin: 0; padding: 0; border: 0; outline: none; resize: none; overflow: hidden; background: transparent;
     color: transparent; caret-color: var(--pl-instrument); pointer-events: auto; }
@@ -57,6 +57,14 @@ export const TEXT_EDIT_CSS = `
 `;
 
 const norm = (v) => v.replace(/\s+/g, ' ').trim();
+// The textarea is transparent: only its caret and selection show, so its metrics must be the page's to the pixel.
+// `font` alone is not enough: Chrome serialises the shorthand to "" whenever font-variant, kerning or features are
+// set (common on real pages, e.g. font-variant-ligatures: common-ligatures), which left the textarea at the overlay's
+// 13px monospace and put the caret in the wrong place. Copy the longhands the shorthand stands for, plus the ones it
+// never carried, and the caret lands where the words are.
+const TYPE = ['fontFamily', 'fontSize', 'fontWeight', 'fontStyle', 'fontStretch', 'fontVariant', 'lineHeight',
+  'fontKerning', 'fontFeatureSettings', 'fontVariationSettings', 'fontOpticalSizing', 'textRendering',
+  'letterSpacing', 'wordSpacing', 'textTransform', 'textAlign', 'textIndent', 'direction'];
 const short = (file) => String(file ?? '').split('/').pop();
 // Words whose line can't be found: the reason locate gave, as something the person can act on
 function unfound(found) {
@@ -238,7 +246,7 @@ export class TextEditor {
       area.value = node.data.trim();
       area.spellcheck = false;
       area.setAttribute('aria-label', `Edit “${norm(node.data)}”`);
-      for (const k of ['font', 'letterSpacing', 'textTransform', 'wordSpacing', 'lineHeight', 'textAlign']) area.style[k] = cs[k];
+      for (const k of TYPE) area.style[k] = cs[k];
       this.#root.append(area);
       ed.area = area;
       this.#scope.listen(area, 'keydown', this.#key);
@@ -400,13 +408,22 @@ export class TextEditor {
     this.#host.changed?.();
   }
 
+  // A word beside the words under the pointer, for a moment, when nothing is being edited: how to edit them (a plain
+  // double-click on a link's or a button's words is the page's own, and did nothing with no word said)
+  hint(event, text) {
+    if (this.#phase !== 'idle') return false;
+    const node = caretAt(event.clientX, event.clientY)?.node;
+    if (node?.nodeType !== Node.TEXT_NODE || !norm(node.data)) return false;
+    this.#refusal(node, { reason: text }, 'hint');
+    return true;
+  }
   // Words that can't be edited: why, and where to change them, beside the words for a moment.
-  #refusal(node, target) {
+  #refusal(node, target, kind = 'refused') {
     const range = document.createRange();
     range.selectNodeContents(node);
     const r = range.getBoundingClientRect();
     const where = target.where?.file ? ` <code>${esc(short(target.where.file))}:${target.where.line}</code>` : '';
-    this.#tag.dataset.kind = 'refused';
+    this.#tag.dataset.kind = kind;
     this.#tag.innerHTML = `<span>${esc(target.reason ?? 'This text can’t be edited here.')}${where}</span>`;
     this.#tag.hidden = false;
     Object.assign(this.#tag.style, { left: `${Math.max(8, Math.min(innerWidth - 428, r.left))}px`, top: `${r.bottom + 8 + 60 > innerHeight ? r.top - 60 : r.bottom + 8}px` });

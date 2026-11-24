@@ -1913,7 +1913,12 @@ class PlumbOverlay extends HTMLElement {
     if (!free) {
       const [a, b] = this.#downs;
       if (!a || a !== b || a !== path[0]) return;
-      if (path[0]?.closest?.('a[href], button, summary, label, select, [role="button"], [role="link"], [role="tab"], [role="menuitem"], [role="option"], [role="switch"], [role="checkbox"]')) return;
+      if (path[0]?.closest?.('a[href], button, summary, label, select, [role="button"], [role="link"], [role="tab"], [role="menuitem"], [role="option"], [role="switch"], [role="checkbox"]')) {
+        // the control's own double-click is the page's; how to edit its words is said beside them, a few times a session
+        let told = 0; try { told = Number(sessionStorage.getItem('plumb:hint:alt-dblclick') ?? 0); } catch {}
+        if (told < 3 && this.#text?.hint(event, FIX.altToEdit ?? 'To change these words, hold Alt and double-click.')) { try { sessionStorage.setItem('plumb:hint:alt-dblclick', String(told + 1)); } catch {} }
+        return;
+      }
     } else if (event.altKey) {
       this.#disarm();
       if (this.#pinned) this.close();
