@@ -520,7 +520,9 @@ class PlumbOverlay extends HTMLElement {
     this.#xrayPinOff?.();
     const done = () => { this.#xrayPinOff?.(); if (this.#xray && !this.#blueprint?.active && !this.#armed) this.#toggleXray(); };
     const down = (e) => { if (e.altKey || this.#ours(e)) return; done(); };
-    const key = (e) => { if (e.key === 'Escape' && !this.#xray?.pending && !this.#typing(e)) done(); };
+    // an Esc already taken (Put back, a list closing) is that one's: the first Esc puts the changes back, a second one
+    // closes the card. Both used to happen on one press, whichever listener heard it first
+    const key = (e) => { if (e.key === 'Escape' && !e.defaultPrevented && !this.#xray?.pending && !this.#typing(e)) done(); };
     addEventListener('pointerdown', down, true); addEventListener('keydown', key, true);
     this.#xrayPinOff = () => { removeEventListener('pointerdown', down, true); removeEventListener('keydown', key, true); this.#xrayPinOff = null; };
   } // results said again after a write's reload

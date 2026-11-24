@@ -5290,6 +5290,25 @@ sideways is left alone.
 
 **Media hooks.** None.
 
+### 118. One Esc, one thing, in the X-ray card (2026-11-24)
+
+**The itch.** With a change waiting in a pinned X-ray card, Esc put the change back and also closed the card, so the
+person lost the card they were working in. A second Esc should close it.
+
+**How we found it.** From the backlog; read the two listeners that hear Esc.
+
+**The system behind it.** The widget's key handler puts the changes back and marks the key as taken. The pin's own
+listener, which runs after it, checked only whether changes were still waiting, and by then none were, so it closed
+the card too.
+
+**What we chose.** The pin leaves an Esc that something else has already taken.
+
+**The fix and the proof.** In `overlay/src/widget.js`. On the ledger example: pinned the card with Alt+click, picked 0
+for a margin ("1 change · Put back · Sync ↵"), pressed Esc: the change went and the card stayed open; pressed Esc
+again: the card closed.
+
+**Media hooks.** None.
+
 ## Open gaps
 
 - **A shadow, motion or layout pick waiting in the X-ray card is still lost on a reload** ([entry 107](#107-changes-waiting-in-the-x-ray-card-survive-a-reload-2026-11-23)).
@@ -6979,6 +6998,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
+- In the X-ray card, the first Esc puts your changes back and the second closes the card, instead of one press doing both. On main, not released ([entry](#118-one-esc-one-thing-in-the-x-ray-card-2026-11-24)).
 - A carousel's track inside a sideways scroller is no longer told to wrap. On main, not released ([entry](#117-a-carousels-track-is-not-told-to-wrap-2026-11-24)).
 - Plumber no longer offers a fix that its own checks then flag ("Use weight 800", then "extra-heavy weight"): a fix is tried against every check about what it changes. On main, not released ([entry](#116-a-fix-cant-trip-plumbers-own-lesser-checks-2026-11-24)).
 - A page whose theme surface is white is no longer told its white is "outside your surface colour". On main, not released ([entry](#115-a-white-surface-is-not-outside-your-surface-colour-2026-11-24)).
