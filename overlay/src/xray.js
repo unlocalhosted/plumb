@@ -416,8 +416,11 @@ export function placeCard(box, size, room, gap = 16, context = null) {
   if (context) {
     // a card taller than the room is shortened to it here too (its body scrolls), never run past the room's edge
     const tall = h > room.bottom - room.top ? Math.round(room.bottom - room.top) : null;
-    if (room.right - (context.right + gap) >= w) return { x: Math.round(context.right + gap), y: Math.round(clampY(box.top, tall ?? h)), side: 'right', maxH: tall };
-    if (context.left - gap - room.left >= w) return { x: Math.round(context.left - gap - w), y: Math.round(clampY(box.top, tall ?? h)), side: 'left', maxH: tall };
+    // outside the surface and outside the element: an element can hang past its surface's edge (a chart's axis label
+    // pinned left of the plot), and a card set against the surface covered it and took the click meant for it (journey 108)
+    const right = Math.max(context.right, box.right), left = Math.min(context.left, box.left);
+    if (room.right - (right + gap) >= w) return { x: Math.round(right + gap), y: Math.round(clampY(box.top, tall ?? h)), side: 'right', maxH: tall };
+    if (left - gap - room.left >= w) return { x: Math.round(left - gap - w), y: Math.round(clampY(box.top, tall ?? h)), side: 'left', maxH: tall };
   }
   const sides = [
     { side: 'right', fit: room.right - (box.right + gap), need: w, along: room.bottom - room.top, at: (hh) => ({ x: box.right + gap, y: clampY(box.top, hh) }) },

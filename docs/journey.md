@@ -5041,6 +5041,30 @@ bar's hairline fix, and the kept copy cleared.
 
 **Media hooks.** The calendar right after the reload, with the card's waiting change still on screen.
 
+### 108. The X-ray card stops covering the element it describes (2026-11-24)
+
+**The itch.** In the launch film 2 proof run, Enter on the showcase's newsletter screen (37) wrote a different fix from
+the one asked for, in one run of two. Entry 106 fixed the calendar's case, but the newsletter's had another cause.
+
+**How we found it.** Replaying the proof script's gesture by hand: Alt+B, move to the chart's "0" axis label, click,
+Enter. The first replay wrote the right fix. The second didn't put the fix in the bar at all: the X-ray card pinned
+itself on the label instead, and the bar stayed at rest. A log on Blueprint's click showed the click never reached
+it.
+
+**The system behind it.** The card is placed just outside the element's surface, here the chart's plot, so it
+doesn't cover what it explains. The axis labels are pinned so they hang left of the plot's edge, so a card set
+against that edge covered the label. When the pointer rested long enough for the card to appear, the click meant for
+the label landed on the card. With the card pinned and the bar at rest, Enter went to whatever the bar held next.
+The proof script then read the fix's words in the card and took them as the bar's.
+
+**What we chose.** The card clears both the surface and the element's own box, on whichever side it goes.
+
+**The fix and the proof.** One check in `placeCard` (`overlay/src/xray.js`). Replayed the gesture that failed: the
+card's right edge now stops at x=310, short of the label at 349. The click put the blurry-text fix in the bar
+(3 of 57), and Enter wrote `inset-y-0 my-auto h-fit` in place of `top-1/2 -translate-y-1/2`.
+
+**Media hooks.** The newsletter chart with the card beside the "0" label, before (overlapping) and after (clear).
+
 ## Open gaps
 
 - **A page-wide warning can withdraw an unrelated fix.** A font with no `font-display` turned the z-index fix into
@@ -6732,6 +6756,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
+- The X-ray card no longer covers the element it describes, so a click on a chart's axis label reaches the label and its fix goes in the bar. On main, not released ([entry](#108-the-x-ray-card-stops-covering-the-element-it-describes-2026-11-24)).
 - Changes waiting in the X-ray card survive a reload: a fix taken elsewhere, plumber's own re-read or closing Blueprint no longer throws away sizes and spacing you changed but haven't synced. On main, not released ([entry](#107-changes-waiting-in-the-x-ray-card-survive-a-reload-2026-11-23)).
 - Enter takes the fix the bar shows, even while the X-ray card has a change waiting; only the one that will get Enter shows ↵. On main, not released ([entry](#106-enter-takes-the-fix-the-bar-shows-2026-11-23)).
 - A size fix no longer writes a class that doesn't exist: plumber offered `text-2xl--line-height` (a line height) for a 34px text size; it now offers your real size steps, and 28px sizes that hid behind a line height are flagged. On main, not released ([entry](#105-a-size-fix-stops-writing-a-class-that-doesnt-exist-2026-11-23)).
