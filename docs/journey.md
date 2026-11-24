@@ -5353,6 +5353,26 @@ Use and two were advice. How many of the eight were the slow kind isn't known.
 
 **Media hooks.** None.
 
+### 121. Plumber says "hard-coded" and "your tokens" everywhere (2026-11-24)
+
+**The itch.** The overlay still said "off the scale" and "typed by hand" where the owner's words are "off your tokens"
+and "hard-coded" (seen on the design pages, which draw the product's own strings).
+
+**How we found it.** Searched the overlay for both phrases and kept only words a person sees: 19 places, in the X-ray
+(its size pills and live value), the size staircase's hover note, the gravity plot and its table, the size specimen,
+the onboarding lesson and the system review page. "List typed by hand" stays: it means a list faked with lines,
+which is another thing.
+
+**The system behind it.** The words were written before the owner named the two ideas, and each surface wrote its
+own.
+
+**What we chose.** "Hard-coded" for a value written in place of a token, "one of your tokens" and "off your tokens"
+for where a value stands. Code comments keep their old words; they are not read by the person.
+
+**The fix and the proof.** In nine overlay files. A search for both phrases in user-facing strings finds none left.
+
+**Media hooks.** None.
+
 ## Open gaps
 
 - **A shadow, motion or layout pick waiting in the X-ray card is still lost on a reload** ([entry 107](#107-changes-waiting-in-the-x-ray-card-survive-a-reload-2026-11-23)).
@@ -7042,6 +7062,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
+- Plumber says "hard-coded" and "off your tokens" everywhere it used to say "typed by hand" and "off the scale". On main, not released ([entry](#121-plumber-says-hard-coded-and-your-tokens-everywhere-2026-11-24)).
 - The fix bar no longer flashes "can't write this change" before offering a fix it can write. On main, not released ([entry](#120-the-fix-bar-stops-refusing-a-fix-it-is-about-to-offer-2026-11-24)).
 - The X-ray's size pills and its other small badges can be read in the dark scheme (they were white on white). On main, not released ([entry](#119-the-x-rays-pills-can-be-read-in-the-dark-scheme-2026-11-24)).
 - In the X-ray card, the first Esc puts your changes back and the second closes the card, instead of one press doing both. On main, not released ([entry](#118-one-esc-one-thing-in-the-x-ray-card-2026-11-24)).

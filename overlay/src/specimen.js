@@ -123,7 +123,7 @@ export class Specimen {
 
   stray(s, st) {
     const short = st.name.replace(/^text-/, ''), written = s.written.map((w) => `${esc(w.text)} ×${w.n}`).join(' · ');
-    const said = `${fmt(s.px)}, typed by hand in ${plural(s.places, 'place', 'places')}, as ${s.written.map((w) => w.text).join(' and ')}. Nearest on your scale: ${short}, ${fmt(st.px)}`;
+    const said = `${fmt(s.px)}, hard-coded in ${plural(s.places, 'place', 'places')}, as ${s.written.map((w) => w.text).join(' and ')}. Nearest on your scale: ${short}, ${fmt(st.px)}`;
     return `<li class="sp-row stray" tabindex="-1" data-near="${esc(st.name)}" style="--snap:${(st.px / s.px).toFixed(4)}"><span class="sr">${esc(said)}</span>
       <div class="sp-meta" aria-hidden="true"><span class="px">${fmt(s.px)}</span><span class="to">→ ${esc(short)}</span><span class="how" title="${esc(s.written.map((w) => `${w.text} ×${w.n}`).join(' · '))}">${written}</span></div>
       <div class="sp-sample" aria-hidden="true" style="font-size:${s.px}px"><span>${SAMPLE}</span></div>
@@ -133,12 +133,12 @@ export class Specimen {
   few(few, st) {
     const places = few.reduce((n, s) => n + s.places, 0);
     const sizes = few.length > 4 ? `${few.length} sizes from <code>${fmt(few.at(-1).px)}</code> to <code>${fmt(few[0].px)}</code>` : few.map((s) => `<code>${fmt(s.px)}</code>`).join(', ');
-    return `<li class="sp-row few" data-near="${esc(st.name)}"><div class="sp-sample">Also typed by hand: ${sizes}, ${plural(places, 'place', 'places')}.</div></li>`;
+    return `<li class="sp-row few" data-near="${esc(st.name)}"><div class="sp-sample">Also hard-coded: ${sizes}, ${plural(places, 'place', 'places')}.</div></li>`;
   }
 
   render() {
     this.el.innerHTML = `<section class="sp pl-card" aria-labelledby="sp-title">
-      <div class="sp-head"><h2 id="sp-title">Your scale, size by size</h2><p>Each size in your theme, shown at that size. Beside it are the sizes typed by hand that should become it, and how many places use each. Point at one to see it snap.</p></div>
+      <div class="sp-head"><h2 id="sp-title">Your scale, size by size</h2><p>Each size in your theme, shown at that size. Beside it are the hard-coded sizes that should become it, and how many places use each. Point at one to see it snap.</p></div>
       <ol>${this.rows().join('')}</ol></section>`;
   }
 

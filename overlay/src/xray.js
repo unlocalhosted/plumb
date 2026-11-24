@@ -272,7 +272,7 @@ export function xray(el, { shadow = null, motion = null, layout = null, tokenOf,
     // the pill sits outside the element, beside the part: under it for a bottom or inside part, above for a top one
     const up = zone.side === 'top' || zone.prop === 'width';
     const py = up ? Math.min(zy, r.top - m[0] - 12) - 32 : Math.max(zy + zone.h, r.bottom + m[2]) + 8;
-    said = `<span class="xr-say" style="left:${r1(zx + zone.w / 2)}px;top:${r1(py)}px"><b>${esc(zone.said)}</b> ${zone.family === 'radius' && zone.n > 500 ? '' : zj.n}${zj.t ? ` <i class="on">${esc(zj.t)}</i>` : zj.off ? ' <i class="off">off scale</i>' : ''}</span>`;
+    said = `<span class="xr-say" style="left:${r1(zx + zone.w / 2)}px;top:${r1(py)}px"><b>${esc(zone.said)}</b> ${zone.family === 'radius' && zone.n > 500 ? '' : zj.n}${zj.t ? ` <i class="on">${esc(zj.t)}</i>` : zj.off ? ' <i class="off">hard-coded</i>' : ''}</span>`;
   }
   // parts in hand while a picker has them: drawn strong, no pill (the picker says it)
   for (const lz of lit) { const lj = judge(lz.family, lz.n), hue = BLOCK[blockOf(lz)]; draw += `<rect class="xr-zone" x="${r1(lz.x - origin.left)}" y="${r1(lz.y - origin.top)}" width="${r1(lz.w)}" height="${r1(lz.h)}" rx="2" fill="${blockOf(lz) === 'type' ? 'none' : tintOf(hue, 24)}" stroke="${lj.off ? 'var(--pl-off)' : hue}" stroke-width="2"${lj.off ? ' stroke-dasharray="4 3"' : ''}/>`; }
@@ -286,7 +286,7 @@ export function xray(el, { shadow = null, motion = null, layout = null, tokenOf,
     + (r.height >= 96 ? `<span class="ruler-pill" style="left:${r1(beside)}px;top:${r1(r.top + r.height / 2)}px;${sz(r.height)}">${esc(named(hSz, r.height))}</span>` : ''));
 
   // ── the card ──
-  const tok = (v) => (v.zero ? '' : v.on ? `<span class="xr-tok on">${esc(v.t)}</span>` : v.off ? '<span class="xr-tok off">off scale</span>' : '');
+  const tok = (v) => (v.zero ? '' : v.on ? `<span class="xr-tok on">${esc(v.t)}</span>` : v.off ? '<span class="xr-tok off">hard-coded</span>' : '');
   // every number is a control: data-prop names the property it changes (drag it, scroll on it, click it for a list)
   // one number per side, its px; the token's name on hover. Two numbers side by side ("96 24", px then a Tailwind step
   // named by a number) read as a pair of random numbers (U10); the side's colour already says on your tokens or off

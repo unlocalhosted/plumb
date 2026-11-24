@@ -307,7 +307,7 @@ export function mountLesson(host, data, { post } = {}) {
     const from = m.lanes.length ? m.lanes.map((l) => `css:${l.file}#${l.name}`) : [...new Set((m.kind?.groups ?? []).map((g) => `css:${g.file}`))];
     return { plain: `${m.spec.nouns[0].toUpperCase()}${m.spec.nouns.slice(1)} use the ones you already have. Anything else, Plumber points out.`, key, from, code: `${key}: { from: [${from.map((f) => `'${f}'`).join(', ')}] }` };
   };
-  const colourRule = () => ({ plain: `Colours come from your palette of ${col.palette.length} and the ${col.roles.length} named ${col.roles.length === 1 ? 'use' : 'uses'} built on it${state.choice.color === 'point' && col.fixable.length ? `, with ${col.fixable.length} copies pointed back at it` : ''}. A colour typed by hand, Plumber points out.`,
+  const colourRule = () => ({ plain: `Colours come from your palette of ${col.palette.length} and the ${col.roles.length} named ${col.roles.length === 1 ? 'use' : 'uses'} built on it${state.choice.color === 'point' && col.fixable.length ? `, with ${col.fixable.length} copies pointed back at it` : ''}. A hard-coded colour, Plumber points out.`,
     key: 'color', from: col.files.map((f) => `css:${f}`), code: `color: { from: [${col.files.map((f) => `'css:${f}'`).join(', ')}] }` });
   const ruleOf = (id) => id === 'colour' ? colourRule() : sizeRule(sizes[Object.keys(screenOf).find((f) => screenOf[f] === id)]);
 
@@ -379,7 +379,7 @@ export function mountLesson(host, data, { post } = {}) {
     const total = all.reduce((t, x) => t + x.n, 0), d = data[m.spec.data] ?? { steps: [], strays: [] };
     const insight = !total ? `${app} doesn’t set any ${esc(m.spec.nouns)} Plumber could read.`
       : pile ? `${share(pile.n, total)} of ${app}’s ${esc(m.spec.subject)} ${m.spec.verb} set in <em>${pile.k} sizes between ${px(pile.from)} and ${px(pile.to)}</em>, each barely different from the next.`
-      : m.byHand / total > 0.3 ? `<em>${share(m.byHand, total)} of ${app}’s ${esc(m.spec.subject)}</em> ${m.spec.verb} typed by hand instead of using your steps.`
+      : m.byHand / total > 0.3 ? `<em>${share(m.byHand, total)} of ${app}’s ${esc(m.spec.subject)}</em> ${m.spec.verb} hard-coded instead of using your tokens.`
       : `${share(total - m.byHand, total)} of ${app}’s ${esc(m.spec.subject)} already ${m.spec.verb === 'is' ? 'uses' : 'use'} your steps. <em>${nf.format(m.byHand)} ${m.byHand === 1 ? 'place types' : 'places type'} one by hand.</em>`;
     const keepVals = m.values.length ? m.values : d.steps.map((x) => x.px).filter((v, i, a) => a.indexOf(v) === i).sort((a, b) => a - b);
     const top = [...d.strays].sort((a, b) => b.places - a.places).slice(0, 5);
@@ -391,7 +391,7 @@ export function mountLesson(host, data, { post } = {}) {
       <div role="radiogroup" aria-label="${esc(s.name)}">
         ${m.needed ? choice({ on: state.choice[m.family] === 'tidy', pick: `${m.family}:tidy`, title: m.moved.length ? `${sized(m.one)} clear levels` : `One list of ${m.one.steps.length}`, rec: true, mini: miniOf(m.family, m.one.steps.map((x) => x.px ?? (String(x.value).endsWith('rem') ? parseFloat(x.value) * 16 : parseFloat(x.value))).filter((v) => v > 0)), text: m.moved.length ? `${m.lanes.length > 1 ? `Your ${m.lanes.length} lists become one` : 'One list'} of ${sized(m.one)} levels, each clearly bigger than the next. Text set in a size between them moves to the nearest level: ${movesOf(m)}.` : `${m.lanes.length > 1 ? `Your ${m.lanes.length} lists become one` : `Your ${esc(m.spec.gravity.sizes)} become one list`}, with Tailwind’s names. The old names keep working, pointing at the new ones.` }) : ''}
         ${choice({ on: state.choice[m.family] === 'keep', pick: `${m.family}:keep`, title: bare(m) ? 'Skip it for now' : 'Keep what you have', mini: bare(m) ? '' : miniOf(m.family, keepVals),
-          text: bare(m) ? `Your theme has no ${esc(m.spec.gravity.sizes)} yet. To draft them from the sizes your code uses, run <code>${esc(data.runner ?? 'npx')} plumber propose --family ${m.family} --write</code>.` : m.lanes.length > 1 ? `Your ${m.lanes.length} lists stay as they are. Plumber points out new ${esc(m.spec.nouns)} typed by hand.` : `Nothing changes. Plumber points out new ${esc(m.spec.nouns)} typed by hand.` })}
+          text: bare(m) ? `Your theme has no ${esc(m.spec.gravity.sizes)} yet. To draft them from the sizes your code uses, run <code>${esc(data.runner ?? 'npx')} plumber propose --family ${m.family} --write</code>.` : m.lanes.length > 1 ? `Your ${m.lanes.length} lists stay as they are. Plumber points out new hard-coded ${esc(m.spec.nouns)}.` : `Nothing changes. Plumber points out new hard-coded ${esc(m.spec.nouns)}.` })}
       </div>
       ${becomes(rule)}
       <details class="more"><summary>Details for designers</summary><div><code>${esc(rule.code)}</code>${m.lanes.map((l) => `<span>${esc(l.name)} in ${esc(l.file)}: ${l.values.join(', ')}px</span>`).join('')}${top.length ? `<span>Typed by hand most often:</span>${top.map((x) => `<code>${esc(x.written[0]?.text ?? px(x.px))}${x.where?.[0] ? `  ${esc(x.where[0].file)}:${x.where[0].line}` : ''}  ×${x.places}</code>`).join('')}` : ''}</div></details>
@@ -404,7 +404,7 @@ export function mountLesson(host, data, { post } = {}) {
     const exact = col.typed.filter((t) => t.distance === 0).reduce((n, t) => n + t.places, 0);
     const insight = !total ? `${app} doesn’t set any colours Plumber could read.`
       : exact / Math.max(1, col.byHand) >= 0.3 ? `<em>${share(exact, col.byHand)} of the colours ${app} types by hand</em> are already in your palette, typed again.`
-      : col.byHand / total > 0.2 ? `<em>${share(col.byHand, total)} of ${app}’s colours</em> are typed by hand instead of coming from your palette.`
+      : col.byHand / total > 0.2 ? `<em>${share(col.byHand, total)} of ${app}’s colours</em> are hard-coded instead of coming from your palette.`
       : `${share(onPalette, total)} of ${app}’s colours come from your palette. <em>${nf.format(col.byHand)} ${col.byHand === 1 ? 'place types' : 'places type'} one by hand.</em>`;
     const chip = (v, title) => `<i class="chip" style="background: ${esc(v)}" title="${esc(title)}"></i>`;
     const pairs = col.typed.slice(0, 6).map((t) => { const near = col.palette.find((p) => p.name.slice(2) === t.near) ?? col.roles.find((p) => p.name.slice(2) === t.near);
@@ -412,12 +412,12 @@ export function mountLesson(host, data, { post } = {}) {
     return `<section class="screen" style="${hueOf(s)}">${head(s, 'Colours', 'Colours: a small palette, and a name for each job.', 'Your palette is the colours themselves. Each job (text, a background, a border, a button) gets a name that points at one of them.')}
       <p class="insight">${insight}</p>
       <div class="shelf"><h4>Your palette, ${col.palette.length} ${col.palette.length === 1 ? 'colour' : 'colours'}</h4>${col.defaults ? `<p class="key">Tailwind’s ${nf.format(col.defaults)} default colours are left out: they are Tailwind’s, not yours.</p>` : ''}<div class="chips">${col.hues.map((h) => `<span class="hue">${h.map((p) => chip(p.value, `${p.name}: ${p.value}`)).join('')}</span>`).join('')}</div>
-        ${pairs ? `<h4>Typed by hand most often, beside the palette colour it’s nearest</h4><ol class="pairs">${pairs}</ol>` : ''}</div>
+        ${pairs ? `<h4>Hard-coded most often, beside the palette colour it’s nearest</h4><ol class="pairs">${pairs}</ol>` : ''}</div>
       <p class="why">Ten slightly different greys make an app look tired, and changing your brand colour means finding every copy. Named uses that point at one palette change everywhere at once.</p>
       <h2>How should your colours work?</h2>
       <div role="radiogroup" aria-label="Colours">
         ${col.fixable.length ? choice({ on: state.choice.color === 'point', pick: 'color:point', title: 'Point the copies at the palette', rec: true, mini: col.fixable.slice(0, 6).map((h) => chip(h.value, h.name)).join(''), text: `${col.fixable.length} named ${col.fixable.length === 1 ? 'use copies' : 'uses copy'} a palette colour instead of pointing at it. They’d point at it; nothing looks different today.` }) : ''}
-        ${choice({ on: state.choice.color === 'keep', pick: 'color:keep', title: col.fixable.length ? 'Leave them' : 'Keep your palette as it is', text: col.fixable.length ? 'The copies stay copies. Plumber points out new colours typed by hand.' : 'Your palette and its named uses already point the right way. Plumber points out new colours typed by hand.' })}
+        ${choice({ on: state.choice.color === 'keep', pick: 'color:keep', title: col.fixable.length ? 'Leave them' : 'Keep your palette as it is', text: col.fixable.length ? 'The copies stay copies. Plumber points out new hard-coded colours.' : 'Your palette and its named uses already point the right way. Plumber points out new hard-coded colours.' })}
       </div>
       ${becomes(rule)}
       <details class="more"><summary>Details for designers</summary><div><code>${esc(rule.code)}</code></div></details>

@@ -544,5 +544,4 @@ one-bar and new-token tests are fixed and pass there on their own; the steady li
   - A plain double-click on words in a link or button does nothing and doesn't mention Alt + double-click.
   - The published package names a private app in code comments (13 files in 0.6.0). The owner decides.
   - Editing in Safari and Firefox hasn't been tried, and the release gate doesn't cover them.
-- The overlay's own words still say "off the scale" and "typed by hand" where the owner's words are "off your tokens" and "hard-coded" (seen on the design pages, which draw the product's strings and token notes).
 - Found running 0.6.0 on our own homepage (2026-11-22): the elevation ladder's suggested level makes the next finding; five declared-gap fixes don't clear their own finding there, because the homepage is plain CSS and a `gap-…` class does nothing on it (checked 2026-11-24 on the ledger example: with Tailwind, both forms of the gap fix clear their finding). It is the CSS-write gap under "Plumber on its own design pages".

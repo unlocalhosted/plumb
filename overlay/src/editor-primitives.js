@@ -143,7 +143,7 @@ const GLYPHS = {
 const attrs = (s) => `${s.disabled ? ' aria-disabled="true"' : ''}${s.busy ? ' aria-busy="true"' : ''}`;
 const opt = (s, step, i, inner) => `<button type="button" class="opt" role="radio" data-i="${i}" aria-checked="${step.token === s.current}"${step.token === s.picked && s.picked !== s.current ? ' data-picked' : ''} tabindex="-1" aria-label="${esc(step.label ?? step.token)}${step.value ? ` ${esc(step.value)}` : ''}" title="${esc(step.token)}${step.value ? ` · ${esc(step.value)}` : ''}">${inner}</button>`;
 // the dashed notch where an off-scale value falls between steps
-const notch = (drift, inner = esc(drift.label)) => `<span class="notch" title="${esc(drift.label)} is off the scale" aria-hidden="true">${inner}</span>`;
+const notch = (drift, inner = esc(drift.label)) => `<span class="notch" title="${esc(drift.label)} is off your tokens" aria-hidden="true">${inner}</span>`;
 // steps with the drift notch placed between the steps it falls between (by n)
 function withNotch(steps, s, render, inner) {
   let out = '', placed = false;

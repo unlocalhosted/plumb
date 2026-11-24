@@ -566,7 +566,7 @@ export function mountXray(o) {
     return S.sort((a, b) => a.v - b.v);
   };
   const nearest = (S, v) => S.reduce((b, x) => (Math.abs(x.v - v) < Math.abs(b.v - v) ? x : b), S[0]);
-  const say = (x, px, py) => { const s = box(); live.hidden = false; const n = shown ? targets(shown).length : 1; live.innerHTML = `<b>${x.v}</b>${x.hard ? '<i class="off">off scale</i>' : `<i>${esc(x.name)}</i>`}${n > 1 ? `<span class="x">×${n}</span>` : ''}`; live.style.left = `${px - s.left + 16}px`; live.style.top = `${py - s.top + 14}px`; };
+  const say = (x, px, py) => { const s = box(); live.hidden = false; const n = shown ? targets(shown).length : 1; live.innerHTML = `<b>${x.v}</b>${x.hard ? '<i class="off">hard-coded</i>' : `<i>${esc(x.name)}</i>`}${n > 1 ? `<span class="x">×${n}</span>` : ''}`; live.style.left = `${px - s.left + 16}px`; live.style.top = `${py - s.top + 14}px`; };
 
   // ── a shadow or a motion: one of yours, for every element its line of code draws ──
   // what the adapter read for an element ({} until it answers); read when its row is on screen, again after a write
