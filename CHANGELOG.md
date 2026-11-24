@@ -14,6 +14,7 @@ Everything since 0.7.0, as a person using it sees it.
   level at once, instead of one step at a time, each fix making the next finding. A page-wide warning (a font with no
   `font-display`, a page with no h1) no longer holds back an unrelated fix, and the fix bar no longer flashes "can't
   write this change" before offering a fix it can write.
+- **A missing class is no longer swapped for an unrelated one.** `animate-out` was offered as `animate-pulse`, with its variant written twice. Only a typo or a step of the same scale is offered now.
 - **Fewer wrong findings.** Words drawn in a gradient or a fill colour are judged in that ink, not read as grey or as
   zero contrast. White is fine where the theme's surface is white. A carousel's track inside a sideways scroller
   isn't told to wrap.

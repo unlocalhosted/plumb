@@ -5595,6 +5595,31 @@ words.
 
 **Media hooks.** The stopped card with Try now on the glyphwrite page, then "Back".
 
+### 131. A missing class is no longer swapped for an unrelated one (2026-11-24)
+
+**The itch.** Trying plumber as an agent with no setup (the owner: "lets work on ax part agent experience"),
+`check --agent` told it to replace a missing `data-[state=closed]:animate-out` with
+`data-[state=closed]:data-[state=closed]:animate-pulse`. An agent would make that edit: an exit animation becomes a
+pulse, and the variant is written twice.
+
+**How we found it.** Running `check --agent` on a copy of the ledger example with no plumber setup.
+
+**The system behind it.** A missing class gets the two nearest classes that exist. Any class with the same start
+(`animate-`) counted as near, whatever came after it, so `animate-out` and `animate-pulse` matched. And each choice was
+written with its variant, while the edit adds the variant again.
+
+**What we chose.** A class with the same start is near only when the rest is near too: a typo away, or two steps of
+one scale (`md` and `lg`, `s1` and `s8`). Otherwise there is no choice, and the agent is told to remove the class or
+define it, which is the honest answer. Each choice is written without its variant, since the edit keeps the one in
+the code.
+
+**The fix and the proof.** In `src/rules/existence.ts`. On the bare ledger copy, `animate-in` and `animate-out` now
+say "Remove it, or define it in a stylesheet" with no swap. `gap-s8` still offers `gap-s1` and `gap-s2`. The other
+findings are unchanged (127 in the JSON report before and after). Still missing: saying that `animate-in` and
+`animate-out` come from an animation plugin that isn't installed.
+
+**Media hooks.** The agent instruction before and after, side by side.
+
 ## Open gaps
 
 - The fixes of entry 81 (caret, app errors, broken config on Vite) are committed and not published. The site runs
@@ -7279,6 +7304,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
+- A missing class is no longer swapped for an unrelated one: `animate-out` was offered as `animate-pulse`, with its variant written twice. On main, not released ([entry](#131-a-missing-class-is-no-longer-swapped-for-an-unrelated-one-2026-11-24)).
 - When plumber stops, the dock says so and why in plain words, counts down to its next try, offers Try now and says when it's back, instead of "Checking your project…" forever. It also tries again on its own. On main, not released ([entry](#130-plumber-says-when-it-has-stopped-and-starts-again-on-its-own-2026-11-24)).
 - An undo made while another write to the same files arrives goes back whole or not at all; it could stop halfway on a busy machine. On main, not released ([entry](#129-the-full-suite-before-080-and-an-undo-that-could-stop-halfway-2026-11-24)).
 - The design site's X-ray page shows the Shadow row: point at a card and pick one of the theme's shadows, as in the product. On main, not deployed ([entry](#128-the-design-sites-x-ray-shows-the-shadow-row-2026-11-24)).

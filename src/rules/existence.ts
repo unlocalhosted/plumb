@@ -107,7 +107,15 @@ function existenceParts(sites: ClassSite[], candidates: Map<string, CandidateCss
       Number(b.samePrefix) - Number(a.samePrefix) || Number(b.theme) - Number(a.theme) || Number(b.suffix) - Number(a.suffix) || b.shared - a.shared || a.distance - b.distance || a.token.localeCompare(b.token);
     for (const hint of site.opaque || input.base.replace(/^--/, '').length < 4 || rankings.has(site.token) ? [] : hintNames) {
       if (hint.base.replace(/^--/, '').length < 4 || hint.variants && hint.variants !== input.variants) continue;
-      const samePrefix = !!hint.prefix && (hint.theme ? input.base.startsWith(hint.prefix) : prefix(input.base) === hint.prefix);
+      // the same start is a near miss only when the rest is too: a typo of it, or two steps of one scale. `animate-out`
+      // and `animate-pulse` share a start and mean opposite things; suggesting one for the other is a wrong edit
+      const rest = (name: string) => hint.prefix && name.startsWith(hint.prefix) ? name.slice(hint.prefix.length) : name;
+      const step = (v: string) => /^(?:\d+(?:\.\d+)?|\d?x?[sl]|sm|md|lg|base|full|none|px)$/.test(v);
+      const restIn = rest(input.base), restHint = rest(hint.base);
+      const near = (step(restIn) && step(restHint)) || distance(restIn, restHint, restIn.length) <= Math.max(1, Math.floor(Math.max(restIn.length, restHint.length) / 3));
+      const sharesStart = !!hint.prefix && (hint.theme ? input.base.startsWith(hint.prefix) : prefix(input.base) === hint.prefix);
+      if (sharesStart && !near) continue;
+      const samePrefix = sharesStart;
       const length = Math.max(input.base.length, hint.base.length);
       const suffix = input.base.endsWith(`-${hint.base}`);
       let shared = 0;
@@ -131,7 +139,7 @@ function existenceParts(sites: ClassSite[], candidates: Map<string, CandidateCss
     const prefixText = site.token.split(/\$?\{/, 1)[0]!;
     // each suggested class is a choice the overlay can take, with the shape a token choice has: the class is what is
     // written in place of the dead one (classEdit keeps its variants and importance)
-    const choices: Decision[] = site.opaque ? [] : alternatives.map(name => ({ family: 'existence' as Decision['family'], name, value: name, refs: [], origin: 'project', tier: 'semantic', why: 'A class Tailwind generates.', source: { file: site.file, line: site.line }, use: { class: name, css: '' } }));
+    const choices: Decision[] = site.opaque ? [] : alternatives.map(name => ({ family: 'existence' as Decision['family'], name, value: name, refs: [], origin: 'project', tier: 'semantic', why: 'A class Tailwind generates.', source: { file: site.file, line: site.line }, use: { class: split(name).base, css: '' } }));
     return makeFinding({ key, rule: site.opaque ? 'existence/dynamic-class' : 'existence/dead-class', family: 'existence', severity: 'error',
       sites: uniqueSites, declaration: classDeclaration(site), occurrences: [...uniqueClasses.values()].map(classDeclaration), decisions: [], ...(choices.length ? { choices } : {}),
       title: site.opaque ? `\`${site.token}\` is assembled at runtime, so Tailwind never generates it` : `\`${site.token}\` does nothing: no CSS is generated for it`,
