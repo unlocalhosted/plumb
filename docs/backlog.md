@@ -548,4 +548,4 @@ one-bar and new-token tests are fixed and pass there on their own; the steady li
   - The published package names a private app in code comments (13 files in 0.6.0). The owner decides.
   - Editing in Safari and Firefox hasn't been tried, and the release gate doesn't cover them.
 - The overlay's own words still say "off the scale" and "typed by hand" where the owner's words are "off your tokens" and "hard-coded" (seen on the design pages, which draw the product's strings and token notes).
-- Found running 0.6.0 on our own homepage (2026-11-22): a white page counts as "pure white outside your surface colour" when white is the surface; a carousel's track is told to wrap; "Use weight 800" trips the anti-slop "800 and 900 shout"; the elevation ladder's suggested level makes the next finding; five declared-gap fixes don't clear their own finding.
+- Found running 0.6.0 on our own homepage (2026-11-22): a carousel's track is told to wrap; "Use weight 800" trips the anti-slop "800 and 900 shout"; the elevation ladder's suggested level makes the next finding; five declared-gap fixes don't clear their own finding.

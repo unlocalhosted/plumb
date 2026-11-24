@@ -295,10 +295,10 @@ export const CRAFT = {
     line: 'This fade goes from dark to clear in a straight line, so its edge shows.',
     reason: 'An eased fade (more stops, dropping fast then slow) has no visible edge.',
   }),
-  'pure-black-white': ({ black }) => ({
+  'pure-black-white': ({ black, tinted }) => ({
     label: black ? 'Pure black area' : 'Pure white area',
-    line: black ? 'A large area of pure black. A tinted near-black reads better.' : 'A large area of pure white, outside your surface colour.',
-    reason: black ? 'Pure black is harsh next to anything with colour.' : 'Your other surfaces are tinted; this one escaped.',
+    line: black ? 'A large area of pure black. A tinted near-black reads better.' : tinted ? 'A large area of pure white, outside your surface colour.' : 'A large area of pure white. A white tinted toward your brand hue reads softer.',
+    reason: black ? 'Pure black is harsh next to anything with colour.' : tinted ? 'Your other surfaces are tinted; this one escaped.' : 'Pure white glares on a large area; a slight tint is easier on the eye.',
   }),
   'content-size': ({ w, need }) => ({
     label: 'Fixed width crushes its words',

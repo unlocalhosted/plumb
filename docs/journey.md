@@ -5223,6 +5223,27 @@ none (only the gradient checks), and a deliberately dim line was still flagged.
 
 **Media hooks.** None.
 
+### 115. A white surface is not "outside your surface colour" (2026-11-24)
+
+**The itch.** On our homepage, 0.6.0 flagged the white page as "a large area of pure white, outside your surface
+colour", when white is the surface.
+
+**How we found it.** Read the rule: it let white pass only when the element's class named a theme colour.
+
+**The system behind it.** A page painted from a stylesheet (`var(--surface)`) has no class, so the rule never learned
+that the theme's surface is that same white. Its words also always said "outside your surface colour", even in a
+theme with no tinted surface to be outside of.
+
+**What we chose.** White passes when the theme's own surface token (surface, paper, ground, background, page or canvas)
+is white. The finding's words mention your surface colour only when the theme has a tinted one; otherwise they say
+that pure white glares on a large area.
+
+**The fix and the proof.** In `overlay/src/craft-rules.js` and `overlay/src/words.js`. On the ledger example (theme
+`--color-surface: #ffffff`), with a 900 × 520 panel painted white inline and another painted black: the white panel
+got no finding, and the black one still did.
+
+**Media hooks.** None.
+
 ## Open gaps
 
 - **A shadow, motion or layout pick waiting in the X-ray card is still lost on a reload** ([entry 107](#107-changes-waiting-in-the-x-ray-card-survive-a-reload-2026-11-23)).
@@ -6912,6 +6933,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
+- A page whose theme surface is white is no longer told its white is "outside your surface colour". On main, not released ([entry](#115-a-white-surface-is-not-outside-your-surface-colour-2026-11-24)).
 - Gradient and fill-coloured words are no longer read as grey or as zero contrast: plumber judges words in the ink they are drawn in. On main, not released ([entry](#114-words-are-judged-in-the-ink-they-are-drawn-in-2026-11-24)).
 - Setting up says what is true: after `plumber init`, plumber names the one step left (adding it to your dev server), the hooks diff prints a command you can run, and `init` says plainly what `--force` replaces. On main, not released ([entry](#113-three-setup-messages-say-what-is-true-2026-11-24)).
 - On Next 16, plumber is ready in about half a second instead of 10, so `plumber craft` and checks no longer wait ten seconds per page. On main, not released ([entry](#112-ready-stops-waiting-10-seconds-on-next-16-2026-11-24)).

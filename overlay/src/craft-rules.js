@@ -2162,7 +2162,11 @@ export const pureBlackWhite = {
     // framework's own black and white come with every theme, so they decide nothing
     const own = colourClass(el, 'bg', theme);
     if (own && theme.colors().some((t) => t.own !== false && own === `bg-${t.short}`)) return [];
-    const tinted = theme.colors().find((t) => /surface|paper|ground|background/.test(t.short) && !(t.rgb[0] === 255 && t.rgb[1] === 255 && t.rgb[2] === 255) && Math.min(...t.rgb) > 220);
+    // white is the surface when the theme's own surface is white: a page painted from a stylesheet (var(--surface)) has no
+    // class to say so, and was told it sat "outside your surface colour" (our homepage, 0.6.0)
+    const SURFACE = /surface|paper|ground|background|page|canvas/;
+    if (white && theme.colors().some((t) => t.own !== false && SURFACE.test(t.short) && t.rgb[0] === 255 && t.rgb[1] === 255 && t.rgb[2] === 255 && (t.rgb[3] ?? 1) >= 1)) return [];
+    const tinted = theme.colors().find((t) => SURFACE.test(t.short) && !(t.rgb[0] === 255 && t.rgb[1] === 255 && t.rgb[2] === 255) && Math.min(...t.rgb) > 220);
     // the project's own near-black first (a dark ink or night colour), else whatever the theme has near it
     const ownDark = theme.colors().filter((t) => t.own !== false && Math.max(...t.rgb) <= 64)
       .map((t) => ({ ...t, distance: Math.hypot(t.rgb[0] - 20, t.rgb[1] - 20, t.rgb[2] - 22) })).filter((t) => t.distance <= T.within * 1.25).sort((a, b) => a.distance - b.distance)[0];
@@ -2170,7 +2174,7 @@ export const pureBlackWhite = {
     // white outside a tinted theme is taste, unless the spec makes the rule a note already
     const tier = black || tinted ? T.tier : Math.max(T.tier, TIER.advisory);
     return [{
-      ...say(this.id, { black }),
+      ...say(this.id, { black, tinted: !!tinted }),
       key: this.id, tier, text: own ?? 'background-color', props: ['background-color'], value: hex(c), n: area,
       evidence: { colour: hex(c), area: Math.round(area) }, confidence: grey ? GREY : 0.8,
       suggest: near && own ? { kind: 'class', from: own, to: `bg-${near.short}`, why: black ? 'a near-black from your theme' : 'your tinted surface' } : { kind: 'advice', text: black ? 'Use a tinted near-black, 2–3% toward your brand hue.' : 'Tint it 2–3% toward your brand hue, or use your surface colour.' },
