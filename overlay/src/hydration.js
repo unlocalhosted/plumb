@@ -46,7 +46,7 @@ let synced = false;
 addEventListener('plumb:host-synced', () => { synced = true; }, { once: true });
 export const onNext = () => !!document.querySelector('script[data-plumb-next-dist]');
 export function hostSynced({ timeout = 10000 } = {}) {
-  if (!onNext() || synced) return Promise.resolve(true);
+  if (!onNext() || synced || window.__plumbHostSynced) return Promise.resolve(true);
   return new Promise(resolve => {
     const timer = setTimeout(() => resolve(false), timeout);
     addEventListener('plumb:host-synced', () => { clearTimeout(timer); resolve(true); }, { once: true });

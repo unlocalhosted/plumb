@@ -30,7 +30,9 @@ const connect = async () => {
     // registry for its latest version, which kept ready() waiting its whole 10 s on Next 16 (journey 112): there,
     // "turbopack-connected", sent at once, is the same news
     const kind = message?.type ?? message?.action;
-    if ((kind === 'sync' || kind === 'turbopack-connected') && !synced) { synced = true; dispatchEvent(new Event('plumb:host-synced')); }
+    // kept on the window as well as said: the overlay's own modules may load after it, and an event said before anyone
+    // listened was lost, so ready() waited its whole 10 s for one that never came again (journey 112)
+    if ((kind === 'sync' || kind === 'turbopack-connected') && !synced) { synced = true; window.__plumbHostSynced = true; dispatchEvent(new Event('plumb:host-synced')); }
     if (!kinds.has(message?.type ?? message?.action)) return;
     clearTimeout(timer); timer = setTimeout(invalidateSourceMaps, 80);
   };
