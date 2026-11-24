@@ -5102,10 +5102,33 @@ outside its root unless `turbopack.root` says where that is.
 
 **Media hooks.** None worth filming; the two socket logs are the proof.
 
+### 110. A page-wide warning stops withdrawing an unrelated fix (2026-11-24)
+
+**The itch.** Making launch film 2 (entry 91), plumber held back the z-index fix on the badge screen and said it
+"would make it text hidden while its font loads". The fix changes a z-index. It has nothing to do with fonts.
+
+**How we found it.** Reproduced on the showcase's z-index screen (74) by adding a font with no `font-display`, as the
+film's capture had. The z-index finding came back as advice. With the first guess fixed it came back as advice again,
+now blaming "a page with no main heading".
+
+**The system behind it.** Before offering a fix, plumber tries it on a virtual copy of the page and runs the rules
+again; a more important finding that wasn't there before withdraws the fix. Two things made page-wide rules look new:
+"before" was only the findings marked on that element, and page-wide findings are marked once on the page's root. And
+the virtual page holds just the element being fixed, so to a page-wide rule that element *is* the page's root, and
+the rule answered for the whole page there.
+
+**What we chose.** A rule that speaks once for the whole page (no h1, no `font-display`, page language and the rest)
+is left out of a fix's trial: one element's classes can't add an h1, and the trial can't ask such a rule fairly. For
+the rest, a finding counts as woken only if the same rule, asked the same way on the real page, is quiet.
+
+**The fix and the proof.** In `overlay/src/verdict.js`. On screen 74 with a font missing `font-display` and the page's
+missing h1 both reported, the z-index finding now offers `z-[999]` → `z-10` with `isolation: isolate` on the
+component.
+
+**Media hooks.** The fix bar on the badge screen: advice about fonts before, the z-index fix after.
+
 ## Open gaps
 
-- **A page-wide warning can withdraw an unrelated fix.** A font with no `font-display` turned the z-index fix into
-  advice (seen 2026-11-23, [entry 91](#91-the-film-shows-the-component-without-the-page-round-it-2026-11-23)).
 - **A shadow, motion or layout pick waiting in the X-ray card is still lost on a reload** ([entry 107](#107-changes-waiting-in-the-x-ray-card-survive-a-reload-2026-11-23)).
 - **A lone ticking number isn't flagged.** The tabular figures check reads only cells and list rows, so the showcase's
   own running timer keeps its wobble after the fix (entry 88).
@@ -6793,6 +6816,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
+- A fix is no longer held back by an unrelated page-wide warning (a font with no `font-display`, a page with no h1). On main, not released ([entry](#110-a-page-wide-warning-stops-withdrawing-an-unrelated-fix-2026-11-24)).
 - On Next 15, plumber hears your saves again and is ready in about a tenth of a second instead of 10. On main, not released ([entry](#109-plumber-hears-saves-on-next-15-2026-11-24)).
 - The X-ray card no longer covers the element it describes, so a click on a chart's axis label reaches the label and its fix goes in the bar. On main, not released ([entry](#108-the-x-ray-card-stops-covering-the-element-it-describes-2026-11-24)).
 - Changes waiting in the X-ray card survive a reload: a fix taken elsewhere, plumber's own re-read or closing Blueprint no longer throws away sizes and spacing you changed but haven't synced. On main, not released ([entry](#107-changes-waiting-in-the-x-ray-card-survive-a-reload-2026-11-23)).

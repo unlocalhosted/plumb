@@ -198,10 +198,10 @@ function verify(k, el, byId, rules, facts, theme, before) {
   const triable = Object.keys(sets).length > 0;
   const after = facts.with(el, { sets, classes: list.join(' ') }, (virtual) => rules.flatMap((r) => {
     if (r.id !== k.rule && !(edit.composed ?? []).includes(r.id) && !((r.tier ?? TIER.craft) < k.tier)) return [];
+    if (wholePage(r)) return [];
     try { return (r.check({ el, facts: virtual }, theme) ?? []).filter((f) => (f.confidence ?? 0) >= FLOOR).map((f) => ({ ...f, rule: r.id, tier: r.tier ?? TIER.craft })); } catch { return []; }
   }));
-  const was = new Set(before.map((m) => m.rule));
-  const woke = after.find((f) => f.tier < k.tier && !was.has(f.rule));
+  const woke = wokeBy(after, before, k, el, rules, facts, theme);
   if (woke) return withdraw(k, 'higher-tier', `That would make it ${woke.what?.toLowerCase() ?? 'worse'}.`, woke.rule);
   if (triable && after.some((f) => f.rule === k.rule || (edit.composed ?? []).includes(f.rule))) return withdraw(k, 'no-step', 'None of your steps settles it.');
   if (rewritten) setEdit(k, el, list, { ...edit, sets, rewritten: true });
@@ -216,16 +216,39 @@ function verifyToken(k, el, rules, facts, theme, before) {
   if (triable) {
     const after = facts.with(el, { sets }, (virtual) => rules.flatMap((r) => {
       if (r.id !== k.rule && !((r.tier ?? TIER.craft) < k.tier)) return [];
+      if (wholePage(r)) return [];
       try { return (r.check({ el, facts: virtual }, theme) ?? []).filter((f) => (f.confidence ?? 0) >= FLOOR).map((f) => ({ ...f, rule: r.id, tier: r.tier ?? TIER.craft })); } catch { return []; }
     }));
-    const was = new Set(before.map((m) => m.rule));
-    const woke = after.find((f) => f.tier < k.tier && !was.has(f.rule));
+    const woke = wokeBy(after, before, k, el, rules, facts, theme);
     if (woke) return withdraw(k, 'higher-tier', `That would make it ${woke.what?.toLowerCase() ?? 'worse'}.`, woke.rule);
     if (after.some((f) => f.rule === k.rule)) return withdraw(k, 'no-step', 'None of your steps settles it.');
   }
   k.whyNot = 'no-step';
   k.action = edit.text;
   k.proof = { theme: 'new', quiet: triable ? true : 'untried', above: triable ? 'clear' : 'untried' };
+}
+
+// A rule that speaks once for the whole page (no h1, a font with no font-display) can't be woken by one element's
+// classes, and can't be asked in the trial: the trial's page is the one element, so to such a rule that element is the
+// page's root and it answered for the whole page there (it withdrew a z-index fix as "a page with no main heading")
+const wholePage = (r) => (r.reads ?? []).includes('census');
+// A higher-tier finding the fix would wake: one the page as it is doesn't have. The element's own marks are not enough
+// to say so: a page-wide rule (a font with no font-display) answers for every element but is marked once, on the page's
+// root, so it looked new after any fix and withdrew a z-index fix that had nothing to do with fonts (journey 110). A
+// finding counts as woken only when the same rule, asked the same way on the real page, is quiet.
+function wokeBy(after, before, k, el, rules, facts, theme) {
+  const was = new Set(before.map((m) => m.rule));
+  const already = new Map();
+  const firesNow = (id) => {
+    if (!already.has(id)) {
+      const r = rules.find((x) => x.id === id);
+      let fires = false;
+      try { fires = !!r && (r.check({ el, facts }, theme) ?? []).some((f) => (f.confidence ?? 0) >= FLOOR); } catch { /* a rule that throws on the real page says nothing about it */ }
+      already.set(id, fires);
+    }
+    return already.get(id);
+  };
+  return after.find((f) => f.tier < k.tier && !was.has(f.rule) && !firesNow(f.rule)) ?? null;
 }
 
 function withdraw(k, whyNot, text, by) {
