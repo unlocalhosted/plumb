@@ -392,7 +392,7 @@ async function main(): Promise<void> {
   };
   const emitCheck = async (report: import('./report.js').Report): Promise<void> => {
     if (args.values.sarif) process.stdout.write(`${JSON.stringify(sarif(report), null, 2)}\n`);
-    else if (args.values.agent) process.stdout.write(formatAgent(report, agentTop()));
+    else if (args.values.agent) process.stdout.write(runnable(formatAgent(report, agentTop()), runnerOf(options.root)));
     else if (args.values.format === 'github') {
       const base = args.values.base === undefined ? undefined : await baseReport(report.root, args.values.base, options);
       const scope = args.values.base !== undefined || args.values.changed ? await changedLines(report.root, args.values.base ?? 'HEAD') : undefined;
@@ -444,7 +444,7 @@ async function main(): Promise<void> {
       ...(args.values.lang === undefined ? {} : { lang: args.values.lang as 'tsx' | 'css' }),
       ...(args.values.as === undefined ? {} : { as: args.values.as }) };
     const report = await analyzing(async () => await clientTry(text, tryOptions) ?? await trySnippet(text, tryOptions));
-    process.stdout.write(args.values.json ? `${JSON.stringify(report)}\n` : args.values.agent ? formatAgent(report, agentTop()) : formatText(report, args.values.verbose));
+    process.stdout.write(args.values.json ? `${JSON.stringify(report)}\n` : args.values.agent ? runnable(formatAgent(report, agentTop()), runnerOf(options.root)) : formatText(report, args.values.verbose));
     process.exitCode = report.findings.some(finding => finding.severity === 'error') ? 1 : 0;
     return;
   }

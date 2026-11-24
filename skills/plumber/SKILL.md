@@ -1,6 +1,6 @@
 ---
 name: plumber
-description: Keep UI code on the project's design system with the React Plumber CLI (works with any coding agent or by hand). Use before and after writing or changing styles in a project that has plumber.config.ts, .plumber/ledger.jsonl or @unlocalhosted/react-plumber installed: Tailwind classes, cn/cva maps, CSS, @apply, inline style objects, or a design-system component's props. Also use when asked why a style is flagged, which token to use, or whether a value is on the scale.
+description: Keep UI code on the project's design system with the React Plumber CLI (works with any coding agent or by hand). Use before and after writing or changing styles in a React app: Tailwind classes, cn/cva maps, CSS, @apply, inline style objects, or a design-system component's props. It needs no setup; it reads the project's own theme. Also use when asked why a style is flagged, which token to use, or whether a value is on the scale.
 ---
 
 # React Plumber
@@ -9,23 +9,35 @@ These instructions are for any coding agent (Claude Code, Codex, Cursor, Copilot
 
 React Plumber judges every styling choice by the CSS it compiles to, against the project's own tokens, component contracts and habits. Run it; don't guess the tokens.
 
+## Running it
+
+It works in any React app with nothing set up: it reads the theme the project already has. Setup (`plumber.config.ts`,
+`.plumber/ledger.jsonl`) only records the person's own choices, and it is theirs to do.
+
+- If `@unlocalhosted/react-plumber` is in the project's dependencies, run `npx plumber …` (`pnpm exec plumber …`,
+  `yarn plumber …`).
+- If it isn't, run `npx -p @unlocalhosted/react-plumber plumber …`. Never plain `npx plumber` there: that downloads
+  a different npm package named "plumber".
+
+The commands below are written `plumber …`; put the right start in front. Plumber's own output prints them with it.
+
 ## Before you write styles
 
 1. Read `PLUMBER.md` at the project root if it exists: the project's tokens with their reasons, what callers may set on each component, and the habits in force.
 2. To check a snippet before writing it:
 
    ```bash
-   echo '<div className="gap-10 text-gray-500" />' | npx plumber try --agent
+   echo '<div className="gap-10 text-gray-500" />' | plumber try --agent
    ```
 
    `--lang css` for CSS. It writes nothing. Exit 0 means the snippet uses the system.
 
-3. To pick a token: `npx plumber decisions --family spacing` (also `color`, `radius`, `type`, `motion`, `elevation`, `z`).
+3. To pick a token: `plumber decisions --family spacing` (also `color`, `radius`, `type`, `motion`, `elevation`, `z`).
 
 ## After you edit
 
 ```bash
-npx plumber check --changed --agent
+plumber check --changed --agent
 ```
 
 It lists only new problems in the files you changed, one instruction per site:
@@ -46,11 +58,13 @@ left. Fix those and run it again: the next ones come up. Stop when it prints `0 
 
 ## When asked about a finding
 
-- `npx plumber why <file>:<line>`: which rule, token and ledger entry apply at a line.
-- `npx plumber explain <file>`: every class, rule and inline style in a file with the CSS it compiles to.
-- `npx plumber show <rule>`: every site of one kind of finding.
+- `plumber why <file>:<line>`: which rule, token and ledger entry apply at a line.
+- `plumber explain <file>`: every class, rule and inline style in a file with the CSS it compiles to.
+- `plumber show <rule>`: every site of one kind of finding.
 
 ## Notes
 
-- A first run with no ledger always exits 0; it reports and suggests `plumber init`. Setting the project up is the user's call.
+- With no setup, a first `plumber check` lists everything already off the theme. Work with `--changed`, so you fix
+  what you touched, and tell the user plumber can be set up (`plumber init`) if they want their own rules.
+- Don't run `plumber init` or install the package for the user unless they ask: both change their project.
 - A warm `plumber serve` makes these commands answer faster; they use it automatically when it runs.

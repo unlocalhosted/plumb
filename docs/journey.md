@@ -5646,6 +5646,40 @@ wants and exits 2.
 
 **Media hooks.** The first screen of `check --agent` before (file order) and after (ranked, ten, "120 more").
 
+### 133. An agent can use plumber in a project that never installed it (2026-11-24)
+
+**The itch.** The second layer of plumber for agents (the owner: "what if people dont want to do the whole setup").
+An agent in an ordinary React app, with nothing set up and nothing installed, should still be able to check its
+styles.
+
+**How we found it.** Running the agent's own instructions in a copy of the ledger example with no plumber in it.
+The instructions said `npx plumber check`. On npm, the name `plumber` belongs to an unrelated asset pipeline tool,
+so that line downloads someone else's package. Plumber's own output ("Next: run npx plumber init", the agent loop's
+"Run `plumber check --changed --agent`") pointed at the same wrong command. The agent was told to use plumber
+only "in a project that has plumber.config.ts, .plumber/ledger.jsonl or @unlocalhosted/react-plumber installed", so
+an agent in a plain app never reached for it.
+
+**The system behind it.** Every command plumber prints assumed it was installed in the project. The instructions
+assumed setup came first. Nothing checked either.
+
+**What we chose and why.** Plumber now checks whether it is installed in the project (its folder in node_modules, or
+the manifest under Yarn's Plug'n'Play). When it isn't, every command it prints starts with
+`npx -p @unlocalhosted/react-plumber plumber`, which runs the published package with no install. This applies to the
+words for a person and the agent's list alike. The instructions say plumber works in any React app with no setup, give
+both forms of the command, and tell the agent not to set up or install plumber for the person unasked.
+`plumber install --agent claude` now works without the package. It writes the instructions and skips the check after
+each edit, because that check runs the installed plumber and would fail on every edit. Plumber says so and gives the
+install line for the project's package manager. `--changed` in a folder that isn't a git repository says that in plain
+words and points to a plain `check`, where it used to say "Git comparison requires a repository and valid ref
+(rev-parse)".
+
+**The fix and the proof.** In the bare copy: `npx -p @unlocalhosted/react-plumber plumber try --agent` downloaded
+0.7.0 and judged a snippet in about 10 seconds. `check --agent` ends with "Run `npx -p @unlocalhosted/react-plumber
+plumber check --changed --agent`". `install --agent claude --list` would write the skill and skip the hook, with the
+reason. `check --changed` there exits 2 with the plain message.
+
+**Media hooks.** A terminal clip: a fresh React app, one `npx -p …` line, the ten most urgent problems.
+
 ## Open gaps
 
 - The fixes of entry 81 (caret, app errors, broken config on Vite) are committed and not published. The site runs
@@ -7330,6 +7364,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
+- An agent can run plumber in a React app that never installed or set it up: the instructions say so, and every command plumber prints names the real package when it isn't installed, so `npx plumber` no longer fetches an unrelated tool. On main, not released ([entry](#133-an-agent-can-use-plumber-in-a-project-that-never-installed-it-2026-11-24)).
 - An agent running `plumber check --agent` gets the ten most urgent problems first and a count of the rest, instead of hundreds in file order. On main, not released ([entry](#132-an-agent-sees-the-ten-problems-that-matter-first-2026-11-24)).
 - A missing class is no longer swapped for an unrelated one: `animate-out` was offered as `animate-pulse`, with its variant written twice. On main, not released ([entry](#131-a-missing-class-is-no-longer-swapped-for-an-unrelated-one-2026-11-24)).
 - When plumber stops, the dock says so and why in plain words, counts down to its next try, offers Try now and says when it's back, instead of "Checking your project…" forever. It also tries again on its own. On main, not released ([entry](#130-plumber-says-when-it-has-stopped-and-starts-again-on-its-own-2026-11-24)).

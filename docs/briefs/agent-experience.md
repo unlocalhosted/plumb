@@ -41,9 +41,9 @@ and the agent can't reach them. An agent without setup is not a case the instruc
 1. **Output an agent can trust.** *Built 2026-11-24 (journey 132), except naming the plugin behind a dead class.* Findings come ranked by what they cost a person (broken
    before inconsistent, many places before one), with a limit (`--top 10`) and a line saying how many are left. Dead
    plugin classes name the plugin.
-2. **No setup needed.** The skill says plumber works in any React app with no setup, and that setup only records the
-   person's choices. `npx @unlocalhosted/react-plumber check --agent` works without installing. A one-line
-   `plumber install --agent` path works without `init`.
+2. **No setup needed.** *Built 2026-11-24 (journey 133). Plain `npx plumber` was the wrong package; commands now name `npx -p @unlocalhosted/react-plumber` when it isn't installed.* The skill says plumber works in any React app with no setup, and that setup only records the
+   person's choices. `npx -p @unlocalhosted/react-plumber plumber check --agent` works without installing.
+   `plumber install --agent` works without `init` or the package.
 3. **Edits, not sentences.** Every finding plumber can write carries the edit as data (file, line, before, after) in
    `--json` and `--agent`, and `plumber apply <key>` writes it with the writer the fix bar uses, with undo.
 4. **Page checks an agent can use.** Find the running dev server, reuse the warm server for speed, and return a

@@ -8,7 +8,12 @@ import type { LedgerEntry } from './types.js';
 
 function git(root: string, args: string[]): string {
   try { return execFileSync('git', ['-C', root, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 16 * 1024 * 1024 }); }
-  catch { throw new UsageError(`Git comparison requires a repository and valid ref (${args[0]}).`); }
+  catch (error) {
+    // the one an agent meets first: --changed in a folder that isn't a repository (a copy, a download, a new app)
+    const stderr = String((error as { stderr?: unknown }).stderr ?? '');
+    if (/not a git repository/i.test(stderr)) throw new UsageError('--changed and --base compare with git, and this folder isn\'t a git repository.\n  → check every file instead: plumber check (add --agent for an agent)');
+    throw new UsageError(`Git couldn't compare (${args[0]}): ${stderr.trim().split('\n')[0] || 'no reason given'}.\n  → check the ref exists: git rev-parse <ref>`);
+  }
 }
 export function author(root: string): string | undefined {
   try { return git(root, ['config', 'user.name']).trim() || undefined; } catch { return undefined; }

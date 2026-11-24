@@ -11,6 +11,7 @@ import { writeOverlay } from './overlay.js';
 import { overlaySetupNotice } from '../setup-messages.js';
 import { manifestAt, packageManagerOf, projectFacts } from '../project-facts/index.js';
 import { readSourceIfExists, writeSource } from '../write/source-file.js';
+import { installed, runnerOf, devInstall } from '../runner.js';
 
 export const agentNames = ['claude', 'cursor', 'codex', 'copilot', 'gemini', 'windsurf', 'generic'] as const;
 export type AgentName = typeof agentNames[number];
@@ -190,7 +191,10 @@ export async function installProject(root: string, options: InstallOptions = {})
     plans.push({ file: ciPlan.file, root: repo, ...(before === undefined ? {} : { before }), hash: current?.hash ?? null, after: before ?? ciPlan.text });
   }
   const hooks = [];
-  for (const scope of scopes) {
+  // The hook runs the project's own plumber after every edit and never downloads one: with no install it would fail
+  // on every edit, so it waits until the package is there. The instructions work either way.
+  const hookless = !installed(root) && selected.some(agent => agent === 'claude' || agent === 'cursor');
+  if (!hookless) for (const scope of scopes) {
     const agents = (['claude', 'cursor'] as const).filter(agent => selected.includes(agent) && (detected.get(agent) ?? root) === scope);
     if (agents.length) hooks.push(...await planHooks(scope, agents, scope === root ? undefined : relative(scope, root).replaceAll('\\', '/')));
   }
@@ -199,6 +203,7 @@ export async function installProject(root: string, options: InstallOptions = {})
   const name = (file: string) => relative(root, file).replaceAll('\\', '/');
   if (options.list) {
     output.push(...[...plans, ...hooks].map(plan => (plan.before === plan.after ? 'Kept ' : 'Would write ') + name(plan.file) + '.'));
+    if (hookless) output.push(`Would skip the check after each edit: plumber isn't installed in this project. Install it (${devInstall(root)}) to add it.`);
     return output.join('\n') + '\n';
   }
   const hookOutput = await writeHooks(hooks, false, root);
@@ -209,5 +214,6 @@ export async function installProject(root: string, options: InstallOptions = {})
     output.push('Wrote ' + name(plan.file) + '.');
   }
   if (ciPlan && plans.find(plan => plan.file === ciPlan.file)?.before === undefined) output.push(...ciPlan.notes);
+  if (hookless) output.push(`No check after each edit yet: plumber isn't installed in this project, and that check runs the installed one. Your agent runs it with ${runnerOf(root)} plumber until then. To add the check, install it (${devInstall(root)}), then run plumber install again.`);
   return output.join('\n') + '\n';
 }

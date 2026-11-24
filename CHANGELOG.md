@@ -4,6 +4,11 @@
 
 Everything since 0.7.0, as a person using it sees it.
 
+- **Agents need no install.** In a project without plumber, every command it prints (and the agent loop's) starts
+  with `npx -p @unlocalhosted/react-plumber plumber`, because plain `npx plumber` fetches an unrelated npm package.
+  The agent instructions say plumber works in any React app with no setup. `install --agent` works without the
+  package and skips the check after each edit until it's installed, saying why. `--changed` outside a git repository
+  says so in plain words.
 - **Fixes land on plain-CSS pages.** On a page styled with `.css` files, the fix bar used to add Tailwind classes
   that did nothing there. It now writes the fix into the stylesheet rule that styles the element (`column-gap: 8px`
   in `.row`), names the CSS it sets, and Undo takes it back out of the file. A fix that only gives advice, or changes
