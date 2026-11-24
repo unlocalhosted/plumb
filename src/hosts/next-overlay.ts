@@ -4,15 +4,25 @@ import { state } from './next-state.js';
 import { nextHost } from './next-host.js';
 
 // The host's hot updates start a new module generation for the overlay, the way hosts/vite.ts hooks vite:afterUpdate:
-// Next's dev client takes its updates over a WebSocket at /_next/hmr (webpack and Turbopack alike); a second socket on
-// it hears the same "built", "sync", server-component and Turbopack update messages. It connects without the page's
+// Next's dev client takes its updates over a WebSocket, at /_next/hmr from Next 16 and /_next/webpack-hmr before it
+// (webpack and Turbopack alike); a second socket on it hears the same "built", "sync", server-component and Turbopack
+// update messages. The version is the page's own (window.next.version): on Next 15 the old path alone heard nothing,
+// so a save there never reached the overlay (journey 109). It connects without the page's
 // request id: a socket with that id would replace the page's own client and take its updates. Next applies the
 // update right after it says so, hence the short settle before the overlay invalidates what it knew.
 const updates = `import { invalidateSourceMaps } from '/__plumb/src/sourcemap.js';
 const kinds = new Set(['built', 'sync', 'serverComponentChanges', 'turbopack-message', 'clientChanges']);
-let timer, socket, synced = false;
-const connect = () => {
-  try { socket = new WebSocket(\`\${location.protocol === 'https:' ? 'wss' : 'ws'}://\${location.host}/_next/hmr\`); } catch { return; }
+let timer, socket, synced = false, path = null;
+// Next's client sets window.next as it boots, which can be after this module runs: asked again for up to 5 s, then the
+// newest path
+const pathOf = (tries = 0) => new Promise((done) => {
+  const v = window.next?.version;
+  if (v || tries >= 50) return done(!v || parseInt(v, 10) >= 16 ? '/_next/hmr' : '/_next/webpack-hmr');
+  setTimeout(() => done(pathOf(tries + 1)), 100);
+});
+const connect = async () => {
+  path ??= await pathOf();
+  try { socket = new WebSocket(\`\${location.protocol === 'https:' ? 'wss' : 'ws'}://\${location.host}\${path}\`); } catch { return; }
   socket.onmessage = (event) => {
     let message; try { message = JSON.parse(event.data); } catch { return; }
     // the first sync: the host's client has compared its bundle hash (a changed one reloads the page); the overlay's ready waits for it
