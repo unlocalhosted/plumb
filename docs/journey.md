@@ -5070,6 +5070,38 @@ draft folder, which git ignores.
 
 **Media hooks.** The newsletter chart with the card beside the "0" label, before (overlapping) and after (clear).
 
+### 109. Plumber hears saves on Next 15 (2026-11-24)
+
+**The itch.** Testing 0.6.0 on our site (entry 81) found that on Next 15 plumber listened for hot updates at
+`/_next/hmr` and got 0 messages: Next 15 sends them at `/_next/webpack-hmr`. A save never reached the overlay, so
+what it knew about the page went stale, and `window.__plumb.ready()` waited out its 10 s limit (10.4 s measured) on
+every page, which `plumber craft` and the tests paid each time.
+
+**How we found it.** Picked from the backlog as a small change that every Next 15 user meets.
+
+**The system behind it.** The listener was written against Next 16, which moved the socket to `/_next/hmr`. Nothing
+told it which Next it was running on.
+
+**What we chose.** The page says its own version: Next's client sets `window.next.version` as it boots. The listener
+waits up to 5 s for it, then connects at `/_next/hmr` from 16 on and at `/_next/webpack-hmr` before that. Two other
+options were turned down. Reading the version on the server would mean reaching into the app's `node_modules` from
+code Next bundles. Connecting to both paths would leave a socket failing and retrying every 1.5 s on the path that
+doesn't exist.
+
+**The fix and the proof.** In `src/hosts/next-overlay.ts`. A throwaway Next app with plumber installed, on vm-agent
+(the laptop was out of memory), saved twice under a headless browser:
+
+- Next 15.5.28: plumber's socket at `/_next/webpack-hmr` heard both saves (`serverComponentChanges`), as Next's own
+  client did; `ready()` answered in 117 ms.
+- Next 16.4.6: plumber's socket at `/_next/hmr` heard every message of both saves, as before. `ready()` still takes
+  10.6 s there, a separate gap that stays in the backlog.
+
+Two things that fooled the probe on the way: Next's webpack watcher skips any folder whose name contains `.next`, so
+an app in `fixtures/.next-probe-15` never saw its own saves. And Turbopack can't resolve a package linked in from
+outside its root unless `turbopack.root` says where that is.
+
+**Media hooks.** None worth filming; the two socket logs are the proof.
+
 ## Open gaps
 
 - **A page-wide warning can withdraw an unrelated fix.** A font with no `font-display` turned the z-index fix into
@@ -6761,6 +6793,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
+- On Next 15, plumber hears your saves again and is ready in about a tenth of a second instead of 10. On main, not released ([entry](#109-plumber-hears-saves-on-next-15-2026-11-24)).
 - The X-ray card no longer covers the element it describes, so a click on a chart's axis label reaches the label and its fix goes in the bar. On main, not released ([entry](#108-the-x-ray-card-stops-covering-the-element-it-describes-2026-11-24)).
 - Changes waiting in the X-ray card survive a reload: a fix taken elsewhere, plumber's own re-read or closing Blueprint no longer throws away sizes and spacing you changed but haven't synced. On main, not released ([entry](#107-changes-waiting-in-the-x-ray-card-survive-a-reload-2026-11-23)).
 - Enter takes the fix the bar shows, even while the X-ray card has a change waiting; only the one that will get Enter shows ↵. On main, not released ([entry](#106-enter-takes-the-fix-the-bar-shows-2026-11-23)).

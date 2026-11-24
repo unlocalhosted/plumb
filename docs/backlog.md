@@ -548,10 +548,9 @@ one-bar and new-token tests are fixed and pass there on their own; the steady li
     109 of 109 elements on two pages carry one), the app's MDX components passing that attribute on and `source`
     taking `.mdx`, and a Markdown-aware writer. The writer is the risky one.
   - A plain double-click on words in a link or button does nothing and doesn't mention Alt + double-click.
-  - On Next 15 Plumber listens for hot updates at `/_next/hmr`, where that version sends none (its path is
-    `/_next/webpack-hmr`; 0 messages received, measured). Plumber isn't told of a save there.
-  - `window.__plumb.ready()` waits out its 10 s limit on Next 15 and 16 (10.4 and 10.7 s measured), so `plumber craft`
-    and the tests lose that on every page. On 16 the first sync probably arrives before the overlay listens (not checked).
+  - `window.__plumb.ready()` waits out its 10 s limit on Next 16 (10.6 s measured 2026-11-24; Next 15 answers in
+    about 0.1 s since journey 109), so `plumber craft` and the tests lose that on every page. The first sync probably
+    arrives before the overlay listens (not checked).
   - The published package names a private app in code comments (13 files in 0.6.0). The owner decides.
   - Editing in Safari and Firefox hasn't been tried, and the release gate doesn't cover them.
 - The overlay's own words still say "off the scale" and "typed by hand" where the owner's words are "off your tokens" and "hard-coded" (seen on the design pages, which draw the product's strings and token notes).
