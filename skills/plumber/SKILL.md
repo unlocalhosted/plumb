@@ -35,7 +35,8 @@ It lists only new problems in the files you changed, one instruction per site:
 - **NEEDS-DECISION:** no token fits. Stop and tell the user the sites and the value you wanted. This is a valid result.
 - **Fix:** a habit, ownership, imitation or existence finding. Follow it (for a component override, use one of the variants it names).
 
-Run it again until it prints `0 new`.
+It shows the ten most urgent problems first (what draws nothing, then what one edit settles), and says how many are
+left. Fix those and run it again: the next ones come up. Stop when it prints `0 new`.
 
 ## Never
 

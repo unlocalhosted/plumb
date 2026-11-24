@@ -32,6 +32,8 @@ Everything since 0.7.0, as a person using it sees it.
 - **Plain words.** Plumber says "hard-coded" and "off your tokens" everywhere it used to say "typed by hand" and "off
   the scale". After `plumber init` it names the one step left (adding it to your dev server), and `init` says plainly
   what `--force` replaces. Double-clicking a button's words says to hold Alt to edit them, instead of doing nothing.
+- **Agents see what matters first.** `plumber check --agent` lists the ten most urgent problems first (what draws
+  nothing, then what one edit settles) and how many are left; `--top <n>` or `--top all` shows more.
 - **Plumber says when something is wrong, and recovers.** If its reading thread stops (say its files vanish during a
   reinstall), it tries again on its own, and the dock says "Plumber stopped." with the cause in plain words, a
   countdown to the next try, Try now, and "Back" when it is. It used to say "Checking your project…" forever. A failure

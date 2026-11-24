@@ -14,7 +14,7 @@ import { appendFile, readFile } from 'node:fs/promises';
 import { loadConfig } from './config.js';
 import { sarif } from './surfaces/sarif.js';
 import { githubCommands, githubSummary, renderSummary } from './surfaces/github.js';
-import { formatAgent } from './surfaces/agent.js';
+import { formatAgent, AGENT_TOP } from './surfaces/agent.js';
 import { writeAgentDocs } from './surfaces/docs.js';
 import { installHooks } from './surfaces/hooks.js';
 import { baseReport } from './surfaces/base.js';
@@ -66,7 +66,7 @@ Usage: plumber [check] [--json] [--verbose] [--root <dir>] [--config <path>]
        plumber ledger [--ratchet] [--prune] [--rebase]
        plumber show <key|rule> | why <file:line>
        plumber check [--base <git-ref>] [--changed] [--strict-ledger]
-       plumber check [--sarif | --agent | --format github]
+       plumber check [--sarif | --agent [--top <n>|all] | --format github]
        plumber census --url <dev server> [--routes / /settings] [--max <n>] [--json]
        plumber craft --url <dev server> [--routes / /settings] [--json] [--sarif <file>] [--timeout <ms>] [--no-pairs] [--no-probe] [--probe drag] [--probe-budget <n>] [--scope <selector>] [--record-probe <dir>] [--judge]
        plumber agent-docs
@@ -97,7 +97,7 @@ async function main(): Promise<void> {
     try {
       const options = {
           yes: { type: 'boolean' }, json: { type: 'boolean' }, verbose: { type: 'boolean' }, root: { type: 'string' }, config: { type: 'string' },
-          base: { type: 'string' }, 'strict-ledger': { type: 'boolean' }, force: { type: 'boolean' }, why: { type: 'string' }, rule: { type: 'string' }, site: { type: 'string' }, ratchet: { type: 'boolean' }, prune: { type: 'boolean' }, rebase: { type: 'boolean' },
+          base: { type: 'string' }, top: { type: 'string' }, 'strict-ledger': { type: 'boolean' }, force: { type: 'boolean' }, why: { type: 'string' }, rule: { type: 'string' }, site: { type: 'string' }, ratchet: { type: 'boolean' }, prune: { type: 'boolean' }, rebase: { type: 'boolean' },
           changed: { type: 'boolean' }, agent: { type: 'boolean' }, sarif: { type: 'boolean' }, format: { type: 'string' }, hooks: { type: 'boolean' }, ci: { type: 'boolean' },
           family: { type: 'string', multiple: true }, preset: { type: 'string' }, decline: { type: 'string', multiple: true }, suggest: { type: 'boolean' }, version: { type: 'boolean' }, help: { type: 'boolean' },
           all: { type: 'boolean' }, broken: { type: 'boolean' }, file: { type: 'string' }, new: { type: 'boolean' }, debt: { type: 'boolean' },
@@ -125,6 +125,14 @@ async function main(): Promise<void> {
       throw new UsageError(`${flag ? `Option ${flag} needs ${problem.message.includes('argument missing') ? 'a value' : 'a valid value'}.` : 'Could not read these options.'}\n  → plumber --help`);
     }
   })();
+  // --agent shows the most urgent problem groups first, ten at a time unless asked (`--top 25`, `--top all`)
+  const agentTop = (): number => {
+    const top = args.values.top as string | undefined;
+    if (top === undefined) return AGENT_TOP;
+    if (top === 'all') return Infinity;
+    if (!/^[1-9]\d*$/.test(top)) throw new UsageError('--top must be a number of problem groups, or all.');
+    return Number(top);
+  };
   if (args.values.help) { process.stdout.write(help); return; }
   if (args.values.version) { process.stdout.write(`${tool.version}\n`); return; }
   const command = args.positionals[0] ?? 'check';
@@ -384,7 +392,7 @@ async function main(): Promise<void> {
   };
   const emitCheck = async (report: import('./report.js').Report): Promise<void> => {
     if (args.values.sarif) process.stdout.write(`${JSON.stringify(sarif(report), null, 2)}\n`);
-    else if (args.values.agent) process.stdout.write(formatAgent(report));
+    else if (args.values.agent) process.stdout.write(formatAgent(report, agentTop()));
     else if (args.values.format === 'github') {
       const base = args.values.base === undefined ? undefined : await baseReport(report.root, args.values.base, options);
       const scope = args.values.base !== undefined || args.values.changed ? await changedLines(report.root, args.values.base ?? 'HEAD') : undefined;
@@ -436,7 +444,7 @@ async function main(): Promise<void> {
       ...(args.values.lang === undefined ? {} : { lang: args.values.lang as 'tsx' | 'css' }),
       ...(args.values.as === undefined ? {} : { as: args.values.as }) };
     const report = await analyzing(async () => await clientTry(text, tryOptions) ?? await trySnippet(text, tryOptions));
-    process.stdout.write(args.values.json ? `${JSON.stringify(report)}\n` : args.values.agent ? formatAgent(report) : formatText(report, args.values.verbose));
+    process.stdout.write(args.values.json ? `${JSON.stringify(report)}\n` : args.values.agent ? formatAgent(report, agentTop()) : formatText(report, args.values.verbose));
     process.exitCode = report.findings.some(finding => finding.severity === 'error') ? 1 : 0;
     return;
   }

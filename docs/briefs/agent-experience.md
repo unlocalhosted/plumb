@@ -38,7 +38,7 @@ and the agent can't reach them. An agent without setup is not a case the instruc
 
 ## Five layers
 
-1. **Output an agent can trust.** Findings come ranked by what they cost a person (broken
+1. **Output an agent can trust.** *Built 2026-11-24 (journey 132), except naming the plugin behind a dead class.* Findings come ranked by what they cost a person (broken
    before inconsistent, many places before one), with a limit (`--top 10`) and a line saying how many are left. Dead
    plugin classes name the plugin.
 2. **No setup needed.** The skill says plumber works in any React app with no setup, and that setup only records the

@@ -5620,6 +5620,32 @@ findings are unchanged (127 in the JSON report before and after). Still missing:
 
 **Media hooks.** The agent instruction before and after, side by side.
 
+### 132. An agent sees the ten problems that matter first (2026-11-24)
+
+**The itch.** Working on plumber for agents (the owner: "what if people dont want to do the whole setup"). With no
+setup, `check --agent` handed an agent 437 problems in 130 groups, in the order the files were read. Nothing said
+which ones matter, so an agent either works through all of them or stops anywhere.
+
+**How we found it.** Running `check --agent` on a copy of the ledger example with no plumber setup
+(docs/briefs/agent-experience.md).
+
+**The system behind it.** The agent list was the report in file order. Plumber already ranks problems for people in
+the cause list beside Blueprint: what draws nothing first, then what one rename to a token settles, then the rest,
+most places first. The agent list didn't use it.
+
+**What we chose.** The same order, so a person and an agent see the same first problem: a class that draws nothing,
+then a problem one edit settles, then a choice between tokens, then what needs a person. The most places come first
+within each. The agent sees ten groups at a time and a line saying how many are left and that running again brings
+the next ones. `--top <n>` and `--top all` show more. The count at the top still counts everything, so "0 new" still
+means done. The agent instructions say the same.
+
+**The fix and the proof.** In `src/surfaces/agent.ts`, `src/cli.ts`, `src/cli-flags.ts`, the skill and the README.
+On the bare ledger copy: the four classes that draw nothing come first, then Tailwind's default palette, then
+hard-coded values; "120 more" follows the tenth. `--top 3` shows three, `--top all` all 130, `--top x` says what it
+wants and exits 2.
+
+**Media hooks.** The first screen of `check --agent` before (file order) and after (ranked, ten, "120 more").
+
 ## Open gaps
 
 - The fixes of entry 81 (caret, app errors, broken config on Vite) are committed and not published. The site runs
@@ -7304,6 +7330,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
+- An agent running `plumber check --agent` gets the ten most urgent problems first and a count of the rest, instead of hundreds in file order. On main, not released ([entry](#132-an-agent-sees-the-ten-problems-that-matter-first-2026-11-24)).
 - A missing class is no longer swapped for an unrelated one: `animate-out` was offered as `animate-pulse`, with its variant written twice. On main, not released ([entry](#131-a-missing-class-is-no-longer-swapped-for-an-unrelated-one-2026-11-24)).
 - When plumber stops, the dock says so and why in plain words, counts down to its next try, offers Try now and says when it's back, instead of "Checking your project…" forever. It also tries again on its own. On main, not released ([entry](#130-plumber-says-when-it-has-stopped-and-starts-again-on-its-own-2026-11-24)).
 - An undo made while another write to the same files arrives goes back whole or not at all; it could stop halfway on a busy machine. On main, not released ([entry](#129-the-full-suite-before-080-and-an-undo-that-could-stop-halfway-2026-11-24)).

@@ -12,13 +12,21 @@ export const loopRules = [
 export const renderLoop = () => `## Rules for this loop\n\n${loopRules.map(rule => `- ${rule}`).join('\n')}\n`;
 // An agent reads this to change code, so every site gets a concrete instruction: the exact edit when one decision
 // fits, the edits to choose between (by their reasons) when several do, and NEEDS-DECISION when none is close.
-export function formatAgent(report: Report): string {
-  const findings = report.findings.map(finding => ({ finding, sites: newSites(finding) })).filter(f => f.sites.length);
+// The order is the cause list's (src/causes.ts), so an agent and a person see the same problem first: what draws
+// nothing, then what one edit settles, then a choice between tokens, then what needs a person; the most places first
+// within each. An agent works the top `top` groups, runs again, and the next ones come up.
+export const AGENT_TOP = 10;
+export function formatAgent(report: Report, top: number = AGENT_TOP): string {
+  const urgency = (f: Report['findings'][number]) => f.rule.startsWith('existence/') ? 0
+    : ['ledger', 'decisions'].includes(f.family) ? 3 : editChoices(f).length === 1 ? 1 : editChoices(f).length ? 2 : 3;
+  const all = report.findings.map(finding => ({ finding, sites: newSites(finding), urgency: urgency(finding) })).filter(f => f.sites.length)
+    .sort((a, b) => a.urgency - b.urgency || b.sites.length - a.sites.length);
+  const findings = all.slice(0, top);
   const where = (site: Site) => `${pathFor(report, site.file)}:${site.line}:${site.column}`;
   const sections = findings.map(({ finding, sites }, index) => {
     const candidates = editChoices(finding);
     const amount = finding.declaration.resolved ?? finding.declaration.value;
-    const lines = [`## ${index + 1} of ${findings.length}  ${finding.title || `${finding.declaration.prop}: ${amount}`}`, `Rule: ${finding.rule}`, `Why: ${finding.because || finding.why}`];
+    const lines = [`## ${index + 1} of ${all.length}  ${finding.title || `${finding.declaration.prop}: ${amount}`}`, `Rule: ${finding.rule}`, `Why: ${finding.because || finding.why}`];
     if (candidates.length) {
       lines.push('Tokens:', ...candidates.map(d => {
         // a class site is offered a class: the token's own utility, or the utility with the token as its value
@@ -47,7 +55,9 @@ export function formatAgent(report: Report): string {
     }
     return lines.join('\n');
   });
-  const diagnostics = findings.filter(f => ['ledger', 'decisions'].includes(f.finding.family)).reduce((n, f) => n + f.sites.length, 0);
-  const drift = report.ledger?.new ?? findings.filter(f => !['ledger', 'decisions'].includes(f.finding.family)).reduce((n, f) => n + f.sites.length, 0);
-  return `${drift + diagnostics} new\n\n${sections.join('\n\n')}${sections.length ? '\n\n' : ''}${renderLoop()}`;
+  const diagnostics = all.filter(f => ['ledger', 'decisions'].includes(f.finding.family)).reduce((n, f) => n + f.sites.length, 0);
+  const drift = report.ledger?.new ?? all.filter(f => !['ledger', 'decisions'].includes(f.finding.family)).reduce((n, f) => n + f.sites.length, 0);
+  const left = all.length - findings.length;
+  const more = left ? `## ${left} more\n\nThese are the first ${findings.length} of ${all.length}, the most urgent first. Fix them and run the same command again: the next ones come up. \`--top all\` lists every one.\n\n` : '';
+  return `${drift + diagnostics} new\n\n${sections.join('\n\n')}${sections.length ? '\n\n' : ''}${more}${renderLoop()}`;
 }
