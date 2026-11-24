@@ -5244,6 +5244,34 @@ got no finding, and the black one still did.
 
 **Media hooks.** None.
 
+### 116. A fix can't trip plumber's own lesser checks (2026-11-24)
+
+**The itch.** On our homepage, 0.6.0 offered "Use weight 800" for a weight the page barely used, and its own
+anti-slop check then said the words were set at an extra-heavy weight. Plumber contradicted itself.
+
+**How we found it.** Rebuilt the case on the ledger example: a page whose common weights are 400, 500 and 800, with
+lines at 700 that the weight check wants to move.
+
+**The system behind it.** Two things. Before offering a fix, plumber tries it and asks the rules again, but only the
+rules ranked above the fix. The extra-heavy check is advisory, ranked below, so it was never asked. And the weight
+check picked the nearest common weight even when that pushed lighter text up into 800 or 900.
+
+Fixing this turned up a mistake of mine in entry 110: to spot "page-wide" rules it looked for rules that read the
+page's counts, but rules like this weight check read those counts and still judge one element, so they had been left
+out of their own trials. Page-wide rules now carry their own mark, set where they are declared.
+
+**What we chose.** The trial also asks any rule, of any rank, that owns a property the fix changes (the fixing rule's
+own properties and what the fix sets); a finding woken there withdraws the fix. Asking every rule in every trial would
+be too slow on a big page, and a fix can only wake rules about what it changes. The weight check no longer moves text
+from below 800 up into 800 or 900 when the page has a common weight under 800.
+
+**The fix and the proof.** In `overlay/src/verdict.js`, `overlay/src/html-rules.js` and `overlay/src/craft-rules.js`.
+On the ledger probe: with only the trial change, the 700 line's fix came back as advice ("That would make it
+extra-heavy weight"); with the weight check's change too, it is offered as `font-medium` (500), and the advice for
+700s set without a class says "Use weight 500".
+
+**Media hooks.** None.
+
 ## Open gaps
 
 - **A shadow, motion or layout pick waiting in the X-ray card is still lost on a reload** ([entry 107](#107-changes-waiting-in-the-x-ray-card-survive-a-reload-2026-11-23)).
@@ -6933,6 +6961,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
+- Plumber no longer offers a fix that its own checks then flag ("Use weight 800", then "extra-heavy weight"): a fix is tried against every check about what it changes. On main, not released ([entry](#116-a-fix-cant-trip-plumbers-own-lesser-checks-2026-11-24)).
 - A page whose theme surface is white is no longer told its white is "outside your surface colour". On main, not released ([entry](#115-a-white-surface-is-not-outside-your-surface-colour-2026-11-24)).
 - Gradient and fill-coloured words are no longer read as grey or as zero contrast: plumber judges words in the ink they are drawn in. On main, not released ([entry](#114-words-are-judged-in-the-ink-they-are-drawn-in-2026-11-24)).
 - Setting up says what is true: after `plumber init`, plumber names the one step left (adding it to your dev server), the hooks diff prints a command you can run, and `init` says plainly what `--force` replaces. On main, not released ([entry](#113-three-setup-messages-say-what-is-true-2026-11-24)).

@@ -196,12 +196,13 @@ function verify(k, el, byId, rules, facts, theme, before) {
   // 2. quiet, and 3. nothing above it wakes: every rule run again on the page as the fix leaves it. A fix that doesn't
   // say what it sets can't be read that way: it is checked against the theme only, and says so in its proof
   const triable = Object.keys(sets).length > 0;
+  const touched = touchedBy(k, sets, rules);
   const after = facts.with(el, { sets, classes: list.join(' ') }, (virtual) => rules.flatMap((r) => {
-    if (r.id !== k.rule && !(edit.composed ?? []).includes(r.id) && !((r.tier ?? TIER.craft) < k.tier)) return [];
+    if (r.id !== k.rule && !(edit.composed ?? []).includes(r.id) && !((r.tier ?? TIER.craft) < k.tier) && !owned(r, touched)) return [];
     if (wholePage(r)) return [];
     try { return (r.check({ el, facts: virtual }, theme) ?? []).filter((f) => (f.confidence ?? 0) >= FLOOR).map((f) => ({ ...f, rule: r.id, tier: r.tier ?? TIER.craft })); } catch { return []; }
   }));
-  const woke = wokeBy(after, before, k, el, rules, facts, theme);
+  const woke = wokeBy(after, before, k, el, rules, facts, theme, edit.composed);
   if (woke) return withdraw(k, 'higher-tier', `That would make it ${woke.what?.toLowerCase() ?? 'worse'}.`, woke.rule);
   if (triable && after.some((f) => f.rule === k.rule || (edit.composed ?? []).includes(f.rule))) return withdraw(k, 'no-step', 'None of your steps settles it.');
   if (rewritten) setEdit(k, el, list, { ...edit, sets, rewritten: true });
@@ -214,8 +215,9 @@ function verifyToken(k, el, rules, facts, theme, before) {
   const edit = k.craft.suggest, sets = edit.target || edit.moves ? {} : edit.sets ?? {};
   const triable = Object.keys(sets).length > 0;
   if (triable) {
+    const touched = touchedBy(k, sets, rules);
     const after = facts.with(el, { sets }, (virtual) => rules.flatMap((r) => {
-      if (r.id !== k.rule && !((r.tier ?? TIER.craft) < k.tier)) return [];
+      if (r.id !== k.rule && !((r.tier ?? TIER.craft) < k.tier) && !owned(r, touched)) return [];
       if (wholePage(r)) return [];
       try { return (r.check({ el, facts: virtual }, theme) ?? []).filter((f) => (f.confidence ?? 0) >= FLOOR).map((f) => ({ ...f, rule: r.id, tier: r.tier ?? TIER.craft })); } catch { return []; }
     }));
@@ -231,12 +233,23 @@ function verifyToken(k, el, rules, facts, theme, before) {
 // A rule that speaks once for the whole page (no h1, a font with no font-display) can't be woken by one element's
 // classes, and can't be asked in the trial: the trial's page is the one element, so to such a rule that element is the
 // page's root and it answered for the whole page there (it withdrew a z-index fix as "a page with no main heading")
-const wholePage = (r) => (r.reads ?? []).includes('census');
+// (marked by pageWide in html-rules.js; reading the census alone is not it: a weight or grey rule reads the page's
+// counts but judges one element)
+const wholePage = (r) => r.page === true;
 // A higher-tier finding the fix would wake: one the page as it is doesn't have. The element's own marks are not enough
 // to say so: a page-wide rule (a font with no font-display) answers for every element but is marked once, on the page's
 // root, so it looked new after any fix and withdrew a z-index fix that had nothing to do with fonts (journey 110). A
 // finding counts as woken only when the same rule, asked the same way on the real page, is quiet.
-function wokeBy(after, before, k, el, rules, facts, theme) {
+// The properties a fix changes: what its own rule owns, and what the fix sets. A rule of any rank that owns one of them
+// is asked in the trial too: plumber offered "Use weight 800" for a weight the page barely uses, and its own tell then
+// said "Set at weight 800" (an extra-heavy weight); only rules ranked above the fix were asked (journey 116)
+const kebab = (p) => p.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
+function touchedBy(k, sets, rules) {
+  const own = rules.find((r) => r.id === k.rule)?.owns ?? [];
+  return new Set([...own, ...Object.keys(sets ?? {}).map(kebab)]);
+}
+const owned = (r, touched) => (r.owns ?? []).some((p) => touched.has(p));
+function wokeBy(after, before, k, el, rules, facts, theme, composed = []) {
   const was = new Set(before.map((m) => m.rule));
   const already = new Map();
   const firesNow = (id) => {
@@ -248,7 +261,7 @@ function wokeBy(after, before, k, el, rules, facts, theme) {
     }
     return already.get(id);
   };
-  return after.find((f) => f.tier < k.tier && !was.has(f.rule) && !firesNow(f.rule)) ?? null;
+  return after.find((f) => f.rule !== k.rule && !composed.includes(f.rule) && !was.has(f.rule) && !firesNow(f.rule)) ?? null;
 }
 
 function withdraw(k, whyNot, text, by) {

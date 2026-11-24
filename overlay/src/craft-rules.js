@@ -2510,7 +2510,10 @@ export const weightLevels = {
     if (c.share(w) > T.minority) return [];
     const majority = c.clusters.slice(0, 3).map((k) => k.value);
     if (majority.includes(w)) return [];
-    const near = majority.slice().sort((a, b) => Math.abs(a - w) - Math.abs(b - w))[0];
+    // never up into 800 or 900 from below them: plumber's own tell calls those extra-heavy (U19), and "Use weight 800" was
+    // its next finding (our homepage, 0.6.0). A common weight under 800 is the answer when the page has one
+    const under = majority.filter((m) => m < 800 || w >= 800);
+    const near = (under.length ? under : majority).slice().sort((a, b) => Math.abs(a - w) - Math.abs(b - w))[0];
     const cls = classesOf(el).split(/\s+/).find((k) => /^font-(thin|extralight|light|normal|medium|semibold|bold|extrabold|black|\[\d+\])$/.test(k));
     return [{
       ...say(this.id, { w, used: majority.sort((a, b) => a - b).join(', ') }),

@@ -42,7 +42,8 @@ export const isPage = (el, facts) => {
   return root === el;
 };
 // a check that speaks once for the whole page is judged with the census: again whenever the page has changed
-export const pageWide = (rule) => { rule.reads = [...(rule.reads ?? []), 'census']; return rule; };
+// (`page`: it speaks once for the whole page, on its root; a fix's trial leaves it out, verdict.js)
+export const pageWide = (rule) => { rule.reads = [...(rule.reads ?? []), 'census']; rule.page = true; return rule; };
 const PRESSABLE = 'a[href], button, input, select, textarea, summary, label, [role], [tabindex], [contenteditable]';
 const viewport = () => document.querySelector('meta[name="viewport"]')?.getAttribute('content') ?? null;
 const fold = () => window.innerHeight;
