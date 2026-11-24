@@ -5507,6 +5507,26 @@ ledger example, with a counting clock added for the check and taken out after: t
 
 **Media hooks.** The timer before and after `tabular-nums`, side by side as it counts.
 
+### 128. The design site's X-ray shows the Shadow row (2026-11-24)
+
+**The itch.** The design site's X-ray page is where people try the X-ray before installing. Its card had size, corner,
+gap, type and colour, but no Shadow row, which the product's card has had since entry 96.
+
+**How we found it.** From the backlog. The page runs the overlay's own X-ray module on a demo card, and the module
+shows a Shadow row only when it's given something that reads shadows. In the product, plumber's server does that
+reading. The demo page has no server, so the row never appeared.
+
+**What we chose.** The page already pretends a theme (its spacing and corner steps) and a server (Sync says where a
+change would be written). It now pretends a shadow set too, Tailwind's five shadows from `shadow-xs` to `shadow-xl`, read
+the way the product reads them. The shadow an element wears is found among them, or named by its numbers and marked
+hard-coded.
+
+**The fix and the proof.** In `web/design/parts/xray.js`, on the local design site: the team card's Shadow row says
+"hard-coded"; the picker lists the five shadows, each drawn as it looks; picking `shadow-md` puts it on the card with
+"1 change" waiting for Sync. The pick survived a reload, and Put back removed it.
+
+**Media hooks.** The card with the shadow picker open over the team card.
+
 ## Open gaps
 
 - The fixes of entry 81 (caret, app errors, broken config on Vite) are committed and not published. The site runs
@@ -7192,6 +7212,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
+- The design site's X-ray page shows the Shadow row: point at a card and pick one of the theme's shadows, as in the product. On main, not deployed ([entry](#128-the-design-sites-x-ray-shows-the-shadow-row-2026-11-24)).
 - A number that counts on its own (a timer, a live counter) is now told to use tabular figures, so it stops shifting as it changes. On main, not released ([entry](#127-a-number-that-ticks-is-told-to-keep-its-digits-one-width-2026-11-24)).
 - Double-clicking a button's words now tells you to hold Alt to edit them, instead of doing nothing. On main, not released ([entry](#126-a-double-click-on-a-buttons-words-says-how-to-edit-them-2026-11-24)).
 - Taking the shadow-level fixes ends the findings instead of starting new ones: levels a hair apart are told to take the page's most-used one, all at once. On main, not released ([entry](#125-shadow-levels-a-hair-apart-become-one-level-at-once-2026-11-24)).

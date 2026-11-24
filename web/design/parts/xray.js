@@ -15,6 +15,18 @@ const SCALE = {
   size: [[32, '8'], [36, '9'], [40, '10'], [48, '12'], [64, '16'], [80, '20'], [96, '24'], [128, '32'], [160, '40'], [192, '48'], [224, '56'], [256, '64'], [288, '72'], [320, '80'], [384, '96'], [448, 'md'], [512, 'lg'], [576, 'xl'], [672, '2xl']],
   type: [[12, 'xs'], [14, 'sm'], [16, 'base'], [18, 'lg'], [20, 'xl'], [24, '2xl']],
 };
+// someone's shadows (Tailwind's), lightest first: the Shadow row offers these, each drawn as it looks
+const SHADOWS = [
+  ['shadow-xs', '0 1px 2px 0 rgb(0 0 0 / 0.05)'],
+  ['shadow-sm', '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)'],
+  ['shadow-md', '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)'],
+  ['shadow-lg', '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)'],
+  ['shadow-xl', '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)'],
+];
+// a shadow as the browser draws it, so the one an element wears can be found among them
+const drawn = (v) => { const i = document.createElement('i'); i.style.cssText = `position:absolute;visibility:hidden;box-shadow:${v}`; document.body.append(i); try { return getComputedStyle(i).boxShadow; } finally { i.remove(); } };
+// a shadow with no token, named by its first layer's lengths ("0 1px 2px")
+const short = (v) => v.replace(/(?:rgba?|oklch|oklab|color|hsla?)\([^)]*\)|#[0-9a-f]+/gi, '').split(',')[0].trim().split(/\s+/).slice(0, 3).join(' ').replace(/\b0px\b/g, '0');
 const tokenOf = (family, n) => SCALE[family]?.find(([v]) => Math.abs(v - n) <= 0.5 || (v === 9999 && n > 500))?.[1] ?? null;
 
 // each part of the card: the name its code gives it, and the line it's written on
@@ -126,6 +138,21 @@ export function mount(host, root, css) {
     component: (el) => { const c = compOf(el); return c && { name: c[0], file: c[1], uses: USES[el.dataset.x] }; },
     everywhere: (el) => { const c = compOf(el); return [...stage.querySelectorAll('.app [data-x], .app[data-x]')].filter((t) => { const n = NAMES[t.dataset.x]; return n && n[0] === c[0] && n[1] === c[1]; }); },
     tokenOf, scale: (f) => SCALE[f],
+    // the pretend recipe engine: someone's shadows, and the one the element wears among them or as written by hand
+    recipes: {
+      shadow: {
+        read: async (el, lifted) => {
+          const css = lifted(() => getComputedStyle(el).boxShadow);
+          const options = SHADOWS.map(([name, value], i) => ({ name, v: i + 1, recipe: `--${name}`, value, css: drawn(value) }));
+          let now = css === 'none' ? null : options.find((x) => x.css === css);
+          if (!now) {
+            now = css === 'none' ? { name: 'None', v: 0, none: true, css: '' } : { name: short(css), hard: true, v: 0, css };
+            options.splice(now.none ? 0 : options.length, 0, now);
+          }
+          return { options, start: options.indexOf(now), mates: [...parts(el.dataset.x)] };
+        },
+      },
+    },
     isPage: (r) => !!(r.target.closest?.('.app') || [...r.addedNodes, ...r.removedNodes].some((n) => n.nodeType === 1 && n.matches?.('.app'))),
     // the pretend server: where each change would be written, and what it says when it can't be
     write: async (groups) => groups.map((g) => {
