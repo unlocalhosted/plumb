@@ -5272,6 +5272,24 @@ extra-heavy weight"); with the weight check's change too, it is offered as `font
 
 **Media hooks.** None.
 
+### 117. A carousel's track is not told to wrap (2026-11-24)
+
+**The itch.** On our homepage, 0.6.0 told the examples carousel's track to add `flex-wrap`, though running past its row
+is the point of a carousel.
+
+**How we found it.** Read the wrap check: it lets a row be when the row itself scrolls ("a row set to scroll is a
+choice"). A carousel's track doesn't scroll itself. It sits in a viewport that scrolls or clips it.
+
+**The system behind it.** The check looked at the row alone, so the choice made one level up was invisible to it.
+
+**What we chose.** The same principle, one to three levels up: a row wider than a parent that scrolls or clips
+sideways is left alone.
+
+**The fix and the proof.** In `overlay/src/craft-rules.js`. On the ledger example, a six-card track (1040px) inside a
+320px sideways scroller got no finding, and the same kind of row with no scroller round it was still told to wrap.
+
+**Media hooks.** None.
+
 ## Open gaps
 
 - **A shadow, motion or layout pick waiting in the X-ray card is still lost on a reload** ([entry 107](#107-changes-waiting-in-the-x-ray-card-survive-a-reload-2026-11-23)).
@@ -6961,6 +6979,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
+- A carousel's track inside a sideways scroller is no longer told to wrap. On main, not released ([entry](#117-a-carousels-track-is-not-told-to-wrap-2026-11-24)).
 - Plumber no longer offers a fix that its own checks then flag ("Use weight 800", then "extra-heavy weight"): a fix is tried against every check about what it changes. On main, not released ([entry](#116-a-fix-cant-trip-plumbers-own-lesser-checks-2026-11-24)).
 - A page whose theme surface is white is no longer told its white is "outside your surface colour". On main, not released ([entry](#115-a-white-surface-is-not-outside-your-surface-colour-2026-11-24)).
 - Gradient and fill-coloured words are no longer read as grey or as zero contrast: plumber judges words in the ink they are drawn in. On main, not released ([entry](#114-words-are-judged-in-the-ink-they-are-drawn-in-2026-11-24)).

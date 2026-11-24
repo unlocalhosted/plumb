@@ -1539,6 +1539,11 @@ export const listWrap = {
     const s = facts.style(el);
     if (!/flex/.test(s.display) || /column/.test(s.flexDirection) || s.flexWrap !== 'nowrap') return [];
     if (s.overflowX !== 'visible' || el.closest('[aria-hidden="true"]')) return []; // a row set to scroll is a choice
+    // so is a row inside a sideways scroller or a clipping viewport just above it, wider than that viewport: a carousel's
+    // track (the homepage's examples were told to wrap, 0.6.0)
+    for (let p = el.parentElement, d = 0; p && d < 3; p = p.parentElement, d++) {
+      if (facts.style(p).overflowX !== 'visible' && el.scrollWidth > p.clientWidth + 1) return [];
+    }
     // `flex-nowrap` written out, overriding a wrap, is the author's decision for this row
     if (/(?:^|\s)!?flex-nowrap!?(?:\s|$)/.test(classesOf(el))) return [];
     if (el.matches('[role="tablist"], [role="toolbar"], [role="menubar"], [role="radiogroup"]')) return [];
