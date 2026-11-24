@@ -167,7 +167,11 @@ export const CRAFT = {
     line: caps ? `${px(size)} capitals with no letter spacing.` : `${px(size)} text with extra letter spacing.`,
     reason: 'Small capitals need a little more space. Big text needs a little less.',
   }),
-  'tabular-nums': () => ({
+  'tabular-nums': ({ ticking } = {}) => (ticking ? {
+    label: 'Number jitters as it changes',
+    line: 'Each digit here is a different width, so the number shifts every time it changes.',
+    reason: 'Tabular numbers make every digit the same width.',
+  } : {
     label: 'Numbers don’t line up',
     line: 'Each digit here is a different width, so the column wobbles.',
     reason: 'Tabular numbers make every digit the same width.',

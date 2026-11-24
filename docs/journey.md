@@ -5482,10 +5482,33 @@ double-click on the "Start now" button showed the note under it, in the same tag
 
 **Media hooks.** The note under "Start now".
 
+### 127. A number that ticks is told to keep its digits one width (2026-11-24)
+
+**The itch.** Choosing the fault for launch film 2 (entry 88), the first idea was a running timer whose digits jiggle
+as it counts. Plumber didn't flag it. The tabular-figures check only looked at numbers stacked in a table or down a
+list, so a lone timer, a live counter or a price that updates got no word.
+
+**How we found it.** From the backlog, and the showcase's own timer screen, which keeps its wobble after its fix.
+
+**The system behind it.** The check read only the page's shape (rows and cells). A number that changes in place can't
+be told by its shape: "1:18:46" on its own could be a clock that ticks or a time that never moves. What tells them
+apart is what the page does with it over time.
+
+**What we chose.** Plumber already watches the page's changes, to keep from judging things that move every frame. It
+now also counts how often an element's own words are rewritten. A number whose words changed at least twice while
+plumber watched, or that sits in an element marked `role="timer"`, gets the same fix as a column of figures, with its
+own words: "Each digit here is a different width, so the number shifts every time it changes." A time that never
+changes isn't flagged. The page's first read can miss a timer that hasn't ticked yet. The next change to the timer
+reads it again, so it shows up a second or two later.
+
+**The fix and the proof.** In `overlay/src/live.js`, `overlay/src/craft-rules.js` and `overlay/src/words.js`. On the
+ledger example, with a counting clock added for the check and taken out after: the craft read named the clock
+("1:19:34") with the new words and the `tabular-nums` fix. No other finding changed (73 in all).
+
+**Media hooks.** The timer before and after `tabular-nums`, side by side as it counts.
+
 ## Open gaps
 
-- **A lone ticking number isn't flagged.** The tabular figures check reads only cells and list rows, so the showcase's
-  own running timer keeps its wobble after the fix (entry 88).
 - The fixes of entry 81 (caret, app errors, broken config on Vite) are committed and not published. The site runs
   0.6.0 from npm, so it still has all three bugs.
 - The release gate of entry 85 guards Chromium only: Safari and Firefox aren't in it. On a Mac `npm test` refuses to
@@ -7169,6 +7192,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
+- A number that counts on its own (a timer, a live counter) is now told to use tabular figures, so it stops shifting as it changes. On main, not released ([entry](#127-a-number-that-ticks-is-told-to-keep-its-digits-one-width-2026-11-24)).
 - Double-clicking a button's words now tells you to hold Alt to edit them, instead of doing nothing. On main, not released ([entry](#126-a-double-click-on-a-buttons-words-says-how-to-edit-them-2026-11-24)).
 - Taking the shadow-level fixes ends the findings instead of starting new ones: levels a hair apart are told to take the page's most-used one, all at once. On main, not released ([entry](#125-shadow-levels-a-hair-apart-become-one-level-at-once-2026-11-24)).
 - A drag in the X-ray keeps its change when you let go: the release no longer selects what's underneath, and letting go of Alt keeps the card open while changes wait. On main, not released ([entry](#124-a-drag-keeps-its-change-when-you-let-go-2026-11-24)).

@@ -14,6 +14,8 @@
  *             so until it has been quiet for REST ms
  *  isLive(el) el is moving: it is, or sits inside, something animating or churning, or it holds an animation that
  *             will end. A walk up its ancestors against sets: no per-animation work per element
+ *  ticks(el)  how many times el's own words were rewritten while watched: a clock, a counter, a price that updates. A
+ *             number that changes in place wobbles unless its digits are all one width (craft #16)
  *  quiet(records)  the mutation records that are not motion: the ones a reader should act on
  *  handsBusy()  the person is scrolling or typing (an input within HANDS ms): plumber's heavy work waits
  *  whenIdle(fn) runs fn once the hands have been still for HANDS ms, in the browser's idle time (at most IDLE ms
@@ -28,6 +30,7 @@ let moves = new Set();   // targets of running animations: they and everything i
 let holds = new Set();   // ancestors of an animation that will end: they wait for it, judged at rest
 let loops = new Set();   // targets of animations that never end (a spinner, a pulsing dot): never at rest
 const churn = new Map(); // element → { times: [ms], until: ms }
+const rewrites = new WeakMap(); // element → how many times its own words were rewritten
 let watching = false;
 
 function readAnimations(now) {
@@ -52,6 +55,7 @@ function watch() {
     for (const r of records) {
       const el = r.target instanceof Element ? r.target : r.target.parentElement;
       if (!el || el.closest('plumb-overlay, [data-plumb-layer]')) continue;
+      if (r.type === 'characterData' || (r.type === 'childList' && [...r.addedNodes].some((n) => n.nodeType === 3))) rewrites.set(el, (rewrites.get(el) ?? 0) + 1);
       let c = churn.get(el);
       if (!c) churn.set(el, (c = { times: [], until: 0 }));
       c.times.push(now);
@@ -102,6 +106,9 @@ export function quiet(records) {
     return true;
   });
 }
+
+/** How many times el's own words were rewritten since plumber started watching (0 off the page's browser). */
+export function ticks(el) { watch(); return rewrites.get(el) ?? 0; }
 
 /** Start watching early, so motion is known before it is asked about. */
 export const startLive = () => watch();

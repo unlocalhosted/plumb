@@ -60,6 +60,7 @@
 import { rgb, inkCss, utility, classesOf, elevation, COLOUR } from './craft-read.js';
 import { TIER } from './craft-facets.js';
 import { say } from './words.js';
+import { ticks } from './live.js';
 import { controlAround, controlKind, roleOf } from './roles.js';
 import { RUN_RULES } from './craft-headless.js';
 import { RANK_RULES } from './craft-ranks.js';
@@ -787,20 +788,24 @@ export const tracking = {
   },
 };
 
-// #16. Tabular numbers where numbers line up: a column of figures in a table, or down the rows of a list.
+// #16. Tabular numbers where numbers line up: a column of figures in a table, or down the rows of a list, and a
+// number that changes in place (a running timer, a live counter), whose width jumps with every tick in proportional figures.
 export const tabularNums = {
   id: 'craft/tabular-nums', family: 'craft', number: [16], owns: ['font-features'], once: 'ancestor', reads: ['style', 'text'],
   check({ el, facts }, theme) {
     const T = theme.spec(this.id);
     const cell = el.matches('td, th, [role="cell"], [role="gridcell"]');
+    // a number that ticks: the page rewrote its words while plumber watched, or it says it is a timer
+    const ticking = !cell && !el.children.length && (ticks(el) >= 2 || !!el.closest('[role="timer"]'));
     // a figure on its own in a row of a list (a timesheet's durations, an order list's totals) stacks just like a cell
-    if (!cell && (el.children.length || !el.closest('li, [role="listitem"]'))) return [];
+    if (!cell && !ticking && (el.children.length || !el.closest('li, [role="listitem"]'))) return [];
     const text = words(el);
     if (!/^[\s$€£¥₹+\-−–.,:%()\d]+$/.test(text) || (text.match(/\d/g) ?? []).length < 2) return [];
+    // a figure that stacks needs enough rows to stack in; one that ticks wobbles on its own
     if (cell) {
       const table = el.closest('table, [role="table"], [role="grid"]');
       if (!table || rowsOf(facts, table) < T.rows) return [];
-    } else {
+    } else if (!ticking) {
       const list = el.closest('li, [role="listitem"]').parentElement;
       if (!list || list.children.length < T.rows) return [];
     }
@@ -808,9 +813,9 @@ export const tabularNums = {
     if (/tabular-nums/.test(s.fontVariantNumeric) || /"tnum"/.test(s.fontFeatureSettings)) return [];
     if (/mono/i.test(s.fontFamily)) return [];
     return [{
-      ...say(this.id, {}),
+      ...say(this.id, { ticking }),
       key: this.id, text: 'font-variant-numeric', props: ['font-variant-numeric'], value: s.fontVariantNumeric, n: 0,
-      evidence: { text }, confidence: 0.88,
+      evidence: { text, ticking }, confidence: 0.88,
       suggest: { kind: 'class', from: '', to: 'tabular-nums', why: 'every digit the same width', sets: { fontVariantNumeric: 'tabular-nums' } },
     }];
   },
