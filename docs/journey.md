@@ -5400,9 +5400,29 @@ back out of the file.
 
 **Media hooks.** The `.row` rule before and after, and the bar's "Use column-gap: 8px".
 
+### 123. A shadow, motion or layout pick survives a reload too (2026-11-24)
+
+**The itch.** Since entry 107, sizes and spacing waiting in the X-ray card survive a reload; a shadow, a motion or a
+layout picked there was still lost.
+
+**How we found it.** Left open in entry 107, on purpose: a pick held the element it was made on, which a reload
+replaces.
+
+**The system behind it.** The element was only a convenience: when a pick is written, the writer already falls back
+to the element at the change's place in the code (`xray-recipes.js`).
+
+**What we chose.** A pick is kept without its element, and worn again on reload by its own recipe (a shadow is put
+back on, a layout is shown by the adapter). A pick whose spec can't be kept as data is left out alone, so it can never
+cost the sizes and spacing around it.
+
+**The fix and the proof.** In `overlay/src/xray-live.js`. On the ledger example: picked `shadow-rest` for the logo in
+the card, reloaded; the logo wore the shadow again and the card said "1 change · Sync ↵"; Sync wrote
+`className="font-bold shadow-rest"`. Motion and layout picks take the same path but weren't tried by hand.
+
+**Media hooks.** None.
+
 ## Open gaps
 
-- **A shadow, motion or layout pick waiting in the X-ray card is still lost on a reload** ([entry 107](#107-changes-waiting-in-the-x-ray-card-survive-a-reload-2026-11-23)).
 - **A lone ticking number isn't flagged.** The tabular figures check reads only cells and list rows, so the showcase's
   own running timer keeps its wobble after the fix (entry 88).
 - The fixes of entry 81 (caret, app errors, broken config on Vite) are committed and not published. The site runs
@@ -7089,6 +7109,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
+- A shadow, motion or layout picked in the X-ray card survives a reload, like sizes and spacing do. On main, not released ([entry](#123-a-shadow-motion-or-layout-pick-survives-a-reload-too-2026-11-24)).
 - On a page styled with plain CSS, the fix bar writes its fixes into your stylesheet (`column-gap: 8px` in `.row`) instead of adding Tailwind classes that do nothing there, and Undo takes them back. On main, not released ([entry](#122-the-fix-bar-writes-into-plain-stylesheets-2026-11-24)).
 - Plumber says "hard-coded" and "off your tokens" everywhere it used to say "typed by hand" and "off the scale". On main, not released ([entry](#121-plumber-says-hard-coded-and-your-tokens-everywhere-2026-11-24)).
 - The fix bar no longer flashes "can't write this change" before offering a fix it can write. On main, not released ([entry](#120-the-fix-bar-stops-refusing-a-fix-it-is-about-to-offer-2026-11-24)).

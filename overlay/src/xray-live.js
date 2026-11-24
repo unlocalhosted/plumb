@@ -511,7 +511,8 @@ export function mountXray(o) {
   const markKeys = () => { o.root?.host?.toggleAttribute?.('data-xr-keys', !!count() && !o.paused?.()); keep(); };
   // Changes waiting to sync outlive a reload (a write elsewhere reloads the page; they were lost with it, journey 107):
   // kept for this tab by their place in the code, and drawn again on that page when the X-ray starts. A shadow, motion
-  // or layout pick holds the element it was made on, so only plain properties are kept
+  // or layout pick is kept without the element it was made on (its write falls back to the element at its place,
+  // xray-recipes.js), and worn again by its recipe
   const KEPT = 'plumber:xray-changes';
   // the X-ray ending (Blueprint left, by the person or by plumber's own re-read) takes the changes off the page but
   // keeps them: only Sync and Put back end them
@@ -519,16 +520,30 @@ export function mountXray(o) {
   const keep = () => {
     if (ending) return;
     try {
-      const list = [...changes].filter(([k]) => !loose.has(k)).flatMap(([k, m]) => [...m].filter(([p]) => !RECIPES[p]).map(([p, c]) => [k, p, c.before, c.value, c.scope, c.step ?? null]));
+      // a pick that can't be kept as data (its spec holds something live) is left out alone, never the whole list
+      const bare = (pick) => { if (!pick) return null; try { return JSON.parse(JSON.stringify(Object.fromEntries(Object.entries(pick).filter(([key]) => key !== 'el')))); } catch { return undefined; } };
+      const list = [...changes].filter(([k]) => !loose.has(k)).flatMap(([k, m]) => [...m].flatMap(([p, c]) => { const pick = bare(c.pick); return RECIPES[p] && pick === undefined ? [] : [[k, p, c.before, c.value, c.scope, c.step ?? null, pick ?? null]]; }));
       if (list.length) sessionStorage.setItem(KEPT, JSON.stringify({ path: location.pathname, list })); else sessionStorage.removeItem(KEPT);
     } catch { /* storage refused: the changes live on the page only, as before */ }
   };
   // drawn on whichever of their places the page has now; a place rendered later is drawn by the next pass
-  const redraw = () => { for (const [k, m] of changes) { const el = elOf(k); if (el) for (const [p, c] of m) if (!RECIPES[p] && el.style.getPropertyValue(p) !== c.value) el.style.setProperty(p, c.value); } refresh(); };
+  const redraw = () => {
+    for (const [k, m] of changes) {
+      const el = elOf(k);
+      if (el) for (const [p, c] of m) {
+        if (!RECIPES[p]) { if (el.style.getPropertyValue(p) !== c.value) el.style.setProperty(p, c.value); continue; }
+        // a recipe is worn once on the element the page has now
+        if (c.worn === el) continue;
+        if (c.pick) c.pick.el = el;
+        try { RECIPES[p].wear?.(el, null, c, o); c.worn = el; } catch { /* worn on the next pass, when the element is ready */ }
+      }
+    }
+    refresh();
+  };
   const restore = () => {
     let saved = null; try { saved = JSON.parse(sessionStorage.getItem(KEPT) ?? 'null'); } catch { /* unreadable: nothing kept */ }
     if (!saved?.list?.length || saved.path !== location.pathname) return;
-    for (const [k, p, before, value, scope, step] of saved.list) { if (!changes.has(k)) changes.set(k, new Map()); changes.get(k).set(p, { before, value, scope, step }); }
+    for (const [k, p, before, value, scope, step, pick] of saved.list) { if (!changes.has(k)) changes.set(k, new Map()); changes.get(k).set(p, { before, value, scope, step, ...(pick ? { pick } : {}) }); }
     redraw(); life.timeout(redraw, 600); life.timeout(redraw, 2000);
     markKeys();
   };
