@@ -169,8 +169,8 @@ export const XRAY_LIVE_CSS = `
     background: var(--pl-text-primary); color: var(--pl-bg-surface); font: 600 12px/1 var(--pl-mono); font-variant-numeric: tabular-nums; box-shadow: 0 6px 16px -6px rgb(0 0 0 / .4); }
   .xr-live[hidden] { display: none; }
   .xr-live .x { font: 600 11px/1 var(--pl-sans); opacity: .7; padding-right: 4px; }
-  .xr-live b { font-family: var(--pl-sans); } .xr-live i { font: 700 11px/1 var(--pl-sans); font-style: normal; padding: 4px 7px; border-radius: 99px; background: var(--pl-on); color: #fff; }
-  .xr-live i.off { background: var(--pl-off); }
+  .xr-live b { font-family: var(--pl-sans); } .xr-live i { font: 700 11px/1 var(--pl-sans); font-style: normal; padding: 4px 7px; border-radius: 99px; background: var(--pl-on); color: var(--pl-mint-on); }
+  .xr-live i.off { background: var(--pl-off); color: var(--pl-coral-on); }
   /* a list, from a click on a number: your sizes in order */
   .xr-list { position: absolute; z-index: 9; display: grid; padding: 4px; min-width: 120px; max-height: 240px; overflow: auto; border-radius: 12px; background: var(--pl-bg-surface); box-shadow: var(--pl-shadow-card); animation: pl-pop 200ms var(--pl-spring-pop) both; }
   .xr-list button { display: flex; justify-content: space-between; gap: 12px; padding: 6px 8px; border: 0; border-radius: 8px; background: none; font: 600 12px/1 var(--pl-sans); color: var(--pl-text-primary); cursor: pointer; }
@@ -217,9 +217,9 @@ export const XRAY_LIVE_CSS = `
   .xr-res .rx { width: 22px; height: 22px; border: 0; border-radius: 7px; background: none; color: var(--xr-label); cursor: pointer; font-size: 15px; line-height: 1; }
   .xr-res .rr { display: grid; grid-template-columns: 20px 1fr auto; gap: 8px; align-items: start; padding: 7px 6px; border-radius: 9px; background: var(--pl-bg-surface); font: 500 12px/16px var(--pl-sans); }
   .xr-res .rr + .rr { margin-top: 4px; }
-  .xr-res .rr > i { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 99px; font: 800 11px/1 var(--pl-sans); font-style: normal; color: #fff; background: var(--pl-on); }
-  .xr-res .rr[data-state="moved"] > i { background: color-mix(in oklab, var(--pl-butter) 80%, var(--pl-butter-ink)); }
-  .xr-res .rr[data-state="failed"] > i { background: var(--pl-off); }
+  .xr-res .rr > i { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 99px; font: 800 11px/1 var(--pl-sans); font-style: normal; color: var(--pl-mint-on); background: var(--pl-on); }
+  .xr-res .rr[data-state="moved"] > i { background: var(--pl-butter); color: var(--pl-butter-on); }
+  .xr-res .rr[data-state="failed"] > i { background: var(--pl-off); color: var(--pl-coral-on); }
   .xr-res .rr[data-state="undone"] > i { background: var(--pl-icon-tick, #aaa); }
   .xr-res .rr b { font: 600 12px/16px var(--pl-mono); }
   .xr-res .rr span { display: block; margin-top: 2px; color: var(--xr-label); font: 500 11px/15px var(--pl-mono); word-break: break-word; }
@@ -281,7 +281,7 @@ export const XRAY_LIVE_CSS = `
   .xr-note[data-done] textarea { opacity: .5; }
   .xr-note .done { display: none; align-items: center; gap: 6px; color: var(--pl-mint-ink); font-weight: 700; }
   .xr-note[data-done] .done { display: inline-flex; } .xr-note[data-done] .keys { display: none; }
-  .xr-note .done i { display: grid; place-items: center; width: 18px; height: 18px; border-radius: 99px; background: var(--pl-mint); color: #fff; font-style: normal; font-size: 11px; }
+  .xr-note .done i { display: grid; place-items: center; width: 18px; height: 18px; border-radius: 99px; background: var(--pl-mint); color: var(--pl-mint-on); font-style: normal; font-size: 11px; }
 `;
 
 const PAIR = { top: 'bottom', bottom: 'top', left: 'right', right: 'left' }, LINKS = ['one', 'pair', 'all'], SIZINGS = ['fixed', 'fill', 'fit'];

@@ -5309,6 +5309,29 @@ again: the card closed.
 
 **Media hooks.** None.
 
+### 119. The X-ray's pills can be read in the dark scheme (2026-11-24)
+
+**The itch.** In the dark scheme the X-ray's size pills were white and empty (seen 2026-11-23).
+
+**How we found it.** Read the pill's style: a fill of `--pl-sky-ink` with its words written as `#fff` by hand. In the
+dark scheme the ink turns white, so the words were white on white.
+
+**The system behind it.** The project's rule is that words on a hue take `--pl-<hue>-on`, and every pairing is in
+`overlay/src/pairs.js`, checked in both schemes by `npm run contrast`. The pills broke it, and so did four other
+small things in the X-ray: the held chip in the card, the live value pill and its off-scale form, the Sync result
+dots, and the note's done tick, all with white written by hand on a hue that turns light at night.
+
+**What we chose.** The size pills use the pairing the system already names for pills: the hue's pale, lettered in
+its ink. That changes them in light mode too, from a deep fill to a pale one; a new "ink body" pairing would have kept
+the old light look, but the design page has no such piece. The other five keep their hue bodies and take the hue's
+`-on` for their words.
+
+**The fix and the proof.** In `overlay/src/xray.js` and `overlay/src/xray-live.js`; `npm run contrast`: 76 of 76
+pairs pass. Read off the page in plumber's own layer: the sky, coral and mint pills are about 4.7:1 in the dark scheme
+(they were 1:1) and about 9.8:1 in light.
+
+**Media hooks.** A size pill in light and dark, before and after.
+
 ## Open gaps
 
 - **A shadow, motion or layout pick waiting in the X-ray card is still lost on a reload** ([entry 107](#107-changes-waiting-in-the-x-ray-card-survive-a-reload-2026-11-23)).
@@ -6998,6 +7021,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
+- The X-ray's size pills and its other small badges can be read in the dark scheme (they were white on white). On main, not released ([entry](#119-the-x-rays-pills-can-be-read-in-the-dark-scheme-2026-11-24)).
 - In the X-ray card, the first Esc puts your changes back and the second closes the card, instead of one press doing both. On main, not released ([entry](#118-one-esc-one-thing-in-the-x-ray-card-2026-11-24)).
 - A carousel's track inside a sideways scroller is no longer told to wrap. On main, not released ([entry](#117-a-carousels-track-is-not-told-to-wrap-2026-11-24)).
 - Plumber no longer offers a fix that its own checks then flag ("Use weight 800", then "extra-heavy weight"): a fix is tried against every check about what it changes. On main, not released ([entry](#116-a-fix-cant-trip-plumbers-own-lesser-checks-2026-11-24)).

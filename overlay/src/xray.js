@@ -45,7 +45,9 @@ export const XRAY_CSS = `
   .xr-say i.on { background: var(--pl-mint-soft); color: var(--pl-mint-ink); } .xr-say i.off { background: var(--pl-coral-soft); color: var(--pl-coral-ink); }
   .xr-say kbd { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 3px; border-radius: 6px; font: 600 11px/1 var(--pl-sans); background: var(--pl-bg-inset); box-shadow: inset 0 -1px 0 var(--pl-border-default), 0 0 0 1px var(--pl-border-default); }
   .xr .ruler { font: 600 10.5px/1 var(--pl-mono); font-variant-numeric: tabular-nums; }
-  .xr .ruler-pill { position: absolute; translate: -50% -50%; padding: 3px 6px; border-radius: 99px; background: var(--pl-sky-ink); color: #fff;
+  /* a pill: a hue's pale, lettered in its ink (pairs.js). Deep ink with white words by hand turned white on white in the
+     dark scheme, where the ink is white */
+  .xr .ruler-pill { position: absolute; translate: -50% -50%; padding: 3px 6px; border-radius: 99px; background: var(--pl-sky-soft); color: var(--pl-sky-ink);
     font: 600 10.5px/1 var(--pl-mono); font-variant-numeric: tabular-nums; white-space: nowrap; box-shadow: 0 0 0 2px var(--pl-bg-surface); animation: pl-pop 260ms var(--pl-spring-pop) 80ms both; }
 
   /* the card: paper, lifted, travelling to its element on the overlay's spring */
@@ -101,8 +103,8 @@ export const XRAY_CSS = `
   .xr-card .ch { cursor: ew-resize; touch-action: none; user-select: none; -webkit-user-select: none; transition: background-color 140ms var(--pl-ease-out), box-shadow 140ms var(--pl-ease-out), scale 220ms var(--pl-spring-pop); }
   .xr-card .ch.n { display: inline-grid; place-items: center; min-width: 28px; height: 22px; padding: 0 6px; border-radius: 7px; background: var(--pl-bg-inset); box-shadow: inset 0 -1px 0 var(--pl-border-default); }
   .xr-card .ch:hover { background: var(--pl-sky-soft); scale: 1.06; }
-  .xr-card .ch[data-held] { background: var(--pl-sky); color: #fff; scale: 1.1; }
-  .xr-card .ch[data-held] i { color: #fff; }
+  .xr-card .ch[data-held] { background: var(--pl-sky); color: var(--pl-sky-on); scale: 1.1; }
+  .xr-card .ch[data-held] i { color: var(--pl-sky-on); }
   .xr-card .ch[data-changed]:not([data-held]) { box-shadow: 0 0 0 1.5px var(--pl-pink); }
   .xr-chip { display: inline-grid; place-items: center; width: 30px; height: 20px; border-radius: 6px; font-size: 12px; line-height: 1; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .12); }
   .xr-sw { display: inline-block; width: 16px; height: 16px; border-radius: 5px; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .14); vertical-align: -3px; }
@@ -276,7 +278,7 @@ export function xray(el, { shadow = null, motion = null, layout = null, tokenOf,
   for (const lz of lit) { const lj = judge(lz.family, lz.n), hue = BLOCK[blockOf(lz)]; draw += `<rect class="xr-zone" x="${r1(lz.x - origin.left)}" y="${r1(lz.y - origin.top)}" width="${r1(lz.w)}" height="${r1(lz.h)}" rx="2" fill="${blockOf(lz) === 'type' ? 'none' : tintOf(hue, 24)}" stroke="${lj.off ? 'var(--pl-off)' : hue}" stroke-width="2"${lj.off ? ' stroke-dasharray="4 3"' : ''}/>`; }
   const wSz = sizing(el, cs, 'w'), hSz = sizing(el, cs, 'h');
   // the rulers' numbers carry their verdict too: deep coral off your sizes, deep mint on one (with its name)
-  const sz = (n) => { const v = judge('size', n); return v.off ? 'background:var(--pl-coral-ink)' : v.on ? 'background:var(--pl-mint-ink)' : ''; };
+  const sz = (n) => { const v = judge('size', n); return v.off ? 'background:var(--pl-coral-soft);color:var(--pl-coral-ink)' : v.on ? 'background:var(--pl-mint-soft);color:var(--pl-mint-ink)' : ''; };
   const named = (txt, n) => { const v = judge('size', n); return v.on ? `${txt} · ${v.t}` : txt; };
   // one pill on the page at a time: the part pointed at says itself and nothing else does; at rest the size pills
   // show only on an element big enough to carry them clear of itself and its neighbours (the card has the size)

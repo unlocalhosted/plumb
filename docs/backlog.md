@@ -147,7 +147,6 @@ reserved.)
 
 ### Blueprint
 
-- **In the dark scheme the X-ray's ruler pills are white and empty** (seen 2026-11-23).
 - **The design site's X-ray page doesn't show the Shadow row**: it has no recipe engine to read from.
 - A section that lives in its own file is not counted until it mounts: its problems join the count only once it is
   scrolled into view. (A test used to pin this as expected; it was removed on 2026-11-12 so fixing it fails nothing.)
