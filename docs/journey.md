@@ -5358,7 +5358,7 @@ Use and two were advice. How many of the eight were the slow kind isn't known.
 **The itch.** The overlay still said "off the scale" and "typed by hand" where the owner's words are "off your tokens"
 and "hard-coded" (seen on the design pages, which draw the product's own strings).
 
-**How we found it.** Searched the overlay for both phrases and kept only words a person sees: 19 places, in the X-ray
+**How we found it.** Searched the overlay for both phrases and kept only words a person sees: 22 places, in the X-ray
 (its size pills and live value), the size staircase's hover note, the gravity plot and its table, the size specimen,
 the onboarding lesson and the system review page. "List typed by hand" stays: it means a list faked with lines,
 which is another thing.
@@ -5369,7 +5369,7 @@ own.
 **What we chose.** "Hard-coded" for a value written in place of a token, "one of your tokens" and "off your tokens"
 for where a value stands. Code comments keep their old words; they are not read by the person.
 
-**The fix and the proof.** In nine overlay files. A search for both phrases in user-facing strings finds none left.
+**The fix and the proof.** In seven overlay files. A search for both phrases in user-facing strings finds none left.
 
 **Media hooks.** None.
 
