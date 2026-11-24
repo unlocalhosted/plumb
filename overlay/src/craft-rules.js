@@ -2599,10 +2599,15 @@ export const elevationLadder = {
     if (c.sample < T.sample) return [];
     const own = c.clusters.find((k) => k.members.includes(el));
     if (!own) return [];
-    // the level it crowds: one the page uses more, closer than a step
-    const near = c.clusters.filter((k) => k !== own && k.count > own.count && Math.max(k.value, b) / Math.min(k.value, b) < T.step)
-      .sort((x, y) => Math.abs(x.value - b) - Math.abs(y.value - b))[0];
-    if (!near) return [];
+    // the levels a hair apart form one run (each within a step of the next), and the run is one level: the one the page
+    // uses most. Every other level in it takes that one, at once. Told only "the nearest level used more", each fix
+    // made the next finding (8px took 10px, then 10px outnumbered 12px and 12px was told to take 10px; our homepage)
+    const sorted = c.clusters.slice().sort((x, y) => x.value - y.value), i = sorted.indexOf(own);
+    let lo = i, hi = i;
+    while (lo > 0 && sorted[lo].value / Math.max(sorted[lo - 1].value, 0.001) < T.step) lo--;
+    while (hi < sorted.length - 1 && sorted[hi + 1].value / Math.max(sorted[hi].value, 0.001) < T.step) hi++;
+    const near = sorted.slice(lo, hi + 1).sort((x, y) => y.count - x.count || Math.abs(x.value - b) - Math.abs(y.value - b))[0];
+    if (!near || near === own || near.count <= own.count) return [];
     // the class that sets the level, never the one that colours it (shadow-black/5 beside shadow-md)
     const level = (x) => utility(x, 'shadow', { not: { test: (rest) => isColour(rest, theme) } });
     const cls = level(el);

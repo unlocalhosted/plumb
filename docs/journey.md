@@ -5444,6 +5444,27 @@ browser driver can't hold Alt through a drag.
 
 **Media hooks.** None.
 
+### 125. Shadow levels a hair apart become one level, at once (2026-11-24)
+
+**The itch.** On our homepage, taking the elevation ladder's fix for one shadow made the next finding: the level it
+moved to now outnumbered its neighbour, which was then told to move (entry 87: "moving a shadow's level trips the
+next level").
+
+**How we found it.** Read the rule: it sent each shadow to the nearest level the page used more, one at a time.
+
+**The system behind it.** A local rule applied greedily. With levels at 8px (3 uses), 11px (4) and 15px (5), 8px was
+told to take 11px; once it did, 11px outnumbered 15px, and 15px was told to take 11px.
+
+**What we chose.** Levels that sit within a step of each other form one run, and a run is one level: the one the page
+uses most. Every other level in the run is told to take it, at once, and that level is never flagged, so taking the
+fixes ends the findings instead of starting new ones. On such a page 8px is told to take 15px directly; within a run
+the page has one level there, not three.
+
+**The fix and the proof.** In `overlay/src/craft-rules.js`. On the ledger example with cards at 8px ×3, 11px ×4 and
+15px ×5: both the 8px and the 11px cards are told to take `shadow-[0_2px_15px…]`, and the 15px cards get no finding.
+
+**Media hooks.** None.
+
 ## Open gaps
 
 - **A lone ticking number isn't flagged.** The tabular figures check reads only cells and list rows, so the showcase's
@@ -7131,6 +7152,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
+- Taking the shadow-level fixes ends the findings instead of starting new ones: levels a hair apart are told to take the page's most-used one, all at once. On main, not released ([entry](#125-shadow-levels-a-hair-apart-become-one-level-at-once-2026-11-24)).
 - A drag in the X-ray keeps its change when you let go: the release no longer selects what's underneath, and letting go of Alt keeps the card open while changes wait. On main, not released ([entry](#124-a-drag-keeps-its-change-when-you-let-go-2026-11-24)).
 - A shadow, motion or layout picked in the X-ray card survives a reload, like sizes and spacing do. On main, not released ([entry](#123-a-shadow-motion-or-layout-pick-survives-a-reload-too-2026-11-24)).
 - On a page styled with plain CSS, the fix bar writes its fixes into your stylesheet (`column-gap: 8px` in `.row`) instead of adding Tailwind classes that do nothing there, and Undo takes them back. On main, not released ([entry](#122-the-fix-bar-writes-into-plain-stylesheets-2026-11-24)).

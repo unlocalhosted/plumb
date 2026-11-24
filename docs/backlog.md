@@ -546,4 +546,4 @@ one-bar and new-token tests are fixed and pass there on their own; the steady li
   - A plain double-click on words in a link or button does nothing and doesn't mention Alt + double-click.
   - The published package names a private app in code comments (13 files in 0.6.0). The owner decides.
   - Editing in Safari and Firefox hasn't been tried, and the release gate doesn't cover them.
-- Found running 0.6.0 on our own homepage (2026-11-22): the elevation ladder's suggested level makes the next finding. (The five gap fixes that didn't clear there were class fixes on a plain-CSS page; since journey 122 they are written into the stylesheet. Not checked on the homepage itself, which runs 0.6.0 from npm.)
+- Found running 0.6.0 on our own homepage (2026-11-22): the elevation ladder's suggested level made the next finding (fixed in journey 125). (The five gap fixes that didn't clear there were class fixes on a plain-CSS page; since journey 122 they are written into the stylesheet. Not checked on the homepage itself, which runs 0.6.0 from npm.)
