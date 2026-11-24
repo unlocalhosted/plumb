@@ -5063,6 +5063,11 @@ The proof script then read the fix's words in the card and took them as the bar'
 card's right edge now stops at x=310, short of the label at 349. The click put the blurry-text fix in the bar
 (3 of 57), and Enter wrote `inset-y-0 my-auto h-fit` in place of `top-1/2 -translate-y-1/2`.
 
+The film's proof script now reads only the fix panel's own words (the bar and the choice beside the element), not
+the X-ray card's. Checked on the same screen: with only the card showing the finding, the old read matched the fix's
+words and the new one didn't; once the bar held the fix, the new read matched it. The script lives in the film's
+draft folder, which git ignores.
+
 **Media hooks.** The newsletter chart with the card beside the "0" label, before (overlapping) and after (clear).
 
 ## Open gaps
