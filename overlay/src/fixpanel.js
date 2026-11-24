@@ -1356,7 +1356,7 @@ export class FixPanel {
         chips = control ? `<span class="pick"><span class="ic sm" aria-hidden="true">${toyFor(mark, kindNow)}</span><span class="ctl">${control}</span></span>`
           : `<span class="chips">${v.options.map((o, i) => `<button class="sp chip" data-i="${i}" aria-pressed="${v.at === i}" title="${esc(o.cls ?? o.label ?? '')}">${esc(unitOf(o.n) ?? o.label ?? '')}</button>`).join('')}</span>`;
       }
-      const writable = !v?.ready || v.options.some((o) => o.ok);
+      const writable = !v?.ready || v.filling || v.options.some((o) => o.ok);
       const cant = writable ? '' : `<span class="cant">${esc(FIX.cantWrite ?? 'Plumber can’t write this change in your code yet. Keep it, or change it by hand.')}</span>`;
       const acts2 = writable ? soft : soft.replace(/<button type="button" class="tb sm take"[\s\S]*?<\/button>/, '');
       this.#onBody = `${failed}${unseen}${reach}${chips}${cant}${acts2}`;

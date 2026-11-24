@@ -100,7 +100,9 @@ export class Selection {
     const p = this.#plan?.for === m.key ? this.#plan : null, suggest = m.craft?.suggest ?? null;
     if (this.#taken.has(m.key)) return { mark: m, taken: true };
     if (!p) return { mark: m, ready: false, whyNot: m.whyNot ?? (suggest?.kind === 'advice' ? 'advice' : null), suggest };
-    if (p.kind === 'swap') return { mark: m, ready: true, kind: 'swap', options: p.options.map((o) => ({ label: o.label, n: o.n, swatch: o.swatch, ok: !!o.write, cls: o.write?.to ?? null })), at: p.at, now: p.now, suggest };
+    // `filling`: the options' exact edits are still being read from the element; until then "no option writes" is not
+    // known, and the bar said "can't write this change" for a moment before offering it (seen on Relay, 2026-11-22)
+    if (p.kind === 'swap') return { mark: m, ready: true, kind: 'swap', filling: !!p.filling, options: p.options.map((o) => ({ label: o.label, n: o.n, swatch: o.swatch, ok: !!o.write, cls: o.write?.to ?? null })), at: p.at, now: p.now, suggest };
     return { mark: m, ready: true, kind: 'space', prop: p.main.prop, options: p.steps.map((x) => ({ label: x.token, n: x.n, ok: true })), at: p.at, now: { label: `${p.main.from.n}px`, n: p.main.from.n }, suggest };
   }
   // Pick an option of the current plan by its index: the page glides to it
@@ -376,7 +378,7 @@ export class Selection {
       if (plan?.kind === 'swap') {
         // a theme choice's exact class edit comes from the element's full reading, read once
         if (plan.options.some((o) => !o.write) && !plan.reading && this.#read) {
-          plan.reading = true;
+          plan.reading = true; plan.filling = true;
           const key = current.key;
           plan.key = key;
           // the exact edit when the element's reading has one; else the choice's class swap, found in the code when
@@ -385,7 +387,9 @@ export class Selection {
             const m = full?.marks?.find((x) => x.key === key) ?? current;
             // the plan may have moved on (an arrow made a new one): the edits go to whichever plan is current for it
             const now = this.#plan;
+            plan.filling = false;
             if (!now || now.key !== key || this.#el !== el) return;
+            now.filling = false;
             const choiceOf = (list, o) => list?.find((x) => (x.label ?? x.name) === o.label || x.name === o.token);
             now.options = now.options.map((o) => {
               if (o.write) return o;
