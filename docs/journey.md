@@ -4669,7 +4669,11 @@ The same build passed 705 loads before it went out, and the game passes on the l
   and concepts". Describing the frame was the wrong fix: the picture already shows the example. Script 4 says the
   problem every viewer has met and the idea behind it: "Open menus often end up under the page.", "Each layer gets a
   number. Higher wins.", "A 999 set "just in case" beats the menu.", "A small number fixes it. The menu wins."
-  Waiting for the owner's OK before the film changes.
+  The owner on script 4: "who the fuck talks and explain like this". The system behind all three rounds: each line was
+  squeezed to fit a beat of fixed length, which turned it into clipped slogans. Script 5 is whole sentences a person
+  would say ("You open a dropdown, and part of the page sits on top of it.", "That badge has a z-index of 999, and the
+  menu only has 50."), and the beats grow to fit them (about 34 s). The film skill now says the film's length follows
+  the words. Waiting for the owner's OK before the film changes.
 
 ### 94. The X-ray card gets a layout picker (2026-11-23)
 

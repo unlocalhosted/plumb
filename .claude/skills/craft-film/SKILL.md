@@ -142,14 +142,15 @@ holds the date and what they said.
 - **Launch films open on the component at its normal size, then move in on the detail.** Never open on a close-up.
   Why: "i would've like if you have started from default view and then showed the numbers in details".
   <!-- 2026-11-23: on launch film 2, rough cut 1 -->
-- **Launch film words name the common problem and the idea behind it, never the example on screen.** The picture
-  shows the example; the words say what every viewer has met in their own work ("Open menus often end up under the
-  page.", "Each layer gets a number. Higher wins.", the habit of a 999 set "just in case"). Never describe the frame
-  ("A "Live" tag covers part of the menu") or how the bug works in a developer's shorthand ("a badge shows through").
-  The words go through the writing pass before the owner reads them, and each line must be readable in the time it is
-  held: about three words a second, plus half a second.
-  Why: "the writing is so stupid "a badge shows through the menu" wtf does this even mean?", then "dont talk in terms of
-  these words on screen but talk in terms of common problem and concepts".
+- **Launch film words are what you'd say out loud to a friend: whole sentences, real CSS names, the common problem.**
+  "You open a dropdown, and part of the page sits on top of it." "That badge has a z-index of 999, and the menu only
+  has 50." Never clipped slogan fragments ("Each layer gets a number. Higher wins."), never a description of the frame
+  ("A "Live" tag covers part of the menu"), never a developer's shorthand for how the bug works ("a badge shows
+  through"). The film's length follows the words, never the other way round: a line too long for its beat gets a
+  longer beat, never fewer words. Each line is held about three words a second plus half a second, and goes through
+  the writing pass before the owner reads it.
+  Why: three rounds on 2026-11-25: "wtf does this even mean?", "talk in terms of common problem and concepts", and
+  "who the fuck talks and explain like this". Squeezing lines to fit fixed beats is what made them clipped.
   <!-- 2026-11-25 -->
 - **Launch films keep their words still.** They arrive word by word, as film 1's do, and don't act out the fault.
   Why: "dont fuck up the title i understand you are trying to sell the illusion but i think lets keep it same".
