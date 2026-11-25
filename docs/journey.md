@@ -4685,6 +4685,8 @@ The same build passed 705 loads before it went out, and the game passes on the l
   3× and the camera scales them down. In drafts of the tilt and the fix, the share of the picture moving each frame
   rises and falls evenly with no spikes. The badge's dashed ring and stalk now fade as it goes under the menu, so
   nothing of it is drawn over the menu's words.
+  Rendered again on 2026-11-25 with the sharp layers: 49 s, 1080p60; from 5 to 8 s the moving share of the picture
+  rises from 5% to 24% and falls back with no spike.
 
 ### 94. The X-ray card gets a layout picker (2026-11-23)
 
