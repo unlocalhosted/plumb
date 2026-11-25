@@ -4678,6 +4678,13 @@ The same build passed 705 loads before it went out, and the game passes on the l
   cover the whole page, and finds the line that set it (`craft/z-index-war`). Rendered on 2026-11-25: 49 s, 1080p60.
   The recording now also shows plumber's card on the badge ("z-index too high, z-index 999 in the middle of the
   page") while its line is read, and the line of code appears as "finds the line in your code" is said.
+- **"The animation is not smooth" and "this tilt view is pixelated" (owner, 2026-11-25):** the tilted layers were
+  laid out at their 1× size and scaled up about three times by the camera, so the headless browser drew them from a 1×
+  copy: soft, stepped text that crawled as they moved. A frame-difference check first pointed at a flicker in still
+  shots; the difference image showed only the encoder's noise, so that lead was wrong. The layers are now laid out at
+  3× and the camera scales them down. In drafts of the tilt and the fix, the share of the picture moving each frame
+  rises and falls evenly with no spikes. The badge's dashed ring and stalk now fade as it goes under the menu, so
+  nothing of it is drawn over the menu's words.
 
 ### 94. The X-ray card gets a layout picker (2026-11-23)
 
