@@ -5713,6 +5713,32 @@ sentences.
 **Media hooks.** A terminal clip: `check --agent` shows "Apply: plumber apply 1313e5c46691", one command, the diff of
 six lines, then `plumber undo`.
 
+### 135. Fixes from the page check can be applied too (2026-11-25)
+
+**The itch.** The other half of layer 3. `plumber craft --url` reads the drawn page and found 72 problems on the ledger
+example, each as a sentence ("→ Add `gap-s2`: keeps a set distance between the parts"). The fix bar writes many of
+these itself; an agent had to turn every sentence into an edit by hand.
+
+**How we found it.** Plumber tried as an agent on the running ledger page, after `plumber apply` shipped for
+`plumber check` ([entry 134](#134-an-agent-fixes-a-whole-problem-group-in-one-command-and-can-take-it-back-2026-11-25)).
+
+**The system behind it.** The checks running in the page already work out a fix as data: the classes the element
+loses and gains (35 of the 74 kinds of fix are like this; the rest are advice). The command line kept only the
+sentence and dropped the fix.
+
+**What we chose and why.** The page check now keeps that fix on each problem (`apply` in `--json`) and prints
+`Apply: plumber apply p…` under it. The fixes are kept in plumber's cache folder, so applying one doesn't need the
+page read again, which takes most of a minute. `plumber apply p…` writes it with the session engine's class swap, the
+fix bar's writer for a class fix, and `plumber undo` takes it back. If the element changed since the page was read,
+the swap's own guard refuses, and plumber says to run the page check again. Advice stays words.
+
+**The fix and the proof.** On the running ledger page: 14 of the 72 problems came with an Apply line. Applying
+`pbbd1bdb46` added `gap-s2` to the header at src/App.jsx:12, `undo` put it back, and a second apply of the same key
+said to run the page check again. With `font-semibold` changed by hand at line 100 first, its fix refused and wrote
+nothing. A weight fix at line 57 applied and undid cleanly.
+
+**Media hooks.** The page check's text with an Apply line, then the header's two sides held at a set gap.
+
 ## Open gaps
 
 - The fixes of entry 81 (caret, app errors, broken config on Vite) are committed and not published. The site runs
@@ -7397,6 +7423,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
+- The page check (`plumber craft --url`) ends each problem it can fix itself with an `Apply:` line; `plumber apply p…` writes that fix the way the fix bar does, and `plumber undo` takes it back. On main, not released ([entry](#135-fixes-from-the-page-check-can-be-applied-too-2026-11-25)).
 - An agent fixes a whole problem group with `plumber apply <key>`, written by the same writer as the fix bar, and takes it back with `plumber undo`. On main, not released ([entry](#134-an-agent-fixes-a-whole-problem-group-in-one-command-and-can-take-it-back-2026-11-25)).
 - An agent can run plumber in a React app that never installed or set it up: the instructions say so, and every command plumber prints names the real package when it isn't installed, so `npx plumber` no longer fetches an unrelated tool. On main, not released ([entry](#133-an-agent-can-use-plumber-in-a-project-that-never-installed-it-2026-11-24)).
 - An agent running `plumber check --agent` gets the ten most urgent problems first and a count of the rest, instead of hundreds in file order. On main, not released ([entry](#132-an-agent-sees-the-ten-problems-that-matter-first-2026-11-24)).

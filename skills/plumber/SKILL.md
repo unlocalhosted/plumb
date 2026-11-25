@@ -59,6 +59,13 @@ left. Fix those and run it again: the next ones come up. Stop when it prints `0 
 - Run `plumber accept`, `plumber accept-decisions` or `plumber baseline` unless the user asks you to. If something should be an exception, say so and give the `plumber accept … --why` line from the output for the user to run.
 - Invent a value or the nearest arbitrary class (`p-[13px]`, `p-3.25`) to get around a finding.
 
+## Checking the page itself
+
+With the app's dev server running, `plumber craft --url http://localhost:5173/` reads the drawn page: spacing that
+only looks right by accident, weights, contrast, touch targets, motion. It takes up to a minute. Where it can write the
+fix itself, a problem ends with `Apply: plumber apply p…`. Run that line, and `plumber undo` takes it back. Fix the
+rest by hand from the `→` line. Page fixes come from the last page check, so run it again after you change the page.
+
 ## When asked about a finding
 
 - `plumber why <file>:<line>`: which rule, token and ledger entry apply at a line.

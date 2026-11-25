@@ -292,6 +292,8 @@ async function main(): Promise<void> {
     if (!Number.isInteger(budget) || budget < 1) throw new UsageError('--probe-budget is how many elements to try per kind of gesture, at least 1.\n  → plumber craft --url <address> --probe-budget 24');
     const pages = await craftRun({ url: args.values.url, routes: routes.length ? routes : ['/'], root: options.root, timeout, pairs: !args.values['no-pairs'], probe: !args.values['no-probe'], probeBudget: budget, probeDrag: (args.values.probe ?? []).includes('drag'), judge: !!args.values.judge, ...(args.values.scope ? { scope: args.values.scope } : {}), ...(args.values['record-probe'] ? { recordProbe: resolve(args.values['record-probe']) } : {}) });
     const findings = craftFindings(pages, options.root);
+    // the fixes plumber can write, kept for `plumber apply p…` (cli-apply.ts)
+    if (findings.some(finding => finding.apply)) await (await import('./cli-apply.js')).keepPageFixes(options.root, findings);
     if (typeof sarifFile === 'string') {
       const { atomicWrite } = await import('./atomic-write.js');
       await atomicWrite(resolve(sarifFile), `${JSON.stringify(sarif(craftReport(options.root, findings)), null, 2)}\n`);

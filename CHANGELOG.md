@@ -7,7 +7,8 @@ Everything since 0.7.0, as a person using it sees it.
 - **`plumber apply` and `plumber undo`.** An agent (or a person) takes a whole problem group from `check --agent` in
   one command; the list shows the line on every group plumber can write. It writes with the fix bar's writer and
   guards, asks for `--token` when several tokens fit, and refuses what needs a person. `plumber undo` puts the files
-  back while nothing has changed them since.
+  back while nothing has changed them since. The page check (`craft --url`) does the same for the fixes it can
+  write itself: each ends with an `Apply:` line, and `--json` carries the fix as `apply`.
 - **Agents need no install.** In a project without plumber, every command it prints (and the agent loop's) starts
   with `npx -p @unlocalhosted/react-plumber plumber`, because plain `npx plumber` fetches an unrelated npm package.
   The agent instructions say plumber works in any React app with no setup. `install --agent` works without the

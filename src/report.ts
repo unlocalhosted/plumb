@@ -87,6 +87,9 @@ export interface Finding {
   action?: string;
   /** Where the rule is read about (craft findings only): the rules reference's entry for it. */
   docs?: string;
+  /** A page check's fix that plumber writes itself (craft findings only): the classes the element loses and gains,
+   * taken with `plumber apply <key>` the way the fix bar takes it. */
+  apply?: { key: string; from: string; to: string; why?: string };
   accept: string;
   /** Suggestible tokens only; decisions also retains non-choice metadata. */
   choices?: Decision[];

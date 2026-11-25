@@ -6,7 +6,7 @@ import { UsageError } from './errors.js';
 import { readSource, writeSource, staleFile } from './write/source-file.js';
 import { editChoices } from './surfaces/edits.js';
 import { newSites } from './surfaces/sites.js';
-import type { Report } from './report.js';
+import type { Finding, Report } from './report.js';
 
 /**
  * `plumber apply <key>`: an agent takes a problem group the way a person takes a fix in the fix bar. The edits are
@@ -31,7 +31,58 @@ async function keep(root: string, entries: Kept[]): Promise<void> {
 
 export interface ApplyCommand { root: string; config?: string; key: string; token?: string }
 
-export async function applyGroup({ root, config, key, token }: ApplyCommand): Promise<string> {
+/**
+ * A page check's fixes (`plumber craft --url`), kept so `plumber apply p…` can take one without reading the page
+ * again (a page check takes most of a minute). The newest run wins; each fix is guarded again when it is written.
+ */
+interface PageFix { file: string; line: number; column: number; from: string; to: string; title: string; rule: string }
+const pageFixesFile = (root: string) => join(cacheDirectory(root), 'page-fixes.json');
+const isPageKey = (key: string) => /^p[0-9a-f]{9}$/.test(key);
+export async function keepPageFixes(root: string, findings: readonly Finding[]): Promise<void> {
+  let kept: Record<string, PageFix> = {};
+  try { kept = JSON.parse(await readFile(pageFixesFile(root), 'utf8')) as Record<string, PageFix>; } catch { /* none yet */ }
+  for (const finding of findings) {
+    const site = finding.sites[0];
+    if (!finding.apply || !site) continue;
+    delete kept[finding.apply.key];
+    kept[finding.apply.key] = { file: relative(root, site.file).replaceAll('\\', '/'), line: site.line, column: site.column, from: finding.apply.from, to: finding.apply.to, title: finding.title, rule: finding.rule };
+  }
+  const entries = Object.entries(kept).slice(-500);
+  ignoreCache(root);
+  await mkdir(cacheDirectory(root), { recursive: true });
+  const file = pageFixesFile(root), temp = `${file}.${process.pid}.tmp`;
+  await writeFile(temp, JSON.stringify(Object.fromEntries(entries)));
+  await rename(temp, file);
+}
+
+async function applyPageFix({ root, config, key }: ApplyCommand): Promise<string> {
+  let kept: Record<string, PageFix> = {};
+  try { kept = JSON.parse(await readFile(pageFixesFile(root), 'utf8')) as Record<string, PageFix>; } catch { /* none yet */ }
+  const fix = kept[key];
+  if (!fix) throw new UsageError(`No page fix is called ${key}. Page fixes come from the last page check; run it again.\n  → plumber craft --url <your dev server>`, 'not-found');
+  const { Session } = await import('./session/index.js');
+  const session = await Session.create({ root, ...(config === undefined ? {} : { config }) });
+  try {
+    const path = join(root, fix.file), before = await readSource(root, path);
+    try { await session.swap({ file: path, hash: before.hash, line: fix.line, column: fix.column, from: fix.from, to: fix.to }); }
+    catch (error) {
+      // the element moved or changed since the page was read: say so, and how to get a fresh fix
+      if (error instanceof UsageError && /does not identify|is not written on this element|no longer|changed since/i.test(error.message)) throw new UsageError(`${fix.file}:${fix.line} changed since the page check, so nothing was written (${error.message.replace(/\.$/, '')}). Run the page check again for a fresh fix.`, 'stale-file');
+      throw error;
+    }
+    const after = await readSource(root, path);
+    const entry: Kept = { id: randomBytes(4).toString('hex'), at: new Date().toISOString(), label: `${fix.from ? `${fix.from} → ${fix.to}` : `+${fix.to}`} at ${fix.file}:${fix.line}`, files: [{ file: fix.file, before: before.text, hashAfter: after.hash }] };
+    await keep(root, [...await history(root), entry]);
+    delete kept[key];
+    await writeFile(pageFixesFile(root), JSON.stringify(kept));
+    return [`Applied ${fix.from ? `${fix.from} → ${fix.to}` : `+${fix.to}`} at ${fix.file}:${fix.line} (${fix.rule}).`,
+      `Undo: plumber undo ${entry.id}`, 'Next: look at the page, or run the page check again.', ''].join('\n');
+  } finally { await session.close(); }
+}
+
+export async function applyGroup(command: ApplyCommand): Promise<string> {
+  if (isPageKey(command.key)) return applyPageFix(command);
+  const { root, config, key, token } = command;
   const { Session } = await import('./session/index.js');
   const session = await Session.create({ root, ...(config === undefined ? {} : { config }) });
   try {

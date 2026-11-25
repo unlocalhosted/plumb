@@ -8,6 +8,7 @@ import { takeProbes } from './craft-probe.js';
 import { docsUrl } from '../overlay/src/rule-docs.js';
 import { BOUND_RULES, boundInSource } from '../overlay/src/pack-tells.js';
 import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { makeFinding } from './messages.js';
 import { tool } from './report.js';
 import type { Declaration, Finding, Report, Site } from './report.js';
@@ -20,6 +21,8 @@ export interface CraftRecord {
   text: string; value: unknown; confidence: number | null;
   evidence: Record<string, unknown>;
   /** what decided it: a fixed rule over the drawn page, or a model reading the words (evidence.model names which) */
+  /** the page's own fix: classes to write on the element, or advice in words */
+  suggest?: { kind: string; from?: string; to?: string; text?: string; why?: string } | null;
   by?: 'rule' | 'model'; soft?: boolean; judged?: boolean; file: string | null; line: number | null; column: number | null; component: string | null; tag: string; count: number;
 }
 export interface CraftPage { route: string; url: string; read: number; complete: boolean; findings: CraftRecord[]; spec?: unknown }
@@ -254,7 +257,10 @@ export function craftFindings(pages: CraftPage[], root: string): Finding[] {
     const declaration: Declaration = { prop: record.rule, value: record.text, refs: [], when: [], site, owner: { kind: 'element', name: record.component ?? record.tag }, origin: 'class' };
     // an advisory finding (a judgement of taste) is a note: shown, never failing the run
     const docs = docsUrl(record.rule);
-    found.set(key, { ...makeFinding({ key, rule: record.rule, family: 'craft', severity: (record as { soft?: boolean }).soft ? 'info' : 'error', sites: [site], declaration, decisions: [],
+    // a class fix on a placed element is one plumber can write; advice stays words
+    const fix = record.suggest?.kind === 'class' && record.suggest.to?.trim() ? record.suggest : undefined;
+    const apply = fix ? { key: `p${createHash('sha256').update(key).digest('hex').slice(0, 9)}`, from: fix.from ?? '', to: fix.to!, ...(fix.why ? { why: fix.why } : {}) } : undefined;
+    found.set(key, { ...(apply ? { apply } : {}), ...makeFinding({ key, rule: record.rule, family: 'craft', severity: (record as { soft?: boolean }).soft ? 'info' : 'error', sites: [site], declaration, decisions: [],
       title: record.title, because: record.because, ...(record.action ? { action: record.action } : {}) }), ...(docs ? { docs } : {}) });
   }
   return [...found.values()].sort((a, b) => a.sites[0]!.file.localeCompare(b.sites[0]!.file) || a.sites[0]!.line - b.sites[0]!.line || a.rule.localeCompare(b.rule));
@@ -273,7 +279,8 @@ export function formatCraft(pages: CraftPage[], findings: Finding[], root: strin
   const laws = new Map(pages.flatMap(page => page.findings.map(record => [record.rule, record.laws ?? []] as const)));
   for (const finding of findings) {
     const site = finding.sites[0]!, named = (laws.get(finding.rule) ?? []).map(law => law.name);
-    lines.push('', `${relative(root, site.file)}:${site.line}:${site.column}  ${finding.rule}`, `  ${finding.title}`, `  ${finding.because}`, ...(named.length ? [`  Law: ${named.join(', ')}`] : []), ...(finding.docs ? [`  Read more: ${finding.docs}`] : []), ...(finding.action ? [`  → ${finding.action}`] : []));
+    lines.push('', `${relative(root, site.file)}:${site.line}:${site.column}  ${finding.rule}`, `  ${finding.title}`, `  ${finding.because}`, ...(named.length ? [`  Law: ${named.join(', ')}`] : []), ...(finding.docs ? [`  Read more: ${finding.docs}`] : []), ...(finding.action ? [`  → ${finding.action}`] : []),
+      ...(finding.apply ? [`  Apply: plumber apply ${finding.apply.key}${finding.action ? '' : `  (${finding.apply.from ? `${finding.apply.from} → ${finding.apply.to}` : `adds ${finding.apply.to}`})`}`] : []));
   }
   return lines.join('\n') + '\n';
 }
