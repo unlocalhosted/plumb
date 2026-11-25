@@ -4655,6 +4655,10 @@ The same build passed 705 loads before it went out, and the game passes on the l
   `docs/films/launch-02-draft/principle-icons.jpg` (local).
 - **Rendered (2026-11-23):** the owner: "Polish and render". `docs/media/launch-02-craft-details.mp4`, 27.6 s,
   1920 × 1080 at 60 fps, silent, rendered on vm-agent in 123 s. Nine frames were checked at full size.
+- **The owner's notes on the final (2026-11-25):** "at the end call it react plumber is a smart design system
+  linter" and "remove this press enter thing". The closing line now says "React Plumber is a smart design system
+  linter, looking for 100+ design issues.", and the recording's beat drops "Press Enter." and the Enter key, leaving
+  "React Plumber spots it." Stills shown; the render waits for the owner's OK.
 
 ### 94. The X-ray card gets a layout picker (2026-11-23)
 
