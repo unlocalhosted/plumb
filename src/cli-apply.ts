@@ -35,17 +35,17 @@ export interface ApplyCommand { root: string; config?: string; key: string; toke
  * A page check's fixes (`plumber craft --url`), kept so `plumber apply p…` can take one without reading the page
  * again (a page check takes most of a minute). The newest run wins; each fix is guarded again when it is written.
  */
-interface PageFix { file: string; line: number; column: number; from: string; to: string; title: string; rule: string }
+interface PageFix { file: string; line: number; column: number; from: string; to: string; title: string; rule: string; url?: string; path?: string }
 const pageFixesFile = (root: string) => join(cacheDirectory(root), 'page-fixes.json');
 const isPageKey = (key: string) => /^p[0-9a-f]{9}$/.test(key);
-export async function keepPageFixes(root: string, findings: readonly Finding[]): Promise<void> {
+export async function keepPageFixes(root: string, findings: readonly Finding[], places: ReadonlyMap<string, { url: string; path: string }> = new Map()): Promise<void> {
   let kept: Record<string, PageFix> = {};
   try { kept = JSON.parse(await readFile(pageFixesFile(root), 'utf8')) as Record<string, PageFix>; } catch { /* none yet */ }
   for (const finding of findings) {
     const site = finding.sites[0];
     if (!finding.apply || !site) continue;
     delete kept[finding.apply.key];
-    kept[finding.apply.key] = { file: relative(root, site.file).replaceAll('\\', '/'), line: site.line, column: site.column, from: finding.apply.from, to: finding.apply.to, title: finding.title, rule: finding.rule };
+    kept[finding.apply.key] = { file: relative(root, site.file).replaceAll('\\', '/'), line: site.line, column: site.column, from: finding.apply.from, to: finding.apply.to, title: finding.title, rule: finding.rule, ...places.get(finding.apply.key) };
   }
   const entries = Object.entries(kept).slice(-500);
   ignoreCache(root);
@@ -75,9 +75,35 @@ async function applyPageFix({ root, config, key }: ApplyCommand): Promise<string
     await keep(root, [...await history(root), entry]);
     delete kept[key];
     await writeFile(pageFixesFile(root), JSON.stringify(kept));
+    const shots = await pictures(root, key, fix);
     return [`Applied ${fix.from ? `${fix.from} → ${fix.to}` : `+${fix.to}`} at ${fix.file}:${fix.line} (${fix.rule}).`,
-      `Undo: plumber undo ${entry.id}`, 'Next: look at the page, or run the page check again.', ''].join('\n');
+      ...shots, `Undo: plumber undo ${entry.id}`, 'Next: look at the pictures, or run the page check again.', ''].join('\n');
   } finally { await session.close(); }
+}
+
+/**
+ * The element before (taken by the page check) and after (taken now, once the dev server has the change): two files
+ * an agent can open to see what it did. A picture that can't be taken is said, never a failed apply.
+ */
+async function pictures(root: string, key: string, fix: PageFix): Promise<string[]> {
+  const { shotsDirectory, shoot, launchChromium } = await import('./craft-run.js');
+  const before = join(shotsDirectory(root), `${key}-before.png`), after = join(shotsDirectory(root), `${key}-after.png`);
+  const had = await readFile(before).then(() => true, () => false);
+  if (!fix.url || !fix.path) return had ? [`Before: ${before}`] : [];
+  try {
+    const browser = await launchChromium();
+    try {
+      const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+      // the dev server's hot update lands in well under this; a full reload is waited for by goto itself
+      await new Promise(done => setTimeout(done, 800));
+      await page.goto(fix.url, { waitUntil: 'load', timeout: 20000 });
+      await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {});
+      await shoot(page, fix.path, after);
+    } finally { await browser.close(); }
+    return [...had ? [`Before: ${before}`] : [], `After:  ${after}`];
+  } catch (error) {
+    return [...had ? [`Before: ${before}`] : [], `No after picture: ${String((error as Error).message ?? error).split('\n')[0]}`];
+  }
 }
 
 export async function applyGroup(command: ApplyCommand): Promise<string> {

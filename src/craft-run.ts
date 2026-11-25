@@ -1,4 +1,6 @@
-import { relative, resolve } from 'node:path';
+import { join, relative, resolve } from 'node:path';
+import { mkdir } from 'node:fs/promises';
+import { cacheDirectory, ignoreCache } from './paths.js';
 import { UsageError } from './errors.js';
 import { ask, desktop, hold, inside, open, reloaded, settle, sleep } from './craft-page.js';
 import type { Browser, Page } from './craft-page.js';
@@ -22,6 +24,8 @@ export interface CraftRecord {
   evidence: Record<string, unknown>;
   /** what decided it: a fixed rule over the drawn page, or a model reading the words (evidence.model names which) */
   /** the page's own fix: classes to write on the element, or advice in words */
+  /** its place in the page (craft-headless.js pathKey), for a picture of it */
+  path?: string;
   suggest?: { kind: string; from?: string; to?: string; text?: string; why?: string } | null;
   by?: 'rule' | 'model'; soft?: boolean; judged?: boolean; file: string | null; line: number | null; column: number | null; component: string | null; tag: string; count: number;
 }
@@ -216,6 +220,7 @@ export async function craftRun(options: CraftRunOptions): Promise<CraftPage[]> {
           if (!reloaded(error)) throw error;
           throw new Error(`${url} kept reloading while Plumber was reading it, for 30 s (a file changing, or the dev server restarting). Run it again once the page is still.`);
         }
+        await photograph(page, result.findings, options.root);
         if (process.env.PLUMBER_DEBUG && result.grey) process.stderr.write(`craft: grey ${JSON.stringify(result.grey)?.slice(0, 800)}\n`);
         if (result.grey) {
           // a model is never asked when CI is set: the answers kept in the project are all there is
@@ -239,6 +244,45 @@ export async function craftRun(options: CraftRunOptions): Promise<CraftPage[]> {
   } finally { await browser.close(); }
 }
 
+/** Each writable fix's page and place, by its short key. */
+export function pageFixPlaces(pages: CraftPage[], root: string): Map<string, { url: string; path: string }> {
+  const places = new Map<string, { url: string; path: string }>();
+  for (const page of pages) for (const record of page.findings) if (record.file && record.path) places.set(fixKey(recordKey(record, root)), { url: page.url, path: record.path });
+  return places;
+}
+
+/** One page finding's key, and the short key its fix is applied by (`plumber apply p…`). */
+const recordKey = (record: CraftRecord, root: string) => `${record.rule}:${relative(root, resolve(root, record.file!))}:${record.line ?? 1}:${record.column ?? 1}:${record.text}`;
+const fixKey = (key: string) => `p${createHash('sha256').update(key).digest('hex').slice(0, 9)}`;
+/** The CSS selector for a pathKey (`div:1>main:2` → `body > div:nth-of-type(1) > main:nth-of-type(2)`). */
+export const pathSelector = (path: string) => ['body', ...path.split('>').map(part => { const [tag, n] = part.split(':'); return `${tag}:nth-of-type(${n})`; })].join(' > ');
+export const shotsDirectory = (root: string) => join(cacheDirectory(root), 'shots');
+
+/** A picture of one element with some of the page around it (24px), so its edges and its neighbours show. */
+export async function shoot(page: Page, path: string, file: string): Promise<void> {
+  const element = page.locator(pathSelector(path)).first();
+  await element.scrollIntoViewIfNeeded({ timeout: 2000 });
+  const box = await element.boundingBox({ timeout: 2000 });
+  if (!box) throw new Error('the element is not drawn');
+  const view = page.viewportSize() ?? desktop, x = Math.max(0, box.x - 24), y = Math.max(0, box.y - 24);
+  // the page as its person sees it: plumber's own dock and marks are hidden for the picture, then given back
+  const hide = (on: boolean) => page.evaluate((on) => { for (const el of document.querySelectorAll<HTMLElement>('plumb-overlay')) el.style.visibility = on ? 'hidden' : ''; }, on).catch(() => {});
+  await hide(true);
+  try { await page.screenshot({ path: file, animations: 'disabled', clip: { x, y, width: Math.min(view.width - x, box.width + 48), height: Math.min(view.height - y, box.height + 48) } }); }
+  finally { await hide(false); }
+}
+
+/** A picture of each element the page check has a fix for, as it is now: the "before" of `plumber apply`. */
+async function photograph(page: Page, records: CraftRecord[], root: string): Promise<void> {
+  const writable = records.filter(r => r.file && r.path && r.suggest?.kind === 'class' && r.suggest.to?.trim());
+  if (!writable.length) return;
+  ignoreCache(root);
+  await mkdir(shotsDirectory(root), { recursive: true });
+  for (const record of writable.slice(0, 60)) {
+    await shoot(page, record.path!, join(shotsDirectory(root), `${fixKey(recordKey(record, root))}-before.png`)).catch(() => {});
+  }
+}
+
 const sources = new Map<string, string>();
 const sourceOf = (file: string): string => { let t = sources.get(file); if (t === undefined) { try { t = readFileSync(file, 'utf8'); } catch { t = ''; } sources.set(file, t); } return t; };
 
@@ -251,7 +295,7 @@ export function craftFindings(pages: CraftPage[], root: string): Finding[] {
     // a badge or a dot that renders only under a condition shows real state: the tells pack keeps it (pack-tells.js)
     if (BOUND_RULES.has(record.rule) && boundInSource(sourceOf(file), record.line ?? 1, record.column ?? 1)) continue;
     const site: Site = { file, line: record.line ?? 1, column: record.column ?? 1, text: record.text };
-    const key = `${record.rule}:${relative(root, file)}:${site.line}:${site.column}:${record.text}`;
+    const key = recordKey(record, root);
     const hit = found.get(key);
     if (hit) continue; // a list's rows share one site
     const declaration: Declaration = { prop: record.rule, value: record.text, refs: [], when: [], site, owner: { kind: 'element', name: record.component ?? record.tag }, origin: 'class' };
@@ -259,7 +303,7 @@ export function craftFindings(pages: CraftPage[], root: string): Finding[] {
     const docs = docsUrl(record.rule);
     // a class fix on a placed element is one plumber can write; advice stays words
     const fix = record.suggest?.kind === 'class' && record.suggest.to?.trim() ? record.suggest : undefined;
-    const apply = fix ? { key: `p${createHash('sha256').update(key).digest('hex').slice(0, 9)}`, from: fix.from ?? '', to: fix.to!, ...(fix.why ? { why: fix.why } : {}) } : undefined;
+    const apply = fix ? { key: fixKey(key), from: fix.from ?? '', to: fix.to!, ...(fix.why ? { why: fix.why } : {}) } : undefined;
     found.set(key, { ...(apply ? { apply } : {}), ...makeFinding({ key, rule: record.rule, family: 'craft', severity: (record as { soft?: boolean }).soft ? 'info' : 'error', sites: [site], declaration, decisions: [],
       title: record.title, because: record.because, ...(record.action ? { action: record.action } : {}) }), ...(docs ? { docs } : {}) });
   }

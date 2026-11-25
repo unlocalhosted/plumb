@@ -9,6 +9,8 @@ Everything since 0.7.0, as a person using it sees it.
   guards, asks for `--token` when several tokens fit, and refuses what needs a person. `plumber undo` puts the files
   back while nothing has changed them since. The page check (`craft --url`) does the same for the fixes it can
   write itself: each ends with an `Apply:` line, and `--json` carries the fix as `apply`.
+- **The page check finds your dev server.** `plumber craft` with no `--url` checks the dev server running in the
+  project. Applying a page fix prints a picture of the element before and after.
 - **Agents need no install.** In a project without plumber, every command it prints (and the agent loop's) starts
   with `npx -p @unlocalhosted/react-plumber plumber`, because plain `npx plumber` fetches an unrelated npm package.
   The agent instructions say plumber works in any React app with no setup. `install --agent` works without the

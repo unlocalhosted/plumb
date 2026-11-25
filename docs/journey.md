@@ -5739,8 +5739,45 @@ nothing. A weight fix at line 57 applied and undid cleanly.
 
 **Media hooks.** The page check's text with an Apply line, then the header's two sides held at a set gap.
 
+### 136. The page check finds the dev server, and an applied fix comes with pictures (2026-11-25)
+
+**The itch.** The fourth layer of plumber for agents. To check the page, an agent had to know the dev server's
+address, wait 44 seconds, and then had no way to see what a fix did to the page.
+
+**How we found it.** Plumber tried as an agent on the ledger example's running page, after page fixes could be
+applied ([entry 135](#135-fixes-from-the-page-check-can-be-applied-too-2026-11-25)).
+
+**The system behind it.** The page check was built for a person who has the page open and passes its address. It
+never looked for the server itself, and the only picture of a fix was the person's own eyes on the page.
+
+**What we chose and why.**
+- *The address.* With no `--url`, plumber looks for a process listening on a local port whose working folder is the
+  project, and keeps the port that answers with a web page (a dev server also holds its hot-reload socket). It says
+  which address it is checking, and names any others it found. This works with no setup, on macOS and Linux.
+- *Speed.* Of the 44 seconds, 30 go to trying gestures (hover, press, menus, the keyboard). They wait in real time on
+  purpose, because they watch motion as it plays, so shortening the waits would break what they judge. On the ledger
+  page they found nothing the plain read didn't (72 findings either way). The instructions now tell an agent to skip
+  them with `--no-probe` while fixing (14 seconds) and run them once at the end.
+- *Pictures.* The page check photographs each element it has a fix for, with 24px of the page around it and plumber's
+  own dock hidden. `plumber apply p…` then opens the page again once the dev server has the change, photographs the same
+  element, and prints both files. An agent that reads images (Claude Code does) sees what it did. A picture that can't
+  be taken is said, and the apply still stands.
+
+**The fix and the proof.** In the ledger example, with no `--url`: "Checking http://localhost:4340/, the dev server
+running in this project" (found in half a second; from the folder above it, both example servers were listed). The
+check without gestures took 14.6 seconds and photographed all 14 fixable elements. Applying the weight fix on the hero
+title took 3.3 seconds, and the two pictures show the heading at 600 and then at 500.
+
+**Still open.** The page check needs plumber wired into the dev server (it reads the page through the overlay), so it
+isn't a no-setup command yet.
+
+**Media hooks.** The before and after pictures of the hero title (`.plumber/cache/shots/pfd233d917-*.png` after a run
+in examples/ledger).
+
 ## Open gaps
 
+- The page check (`plumber craft`) reads the page through plumber's overlay, so it needs plumber wired into the dev
+  server. An agent in a project with no setup can run `check` but not the page check ([entry 136](#136-the-page-check-finds-the-dev-server-and-an-applied-fix-comes-with-pictures-2026-11-25)).
 - The fixes of entry 81 (caret, app errors, broken config on Vite) are committed and not published. The site runs
   0.6.0 from npm, so it still has all three bugs.
 - The release gate of entry 85 guards Chromium only: Safari and Firefox aren't in it. On a Mac `npm test` refuses to
@@ -7423,6 +7460,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
+- `plumber craft` with no address finds the dev server running in the project, and `plumber apply p…` prints a picture of the element before and after the fix. On main, not released ([entry](#136-the-page-check-finds-the-dev-server-and-an-applied-fix-comes-with-pictures-2026-11-25)).
 - The page check (`plumber craft --url`) ends each problem it can fix itself with an `Apply:` line; `plumber apply p…` writes that fix the way the fix bar does, and `plumber undo` takes it back. On main, not released ([entry](#135-fixes-from-the-page-check-can-be-applied-too-2026-11-25)).
 - An agent fixes a whole problem group with `plumber apply <key>`, written by the same writer as the fix bar, and takes it back with `plumber undo`. On main, not released ([entry](#134-an-agent-fixes-a-whole-problem-group-in-one-command-and-can-take-it-back-2026-11-25)).
 - An agent can run plumber in a React app that never installed or set it up: the instructions say so, and every command plumber prints names the real package when it isn't installed, so `npx plumber` no longer fetches an unrelated tool. On main, not released ([entry](#133-an-agent-can-use-plumber-in-a-project-that-never-installed-it-2026-11-24)).

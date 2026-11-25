@@ -68,7 +68,7 @@ Usage: plumber [check] [--json] [--verbose] [--root <dir>] [--config <path>]
        plumber check [--base <git-ref>] [--changed] [--strict-ledger]
        plumber check [--sarif | --agent [--top <n>|all] | --format github]
        plumber census --url <dev server> [--routes / /settings] [--max <n>] [--json]
-       plumber craft --url <dev server> [--routes / /settings] [--json] [--sarif <file>] [--timeout <ms>] [--no-pairs] [--no-probe] [--probe drag] [--probe-budget <n>] [--scope <selector>] [--record-probe <dir>] [--judge]
+       plumber craft [--url <dev server>] [--routes / /settings] [--json] [--sarif <file>] [--timeout <ms>] [--no-pairs] [--no-probe] [--probe drag] [--probe-budget <n>] [--scope <selector>] [--record-probe <dir>] [--judge]
        plumber agent-docs
        plumber install [--ci] [--list] [--agent <name> ...] | install --hooks [--list]
        plumber install --overlay [--write] [--root <dir>]  Print host wiring, or apply it with --write
@@ -278,7 +278,14 @@ async function main(): Promise<void> {
   }
   if (command === 'craft') {
     // The craft engine over a running dev server's pages, in headless Chromium (docs/briefs/craft-engine.md, layer 5)
-    if (!args.values.url?.trim()) throw new UsageError('Provide the dev server address for plumber craft.\n  → plumber craft --url http://localhost:5173/');
+    // no address: the dev server started in this project, found by its folder (dev-server.ts)
+    if (!args.values.url?.trim()) {
+      const { findDevServer } = await import('./dev-server.js');
+      const servers = await findDevServer(options.root);
+      if (!servers.length) throw new UsageError(`No dev server is running for this project: nothing started in ${options.root} serves a page.\n  → start it (npm run dev), then run this again, or pass its address: plumber craft --url http://localhost:5173/`);
+      args.values.url = servers[0]!.url;
+      process.stderr.write(`Checking ${servers[0]!.url}, the dev server running in this project${servers.length > 1 ? ` (also running: ${servers.slice(1).map(s => s.url).join(', ')}; --url picks one)` : ''}.\n`);
+    }
     try { new URL(args.values.url); } catch { throw new UsageError(`--url ${args.values.url}: not an address.\n  → plumber craft --url http://localhost:5173/`); }
     const timeout = args.values.timeout === undefined ? 60000 : Number(args.values.timeout);
     if (!Number.isInteger(timeout) || timeout < 1000) throw new UsageError('--timeout is milliseconds, at least 1000.\n  → plumber craft --url <address> --timeout 60000');
@@ -293,7 +300,11 @@ async function main(): Promise<void> {
     const pages = await craftRun({ url: args.values.url, routes: routes.length ? routes : ['/'], root: options.root, timeout, pairs: !args.values['no-pairs'], probe: !args.values['no-probe'], probeBudget: budget, probeDrag: (args.values.probe ?? []).includes('drag'), judge: !!args.values.judge, ...(args.values.scope ? { scope: args.values.scope } : {}), ...(args.values['record-probe'] ? { recordProbe: resolve(args.values['record-probe']) } : {}) });
     const findings = craftFindings(pages, options.root);
     // the fixes plumber can write, kept for `plumber apply p…` (cli-apply.ts)
-    if (findings.some(finding => finding.apply)) await (await import('./cli-apply.js')).keepPageFixes(options.root, findings);
+    if (findings.some(finding => finding.apply)) {
+      // where each fix's element is, for its after picture: the page it was read on, and its place there
+      const { pageFixPlaces } = await import('./craft-run.js');
+      await (await import('./cli-apply.js')).keepPageFixes(options.root, findings, pageFixPlaces(pages, options.root));
+    }
     if (typeof sarifFile === 'string') {
       const { atomicWrite } = await import('./atomic-write.js');
       await atomicWrite(resolve(sarifFile), `${JSON.stringify(sarif(craftReport(options.root, findings)), null, 2)}\n`);

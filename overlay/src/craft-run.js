@@ -251,6 +251,8 @@ async function readOnce(overlay, { timeout = 60000, quiet = 600, grey = false, s
           by: m.craft?.evidence?.model ? 'model' : 'rule', suggest: m.craft?.suggest ?? null, soft: !!m.soft,
           file: site?.file ?? item.file ?? null, line: site?.line ?? null, column: site?.column ?? null,
           component: site?.component ?? null, tag: item.el.localName, count: 1,
+          // where it is on the page, so a fix can be photographed before and after (plumber apply)
+          path: pathKey(item.el),
         });
       }
     }
