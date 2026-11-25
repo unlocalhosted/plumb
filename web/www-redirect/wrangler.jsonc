@@ -1,0 +1,10 @@
+// www.react-plumber.com: sends every request to the same path on react-plumber.com.
+//   npx wrangler deploy   (from this folder; it has no assets, so no site build is needed)
+{
+  "name": "react-plumber-www",
+  "main": "worker.js",
+  "compatibility_date": "2026-11-21",
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [{ "pattern": "www.react-plumber.com", "custom_domain": true }]
+}
