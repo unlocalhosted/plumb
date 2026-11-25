@@ -384,3 +384,16 @@ All free under the Unsplash License, hotlinked from images.unsplash.com as Unspl
   four gaps to the backlog's colour clean-up: `dark:` pairs not offered as role tokens, raw ramp steps not flagged,
   tokens used against their job not flagged, and two craft suggestions that write `dark:` themselves.
 - Used in: backlog, Clean-up: colour.
+
+## 2026-11-25 · Aiden Bai's dashboard demo video (shared by the owner)
+- What: a 14-second screen video posted on X by Aiden Bai (@aidenybai),
+  `~/Downloads/twitter_media_harvest/aidenybai-2029603067927351506-01.mp4`. A dark dashboard; the pointer picks an
+  element, a small popup names it (`CardTitle.div`), a request is typed ("fix formatting", "add a background", "fix
+  spelling") and sent. Frame sheet: `docs/films/launch-03-draft/reference-sheet.jpg` (local).
+- Why: "i like how we are moving the camera but i think we can learn a bit more by a video i just downloaded about
+  how to showcase the subject to the face and not really having to explain itself".
+- What we read from it: the camera stays in close-up, the element and the tool's own popup filling most of the frame,
+  and drifts after the pointer; it never cuts, it glides from one element to the next; nothing is drawn over the
+  product and there are no captions, because the words typed into the tool say what is happening; three examples of
+  the same gesture, about four seconds each; one pull-back at the end shows the whole page.
+- Used in: the launch film's script and shot plan (journey entry 94).

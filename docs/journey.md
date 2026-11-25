@@ -5889,6 +5889,20 @@ into its own browser. Your app isn't changed.", then the findings.
   pill show during the flip. The other nine kinds and the big button still behave the old way.
 - **Media hooks:** a screen recording of today's section next to the rebuilt one.
 
+### 94. The launch film: learning from a video that doesn't explain itself (2026-11-25)
+
+- **The itch:** the owner: "create a launch video now, so show a fix, visual editor, fixes", and "i like how we are
+  moving the camera but i think we can learn a bit more by a video i just downloaded about how to showcase the
+  subject to the face and not really having to explain itself".
+- **How we found it:** the newest file in the owner's downloads, Aiden Bai's 14-second dashboard video, read frame by
+  frame ([references](references.md)).
+- **What it teaches:** a close-up that follows the pointer, no cuts, the product's own words in place of captions,
+  three examples of one gesture, and one pull-back at the end.
+- **What we chose:** a 26-second film of real takes on Relay: one fix, the visual editor writing a padding change,
+  then Clean up across the page, with only the closing line as a caption. Shot plan:
+  `docs/films/launch-03-draft/script.md` (local). Waiting for the owner's OK.
+- **Media hooks:** the reference's frame sheet beside the shot plan.
+
 ## Open gaps
 
 - Without setup, the page check found 70 problems where the same page wired in finds 72 (10 fixes against 14). Not
