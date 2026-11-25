@@ -2,16 +2,15 @@
  * THE EGGS · the real faults behind each toy on the floor (site/Floor.jsx)
  *
  * Nothing is staged. Behind a toy are the faults of its kind that Plumber found on the homepage and that nobody
- * fixed (findings.json). Press it: the page comes to one of them, the toy flies over, the card says what Plumber
- * found and where in the code, and the product's own show plays (overlay/src/show.js): guides in coral, the move on
- * the spring with the value rolling, the landing in sky, the guides go. The rest of that kind are fixed with it, the
- * count falls, and they stay fixed for the visit (fixes.js). Then the page glides back, unless the person moved it.
+ * fixed (findings.json). Press it and the page takes you to each one in turn: a note beside it says what is wrong
+ * (note.js), the product's own guides mark it (overlay/src/show.js), it moves to the fixed value, and the count
+ * falls. Fixes stay for the visit (fixes.js). The main button does the same for every kind.
  *
- * Interrupted (Esc, another toy, leaving): whatever was being fixed is fixed at once, never put back.
- * Reduced motion: fixed at once, with the card and no travel.
+ * Interrupted (Esc, scrolling, another toy, leaving): what was fixed stays fixed, the rest waits.
+ * Reduced motion: fixed at once, no travel.
  * ───────────────────────────────────────────────────────── */
 import { Scope } from '../../overlay/src/scope.js';
-import { play, playAll, PageGuides, BEAT, SPRING } from '../../overlay/src/show.js';
+import { PageGuides, BEAT, SPRING } from '../../overlay/src/show.js';
 import { reduced } from '../../overlay/src/motion.js';
 import { ITEMS } from './fixes.js';
 import { Note, SAY } from './note.js';
@@ -67,11 +66,6 @@ function seen(i) {
   return null;
 }
 
-// the kinds whose change the eye catches, the easiest to see first: the ride stops at these before the others
-const EYE = ['craft/layered-shadow', 'craft/continuous-corners', 'craft/inner-outer-spacing', 'craft/text-wrap-role', 'craft/gradient-space',
-  'craft/card-optical-padding', 'craft/icon-side', 'craft/baseline-align', 'craft/contrast', 'craft/text-opacity', 'craft/tinted-shadow',
-  'craft/hit-target', 'tells/eyebrow', 'craft/scroll-cue', 'craft/truncate-intent'];
-
 // everything drawn on the page, as boxes in page coordinates: words (each line of them), pictures, controls, and
 // anything with its own surface. A note is written only where none of these is
 function ink() {
@@ -116,204 +110,119 @@ function eased(list) {
   setTimeout(() => rule.remove(), BEAT.move + 80);
 }
 
-// beside a piece, where a toy led to it waits without covering it
-const beside = (el) => () => {
-  const r = el.getBoundingClientRect(), y = Math.max(48, Math.min(innerHeight - 48, r.top + Math.min(r.height, 140) / 2));
-  if (r.right + 100 < innerWidth) return { x: r.right + 56, y: r.bottom < 72 ? 112 : y };
-  const x = Math.min(innerWidth - 48, Math.max(48, r.right - 40));
-  return r.top > 140 ? { x, y: r.top - 64 } : { x, y: Math.min(r.bottom + 64, innerHeight - 48) };
-};
-
-// none of a kind in plain sight: one in the homepage's own demos, brought into sight. A carousel card is turned to
-// by pressing it, as a person would; a demo that plays when it is reached plays as the page comes to it
-function reach(list) {
-  const all = list.flatMap((i) => ITEMS[i].sel.flatMap((s) => { const el = document.querySelector(s); return el?.getClientRects().length ? [{ i, el, y: el.getBoundingClientRect().top + scrollY, deep: true }] : []; }));
-  const found = all.find((p) => !p.el.closest('.ins-x-track')) ?? all[0];
-  if (!found) return null;
-  const turned = found.el.closest('.ins-card:not([data-active])');
-  turned?.click();
-  return found;
-}
-
 export class Eggs {
   #run = null; #host;
   /**
-   * @param host { fixes, lead(toy, point) → release, changed(), card(found | null) }
+   * @param host { fixes, lead(toy, point) → release, changed() }
    */
   constructor(host) { this.#host = host; }
 
   stop() { this.#run?.end(); this.#run = null; }
 
   /**
-   * The ride: every fault that is left, from the top of the page to the bottom. The page carries the person down,
-   * stop by stop. At each stop the faults in sight are marked on the real elements with what they have, a note
-   * beside the biggest one says what is wrong in plain words (note.js), they move to the fixed value together, and
-   * the note says what changed and how many are left. Scrolling or Esc ends the ride where it
-   * is: what was fixed stays fixed and the rest is left for the next press.
+   * The tour: one toy's faults, or every fault that is left, one at a time from the top of the page to the bottom.
+   * The page comes to each one. A note beside it says what is wrong in plain words (note.js), the piece is marked
+   * with what it has, it moves to the fixed value, and the note says what changed. Then the next one. A kind met
+   * for the first time is given longer to read; the ones after it go quicker. Scrolling or Esc ends the tour where
+   * it is: what was fixed stays fixed and the rest is left for the next press.
    */
-  async ride() {
+  async ride(toy) {
     this.stop();
-    const { fixes, lead, changed, card } = this.#host, list = fixes.open();
+    const { fixes, lead, changed } = this.#host, list = fixes.open(toy);
     if (!list.length) return;
     fixes.ready(list);
     const run = new Scope();
     this.#run = run;
-    run.onEnd(() => card(null));
     if (reduced()) { fixes.make(list); changed(); return this.stop(); }
-    const note = new Note();
-    run.onEnd(() => note.remove());
+    const note = new Note(), guides = new PageGuides(document.body), start = scrollY;
+    let letGo = () => {}, led = null;
+    run.onEnd(() => { note.remove(); guides.remove(); letGo(); });
     run.listen(window, 'keydown', (e) => { if (e.key === 'Escape') this.stop(); });
     for (const type of ['wheel', 'touchmove']) run.listen(window, type, () => this.stop(), { passive: true });
     const pause = (ms) => run.wait(new Promise((done) => run.timeout(done, ms)));
     const glide = async (top) => {
-      scrollTo({ top, behavior: 'smooth' });
-      for (let last = -1, n = 0; n < 30 && last !== scrollY; n++) { last = scrollY; await pause(110); }
+      const to = Math.max(0, Math.min(top, document.documentElement.scrollHeight - innerHeight));
+      scrollTo({ top: to, behavior: 'smooth' });
+      // there, or stopped short for a second and a half (a long way can be slow to start)
+      for (let n = 0, still = 0, last = scrollY; n < 120 && Math.abs(scrollY - to) > 2 && still < 20; n++) { await pause(80); still = scrollY === last ? still + 1 : 0; last = scrollY; }
     };
-    const guides = new PageGuides(document.body);
-    run.onEnd(() => guides.remove());
 
-    // the stops: one piece each, and only a piece with empty page beside it, where its note can be written without
-    // covering anything (ink). Planned once, on the whole page, before the ride starts
-    const places = list.map(placed).filter(Boolean).sort((a, b) => a.y - b.y);
-    const taken = ink(), W = Math.min(372, innerWidth - 32), H = 84, top = 96, room = innerHeight - top - 24;
-    const clear = (x, y) => x >= 16 && x + W <= innerWidth - 16 && y >= 0
-      && !taken.some((k) => k.left < x + W + 10 && k.right > x - 10 && k.top < y + H + 10 && k.bottom > y - 10);
-    const spot = (p) => {
-      const r = p.el.getBoundingClientRect(), y0 = p.y, x0 = Math.max(16, Math.min(r.left, innerWidth - W - 16)), part = Math.min(p.h, 220);
-      for (const [x, y] of [[r.right + 44, y0 + Math.min(p.h, 160) / 2 - H / 2], [x0, y0 + p.h + 40], [x0, y0 - H - 64], [r.left - W - 44, y0 + Math.min(p.h, 160) / 2 - H / 2]]) {
-        // the piece (its first part, when it is tall) and its note fit in the window together
-        const from = Math.min(y0 - 44, y), to = Math.max(y0 + part, y + H);
-        if (to - from <= room && clear(x, y)) return { x, y, from };
+    // where a note goes: beside the piece, in the emptiest place around it (ink), and never on the piece itself
+    const taken = ink(), W = Math.min(372, innerWidth - 32), H = 84;
+    const over = (a, b) => Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left)) * Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+    const spot = (r) => {
+      const fit = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+      const midY = fit(r.top + Math.min(r.height, 160) / 2 - H / 2, 88, innerHeight - H - 16), x0 = fit(r.left, 16, innerWidth - W - 16);
+      const keep = { left: r.left - 14, right: r.right + 14, top: r.top - 40, bottom: r.bottom + 14 };
+      const near = taken.filter((k) => k.bottom - scrollY > 0 && k.top - scrollY < innerHeight).map((k) => ({ left: k.left, right: k.right, top: k.top - scrollY, bottom: k.bottom - scrollY }));
+      const cost = ([x, y]) => { const box = { left: x - 8, right: x + W + 8, top: y - 8, bottom: y + H + 8 }; return over(box, keep) * 1000 + near.reduce((sum, k) => sum + over(box, k), 0); };
+      const tries = [[r.right + 44, midY], [x0, r.bottom + 40], [x0, r.top - H - 64], [r.left - W - 44, midY],
+        [innerWidth - W - 16, r.bottom + 40], [16, r.bottom + 40], [innerWidth - W - 16, r.top - H - 64], [16, r.top - H - 64],
+        [innerWidth - W - 16, innerHeight - H - 16], [16, innerHeight - H - 16], [innerWidth - W - 16, 88], [16, 88]]
+        .filter(([x, y]) => x >= 16 && x + W <= innerWidth - 16 && y >= 88 && y + H <= innerHeight - 16);
+      // next to the piece when any place next to it is in the window; a far corner only when none is
+      const [x, y] = (tries.length > 4 ? tries.slice(0, -4) : tries).map((t) => [t, cost(t)]).sort((a, b) => a[1] - b[1])[0]?.[0] ?? [16, innerHeight - H - 16];
+      return { x, y, w: W, h: H };
+    };
+
+    // the place planned on the whole page, before the page comes to the piece: beside it, or the nearest empty
+    // band above or below it, with nothing drawn there and the piece left clear. The page then comes to both
+    const plan = (el) => {
+      const r = el.getBoundingClientRect(), pt = r.top + scrollY, pb = pt + r.height, room = innerHeight - 88 - 24;
+      const fit = (v) => Math.max(16, Math.min(innerWidth - W - 16, v));
+      const free = (x, y) => x >= 16 && x + W <= innerWidth - 16 && y >= 0
+        && !(r.left - 14 < x + W && r.right + 14 > x && pt - 40 < y + H && pb + 14 > y)
+        && !taken.some((k) => k.left < x + W + 10 && k.right > x - 10 && k.top < y + H + 10 && k.bottom > y - 10);
+      const mid = pt + Math.min(r.height, 160) / 2 - H / 2;
+      for (const x of [r.right + 44, r.left - W - 44]) if (free(x, mid)) return { x, y: mid, from: Math.min(pt - 44, mid) };
+      const xs = [...new Set([fit(r.left), fit(r.left + r.width / 2 - W / 2), fit(r.right - W)])];
+      for (let x = 16; x <= innerWidth - W - 16; x += 48) xs.push(x);
+      // no further than leaves a good part of the piece in the window with it
+      for (let d = 0, far = Math.max(0, room - H - 64 - 140); d <= far; d += 12) for (const x of xs) {
+        const below = pb + 40 + d, above = pt - H - 64 - d;
+        if (free(x, below)) return { x, y: below, from: Math.max(pt - 44, below + H - room) };
+        if (free(x, above)) return { x, y: above, from: above };
       }
       return null;
     };
-    const stops = [], told = new Set();
-    let reach = -Infinity;
-    for (const p of places) {
-      if (p.y < reach) continue; // one stop a screenful
-      // of the pieces on this screenful: one with room, a kind not told yet first, then the change the eye catches
-      const near = places.filter((q) => q.y >= p.y && q.y < p.y + room).map((q) => ({ ...q, at: spot(q) })).filter((q) => q.at);
-      const rank = (q) => (told.has(ITEMS[q.i].rule) ? 100 : 0) + (EYE.indexOf(ITEMS[q.i].rule) + 1 || 50);
-      // a kind is told once: a second stop that says the same sentence is a stop too many
-      const pick = near.filter((q) => !told.has(ITEMS[q.i].rule)).sort((x, y) => rank(x) - rank(y))[0];
-      if (!pick) continue;
-      told.add(ITEMS[pick.i].rule);
-      stops.push(pick);
-      reach = pick.y + room * 0.6;
-    }
-    for (const [n, stop] of stops.entries()) {
-      await glide(Math.max(0, stop.at.from - top));
-      await pause(220);
-      // everything from here up to the next stop is fixed with this one; only this piece is marked
-      const until = stops[n + 1]?.y ?? Infinity, passed = new Set(places.filter((p) => p.y < until).map((p) => p.i));
-      const here = fixes.open().filter((i) => passed.has(i));
-      if (!here.includes(stop.i)) continue;
-      // not in plain sight after all, or the page could not come far enough for the note to be in the window
-      const shown = seen(stop.i), noteTop = stop.at.y - scrollY;
-      if (!shown || noteTop < 80 || noteTop + H > innerHeight - 8) { fixes.make(here); changed(); continue; }
-      const main = ITEMS[stop.i], el = shown.el;
-      const [wrong, right] = SAY[main.rule] ?? [main.title, 'Fixed.'];
-      const slot = note.showAt(el, { x: stop.at.x, y: stop.at.y - scrollY, w: W, h: H }, { say: wrong, sub: '' });
-      const release = lead(main.toy, slot);
-      const steps = [{ look: 'ring', ...drawn(main, el), chip: null, bands: () => [{ el, rect: () => el.getBoundingClientRect() }], morph() {} }];
+
+    const order = list.map(placed).filter(Boolean).sort((a, b) => a.y - b.y), told = new Set();
+    for (const [n, p] of order.entries()) {
+      if (!fixes.open().includes(p.i)) continue;
+      const item = ITEMS[p.i];
+      let r = p.el.getBoundingClientRect();
+      const want = plan(p.el), to = Math.max(0, want ? want.from - 88 : r.top + scrollY - Math.max(240, innerHeight * 0.34));
+      if (Math.abs(to - scrollY) > 24) { await glide(to); await pause(140); }
+      // inside a demo that is not open, or not drawn: fixed without a stop
+      const shown = seen(p.i);
+      if (!shown) { fixes.make([p.i]); changed(); continue; }
+      const el = shown.el, first = !told.has(item.rule);
+      told.add(item.rule);
+      r = el.getBoundingClientRect();
+      const wy = want ? want.y - scrollY : -1, at = want && wy >= 80 && wy + H <= innerHeight - 8 ? { x: want.x, y: wy, w: W, h: H } : spot(r);
+      const [wrong, right] = SAY[item.rule] ?? [item.title, 'Fixed.'];
+      const slot = note.showAt(el, at, { say: wrong, sub: `${n + 1} of ${order.length}` });
+      if (led !== item.toy) { letGo(); letGo = lead(item.toy, slot); led = item.toy; }
+      const steps = [{ look: 'ring', ...drawn(item, el), chip: null, bands: () => [{ el, rect: () => el.getBoundingClientRect() }], morph() {} }];
       await run.wait(guides.in(steps, run.signal));
-      await pause(800);
-      eased(here);
-      fixes.make(here); changed();
+      await pause(first ? 900 : 320);
+      eased([p.i]);
+      fixes.make([p.i]); changed();
       guides.move();
       await pause(BEAT.move);
       guides.land();
-      note.land({ say: right, sub: here.length > 1 ? `and ${here.length - 1} more around it · ${fixes.left} left on the page` : `${fixes.left} left on the page` });
-      await pause(900);
+      note.land({ say: right, sub: `${fixes.left} left on the page` });
+      await pause(first ? 900 : 420);
       await run.wait(Promise.all([guides.out(run.signal), note.hide()]));
       guides.clear();
-      release();
     }
-    // back at the floor, with what could not be shown on the way (inside a demo that was not open)
-    const floor = document.querySelector('.floor');
-    if (floor) await glide(floor.getBoundingClientRect().bottom + scrollY - innerHeight);
-    const rest = fixes.open();
+    letGo();
+    // what has no place on the page as it is drawn now
+    const rest = fixes.open(toy);
     if (rest.length) { fixes.make(rest); changed(); }
-    this.stop();
-  }
-
-  /** One toy's faults, or every one that is left. */
-  async play(toy) {
-    this.stop();
-    const { fixes, lead, changed, card } = this.#host, list = fixes.open(toy);
-    if (!list.length) {
-      if (toy) card({ title: fixes.of(toy) ? 'These are fixed. They stay that way while you’re here.' : 'This browser can’t draw this fix.', done: true });
-      const run = new Scope();
-      this.#run = run;
-      run.onEnd(() => card(null));
-      run.timeout(() => this.stop(), 2200);
-      return;
-    }
-    fixes.ready(list);
-    const run = new Scope(), still = reduced(), start = scrollY;
-    this.#run = run;
-    let moved = false, made = false;
-    const make = () => { if (made) return; made = true; fixes.make(list); changed(); };
-    // left part way: fixed all the same
-    run.onEnd(() => { make(); card(null); });
-    run.listen(window, 'keydown', (e) => { if (e.key === 'Escape') this.stop(); });
-    for (const type of ['wheel', 'touchmove']) run.listen(window, type, () => { moved = true; }, { passive: true });
-    const pause = (ms) => run.wait(new Promise((done) => run.timeout(done, ms)));
-
-    // the one to go to: not inside one of the homepage's own demos if there is another, and the nearest to the floor
-    const places = list.map(seen).filter(Boolean).sort((a, b) => a.deep - b.deep || b.y - a.y);
-    const main = places[0] ?? (still ? null : reach(list)), said = ITEMS[main?.i ?? list[0]];
-    card({ title: said.title, at: said.at, more: list.length - 1 });
-    if (!main || still) {
-      make();
-      await pause(3200);
-      return this.stop();
-    }
-
-    const rect = () => main.el.getBoundingClientRect();
-    run.onEnd(lead(toy ?? said.toy, () => {
-      const r = rect(), y = Math.max(48, Math.min(innerHeight - 48, r.top + Math.min(r.height, 140) / 2));
-      if (r.right + 100 < innerWidth) return { x: r.right + 56, y: r.bottom < 72 ? 112 : y };
-      const x = Math.min(innerWidth - 48, Math.max(48, r.right - 40));
-      return r.top > 140 ? { x, y: r.top - 64 } : { x, y: Math.min(r.bottom + 64, innerHeight - 48) };
-    }));
-
-    const at = rect(), above = 170, below = innerHeight - 24; // the card hangs under the bar
-    if (at.top < above || at.top + Math.min(at.height, 120) > below) {
-      scrollBy({ top: at.top - Math.max(above + 40, innerHeight * 0.36), behavior: 'smooth' });
-      for (let last = -1, n = 0; n < 24 && last !== scrollY; n++) { last = scrollY; await pause(120); }
-    }
-    // long enough to read what it found, and for a demo it was brought out of to draw
-    await pause(main.deep ? 1300 : 420);
-
-    const near = [main, ...places.filter((p) => p.el !== main.el && p.el.getBoundingClientRect().top > above && p.el.getBoundingClientRect().bottom < below)].slice(0, toy ? 3 : 5);
-    const timed = ITEMS[main.i].rule.startsWith('provenance/motion') ? ITEMS[main.i] : null;
-    const beat = (ms) => main.el.animate([{ scale: '1' }, { scale: '1.16' }, { scale: '1' }], { duration: ms * 2, iterations: 2, easing: 'ease-out' });
-    if (timed) { beat(timed.from); await pause(timed.from * 4); }
-
-    const morph = () => {
-      if (made) return;
-      // everything that changes eases on the show's spring, through a rule that outweighs the page's own transitions
-      const props = [...new Set(list.flatMap((i) => Object.keys(ITEMS[i].make.css ?? {})))].filter((p) => !['display', 'transition-duration'].includes(p));
-      const on = list.filter((i) => ITEMS[i].toy !== 'motion').flatMap((i) => ITEMS[i].sel);
-      const easing = Object.assign(document.createElement('style'), {
-        textContent: props.length && on.length ? `${on.map((s) => `:root:root ${s}`).join(',')} { transition: ${props.map((p) => `${p} ${BEAT.move}ms ${SPRING}`).join(', ')} !important }` : '',
-      });
-      document.head.append(easing);
-      void document.body.offsetHeight;
-      make();
-      setTimeout(() => easing.remove(), BEAT.move + 80);
-      if (timed) beat(timed.to);
-    };
-    const steps = near.map((p, n) => {
-      const d = drawn(ITEMS[p.i], p.el), bands = [{ el: p.el, rect: () => p.el.getBoundingClientRect() }];
-      return { look: 'ring', ...d, chip: null, bands: () => bands, morph: n === 0 ? morph : () => {} };
-    });
-    const guides = new PageGuides(document.body);
-    run.onEnd(() => guides.remove());
-    await run.wait(steps.length > 1 ? playAll(steps, { guides, signal: run.signal }) : play(steps, { guides, signal: run.signal }));
-    await pause(700);
-    if (!moved && Math.abs(scrollY - start) > 4) scrollTo({ top: start, behavior: 'smooth' });
+    // back to the floor: where the press was, or the foot of the page after the whole tour
+    const floor = document.querySelector('.floor');
+    await glide(toy || !floor ? start : floor.getBoundingClientRect().bottom + scrollY - innerHeight);
     this.stop();
   }
 }

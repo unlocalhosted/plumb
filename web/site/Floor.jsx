@@ -21,14 +21,13 @@ export function Floor() {
   here.current = path;
   const [pileIs, setPileIs] = useState('waiting');
   const [{ left, able, toys, cant, none }, setCount] = useState(FRESH);
-  const [found, setFound] = useState(null);
 
   useEffect(() => {
     const f = new Fixes();
     const count = () => setCount({ left: f.left, able: f.open().length, none: f.cant(), cant: Object.fromEntries(PIECES.map(([t]) => [t, f.cant(t)])), toys: Object.fromEntries(PIECES.map(([t]) => [t, f.open(t).length])) });
     fixes.current = f;
     eggs.current = new Eggs({
-      fixes: f, card: setFound,
+      fixes: f,
       lead: (name, point) => pile.current?.lead(name, point) ?? (() => {}),
       changed() {
         count();
@@ -42,7 +41,7 @@ export function Floor() {
 
   // the faults are the homepage's: from any other page a press goes there first
   function start(toy) {
-    if (here.current === '/') return toy ? eggs.current.play(toy) : eggs.current.ride();
+    if (here.current === '/') return eggs.current.ride(toy);
     next.current = toy ?? null;
     router.push('/', { scroll: false });
   }
@@ -50,7 +49,7 @@ export function Floor() {
     if (path === '/' && next.current !== undefined) {
       const toy = next.current;
       next.current = undefined;
-      const wait = setTimeout(() => (toy ? eggs.current.play(toy) : eggs.current.ride()), 900); // long enough for the sections to draw
+      const wait = setTimeout(() => (eggs.current.ride(toy)), 900); // long enough for the sections to draw
       return () => clearTimeout(wait);
     }
     return () => eggs.current?.stop();
@@ -92,12 +91,6 @@ export function Floor() {
           );
         })}
       </div>
-      {found && (
-        <div className="found" role="status" data-done={found.done || undefined}>
-          <b>{found.title}</b>
-          {found.at && <span><code>{found.at}</code>{found.more ? ` and ${found.more} more like it` : ''}</span>}
-        </div>
-      )}
     </div>
   );
 }

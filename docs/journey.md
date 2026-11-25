@@ -5958,6 +5958,17 @@ into its own browser. Your app isn't changed.", then the findings.
 - **Media hooks:** the reference's frame sheet beside the shot plan; `take/editor-syncing.jpg` and
   `take/after-sync.jpg` (local) show the bug.
 
+- **One at a time, from any toy (2026-11-26).** The owner: "just fix the things one by one clicking on a single item
+  should give the tour like experience". Until now only the main button toured, and it showed 4 of 80 fixes; a single
+  toy still played the old way, with a dark card under the top bar that he read as a tooltip. Now a toy and the main
+  button run the same tour: the page goes to each fault in turn, the note says what is wrong, the piece moves, the
+  note says what changed. A kind met for the first time gets longer to read. The dark card is deleted. The note's
+  place is planned on the whole page before the page moves, so the page comes to the piece and its note together.
+  Proof: the Shadow toy at 1024 wide, 9 stops in about 45 seconds, every note beside or under its piece. Not solved:
+  the full tour of 80 is long and has not been watched end to end.
+- **The Demo page is gone.** It was a placeholder that said the demo isn't on the site yet. The owner: "remove the
+  demo page its fucking annoying". The page and its link in the top bar are removed.
+
 ## Open gaps
 
 - Without setup, the page check found 70 problems where the same page wired in finds 72 (10 fixes against 14). Not

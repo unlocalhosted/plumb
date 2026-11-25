@@ -267,11 +267,6 @@ body > .fx-burst { z-index: 45 !important; }
 .piece-done::after { content: ''; position: absolute; left: 7.5px; top: 4.5px; width: 5px; height: 10px; border: solid var(--pl-cut); border-width: 0 2.4px 2.4px 0; rotate: 45deg; }
 .piece[data-fixed] .piece-done { opacity: 1; scale: 1; }
 /* what Plumber found, in its own words, over the page while the fix plays */
-.found { position: fixed; z-index: 55; left: 50%; top: 74px; translate: -50% 0; display: grid; gap: 4px; width: max-content; max-width: min(620px, calc(100vw - 32px)); padding: 12px 18px; border-radius: 16px; background: var(--pl-text-primary); color: var(--pl-bg-surface); text-align: center; pointer-events: none; animation: found-in 260ms var(--pl-ease-out) both; }
-.found b { font: var(--pl-round-w, 700) 17px/22px var(--pl-round); text-wrap: balance; }
-.found span { font: 500 13px/18px var(--pl-sans); }
-.found code { font: 500 12px/18px var(--pl-mono); }
-@keyframes found-in { from { opacity: 0; translate: -50% -10px; } }
 /* what the ride says at a stop, written beside the element it is about (site/note.js): a sentence and a line to it,
    no box; the page's colour glows behind the words so they read over anything */
 .note { position: fixed; z-index: 48; box-sizing: border-box; display: flex; align-items: center; gap: 12px; min-height: 84px; pointer-events: none; }
@@ -338,5 +333,5 @@ body > .fx-burst { z-index: 45 !important; }
 }
 @keyframes get-drop { 35% { translate: 0 -3px; } 70% { translate: 0 1px; } }
 @media (prefers-reduced-motion: reduce) {
-  .piece .toy svg *, .floor-n, .found, .piece-done, .bar .tile > path, .bar .star > path { animation: none !important; transition: none !important; }
+  .piece .toy svg *, .floor-n, .piece-done, .bar .tile > path, .bar .star > path { animation: none !important; transition: none !important; }
 }

@@ -10,7 +10,7 @@ import { short, useCount } from './counts.js';
 import { Download, Fetched, GitHub, LinkedIn, Moon, Star, Sun, X } from './marks.jsx';
 import { AUTHOR, GITHUB_URL, NPM_URL } from './project.js';
 
-const PLACES = [['/', 'Home'], ['/docs', 'Docs'], ['/demo', 'Demo'], ['/design', 'Design']];
+const PLACES = [['/', 'Home'], ['/docs', 'Docs'], ['/design', 'Design']];
 
 export function useScheme() {
   const [scheme, setScheme] = useState('light');
