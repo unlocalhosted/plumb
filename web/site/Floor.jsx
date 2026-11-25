@@ -9,7 +9,6 @@ import { Toy } from './Toy.jsx';
 import { Eggs } from './eggs.js';
 import { Fixes, TOTAL } from './fixes.js';
 import { Pile } from './pile.js';
-import { Story, STORIES } from './Story.jsx';
 
 // [toy, its name]
 const PIECES = [['padding', 'Padding'], ['margin', 'Margin'], ['gap', 'Gap'], ['corner', 'Border radius'], ['type', 'Type'],
@@ -23,14 +22,11 @@ export function Floor() {
   const [pileIs, setPileIs] = useState('waiting');
   const [{ left, able, toys, cant, none }, setCount] = useState(FRESH);
   const [found, setFound] = useState(null);
-  const [story, setStory] = useState(null);
-  const tally = useRef(() => {});
 
   useEffect(() => {
     const f = new Fixes();
     const count = () => setCount({ left: f.left, able: f.open().length, none: f.cant(), cant: Object.fromEntries(PIECES.map(([t]) => [t, f.cant(t)])), toys: Object.fromEntries(PIECES.map(([t]) => [t, f.open(t).length])) });
     fixes.current = f;
-    tally.current = count;
     eggs.current = new Eggs({
       fixes: f, card: setFound,
       lead: (name, point) => pile.current?.lead(name, point) ?? (() => {}),
@@ -45,14 +41,8 @@ export function Floor() {
   }, []);
 
   // the faults are the homepage's: from any other page a press goes there first
-  // a kind with a story is told here, one fault at a time (Story.jsx); the others still play on the page
-  function tell(toy) {
-    if (toy && STORIES[toy] && fixes.current.open(toy).length) { eggs.current.stop(); setStory(toy); return; }
-    setStory(null);
-    eggs.current.play(toy);
-  }
   function start(toy) {
-    if (here.current === '/') return tell(toy);
+    if (here.current === '/') return toy ? eggs.current.play(toy) : eggs.current.ride();
     next.current = toy ?? null;
     router.push('/', { scroll: false });
   }
@@ -60,7 +50,7 @@ export function Floor() {
     if (path === '/' && next.current !== undefined) {
       const toy = next.current;
       next.current = undefined;
-      const wait = setTimeout(() => tell(toy ?? undefined), 900); // long enough for the sections to draw
+      const wait = setTimeout(() => (toy ? eggs.current.play(toy) : eggs.current.ride()), 900); // long enough for the sections to draw
       return () => clearTimeout(wait);
     }
     return () => eggs.current?.stop();
@@ -90,7 +80,6 @@ export function Floor() {
           <span>{done ? (tidy ? 'Mix them up' : 'Clean up') : able === null ? 'Fix them' : `Fix ${able}`}</span>
         </button>
       </div>
-      {story && <Story key={story} toy={story} fixes={fixes.current} left={left} onMade={() => tally.current()} onClose={() => setStory(null)} />}
       <div ref={stage} className="pile">
         {PIECES.slice(1).map(([toy]) => <i key={toy} className="pile-gap" data-guide aria-hidden="true"><b /></i>)}
         {PIECES.map(([toy, name]) => {
@@ -103,7 +92,13 @@ export function Floor() {
           );
         })}
       </div>
-      {found && (
+      {found?.ride && (
+        <div className="ride" role="status">
+          <b className="ride-n"><span key={left}>{left}</span></b>
+          <span className="ride-say" key={found.title}>{found.title}{found.more > 0 ? <i> and {found.more} more here</i> : null}</span>
+        </div>
+      )}
+      {found && !found.ride && (
         <div className="found" role="status" data-done={found.done || undefined}>
           <b>{found.title}</b>
           {found.at && <span><code>{found.at}</code>{found.more ? ` and ${found.more} more like it` : ''}</span>}

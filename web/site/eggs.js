@@ -66,6 +66,40 @@ function seen(i) {
   return null;
 }
 
+// where it is on the page, drawn or still waiting to be revealed: the ride plans its stops from this
+function placed(i) {
+  for (const s of ITEMS[i].sel) {
+    const el = document.querySelector(s);
+    if (!el?.getClientRects().length) continue;
+    const r = el.getBoundingClientRect();
+    if (r.width < 4 || r.height < 2 || r.left < 0 || r.right > innerWidth + 1) continue;
+    return { i, el, y: r.top + scrollY, h: r.height };
+  }
+  return null;
+}
+
+// everything a list of fixes changes eases on the show's spring, through a rule that outweighs the page's own
+// transitions; the rule goes when the move is over
+function eased(list) {
+  const props = [...new Set(list.flatMap((i) => Object.keys(ITEMS[i].make.css ?? {})))].filter((p) => !['display', 'transition-duration'].includes(p));
+  const on = list.filter((i) => ITEMS[i].toy !== 'motion').flatMap((i) => ITEMS[i].sel);
+  if (!props.length || !on.length) return;
+  const rule = Object.assign(document.createElement('style'), {
+    textContent: `${on.map((s) => `:root:root ${s}`).join(',')} { transition: ${props.map((p) => `${p} ${BEAT.move}ms ${SPRING}`).join(', ')} !important }`,
+  });
+  document.head.append(rule);
+  void document.body.offsetHeight;
+  setTimeout(() => rule.remove(), BEAT.move + 80);
+}
+
+// beside a piece, where a toy led to it waits without covering it
+const beside = (el) => () => {
+  const r = el.getBoundingClientRect(), y = Math.max(48, Math.min(innerHeight - 48, r.top + Math.min(r.height, 140) / 2));
+  if (r.right + 100 < innerWidth) return { x: r.right + 56, y: r.bottom < 72 ? 112 : y };
+  const x = Math.min(innerWidth - 48, Math.max(48, r.right - 40));
+  return r.top > 140 ? { x, y: r.top - 64 } : { x, y: Math.min(r.bottom + 64, innerHeight - 48) };
+};
+
 // none of a kind in plain sight: one in the homepage's own demos, brought into sight. A carousel card is turned to
 // by pressing it, as a person would; a demo that plays when it is reached plays as the page comes to it
 function reach(list) {
@@ -85,6 +119,76 @@ export class Eggs {
   constructor(host) { this.#host = host; }
 
   stop() { this.#run?.end(); this.#run = null; }
+
+  /**
+   * The ride: every fault that is left, from the top of the page to the bottom. The page carries the person down,
+   * stop by stop. At each stop the faults in sight are marked on the real elements with what they have, they move
+   * to the fixed value together, and the count the person carries falls. Scrolling or Esc ends the ride where it
+   * is: what was fixed stays fixed and the rest is left for the next press.
+   */
+  async ride() {
+    this.stop();
+    const { fixes, lead, changed, card } = this.#host, list = fixes.open();
+    if (!list.length) return;
+    fixes.ready(list);
+    const run = new Scope();
+    this.#run = run;
+    run.onEnd(() => card(null));
+    if (reduced()) {
+      fixes.make(list); changed();
+      card({ ride: true, title: 'Fixed, without the ride.' });
+      run.timeout(() => this.stop(), 2600);
+      return;
+    }
+    run.listen(window, 'keydown', (e) => { if (e.key === 'Escape') this.stop(); });
+    for (const type of ['wheel', 'touchmove']) run.listen(window, type, () => this.stop(), { passive: true });
+    const pause = (ms) => run.wait(new Promise((done) => run.timeout(done, ms)));
+    const glide = async (top) => {
+      scrollTo({ top, behavior: 'smooth' });
+      for (let last = -1, n = 0; n < 30 && last !== scrollY; n++) { last = scrollY; await pause(110); }
+    };
+    const guides = new PageGuides(document.body);
+    run.onEnd(() => guides.remove());
+
+    // the stops: pieces in page order, each stop what fits between the bar at the top and the count at the bottom
+    const above = 150, span = innerHeight - above - 150;
+    const places = list.map(placed).filter(Boolean).sort((a, b) => a.y - b.y), stops = [];
+    for (const p of places) {
+      const s = stops.at(-1);
+      if (s && p.y + Math.min(p.h, 160) - s[0].y < span) s.push(p); else stops.push([p]);
+    }
+    card({ ride: true, title: 'Going to the top of the page.' });
+    for (const stop of stops) {
+      await glide(Math.max(0, stop[0].y - above));
+      await pause(260);
+      const here = stop.map((p) => p.i).filter((i) => !fixes.has(i));
+      // marked: the ones in plain sight now, one of each element, the widest first so the big changes lead
+      const inSight = stop.map((p) => seen(p.i)).filter(Boolean).filter((p, n, all) => all.findIndex((q) => q.el === p.el) === n);
+      const shown = inSight.sort((a, b) => b.el.offsetWidth - a.el.offsetWidth).slice(0, 4);
+      if (!shown.length) { fixes.make(here); changed(); continue; }
+      const main = ITEMS[shown[0].i];
+      card({ ride: true, title: main.title, more: here.length - 1 });
+      const release = lead(main.toy, beside(shown[0].el));
+      const steps = shown.map((p) => ({ look: 'ring', ...drawn(ITEMS[p.i], p.el), chip: null, bands: () => [{ el: p.el, rect: () => p.el.getBoundingClientRect() }], morph() {} }));
+      await run.wait(guides.in(steps, run.signal));
+      await pause(620);
+      eased(here);
+      fixes.make(here); changed();
+      guides.move();
+      await pause(BEAT.move);
+      guides.land();
+      await pause(640);
+      await run.wait(guides.out(run.signal));
+      guides.clear();
+      release();
+    }
+    // back at the floor, with what could not be shown on the way (inside a demo that was not open)
+    const floor = document.querySelector('.floor');
+    if (floor) await glide(floor.getBoundingClientRect().bottom + scrollY - innerHeight);
+    const rest = fixes.open();
+    if (rest.length) { card({ ride: true, title: `And ${rest.length} more inside this page’s demos.` }); fixes.make(rest); changed(); await pause(1400); }
+    this.stop();
+  }
 
   /** One toy's faults, or every one that is left. */
   async play(toy) {

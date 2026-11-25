@@ -5887,6 +5887,21 @@ into its own browser. Your app isn't changed.", then the findings.
   which fixes them on the page with a burst. Seen running in the dark theme: the count went from 125 to 111 and the
   toy read "Shadow · fixed". Not yet looked at: the light theme, a phone width, and whether the guides and the
   pill show during the flip. The other nine kinds and the big button still behave the old way.
+- **Then the stop (owner, on the Shadow card):** "this is ass, the ux i was going for to show a evolving site which
+  fixes itself and like across the page user will feel the magic while the site fixes itself, you just made this
+  fuck ass card and says 14 things fixed without user actually feeling it". The mistake was mine: I read "the
+  visitor can't see the fix" and answered by taking the fault off the page into a box, when the page itself is the
+  show. The first version had the right stage and no way to feel it; the card had neither. Nothing more is built on
+  the card; the questions on how the page fixes itself are with the owner.
+- **What the owner chose instead:** one press, then a ride; each fault marked on the real element, then moved; the
+  count travels with you.
+- **The ride, first version:** the card is gone. The main button now takes the page to the top and carries it down in
+  stops (`web/site/eggs.js`, `ride`). At each stop the faults in sight are ringed on the real elements with what
+  they have, they move to the fixed value together, the kind's toy waits beside the biggest one, and a pill at the
+  bottom of the window carries the count and says what was found. Seen running at 1024 wide in the dark theme: ten
+  stops, about 50 seconds, the count falling 125, 112, 107, 105, 96, 94, 92, 91, 77, 73, 70, then the last 25
+  (inside demos that were not open) at the bottom. Open: it is long; the words in the pill are the tool's report;
+  the first try, in a narrower window, found no stops and fixed everything at once.
 - **Media hooks:** a screen recording of today's section next to the rebuilt one.
 
 ### 94. The launch film: learning from a video that doesn't explain itself (2026-11-25)
