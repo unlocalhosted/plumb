@@ -5915,8 +5915,16 @@ into its own browser. Your app isn't changed.", then the findings.
   three examples of one gesture, and one pull-back at the end.
 - **What we chose:** a 26-second film of real takes on Relay: one fix, the visual editor writing a padding change,
   then Clean up across the page, with only the closing line as a caption. Shot plan:
-  `docs/films/launch-03-draft/script.md` (local). Waiting for the owner's OK.
-- **Media hooks:** the reference's frame sheet beside the shot plan.
+  `docs/films/launch-03-draft/script.md` (local).
+- **The owner's note:** "its more of a continous shot". The film became one unbroken take on Relay, recorded with
+  today's plumber built on vm-agent (main at e972b9a1, 63 product commits newer than the copy the earlier films used).
+- **The take, and what it found:** the fix (Alt+B, the note, Enter) and the visual editor's gesture (Alt+click a card,
+  ⇧ and two fingers to all sides and one step) both write the right code, and Clean up's text pass previews 16 changes
+  and writes them ("17 places in 4 files now use these styles"). But the editor's preview breaks the page: it says
+  "48 changes · 91 places" for one card's padding, puts the padding on avatars, icons, headers and the sidebar, and
+  the page stays broken after Sync. A launch film can't show that, so it's in the backlog and the film waits on it.
+- **Media hooks:** the reference's frame sheet beside the shot plan; `take/editor-syncing.jpg` and
+  `take/after-sync.jpg` (local) show the bug.
 
 ## Open gaps
 
