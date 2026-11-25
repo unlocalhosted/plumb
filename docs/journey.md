@@ -6010,6 +6010,14 @@ into its own browser. Your app isn't changed.", then the findings.
   purpose, the craft preset, and whether a fix may add tokens. It asks before changing a rule. The meaning of each
   field was checked against the README and `docs/layers/1-class-lowering.md`.
 
+- **The headline flips (2026-11-26).** The owner, pointing at the hero's heading: "do text animation on the heading
+  it should like flip text from design engineer to ui slop linter , design system enforcer". The first line now
+  turns between "a design engineer", "a UI slop linter" and "a design system enforcer" every 2.8 seconds: the old
+  line tips up and away, the new one swings in from below out of a blur. "on every screen." stays. All three lines
+  lie in one place, so nothing under the heading moves. The heading shrinks a little on narrower windows so the
+  longest line stays on one line (65px at 945 wide, 72px at full width). A screen reader and a reader without
+  motion get "a design engineer on every screen." Seen at 945 wide in the dark theme; phones not looked at.
+
 ## Open gaps
 
 - Without setup, the page check found 70 problems where the same page wired in finds 72 (10 fixes against 14). Not

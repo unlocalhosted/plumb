@@ -8,7 +8,10 @@
   .hero { height: 100svh; min-height: 40rem; padding-bottom: clamp(16px, 3vh, 40px); }
   /* the head gives way on short windows, so the screen keeps most of the height: type and gaps follow the height */
   .hero-head { max-width: 52rem; margin-top: clamp(8px, 4svh, 72px); }
-  .hero-head .display { font-size: clamp(44px, 7.2svh, 72px); }
+  /* and on the width: the longest of the flipping lines (about 13.5 of its own letters wide) stays on one line */
+  .hero-head .display { font-size: min(clamp(44px, 7.2svh, 72px), calc((100vw - 64px) / 13.5)); }
+  /* the side margins are pulled in so a line wider than the head overflows it evenly on both sides */
+  .hero-flip > span { white-space: nowrap; width: max-content; max-width: none; margin-inline: -12rem; }
   .hero-head .lead { max-width: 40rem; margin-top: clamp(12px, 2.6svh, 24px); font-size: clamp(17px, 2.3svh, 20px); }
   .hero-cta { margin-top: clamp(16px, 3.5svh, 32px); }
   .review { flex: 1 1 0; min-height: 0; margin-top: clamp(20px, 4svh, 56px); }
@@ -24,6 +27,22 @@
 @media (hover: hover) and (pointer: fine) { .hero-links a:hover { color: var(--ink-1); background: var(--g2); } }
 
 /* ── head ── */
+/* the headline's first line flips between three things Plumber is (Hero.jsx). Each line carries the fill itself,
+   because a line that turns can't borrow it from the heading: the top half of the fill for the first line, the
+   bottom half for the second, so the two read as one heading */
+.hero-title { background: none; perspective: 900px; }
+.hero-flip { display: grid; justify-items: center; }
+/* wider than the head when it has to be, and still centred on it */
+.hero-flip > span { grid-area: 1 / 1; display: block; max-width: 100%; transform-origin: 50% 60%; backface-visibility: hidden; }
+.hero-flip > span, .hero-rest { background: var(--display-fill) 0 0 / 100% 200%; -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hero-rest { display: block; background-position: 0 100%; }
+.hero-flip > [data-is='wait'] { opacity: 0; visibility: hidden; }
+.hero-flip > [data-is='in'] { animation: hero-flip-in 620ms var(--pl-spring-pop, var(--ease)) both; }
+.hero-flip > [data-is='out'] { animation: hero-flip-out 320ms var(--ease) both; }
+@keyframes hero-flip-in { from { opacity: 0; transform: translateY(.42em) rotateX(-78deg); filter: blur(6px); } 55% { opacity: 1; filter: blur(0); } }
+@keyframes hero-flip-out { to { opacity: 0; transform: translateY(-.42em) rotateX(72deg); filter: blur(6px); visibility: hidden; } }
+@media (prefers-reduced-motion: reduce) { .hero-flip > span { animation: none !important; } .hero-flip > [data-is='out'] { opacity: 0; visibility: hidden; } }
+
 .hero-head { flex: none; width: 100%; max-width: 46rem; margin: var(--s-9) auto 0; text-align: center; }
 .hero-head .lead { margin: var(--s-5) auto 0; }
 .hero-cta { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; align-items: center; margin-top: var(--s-6); }
