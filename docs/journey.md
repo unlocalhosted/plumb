@@ -4665,7 +4665,11 @@ The same build passed 705 loads before it went out, and the game passes on the l
   owner's rules require for on-screen words, and they were written from how the bug works ("shows through", "stack by
   number"), not from what a viewer sees. Script 3 names what is on screen ("A "Live" tag covers part of the menu.",
   "Higher numbers sit on top.", "The tag has 999. The menu has 50.", "The tag gets 10. The menu is on top.") and checks
-  each line's reading time. Waiting for the owner's OK before the film changes.
+  each line's reading time. The owner: "dont talk in terms of these words on screen but talk in terms of common problem
+  and concepts". Describing the frame was the wrong fix: the picture already shows the example. Script 4 says the
+  problem every viewer has met and the idea behind it: "Open menus often end up under the page.", "Each layer gets a
+  number. Higher wins.", "A 999 set "just in case" beats the menu.", "A small number fixes it. The menu wins."
+  Waiting for the owner's OK before the film changes.
 
 ### 94. The X-ray card gets a layout picker (2026-11-23)
 

@@ -142,10 +142,14 @@ holds the date and what they said.
 - **Launch films open on the component at its normal size, then move in on the detail.** Never open on a close-up.
   Why: "i would've like if you have started from default view and then showed the numbers in details".
   <!-- 2026-11-23: on launch film 2, rough cut 1 -->
-- **Launch film words name what a person sees, in everyday words, and go through the writing pass before the owner
-  reads them.** "A "Live" tag covers part of the menu", never how the bug works ("a badge shows through"). Each line
-  must be readable in the time it is held: about three words a second, plus half a second.
-  Why: "the writing is so stupid "a badge shows through the menu" wtf does this even mean?".
+- **Launch film words name the common problem and the idea behind it, never the example on screen.** The picture
+  shows the example; the words say what every viewer has met in their own work ("Open menus often end up under the
+  page.", "Each layer gets a number. Higher wins.", the habit of a 999 set "just in case"). Never describe the frame
+  ("A "Live" tag covers part of the menu") or how the bug works in a developer's shorthand ("a badge shows through").
+  The words go through the writing pass before the owner reads them, and each line must be readable in the time it is
+  held: about three words a second, plus half a second.
+  Why: "the writing is so stupid "a badge shows through the menu" wtf does this even mean?", then "dont talk in terms of
+  these words on screen but talk in terms of common problem and concepts".
   <!-- 2026-11-25 -->
 - **Launch films keep their words still.** They arrive word by word, as film 1's do, and don't act out the fault.
   Why: "dont fuck up the title i understand you are trying to sell the illusion but i think lets keep it same".
