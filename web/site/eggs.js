@@ -67,6 +67,29 @@ function seen(i) {
   return null;
 }
 
+// the kinds whose change the eye catches, the easiest to see first: the ride stops at these before the others
+const EYE = ['craft/layered-shadow', 'craft/continuous-corners', 'craft/inner-outer-spacing', 'craft/text-wrap-role', 'craft/gradient-space',
+  'craft/card-optical-padding', 'craft/icon-side', 'craft/baseline-align', 'craft/contrast', 'craft/text-opacity', 'craft/tinted-shadow',
+  'craft/hit-target', 'tells/eyebrow', 'craft/scroll-cue', 'craft/truncate-intent'];
+
+// everything drawn on the page, as boxes in page coordinates: words (each line of them), pictures, controls, and
+// anything with its own surface. A note is written only where none of these is
+function ink() {
+  const out = [], range = document.createRange(), wide = innerWidth - 2;
+  const add = (r) => { if (r.width > 1 && r.height > 1 && r.right > 0 && r.left < innerWidth) out.push({ left: r.left, right: r.right, top: r.top + scrollY, bottom: r.bottom + scrollY }); };
+  for (const el of document.querySelectorAll('main *, footer *, .floor *')) {
+    if (!el.getClientRects().length) continue;
+    if (/^(img|svg|video|canvas|button|input|textarea|select|pre|code)$/i.test(el.tagName)) { add(el.getBoundingClientRect()); continue; }
+    if (el.closest('svg')) continue;
+    for (const n of el.childNodes) if (n.nodeType === 3 && n.nodeValue.trim()) { range.selectNodeContents(n); for (const r of range.getClientRects()) add(r); }
+    const r = el.getBoundingClientRect();
+    if (r.width >= wide) continue; // a band across the page is the page, not a thing on it
+    const c = getComputedStyle(el);
+    if (c.backgroundImage !== 'none' || c.boxShadow !== 'none' || parseFloat(c.borderTopWidth) > 0 || !/rgba\(.*, 0\)$|transparent/.test(c.backgroundColor)) add(r);
+  }
+  return out;
+}
+
 // where it is on the page, drawn or still waiting to be revealed: the ride plans its stops from this
 function placed(i) {
   for (const s of ITEMS[i].sel) {
@@ -149,39 +172,59 @@ export class Eggs {
     const guides = new PageGuides(document.body);
     run.onEnd(() => guides.remove());
 
-    // the stops: pieces in page order, each stop what fits between the bar at the top and the count at the bottom
-    const above = 150, span = innerHeight - above - 150;
-    const places = list.map(placed).filter(Boolean).sort((a, b) => a.y - b.y), stops = [];
+    // the stops: one piece each, and only a piece with empty page beside it, where its note can be written without
+    // covering anything (ink). Planned once, on the whole page, before the ride starts
+    const places = list.map(placed).filter(Boolean).sort((a, b) => a.y - b.y);
+    const taken = ink(), W = Math.min(372, innerWidth - 32), H = 84, top = 96, room = innerHeight - top - 24;
+    const clear = (x, y) => x >= 16 && x + W <= innerWidth - 16 && y >= 0
+      && !taken.some((k) => k.left < x + W + 10 && k.right > x - 10 && k.top < y + H + 10 && k.bottom > y - 10);
+    const spot = (p) => {
+      const r = p.el.getBoundingClientRect(), y0 = p.y, x0 = Math.max(16, Math.min(r.left, innerWidth - W - 16)), part = Math.min(p.h, 220);
+      for (const [x, y] of [[r.right + 44, y0 + Math.min(p.h, 160) / 2 - H / 2], [x0, y0 + p.h + 40], [x0, y0 - H - 64], [r.left - W - 44, y0 + Math.min(p.h, 160) / 2 - H / 2]]) {
+        // the piece (its first part, when it is tall) and its note fit in the window together
+        const from = Math.min(y0 - 44, y), to = Math.max(y0 + part, y + H);
+        if (to - from <= room && clear(x, y)) return { x, y, from };
+      }
+      return null;
+    };
+    const stops = [], told = new Set();
+    let reach = -Infinity;
     for (const p of places) {
-      const s = stops.at(-1);
-      if (s && p.y + Math.min(p.h, 160) - s[0].y < span) s.push(p); else stops.push([p]);
+      if (p.y < reach) continue; // one stop a screenful
+      // of the pieces on this screenful: one with room, a kind not told yet first, then the change the eye catches
+      const near = places.filter((q) => q.y >= p.y && q.y < p.y + room).map((q) => ({ ...q, at: spot(q) })).filter((q) => q.at);
+      const rank = (q) => (told.has(ITEMS[q.i].rule) ? 100 : 0) + (EYE.indexOf(ITEMS[q.i].rule) + 1 || 50);
+      // a kind is told once: a second stop that says the same sentence is a stop too many
+      const pick = near.filter((q) => !told.has(ITEMS[q.i].rule)).sort((x, y) => rank(x) - rank(y))[0];
+      if (!pick) continue;
+      told.add(ITEMS[pick.i].rule);
+      stops.push(pick);
+      reach = pick.y + room * 0.6;
     }
-    for (const stop of stops) {
-      await glide(Math.max(0, stop[0].y - above));
-      await pause(260);
-      const here = stop.map((p) => p.i).filter((i) => !fixes.has(i));
-      // marked: the ones in plain sight now, one of each element, the widest first so the big changes lead
-      const inSight = stop.map((p) => seen(p.i)).filter(Boolean).filter((p, n, all) => all.findIndex((q) => q.el === p.el) === n);
-      const marked = inSight.sort((a, b) => b.el.offsetWidth - a.el.offsetWidth).slice(0, 4);
-      if (!marked.length) { fixes.make(here); changed(); continue; }
-      // the note is about the piece with clear room beside it; among those, the biggest
-      const els = marked.map((p) => p.el), room = marked.map((p) => note.fit(p.el, els).cost);
-      const lead0 = room.indexOf(Math.min(...room));
-      const shown = [marked[lead0], ...marked.filter((p, n) => n !== lead0)];
-      const main = ITEMS[shown[0].i];
-      const [wrong, right] = SAY[main.rule] ?? [main.title, 'Fixed.'], more = here.length - 1;
-      const slot = note.show(shown[0].el, shown.map((p) => p.el), { say: wrong, sub: more > 0 ? `and ${more} more on this part of the page` : '' });
+    for (const [n, stop] of stops.entries()) {
+      await glide(Math.max(0, stop.at.from - top));
+      await pause(220);
+      // everything from here up to the next stop is fixed with this one; only this piece is marked
+      const until = stops[n + 1]?.y ?? Infinity, passed = new Set(places.filter((p) => p.y < until).map((p) => p.i));
+      const here = fixes.open().filter((i) => passed.has(i));
+      if (!here.includes(stop.i)) continue;
+      // not in plain sight after all, or the page could not come far enough for the note to be in the window
+      const shown = seen(stop.i), noteTop = stop.at.y - scrollY;
+      if (!shown || noteTop < 80 || noteTop + H > innerHeight - 8) { fixes.make(here); changed(); continue; }
+      const main = ITEMS[stop.i], el = shown.el;
+      const [wrong, right] = SAY[main.rule] ?? [main.title, 'Fixed.'];
+      const slot = note.showAt(el, { x: stop.at.x, y: stop.at.y - scrollY, w: W, h: H }, { say: wrong, sub: '' });
       const release = lead(main.toy, slot);
-      const steps = shown.map((p) => ({ look: 'ring', ...drawn(ITEMS[p.i], p.el), chip: null, bands: () => [{ el: p.el, rect: () => p.el.getBoundingClientRect() }], morph() {} }));
+      const steps = [{ look: 'ring', ...drawn(main, el), chip: null, bands: () => [{ el, rect: () => el.getBoundingClientRect() }], morph() {} }];
       await run.wait(guides.in(steps, run.signal));
-      await pause(900);
+      await pause(800);
       eased(here);
       fixes.make(here); changed();
       guides.move();
       await pause(BEAT.move);
       guides.land();
-      note.land({ say: right, sub: `${here.length} fixed here · ${fixes.left} left on the page` });
-      await pause(1000);
+      note.land({ say: right, sub: here.length > 1 ? `and ${here.length - 1} more around it · ${fixes.left} left on the page` : `${fixes.left} left on the page` });
+      await pause(900);
       await run.wait(Promise.all([guides.out(run.signal), note.hide()]));
       guides.clear();
       release();

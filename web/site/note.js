@@ -78,6 +78,9 @@ export class Note {
     return this.#place({ x, y, w, h }, r, { say, sub });
   }
 
+  /** The note at a place its owner chose (the ride plans one clear of everything on the page). */
+  showAt(target, at, words) { return this.#place(at, target.getBoundingClientRect(), words); }
+
   #place({ x, y, w, h }, r, { say, sub }) {
     Object.assign(this.#el.style, { left: `${x}px`, top: `${y}px`, width: `${w}px` });
     this.#el.querySelector('b').textContent = say;

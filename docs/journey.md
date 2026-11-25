@@ -5914,6 +5914,14 @@ into its own browser. Your app isn't changed.", then the findings.
 - **Not solved:** where the note goes. On one ride of ten stops it fell into the bottom right corner of the window
   on seven, over the page's own headings, and on three it sat on a piece that was ringed. A stop is planned as a
   screenful of pieces with no room kept for the note, so on a full screen there is nowhere clear to put it.
+- **One piece a stop (owner: "Yes, one piece"):** the ride now plans its stops before it starts. It maps everything
+  drawn on the page (each line of words, pictures, controls, anything with its own surface) and stops only at a piece
+  that has empty page beside it, where the note is written. Only that piece is ringed; the other fixes up to the
+  next stop land with it and show in the count. A kind is told once. Seen at 1024 wide in the dark theme: four
+  stops in about 26 seconds (the shadow under the hero's app, a control too small to tap, an icon with too much
+  space, text too faint to read), the note in the window and off the ringed piece at every one. The count read 106,
+  103, 79, 70, and the last 25 landed without a stop at the bottom. Open: four stops show 4 of 80 fixes; the long
+  stretch after the fourth stop passes with nothing said.
 - **Media hooks:** a screen recording of today's section next to the rebuilt one.
 
 ### 94. The launch film: learning from a video that doesn't explain itself (2026-11-25)
