@@ -190,11 +190,44 @@ export async function launchChromium(): Promise<Browser> {
   }
 }
 
+/** Whether the app's page loads plumber's overlay itself (plumber wired into its dev server). */
+async function loadsOverlay(browser: Browser, url: string): Promise<boolean> {
+  const page = await browser.newPage();
+  try {
+    await page.goto(url, { waitUntil: 'load', timeout: 30000 }).catch(() => {});
+    return await page.waitForFunction(() => !!(window as unknown as { __plumb?: { overlay?: unknown } }).__plumb?.overlay, undefined, { timeout: 5000 }).then(() => true, () => false);
+  } finally { await page.close(); }
+}
+
+/**
+ * The page check with no setup: an app whose dev server doesn't load plumber's overlay gets it from plumber's own
+ * server (the one `plumber serve --overlay` runs for hosts plumber can't wire), added to every page this run opens.
+ * Only plumber's own headless browser sees it; the app and its files are not touched.
+ */
+async function carryOverlay(browser: Browser, root: string, base: string): Promise<() => Promise<void>> {
+  const { serve } = await import('./session/server.js');
+  // page: no discovery file is written, so a server the person runs later isn't refused, and nothing is left behind
+  const daemon = await serve({ root, overlay: true, origin: new URL(base).origin, port: 0, page: true });
+  const client = `http://127.0.0.1:${daemon.info.port}/__plumb/client.js`;
+  const script = `(() => { if (window !== window.top || !/^https?:$/.test(location.protocol)) return; const add = () => { if (document.querySelector('script[data-plumb-token]')) return;
+    const s = document.createElement('script'); s.type = 'module'; s.src = ${JSON.stringify(client)}; s.dataset.plumbToken = ${JSON.stringify(daemon.info.token)}; document.head.append(s); };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', add); else add(); })();`;
+  const newContext = browser.newContext.bind(browser);
+  browser.newContext = async (options = {}) => { const context = await newContext({ ...options, bypassCSP: true }); await context.addInitScript(script); return context; };
+  browser.newPage = async (options = {}) => { const context = await browser.newContext(options), page = await context.newPage(); page.once('close', () => { context.close().catch(() => {}); }); return page; };
+  return () => daemon.close();
+}
+
 /** Open every route in headless Chromium and run the craft engine over the whole page. */
 export async function craftRun(options: CraftRunOptions): Promise<CraftPage[]> {
   const browser = await launchChromium();
+  let stopOwn: (() => Promise<void>) | undefined;
   try {
     const pages: CraftPage[] = [], base = await reachable(options.url);
+    if (!await loadsOverlay(browser, new URL(options.routes[0] ?? '/', base).href)) {
+      process.stderr.write('Plumber isn\'t set up in this app\'s dev server, so the check brings its own copy into its own browser. Your app isn\'t changed.\n');
+      stopOwn = await carryOverlay(browser, options.root, base);
+    }
     for (const route of options.routes) {
       const url = new URL(route, base).href;
       // motion on: a page loaded with reduced motion hides every animation from every rule
@@ -241,7 +274,7 @@ export async function craftRun(options: CraftRunOptions): Promise<CraftPage[]> {
       } finally { await page.close(); }
     }
     return pages;
-  } finally { await browser.close(); }
+  } finally { await browser.close(); await stopOwn?.(); }
 }
 
 /** Each writable fix's page and place, by its short key. */

@@ -5806,10 +5806,42 @@ page", and `notes --done` cleared it. An unknown id exits 2.
 **Media hooks.** A clip: Alt over the heading, ↵, a note typed, ⌘↵, "Saved for your agent"; then the terminal's
 `plumber notes`.
 
+### 138. The page check works in an app with no plumber setup (2026-11-25)
+
+**The itch.** The last no-setup gap from the agent work ([entry 136](#136-the-page-check-finds-the-dev-server-and-an-applied-fix-comes-with-pictures-2026-11-25)):
+the page check read the page through plumber's overlay, so it refused any app whose dev server didn't load it ("has no
+React Plumber overlay → add plumb() to the Vite plugins").
+
+**How we found it.** Reading how the page check opens a page: it waits for the overlay the dev server serves, and
+gives up after 15 seconds without it.
+
+**The system behind it.** The page check was built on the overlay a person installs. Plumber's server can already
+serve the overlay to any page (`plumber serve --overlay`, the path for hosts plumber can't wire), but the page check
+never used that.
+
+**What we chose and why.** The page check first looks for plumber's overlay in the page (up to 5 seconds). If it
+isn't there, it starts plumber's own server for the run, writing no discovery file, and adds the overlay to every page
+its own headless browser opens. The person's app, its files and their browser stay as they were, and plumber says so in
+one line. The server stops with the run. Finding each element's file and line needs no stamping here: the overlay reads
+React's own development information through the page's source maps.
+
+**The fix and the proof.** On vm-agent (the laptop had no memory to spare), in a copy of the ledger example with
+plumber taken out of its Vite config: `plumber craft --no-probe`, with no address, found the dev server, said it was
+bringing its own copy, and read 108 elements in 12 seconds. It found 70 problems with their file and line, 10 of them
+with an Apply line. With plumber wired in, the same page gives 72 and 14. `plumber apply` added `gap-s2` to the header
+with before and after pictures, and `undo` took it back. The trial server was stopped afterwards and nothing of the run
+was left running.
+
+**Still open.** The gap between 70 and 72 problems, and between 10 and 14 fixes, isn't explained yet. Without
+stamping, some elements are likely placed less exactly.
+
+**Media hooks.** The terminal line "Plumber isn't set up in this app's dev server, so the check brings its own copy
+into its own browser. Your app isn't changed.", then the findings.
+
 ## Open gaps
 
-- The page check (`plumber craft`) reads the page through plumber's overlay, so it needs plumber wired into the dev
-  server. An agent in a project with no setup can run `check` but not the page check ([entry 136](#136-the-page-check-finds-the-dev-server-and-an-applied-fix-comes-with-pictures-2026-11-25)).
+- Without setup, the page check found 70 problems where the same page wired in finds 72 (10 fixes against 14). Not
+  explained yet ([entry 138](#138-the-page-check-works-in-an-app-with-no-plumber-setup-2026-11-25)).
 - The fixes of entry 81 (caret, app errors, broken config on Vite) are committed and not published. The site runs
   0.6.0 from npm, so it still has all three bugs.
 - The release gate of entry 85 guards Chromium only: Safari and Firefox aren't in it. On a Mac `npm test` refuses to
@@ -7492,6 +7524,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
+- The page check (`plumber craft`) works in a React app with no plumber setup: it brings its own copy of the overlay into its own browser and leaves the app alone. On main, not released ([entry](#138-the-page-check-works-in-an-app-with-no-plumber-setup-2026-11-25)).
 - A note written on the page for your agent (X-ray, ↵, then ⌘↵) is saved in the project; the agent reads it with `plumber notes` and is told when one is waiting. On main, not released ([entry](#137-a-note-written-on-the-page-reaches-the-agent-2026-11-25)).
 - `plumber craft` with no address finds the dev server running in the project, and `plumber apply p…` prints a picture of the element before and after the fix. On main, not released ([entry](#136-the-page-check-finds-the-dev-server-and-an-applied-fix-comes-with-pictures-2026-11-25)).
 - The page check (`plumber craft --url`) ends each problem it can fix itself with an `Apply:` line; `plumber apply p…` writes that fix the way the fix bar does, and `plumber undo` takes it back. On main, not released ([entry](#135-fixes-from-the-page-check-can-be-applied-too-2026-11-25)).

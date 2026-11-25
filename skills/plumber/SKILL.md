@@ -69,7 +69,8 @@ left. Fix those and run it again: the next ones come up. Stop when it prints `0 
 
 With the app's dev server running, `plumber craft` reads the drawn page: spacing that only looks right by accident,
 weights, contrast, touch targets, motion. It finds the dev server started in the project by itself (`--url` names
-another). While you fix, add `--no-probe`: it skips trying hover, press, menus and the keyboard, which takes most of the
+another), and needs no setup: where plumber isn't wired into the dev server, it brings its own copy into its own
+browser and leaves the app alone. It needs Playwright's Chromium (`npx playwright install chromium`). While you fix, add `--no-probe`: it skips trying hover, press, menus and the keyboard, which takes most of the
 time (14 s instead of 44 s on a small page). Run it once without `--no-probe` when you're done.
 
 Where it can write the fix itself, a problem ends with `Apply: plumber apply p…`. Run that line: it prints a picture

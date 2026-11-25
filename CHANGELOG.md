@@ -12,8 +12,8 @@ Everything since 0.7.0, as a person using it sees it.
 - **Notes reach your agent.** A note written in the X-ray (↵, then ⌘↵) is saved in the project as well as copied.
   `plumber notes` lists them with each element's file and line, `--done <id>` clears one, and `check --agent` says
   when one is waiting.
-- **The page check finds your dev server.** `plumber craft` with no `--url` checks the dev server running in the
-  project. Applying a page fix prints a picture of the element before and after.
+- **The page check finds your dev server, and needs no setup.** `plumber craft` with no `--url` checks the dev server
+  running in the project. Where plumber isn't wired into it, the check brings its own copy into its own browser. Applying a page fix prints a picture of the element before and after.
 - **Agents need no install.** In a project without plumber, every command it prints (and the agent loop's) starts
   with `npx -p @unlocalhosted/react-plumber plumber`, because plain `npx plumber` fetches an unrelated npm package.
   The agent instructions say plumber works in any React app with no setup. `install --agent` works without the
