@@ -5865,6 +5865,30 @@ stamping, some elements are likely placed less exactly.
 **Media hooks.** The terminal line "Plumber isn't set up in this app's dev server, so the check brings its own copy
 into its own browser. Your app isn't changed.", then the findings.
 
+### 139. The fix-it-yourself section tells no story (2026-11-25)
+
+- **The itch:** the owner, on the part at the bottom of the homepage where a visitor fixes the page's own faults:
+  "orchestrated and executed very badly, no thought is given to narration and how the user is perceiving it".
+- **How we found it:** by running it as a visitor. Pressing one toy threw the page about 1,500 pixels up in a second,
+  into a moving diagram; a card gave a measurement and a file name; nothing visibly changed; four seconds later the
+  page went back and the count read 120. The big button made 75 fixes in about three seconds under a card that
+  described one grey shadow "and 74 more like it".
+- **The system behind it:** the section was built as a machine that applies a list. Its unit is one kind of fault:
+  apply all of them and lower the count. Its words are the tool's report. The only narrator is a number going down.
+  No step shows a fault as something the eye can catch, and the rest are fixed off screen.
+- **What we chose:** one fault at a time, told where the visitor already is (owner: "Yes, one at a time"). The real
+  piece comes up large, the fault is said the way you would say it to a friend, a switch flips it between as it is
+  and fixed, and then the rest of that kind is offered. Many faults can't be seen at all (19 are transition
+  durations); those say so.
+- **The first piece, Shadow (owner: "Build Shadow"):** pressing the Shadow toy now opens the story in the section
+  (`web/site/Story.jsx`). A still copy of the real Members card from the tokens demo sits on a tray, large. "This
+  shadow is one big blur. It looks like a smudge under the card." A switch, As it is / Fixed, changes the copy's
+  shadow; then "8 more shadows are one big blur like this. 5 more are grey on a coloured surface." and Fix all 14,
+  which fixes them on the page with a burst. Seen running in the dark theme: the count went from 125 to 111 and the
+  toy read "Shadow · fixed". Not yet looked at: the light theme, a phone width, and whether the guides and the
+  pill show during the flip. The other nine kinds and the big button still behave the old way.
+- **Media hooks:** a screen recording of today's section next to the rebuilt one.
+
 ## Open gaps
 
 - Without setup, the page check found 70 problems where the same page wired in finds 72 (10 fixes against 14). Not
