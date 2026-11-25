@@ -42,7 +42,8 @@ async function operate(options) {
   if (op === 'candidates') { resetKeys(); return candidates(options.scope); }
   // Other states of the page (src/craft-run.ts takeStates): the things that answer the pointer coming over them, and
   // the words that meet other words in the state the page is in now. A read of its own, with no blueprint: it is asked
-  // many times (each window width, each thing hovered), and only this one rule changes with those.
+  // many times (each window width, each thing hovered). Spacing changes with the width too: the runner reads the whole
+  // page once per width for it, and asks `spacing` which rules those are.
   if (op === 'hovers') {
     resetKeys();
     const LISTENS = ['onMouseEnter', 'onPointerEnter', 'onMouseOver', 'onPointerOver', 'onMouseMove', 'onPointerMove'];
@@ -53,6 +54,8 @@ async function operate(options) {
       return (props && LISTENS.some((name) => typeof props[name] === 'function')) || /(^|\s)group(\/\S+)?(\s|$)/.test(el.getAttribute('class') ?? '');
     }).slice(0, options.budget ?? 6).map(pathKey);
   }
+  // the rules that own nothing but space (a gap, a margin, a padding): the ones read again at every window width
+  if (op === 'spacing') return RULES.filter((rule) => rule.owns?.length && rule.owns.every((own) => /^(gap|margin|padding)/.test(own))).map((rule) => rule.id);
   if (op === 'collisions') {
     const facts = new Facts();
     facts.items = [...document.body.querySelectorAll(STAMPED)].filter((el) => !el.closest('plumb-overlay'));

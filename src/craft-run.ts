@@ -124,24 +124,32 @@ async function takePairs(browser: Browser, url: string, main: Page, timeout: num
   if (needs.held) await give('held', await takeHeld(browser, url, timeout).catch(quiet('held')));
 }
 
-// The widths a page is read at besides the desktop one: a small laptop, a tablet held upright, a phone. A layout
-// that holds at one width and breaks at another is the commonest thing a rest-state read at one width cannot see.
-const WIDTHS = [desktop.width, 1024, 768, 390];
+// The windows a page is read in: a full HD monitor, an HD laptop (the main read's own), an iPhone, a large Samsung phone.
+// A layout that holds at one width and breaks at another is the commonest thing a read at one width cannot see.
+const WINDOWS = [{ width: 1920, height: 1080 }, desktop, { width: 390, height: 844 }, { width: 412, height: 915 }];
 const HOVERS = 6; // things tried under the pointer, per width
 
-/** Words that meet other words in the states the main read does not see: other window widths, and with the pointer
- *  over each thing that listens for it. A hover presses nothing; each width is a page of its own. */
+/** What the main read does not see: spacing at the other window widths, and words that meet other words at every
+ *  width, at rest and with the pointer over each thing that listens for it. A hover presses nothing; each width is a
+ *  page of its own. Spacing is the engine's whole read of the page at that width, kept for the rules that own a gap,
+ *  a margin or a padding, so a finding here is the one the main read would make in a window that size. */
 async function takeStates(browser: Browser, url: string, timeout: number): Promise<CraftRecord[]> {
   // side by side: each width is a page of its own, and most of its time is waiting for the pointer's effects
-  const each = await Promise.all(WIDTHS.map(async width => {
-    const out: CraftRecord[] = [];
+  const each = await Promise.all(WINDOWS.map(async viewport => {
+    const out: CraftRecord[] = [], width = viewport.width;
     // a dev server that reloads the page once (it found a new dependency) takes the overlay away mid-read: once more
-    const read = () => inside(browser, url, { viewport: { width, height: desktop.height }, reducedMotion: 'no-preference' }, timeout, async page => {
+    const read = () => inside(browser, url, { viewport, reducedMotion: 'no-preference' }, timeout, async page => {
       const kept = out.length;
       try {
       await open(page, url, timeout, true);
       await settle(page);
       const note = (list: CraftRecord[], hover: boolean) => { for (const record of list) out.push({ ...record, evidence: { ...record.evidence, width, hover } }); };
+      if (width !== desktop.width) {
+        const spacing = new Set(await ask<string[]>(page, { op: 'spacing' }));
+        const found = (await ask<{ findings: CraftRecord[] }>(page, { timeout, grey: false, scope: null })).findings.filter(record => spacing.has(record.rule));
+        if (process.env.PLUMBER_DEBUG) process.stderr.write(`craft: spacing at ${width}px ${JSON.stringify(found.map(record => `${record.rule} ${record.file}:${record.line}`))}\n`);
+        note(found, false);
+      }
       note(await ask<CraftRecord[]>(page, { op: 'collisions' }), false);
       for (const key of await ask<string[]>(page, { op: 'hovers', budget: HOVERS })) {
         const at = await ask<{ cx: number; cy: number } | null>(page, { op: 'frame', key });
@@ -160,10 +168,13 @@ async function takeStates(browser: Browser, url: string, timeout: number): Promi
   return each.flat();
 }
 
-// when a finding from another state is true: said in the title, since at rest the page will not show it
+// when a finding from another state is true: said in the title, since at rest the page will not show it. Every width
+// that showed it is named, so a finding of the phones alone reads as one
 const when = (record: CraftRecord): string => {
-  const width = record.evidence.width as number, hover = record.evidence.hover === true;
-  const parts = [...(width !== desktop.width ? [`in a window ${width}px wide`] : []), ...(hover ? ['with the pointer over it'] : [])];
+  const widths = (record.evidence.widths as number[]).filter(width => width !== desktop.width), hover = record.evidence.hover === true;
+  const sizes = widths.map(width => `${width}px`);
+  const windows = sizes.length > 1 ? `in windows ${sizes.slice(0, -1).join(', ')} and ${sizes.at(-1)} wide` : `in a window ${sizes[0]} wide`;
+  const parts = [...(widths.length ? [windows] : []), ...(hover ? ['with the pointer over it'] : [])];
   return parts.length ? ` Seen ${parts.join(', ')}.` : '';
 };
 
@@ -261,14 +272,17 @@ export async function craftRun(options: CraftRunOptions): Promise<CraftPage[]> {
           delete result.grey;
         }
         if (options.probe !== false && !options.scope) {
-          // one finding per place: the main read's, else the first state that shows it (widest first, at rest first)
+          // one finding per place: the main read's, else the first state that shows it (widest first, at rest first),
+          // with every width that showed it
           const place = (record: CraftRecord) => `${record.rule}|${record.file}:${record.line}:${record.column}`;
-          const seen = new Set(result.findings.map(place));
+          const seen = new Set(result.findings.map(place)), first = new Map<string, CraftRecord>();
           for (const record of await takeStates(browser, url, options.timeout).catch(quiet('states')) ?? []) {
             if (seen.has(place(record))) continue;
-            seen.add(place(record));
-            result.findings.push({ ...record, title: record.title + when(record) });
+            const kept = first.get(place(record));
+            if (!kept) first.set(place(record), { ...record, evidence: { ...record.evidence, widths: [record.evidence.width] } });
+            else if (!(kept.evidence.widths as number[]).includes(record.evidence.width as number)) (kept.evidence.widths as number[]).push(record.evidence.width as number);
           }
+          for (const record of first.values()) result.findings.push({ ...record, title: record.title + when(record) });
         }
         pages.push({ ...result, route, url });
       } finally { await page.close(); }
