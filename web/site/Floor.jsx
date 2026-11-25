@@ -92,13 +92,7 @@ export function Floor() {
           );
         })}
       </div>
-      {found?.ride && (
-        <div className="ride" role="status">
-          <b className="ride-n"><span key={left}>{left}</span></b>
-          <span className="ride-say" key={found.title}>{found.title}{found.more > 0 ? <i> and {found.more} more here</i> : null}</span>
-        </div>
-      )}
-      {found && !found.ride && (
+      {found && (
         <div className="found" role="status" data-done={found.done || undefined}>
           <b>{found.title}</b>
           {found.at && <span><code>{found.at}</code>{found.more ? ` and ${found.more} more like it` : ''}</span>}

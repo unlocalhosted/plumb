@@ -5902,6 +5902,18 @@ into its own browser. Your app isn't changed.", then the findings.
   stops, about 50 seconds, the count falling 125, 112, 107, 105, 96, 94, 92, 91, 77, 73, 70, then the last 25
   (inside demos that were not open) at the bottom. Open: it is long; the words in the pill are the tool's report;
   the first try, in a narrower window, found no stops and fixed everything at once.
+- **Then (owner, on the ride):** "i dont like the black tool tip looking part which fixes thing instead i think an
+  annotatoion kind of approach would be better to explain also the text should be simple to understand", and on the
+  toys: "a lot of time you are placing them on top of the element which is getting fixed it looks ugly and
+  disgusting". The system behind both: the explanation lived apart from the thing it explained (a bar at the bottom,
+  a toy sent "near" one element), and nothing laid a stop out as one picture.
+- **What changed:** the black pill is gone. Each stop has a note (`web/site/note.js`): a plain sentence with no box,
+  a dotted line from it to the element, the kind's toy at the head of the sentence. It reads what is wrong
+  ("This shadow is one big blur, like a smudge."), then what changed ("Now it's small shadows, stacked.") with
+  "13 fixed here · 112 left on the page". Every kind of fault has its two sentences.
+- **Not solved:** where the note goes. On one ride of ten stops it fell into the bottom right corner of the window
+  on seven, over the page's own headings, and on three it sat on a piece that was ringed. A stop is planned as a
+  screenful of pieces with no room kept for the note, so on a full screen there is nowhere clear to put it.
 - **Media hooks:** a screen recording of today's section next to the rebuilt one.
 
 ### 94. The launch film: learning from a video that doesn't explain itself (2026-11-25)

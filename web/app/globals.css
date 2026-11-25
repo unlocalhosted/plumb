@@ -272,14 +272,20 @@ body > .fx-burst { z-index: 45 !important; }
 .found span { font: 500 13px/18px var(--pl-sans); }
 .found code { font: 500 12px/18px var(--pl-mono); }
 @keyframes found-in { from { opacity: 0; translate: -50% -10px; } }
-/* the count a person carries down the page while it fixes itself (eggs.js, the ride) */
-.ride { position: fixed; z-index: 55; left: 50%; bottom: 22px; translate: -50% 0; display: flex; align-items: center; gap: 12px; width: max-content; max-width: min(680px, calc(100vw - 32px)); padding: 8px 20px 8px 8px; border-radius: 999px; background: var(--pl-text-primary); color: var(--pl-bg-surface); pointer-events: none; animation: ride-in 320ms var(--pl-ease-out) both; }
-@keyframes ride-in { from { opacity: 0; translate: -50% 14px; } }
-.ride-n { flex: none; min-width: 2.4em; padding: 6px 12px; border-radius: 999px; background: var(--pl-coral); color: var(--pl-coral-on); font: var(--pl-round-w2, 700) 20px/24px var(--pl-round); font-variant-numeric: tabular-nums; text-align: center; overflow: hidden; }
-.ride-n > span { display: inline-block; animation: floor-roll 360ms var(--pl-ease-out) both; }
-.ride-say { font: var(--pl-round-w, 600) 15px/20px var(--pl-round); text-wrap: balance; animation: floor-roll 300ms var(--pl-ease-out) both; }
-.ride-say i { font-style: normal; opacity: .7; }
-@media (prefers-reduced-motion: reduce) { .ride, .ride-n > span, .ride-say { animation: none; } }
+/* what the ride says at a stop, written beside the element it is about (site/note.js): a sentence and a line to it,
+   no box; the page's colour glows behind the words so they read over anything */
+.note { position: fixed; z-index: 48; box-sizing: border-box; display: flex; align-items: center; gap: 12px; min-height: 84px; pointer-events: none; }
+.note[hidden] { display: none; }
+.note-toy { flex: none; width: 72px; height: 72px; }
+.note p { margin: 0; display: grid; gap: 4px; --halo: var(--pl-desk); text-shadow: 0 0 3px var(--halo), 0 0 6px var(--halo), 0 0 12px var(--halo), 0 0 20px var(--halo), 0 0 28px var(--halo); }
+.note b { font: var(--pl-round-w, 600) 19px/24px var(--pl-round); color: var(--pl-text-primary); text-wrap: balance; }
+.note span { font: 500 14px/20px var(--pl-sans); color: var(--pl-text-secondary); }
+.note span:empty { display: none; }
+.note-line { position: fixed; z-index: 47; inset: 0; width: 100vw; height: 100vh; pointer-events: none; overflow: visible; }
+.note-line line { stroke: var(--pl-coral); stroke-width: 2; stroke-linecap: round; stroke-dasharray: 2 6; transition: stroke 240ms var(--pl-ease-out); }
+.note-line circle { fill: var(--pl-coral); transition: fill 240ms var(--pl-ease-out); }
+.note-line[data-done] line { stroke: var(--pl-mint); }
+.note-line[data-done] circle { fill: var(--pl-mint); }
 
 /* An icon moves the way its property does (interaction-principles 33b): pointed at, focused, or off fixing it.
    The shapes are the toys' own (overlay/src/toys.js), by their place in the drawing. */

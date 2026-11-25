@@ -14,6 +14,7 @@ import { Scope } from '../../overlay/src/scope.js';
 import { play, playAll, PageGuides, BEAT, SPRING } from '../../overlay/src/show.js';
 import { reduced } from '../../overlay/src/motion.js';
 import { ITEMS } from './fixes.js';
+import { Note, SAY } from './note.js';
 
 // [drawn as, what it was, what it becomes]: the pill's words, for a fix that isn't a number
 const DRAWN = {
@@ -122,8 +123,9 @@ export class Eggs {
 
   /**
    * The ride: every fault that is left, from the top of the page to the bottom. The page carries the person down,
-   * stop by stop. At each stop the faults in sight are marked on the real elements with what they have, they move
-   * to the fixed value together, and the count the person carries falls. Scrolling or Esc ends the ride where it
+   * stop by stop. At each stop the faults in sight are marked on the real elements with what they have, a note
+   * beside the biggest one says what is wrong in plain words (note.js), they move to the fixed value together, and
+   * the note says what changed and how many are left. Scrolling or Esc ends the ride where it
    * is: what was fixed stays fixed and the rest is left for the next press.
    */
   async ride() {
@@ -134,12 +136,9 @@ export class Eggs {
     const run = new Scope();
     this.#run = run;
     run.onEnd(() => card(null));
-    if (reduced()) {
-      fixes.make(list); changed();
-      card({ ride: true, title: 'Fixed, without the ride.' });
-      run.timeout(() => this.stop(), 2600);
-      return;
-    }
+    if (reduced()) { fixes.make(list); changed(); return this.stop(); }
+    const note = new Note();
+    run.onEnd(() => note.remove());
     run.listen(window, 'keydown', (e) => { if (e.key === 'Escape') this.stop(); });
     for (const type of ['wheel', 'touchmove']) run.listen(window, type, () => this.stop(), { passive: true });
     const pause = (ms) => run.wait(new Promise((done) => run.timeout(done, ms)));
@@ -157,28 +156,33 @@ export class Eggs {
       const s = stops.at(-1);
       if (s && p.y + Math.min(p.h, 160) - s[0].y < span) s.push(p); else stops.push([p]);
     }
-    card({ ride: true, title: 'Going to the top of the page.' });
     for (const stop of stops) {
       await glide(Math.max(0, stop[0].y - above));
       await pause(260);
       const here = stop.map((p) => p.i).filter((i) => !fixes.has(i));
       // marked: the ones in plain sight now, one of each element, the widest first so the big changes lead
       const inSight = stop.map((p) => seen(p.i)).filter(Boolean).filter((p, n, all) => all.findIndex((q) => q.el === p.el) === n);
-      const shown = inSight.sort((a, b) => b.el.offsetWidth - a.el.offsetWidth).slice(0, 4);
-      if (!shown.length) { fixes.make(here); changed(); continue; }
+      const marked = inSight.sort((a, b) => b.el.offsetWidth - a.el.offsetWidth).slice(0, 4);
+      if (!marked.length) { fixes.make(here); changed(); continue; }
+      // the note is about the piece with clear room beside it; among those, the biggest
+      const els = marked.map((p) => p.el), room = marked.map((p) => note.fit(p.el, els).cost);
+      const lead0 = room.indexOf(Math.min(...room));
+      const shown = [marked[lead0], ...marked.filter((p, n) => n !== lead0)];
       const main = ITEMS[shown[0].i];
-      card({ ride: true, title: main.title, more: here.length - 1 });
-      const release = lead(main.toy, beside(shown[0].el));
+      const [wrong, right] = SAY[main.rule] ?? [main.title, 'Fixed.'], more = here.length - 1;
+      const slot = note.show(shown[0].el, shown.map((p) => p.el), { say: wrong, sub: more > 0 ? `and ${more} more on this part of the page` : '' });
+      const release = lead(main.toy, slot);
       const steps = shown.map((p) => ({ look: 'ring', ...drawn(ITEMS[p.i], p.el), chip: null, bands: () => [{ el: p.el, rect: () => p.el.getBoundingClientRect() }], morph() {} }));
       await run.wait(guides.in(steps, run.signal));
-      await pause(620);
+      await pause(900);
       eased(here);
       fixes.make(here); changed();
       guides.move();
       await pause(BEAT.move);
       guides.land();
-      await pause(640);
-      await run.wait(guides.out(run.signal));
+      note.land({ say: right, sub: `${here.length} fixed here · ${fixes.left} left on the page` });
+      await pause(1000);
+      await run.wait(Promise.all([guides.out(run.signal), note.hide()]));
       guides.clear();
       release();
     }
@@ -186,7 +190,7 @@ export class Eggs {
     const floor = document.querySelector('.floor');
     if (floor) await glide(floor.getBoundingClientRect().bottom + scrollY - innerHeight);
     const rest = fixes.open();
-    if (rest.length) { card({ ride: true, title: `And ${rest.length} more inside this page’s demos.` }); fixes.make(rest); changed(); await pause(1400); }
+    if (rest.length) { fixes.make(rest); changed(); }
     this.stop();
   }
 
