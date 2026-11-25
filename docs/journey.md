@@ -4675,8 +4675,9 @@ The same build passed 705 loads before it went out, and the game passes on the l
   menu only has 50."), and the beats grow to fit them (about 34 s). The film skill now says the film's length follows
   the words. The owner on script 5: "explain how the react sees it find". Script 6 says what the check does: it reads
   the page as the browser drew it, finds a z-index of 999 inside a card, knows numbers that high are for things that
-  cover the whole page, and finds the line that set it (`craft/z-index-war`). The film grows to about 46 s.
-  Waiting for the owner's OK before the film changes.
+  cover the whole page, and finds the line that set it (`craft/z-index-war`). Rendered on 2026-11-25: 49 s, 1080p60.
+  The recording now also shows plumber's card on the badge ("z-index too high, z-index 999 in the middle of the
+  page") while its line is read, and the line of code appears as "finds the line in your code" is said.
 
 ### 94. The X-ray card gets a layout picker (2026-11-23)
 
