@@ -6018,6 +6018,11 @@ into its own browser. Your app isn't changed.", then the findings.
   longest line stays on one line (65px at 945 wide, 72px at full width). A screen reader and a reader without
   motion get "a design engineer on every screen." Seen at 945 wide in the dark theme; phones not looked at.
 
+- **"Enforcer" is out (2026-11-26).** The owner: "remove enforcer it sounds cringe think of better wording". The
+  third line is now "a design review". It says what the hero shows right under it, a screen being reviewed and
+  fixed, and it sounds like a colleague where "enforcer" sounded like police. It is also short, so the heading is
+  back at its full size at every width. Passed over: "a design system keeper" and "a drift fixer".
+
 ## Open gaps
 
 - Without setup, the page check found 70 problems where the same page wired in finds 72 (10 fixes against 14). Not

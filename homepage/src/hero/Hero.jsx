@@ -12,7 +12,7 @@ export const INSTALL = 'npm install -D @unlocalhosted/react-plumber';
 
 // what Plumber is, three ways: the first line of the headline flips through them. The first is the one a reader
 // without motion, a search engine and a screen reader get
-const IS = ['a design engineer', 'a UI slop linter', 'a design system enforcer'];
+const IS = ['a design engineer', 'a UI slop linter', 'a design review'];
 const FLIP = { every: 2800 };
 
 /* The headline's first line, flipping. All three lines lie in one place, so the tallest keeps the room and nothing

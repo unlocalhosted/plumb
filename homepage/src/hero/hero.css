@@ -8,8 +8,7 @@
   .hero { height: 100svh; min-height: 40rem; padding-bottom: clamp(16px, 3vh, 40px); }
   /* the head gives way on short windows, so the screen keeps most of the height: type and gaps follow the height */
   .hero-head { max-width: 52rem; margin-top: clamp(8px, 4svh, 72px); }
-  /* and on the width: the longest of the flipping lines (about 13.5 of its own letters wide) stays on one line */
-  .hero-head .display { font-size: min(clamp(44px, 7.2svh, 72px), calc((100vw - 64px) / 13.5)); }
+  .hero-head .display { font-size: clamp(44px, 7.2svh, 72px); }
   /* the side margins are pulled in so a line wider than the head overflows it evenly on both sides */
   .hero-flip > span { white-space: nowrap; width: max-content; max-width: none; margin-inline: -12rem; }
   .hero-head .lead { max-width: 40rem; margin-top: clamp(12px, 2.6svh, 24px); font-size: clamp(17px, 2.3svh, 20px); }
