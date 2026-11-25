@@ -478,9 +478,13 @@ export function mountXray(o) {
   // ── where a change reaches, and the changes ───────────────
   // a part's places on the page: every element its line of code draws (the rows of a list, the cards of a grid)
   // where a part's classes are written, and every element that line draws (the adapter's scopeInfo, asked once per
-  // element when a part comes into hand): { scopes, mates, where }. Until it answers, the copies its stamp shares
+  // element and part when a part comes into hand): { scopes, mates, where }. Until it answers, the copies its stamp shares.
+  // Kept by part as well as element: two parts of one element can be written in different places (a card's row gap
+  // from a class 91 elements share, its padding from its own line), and the first part's answer used for the next
+  // spread a padding change to all 91.
   const infos = new WeakMap();
-  const peers = (el) => { const i = infos.get(el); if (i) return i.mates; const k = o.key(el); const all = k ? [...o.all(k)] : []; return all.includes(el) ? all : [el]; };
+  const infoOf = (el, prop = inHand?.el === el ? inHand.prop : null) => (prop ? infos.get(el)?.get(prop) ?? null : null);
+  const peers = (el) => { const i = infoOf(el); if (i) return i.mates; const k = o.key(el); const all = k ? [...o.all(k)] : []; return all.includes(el) ? all : [el]; };
   // the changes not yet synced, by place in the code and which copy ('key#n' → { prop → { before, value, scope } }),
   // never by element: a re-render replaces elements, and the change must find the new one
   const changes = new Map();
@@ -552,7 +556,7 @@ export function mountXray(o) {
   const unseen = () => [...changes.keys()].filter((k) => !elOf(k)).length;
   // the scope: 'one' just this; 'page' every place here its line draws; 'all' the component, everywhere it's used
   let scope = 'one';
-  const scopesOf = (el) => infos.get(el)?.scopes ?? [...(peers(el).length > 1 ? ['one', 'page'] : ['one']), ...(o.component(el) ? ['all'] : [])];
+  const scopesOf = (el) => infoOf(el)?.scopes ?? [...(peers(el).length > 1 ? ['one', 'page'] : ['one']), ...(o.component(el) ? ['all'] : [])];
   const targets = (el) => {
     if (scope === 'all' && o.component(el)) return o.everywhere?.(el) ?? [el];
     return scope === 'page' ? peers(el) : [el];
@@ -797,7 +801,7 @@ export function mountXray(o) {
     if (where && source && where.textContent === source) { where.textContent = tail(source); where.title = source; }
     const head = body.querySelector('.xr-head b');
     head?.querySelector('.xr-many')?.remove();
-    const info = infos.get(el);
+    const info = infoOf(el);
     const reached = inHand?.el === el && RECIPES[inHand.prop] ? inHand.shade.mates.length : 0;
     if (head && reached > 1) head.insertAdjacentHTML('beforeend', ` <span class="xr-many" data-scope="page">×${reached}</span>`);
     else if (head && !reached && (scopesOf(el).length > 1 || peers(el).length > 1)) head.insertAdjacentHTML('beforeend', ` <span class="xr-many" data-scope="${scope}"${info?.where ? ` title="Written at ${esc(info.where)}"` : ''}>${scope === 'all' ? `everywhere · ${o.component(el)?.uses ?? '?'} uses` : scope === 'page' ? `×${peers(el).length}${info?.where ? ` · ${esc(tail(info.where))}` : ' here'}` : 'just this one'}</span>`);
@@ -1038,13 +1042,13 @@ export function mountXray(o) {
     if (!el || !prop) return;
     const sided = sidesSaid(prop) !== null, sized = prop === 'width' || prop === 'height', now = read(el, prop), S = optionsFor(familyOf(prop), now);
     if (!S.length) return;
-    const known = infos.get(el);
+    const known = infoOf(el, prop);
     scope = known ? (known.scopes.includes('page') ? 'page' : known.scopes[0]) : peers(el).length > 1 ? 'page' : 'one';
-    const scopes = scopesOf(el);
+    const scopes = known?.scopes ?? scopesOf(el);
     // ask once where this part is written and what else that line draws; the row is made again with the answer
     if (!known && o.scopeInfo) Promise.resolve(o.scopeInfo(el, prop)).then((info) => {
       if (!info || !el.isConnected) return;
-      infos.set(el, info);
+      (infos.get(el) ?? infos.set(el, new Map()).get(el)).set(prop, info);
       if (inHand?.el === el) { const p = inHand.prop; hand.innerHTML = ''; inHand = null; hold(el, p); }
       if (shown === el) { lastCard = ''; draw(el); }
     }, () => {});

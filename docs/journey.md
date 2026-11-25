@@ -5943,6 +5943,13 @@ into its own browser. Your app isn't changed.", then the findings.
   and writes them ("17 places in 4 files now use these styles"). But the editor's preview breaks the page: it says
   "48 changes · 91 places" for one card's padding, puts the padding on avatars, icons, headers and the sidebar, and
   the page stays broken after Sync. A launch film can't show that, so it's in the backlog and the film waits on it.
+- **The fix (owner: "Fix the bug first"):** the X-ray card asks where a part is written, and what else that line
+  draws, once per element, and kept the answer for the element alone. On the card, the first part pointed at was the
+  row gap, which comes from `gap-2`, a class 91 elements share; that answer was then used for the padding. The answer is
+  now kept per element and per part (`overlay/src/xray-live.js`). Proof on Relay with the same gesture: the card says
+  "IssueCard ×20 · Board.jsx:35" and "4 changes · 20 places", the preview pads only the 20 cards, Sync writes
+  `p-3`, and the board is intact after Sync and after Clean up's text pass. No test was written (the owner's rule while
+  iterating). Stills: `take/fixed-synced.jpg`, `take/fixed-after-cleanup.jpg` (local).
 - **Media hooks:** the reference's frame sheet beside the shot plan; `take/editor-syncing.jpg` and
   `take/after-sync.jpg` (local) show the bug.
 
