@@ -4673,7 +4673,10 @@ The same build passed 705 loads before it went out, and the game passes on the l
   squeezed to fit a beat of fixed length, which turned it into clipped slogans. Script 5 is whole sentences a person
   would say ("You open a dropdown, and part of the page sits on top of it.", "That badge has a z-index of 999, and the
   menu only has 50."), and the beats grow to fit them (about 34 s). The film skill now says the film's length follows
-  the words. Waiting for the owner's OK before the film changes.
+  the words. The owner on script 5: "explain how the react sees it find". Script 6 says what the check does: it reads
+  the page as the browser drew it, finds a z-index of 999 inside a card, knows numbers that high are for things that
+  cover the whole page, and finds the line that set it (`craft/z-index-war`). The film grows to about 46 s.
+  Waiting for the owner's OK before the film changes.
 
 ### 94. The X-ray card gets a layout picker (2026-11-23)
 
