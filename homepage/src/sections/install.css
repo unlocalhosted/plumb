@@ -4,10 +4,29 @@
 .ins code { font-family: var(--mono); }
 .ins .title { max-width: 40rem; }
 
-/* ── or hand it to an agent: one prompt, under the title ── */
-.ins-hand { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: var(--s-5) 0 0; }
-.ins-hand .ins-copy { height: 32px; padding: 0 12px; font-size: 13px; }
-.ins-copy[data-state='blocked'] { background: var(--off-soft); color: var(--off); box-shadow: none; }
+/* ── or hand it to an agent: the site's soft block with what it does beside it, and the prompt to read ── */
+.ins-hand { margin: var(--s-6) 0 0; max-width: 46rem; }
+.ins-hand-row { display: flex; gap: 16px; align-items: center; }
+.ins-hand-copy { flex: none; }
+.ins-hand-copy > span { min-width: 148px; padding: 11px 18px; font-size: 15px; }
+.ins-hand-copy[data-state='copied'] { --h: var(--pl-mint-block); }
+.ins-hand-copy[data-state='copied'] > span { color: var(--pl-mint-block-on); }
+.ins-hand-copy:focus-visible { outline: 2px solid var(--pl-border-focus); outline-offset: 3px; border-radius: 14px; }
+.ins-hand-say { margin: 0; min-width: 0; font: var(--t-small); color: var(--ink-2); text-wrap: pretty; }
+.ins-hand-say b { font-weight: 600; color: var(--ink-1); }
+.ins-hand-read { margin-top: 12px; }
+.ins-hand-read summary { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 2px; cursor: pointer; list-style: none; font: var(--t-small); font-size: 13px; color: var(--ink-2);
+  transition: color 150ms var(--ease); }
+.ins-hand-read summary::-webkit-details-marker { display: none; }
+.ins-hand-read summary::before { content: ''; width: 6px; height: 6px; border: solid currentColor; border-width: 0 1.5px 1.5px 0; rotate: -45deg; transition: rotate 180ms var(--ease); }
+.ins-hand-read[open] summary::before { rotate: 45deg; }
+@media (hover: hover) and (pointer: fine) { .ins-hand-read summary:hover { color: var(--ink-1); } }
+.ins-hand-read summary:focus-visible { outline: 2px solid var(--pl-border-focus); outline-offset: 2px; border-radius: 6px; }
+.ins-hand-read pre { margin: 8px 0 0; max-height: 22rem; overflow: auto; padding: 16px 18px; border-radius: var(--r-md); background: var(--pl-bg-inset); box-shadow: var(--pl-shadow-well);
+  font: 500 12.5px/1.6 var(--mono); color: var(--ink-2); white-space: pre-wrap; overflow-wrap: anywhere; }
+.ins-hand-read pre:focus-visible { outline: 2px solid var(--pl-border-focus); outline-offset: 2px; }
+@media (max-width: 640px) { .ins-hand-row { flex-direction: column; align-items: flex-start; gap: 12px; } }
+@media (prefers-reduced-motion: reduce) { .ins-hand-read summary, .ins-hand-read summary::before { transition: none; } }
 
 /* ── the three lines ── */
 .ins-lines { margin: var(--s-7) 0 0; padding: 0; list-style: none; }

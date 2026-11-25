@@ -5990,6 +5990,19 @@ into its own browser. Your app isn't changed.", then the findings.
   commands (init with `--yes`, since nobody is at the keyboard), then the hooks and a first check, and a line telling
   the agent never to change the config, ledger or theme to pass.
 
+- **The agent prompt did too little, and its button was an afterthought (2026-11-26).** The owner: "make sure the
+  copy for agent setup the overlay on gui and also check for any issues during the setup find the right path and
+  where the source lies", and "use proper ux and good ui for copy button". The first prompt was the three commands
+  in a list, and the button was the small grey chip the single commands use. The system behind it: I wrote the
+  prompt for a person, who watches each step, when an agent has nobody watching. The prompt now has the agent find
+  the app's own folder first (in a monorepo, not the repository root), check Node and the bundler, and find the
+  source and the tokens. It reads what init and the overlay step wrote, runs `plumber doctor`, starts the dev server
+  and looks for the overlay's bar. It names the three set-up messages the overlay can show, and ends with a report.
+  Every command and message is the README's. The control is the site's pink soft block, "Copy the prompt", with
+  what it does beside it. After a press it turns mint and the line says "Now paste it into your agent." The prompt
+  can be read first, under "Read the prompt first". If copying is blocked, the prompt opens with its text selected.
+  Not done: the prompt has not been run by a real agent on a real app.
+
 ## Open gaps
 
 - Without setup, the page check found 70 problems where the same page wired in finds 72 (10 fixes against 14). Not

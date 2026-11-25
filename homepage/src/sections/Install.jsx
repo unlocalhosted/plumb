@@ -17,20 +17,40 @@ const LINES = [
   { cmd: 'npx plumber init', bold: 'init', what: 'asks for your rules, writes your config and records today’s problems as the baseline', vis: 'init' },
   { cmd: 'npx plumber install --overlay --write', bold: 'install --overlay --write', what: 'wires the overlay into Vite or Next.js, and shows the diff', vis: 'vite' },
 ];
-// what a person pastes into their agent (Claude Code, Cursor, Codex): the same three commands, with init taking its
-// suggested answers because nobody is at the keyboard, then the hooks and a first check. Every line is the README's
-const FOR_AGENTS = `Set up React Plumber in this project. It needs Vite or Next.js, Tailwind v4 or plain CSS, and Node 22.18 or newer.
+// what a person pastes into their agent (Claude Code, Cursor, Codex). It goes further than the three commands,
+// because nobody is watching: find the right folder first, check what each step wrote, get the overlay on the running
+// page, and report. Every command, file name and message in it is the README's own
+const FOR_AGENTS = `Set up React Plumber in this project, all the way to its overlay showing on my running page. Check each step before the next one, and tell me about anything that doesn't match.
 
-Run these in order, with this project's package manager:
+BEFORE YOU START
+- Find the app to set up. In a monorepo that is the package with the Vite or Next.js config and its own package.json, not the repository root. Run every command from that folder, with this project's package manager (pnpm exec, yarn or bunx in place of npx).
+- Check it can run here: Node 22.18 or newer, Vite or Next.js, and Tailwind v4 or plain CSS. If one is missing, stop and tell me. With Tailwind v3, CSS Modules or CSS-in-JS it still sets up, but not everything is judged; "npx plumber doctor" says what is supported.
+- Find where the source lies: the folder with the JSX, the CSS file the app loads first, and where the design tokens are (@theme, :root or a theme file). You will check what init wrote against these.
+
+SET UP
 1. npm install -D @unlocalhosted/react-plumber
 2. npx plumber init --yes
-   (takes every suggested rule, writes plumber.config.ts and records today's problems as the baseline)
+   It takes every suggested rule, writes plumber.config.ts and records today's problems as the baseline. Read the config it wrote. The token sources must be the files you found. Don't add "source" unless it read the wrong code.
 3. npx plumber install --overlay --write
-   (wires the overlay into Vite or Next.js and prints the diff)
-4. npx plumber install --hooks
-   (checks each of your edits from now on)
+   It wires the overlay into Vite or Next.js and prints the diff. Read the diff.
+   - Vite: plumb() is in plugins before react(), and react() is still there.
+   - Next.js: the config is wrapped in withPlumb, <PlumbOverlay /> is inside <body> in the root layout, and the route file keeps its .plumb.ts name.
+4. npx plumber install
+   It writes React Plumber's instructions for you and, in Claude Code or Cursor, a hook that checks each of your edits.
+5. npx plumber doctor
+   It lists what is set up, with one command for each thing that isn't. Go through every line it flags. Ask me before "plumber fix <id>" changes a file.
 
-Then run "npx plumber check --agent" and tell me what it found. Show me the rules init chose so I can correct them. Never change the config, the ledger or the theme to make a check pass.`;
+SEE IT ON THE PAGE
+6. Start the dev server the way this project does. A small bar should sit in a corner of the page. If you can open a browser, load the page and look for it. If you can't, give me the URL and ask me to hold Alt over something.
+7. If the bar is missing, or says setup isn't finished, read what it says and fix that.
+   - "Source stamping isn't running": plumb() is not before the plugin that compiles JSX, or the page's HTML was made outside the dev server.
+   - "Turn on React Fast Refresh": the Vite config has no React plugin.
+   - The dev server stops and names a line to move: move it.
+
+FINISH
+8. Run "npx plumber check --agent". Then tell me which folder you set up, the rules init chose, the files that changed, whether you saw the overlay, and what the check found.
+
+Never change the config, the ledger or the theme to make a check pass. Leave the problems it finds for me to choose.`;
 const HOLD = { every: 3200, held: 1700 };
 
 export function Install() {
@@ -53,7 +73,7 @@ export function Install() {
   return (
     <section className="ins" aria-labelledby="ins-title">
       <h2 id="ins-title" className="title">Set up in three commands</h2>
-      <p className="ins-hand"><Copy text={FOR_AGENTS} label="Copy for agents" name="the set-up prompt for your agent" /><span className="ins-what">or paste one prompt into Claude Code, Cursor or Codex and it runs all of this</span></p>
+      <ForAgents />
       <ol className="ins-lines">
         {LINES.map(l => (
           <li key={l.cmd}>
@@ -76,7 +96,7 @@ export function Install() {
 }
 
 /* Copy one command. States: rest, hover, focus, pressed, copied (1.6s), couldn't copy (the command is selected). */
-function Copy({ text, label = 'Copy', name = text }) {
+function Copy({ text }) {
   const [state, setState] = useState('rest');
   const timer = useRef(0), btn = useRef(null);
   useEffect(() => () => clearTimeout(timer.current), []);
@@ -85,21 +105,60 @@ function Copy({ text, label = 'Copy', name = text }) {
     let next = 'copied';
     try { await navigator.clipboard.writeText(text); }
     catch {
-      // a command is selected for ⌘C; the prompt has no text on the page to select, so its button just says it failed
-      const code = btn.current.closest('li')?.querySelector('.ins-cmd');
-      if (code) { const range = document.createRange(); range.selectNodeContents(code); getSelection().removeAllRanges(); getSelection().addRange(range); }
-      next = code ? 'failed' : 'blocked';
+      const code = btn.current.closest('li').querySelector('.ins-cmd');
+      const range = document.createRange(); range.selectNodeContents(code);
+      getSelection().removeAllRanges(); getSelection().addRange(range); next = 'failed';
     }
     setState(next);
-    timer.current = setTimeout(() => setState('rest'), next === 'copied' ? 1600 : 4000);
+    timer.current = setTimeout(() => setState('rest'), next === 'failed' ? 4000 : 1600);
   };
   return (
     <>
-      <button ref={btn} type="button" className="ins-copy" data-state={state} onClick={copy} aria-label={`Copy: ${name}`}>
-        {state === 'copied' ? 'Copied' : state === 'failed' ? 'Press ⌘C' : state === 'blocked' ? 'Couldn’t copy' : label}
+      <button ref={btn} type="button" className="ins-copy" data-state={state} onClick={copy} aria-label={`Copy: ${text}`}>
+        {state === 'copied' ? 'Copied' : state === 'failed' ? 'Press ⌘C' : 'Copy'}
       </button>
-      <span className="sr-only" role="status" aria-live="polite">{state === 'copied' ? 'Copied' : state === 'failed' ? 'Couldn’t copy. The command is selected.' : state === 'blocked' ? 'Couldn’t copy.' : ''}</span>
+      <span className="sr-only" role="status" aria-live="polite">{state === 'copied' ? 'Copied' : state === 'failed' ? 'Couldn’t copy. The command is selected.' : ''}</span>
     </>
+  );
+}
+
+/* The other way in: hand the whole set-up to an agent. One action (the site's soft block, as on the hero's command),
+ * with what it does said beside it and the prompt itself there to read before it is copied.
+ * States: rest, hover, focus, pressed, copied (mint, and the line beside it says what to do next, 4s), couldn't copy
+ * (the prompt opens with its text selected and the button says Press ⌘C). */
+function ForAgents() {
+  const [state, setState] = useState('rest');
+  const timer = useRef(0), read = useRef(null), words = useRef(null);
+  useEffect(() => () => clearTimeout(timer.current), []);
+  const copy = async () => {
+    clearTimeout(timer.current);
+    let next = 'copied';
+    try { await navigator.clipboard.writeText(FOR_AGENTS); }
+    catch {
+      read.current.open = true;
+      const range = document.createRange(); range.selectNodeContents(words.current);
+      getSelection().removeAllRanges(); getSelection().addRange(range); next = 'failed';
+    }
+    setState(next);
+    timer.current = setTimeout(() => setState('rest'), 4000);
+  };
+  return (
+    <div className="ins-hand" data-state={state}>
+      <div className="ins-hand-row">
+        <button type="button" className="ins-hand-copy s-btn" data-state={state} onClick={copy}>
+          <span>{state === 'copied' ? 'Copied' : state === 'failed' ? 'Press ⌘C' : 'Copy the prompt'}</span>
+        </button>
+        <p className="ins-hand-say" role="status">
+          {state === 'copied' ? <b>Now paste it into your agent.</b>
+            : state === 'failed' ? <b>Couldn’t copy. The prompt is selected below.</b>
+            : <><b>Or let your agent do it.</b> One prompt for Claude Code, Cursor or Codex. It finds the right folder, sets up the overlay, checks each step and tells you what it found.</>}
+        </p>
+      </div>
+      <details ref={read} className="ins-hand-read">
+        <summary>Read the prompt first</summary>
+        <pre ref={words} tabIndex={0}>{FOR_AGENTS}</pre>
+      </details>
+    </div>
   );
 }
 
