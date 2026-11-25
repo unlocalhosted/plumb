@@ -19,6 +19,7 @@ export function Floor() {
   const stage = useRef(null), pile = useRef(null), eggs = useRef(null), fixes = useRef(null), next = useRef(undefined);
   const path = usePathname(), router = useRouter(), here = useRef(path);
   here.current = path;
+  const [yay, setYay] = useState(null), yayOff = useRef(0);
   const [pileIs, setPileIs] = useState('waiting');
   const [{ left, able, toys, cant, none }, setCount] = useState(FRESH);
 
@@ -29,14 +30,22 @@ export function Floor() {
     eggs.current = new Eggs({
       fixes: f,
       lead: (name, point) => pile.current?.lead(name, point) ?? (() => {}),
-      changed() {
-        count();
-        if (!f.open().length) burst(document.body, innerWidth / 2, innerHeight * 0.6, { pieces: 64 });
+      changed: count,
+      // a tour ran to its end: the toys jump, the pieces fly, and the floor says so
+      done(toy, n) {
+        const all = !toy || !f.open().length, box = stage.current.getBoundingClientRect(), at = (!all && pile.current.at(toy)) || { x: box.left + box.width / 2, y: box.bottom - 40 };
+        pile.current.cheer(all ? undefined : toy);
+        burst(document.body, at.x, at.y, { pieces: all ? 110 : 48 });
+        if (all) for (const [k, x] of [[260, 0.22], [480, 0.78]]) setTimeout(() => burst(document.body, box.left + box.width * x, box.bottom - 40, { pieces: 70 }), k);
+        const name = PIECES.find(([t]) => t === toy)?.[1];
+        clearTimeout(yayOff.current);
+        setYay({ id: Date.now(), all, say: all ? 'Yay! All fixed.' : `Yay! ${name} is fixed.`, sub: all ? `${TOTAL - f.left} fixes, and you watched every one.` : `${n} down. Pick another toy.` });
+        yayOff.current = setTimeout(() => setYay(null), all ? 5200 : 3200);
       },
     });
     pile.current = new Pile(stage.current, ({ state }) => setPileIs(state), (toy) => start(toy));
     count();
-    return () => { eggs.current.stop(); pile.current.destroy(); f.destroy(); };
+    return () => { clearTimeout(yayOff.current); eggs.current.stop(); pile.current.destroy(); f.destroy(); };
   }, []);
 
   // the faults are the homepage's: from any other page a press goes there first
@@ -79,6 +88,12 @@ export function Floor() {
           <span>{done ? (tidy ? 'Mix them up' : 'Clean up') : able === null ? 'Fix them' : `Fix ${able}`}</span>
         </button>
       </div>
+      {yay && (
+        <p className="yay" role="status" key={yay.id} data-all={yay.all || undefined}>
+          <b aria-label={yay.say}>{[...yay.say].map((c, i) => <i key={i} aria-hidden="true" style={{ '--i': i }}>{c === ' ' ? '\u00a0' : c}</i>)}</b>
+          <span>{yay.sub}</span>
+        </p>
+      )}
       <div ref={stage} className="pile">
         {PIECES.slice(1).map(([toy]) => <i key={toy} className="pile-gap" data-guide aria-hidden="true"><b /></i>)}
         {PIECES.map(([toy, name]) => {

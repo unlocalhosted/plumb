@@ -113,7 +113,7 @@ function eased(list) {
 export class Eggs {
   #run = null; #host;
   /**
-   * @param host { fixes, lead(toy, point) → release, changed() }
+   * @param host { fixes, lead(toy, point) → release, changed(), done(toy, fixed): a tour ran to its end }
    */
   constructor(host) { this.#host = host; }
 
@@ -128,7 +128,7 @@ export class Eggs {
    */
   async ride(toy) {
     this.stop();
-    const { fixes, lead, changed } = this.#host, list = fixes.open(toy);
+    const { fixes, lead, changed, done } = this.#host, list = fixes.open(toy);
     if (!list.length) return;
     fixes.ready(list);
     const run = new Scope();
@@ -223,6 +223,9 @@ export class Eggs {
     // back to the floor: where the press was, or the foot of the page after the whole tour
     const floor = document.querySelector('.floor');
     await glide(toy || !floor ? start : floor.getBoundingClientRect().bottom + scrollY - innerHeight);
+    // the toy is home: the ending
+    await pause(520);
+    done?.(toy, list.length);
     this.stop();
   }
 }

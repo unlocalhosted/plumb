@@ -267,6 +267,18 @@ body > .fx-burst { z-index: 45 !important; }
 .piece-done::after { content: ''; position: absolute; left: 7.5px; top: 4.5px; width: 5px; height: 10px; border: solid var(--pl-cut); border-width: 0 2.4px 2.4px 0; rotate: 45deg; }
 .piece[data-fixed] .piece-done { opacity: 1; scale: 1; }
 /* what Plumber found, in its own words, over the page while the fix plays */
+/* the ending of a tour (site/Floor.jsx): the words hop in a letter at a time over the toys, which are jumping */
+.floor { position: relative; }
+.yay { position: absolute; z-index: 5; left: 50%; top: 56%; translate: -50% -50%; margin: 0; display: grid; gap: 6px; justify-items: center; width: max-content; max-width: calc(100% - 32px); text-align: center; pointer-events: none; animation: yay-out 320ms var(--pl-ease-out) 2800ms both; }
+.yay[data-all] { animation-delay: 4800ms; }
+.yay b { font: var(--pl-round-w, 700) 56px/60px var(--pl-round); color: var(--pl-mint); --halo: var(--pl-desk); text-shadow: 0 0 6px var(--halo), 0 0 14px var(--halo), 0 0 28px var(--halo); }
+.yay b i { display: inline-block; font-style: normal; animation: yay-hop 620ms var(--pl-spring-pop) calc(var(--i) * 34ms) both; }
+.yay b i:nth-child(3n) { color: var(--pl-butter); } .yay b i:nth-child(3n + 1) { color: var(--pl-pink); }
+.yay span { font: 600 17px/24px var(--pl-sans); color: var(--pl-text-primary); --halo: var(--pl-desk); text-shadow: 0 0 6px var(--halo), 0 0 14px var(--halo); animation: found-in 300ms var(--pl-ease-out) 520ms both; }
+@keyframes yay-hop { from { opacity: 0; translate: 0 .7em; rotate: -14deg; scale: .5; } }
+@keyframes yay-out { to { opacity: 0; translate: -50% calc(-50% - 12px); } }
+@keyframes found-in { from { opacity: 0; translate: 0 8px; } }
+@media (max-width: 640px) { .yay b { font-size: 34px; line-height: 38px; } }
 /* what the ride says at a stop, written beside the element it is about (site/note.js): a sentence and a line to it,
    no box; the page's colour glows behind the words so they read over anything */
 .note { position: fixed; z-index: 48; box-sizing: border-box; display: flex; align-items: center; gap: 12px; min-height: 84px; pointer-events: none; }

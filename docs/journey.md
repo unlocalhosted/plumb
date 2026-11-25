@@ -5979,6 +5979,17 @@ into its own browser. Your app isn't changed.", then the findings.
 - **The Demo page is gone.** It was a placeholder that said the demo isn't on the site yet. The owner: "remove the
   demo page its fucking annoying". The page and its link in the top bar are removed.
 
+- **The tour had no ending (2026-11-26).** The owner: "no end state like yay all fixes done add some delight and
+  whimsy". A tour stopped and the page went quiet; only a number had changed. Now, when a toy's tour comes home, that
+  toy jumps twice, pieces burst from it, and "Yay! Type is fixed." hops in a letter at a time over the toys, with
+  "3 down. Pick another toy." under it. When everything is fixed, all the toys jump in a wave, three bursts go off
+  and it says "Yay! All fixed." A tour that is cut short gets no cheer. Seen for the Type toy at 1024 wide; the
+  all-fixed ending has not been watched.
+- **Copy for agents, in the set-up section.** The owner pointed at "Set up in three commands": "also here add a copy
+  button for agents". A button under the title copies one prompt for Claude Code, Cursor or Codex: the three
+  commands (init with `--yes`, since nobody is at the keyboard), then the hooks and a first check, and a line telling
+  the agent never to change the config, ledger or theme to pass.
+
 ## Open gaps
 
 - Without setup, the page check found 70 problems where the same page wired in finds 72 (10 fixes against 14). Not

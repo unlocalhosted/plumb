@@ -247,6 +247,17 @@ export class Pile {
     };
   }
 
+  /** The toys jump for joy, twice: the named one, or all of them in a wave from left to right. */
+  cheer(name) {
+    if (this.#still) return;
+    const who = this.#pieces.filter((p) => !name || p.name === name).sort((a, b) => a.x - b.x);
+    const hop = (p, v) => { if (p.held || p.led) return; p.vy = -v; p.vx += between(-110, 110); this.#run(); };
+    who.forEach((p, i) => { for (const [n, v] of [[0, name ? 1250 : 1050], [1, 780]]) this.#life.timeout(() => hop(p, v), i * 60 + n * 560); });
+  }
+
+  /** Where a piece is in the window, for something that bursts from it. */
+  at(name) { const r = this.#pieces.find((p) => p.name === name)?.el.getBoundingClientRect(); return r ? { x: r.left + r.width / 2, y: r.top + r.height / 2 } : null; }
+
   #run() {
     this.#quiet = 0;
     if (this.#running || this.#still) return;
