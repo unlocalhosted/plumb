@@ -44,7 +44,7 @@ and the agent can't reach them. An agent without setup is not a case the instruc
 2. **No setup needed.** *Built 2026-11-24 (journey 133). Plain `npx plumber` was the wrong package; commands now name `npx -p @unlocalhosted/react-plumber` when it isn't installed.* The skill says plumber works in any React app with no setup, and that setup only records the
    person's choices. `npx -p @unlocalhosted/react-plumber plumber check --agent` works without installing.
    `plumber install --agent` works without `init` or the package.
-3. **Edits, not sentences.** Every finding plumber can write carries the edit as data (file, line, before, after) in
+3. **Edits, not sentences.** *Built 2026-11-25 (journey 134): `plumber apply <key>` and `plumber undo` for check's groups. Edits as data in `--json`, and page checks, still open.* Every finding plumber can write carries the edit as data (file, line, before, after) in
    `--json` and `--agent`, and `plumber apply <key>` writes it with the writer the fix bar uses, with undo.
 4. **Page checks an agent can use.** Find the running dev server, reuse the warm server for speed, and return a
    before and after screenshot so the agent can see what changed.

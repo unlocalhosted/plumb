@@ -2,9 +2,11 @@ import type { Report, Site } from '../report.js';
 import { atSite, newSites, pathFor } from './sites.js';
 import { editChoices, replacement } from './edits.js';
 import { classEdit } from '../messages.js';
+import { quote } from '../cli-apply.js';
 
 export const loopRules = [
   'Do not edit plumber.config.ts (or another React Plumber config), .plumber/ledger.jsonl, or the theme to make a finding pass.',
+  'Use `plumber apply <key>` where a group shows one; edit by hand only where it does not.',
   'Run `plumber check --changed --agent` after editing; stop when it prints "0 new".',
   'If neither decision fits, do not invent a value: stop and report NEEDS-DECISION with the sites and the value you wanted.',
   'Reporting NEEDS-DECISION is fine. Never add a token.',
@@ -36,6 +38,10 @@ export function formatAgent(report: Report, top: number = AGENT_TOP): string {
     }
     lines.push(`Sites: ${sites.map(where).join(', ')}`);
     const governed = ['ledger', 'decisions'].includes(finding.family);
+    // the whole group in one command, written by the fix bar's writer, when plumber can write at least one place
+    const writable = !governed && candidates.some(decision => sites.some(site => replacement(finding, site, decision, report)));
+    if (writable) lines.push(candidates.length === 1 ? `Apply: plumber apply ${quote(finding.key)}  (writes every place below; plumber undo takes it back)`
+      : `Apply: plumber apply ${quote(finding.key)} --token <${candidates.map(d => d.name).join('|')}>  (after you choose)`);
     for (const site of sites) {
       const d = atSite(finding, site);
       lines.push(`- ${where(site)}  \`${site.text}\`${site.defined ? `  (a variable defined at ${where({ ...site, ...site.defined })})` : ''}`, `  Compiles to: ${d.prop}: ${d.resolved ?? d.value} (via ${d.origin})`);

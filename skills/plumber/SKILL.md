@@ -42,8 +42,11 @@ plumber check --changed --agent
 
 It lists only new problems in the files you changed, one instruction per site:
 
-- **Edit:** one token fits. Make exactly that edit.
-- **Choose a token using its reason:** several fit. Pick by the reasons shown and what the element is for, then make that edit.
+- **Apply:** plumber can write this whole group itself. Run the line it shows (`plumber apply <key>`, or with
+  `--token <name>` after you choose). It writes every place the way the person's fix bar would, and
+  `plumber undo` takes it back while nothing has changed those files since. Prefer it to editing by hand.
+- **Edit:** one token fits. Make exactly that edit (or use the group's Apply line).
+- **Choose a token using its reason:** several fit. Pick by the reasons shown and what the element is for, then make that edit, or apply with `--token`.
 - **NEEDS-DECISION:** no token fits. Stop and tell the user the sites and the value you wanted. This is a valid result.
 - **Fix:** a habit, ownership, imitation or existence finding. Follow it (for a component override, use one of the variants it names).
 

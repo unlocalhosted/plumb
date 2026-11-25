@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 
 /** The commands a person can run, as React Plumber prints them in its words ("Next: plumber init"). */
-const COMMANDS = 'init|check|install|doctor|propose|state|fix|baseline|accept|accept-decisions|spec|craft|ledger|show|why|report|census|habits|decisions|explain|try|presets|serve|agent-docs|parity|imitation';
+const COMMANDS = 'init|check|apply|undo|install|doctor|propose|state|fix|baseline|accept|accept-decisions|spec|craft|ledger|show|why|report|census|habits|decisions|explain|try|presets|serve|agent-docs|parity|imitation';
 
 export const PACKAGE = '@unlocalhosted/react-plumber';
 

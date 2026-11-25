@@ -72,6 +72,8 @@ Usage: plumber [check] [--json] [--verbose] [--root <dir>] [--config <path>]
        plumber agent-docs
        plumber install [--ci] [--list] [--agent <name> ...] | install --hooks [--list]
        plumber install --overlay [--write] [--root <dir>]  Print host wiring, or apply it with --write
+       plumber apply <key> [--token <name>]   Take one problem group from check --agent, as the fix bar would
+       plumber undo [<id>]                     Take back the last apply (or that one)
        plumber fix <id> [--yes] [--root <dir>] [--config <path>]
        plumber doctor [--verbose] [--root <dir>] [--config <path>]
 
@@ -104,7 +106,7 @@ async function main(): Promise<void> {
           lang: { type: 'string' }, as: { type: 'string' }, port: { type: 'string' }, stdio: { type: 'boolean' }, watch: { type: 'boolean' },
           markdown: { type: 'boolean' }, since: { type: 'string' }, strict: { type: 'boolean' }, list: { type: 'boolean' },
           url: { type: 'string' }, routes: { type: 'string', multiple: true }, timeout: { type: 'string' }, 'no-pairs': { type: 'boolean' }, 'no-probe': { type: 'boolean' }, judge: { type: 'boolean' }, probe: { type: 'string', multiple: true }, 'probe-budget': { type: 'string' }, scope: { type: 'string' }, 'record-probe': { type: 'string' }, max: { type: 'string' },
-          'no-open': { type: 'boolean' }, overlay: { type: 'boolean' }, write: { type: 'boolean' }, roles: { type: 'boolean' }, origin: { type: 'string' }, 'served-root': { type: 'string' },
+          'no-open': { type: 'boolean' }, token: { type: 'string' }, overlay: { type: 'boolean' }, write: { type: 'boolean' }, roles: { type: 'boolean' }, origin: { type: 'string' }, 'served-root': { type: 'string' },
       } as const;
       // Probe command with all value-taking flags known; --agent is an install
       // target only for install, and remains a boolean report flag elsewhere.
@@ -158,7 +160,7 @@ async function main(): Promise<void> {
   if (args.values.decline?.length && command !== 'propose') throw new UsageError('--decline requires plumber propose.\n  → plumber propose --decline spacing=13px');
   if (args.values.decline?.length && args.values.write) throw new UsageError('Choose --decline or --write.\n  → plumber propose --write');
   if (!Object.hasOwn(commandFlags, command)) throw new UsageError(unknownName('command', command, Object.keys(commandFlags)));
-  if (command === 'craft' || command === 'census' ? false : (explaining || inspecting || comparingTokens || command === 'fix') ? args.positionals.length !== 2 : command === 'accept' ? args.positionals.length > 2 : args.positionals.length > 1) {
+  if (command === 'craft' || command === 'census' ? false : (explaining || inspecting || comparingTokens || command === 'fix' || command === 'apply') ? args.positionals.length !== 2 : command === 'accept' || command === 'undo' ? args.positionals.length > 2 : args.positionals.length > 1) {
     throw new UsageError(`Unexpected arguments for plumber ${command}.\n  → plumber --help`);
   }
   if (args.values.json && ['install', 'doctor'].includes(command)) throw new UsageError(`plumber ${command} prints text; remove --json.\n  → plumber ${command}`);
@@ -334,6 +336,14 @@ async function main(): Promise<void> {
   }
   if (command === 'install' && args.values.hooks) { process.stdout.write(await installHooks(resolve(options.root ?? process.cwd()), undefined, undefined, args.values.list)); return; }
   if (command === 'install') { process.stdout.write(await installProject(resolve(options.root ?? process.cwd()), { list: args.values.list ?? false, ci: args.values.ci ?? false, agents: installAgents })); return; }
+  // an agent takes a problem group the way the fix bar does, and undoes it the same way (cli-apply.ts)
+  if (command === 'apply' || command === 'undo') {
+    const { applyGroup, undoApplied } = await import('./cli-apply.js');
+    process.stdout.write(command === 'apply'
+      ? await applyGroup({ root: options.root, ...(options.config === undefined ? {} : { config: options.config }), key: args.positionals[1]!, ...(args.values.token === undefined ? {} : { token: args.values.token }) })
+      : await undoApplied(options.root, args.positionals[1]));
+    return;
+  }
   if (command === 'fix') {
     const ready = await readiness(options), id = args.positionals[1]!;
     const requirement = ready.requirements.find(item => item.id === id);

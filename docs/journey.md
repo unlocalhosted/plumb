@@ -5680,6 +5680,39 @@ reason. `check --changed` there exits 2 with the plain message.
 
 **Media hooks.** A terminal clip: a fresh React app, one `npx -p …` line, the ten most urgent problems.
 
+### 134. An agent fixes a whole problem group in one command, and can take it back (2026-11-25)
+
+**The itch.** The third layer of plumber for agents. The owner chose that agents write fixes "through plumber", so a
+fix is written the same way whoever takes it.
+
+**How we found it.** Plumber tried as an agent on a copy of the ledger example: every fix came as a sentence ("replace
+`p-8` with `p-s6` at src/App.jsx:41:52"), one per place. An agent had to make each edit by hand, six for one spacing
+value, and a slip in one of them was a new problem.
+
+**The system behind it.** The writer that turns a finding into an edit lives in the session engine, behind the fix bar
+and the dev server. The command line only described edits; it never made them.
+
+**What we chose and why.** `plumber apply <key>` takes one group from `check --agent`. The edits are worked out
+again from the files as they are at that moment, then written by the engine's own `apply`, the fix bar's writer, with
+its guards: a file that changed under it is refused, and nothing the agent types becomes code. A group with several
+tokens needs `--token <name>`, and the refusal lists the choices. A group with no token close enough is refused: that
+one is for a person. Each apply is kept (the last 20, in plumber's cache folder, which is never committed), and
+`plumber undo` puts the files back, whole or not at all, only while they still hold what the apply wrote: the same
+rule as the fix bar's Undo. The agent list now shows an `Apply:` line on every group plumber can write. Long keys are
+shortened to 12 characters, and any unique start of one works.
+
+**The fix and the proof.** On a copy of the ledger example: `apply 1313e5c46691` wrote all 6 places of "2rem isn't
+on your spacing scale" in under a second. `undo` restored the file, and a second `undo` said there was nothing left.
+`apply existence/dead-class:gap-s8` without a token listed `gap-s1, gap-s2` and exited 2; with `--token gap-s2` it
+wrote the one place. After a later edit to the same file, `undo` refused and changed nothing. An unknown key exits 2
+with a pointer back to `check --agent`.
+
+**Still open.** The JSON report doesn't carry the edits as data yet, and the page checks (`craft --url`) still give
+sentences.
+
+**Media hooks.** A terminal clip: `check --agent` shows "Apply: plumber apply 1313e5c46691", one command, the diff of
+six lines, then `plumber undo`.
+
 ## Open gaps
 
 - The fixes of entry 81 (caret, app errors, broken config on Vite) are committed and not published. The site runs
@@ -7364,6 +7397,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
+- An agent fixes a whole problem group with `plumber apply <key>`, written by the same writer as the fix bar, and takes it back with `plumber undo`. On main, not released ([entry](#134-an-agent-fixes-a-whole-problem-group-in-one-command-and-can-take-it-back-2026-11-25)).
 - An agent can run plumber in a React app that never installed or set it up: the instructions say so, and every command plumber prints names the real package when it isn't installed, so `npx plumber` no longer fetches an unrelated tool. On main, not released ([entry](#133-an-agent-can-use-plumber-in-a-project-that-never-installed-it-2026-11-24)).
 - An agent running `plumber check --agent` gets the ten most urgent problems first and a count of the rest, instead of hundreds in file order. On main, not released ([entry](#132-an-agent-sees-the-ten-problems-that-matter-first-2026-11-24)).
 - A missing class is no longer swapped for an unrelated one: `animate-out` was offered as `animate-pulse`, with its variant written twice. On main, not released ([entry](#131-a-missing-class-is-no-longer-swapped-for-an-unrelated-one-2026-11-24)).
