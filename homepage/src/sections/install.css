@@ -5,14 +5,14 @@
 .ins .title { max-width: 40rem; }
 
 /* ── or hand it to an agent: the site's soft block with what it does beside it, and the prompt to read ── */
-.ins-hand { margin: var(--s-6) 0 0; max-width: 46rem; }
-.ins-hand-row { display: flex; gap: 16px; align-items: center; }
-.ins-hand-copy { flex: none; }
+.ins-hand { margin: var(--s-6) 0 0; }
+.ins-hand-row { display: flex; gap: 24px; align-items: center; justify-content: space-between; }
+.ins-hand-copy { flex: none; order: 2; }
 .ins-hand-copy > span { min-width: 148px; padding: 11px 18px; font-size: 15px; }
 .ins-hand-copy[data-state='copied'] { --h: var(--pl-mint-block); }
 .ins-hand-copy[data-state='copied'] > span { color: var(--pl-mint-block-on); }
 .ins-hand-copy:focus-visible { outline: 2px solid var(--pl-border-focus); outline-offset: 3px; border-radius: 14px; }
-.ins-hand-say { margin: 0; min-width: 0; font: var(--t-small); color: var(--ink-2); text-wrap: pretty; }
+.ins-hand-say { margin: 0; min-width: 0; max-width: 40rem; font: var(--t-small); color: var(--ink-2); text-wrap: pretty; }
 .ins-hand-say b { font-weight: 600; color: var(--ink-1); }
 .ins-hand-read { margin-top: 12px; }
 .ins-hand-read summary { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 2px; cursor: pointer; list-style: none; font: var(--t-small); font-size: 13px; color: var(--ink-2);
