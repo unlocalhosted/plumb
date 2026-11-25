@@ -6,7 +6,10 @@
   "compatibility_date": "2026-11-21",
   "workers_dev": false,
   "preview_urls": false,
-  "routes": [{ "pattern": "react-plumber.com", "custom_domain": true }],
+  "routes": [
+    { "pattern": "react-plumber.com", "custom_domain": true },
+    { "pattern": "www.react-plumber.com", "custom_domain": true }
+  ],
   "assets": {
     "directory": "./out",
     "html_handling": "auto-trailing-slash",
