@@ -5950,6 +5950,11 @@ into its own browser. Your app isn't changed.", then the findings.
   "IssueCard ×20 · Board.jsx:35" and "4 changes · 20 places", the preview pads only the 20 cards, Sync writes
   `p-3`, and the board is intact after Sync and after Clean up's text pass. No test was written (the owner's rule while
   iterating). Stills: `take/fixed-synced.jpg`, `take/fixed-after-cleanup.jpg` (local).
+- **Rough cut 1 (owner: "Yes, rough cut"):** 39.8 s, one camera over the fixed take with no cuts. It rides close on
+  the Invite fix, glides to the issue card for the editor, frames Clean up in the bar at the foot of the page, then
+  pulls back into the closing line. The take's waits play up to three times faster instead of being cut. One framing
+  mistake on the way: the recording is 1120 × 720, and the camera had been framed on a grid stretched to 980, so
+  Clean up looked past the page. `docs/films/launch-03-draft/rough-cut-1.mp4` (local).
 - **Media hooks:** the reference's frame sheet beside the shot plan; `take/editor-syncing.jpg` and
   `take/after-sync.jpg` (local) show the bug.
 
