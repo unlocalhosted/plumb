@@ -72,8 +72,7 @@ export function Install() {
 
   return (
     <section className="ins" aria-labelledby="ins-title">
-      <h2 id="ins-title" className="title">Set up in three commands</h2>
-      <ForAgents />
+      <ForAgents><h2 id="ins-title" className="title">Set up in three commands</h2></ForAgents>
       <ol className="ins-lines">
         {LINES.map(l => (
           <li key={l.cmd}>
@@ -115,7 +114,7 @@ function Copy({ text }) {
   return (
     <>
       <button ref={btn} type="button" className="ins-copy" data-state={state} onClick={copy} aria-label={`Copy: ${text}`}>
-        {state === 'copied' ? 'Copied' : state === 'failed' ? 'Press ⌘C' : 'Copy'}
+        <i className="ins-word" key={state}>{state === 'copied' ? 'Copied' : state === 'failed' ? 'Press ⌘C' : 'Copy'}</i>
       </button>
       <span className="sr-only" role="status" aria-live="polite">{state === 'copied' ? 'Copied' : state === 'failed' ? 'Couldn’t copy. The command is selected.' : ''}</span>
     </>
@@ -124,9 +123,10 @@ function Copy({ text }) {
 
 /* The other way in: hand the whole set-up to an agent. One action (the site's soft block, as on the hero's command),
  * with what it does said beside it and the prompt itself there to read before it is copied.
+ * It sits beside the section's heading. The label changes with a small roll (the new word rises in out of a blur).
  * States: rest, hover, focus, pressed, copied (mint, and the line beside it says what to do next, 4s), couldn't copy
  * (the prompt opens with its text selected and the button says Press ⌘C). */
-function ForAgents() {
+function ForAgents({ children }) {
   const [state, setState] = useState('rest');
   const timer = useRef(0), read = useRef(null), words = useRef(null);
   useEffect(() => () => clearTimeout(timer.current), []);
@@ -145,9 +145,12 @@ function ForAgents() {
   return (
     <div className="ins-hand" data-state={state}>
       <div className="ins-hand-row">
+        {children}
         <button type="button" className="ins-hand-copy s-btn" data-state={state} onClick={copy}>
-          <span>{state === 'copied' ? 'Copied' : state === 'failed' ? 'Press ⌘C' : 'Copy the prompt'}</span>
+          <span><i className="ins-word" key={state}>{state === 'copied' ? 'Copied' : state === 'failed' ? 'Press ⌘C' : 'Copy the prompt'}</i></span>
         </button>
+      </div>
+      <div>
         <p className="ins-hand-say" role="status">
           {state === 'copied' ? <b>Now paste it into your agent.</b>
             : state === 'failed' ? <b>Couldn’t copy. The prompt is selected below.</b>
