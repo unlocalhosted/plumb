@@ -74,6 +74,7 @@ Usage: plumber [check] [--json] [--verbose] [--root <dir>] [--config <path>]
        plumber install --overlay [--write] [--root <dir>]  Print host wiring, or apply it with --write
        plumber apply <key> [--token <name>]   Take one problem group from check --agent, as the fix bar would
        plumber undo [<id>]                     Take back the last apply (or that one)
+       plumber notes [--done <id>]             The person's notes for their agent, from the page
        plumber fix <id> [--yes] [--root <dir>] [--config <path>]
        plumber doctor [--verbose] [--root <dir>] [--config <path>]
 
@@ -106,7 +107,7 @@ async function main(): Promise<void> {
           lang: { type: 'string' }, as: { type: 'string' }, port: { type: 'string' }, stdio: { type: 'boolean' }, watch: { type: 'boolean' },
           markdown: { type: 'boolean' }, since: { type: 'string' }, strict: { type: 'boolean' }, list: { type: 'boolean' },
           url: { type: 'string' }, routes: { type: 'string', multiple: true }, timeout: { type: 'string' }, 'no-pairs': { type: 'boolean' }, 'no-probe': { type: 'boolean' }, judge: { type: 'boolean' }, probe: { type: 'string', multiple: true }, 'probe-budget': { type: 'string' }, scope: { type: 'string' }, 'record-probe': { type: 'string' }, max: { type: 'string' },
-          'no-open': { type: 'boolean' }, token: { type: 'string' }, overlay: { type: 'boolean' }, write: { type: 'boolean' }, roles: { type: 'boolean' }, origin: { type: 'string' }, 'served-root': { type: 'string' },
+          'no-open': { type: 'boolean' }, token: { type: 'string' }, done: { type: 'string' }, overlay: { type: 'boolean' }, write: { type: 'boolean' }, roles: { type: 'boolean' }, origin: { type: 'string' }, 'served-root': { type: 'string' },
       } as const;
       // Probe command with all value-taking flags known; --agent is an install
       // target only for install, and remains a boolean report flag elsewhere.
@@ -127,6 +128,13 @@ async function main(): Promise<void> {
       throw new UsageError(`${flag ? `Option ${flag} needs ${problem.message.includes('argument missing') ? 'a value' : 'a valid value'}.` : 'Could not read these options.'}\n  → plumber --help`);
     }
   })();
+  // the person's open notes are said under the agent list's first line, so an agent at work hears of them (notes.ts)
+  const withNotes = async (text: string, root: string): Promise<string> => {
+    const open = (await (await import('./notes.js')).openNotes(root)).length;
+    if (!open) return text;
+    const at = text.indexOf('\n');
+    return `${text.slice(0, at)}\nThe person left ${open === 1 ? 'a note' : `${open} notes`} for you on their page: run plumber notes.${text.slice(at)}`;
+  };
   // --agent shows the most urgent problem groups first, ten at a time unless asked (`--top 25`, `--top all`)
   const agentTop = (): number => {
     const top = args.values.top as string | undefined;
@@ -350,6 +358,13 @@ async function main(): Promise<void> {
   if (command === 'install' && args.values.hooks) { process.stdout.write(await installHooks(resolve(options.root ?? process.cwd()), undefined, undefined, args.values.list)); return; }
   if (command === 'install') { process.stdout.write(await installProject(resolve(options.root ?? process.cwd()), { list: args.values.list ?? false, ci: args.values.ci ?? false, agents: installAgents })); return; }
   // an agent takes a problem group the way the fix bar does, and undoes it the same way (cli-apply.ts)
+  // the person's notes for their agent, written on the page (notes.ts)
+  if (command === 'notes') {
+    const notes = await import('./notes.js');
+    if (args.values.done !== undefined) { const note = await notes.doneNote(options.root, args.values.done); process.stdout.write(`Done: ${note.id}, <${note.element}>. ${(await notes.openNotes(options.root)).length} left.\n`); return; }
+    process.stdout.write(notes.formatNotes(await notes.openNotes(options.root)));
+    return;
+  }
   if (command === 'apply' || command === 'undo') {
     const { applyGroup, undoApplied } = await import('./cli-apply.js');
     process.stdout.write(command === 'apply'
@@ -415,7 +430,7 @@ async function main(): Promise<void> {
   };
   const emitCheck = async (report: import('./report.js').Report): Promise<void> => {
     if (args.values.sarif) process.stdout.write(`${JSON.stringify(sarif(report), null, 2)}\n`);
-    else if (args.values.agent) process.stdout.write(runnable(formatAgent(report, agentTop()), runnerOf(options.root)));
+    else if (args.values.agent) process.stdout.write(runnable(await withNotes(formatAgent(report, agentTop()), options.root), runnerOf(options.root)));
     else if (args.values.format === 'github') {
       const base = args.values.base === undefined ? undefined : await baseReport(report.root, args.values.base, options);
       const scope = args.values.base !== undefined || args.values.changed ? await changedLines(report.root, args.values.base ?? 'HEAD') : undefined;
@@ -467,7 +482,7 @@ async function main(): Promise<void> {
       ...(args.values.lang === undefined ? {} : { lang: args.values.lang as 'tsx' | 'css' }),
       ...(args.values.as === undefined ? {} : { as: args.values.as }) };
     const report = await analyzing(async () => await clientTry(text, tryOptions) ?? await trySnippet(text, tryOptions));
-    process.stdout.write(args.values.json ? `${JSON.stringify(report)}\n` : args.values.agent ? runnable(formatAgent(report, agentTop()), runnerOf(options.root)) : formatText(report, args.values.verbose));
+    process.stdout.write(args.values.json ? `${JSON.stringify(report)}\n` : args.values.agent ? runnable(await withNotes(formatAgent(report, agentTop()), options.root), runnerOf(options.root)) : formatText(report, args.values.verbose));
     process.exitCode = report.findings.some(finding => finding.severity === 'error') ? 1 : 0;
     return;
   }

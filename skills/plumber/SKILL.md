@@ -21,6 +21,12 @@ It works in any React app with nothing set up: it reads the theme the project al
 
 The commands below are written `plumber …`; put the right start in front. Plumber's own output prints them with it.
 
+## Notes from the person
+
+The person can point at an element on their page and write a note for you about it. Run `plumber notes` at the start
+of a task, and whenever the agent list says a note is waiting. Each note names the element's file and line and says
+what they want. Do it there, then run `plumber notes --done <id>`. If a note is unclear, ask them.
+
 ## Before you write styles
 
 1. Read `PLUMBER.md` at the project root if it exists: the project's tokens with their reasons, what callers may set on each component, and the habits in force.

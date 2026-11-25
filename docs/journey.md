@@ -5778,6 +5778,33 @@ isn't a no-setup command yet.
 **Media hooks.** The before and after pictures of the hero title (`.plumber/cache/shots/pfd233d917-*.png` after a run
 in examples/ledger).
 
+### 137. A note written on the page reaches the agent (2026-11-25)
+
+**The itch.** The last layer of plumber for agents. In the X-ray, ↵ opens "Note for your agent" about the element the
+card is on, and ⌘↵ copied it with its file and line. The note then lived only on the clipboard: the person had to
+switch to their agent and paste it, and an agent started later never heard of it.
+
+**How we found it.** Reading the agent's instructions against the overlay: the note was there, but no agent
+instruction mentioned it, and nothing kept it.
+
+**The system behind it.** The note was built as a copy action for a person who would paste it. Nothing in the project
+held it, so an agent had nothing to read.
+
+**What we chose and why.** ⌘↵ now saves the note in the project through plumber's server, and still copies it. The
+card says "Saved for your agent", or "Copied with its place" when there is no server to save to. Notes live in
+`.plumber/notes`, which carries its own .gitignore: a note is between one person and their agent, not the team's.
+`plumber notes` lists the open ones, each with the element, its file and line (said from the app's folder, not the
+repository's), the page and the time. `plumber notes --done <id>` clears one. The agent list (`check --agent`) says
+under its first line when a note is waiting, and the agent instructions say to read them at the start of a task.
+
+**The fix and the proof.** On the running ledger page: the X-ray pinned on the hero heading, the note typed and saved
+with ⌘↵; the card said "Saved for your agent". `plumber notes` in examples/ledger printed it at `src/App.jsx:57` (the
+page had named it `examples/ledger/src/App.jsx:57`), `check --agent` said "The person left a note for you on their
+page", and `notes --done` cleared it. An unknown id exits 2.
+
+**Media hooks.** A clip: Alt over the heading, ↵, a note typed, ⌘↵, "Saved for your agent"; then the terminal's
+`plumber notes`.
+
 ## Open gaps
 
 - The page check (`plumber craft`) reads the page through plumber's overlay, so it needs plumber wired into the dev
@@ -7464,6 +7491,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
+- A note written on the page for your agent (X-ray, ↵, then ⌘↵) is saved in the project; the agent reads it with `plumber notes` and is told when one is waiting. On main, not released ([entry](#137-a-note-written-on-the-page-reaches-the-agent-2026-11-25)).
 - `plumber craft` with no address finds the dev server running in the project, and `plumber apply p…` prints a picture of the element before and after the fix. On main, not released ([entry](#136-the-page-check-finds-the-dev-server-and-an-applied-fix-comes-with-pictures-2026-11-25)).
 - The page check (`plumber craft --url`) ends each problem it can fix itself with an `Apply:` line; `plumber apply p…` writes that fix the way the fix bar does, and `plumber undo` takes it back. On main, not released ([entry](#135-fixes-from-the-page-check-can-be-applied-too-2026-11-25)).
 - An agent fixes a whole problem group with `plumber apply <key>`, written by the same writer as the fix bar, and takes it back with `plumber undo`. On main, not released ([entry](#134-an-agent-fixes-a-whole-problem-group-in-one-command-and-can-take-it-back-2026-11-25)).

@@ -9,6 +9,9 @@ Everything since 0.7.0, as a person using it sees it.
   guards, asks for `--token` when several tokens fit, and refuses what needs a person. `plumber undo` puts the files
   back while nothing has changed them since. The page check (`craft --url`) does the same for the fixes it can
   write itself: each ends with an `Apply:` line, and `--json` carries the fix as `apply`.
+- **Notes reach your agent.** A note written in the X-ray (↵, then ⌘↵) is saved in the project as well as copied.
+  `plumber notes` lists them with each element's file and line, `--done <id>` clears one, and `check --agent` says
+  when one is waiting.
 - **The page check finds your dev server.** `plumber craft` with no `--url` checks the dev server running in the
   project. Applying a page fix prints a picture of the element before and after.
 - **Agents need no install.** In a project without plumber, every command it prints (and the agent loop's) starts

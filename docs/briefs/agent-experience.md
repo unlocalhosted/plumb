@@ -48,7 +48,7 @@ and the agent can't reach them. An agent without setup is not a case the instruc
    `--json` and `--agent`, and `plumber apply <key>` writes it with the writer the fix bar uses, with undo.
 4. **Page checks an agent can use.** *Built 2026-11-25 (journey 136): the dev server is found, `--no-probe` while fixing, before and after pictures on apply. The page check still needs the overlay wired in.* Find the running dev server, reuse the warm server for speed, and return a
    before and after screenshot so the agent can see what changed.
-5. **The person's notes reach the agent.** The ↵ note lands in a notes file the agent's instructions tell it to read,
+5. **The person's notes reach the agent.** *Built 2026-11-25 (journey 137): saved in .plumber/notes, `plumber notes`, said in the agent list.* The ↵ note lands in a notes file the agent's instructions tell it to read,
    with the element's file and line.
 
 ## Open choices for the owner

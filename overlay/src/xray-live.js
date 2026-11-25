@@ -1257,7 +1257,7 @@ export function mountXray(o) {
     note.className = 'xr-note';
     note.innerHTML = `<div class="nh"><i class="toy">${card.querySelector('.xr-head .toy')?.innerHTML ?? ''}</i>Note for your agent</div><code${source ? ` title="${esc(source)}"` : ''}>${esc(name)}${source ? ` · ${esc(tail(source))}` : ''}</code>
       <textarea placeholder="What should change here?" aria-label="Note for your agent about ${esc(name)}"></textarea>
-      <div class="nf"><span class="keys"><kbd>⌘</kbd><kbd>↵</kbd>copy for your agent</span><span class="done"><i>✓</i>Copied with its place</span><span><kbd>Esc</kbd></span></div>`;
+      <div class="nf"><span class="keys"><kbd>⌘</kbd><kbd>↵</kbd>save for your agent</span><span class="done"><i>✓</i><b>Copied with its place</b></span><span><kbd>Esc</kbd></span></div>`;
     note.style.left = `${cardAt.x}px`; note.style.top = `${cardAt.y}px`;
     C.append(note); card.hidden = true;
     const ta = note.querySelector('textarea');
@@ -1275,7 +1275,10 @@ export function mountXray(o) {
         e.preventDefault();
         const said = ta.value.trim(); if (!said) return;
         const text = `${said}\n\nWhere: <${name}> at ${source ?? 'an element with no source line yet'}`;
+        // kept in the project, where the agent reads it (`plumber notes`), and copied too, to paste anywhere
+        const saved = await o.saveNote?.({ text: said, element: name, source: source ?? null, page: location.href }).then(() => true, () => false);
         try { await navigator.clipboard.writeText(text); } catch { ta.select(); document.execCommand?.('copy'); }
+        if (saved) note.querySelector('.done b').textContent = 'Saved for your agent';
         note.setAttribute('data-done', '');
         const b = note.getBoundingClientRect(); burst(o.root, b.left + 40, b.bottom - 16, { pieces: 16 });
         setTimeout(close, 1400);

@@ -88,6 +88,8 @@ export const methods = [
   // progress asked for with a GET; it never holds the queue (src/census.ts)
   { http: 'census', post: true, read: true, rpc: false },
   { http: 'census-status', read: true, rpc: false },
+  // a note for the person's agent, from the X-ray (src/notes.ts)
+  { http: 'note', post: true, rpc: false },
   { http: 'health' },
   { http: 'heal', engine: 'healNow', post: true },
 ] as const satisfies readonly Row[];

@@ -599,6 +599,8 @@ class PlumbOverlay extends HTMLElement {
       // a note's actions in the card: its words edited in place (text-edit.js), or kept as they are (the bar asks why)
       editWords: (el) => { const node = [...el.childNodes].find((n) => n.nodeType === 3 && n.data.trim()); if (node) this.#blueprint?.through(() => this.#text.start(node, node.data.length)) ?? this.#text.start(node, node.data.length); },
       keepNote: (el, rule) => this.#blueprint?.keepNote(el, rule),
+      // a note for the person's agent, kept in the project for `plumber notes`
+      saveNote: (note) => post('note', note),
       noteOf: (el) => this.#blueprint?.noteOf(el) ?? null,
       // every note on an element, for the pinned card: its reading's marks (your tokens, the craft rules), by concern
       notesOf: async (el) => {

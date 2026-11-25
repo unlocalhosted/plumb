@@ -28,6 +28,7 @@ export const commandFlags: Record<string, readonly string[]> = {
   fix: [...common, 'yes'],
   apply: [...common, 'token'],
   undo: common,
+  notes: [...common, 'done'],
   report: [...report, 'markdown', 'since'],
   parity: [...report, 'format', 'strict'],
   craft: [...report, 'url', 'routes', 'sarif', 'timeout', 'no-pairs', 'no-probe', 'probe', 'probe-budget', 'scope', 'record-probe', 'judge'],
