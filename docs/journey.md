@@ -4660,6 +4660,12 @@ The same build passed 705 loads before it went out, and the game passes on the l
   linter, looking for 100+ design issues.", and the recording's beat drops "Press Enter." and the Enter key, leaving
   "React Plumber spots it." Then: "remove smart from design system linter part". The final was rendered again
   (121 s on vm-agent) and ends on "React Plumber is a design system linter, looking for 100+ design issues."
+- **A mistake, and the writing pass (2026-11-25):** the owner: "run the declaude and writing pass the writing is so
+  stupid "a badge shows through the menu" wtf does this even mean?". The film's words had skipped the writing pass the
+  owner's rules require for on-screen words, and they were written from how the bug works ("shows through", "stack by
+  number"), not from what a viewer sees. Script 3 names what is on screen ("A "Live" tag covers part of the menu.",
+  "Higher numbers sit on top.", "The tag has 999. The menu has 50.", "The tag gets 10. The menu is on top.") and checks
+  each line's reading time. Waiting for the owner's OK before the film changes.
 
 ### 94. The X-ray card gets a layout picker (2026-11-23)
 

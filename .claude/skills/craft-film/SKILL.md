@@ -142,6 +142,11 @@ holds the date and what they said.
 - **Launch films open on the component at its normal size, then move in on the detail.** Never open on a close-up.
   Why: "i would've like if you have started from default view and then showed the numbers in details".
   <!-- 2026-11-23: on launch film 2, rough cut 1 -->
+- **Launch film words name what a person sees, in everyday words, and go through the writing pass before the owner
+  reads them.** "A "Live" tag covers part of the menu", never how the bug works ("a badge shows through"). Each line
+  must be readable in the time it is held: about three words a second, plus half a second.
+  Why: "the writing is so stupid "a badge shows through the menu" wtf does this even mean?".
+  <!-- 2026-11-25 -->
 - **Launch films keep their words still.** They arrive word by word, as film 1's do, and don't act out the fault.
   Why: "dont fuck up the title i understand you are trying to sell the illusion but i think lets keep it same".
   <!-- 2026-11-23 -->
