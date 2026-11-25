@@ -19,7 +19,7 @@ const LINES = [
 ];
 // what a person pastes into their agent (Claude Code, Cursor, Codex). It goes further than the three commands,
 // because nobody is watching: find the right folder first, check what each step wrote, get the overlay on the running
-// page, and report. Every command, file name and message in it is the README's own
+// page, go through the config file with the person, and report. Every command, file name and message in it is the README's own
 const FOR_AGENTS = `Set up React Plumber in this project, all the way to its overlay showing on my running page. Check each step before the next one, and tell me about anything that doesn't match.
 
 BEFORE YOU START
@@ -39,6 +39,17 @@ SET UP
    It writes React Plumber's instructions for you and, in Claude Code or Cursor, a hook that checks each of your edits.
 5. npx plumber doctor
    It lists what is set up, with one command for each thing that isn't. Go through every line it flags. Ask me before "plumber fix <id>" changes a file.
+
+THE CONFIG FILE
+init wrote plumber.config.ts in the folder you set up, with every suggested answer. Now go through it with me. For each part, say what you found in my code and what you would set, and wait for my answer before you change a rule.
+- css: the CSS file the app loads first, the one with the tokens. Correct it if init picked another.
+- The rules for spacing, colour, type and corners: show me each one beside the values my code really uses. "npx plumber propose" drafts a scale from those values. Ask me which are right. To answer again, "npx plumber init --force" with "--family <name>=<answer>" replaces the config and prints the diff first; "npx plumber init --help" lists the answers.
+- classHelpers: if my code builds class names with its own function (anything other than cn, clsx, cx, classNames, twMerge, twJoin, cva or tv), add that function's name, or the classes inside it are not read.
+- markers: if my code has class names that style nothing on purpose (hooks for scripts or tests, like js-*), list their patterns, or they are reported as dead classes.
+- source: leave it out. Without it all of my own code is read, my workspace packages included. Add it only if the wrong code was read.
+- craft: the standard the craft checks read their numbers from. "npx plumber spec" prints the one in effect. Ask me whether the preset should be strict, balanced or relaxed. Turn a rule off only when I say so, and put my reason in a comment beside it.
+- craft.tokens: whether a fix may add a new token, and to which file. Ask me.
+After each change run "npx plumber check". A config that doesn't load exits with code 2 and says why.
 
 SEE IT ON THE PAGE
 6. Start the dev server the way this project does. A small bar should sit in a corner of the page. If you can open a browser, load the page and look for it. If you can't, give me the URL and ask me to hold Alt over something.
@@ -154,7 +165,7 @@ function ForAgents({ children }) {
         <p className="ins-hand-say" role="status">
           {state === 'copied' ? <b>Now paste it into your agent.</b>
             : state === 'failed' ? <b>Couldn’t copy. The prompt is selected below.</b>
-            : <><b>Or let your agent do it.</b> One prompt for Claude Code, Cursor or Codex. It finds the right folder, sets up the overlay, checks each step and tells you what it found.</>}
+            : <><b>Or let your agent do it.</b> One prompt for Claude Code, Cursor or Codex. It finds the right folder, sets up the overlay, goes through the config file with you, checks each step and tells you what it found.</>}
         </p>
       </div>
       <details ref={read} className="ins-hand-read">

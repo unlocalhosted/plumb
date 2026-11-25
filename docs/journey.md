@@ -6003,6 +6003,13 @@ into its own browser. Your app isn't changed.", then the findings.
   can be read first, under "Read the prompt first". If copying is blocked, the prompt opens with its text selected.
   Not done: the prompt has not been run by a real agent on a real app.
 
+- **The prompt helps with the config file too (2026-11-26).** The owner: "also give the instructions for llm to help
+  setup the config file". With `--yes`, init takes every suggested rule, so nobody had chosen anything. The prompt
+  now has the agent go through `plumber.config.ts` with the person, part by part: the CSS entry, the rules beside
+  the values the code really uses, the project's own class-name functions, class names that style nothing on
+  purpose, the craft preset, and whether a fix may add tokens. It asks before changing a rule. The meaning of each
+  field was checked against the README and `docs/layers/1-class-lowering.md`.
+
 ## Open gaps
 
 - Without setup, the page check found 70 problems where the same page wired in finds 72 (10 fixes against 14). Not
