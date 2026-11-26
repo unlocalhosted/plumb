@@ -37,10 +37,11 @@ subagents" rule still holds for everything else).
 
 | What | Where |
 |---|---|
+| The list of posts (their text) | the session's scratchpad, `<handle>-posts.json`. Never the repo: the repo is public and the posts are theirs |
 | The harvest: every tip, sorted | `docs/research/harvests/<handle>/tips.md` |
 | The same, for a script to read | `docs/research/harvests/<handle>/tips.json` |
 | What the engine would need | `docs/research/harvests/<handle>/capabilities.md` |
-| Downloaded videos and images | `~/Downloads/twitter_media_harvest/` (`<handle>-<post id>-NN.mp4`), never the repo |
+| Downloaded videos and images | the session's scratchpad, deleted once read; never the repo |
 | Frames cut from a video | the session's scratchpad, never the repo |
 | The reference | one entry in `docs/references.md`, shared by the owner, with why |
 
@@ -70,12 +71,19 @@ for (let i = 0; i < 200 && still < 5; i++) { grab(); window.scrollBy(0, 2500); a
 window.__posts.size;
 ```
 
-3. Save the merged list to `docs/research/harvests/<handle>/posts.json` after every search, not once at the end.
+3. Save the merged list to the scratchpad (`<handle>-posts.json`) after every search, not once at the end.
    A list kept only in the page is lost when the page moves on or the run is stopped.
 4. Write down the coverage in plain numbers: which searches were run, how many posts each gave, the date of the
    oldest one reached, and the profile's own post count. A harvest that reached 41 of 721 posts says so.
-5. Downloads are limited in the brief, since nobody is watching: videos from this handle's own posts only, at most
-   40 and 1.5 GB, with no cookies and no sign-in. Past that, the rest are listed as not read and the owner decides.
+5. Videos are downloaded, watched and deleted (owner, 2026-11-26: "you can download videos watch them extract info
+   and then delete them, you can use yt-dlp with my cookies"):
+   - `yt-dlp --cookies-from-browser chrome -o '<scratchpad>/harvest-<handle>/<handle>-<post id>.%(ext)s' https://x.com/<handle>/status/<post id>`.
+     The cookies are the owner's own sign-in, used only for x.com and only to fetch that handle's posts. The first
+     use may raise a macOS keychain prompt for the browser's storage: that is the owner's to answer, never ours.
+   - Cut frames with ffmpeg (about one a second, plus scene changes), read them, write down what the video shows.
+   - Delete the video and its frames as soon as the tip is written. Nothing is kept in the repo or in Downloads.
+   - Only that handle's own posts, only posts that carry a tip, and nothing but video and image files. Nothing that
+     is downloaded is ever run.
 
 ## 4. The subagent's brief
 
@@ -144,3 +152,9 @@ Turning the new checks into code is the `tips-to-checks` skill.
   now"). The subagent had searched in the browser and saved nothing: its list of posts lived only in the page, and
   was gone when it moved to the next search. No file, no download. So the list is saved after every search, and a
   run that is stopped early still leaves what it had.
+
+- **2026-11-26, the same run, corrected.** It had not lost its work: 442 posts sat in the page's own storage on
+  x.com and two long lists of them were in the subagent's record. The main session looked in the wrong place, told
+  the owner nothing was saved, and then harvested a different profile. Before saying a stopped run left nothing,
+  read its record (`~/.claude/projects/<project>/<session>/subagents/agent-<id>.jsonl`) and the page's storage. And
+  when the owner says "the harvest", it is the one they last watched.
