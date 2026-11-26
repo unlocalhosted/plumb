@@ -1092,6 +1092,15 @@
    "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
+   "id": "craft/columns-jump",
+   "concern": "craft",
+   "name": "Columns move with the data",
+   "why": "A column stays where the eye left it.",
+   "where": "page",
+   "tile": null,
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
+  },
+  {
    "id": "craft/dark-elevation",
    "concern": "craft",
    "name": "Shadow does nothing in dark",

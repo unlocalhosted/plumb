@@ -401,6 +401,16 @@ Object.assign(CRAFT, {
       return { ...ringed(s, x, ['cut off', 'room to grow'], 5), at: (p) => { x.style.height = p ? 'auto' : '40px'; x.style.overflow = p ? 'visible' : 'hidden'; } };
     },
   },
+  // ── the other-data reality: the scene is drawn with a longer name in the first row than the table was built on ──
+  'craft/columns-jump': {
+    code: ['<table class="w-full">', '<table class="w-full table-fixed">'],
+    note: ['A longer name arrived and the amounts moved. The next page of rows will not line up with this one.', 'Each column keeps its width whatever the rows hold.'],
+    scene: (s) => {
+      scene(s, '<table class="x" style="width:300px;border-collapse:collapse;font:400 13px/1.4 system-ui;color:#111827"><tbody>' + [['Wolfeschlegelstein Logistics GmbH', '3 Nov', '$1,240.00'], ['Northwind', '28 Oct', '$310.00'], ['Globex', '14 Oct', '$2,075.50']].map((r) => `<tr>${r.map((c, i) => `<td style="padding:7px 8px;border-top:1px solid #e5e7eb;overflow:hidden;text-overflow:ellipsis;white-space:nowrap${i === 2 ? ';text-align:right;font-variant-numeric:tabular-nums' : ''}">${c}</td>`).join('')}</tr>`).join('') + '</tbody></table>');
+      const x = s.querySelector('.x');
+      return { ...ringed(s, x, ['the amounts moved', 'columns hold'], 5), at: (p) => { x.style.tableLayout = p ? 'fixed' : 'auto'; } };
+    },
+  },
   'craft/native-accent': {
     code: ['<input type="checkbox">', '<input type="checkbox" class="accent-emerald-600">'],
     note: ['The tick is the browser’s blue, beside buttons in your green.', 'The tick wears your colour.'],

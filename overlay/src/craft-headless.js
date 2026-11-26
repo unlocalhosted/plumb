@@ -5,7 +5,7 @@
  * them. The live overlay loads this module too: with nothing handed in, every reader answers null and every rule here
  * stays quiet, so a rule is never judged on facts it does not have.
  *
- *  HEADLESS.other(condition, facts)  a view of the same route under `dark` | `touch` | `held` | `scrolled` | `bigtext`, keyed by
+ *  HEADLESS.other(condition, facts)  a view of the same route under `dark` | `touch` | `held` | `scrolled` | `bigtext` | `data`, keyed by
  *                                    the element's place in the page; null when that pair was not taken
  *  HEADLESS.probe(el, gesture)       the recorded timeline of one gesture on one element; null when not probed
  *  HEADLESS.source(el)               { component, library, role, props, handlers } from the server's index; null before
@@ -131,6 +131,11 @@ const VIEWS = {
     const by = new Map(records.map((r) => [r.k, r]));
     return { get: (el) => by.get(pathKey(el)) ?? null };
   },
+  // data: for each table, where its columns sit as it is and with longer words in one of them
+  data(records) {
+    const by = new Map(records.map((r) => [r.k, r]));
+    return { get: (el) => by.get(pathKey(el)) ?? null };
+  },
   // scrolled: for each scroll container, whether anything at its edges changes with the scroll position
   scrolled(list) {
     const by = new Map(list.map((r) => [r.k, r]));
@@ -144,6 +149,30 @@ const VIEWS = {
 };
 
 // A page rendered under a condition, as one record per element with a box. Runs in the pair page.
+/** The other-data reality, for tables: each table's columns as they sit, and again with the words of one column at
+ *  twice their length (a longer name, a longer title). The column stretched is one whose cells hold different words
+ *  row to row, so it is data and not a label. Every word is put back. Asked of a page opened for this alone. */
+export function otherData() {
+  const out = [], words = (c) => c.textContent.replace(/\s+/g, ' ').trim();
+  for (const table of document.querySelectorAll('table')) {
+    const rows = [...table.tBodies].flatMap((b) => [...b.rows]).filter((r) => r.cells.length > 1);
+    const n = rows[0]?.cells.length;
+    if (rows.length < 2 || rows.some((r) => r.cells.length !== n || [...r.cells].some((c) => c.colSpan > 1))) continue;
+    const cols = Array.from({ length: n }, (_, i) => rows.map((r) => r.cells[i]));
+    const data = cols.map((cs) => cs.every((c) => words(c)) && new Set(cs.map(words)).size > 1);
+    let pick = cols.findIndex((cs, i) => data[i] && cs.some((c) => /[A-Za-z]{3}/.test(words(c))));
+    if (pick < 0) pick = data.indexOf(true);
+    if (pick < 0) continue;
+    const read = () => ({ cols: cols.map((cs) => { const r = cs[0].getBoundingClientRect(); return [round1(r.left), round1(r.width)]; }), wide: round1(table.getBoundingClientRect().width) });
+    const before = read(), put = [];
+    for (const c of cols[pick]) { const w = document.createTreeWalker(c, NodeFilter.SHOW_TEXT); for (let t = w.nextNode(); t; t = w.nextNode()) if (/\S/.test(t.data)) { put.push([t, t.data]); t.data = `${t.data.trim()} ${t.data.trim()}`; } }
+    const after = read();
+    for (const [t, d] of put) t.data = d;
+    out.push({ k: pathKey(table), col: pick, name: words(cols[pick][0]).slice(0, 30), before, after });
+  }
+  return out;
+}
+
 export function snapshot() {
   const out = [];
   const body = document.body;
@@ -671,7 +700,38 @@ export const textClips = {
   },
 };
 
-export const RUN_RULES = [tooltipCut, textFixed, textClips, darkElevation, darkWeight, skeletonMatch, scrollCueSeen, spinnerTiming, exitFasterProbe, interruptibleProbe, pressFeedbackProbe, menuPointerdown, tooltipDelay, paletteMotion, submenuPath, overdrag, touchManipulation];
+// ── the other-data reality (docs/briefs/realities.md): the page opened again, with longer words in one column of
+// each table, as the next page of rows or the next customer has. ──
+
+// A column stays where the eye left it. A table laid out by its contents gives each column the width today's rows
+// ask for, so a longer name on the next page of rows pushes the amounts and the dates somewhere else, and a person
+// scanning down a column loses it. (CSS Tables: with table-layout: fixed the widths do not depend on the cells'
+// contents; MDN, table-layout.) Read by stretching one column of data and watching the others. Quiet when the others
+// hold: a fixed layout, set widths, a cell that cuts its words, or one column given the slack on purpose.
+export const columnsJump = {
+  id: 'craft/columns-jump', family: 'craft', number: [], on: 'table', owns: ['table-layout'], once: 'ancestor', reads: ['style', 'rect', 'other:data'], pairs: ['data'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
+    const d = facts.other('data')?.get(el);
+    if (!d) return [];
+    const s = facts.style(el);
+    if (s.tableLayout === 'fixed') return [];
+    // how far any other column moved or changed size
+    const moved = Math.max(0, ...d.before.cols.map(([x, w], i) => (i === d.col ? 0 : Math.max(Math.abs(d.after.cols[i][0] - x), Math.abs(d.after.cols[i][1] - w)))));
+    if (moved < (T.shift ?? 16)) return [];
+    const cls = utility(el, 'table');
+    const full = facts.rect(el).width >= (el.parentElement?.clientWidth ?? 0) - 2;
+    return [{
+      ...say(this.id, { moved: Math.round(moved), name: d.name }),
+      key: this.id, text: cls ?? 'table-layout', props: ['table-layout'], value: s.tableLayout, n: Math.round(moved),
+      evidence: { moved: Math.round(moved), column: d.col + 1, grew: Math.round(d.after.wide - d.before.wide), reality: 'other data (one column’s words at twice their length)' }, confidence: 0.8,
+      // the columns stop following their contents: it changes how the table is laid out today, so it is shown, not tried
+      suggest: { kind: 'class', from: cls === 'table-auto' ? cls : '', to: full ? 'table-fixed' : 'w-full table-fixed', why: 'each column keeps its width whatever the rows hold', sets: {}, moves: true },
+    }];
+  },
+};
+
+export const RUN_RULES = [tooltipCut, textFixed, textClips, columnsJump, darkElevation, darkWeight, skeletonMatch, scrollCueSeen, spinnerTiming, exitFasterProbe, interruptibleProbe, pressFeedbackProbe, menuPointerdown, tooltipDelay, paletteMotion, submenuPath, overdrag, touchManipulation];
 
 // the pairs the loaded rules ask for
 export const PAIRS = [...new Set(RUN_RULES.flatMap((r) => r.pairs ?? []))];

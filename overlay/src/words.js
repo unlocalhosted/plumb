@@ -116,6 +116,11 @@ export const CRAFT = {
     line: `With a larger text size set in the browser, ${px(over)} of what this holds is cut off.`,
     reason: 'Bigger text needs room.',
   }),
+  'columns-jump': ({ moved }) => ({
+    label: 'Columns move with the data',
+    line: `With a longer name in one column, the other columns move ${px(moved)}. The next page of rows will not line up with this one.`,
+    reason: 'A column stays where the eye left it.',
+  }),
   'tooltip-cut': ({ cut, side }) => ({
     label: 'Tooltip cut off',
     line: `This tooltip opens ${side}, where ${px(cut)} of it is off the screen.`,

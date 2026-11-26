@@ -6250,6 +6250,30 @@ into its own browser. Your app isn't changed.", then the findings.
 - **Media hooks.** A screen recording of ← → on a real page, the count staying on each stop behind you.
 - Reference: the design page `/design/realities` and `docs/briefs/realities.md`.
 
+### 143. Other data: the first check (2026-11-26)
+
+- **The itch.** One of the two faults that started the work on realities: table columns that change width when
+  the data changes. Plumber could not see it, because it only ever saw the table with today's rows.
+- **How we found it.** A tip in the CSS Protips list ("equal-width table cells"), filed as waiting on a sense
+  plumber did not have.
+- **The system behind it.** A table laid out by its contents gives each column the width today's rows ask for.
+  Nothing looks wrong until the next page of rows has a longer name, and then the dates and amounts sit somewhere
+  else and the eye loses the column.
+- **What we chose.** A second reading of the page, taken only when the page has a table with two or more rows. One
+  column of data (cells whose words differ row to row) gets its words at twice their length; where every other
+  column sits is read before and after, and every word is put back. The check speaks when another column moved 16px
+  or more (a number we chose, with no source). It is quiet for a fixed layout, set widths, a column that cuts its
+  words, or one column given the slack on purpose. Its fix writes `table-fixed` (with `w-full` when the table has
+  no width of its own), and is marked as one that changes the layout.
+- **The proof.** On its test page (`scripts/proof/pages/other-data.jsx`): one finding, on the table that jumps; none
+  on the fixed table, the one that cuts its words, or the one-row table; no other check changed; nothing threw. The
+  written fix cleared the finding, raised nothing, and was undone exactly.
+- **Not done.** Not run on a real app. Only tables, and only longer words: bigger numbers, more rows, fewer rows and
+  no rows are the rest of this reality. The docs example cannot be run through its own check, because the check
+  needs the second reading. Not on the dial in the overlay yet. No tests.
+- **Media hooks.** The docs example (What Plumber checks, "Columns move with the data"), Broken and Fixed.
+- Reference: css-protips (`docs/references.md`), `docs/briefs/realities.md`.
+
 ## Open gaps
 
 - Without setup, the page check found 70 problems where the same page wired in finds 72 (10 fixes against 14). Not
@@ -7938,6 +7962,8 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
 
+- Plumber now tries a table with longer names than yours and says when the other columns move, with the fix
+  written. Proven on a test page, not yet on a real app. [Entry 143](#143-other-data-the-first-check-2026-11-26)
 - Break it is now a dial: step through the ways a page can break with the arrow keys, and each stop keeps the
   count of what broke there. The page itself changes, and is put back. [Entry 142](#142-the-dial-in-the-overlay-2026-11-26)
 - Plumber now catches nine more everyday faults from a well-known tips list: a picture that didn't load, an empty

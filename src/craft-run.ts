@@ -136,7 +136,7 @@ async function takeLargerText(browser: Browser, url: string, timeout: number): P
 async function takePairs(browser: Browser, url: string, main: Page, timeout: number): Promise<void> {
   // asked once the page has settled: what it fetches on mount (a list loading its rows) comes after the overlay is ready
   await settle(main);
-  const needs = await ask<{ dark: boolean; scrolled: boolean; held: boolean; bigtext?: boolean }>(main, { op: 'needs' });
+  const needs = await ask<{ dark: boolean; scrolled: boolean; held: boolean; bigtext?: boolean; data?: boolean }>(main, { op: 'needs' });
   const give = async (condition: string, data: unknown) => { if (process.env.PLUMBER_DEBUG) process.stderr.write(`craft: ${condition} pair ${JSON.stringify(data)?.slice(0, 600)}\n`); if (data) await ask(main, { op: 'pair', condition, data }); };
   if (needs.dark) await give('dark', await inside(browser, url, { viewport: desktop, colorScheme: 'dark' }, timeout, async page => {
     await open(page, url, timeout, false); await settle(page); return ask(page, { op: 'snapshot' });
@@ -144,6 +144,10 @@ async function takePairs(browser: Browser, url: string, main: Page, timeout: num
   if (needs.scrolled) await give('scrolled', await takeScrolled(browser, url, timeout).catch(quiet('scrolled')));
   if (needs.held) await give('held', await takeHeld(browser, url, timeout).catch(quiet('held')));
   if (needs.bigtext) await give('bigtext', await takeLargerText(browser, url, timeout).catch(quiet('bigtext')));
+  // other data: the page opened once more, only when it has a table; the page itself stretches a column and puts it back
+  if (needs.data) await give('data', await inside(browser, url, { viewport: desktop }, timeout, async page => {
+    await open(page, url, timeout, false); await settle(page); return ask(page, { op: 'otherdata' });
+  }).catch(quiet('data')));
 }
 
 // The windows a page is read in: a full HD monitor, an HD laptop (the main read's own), an iPhone, a large Samsung phone.

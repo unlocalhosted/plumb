@@ -83,6 +83,7 @@ const RULE_LAWS = {
   'craft/tooltip-cut': [],
   'craft/text-fixed': [],
   'craft/text-clips': [],
+  'craft/columns-jump': [],
   'craft/image-stretch': [],
   'craft/background-tile': [],
   'craft/fixed-column': [],

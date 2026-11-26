@@ -26,7 +26,7 @@
  *  probes { list }            → hand the recorded gestures in (before the run)
  * ───────────────────────────────────────────────────────── */
 import { locate } from './locate.js';
-import { PAIRS, pairIn, pairsReset, resetKeys, snapshot, hasDarkStyles, scrollers, skeletons, heightsAt, fromKey, pathKey, candidates, probesIn, sourcesIn, wantedSources } from './craft-headless.js';
+import { PAIRS, pairIn, pairsReset, resetKeys, snapshot, otherData, hasDarkStyles, scrollers, skeletons, heightsAt, fromKey, pathKey, candidates, probesIn, sourcesIn, wantedSources } from './craft-headless.js';
 import { request } from './api.js';
 import { Facts, Theme, spec } from './craft.js';
 import { RULES, textCollision } from './craft-rules.js';
@@ -140,9 +140,10 @@ async function operate(options) {
   if (op === 'probes') { probesIn(options.list); return true; }
   if (op === 'needs') {
     const fetched = performance.getEntriesByType('resource').some((e) => (e.initiatorType === 'fetch' || e.initiatorType === 'xmlhttprequest') && !e.name.includes('/__plumb/'));
-    return { dark: PAIRS.includes('dark') && hasDarkStyles(), scrolled: PAIRS.includes('scrolled') && scrollers().length > 0, held: PAIRS.includes('held') && fetched, bigtext: PAIRS.includes('bigtext') };
+    return { dark: PAIRS.includes('dark') && hasDarkStyles(), scrolled: PAIRS.includes('scrolled') && scrollers().length > 0, held: PAIRS.includes('held') && fetched, bigtext: PAIRS.includes('bigtext'), data: PAIRS.includes('data') && !!document.querySelector('table tbody tr + tr') };
   }
   if (op === 'snapshot') { resetKeys(); return snapshot(); }
+  if (op === 'otherdata') { resetKeys(); return otherData(); }
   if (op === 'scrollers') { resetKeys(); return scrollers(); }
   if (op === 'prep') {
     const el = fromKey(options.key);

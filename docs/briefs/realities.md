@@ -141,6 +141,14 @@ written fix cleared its finding, moved nothing and was undone exactly.
 Not shown: a real app; a page whose text is all in pixels, where every line would be said one by one (it should be
 said once for the page); what the extra load costs on a large page.
 
+**Other data, for tables (2026-11-26).** The page is opened once more, only when it has a table with two or more
+rows. The page itself stretches one column of data to twice its words, reads where the other columns sit before and
+after, and puts every word back. One check reads it, `craft/columns-jump`: another column moved 16px or more. Its
+fix writes `table-fixed`. On its test page (`scripts/proof/pages/other-data.jsx`) it spoke once, stayed quiet on a
+fixed table, a column that cuts its words and a one-row table, changed no other check, and its fix was undone exactly.
+
+Not shown: a real app. Not built: bigger numbers, more rows, fewer rows, no rows; lists and cards that are not tables.
+
 ## Not known
 
 - Whether realities should share one runner, with the existing widths, dark, scrolled and held readings moved onto
