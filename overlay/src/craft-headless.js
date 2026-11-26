@@ -801,7 +801,7 @@ export const figureBreaks = {
       // a figure with no space in it can't break: it runs out of a column held at a set width. Where that width is a
       // class on the cell, it is made wide enough for the longer figure; it can't be tried without the reality again
       suggest: d.wraps ? { kind: 'class', from: '', to: 'whitespace-nowrap', why: 'the figure stays on one line however long it gets', sets: { whiteSpace: 'nowrap' } }
-        // written once the engine's width steps are right: tried on a test app it put 24px where 128px was asked (backlog)
+        : /^w-\[\d+(?:\.\d+)?px\]$/.test(wide ?? '') ? { kind: 'class', from: wide, to: `w-[${need}px]`, why: 'room for a figure three digits longer, with its padding kept', sets: { width: `${need}px` }, moves: true }
         : { kind: 'advice', text: `Give this column ${need}px, where it has ${Math.round(facts.rect(el).width)}px: room for a figure three digits longer with its padding kept.` },
     }];
   },

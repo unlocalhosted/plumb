@@ -188,6 +188,15 @@ function verify(k, el, byId, rules, facts, theme, before) {
     const v = pxOf(u, theme);
     if (!v || v.named) continue;
     if (Math.abs(v.px) < 1) continue; // under a pixel (a hairline's 0.5px) is a device pixel, not a step of the scale
+    // a width or a height is a size, not a space: it is a named spacing step only when it is exactly one. Snapped to
+    // the nearest, a 128px column became the theme's largest space, 24px (found on a test app, 2026-11-26). Otherwise
+    // it is said on the project's numeric scale when it lands on it (w-32), or kept as written
+    if (['w', 'h', 'size'].includes(u.prefix) && !theme.scale(u.family).some((s) => Math.abs(s.px - v.px) < 0.5)) {
+      const unit = theme.unit?.();
+      if (unit && Number.isInteger(v.px / unit)) { const next = `${u.bang}${u.neg}${u.prefix}-${v.px / unit}${u.tail}`; list = list.map((c) => (c === cls ? next : c)); rewritten = true; }
+      for (const key of SIDES[u.prefix] ?? []) sets[key] = (u.neg ? -1 : 1) * v.px;
+      continue;
+    }
     // rounded the way the rule that wrote this class asks (a composed class keeps its own rule's direction)
     const writer = byId.get(edit.by?.[cls]) ?? rule;
     const step = stepFor(theme, u.family, v.px, writer?.round?.[u.prefix] ?? writer?.round?.['*'] ?? 'nearest');
