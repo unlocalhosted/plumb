@@ -123,7 +123,9 @@ The demo is an entry in that concern's examples file:
 A demo is held to its own check in two ways:
 
 - The broken state is a page the real check speaks on, and the fixed state is one it stays quiet on. A demo is run
-  through its own check before it ships.
+  through its own check before it ships (`scripts/proof/demo-check.mjs`). Some demos are pictures of code: the
+  markup shown as text, or what a screen reader says. The check can't read a picture, so for those the same before
+  and after markup goes on the check's test page, and the test page is what is run.
 - The fix shown is the fix the check writes. If the check gives advice, the demo does not show a one-click fix.
 
 After the entry is added, the docs' list is rebuilt from the rule sources so the count and the page follow.
@@ -283,8 +285,13 @@ Checks from a guide or a list are sorted first and built together, ten or more a
 
 ## 9. Not known
 
-- Whether today's 266 demos pass through their own checks. Nothing runs a demo's scene through its rule today, as
-  far as I have read; the tool for that does not exist yet and is the first thing this spec needs.
+- Run 2026-11-26 (`scripts/proof/demo-check.mjs`, all 266 demos, 5,138 elements): 26 hold, meaning the check speaks
+  on the broken scene and is quiet on the fixed one. On 10 the check still speaks on the fixed scene. On 230 the
+  check is silent on its own broken scene: 18 read the whole page's habits and 14 need a gesture or a model, which a
+  grid of still scenes can't show; 9 are code checks with no page rule; 189 are still-page checks. Two of the 189
+  were read and are pictures, not pages (amounts in plain divs where the check reads table cells; a form shown as
+  text). The other 187 were not read one by one, so how many are pictures and how many are real misses is not known.
+  In 92 fixed scenes some other check speaks.
 - Built 2026-11-26: the on-and-off run (`scripts/proof/on-off.mjs`). It judges the same pages with the named checks
   on and off, prints every other check's finding that came, went or changed, and counts the errors checks threw.
   Tried on one control page, where switching off the faded-button check brought back the general contrast finding it

@@ -5998,6 +5998,17 @@ into its own browser. Your app isn't changed.", then the findings.
   gokhan's tips was mine and too cautious by this standard: 15 of 25 were filed as effects with nothing to find. The
   harvest skill asks, for every technique, what fault it prevents and whether plumber could see it, and writes down
   the sense the engine lacks when it can't. Neither skill has been run yet.
+- **The third proof tool, and what it found:** `scripts/proof/demo-check.mjs` draws every example from the docs'
+  "What Plumber checks" page broken and fixed, many to a page, and runs the real page check over both. Of 266
+  demos, 26 hold. On 10 the check still speaks after the demo's own fix. On 189 still-page checks the check never
+  speaks on its own example. The two read by hand explain the shape of it: the demos are drawings of a fault (a form
+  written out as text, amounts in plain boxes), and the checks read real pages (a real form, a real table). The docs
+  show one thing and the engine tests another, and nothing tied them together until today. The spec now lets a
+  picture demo stand when the same markup sits on a test page that is run.
+- **The grounds, read (2026-11-26, MDN):** the six scroll and colour checks from gokhan's tips have their case
+  written in `docs/research/scroll-batch.md`. Reading the pages changed three things: strict snapping has a firmer
+  ground than the tip gave and a second fault beside it; two fixes can't be written until plumber can read a
+  project's browser list; and the slide-skipping check has no ground and is held back.
 - **Proof of the spec itself:** none yet. It is a draft for the owner to read. The first use is the six checks from gokhan's tips
   (`docs/research/gkurt-css-tips.md`, reference logged 2026-11-26 in `docs/references.md`).
 - **Media hooks:** a docs example flipping between Broken and Fixed, beside the same check's finding on a real app.
