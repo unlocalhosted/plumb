@@ -6065,7 +6065,7 @@ into its own browser. Your app isn't changed.", then the findings.
   (`docs/research/gkurt-css-tips.md`, reference logged 2026-11-26 in `docs/references.md`).
 - **Media hooks:** a docs example flipping between Broken and Fixed, beside the same check's finding on a real app.
 
-### 141. How often plumber is right, scored on a real app (2026-11-26)
+### 141. Scoring every check on crafting-ui (2026-11-26)
 
 - **The itch:** the owner asked "how accurate our design laws are working for us?". Nobody knew. The checks are tied
   to laws of UX (Fitts, proximity, similarity and others) by a table written once by hand, and the only scored run
@@ -7814,6 +7814,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   `generator/shots/generate-craftingattention.png` (local).
 
 ## Open gaps
+- **Checks that judge grouping are mostly wrong on a real app.** On crafting-ui the proximity checks were right 0 of 8 and the craft checks 55 of 112; algorecall is not scored yet. [Entry 141](#141-scoring-every-check-on-crafting-ui-2026-11-26)
 - **The footer's count is a recording.** It has to be recorded again (`node web/scripts/findings.mjs`, with the dev server up) whenever the homepage changes, and nothing enforces that yet. It was read at 1280px, in light, at rest ([entry](#87-the-footer-is-a-demo-on-our-own-faults-2026-11-22)).
 - **The release checks live outside the repo.** The width sweep, the drawing check and the script that plays the footer are one session's temporary files, so the next deploy starts without them.
 - **Docs can drift from the package again.** Nothing runs their commands at release. The homepage's live-editing clip is from an older overlay, and the overlay's gestures were checked in source, without driving them ([entry](#75-the-docs-said-what-an-older-plumber-did-2026-11-22)).

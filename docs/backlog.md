@@ -248,6 +248,16 @@ and icon passes' cases, and the palette after a write, were tested again through
 
 ### Craft suggestions
 
+- Scored on crafting-ui (2026-11-26, journey entry 141): craft/inner-outer-spacing compares a column gutter with
+  row spacing; craft/content-align reads a tinted box's padding as misalignment; craft/text-collision reads a
+  counter's digits hidden by their window as words on top of words. Checks tied to proximity were right 0 of 8.
+- craft/leading and craft/tracking judge words inside SVG drawings, where the size is the drawing's units (7 of 8
+  and 3 of 4 wrong). craft/caps-case speaks on a lone "·" with no capitals of its own.
+- craft/continuous-corners called a circle a 33,554,400px corner; craft/concentric-radius told a round 24px part
+  inside a 6px box to use 2px; craft/button-padding takes full-width list rows for text buttons.
+- craft/scale-from-zero flags a progress fill, craft/tabular-nums a phone mock-up's fixed "9:41",
+  craft/content-size a fixed-width number column: each value was chosen on purpose.
+- experience/caps-long reads a row of short labels joined by dots as one sentence again, in a new shape.
 - craft/concentric-radius reads an SVG's box, so an icon drawn as a circle inside a square SVG is flagged against
   its card's corner (six false notes on algorecall's Today stack, 2026-11-20).
 - craft/shared-edges is written for a card: on a section laid out in columns it counts each designed column as a new
