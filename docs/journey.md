@@ -6703,6 +6703,11 @@ into its own browser. Your app isn't changed.", then the findings.
 - **What the dial showed about our own fix:** with the fixed table layout shown on a table that keeps its words on
   one line, the dial said the fix moves the problem: the longer name now runs into the date beside it. The page
   check writes that same fix, so it has the same fault there. Not fixed yet.
+- **That fix, repaired the same day:** columns that hold their width need words that can wrap. The fix now takes
+  the one-line class off the table where it is written there (`whitespace-nowrap` becomes `w-full table-fixed`), and
+  undoes it on the cells where it comes from elsewhere. On the dial, with the fix shown, the long name takes a
+  second line, the columns stay put, and the dial reports nothing moved. Seen on the test page; fix-and-undo was not
+  run again for it. The rings the dial draws sit a little off after the fix, where the table grew a line.
 - **Not shown:** a real app (crafting-ui has no tables, and the dial stretches only words that are data, which the
   test page had to be changed to have). The count the dial shows ahead for this stop was not looked at. The squeezed
   fix was not opened. A figure that breaks onto two lines and rows cut off are left to Extreme content and Lists,

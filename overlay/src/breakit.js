@@ -1056,7 +1056,12 @@ function partRoot(list) {
 /** How to show a note's advice on the page, or null when plumber has no fix to show for it. Returns undo. */
 function fixFor(n) {
   // other data: the same edits the page check writes (table-fixed; flex flex-col with the last part at the bottom; shrink-0)
-  if (n?.kind === 'moved') return () => restyle(n.box, { tableLayout: 'fixed', ...(n.box.getBoundingClientRect().width >= (n.box.parentElement?.clientWidth ?? 0) - 2 ? {} : { width: '100%' }) });
+  // columns that hold their width need words that can wrap, or a longer name runs into the next column
+  if (n?.kind === 'moved') return () => {
+    const undos = [restyle(n.box, { tableLayout: 'fixed', whiteSpace: 'normal', ...(n.box.getBoundingClientRect().width >= (n.box.parentElement?.clientWidth ?? 0) - 2 ? {} : { width: '100%' }) })];
+    for (const c of n.box.querySelectorAll('td, th')) if (/nowrap/.test(cssOf(c).whiteSpace)) undos.push(restyle(c, { whiteSpace: 'normal' }));
+    return () => undos.reverse().forEach((u) => u());
+  };
   if (n?.kind === 'squeezed') return () => restyle(n.el, { flexShrink: '0' });
   if (n?.kind === 'uneven') return () => {
     const undos = n.cards.flatMap((card) => { const last = card.lastElementChild, own = /^inline/.test(cssOf(last).display); return [restyle(card, { display: 'flex', flexDirection: 'column' }), restyle(last, { marginTop: 'auto', ...(own ? { alignSelf: 'flex-start' } : {}) })]; });

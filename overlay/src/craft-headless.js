@@ -820,12 +820,19 @@ export const columnsJump = {
     if (moved < (T.shift ?? 16)) return [];
     const cls = utility(el, 'table');
     const full = facts.rect(el).width >= (el.parentElement?.clientWidth ?? 0) - 2;
+    const cell = el.tBodies[0]?.rows[0]?.cells[0];
+    const oneLine = !!cell && /nowrap/.test(getComputedStyle(cell).whiteSpace), onTable = [...el.classList].find((c) => /^!?whitespace-nowrap!?$/.test(c)) ?? null;
     return [{
       ...say(this.id, { moved: Math.round(moved), name: d.name }),
       key: this.id, text: cls ?? 'table-layout', props: ['table-layout'], value: s.tableLayout, n: Math.round(moved),
       evidence: { moved: Math.round(moved), column: d.col + 1, grew: Math.round(d.after.wide - d.before.wide), reality: 'other data (one column’s words at twice their length)' }, confidence: 0.8,
       // the columns stop following their contents: it changes how the table is laid out today, so it is shown, not tried
-      suggest: { kind: 'class', from: cls === 'table-auto' ? cls : '', to: full ? 'table-fixed' : 'w-full table-fixed', why: 'each column keeps its width whatever the rows hold', sets: {}, moves: true },
+      // columns that hold their width need words that can wrap: kept on one line, a longer name runs into the next
+      // column (the dial showed our own fix moving the problem, 2026-11-26). The one-line class comes off the table
+      // where it is written there, and is undone on the cells where it comes from elsewhere
+      suggest: { kind: 'class', from: [cls === 'table-auto' ? cls : '', oneLine && onTable ? onTable : ''].filter(Boolean).join(' '),
+        to: `${full ? 'table-fixed' : 'w-full table-fixed'}${oneLine && !onTable ? ' [&_td]:whitespace-normal' : ''}`,
+        why: oneLine ? 'each column keeps its width, and a longer name wraps inside it' : 'each column keeps its width whatever the rows hold', sets: {}, moves: true },
     }];
   },
 };
