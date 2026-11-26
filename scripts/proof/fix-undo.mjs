@@ -15,7 +15,8 @@
 //   hand edit   after the file is edited by hand, undo is refused and writes nothing
 //   all back    undone newest first, the files are exactly as they began and the findings are the starting set
 //
-//   node scripts/proof/fix-undo.mjs --page scripts/proof/pages/fixes.jsx [--rules craft/x,craft/y] [--max 12] [--json]
+//   node scripts/proof/fix-undo.mjs --page scripts/proof/pages/fixes.jsx [--rules craft/x,craft/y] [--max 12] [--full] [--json]
+//   --full   read the page with gestures on (hover, press, widths): slower, needed for a check that a probe feeds
 //
 // A finding that appears after a fix is printed as raised by it. The run cannot yet tell a finding the fix caused
 // from one that was already there, folded under the fixed finding because both own the same thing.
@@ -47,7 +48,7 @@ const changed = (a, b) => [...new Set([...a.keys(), ...b.keys()])].filter((k) =>
 // the page as the check reads it: each finding by its check and its place in the page, and each fix that can be taken
 const says = (f) => JSON.stringify({ title: f.title, suggest: f.suggest ?? null });
 async function check() {
-  const r = await cli('craft', '--url', url, '--json', '--no-probe', '--no-pairs');
+  const r = await cli('craft', '--url', url, '--json', ...(flag('full') ? [] : ['--no-probe', '--no-pairs']));
   if (!r.out.trim().startsWith('{')) throw new Error(`The page check gave no report: ${r.err.slice(-600)}`);
   const report = JSON.parse(r.out), page = report.routes[0];
   if (!page.read) throw new Error('Nothing was read on the page, so nothing is proven.');
@@ -124,7 +125,10 @@ try {
     // undo straight away: the files and the findings as they were
     const u1 = await cli('undo', id1);
     const undone = await snapshot(), back = await check();
-    step.undo = { ok: u1.ok, filesExact: changed(before, undone).length === 0, findingsBack: [...now.findings].every(([k, f]) => back.findings.has(k) && says(back.findings.get(k)) === says(f)) && back.findings.size === now.findings.size };
+    // which findings are not as they were: gone, new, or saying something else
+    const unlike = (a, b) => [...[...a].filter(([k, f]) => !b.has(k) || says(b.get(k)) !== says(f)).map(([k]) => k), ...[...b.keys()].filter((k) => !a.has(k))];
+    const off = unlike(now.findings, back.findings);
+    step.undo = { ok: u1.ok, filesExact: changed(before, undone).length === 0, findingsBack: off.length === 0, ...(off.length ? { differing: off } : {}) };
     // taken again: the same bytes as the first time
     const again = back.fixes.find((f) => f.id === fix.id);
     const a3 = again ? await cli('apply', again.key) : { ok: false, out: '' };

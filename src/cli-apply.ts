@@ -42,7 +42,7 @@ export async function keepPageFixes(root: string, findings: readonly Finding[], 
   let kept: Record<string, PageFix> = {};
   try { kept = JSON.parse(await readFile(pageFixesFile(root), 'utf8')) as Record<string, PageFix>; } catch { /* none yet */ }
   for (const finding of findings) {
-    const site = finding.sites[0];
+    const site = finding.apply?.at ?? finding.sites[0];
     if (!finding.apply || !site) continue;
     delete kept[finding.apply.key];
     kept[finding.apply.key] = { file: relative(root, site.file).replaceAll('\\', '/'), line: site.line, column: site.column, from: finding.apply.from, to: finding.apply.to, title: finding.title, rule: finding.rule, ...places.get(finding.apply.key) };

@@ -40,7 +40,7 @@ All three, on their test page (`scripts/proof/pages/menu-batch.jsx`):
 | Check | Speaks on its fault | Quiet on | Other checks changed | Threw | Fix | Docs demo through its check |
 |---|---|---|---|---|---|---|
 | `craft/row-dead-zone` | yes, once | rows that touch; three buttons set 16px apart | none | no | written: each row's hit area reaches into the gap. Cleared, nothing moved, undone exactly | holds |
-| `craft/tooltip-cut` | yes, once | a tooltip in the same bar that opens below | none | no | advice | can't be run in a still grid: it needs the hover. Its test page is the proof |
+| `craft/tooltip-cut` | yes, once | a tooltip in the same bar that opens below | none | no | written on the tooltip's own line when its side is a class there (`bottom-full mb-1` → `top-full mt-1`). Cleared, undone exactly. Words otherwise | can't be run in a still grid: it needs the hover. Its test page is the proof |
 | `craft/scroll-chain`, widened | yes, once on a list positioned out of flow | the same list keeping its scroll | none | no | written: `overscroll-contain`. Cleared, undone exactly | holds |
 
 One finding of the tooltip-delay check came and went between two runs of the same page. It is a timing reading and

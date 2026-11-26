@@ -6032,7 +6032,10 @@ into its own browser. Your app isn't changed.", then the findings.
   is not in every browser; but a browser without it ignores the line and behaves as it does today, so the fix can
   only help. The spec's rule was wrong and is changed: a newer feature makes a fix advice only when the page would
   be worse without it. All three write their fix now (the control's in the class its own buttons wear), and each was
-  taken, checked and undone exactly on the test pages. The tooltip check still gives advice.
+  taken, checked and undone exactly on the test pages. The tooltip check followed (owner: "Yes, write it"): its fix lands on the tooltip, which exists only while
+  open, so the probe now keeps the tooltip's classes and the line that draws it, and the command line can write a
+  fix on a line other than the finding's own. On the test page the tooltip's side class was swapped on its own line,
+  the finding cleared, and undo put the file back exactly.
 - **Proof of the spec itself:** the six checks above are the first built to it. It is still a draft for the owner. The first use is the six checks from gokhan's tips
   (`docs/research/gkurt-css-tips.md`, reference logged 2026-11-26 in `docs/references.md`).
 - **Media hooks:** a docs example flipping between Broken and Fixed, beside the same check's finding on a real app.

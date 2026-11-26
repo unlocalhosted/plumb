@@ -83,12 +83,18 @@ async function operate(options) {
   if (op === 'tip') return rec.tip(options.ms, options.other, options.at, options.from);
   // where the open tooltip landed: how far it runs past the screen, and on which side (craft/tooltip-cut)
   if (op === 'tipbox') {
-    let worst = { cut: 0, side: null };
+    let worst = { cut: 0, side: null }, node = null;
     for (const n of document.querySelectorAll('[role="tooltip"]')) {
       if (!n.isConnected || n.closest('plumb-overlay')) continue;
       const r = n.getBoundingClientRect();
       if (r.width < 4 || r.height < 4) continue;
-      for (const [side, cut] of [['above', -r.top], ['below', r.bottom - innerHeight], ['left', -r.left], ['right', r.right - innerWidth]]) if (cut > worst.cut) worst = { cut: Math.round(cut), side };
+      for (const [side, cut] of [['above', -r.top], ['below', r.bottom - innerHeight], ['left', -r.left], ['right', r.right - innerWidth]]) if (cut > worst.cut) { worst = { cut: Math.round(cut), side }; node = n; }
+    }
+    // the tooltip itself: its classes, the side its library says it is on, and the line that draws it, so a fix can be
+    // written there (it is gone again by the time the page is judged)
+    if (node) {
+      const at = await locate(node, { explain: true, batch: true }).catch(() => null);
+      worst.tip = { cls: node.getAttribute('class') ?? '', dataSide: node.getAttribute('data-side'), ...(at?.file ? { file: at.file, line: at.line, column: at.column } : {}) };
     }
     return worst;
   }

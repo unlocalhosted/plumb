@@ -26,7 +26,7 @@ export interface CraftRecord {
   /** the page's own fix: classes to write on the element, or advice in words */
   /** its place in the page (craft-headless.js pathKey), for a picture of it */
   path?: string;
-  suggest?: { kind: string; from?: string; to?: string; text?: string; why?: string } | null;
+  suggest?: { kind: string; from?: string; to?: string; text?: string; why?: string; site?: { file: string; line: number; column: number } } | null;
   by?: 'rule' | 'model'; soft?: boolean; judged?: boolean; file: string | null; line: number | null; column: number | null; component: string | null; tag: string; count: number;
 }
 export interface CraftPage { route: string; url: string; read: number; complete: boolean; findings: CraftRecord[]; spec?: unknown;
@@ -364,8 +364,10 @@ export function craftFindings(pages: CraftPage[], root: string): Finding[] {
     // an advisory finding (a judgement of taste) is a note: shown, never failing the run
     const docs = docsUrl(record.rule);
     // a class fix on a placed element is one plumber can write; advice stays words
-    const fix = record.suggest?.kind === 'class' && record.suggest.to?.trim() ? record.suggest : undefined;
-    const apply = fix ? { key: fixKey(key), from: fix.from ?? '', to: fix.to!, ...(fix.why ? { why: fix.why } : {}) } : undefined;
+    // 'class-at': a class fix written on another element's line (a tooltip's, said on its trigger)
+    const elsewhere = record.suggest?.kind === 'class-at' && record.suggest.site?.file ? record.suggest.site : undefined;
+    const fix = (record.suggest?.kind === 'class' || elsewhere) && record.suggest!.to?.trim() ? record.suggest! : undefined;
+    const apply = fix ? { key: fixKey(key), from: fix.from ?? '', to: fix.to!, ...(fix.why ? { why: fix.why } : {}), ...(elsewhere ? { at: { file: resolve(root, elsewhere.file), line: elsewhere.line, column: elsewhere.column } } : {}) } : undefined;
     found.set(key, { ...(apply ? { apply } : {}), ...makeFinding({ key, rule: record.rule, family: 'craft', severity: (record as { soft?: boolean }).soft ? 'info' : 'error', sites: [site], declaration, decisions: [],
       title: record.title, because: record.because, ...(record.action ? { action: record.action } : {}) }), ...(docs ? { docs } : {}) });
   }

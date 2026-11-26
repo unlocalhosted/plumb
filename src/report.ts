@@ -89,7 +89,7 @@ export interface Finding {
   docs?: string;
   /** A page check's fix that plumber writes itself (craft findings only): the classes the element loses and gains,
    * taken with `plumber apply <key>` the way the fix bar takes it. */
-  apply?: { key: string; from: string; to: string; why?: string };
+  apply?: { key: string; from: string; to: string; why?: string; at?: { file: string; line: number; column: number } };
   accept: string;
   /** Suggestible tokens only; decisions also retains non-choice metadata. */
   choices?: Decision[];

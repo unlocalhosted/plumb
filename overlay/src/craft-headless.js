@@ -587,8 +587,9 @@ export const HEADLESS = {
 // the tooltip landed. One that opens above a button at the top of the screen (a toolbar, a header) runs off the edge.
 // (maybepratikk, 2026-11-23, docs/research/harvests/maybepratikk/tips.md; MDN position-try-fallbacks for the fix's
 // ground, not opened.) The probe brings a trigger to the middle of the screen when it can, so this sees the triggers
-// that stay near an edge: in a bar that is fixed or stuck, or at the very top or bottom of the page. Advice: the CSS
-// that flips a tooltip is not in every widely used browser, and plumber can't read a project's browser list.
+// that stay near an edge: in a bar that is fixed or stuck, or at the very top or bottom of the page. Such a trigger
+// never has room on that side, so the fix is to open on the other: written when the tooltip is placed with classes
+// on its own line; said as the library's side option when a library places it; advice otherwise.
 export const tooltipCut = {
   id: 'craft/tooltip-cut', family: 'craft', number: [], owns: ['placement'], once: 'ancestor', reads: ['probe:tooltip'],
   check({ el, facts }, theme) {
@@ -596,11 +597,19 @@ export const tooltipCut = {
     const p = facts.probe(el, 'tooltip');
     if (!p || !(p.cut > (T.over ?? 2)) || !p.side) return [];
     const other = { above: 'below', below: 'above', left: 'the right', right: 'the left' }[p.side];
+    // a tooltip placed with classes: the class that puts it on that side, and the margin that keeps it off its trigger,
+    // swapped for the opposite side. Written on the tooltip's own line, not on the trigger this finding is said on.
+    const SIDE = { above: ['bottom-full', 'top-full', 'mb', 'mt'], below: ['top-full', 'bottom-full', 'mt', 'mb'], left: ['right-full', 'left-full', 'mr', 'ml'], right: ['left-full', 'right-full', 'ml', 'mr'] }[p.side];
+    const words = String(p.tip?.cls ?? '').split(/\s+/).filter(Boolean);
+    const placed = words.find((c) => c === SIDE[0]), gap = words.find((c) => new RegExp(`^${SIDE[2]}-`).test(c));
+    const swap = placed && p.tip?.file ? { kind: 'class-at', from: [placed, gap].filter(Boolean).join(' '), to: [SIDE[1], gap?.replace(SIDE[2], SIDE[3])].filter(Boolean).join(' '),
+      why: `opens ${other}, where there is room`, text: `On the tooltip: ${placed} becomes ${SIDE[1]}, so it opens ${other}.`, site: { file: p.tip.file, line: p.tip.line, column: p.tip.column } } : null;
+    const lib = p.tip?.dataSide ? `Set side="${{ above: 'bottom', below: 'top', left: 'right', right: 'left' }[p.side]}" on the tooltip’s content, or let it avoid collisions.` : null;
     return [{
       ...say(this.id, { cut: p.cut, side: p.side }),
       key: this.id, text: 'tooltip', props: ['inset'], value: `${p.cut}px`, n: p.cut,
       evidence: { cut: p.cut, side: p.side }, confidence: 0.86,
-      suggest: { kind: 'advice', text: `Open it ${other} when there is no room ${p.side}: your tooltip library’s flip option, or position-try-fallbacks where your browsers have it.` },
+      suggest: swap ?? { kind: 'advice', text: lib ?? `Open it ${other} when there is no room ${p.side}: your tooltip library’s flip option, or position-try-fallbacks where your browsers have it.` },
     }];
   },
 };

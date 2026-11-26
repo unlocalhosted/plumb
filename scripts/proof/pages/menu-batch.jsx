@@ -7,12 +7,13 @@ const actions = ['Open in new tab', 'Rename', 'Duplicate', 'Copy link', 'Archive
 const people = Array.from({ length: 20 }, (_, i) => `Person ${i + 1}`);
 const Row = ({ children }) => <li><button role="menuitem" className="w-full rounded px-3 py-1.5 text-left text-sm text-slate-800 hover:bg-slate-100">{children}</button></li>;
 
-function Tip({ id, label, place, children }) {
+// a trigger that shows its tooltip on hover; the tooltip is passed in, so its classes sit on its own line
+function Hint({ id, tip, children }) {
   const [open, setOpen] = useState(false);
   return (
     <span className="relative inline-block">
       <button id={id} aria-describedby={`${id}-tip`} onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)} className="rounded-md bg-slate-800 px-3 py-1.5 text-sm text-white">{children}</button>
-      {open && <span id={`${id}-tip`} role="tooltip" className={`absolute left-0 z-10 whitespace-nowrap rounded bg-black px-2 py-1 text-xs text-white ${place}`}>{label}</span>}
+      {open && tip}
     </span>
   );
 }
@@ -22,9 +23,9 @@ export function App() {
     <main className="mx-auto grid max-w-2xl gap-12 p-10 pb-[1600px] pt-24">
       {/* tooltip-cut: a bar fixed to the top; the first tooltip opens above it, off the screen */}
       <header className="fixed inset-x-0 top-0 flex h-12 items-center gap-3 bg-slate-900 px-4">
-        <Tip id="share" label="Copy share link" place="bottom-full mb-1">Share</Tip>
+        <Hint id="share" tip={<span id="share-tip" role="tooltip" className="absolute bottom-full left-0 z-10 mb-1 whitespace-nowrap rounded bg-black px-2 py-1 text-xs text-white">Copy share link</span>}>Share</Hint>
         {/* quiet: opens below, where there is room */}
-        <Tip id="alerts" label="Notifications" place="top-full mt-1">Alerts</Tip>
+        <Hint id="alerts" tip={<span id="alerts-tip" role="tooltip" className="absolute left-0 top-full z-10 mt-1 whitespace-nowrap rounded bg-black px-2 py-1 text-xs text-white">Notifications</span>}>Alerts</Hint>
       </header>
 
       <h1 className="text-2xl font-semibold text-slate-900">Projects</h1>
