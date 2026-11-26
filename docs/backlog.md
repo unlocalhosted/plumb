@@ -250,7 +250,12 @@ and icon passes' cases, and the palette after a write, were tested again through
 
 - Still wrong on crafting-ui after journey entry 144 (2026-11-26): a11y/label-in-name on a timeline region that shows
   its marks; craft/contrast on lone "·" separators; craft/declared-gap on axis ticks placed by hand; craft/half-pixel on
-  a part inside a scaled drawing; tells/divider on a measuring guide in the hero. Algorecall not scored since 11-15.
+  a part inside a scaled drawing; tells/divider on a measuring guide in the hero.
+- Wrong on algorecall (2026-11-26, journey entry 145): shapes inside SVG drawings judged as page parts by
+  craft/concentric-radius (a drawing's box as a corner), craft/half-pixel (its paths), craft/stroke-weight (its strokes
+  set "the usual weight") and craft/weight-levels (bold numbers in its icons). Also craft/grey-levels compares a dark
+  card's greys with the light page's; craft/scrollbar-gutter fires on sideways scroll strips; craft/list-wrap on a
+  week's seven days; craft/row-lines reads two columns of tracks as two cards.
 - craft/concentric-radius reads an SVG's box, so an icon drawn as a circle inside a square SVG is flagged against
   its card's corner (six false notes on algorecall's Today stack, 2026-11-20).
 - craft/shared-edges is written for a card: on a section laid out in columns it counts each designed column as a new

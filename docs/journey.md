@@ -6239,6 +6239,29 @@ into its own browser. Your app isn't changed.", then the findings.
   near-black and colours inside recreations of other apps.
 - **Note:** another session also numbered an entry 143 ("Other data: the first check"), written after this one's.
 
+### 145. Scoring every check on algorecall (2026-11-26)
+
+- **The itch:** the second half of the owner's question about how accurate the checks are. Algorecall had not been
+  scored since 2026-11-15 (17 of 19 right, from 11 checks).
+- **How we found it:** every check, from main after entries 143 and 144, on algorecall's 16 public pages on the test
+  server. The run waited 18 minutes for room, because another project's jobs were using most of the box. 300 places
+  from 48 checks. I read 153 against the source (up to four per check, and all 34 contrast places by colour pair).
+  One judge, me. Four big pages (showcase, curriculum, tree, LLD) were not read through in two minutes each, so
+  their findings are partial.
+- **What it found:** 112 right, 22 wrong, 19 unsure: 73% right, 84% of those that could be decided (crafting-ui
+  scored 64% and 75% before the fixes). Accessibility, HTML, forms and the "experience" checks 17 of 17; the owner's
+  taste checks 29 of 30; craft checks 66 of 106. 32 of the 48 checks had nothing wrong.
+- **The laws:** Fitts's law 4 of 4, cognitive load 4 of 5. Similarity 4 of 15 and Prägnanz 0 of 6 are the weak ones
+  here; proximity and common region 4 places, all unsure.
+- **The system behind it:** 13 of the 22 wrong ones are the cause entry 143 fixed for type, in four more checks:
+  shapes inside SVG drawings judged as parts of the page. A drawing's box read as a corner that should nest
+  (4), its paths landing between pixels (2), its strokes setting "the usual icon weight" (3), and bold numbers in
+  its icons counted among the page's weights (4). The rest: greys on a dark card compared with the light page's
+  greys, a sideways scroll strip told to reserve a scrollbar's width, a week's seven days told the row may grow,
+  two columns of tracks read as two cards.
+- **Not fixed:** nothing changed in the checks. In the backlog.
+- **Media hooks:** the locked skill cards whose names read at contrast 0 (a real find); the 342-part hero drawing.
+
 ### 142. The dial in the overlay (2026-11-26)
 
 - **The itch.** The owner asked how a person sees the page's other states: "we need to come up with some way like
@@ -7933,7 +7956,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   `generator/shots/generate-craftingattention.png` (local).
 
 ## Open gaps
-- **Wrong notes on a real app.** Of 38 wrong findings on crafting-ui, 30 are fixed (entries 143 and 144), 2 were my misjudgement, 6 remain; algorecall is not scored yet. [Entry 141](#141-scoring-every-check-on-crafting-ui-2026-11-26), [entry 143](#143-fixing-four-causes-of-wrong-notes-2026-11-26), [entry 144](#144-the-last-five-kinds-of-wrong-note-2026-11-26)
+- **Wrong notes on a real app.** Of 38 wrong findings on crafting-ui, 30 are fixed (entries 143 and 144), 2 were my misjudgement, 6 remain. On algorecall 22 of 153 read are wrong, 13 of them shapes inside SVG drawings judged as page parts ([entry 145](#145-scoring-every-check-on-algorecall-2026-11-26)). [Entry 141](#141-scoring-every-check-on-crafting-ui-2026-11-26), [entry 143](#143-fixing-four-causes-of-wrong-notes-2026-11-26), [entry 144](#144-the-last-five-kinds-of-wrong-note-2026-11-26)
 - **The footer's count is a recording.** It has to be recorded again (`node web/scripts/findings.mjs`, with the dev server up) whenever the homepage changes, and nothing enforces that yet. It was read at 1280px, in light, at rest ([entry](#87-the-footer-is-a-demo-on-our-own-faults-2026-11-22)).
 - **The release checks live outside the repo.** The width sweep, the drawing check and the script that plays the footer are one session's temporary files, so the next deploy starts without them.
 - **Docs can drift from the package again.** Nothing runs their commands at release. The homepage's live-editing clip is from an older overlay, and the overlay's gestures were checked in source, without driving them ([entry](#75-the-docs-said-what-an-older-plumber-did-2026-11-22)).
