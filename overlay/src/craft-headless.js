@@ -183,8 +183,11 @@ export function otherData() {
       const was = t.data, l0 = lines(c), s0 = spill(c);
       t.data = was.replace(/\d/, '9,871,$&');
       const l1 = lines(c), s1 = spill(c);
+      // kept on one line it may run out of a column held at a set width: how far, so the fix can give it the room too
+      let flat = 0;
+      if (l1 > 1) { const ws = c.style.whiteSpace; c.style.whiteSpace = 'nowrap'; flat = Math.round(spill(c)); c.style.whiteSpace = ws; }
       t.data = was;
-      if (l0 === 1 && (l1 > 1 || s1 > s0 + 2)) out.push({ k: pathKey(c), num: { wraps: l1 > 1, spill: Math.round(s1), was: w.slice(0, 20) } });
+      if (l0 === 1 && (l1 > 1 || s1 > s0 + 2)) out.push({ k: pathKey(c), num: { wraps: l1 > 1, spill: Math.round(l1 > 1 ? flat : s1), was: w.slice(0, 20) } });
     }
 
     // more rows: the body's rows ten times over (at most 60), as a fuller account has. Rows that land past a box that
@@ -838,20 +841,25 @@ export const figureBreaks = {
     if (!d) return [];
     const s = facts.style(el);
     const held = /nowrap|pre\b/.test(s.whiteSpace), wide = utility(el, 'w');
-    if (d.wraps && held) return [];
+    if (d.wraps && held && !(d.spill > 0)) return [];
     // the room the longer figure asks for with its padding kept, on the 4px grid so the project's own width step can
     // say it. It is settled once the figure no longer leaves the cell
     const side = /right|end/.test(s.textAlign) ? px(s.paddingLeft) : px(s.paddingRight);
     const need = Math.ceil((facts.rect(el).width + d.spill + side) / 4) * 4;
+    const sized = /^w-\[\d+(?:\.\d+)?px\]$/.test(wide ?? '');
     if (!d.wraps && px(s.width) >= facts.rect(el).width + d.spill - 0.5) return [];
+    if (d.wraps && held && px(s.width) >= facts.rect(el).width + d.spill - 0.5) return [];
     return [{
       ...say(this.id, { was: d.was, wraps: d.wraps }),
       key: this.id, text: utility(el, 'whitespace') ?? 'white-space', props: ['white-space'], value: s.whiteSpace, n: d.spill,
       evidence: { figure: d.was, wraps: d.wraps, runsOut: d.spill, reality: 'other data (three more digits in each figure)' }, confidence: 0.82,
       // a figure with no space in it can't break: it runs out of a column held at a set width. Where that width is a
       // class on the cell, it is made wide enough for the longer figure; it can't be tried without the reality again
-      suggest: d.wraps ? { kind: 'class', from: '', to: 'whitespace-nowrap', why: 'the figure stays on one line however long it gets', sets: { whiteSpace: 'nowrap' } }
-        : /^w-\[\d+(?:\.\d+)?px\]$/.test(wide ?? '') ? { kind: 'class', from: wide, to: `w-[${need}px]`, why: 'room for a figure three digits longer, with its padding kept', sets: { width: `${need}px` }, moves: true }
+      // one line alone would trade the break for a figure that runs out of a set-width column (the fix-and-undo run
+      // found it still said after its fix, 2026-11-26): there it gets the room as well
+      suggest: d.wraps && d.spill > 0 && sized ? { kind: 'class', from: wide, to: `w-[${need}px] whitespace-nowrap`, why: 'the figure stays on one line, with room for three more digits', sets: { whiteSpace: 'nowrap', width: `${need}px` } }
+        : d.wraps ? { kind: 'class', from: '', to: 'whitespace-nowrap', why: 'the figure stays on one line however long it gets', sets: { whiteSpace: 'nowrap' } }
+        : sized ? { kind: 'class', from: wide, to: `w-[${need}px]`, why: 'room for a figure three digits longer, with its padding kept', sets: { width: `${need}px` }, moves: true }
         : { kind: 'advice', text: `Give this column ${need}px, where it has ${Math.round(facts.rect(el).width)}px: room for a figure three digits longer with its padding kept.` },
     }];
   },
@@ -885,12 +893,15 @@ export const footDrifts = {
     const d = facts.other('data')?.get(el)?.foot;
     if (!d) return [];
     const s = facts.style(el), column = s.display.includes('flex') && s.flexDirection.startsWith('column');
+    const own = !column && el.lastElementChild && /^inline/.test(getComputedStyle(el.lastElementChild).display);
     return [{
       ...say(this.id, { drift: d.drift, cards: d.cards }),
       key: this.id, text: utility(el, 'flex') ?? 'display', props: ['display'], value: s.display, n: d.drift,
       evidence: { drift: d.drift, cards: d.cards, reality: 'other data (one card’s title at three times its length)' }, confidence: 0.8,
       // it changes how the card lays out its parts, so it is shown, not tried
-      suggest: { kind: 'class', from: '', to: column ? '[&>*:last-child]:mt-auto' : 'flex flex-col [&>*:last-child]:mt-auto', why: 'each card’s last part sits at its bottom, whatever the title’s length', sets: {}, moves: true },
+      // a button or a link that is as wide as its words today stays that way: a column's parts stretch unless told not to
+      // (the fix-and-undo run showed 52 boxes moving and the button going full width, 2026-11-26)
+      suggest: { kind: 'class', from: '', to: `${column ? '' : 'flex flex-col '}[&>*:last-child]:mt-auto${own ? ' [&>*:last-child]:self-start' : ''}`, why: 'each card’s last part sits at its bottom, whatever the title’s length', sets: {}, moves: true },
     }];
   },
 };

@@ -6613,6 +6613,32 @@ into its own browser. Your app isn't changed.", then the findings.
   first item of a group is stretched, and only its first run of words.
 - **Media hooks:** the three docs examples, each with its Broken and Fixed switch.
 
+### 153. The other-data batch, proved once (2026-11-26)
+
+- **The itch:** six other-data checks had only been looked at with the quick run. The owner: "Yes, run proofs".
+- **How we found it:** the two proof runs on the checks' test page, once for the batch: the on-and-off comparison,
+  then every fix taken and undone.
+- **What the runs showed:** with the six on, each gave its own findings (2, 2, 1, 1, 1, 1), no other check changed
+  and none threw. Eleven of twelve fixes cleared their finding, raised nothing, and undid exactly. Two things were
+  wrong.
+  - A figure with a space in it, in a column held at a set width: the fix kept it on one line, and it then ran out
+    of the column. The finding was still there after its own fix.
+  - The card fix made the card a column, and a column stretches its parts: the button went full width.
+- **The system behind both:** each fix answered the one thing its check measured and not what the fix itself would
+  cause next.
+- **What changed:** the reading now also measures how far the figure would run out once it is on one line, and the
+  fix gives the column that room in the same edit (`w-[132px]` becomes `w-38 whitespace-nowrap`). The card fix adds
+  `[&>*:last-child]:self-start` when the last part is as wide as its words today.
+- **The proof:** the two checks were run again alone: all three of their fixes clear, raise nothing, land, and undo
+  exactly.
+- **Not shown:** the card fix still makes each card on the test page a few pixels shorter, so everything below
+  moves up 12px. My reading is that the button no longer sits in a line of text, which was taller than the button;
+  not confirmed. The wider-column fix takes its room from the next column, which the run flags as moving 5 boxes
+  outside itself. An older check's fix (numbers set in even-width digits) moves 17 boxes outside itself on this page;
+  it is not part of this batch and was not looked into. The run stops after 12 fixes. Nothing here was run on a real
+  app. The build folder was emptied twice mid-run by another session's build, and the run had to be started again.
+- **Media hooks:** the fix-and-undo printout before and after, for the figure that breaks.
+
 ### 151. A judged set: real screens marked by a person (2026-11-26)
 
 - **The itch:** the owner wants plumber to "look at the shape rather than the details", and for design laws to
