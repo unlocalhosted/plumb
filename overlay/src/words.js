@@ -127,6 +127,21 @@ export const CRAFT = {
     line: wraps ? `${was} sits on one line today. Three digits longer, it breaks onto a second line and reads as two numbers.` : `${was} fits its cell today. Three digits longer, it runs out of it.`,
     reason: 'A figure is one thing, and stays on one line.',
   }),
+  'foot-drifts': ({ drift, cards }) => ({
+    label: 'Cards stop lining up',
+    line: `These ${cards} cards end on one line today. With a longer title in one, its last part drops ${px(drift)} below the others.`,
+    reason: 'Cards in a row end on one line.',
+  }),
+  'trail-squeezed': ({ was, now }) => ({
+    label: 'The row’s end gets squeezed',
+    line: `With a longer label beside it, this goes from ${px(was)} wide to ${px(now)}.`,
+    reason: 'The end of a row keeps its size.',
+  }),
+  'label-pushes': ({ out }) => ({
+    label: 'A longer label pushes the row out',
+    line: `With a longer label, the row runs ${px(out)} past its own edge.`,
+    reason: 'A long label stays inside its row.',
+  }),
   'rows-cut': ({ cut, to }) => ({
     label: 'More rows are cut off',
     line: `With ${to} rows, ${px(cut)} of the table falls past this box’s edge. It clips and does not scroll, so those rows can’t be reached.`,

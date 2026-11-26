@@ -200,7 +200,57 @@ export function otherData() {
       if (o0 <= 1 && o1 > 8) out.push({ k: pathKey(clip), rows: { cut: o1, from: rows.length, to: rows.length + clones.length } });
     }
   }
+  otherItems(out);
   return out;
+}
+
+/** The other-data reality, for cards and list rows: three or more siblings built alike, one of them given a title
+ *  three times as long (the customer with the long name). Read: whether the cards' last parts still line up, and
+ *  whether a row's trailing part is squeezed or pushed out. Every word is put back. */
+function otherItems(out) {
+  const shown = (e) => e.getClientRects().length > 0 && getComputedStyle(e).position !== 'absolute' && getComputedStyle(e).position !== 'fixed';
+  const box = (e) => e.getBoundingClientRect();
+  // the words a card or a row is named by: its first run of letters
+  const titleOf = (item) => { const w = document.createTreeWalker(item, NodeFilter.SHOW_TEXT); for (let t = w.nextNode(); t; t = w.nextNode()) if (/[A-Za-z]{3}/.test(t.data) && t.parentElement.getClientRects().length) return t; return null; };
+  const longer = (t, run) => { const was = t.data; t.data = `${was.trim()} ${was.trim()} ${was.trim()}`; try { return run(); } finally { t.data = was; } };
+  let groups = 0;
+  for (const parent of document.querySelectorAll('body *')) {
+    if (groups >= 40) break;
+    if (parent.closest('plumb-overlay, table, svg') || parent.children.length < 3 || parent.children.length > 60) continue;
+    const kids = [...parent.children].filter(shown);
+    if (kids.length < 3 || kids.some((k) => k.localName !== kids[0].localName)) continue;
+    // data is what repeats: three or more built the same way (the same classes, the same number of parts). A heading
+    // above a list is written once and is not stretched (found on a real app, 2026-11-26: a fixed "Notifications" title)
+    if (kids.slice(0, 3).some((k) => k.className !== kids[0].className || k.children.length !== kids[0].children.length)) continue;
+    const b = kids.map(box);
+    const inRow = b.slice(0, 3).every((r) => Math.abs(r.top - b[0].top) <= 2) && b[1].left > b[0].left;
+    const stacked = b.every((r, i) => !i || r.top >= b[i - 1].bottom - 1) && b.every((r) => Math.abs(r.left - b[0].left) <= 1);
+    if (inRow && kids.slice(0, 3).every((k) => k.children.length >= 2) && b[0].height >= 60) {
+      // cards in a row: the last part of each (a button, a price, a meta line) sits on one line today
+      const row = kids.filter((k, i) => Math.abs(b[i].top - b[0].top) <= 2), feet = row.map((k) => k.lastElementChild);
+      const spread = () => { const y = feet.map((f) => box(f).bottom); return Math.max(...y) - Math.min(...y); };
+      const even = () => { const y = row.map((k) => box(k).bottom); return Math.max(...y) - Math.min(...y) <= 1; };
+      const t = titleOf(row[0]);
+      if (!t || feet.some((f) => !f || !shown(f)) || feet[0].contains(t) || spread() > 1 || !even()) continue;
+      groups++;
+      const drift = longer(t, () => (even() ? Math.round(spread()) : 0));
+      if (drift > 4) for (const k of row) out.push({ k: pathKey(k), foot: { drift, cards: row.length } });
+    } else if (stacked) {
+      // list rows: each lays a label and a trailing part side by side
+      const first = kids[0], row = getComputedStyle(first).display.includes('flex') && !getComputedStyle(first).flexDirection.startsWith('column') ? first
+        : first.children.length === 1 && getComputedStyle(first.firstElementChild).display.includes('flex') && !getComputedStyle(first.firstElementChild).flexDirection.startsWith('column') ? first.firstElementChild : null;
+      const parts = row ? [...row.children].filter(shown) : [];
+      const t = row && titleOf(row);
+      if (!t || parts.length < 2) continue;
+      const label = parts.find((p) => p.contains(t)), trail = parts.at(-1);
+      if (!label || trail === label || getComputedStyle(row).flexWrap !== 'nowrap') continue;
+      groups++;
+      const w0 = box(trail).width, r0 = box(row).right, over0 = row.scrollWidth - row.clientWidth;
+      const after = longer(t, () => ({ w: box(trail).width, out: Math.round(Math.max(box(trail).right, box(label).right) - r0), over: row.scrollWidth - row.clientWidth }));
+      if (w0 - after.w > 2) out.push({ k: pathKey(trail), trail: { was: Math.round(w0), now: Math.round(after.w) } });
+      else if (over0 <= 1 && (after.out > 2 || after.over > 2)) out.push({ k: pathKey(label), label: { out: Math.max(after.out, after.over) } });
+    }
+  }
 }
 
 export function snapshot() {
@@ -824,7 +874,63 @@ export const rowsCut = {
   },
 };
 
-export const RUN_RULES = [tooltipCut, textFixed, textClips, columnsJump, figureBreaks, rowsCut, darkElevation, darkWeight, skeletonMatch, scrollCueSeen, spinnerTiming, exitFasterProbe, interruptibleProbe, pressFeedbackProbe, menuPointerdown, tooltipDelay, paletteMotion, submenuPath, overdrag, touchManipulation];
+// Cards in a row end on one line. Their buttons or prices line up today because every title is as long as the
+// others; one longer title pushes that card's last part down and the row goes ragged. Read in the other-data
+// reality: one card's title at three times its length, the cards still equal in height, their last parts no longer
+// level. (Ours: no outside source opened. The ground is the row itself, level before and ragged after.) The fix
+// pins each card's last part to its bottom, written on the card.
+export const footDrifts = {
+  id: 'craft/foot-drifts', family: 'craft', number: [], owns: ['card-foot'], once: 'ancestor', reads: ['style', 'other:data'], pairs: ['data'],
+  check({ el, facts }) {
+    const d = facts.other('data')?.get(el)?.foot;
+    if (!d) return [];
+    const s = facts.style(el), column = s.display.includes('flex') && s.flexDirection.startsWith('column');
+    return [{
+      ...say(this.id, { drift: d.drift, cards: d.cards }),
+      key: this.id, text: utility(el, 'flex') ?? 'display', props: ['display'], value: s.display, n: d.drift,
+      evidence: { drift: d.drift, cards: d.cards, reality: 'other data (one card’s title at three times its length)' }, confidence: 0.8,
+      // it changes how the card lays out its parts, so it is shown, not tried
+      suggest: { kind: 'class', from: '', to: column ? '[&>*:last-child]:mt-auto' : 'flex flex-col [&>*:last-child]:mt-auto', why: 'each card’s last part sits at its bottom, whatever the title’s length', sets: {}, moves: true },
+    }];
+  },
+};
+
+// The end of a row keeps its size. A badge, a price or a button beside a label gives up its own width when the label
+// gets longer, so it wraps, clips or shrinks to nothing. Read in the other-data reality: the row's label at three
+// times its length, and the trailing part narrower than it was. (CSS Flexible Box: flex-shrink defaults to 1, so
+// every item gives up room. Written from memory, not opened today.) The fix stops it shrinking.
+export const trailSqueezed = {
+  id: 'craft/trail-squeezed', family: 'craft', number: [], owns: ['flex-shrink'], once: 'ancestor', reads: ['style', 'other:data'], pairs: ['data'],
+  check({ el, facts }) {
+    const d = facts.other('data')?.get(el)?.trail;
+    if (!d || facts.style(el).flexShrink === '0') return [];
+    return [{
+      ...say(this.id, { was: d.was, now: d.now }),
+      key: this.id, text: utility(el, 'shrink') ?? 'flex-shrink', props: ['flex-shrink'], value: facts.style(el).flexShrink, n: d.was - d.now,
+      evidence: { was: d.was, withLongerLabel: d.now, reality: 'other data (the row’s label at three times its length)' }, confidence: 0.82,
+      suggest: { kind: 'class', from: '', to: 'shrink-0', why: 'it keeps its width however long the label gets', sets: { flexShrink: '0' } },
+    }];
+  },
+};
+
+// A long label stays inside its row. A flex item will not get narrower than its longest word or its unbroken line,
+// so a longer name pushes the row's end out of its box. Read in the other-data reality. (CSS Flexible Box: a flex
+// item's automatic minimum size is its content's. Written from memory, not opened today.) The fix lets it shrink.
+export const labelPushes = {
+  id: 'craft/label-pushes', family: 'craft', number: [], owns: ['min-width'], once: 'ancestor', reads: ['style', 'other:data'], pairs: ['data'],
+  check({ el, facts }) {
+    const d = facts.other('data')?.get(el)?.label;
+    if (!d || px(facts.style(el).minWidth) === 0 && facts.style(el).minWidth !== 'auto') return [];
+    return [{
+      ...say(this.id, { out: d.out }),
+      key: this.id, text: utility(el, 'min-w') ?? 'min-width', props: ['min-width'], value: facts.style(el).minWidth, n: d.out,
+      evidence: { runsOut: d.out, reality: 'other data (the row’s label at three times its length)' }, confidence: 0.8,
+      suggest: { kind: 'class', from: '', to: 'min-w-0 truncate', why: 'the label gives up room, and shows it was cut, before the row’s end is pushed out', sets: { minWidth: '0px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } },
+    }];
+  },
+};
+
+export const RUN_RULES = [tooltipCut, textFixed, textClips, columnsJump, figureBreaks, rowsCut, footDrifts, trailSqueezed, labelPushes, darkElevation, darkWeight, skeletonMatch, scrollCueSeen, spinnerTiming, exitFasterProbe, interruptibleProbe, pressFeedbackProbe, menuPointerdown, tooltipDelay, paletteMotion, submenuPath, overdrag, touchManipulation];
 
 // the pairs the loaded rules ask for
 export const PAIRS = [...new Set(RUN_RULES.flatMap((r) => r.pairs ?? []))];

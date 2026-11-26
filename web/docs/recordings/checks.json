@@ -1119,6 +1119,33 @@
    "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
+   "id": "craft/foot-drifts",
+   "concern": "craft",
+   "name": "Cards stop lining up",
+   "why": "Cards in a row end on one line.",
+   "where": "page",
+   "tile": null,
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
+  },
+  {
+   "id": "craft/trail-squeezed",
+   "concern": "craft",
+   "name": "The row’s end gets squeezed",
+   "why": "The end of a row keeps its size.",
+   "where": "page",
+   "tile": null,
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
+  },
+  {
+   "id": "craft/label-pushes",
+   "concern": "craft",
+   "name": "A longer label pushes the row out",
+   "why": "A long label stays inside its row.",
+   "where": "page",
+   "tile": null,
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
+  },
+  {
    "id": "craft/dark-elevation",
    "concern": "craft",
    "name": "Shadow does nothing in dark",

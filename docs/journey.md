@@ -6557,6 +6557,32 @@ into its own browser. Your app isn't changed.", then the findings.
 - **Media hooks:** the two docs examples (a total on two lines, a card that cuts its rows), each with its Broken and
   Fixed switch.
 
+### 152. Other data: cards and list rows (2026-11-26)
+
+- **The itch:** other data only read tables. Most apps show their data as cards and list rows. The owner: "Yes,
+  lists and cards".
+- **How we found it:** crafting-ui has no `<table>` at all, so the table checks had nothing to read on the one real
+  app we look at every day.
+- **The system behind it:** a card or a row is built on the names it has today. Plumber now finds things that
+  repeat (three or more siblings with the same classes and the same number of parts), gives one of them a title three
+  times as long, reads what moved, and puts the words back.
+- **What we chose:** three checks, each with its fix written.
+  - Cards in a row whose last parts were level and no longer are: `flex flex-col [&>*:last-child]:mt-auto` on the
+    card.
+  - A row's trailing part (a badge, a price) that gets narrower: `shrink-0` on it.
+  - A label that pushes the row past its own edge: `min-w-0 truncate` on the label.
+- **A wrong note, found in the first look on the real app:** the row check spoke on a fixed "Notifications" heading
+  above a list of cards. A heading is written once and is not data. That is where "the same classes and the same
+  number of parts" came from; before it, any three siblings of one tag counted.
+- **The proof so far:** looks with the narrow run, 5 to 12 seconds each. On the test page each check gives its one
+  finding and stays quiet on the fixed versions. On six crafting-ui pages (home, Interfaces, Primitives, Standards,
+  Motion vocabulary, Templates) the three give no findings after the change.
+- **Not shown:** whether those six pages are quiet because nothing is wrong or because few of their lists were read;
+  the number of groups read was not printed. The on-and-off run and fix-and-undo have not been run. The grounds are
+  the reading itself (cards) and the flex rules written from memory (rows), with no source opened today. Only the
+  first item of a group is stretched, and only its first run of words.
+- **Media hooks:** the three docs examples, each with its Broken and Fixed switch.
+
 ### 151. A judged set: real screens marked by a person (2026-11-26)
 
 - **The itch:** the owner wants plumber to "look at the shape rather than the details", and for design laws to
@@ -8273,6 +8299,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
 
+- Plumber now tries cards and list rows with a longer name: it says when a row of cards stops lining up, when a badge gets squeezed, and when a label pushes its row out, each with the fix written. Quiet on six real pages; seen firing on a test page only. [Entry 152](#152-other-data-cards-and-list-rows-2026-11-26)
 - Plumber now tries a table with bigger numbers and with ten times the rows: it says when a total would break onto two lines or run out of its column, and when rows would be cut off out of reach, with the fix written for two of the three. Seen on a test page only. [Entry 151](#151-other-data-bigger-numbers-and-more-rows-2026-11-26)
 - The page check can be told to run only the checks you name: a look at one change takes 7 to 15 seconds on a real page, down from about two minutes. [Entry 150](#150-a-narrow-run-so-a-look-takes-seconds-2026-11-26)
 - A fix for a habit now writes each class where it really is: on the element, in the variable that holds it, or where a component is used. On a copy of a real app the fixed-size fix went from 30 of 47 places to all 47, and one undo took it all back. [Entry 149](#149-a-fix-follows-the-class-to-where-it-is-written-2026-11-26)

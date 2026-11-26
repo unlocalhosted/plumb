@@ -109,7 +109,7 @@ export const STANDARD = {
     'icon-soft': { icon: 64 }, // the largest drawn size, in px, read as an icon (invented)
     'row-dead-zone': { least: 3, min: 1, max: 8, row: 56 }, // rows before it reads as a menu, the gap read as a dead strip (px), and the tallest row
     'text-fixed': { grow: 1.15 }, // how much a line must grow, when the default grows by half, to count as following it
-    'figure-breaks': {}, 'rows-cut': {},
+    'figure-breaks': {}, 'rows-cut': {}, 'foot-drifts': {}, 'trail-squeezed': {}, 'label-pushes': {},
     'columns-jump': { shift: 16 }, // px another column moves, when one column's words double, before it is said (invented)
     'text-clips': { over: 4 }, // px cut off at the larger text size before it is said
     'tooltip-cut': { over: 2 }, // px of a tooltip past the screen's edge before it is said

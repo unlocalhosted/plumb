@@ -421,6 +421,35 @@ Object.assign(CRAFT, {
       return { ...ringed(s, x, ['two lines', 'one line'], 5), at: (p) => { x.style.whiteSpace = p ? 'nowrap' : ''; } };
     },
   },
+  // the scene is drawn with one title longer than the cards were built on
+  'craft/foot-drifts': {
+    code: ['<div class="rounded-lg p-3">', '<div class="rounded-lg p-3 flex flex-col [&>*:last-child]:mt-auto">'],
+    note: ['One plan got a longer name and its button dropped below the others.', 'Each card’s button sits at its bottom, whatever the title’s length.'],
+    scene: (s) => {
+      scene(s, '<div style="display:grid;grid-template-columns:repeat(3,96px);gap:8px;font:400 12px/1.35 system-ui;color:#111827">' + ['Starter', 'Team and guests and contractors', 'Company'].map((n) => `<div class="c" style="display:flex;flex-direction:column;border-radius:10px;background:#fff;box-shadow:inset 0 0 0 1px #e5e7eb;padding:10px"><b style="font-weight:600">${n}</b><span style="color:#6b7280;margin-top:4px">For small jobs.</span><span class="b" style="margin-top:10px;align-self:start;border-radius:6px;background:#111827;color:#fff;padding:3px 8px">Choose</span></div>`).join('') + '</div>');
+      const x = s.querySelectorAll('.c')[1], feet = [...s.querySelectorAll('.b')];
+      return { ...ringed(s, x, ['buttons uneven', 'buttons level'], 5), at: (p) => { for (const f of feet) f.style.marginTop = p ? 'auto' : '10px'; } };
+    },
+  },
+  // the scene is drawn with a longer name than the row was built on
+  'craft/trail-squeezed': {
+    code: ['<span class="rounded px-2">Paid in full</span>', '<span class="rounded px-2 shrink-0">Paid in full</span>'],
+    note: ['A longer name arrived and the badge gave up its width.', 'The badge keeps its width however long the name gets.'],
+    scene: (s) => {
+      scene(s, '<div style="display:flex;align-items:center;gap:8px;width:230px;border-radius:10px;background:#fff;box-shadow:inset 0 0 0 1px #e5e7eb;padding:8px 10px;font:400 13px/1.35 system-ui;color:#111827"><span>Wolfeschlegelstein Logistics and Freight GmbH</span><span class="x" style="margin-left:auto;overflow:hidden;white-space:nowrap;border-radius:6px;background:#d1fae5;color:#065f46;padding:1px 8px">Paid in full</span></div>');
+      const x = s.querySelector('.x');
+      return { ...ringed(s, x, ['squeezed', 'keeps its width'], 5), at: (p) => { x.style.flexShrink = p ? '0' : ''; } };
+    },
+  },
+  'craft/label-pushes': {
+    code: ['<span class="whitespace-nowrap">', '<span class="whitespace-nowrap min-w-0 truncate">'],
+    note: ['A longer name arrived and pushed the badge out of the row.', 'The name gives up room, and shows it was cut.'],
+    scene: (s) => {
+      scene(s, '<div style="display:flex;align-items:center;gap:8px;width:210px;border-radius:10px;background:#fff;box-shadow:inset 0 0 0 1px #e5e7eb;padding:8px 10px;font:400 13px/1.35 system-ui;color:#111827"><span class="x" style="white-space:nowrap">Wolfeschlegelstein Logistics GmbH</span><span style="margin-left:auto;flex-shrink:0;border-radius:6px;background:#d1fae5;color:#065f46;padding:1px 8px">Paid</span></div>');
+      const x = s.querySelector('.x');
+      return { ...ringed(s, x, ['runs out of the row', 'cut with …'], 5), at: (p) => { x.style.minWidth = p ? '0' : ''; x.style.overflow = p ? 'hidden' : ''; x.style.textOverflow = p ? 'ellipsis' : ''; } };
+    },
+  },
   // the scene is drawn with more rows than the box was built for
   'craft/rows-cut': {
     code: ['<div class="h-40 overflow-hidden">', '<div class="h-40 overflow-hidden overflow-y-auto">'],
