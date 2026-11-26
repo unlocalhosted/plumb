@@ -456,3 +456,11 @@ All free under the Unsplash License, hotlinked from images.unsplash.com as Unspl
 - What we read from it: nearness has a measured law that depends on a ratio of distances; cues for grouping add up;
   regularity can be counted; salience has two rules. One law is misnamed on Layr and Laws of UX.
 - Used in: `docs/research/perception-sources.md`. Nothing built yet.
+
+## 2026-11-26 · Cal.com, as a well-designed app to judge (shared by the owner)
+- What: [calcom/cal.com](https://github.com/calcom/cal.com), the open-source scheduling app. A throwaway copy runs on
+  the test server, seeded with demo data, started by another session to score plumber on it.
+- Why: "make it from good apps knows for their design i've running cal.com in parallel in other agent see if it can
+  help you out". The judged set should come from apps known for good design.
+- What it changed: the judged set's main set is now cal.com (seven screens), not our own crafting-ui.
+- Used in: `bench/judged/sets/calcom`; [journey entry 151](journey.md#151-a-judged-set-real-screens-marked-by-a-person-2026-11-26).

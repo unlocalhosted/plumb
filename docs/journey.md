@@ -6575,8 +6575,12 @@ into its own browser. Your app isn't changed.", then the findings.
   hidden. Tried once on the crafting-ui home page with a made-up mark: the mark covered five elements, each with its
   source line (`src/pages/home/Play.tsx`), and the screen was saved as 1,175 elements, 1,172 of them with a source
   line, with the app's commit. That test data was deleted.
+- **Then, the same day:** the owner: "make it from good apps knows for their design", and pointed at the cal.com
+  another session was running on the test server. A second set, `sets/calcom`, judges seven of its screens through
+  a tunnel, signed in as its demo user. A made-up mark on the event types list covered the right row ("Tennis
+  class" and its three tags). Cal.com's elements carry no source line there, so a mark leads to elements only.
 - **Not shown:** no real judgement has been made yet. Nothing scores plumber against the marks. No test covers it.
-- **Media hooks:** the judging page with one mark and its note open over the crafting-ui home page.
+- **Media hooks:** the judging page with one mark and its note open over cal.com's event types list.
 - **References:** Layr's chapter and the research behind it, both in [references.md](references.md) under 2026-11-26.
 
 ## Open gaps

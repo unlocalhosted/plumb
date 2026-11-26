@@ -1,0 +1,15 @@
+{
+  "name": "calcom",
+  "app": "http://localhost:3000",
+  "code": { "repository": "https://github.com/calcom/cal.com", "commit": "ae027bb70e694e2d2c44569f398d6cbcee0389b1", "note": "a throwaway copy on the test server, seeded with demo data and signed in as the demo user" },
+  "width": 1280,
+  "screens": [
+    { "id": "event-types", "path": "/event-types" },
+    { "id": "event-type", "path": "/event-types/3" },
+    { "id": "bookings-upcoming", "path": "/bookings/upcoming" },
+    { "id": "bookings-past", "path": "/bookings/past" },
+    { "id": "availability", "path": "/availability" },
+    { "id": "availability-edit", "path": "/availability/3" },
+    { "id": "profile", "path": "/settings/my-account/profile" }
+  ]
+}

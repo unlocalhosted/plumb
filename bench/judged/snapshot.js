@@ -12,7 +12,7 @@ const PROPS = [
   'padding-top', 'padding-right', 'padding-bottom', 'padding-left', 'margin-top', 'margin-right', 'margin-bottom', 'margin-left',
   'row-gap', 'column-gap', 'flex-direction', 'flex-wrap', 'align-items', 'justify-content', 'grid-template-columns',
 ];
-const SKIP = new Set(['SCRIPT', 'STYLE', 'LINK', 'META', 'NOSCRIPT', 'TEMPLATE', 'PLUMB-OVERLAY']);
+const SKIP = new Set(['SCRIPT', 'STYLE', 'LINK', 'META', 'NOSCRIPT', 'TEMPLATE', 'PLUMB-OVERLAY', 'NEXTJS-PORTAL']);
 const round = (n) => Math.round(n * 100) / 100;
 
 export function snapshot(win) {

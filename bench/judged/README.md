@@ -29,6 +29,7 @@ is not finished.
 ## Rules that keep it a fair test
 
 - **The judge does not see plumber.** Plumber's overlay is hidden in the frame, so the marks are the judge's own.
+  Next's development badge is hidden too, because it is not part of the app.
 - **Finished means the rest is fine.** A screen counts only after "Nothing else here". Without that, an unmarked
   thing could be fine or just not looked at yet.
 - **The judge's words are kept as written.** There are no categories to pick from. Sorting marks into kinds is done
@@ -52,6 +53,10 @@ is not finished.
 
 `app` is where the app runs. `appDir` is its folder, from this repository's root; it is used to record which commit
 drew the screen. A set judges one app. `width` is the width every screen is shown at.
+
+An app that runs on another machine has no folder here. Its set gives `code` in place of `appDir`, with the
+repository and commit written by hand, and `app` is the local end of a tunnel to it. `sets/calcom` is one: cal.com on
+the test server, reached with `ssh -N -L 3000:localhost:3000 vm-agent`.
 
 ## Files a judge leaves
 

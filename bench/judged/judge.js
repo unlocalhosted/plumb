@@ -125,7 +125,9 @@ class JudgeDesk extends HTMLElement {
   arrived() {
     const win = this.frame.contentWindow, doc = win?.document;
     if (!doc || this.i === this.set.screens.length) return;
-    const hide = doc.createElement('style'); hide.textContent = 'plumb-overlay { display: none !important; }'; doc.head.append(hide);
+    // plumber, and Next's own dev badge. A sheet the page's framework cannot take out again, as it would a <style>
+    const hide = new win.CSSStyleSheet(); hide.replaceSync('plumb-overlay, nextjs-portal { display: none !important; }');
+    doc.adoptedStyleSheets = [...doc.adoptedStyleSheets, hide];
     win.addEventListener('scroll', () => this.place(), { passive: true });
     win.addEventListener('keydown', (e) => this.key(e, true));
     win.addEventListener('keyup', (e) => this.key(e, false));

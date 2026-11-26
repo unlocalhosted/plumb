@@ -51,7 +51,7 @@ const appDir = set.appDir ? resolve(here, '../..', set.appDir) : null; // from t
 const git = (args) => new Promise((done) => execFile('git', ['-C', appDir, ...args], (err, out) => done(err ? null : out.trim())));
 // which code drew the screen: the app's commit, and whether files had changed since it
 async function code() {
-  if (!appDir) return null;
+  if (!appDir) return set.code ?? null; // an app that runs elsewhere says its commit in set.json
   const commit = await git(['rev-parse', 'HEAD']);
   if (!commit) return null;
   const changed = await git(['status', '--porcelain']);
@@ -87,7 +87,12 @@ async function judging(req, res, url) {
 
 function pass(req, res) {
   const up = http.request({ hostname: app.hostname, port: app.port, path: req.url, method: req.method, headers: { ...req.headers, host: app.host } },
-    (answer) => { res.writeHead(answer.statusCode ?? 502, answer.headers); answer.pipe(res); });
+    (answer) => {
+      // a redirect to the app's own full address would take the frame off this origin: keep it here
+      const headers = { ...answer.headers }, to = headers.location;
+      if (typeof to === 'string' && to.startsWith(app.origin)) headers.location = to.slice(app.origin.length) || '/';
+      res.writeHead(answer.statusCode ?? 502, headers); answer.pipe(res);
+    });
   up.on('error', (e) => { if (!res.headersSent) res.writeHead(502, { 'content-type': 'text/plain; charset=utf-8' }); res.end(`The app at ${set.app} did not answer (${e.code ?? e.message}). Start it, then reload.`); });
   req.pipe(up);
 }
