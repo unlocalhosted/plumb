@@ -159,6 +159,7 @@ The proof, run once for the batch:
 | Its answer does not depend on order | The findings are the same with the check first and last in the list |
 | It never throws | Thrown errors are counted on the real pages and on its test page. The count is zero |
 | It reads nothing behind the kept answer's back | The check lists what it reads beyond an element's own classes and its parent's, and shows the finding update when that thing changes |
+| A check written as two parts agrees with itself | Some checks are two rules with one id: one reads the still page, one reads what a gesture showed. Both parts say the same about everything except what they read (what they own, their rank, what they quiet, what they come after), and every step of the engine that asks the check asks both |
 | It keeps nothing between elements | It reads facts and returns findings. It never touches the page, and anything it remembers is cleared each pass |
 | It does not slow the page | It says which elements it is about. Its time on the largest real page is recorded beside the batch's total |
 

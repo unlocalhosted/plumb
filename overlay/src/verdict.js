@@ -258,9 +258,10 @@ function wokeBy(after, before, k, el, rules, facts, theme, composed = []) {
   const already = new Map();
   const firesNow = (id) => {
     if (!already.has(id)) {
-      const r = rules.find((x) => x.id === id);
+      // every rule with this id: a check written as two rules (a still half and a half that reads a probe) fires when
+      // either does. Asking only the first called a finding new when its other half already had it on the real page
       let fires = false;
-      try { fires = !!r && (r.check({ el, facts }, theme) ?? []).some((f) => (f.confidence ?? 0) >= FLOOR); } catch { /* a rule that throws on the real page says nothing about it */ }
+      for (const r of rules.filter((x) => x.id === id)) { try { fires ||= (r.check({ el, facts }, theme) ?? []).some((f) => (f.confidence ?? 0) >= FLOOR); } catch { /* a rule that throws on the real page says nothing about it */ } }
       already.set(id, fires);
     }
     return already.get(id);

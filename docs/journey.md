@@ -5984,6 +5984,12 @@ into its own browser. Your app isn't changed.", then the findings.
   rules with one id (one reads the still page, one reads what a scroll showed); the engine asked only the second,
   which had nothing to say, and marked the finding settled. Fixed both. Proof: the same run now takes one fix on the
   list, it writes both classes, the finding is cleared, nothing new appears, and undo puts the file back exactly.
+- **The same gap elsewhere (owner: "Yes, check them"):** four checks are written as two rules with one id. All
+  262 rules were compared: the parts of each agree in every field but what they read, and no rule names another that
+  does not exist. Every step that asks a check by its id was read. One more asked only the first part: the step
+  that decides whether a finding seen after a trial fix is new. It asks both now. This one was fixed from reading;
+  no page showed it going wrong. The control page ran clean afterwards: four fixes, nothing raised, everything
+  taken back exactly.
 - **Proof of the spec itself:** none yet. It is a draft for the owner to read. The first use is the six checks from gokhan's tips
   (`docs/research/gkurt-css-tips.md`, reference logged 2026-11-26 in `docs/references.md`).
 - **Media hooks:** a docs example flipping between Broken and Fixed, beside the same check's finding on a real app.
