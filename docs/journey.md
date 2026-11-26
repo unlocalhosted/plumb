@@ -6261,9 +6261,13 @@ into its own browser. Your app isn't changed.", then the findings.
   lists of choices, and counts a row's own rule as part of the row. On the real pages, the three wrong control
   findings and both wrong menu findings are gone, and the right one is still there. The proof pages carry the new
   near misses, and still speak on their faults: the control check 3 times, the menu check once.
-- **Not fixed:** an empty line kept on purpose to stop a jump under the film (`empty-box`), and a demo's inner
-  scroll area read as laid over the page (`scroll-chain`). Both are arguable. Two possible misses for
-  `scroll-chain` are not confirmed.
+- **The two arguable ones, fixed after:** an empty line kept on purpose to stop a jump under the film
+  (`empty-box`), and a demo's inner scroll area read as laid over the page (`scroll-chain`). The empty-box check now
+  leaves alone a box given its height on purpose. The scroll check now counts a placed box as over the page only when
+  it reaches outside the box it sits in, as a popover does. Both findings are gone on the real pages, and each proof
+  page still catches its fault once.
+- **Still open:** two possible misses for `scroll-chain` (a side column filling the screen, a palette's list), not
+  confirmed.
 - **Media hooks:** the Base UI switch beside its hidden input; the practice list with its 4px strips.
 
 ### 145. Scoring every check on algorecall (2026-11-26)

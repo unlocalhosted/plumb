@@ -3266,11 +3266,21 @@ export const scrollChain = {
     const page = document.scrollingElement;
     if (!page || page.scrollHeight <= page.clientHeight + 4) return []; // nothing behind it to move
     if (el.closest('dialog, [role="dialog"], [role="alertdialog"], [aria-modal="true"]')) return [];
+    // placed out of flow and laid over what is around it: a box placed against the page itself, or one that reaches
+    // outside the box it is placed in (a popover hanging below its button). One that sits inside that box (a pane
+    // filling a card, the screen of a drawn device) is part of the card, which is in the page's flow
+    // (found on a real app, 2026-11-26: the scrolling editor inside a dialog demo)
+    const laidOver = (n) => {
+      const cb = n.offsetParent;
+      if (!cb || cb === document.body || cb === document.documentElement) return true;
+      const a = n.getBoundingClientRect(), b = cb.getBoundingClientRect();
+      return a.top < b.top - 2 || a.bottom > b.bottom + 2 || a.left < b.left - 2 || a.right > b.right + 2;
+    };
     let held = false;
     for (let n = el, d = 0; n && n !== document.body && d < 4; n = n.parentElement, d++) {
       const p = facts.style(n).position;
       // fixed or stuck in place, or laid over the page out of its flow: a menu or list in a popover (maybepratikk, 2026-11-25)
-      if (p === 'fixed' || p === 'sticky' || p === 'absolute' || n.matches('[popover]')) { held = true; break; }
+      if (p === 'fixed' || p === 'sticky' || (p === 'absolute' && laidOver(n)) || n.matches('[popover]')) { held = true; break; }
       // an ancestor that scrolls and contains its own overscroll already stops the chain before the page
       if (n !== el && /^(?:auto|scroll)$/.test(facts.style(n).overflowY) && facts.style(n).overscrollBehaviorY !== 'auto') return [];
     }
@@ -3431,6 +3441,10 @@ export const emptyBox = {
     // kept for a screen reader and hidden from the eye (sr-only: a pixel, clipped, out of the flow): an empty status
     // line of that kind is waiting to speak, and takes no room (found on a real app, 2026-11-26)
     if ((r.width <= 2 && r.height <= 2) || /^(?:absolute|fixed)$/.test(s.position) || (s.clipPath && s.clipPath !== 'none') || (s.clip && s.clip !== 'auto')) return [];
+    // space kept on purpose: an empty box whose own content area still has a height was given one (h-9, a min-height,
+    // an aspect ratio) to hold the place of what is still to come, so the page doesn't jump when it arrives. Hiding it
+    // would bring the jump back (found on a real app, 2026-11-26: the row of versions under a film)
+    if (!/^inline/.test(s.display) && r.height - px(s.paddingTop) - px(s.paddingBottom) - px(s.borderTopWidth) - px(s.borderBottomWidth) > 0.5) return [];
     const room = (r.width >= 1 && r.height >= 1) || px(s.marginTop) + px(s.marginBottom) > 0;
     if (!room) return [];
     const bare = el.childNodes.length === 0; // :empty is true only with nothing inside, not even a space

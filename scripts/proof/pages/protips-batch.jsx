@@ -26,6 +26,8 @@ export function App() {
       <div id="rule" className="h-px bg-slate-200" />
       {/* quiet: a status line kept for screen readers, hidden from the eye, empty until there is news */}
       <p id="announce" role="status" className="sr-only">{error}</p>
+      {/* quiet: an empty line given its height on purpose, holding the place of what is still to come */}
+      <p id="reserved" className="flex h-9 items-center text-xs text-slate-500">{error}</p>
 
       {/* link-in-text: a link in a sentence, told apart by colour alone */}
       <p className="text-base text-slate-700">Read the <a id="plain" href="#terms" className="text-indigo-600">terms of service</a> before you continue with the upgrade to the team plan.</p>

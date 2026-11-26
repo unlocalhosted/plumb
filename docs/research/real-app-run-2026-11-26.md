@@ -204,8 +204,31 @@ Proof, run on vm-agent at main `2bd87ad7` plus these edits:
   and not the hidden one. `menu-batch.jsx` gives `{"own":{"craft/row-dead-zone":1},"leaked":0,"diff":[],"thrown":[]}`,
   the gapped menu only.
 
-Not changed: the placeholder `empty-box` finding (arguable) and the `scroll-chain` finding in the dialog demo
-(arguable). Both still show.
+The owner then asked for the two arguable ones to be fixed too:
+
+- **`empty-box`** now leaves alone an empty box whose own content area still has a height. That box was given its
+  height on purpose (`h-9`, a min-height, an aspect ratio) to hold a place, and hiding it would bring back the jump
+  it prevents. An empty box that keeps room only through its padding, like the proof page's empty error line, is
+  still found.
+- **`scroll-chain`** now counts an absolutely placed scroll area as "over the page" only when it is placed against
+  the page itself, or reaches outside the box it is placed in (a popover hanging below its button). A pane that sits
+  inside its card, like the editor inside the dialog demo, belongs to the card, which is in the page's flow.
+
+Near misses added: an empty `h-9` line on `protips-batch.jsx`, and a scroll pane inside a card on
+`scroll-batch.jsx`.
+
+Proof, run on vm-agent at main `18475229` plus these edits:
+
+- **Real pages:** `/patterns/modal-dialog` lost the `scroll-chain` finding and kept the right `row-dead-zone`
+  finding. The two lesson pages read (`saar-nobody-tells-this-to-beginners`, `apple-intention`) lost the
+  `empty-box` finding.
+- **Proof pages** (`on-off.mjs --page --rules craft/empty-box,craft/scroll-chain`):
+  `protips-batch {"own":{"craft/empty-box":1,"craft/scroll-chain":0},"leaked":0,"diff":[],"thrown":[]}`,
+  `scroll-batch {"own":{"craft/empty-box":0,"craft/scroll-chain":1},…,"diff":[],"thrown":[]}` and
+  `menu-batch {"own":{"craft/empty-box":0,"craft/scroll-chain":1},…,"diff":[],"thrown":[]}`. Each fault is still
+  found once: the empty error line, the fixed panel, and the popover list.
+
+All nine places that were wrong or arguable are now fixed. The two possible `scroll-chain` misses are still open.
 
 ## Right findings
 

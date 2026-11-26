@@ -68,6 +68,12 @@ export function App() {
       <div id="inflow" className="h-40 overflow-y-auto rounded-lg bg-slate-50 p-3 text-sm text-slate-800">
         {notes.map((n) => <p key={n} className="py-1">{n}</p>)}
       </div>
+      {/* quiet: a pane placed inside a card in the page's flow (the screen of a drawn device), not laid over the page */}
+      <div className="relative h-48 rounded-lg bg-slate-100">
+        <div id="pane" className="absolute inset-3 overflow-y-auto rounded bg-white p-3 text-sm text-slate-800">
+          {notes.map((n) => <p key={n} className="py-1">{n}</p>)}
+        </div>
+      </div>
 
       {/* native-accent: browser-drawn controls beside green buttons */}
       <form className="grid gap-4">
