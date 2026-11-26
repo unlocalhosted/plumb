@@ -1742,8 +1742,49 @@
    "reply": "2112243581956301303",
    "date": "2026-10-19",
    "media": "",
-   "shots": [],
-   "points": []
+   "shots": [
+    {
+     "id": "home",
+     "file": "marcelo-now.jpg",
+     "w": 1440,
+     "h": 900,
+     "crop": [
+      380,
+      40,
+      680,
+      820
+     ],
+     "label": "Home on 2026-11-26"
+    }
+   ],
+   "points": [
+    {
+     "k": "22.1",
+     "level": "shape",
+     "says": "The site is well divided into three parts, the personal page, the Repository and the Gallery. But the way to move between them is odd. The dropdown menu feels like an afterthought, and its button sits in a different place on each page.",
+     "shows": "On the home page the menu is a small blue square at the top right of the text column, with no word on it. The two other parts are also offered as two text links in the middle of the page. The other pages were not captured.",
+     "how": "He first credits the structure, then looks for the thing that expresses it and finds a dot. The three parts are the architecture of the site, and the control that moves between them is its smallest element. And a control that moves from page to page cannot be found by habit: people remember where a thing is before they remember what it looks like.",
+     "engine": "Shape, across pages: the same control should sit in the same place everywhere. Plumber judges one page at a time. With several pages read, it could find a control that appears on each and compare its position. The blue square with no name is something plumber already flags.",
+     "today": "Not checked on the other pages.",
+     "pins": [
+      {
+       "shot": "home",
+       "x": 958,
+       "y": 74,
+       "w": 34,
+       "h": 34
+      },
+      {
+       "shot": "home",
+       "x": 436,
+       "y": 322,
+       "w": 552,
+       "h": 74
+      }
+     ]
+    }
+   ],
+   "note": "The web archive has no copy of this site."
   },
   {
    "n": 23,
@@ -1752,8 +1793,43 @@
    "reply": "2112244235596411091",
    "date": "2026-10-19",
    "media": "",
-   "shots": [],
-   "points": []
+   "shots": [
+    {
+     "id": "home",
+     "file": "pdepablo-arc.jpg",
+     "w": 1440,
+     "h": 900,
+     "label": "Home as the web archive saved it on 2026-10-09, ten days before the review, after its opening sequence"
+    }
+   ],
+   "points": [
+    {
+     "k": "23.1",
+     "level": "content",
+     "says": "The intro is nice, but use it to say something. Think of it as a prelude. Is your name really the most interesting thing you want a visitor to know as they come in?",
+     "shows": "The site opens with a short sequence built on his name before the page settles into what is pictured. The sentence about what he believes, that new technology only matters if people can understand, trust and enjoy it, sits below in small grey type.",
+     "how": "An opening sequence is the one moment when a visitor gives a site their full attention and cannot yet scroll past. He asks what that moment is being spent on. A name can be read anywhere on the page. A point of view can only be planted once, first. The same thought as “make the second heading the first” in review 10.",
+     "engine": "Content: what the first seconds say. Plumber could note that a page opens with a sequence and read which words it shows. Judging that a name says less than a belief is for a model.",
+     "today": "Not checked.",
+     "pins": [
+      {
+       "shot": "home",
+       "x": 22,
+       "y": 14,
+       "w": 124,
+       "h": 48
+      },
+      {
+       "shot": "home",
+       "x": 22,
+       "y": 328,
+       "w": 570,
+       "h": 96
+      }
+     ]
+    }
+   ],
+   "note": "The opening sequence itself is not in a still picture. For the live harness."
   },
   {
    "n": 24,
@@ -1762,8 +1838,36 @@
    "reply": "2112245094170423576",
    "date": "2026-10-19",
    "media": "legionsdev.jpg",
-   "shots": [],
-   "points": []
+   "shots": [
+    {
+     "id": "his",
+     "file": "gurbinder-rauno.jpg",
+     "w": 1336,
+     "h": 204,
+     "label": "The picture Rauno attached: the introduction as it stood on 2026-10-19"
+    }
+   ],
+   "points": [
+    {
+     "k": "24.1",
+     "level": "content",
+     "says": "Three rows are used to say very little about the person. And the “still not sure?” angle makes him sound as if he is selling something.",
+     "shows": "The introduction is three lines. They hold three facts, a design engineer, a full stack developer and a freelancer, wrapped in patter around them: asides, a “but wait”, a “guess what”. Most of the words are the wrapping.",
+     "how": "He counted what the lines tell him against how long they take to read, and it came out low. Then he listened to the voice. The patter is the voice of an advert, and an advert makes a reader guarded. On a personal site the reader wants a person.",
+     "engine": "Content and voice. Plumber already has one check where a model reads words, for a subtitle that only repeats its heading. This is the same family: lines that take space and say little. It needs a model to read them.",
+     "today": "Not checked. The owner said he would put it right.",
+     "pins": [
+      {
+       "shot": "his",
+       "x": 30,
+       "y": 30,
+       "w": 1210,
+       "h": 150
+      }
+     ]
+    }
+   ],
+   "note": "His picture is the evidence. The web archive’s copy is from May."
   },
   {
    "n": 25,
@@ -1772,8 +1876,82 @@
    "reply": "2112246065340535193",
    "date": "2026-10-19",
    "media": "",
-   "shots": [],
-   "points": []
+   "shots": [
+    {
+     "id": "home",
+     "file": "clint-now.jpg",
+     "w": 1440,
+     "h": 900,
+     "label": "Home on 2026-11-26, after the owner’s changes"
+    }
+   ],
+   "points": [
+    {
+     "k": "25.1",
+     "level": "behaviour",
+     "says": "Drop the “Hello …” animation when the page loads. Nobody will see it. They will only feel a jitter.",
+     "shows": "The greeting at the top centre used to animate in as the page arrived. Today it stands still.",
+     "how": "He weighed what the animation gives against what it risks. It plays in the first instant, when the eye is not yet on that spot, so almost nobody sees it as an animation. What reaches them is text that moves once for no reason. An effect that is not noticed leaves only its side effect.",
+     "engine": "Behaviour over time: movement in the first moments of a page that reads as instability. Plumber would need the first frames of the page arriving. The rule for ranking is his: motion at load has to be seen to be worth having.",
+     "today": "Fixed: the owner removed it.",
+     "pins": [
+      {
+       "shot": "home",
+       "x": 634,
+       "y": 54,
+       "w": 172,
+       "h": 40
+      }
+     ]
+    },
+    {
+     "k": "25.2",
+     "level": "behaviour",
+     "says": "The bar at the bottom is nice. He would bring its items in one after another, very slightly.",
+     "shows": "A small rounded bar at the bottom centre holds three icons.",
+     "how": "A positive note with a refinement. Three things arriving at the same instant read as one flat block. A few hundredths of a second between them lets the eye see three, and the bar feels alive. He says “very subtly” because the same idea, overdone, is what he criticises in the next review.",
+     "engine": "Craft, in motion, and a suggestion more than a fault. Plumber could notice a group whose members all enter at the same instant. Whether a stagger would improve it is taste.",
+     "today": "Not checked.",
+     "pins": [
+      {
+       "shot": "home",
+       "x": 648,
+       "y": 824,
+       "w": 144,
+       "h": 56
+      }
+     ]
+    },
+    {
+     "k": "25.3",
+     "level": "craft",
+     "says": "The shadows could be better. Try blending the border into the shadow.",
+     "shows": "The raised cards had a hard border line with a soft shadow outside it, two separate edges for one object.",
+     "how": "A real object has one edge. A crisp line plus a blur outside it reads as two things stacked: an outline, and then a shadow. Letting the border fade into the shadow makes it one edge again.",
+     "engine": "Craft, and plumber already has it: a check for a solid border on a raised surface. His remark is that check, said by eye.",
+     "today": "Fixed: the owner blended the borders and shadows.",
+     "pins": [
+      {
+       "shot": "home",
+       "x": 560,
+       "y": 212,
+       "w": 320,
+       "h": 490
+      }
+     ]
+    },
+    {
+     "k": "25.4",
+     "level": "behaviour",
+     "says": "Going into a project’s page feels sloppy. The items leave abruptly and there is a lot of movement in opposing directions.",
+     "shows": "Pressing a card opened its page with the other cards and labels each leaving their own way. Today that is a plain fade.",
+     "how": "Things that move the same way are read as one group; that is one of the oldest findings about how we see. Here every part went its own way, so the eye had nothing to follow and the change felt like a scatter. One direction, or none, is calm.",
+     "engine": "Behaviour, and a shape in motion: parts of one change should move together. Plumber could sample where things are across the frames of a change and say when they travel in clashing directions.",
+     "today": "Fixed: the owner replaced it with a quiet fade.",
+     "pins": []
+    }
+   ],
+   "note": "The owner reported back in the thread that he had dropped the greeting animation, blended borders and shadows, and replaced the busy transition with a fade. Today’s page is the “after”; the web archive has no copy of the “before”."
   },
   {
    "n": 26,
@@ -1782,8 +1960,28 @@
    "reply": "2112246328973820204",
    "date": "2026-10-19",
    "media": "",
-   "shots": [],
-   "points": []
+   "shots": [
+    {
+     "id": "home",
+     "file": "lucas-now.jpg",
+     "w": 1440,
+     "h": 900,
+     "label": "First screen on 2026-11-26"
+    }
+   ],
+   "points": [
+    {
+     "k": "26.1",
+     "level": "behaviour",
+     "says": "The one-after-another entrance gets overdone after a while. Consider fading things in by section.",
+     "shows": "The page is about 5,900 pixels long with four sections. As the visitor scrolls, the items in each section arrive one at a time.",
+     "how": "A stagger is a small pleasure the first time and a wait the tenth time. On a long page it repeats for every block, so the reader keeps being held back by the same trick. He suggests the coarser unit: let a whole section arrive at once. It is the limit of his own advice in the previous review, where he asked for a stagger and added “very subtly”.",
+     "engine": "Behaviour over time: the same entrance repeated down a page. Plumber could count how many separate entrances a visitor sits through while scrolling a page, and the time they add up to. How many is too many needs its own source.",
+     "today": "Not checked. For the live harness.",
+     "pins": []
+    }
+   ],
+   "note": "A point about movement over a whole page, so there is nothing to pin on a still. The web archive’s copy is from March."
   },
   {
    "n": 27,
@@ -1792,8 +1990,42 @@
    "reply": "2112248626705768718",
    "date": "2026-10-19",
    "media": "",
-   "shots": [],
-   "points": []
+   "shots": [
+    {
+     "id": "home",
+     "file": "saransh-now-full.jpg",
+     "w": 1440,
+     "h": 2182,
+     "crop": [
+      360,
+      240,
+      720,
+      960
+     ],
+     "label": "The projects part of the home page on 2026-11-26"
+    }
+   ],
+   "points": [
+    {
+     "k": "27.1",
+     "level": "content",
+     "says": "Too many projects. Choose two or three and present them well.",
+     "shows": "What he saw could not be recovered. Today the home page shows one project in full, with a link to “all projects” under it.",
+     "how": "A long list asks the visitor to do the choosing, and makes every item look equally unimportant. Two or three shown properly say what the person is proud of. It is the other half of “lead with your strongest material”: decide what the strongest is.",
+     "engine": "Content: how many items a page puts forward at once. Plumber can count the entries in a list of work. The laws of choice say more options slow people down; the number he gives, two or three, is his own.",
+     "today": "Changed: one project is shown, the rest are behind a link.",
+     "pins": [
+      {
+       "shot": "home",
+       "x": 420,
+       "y": 1092,
+       "w": 110,
+       "h": 36
+      }
+     ]
+    }
+   ],
+   "note": "The web archive’s copy is from April, so the long list he saw is not shown."
   },
   {
    "n": 28,
@@ -1802,8 +2034,54 @@
    "reply": "2112248959448268918",
    "date": "2026-10-19",
    "media": "",
-   "shots": [],
-   "points": []
+   "shots": [
+    {
+     "id": "home",
+     "file": "kyle-now.jpg",
+     "w": 1440,
+     "h": 900,
+     "label": "First screen on 2026-11-26"
+    }
+   ],
+   "points": [
+    {
+     "k": "28.1",
+     "level": "behaviour",
+     "says": "The interactive picture in the hero is interesting, but the way to choose between its versions is uninspired. Think beyond tabs. Make it less obvious and more fun.",
+     "shows": "The hero is a large moving picture made of blue dots. Under its left corner is a plain row of five words, peaks, marble, moiré, tiles and life, with the current one filled blue. They switch the picture.",
+     "how": "To one person in this thread he says a control must be obvious at once; here he asks for one to be less obvious. The difference is what the control is for. Stepping through someone’s work is a necessity, so it must be plain. Switching a toy is a treat, and a treat is better found than announced. A row of tabs turns a playful thing into a settings panel.",
+     "engine": "Not a fault to check. It is a rule for ranking: how easy a control is to find should match how much the visitor needs it. Plumber should not demand that every control be obvious.",
+     "today": "The row of words is still there.",
+     "pins": [
+      {
+       "shot": "home",
+       "x": 234,
+       "y": 500,
+       "w": 268,
+       "h": 32
+      }
+     ]
+    },
+    {
+     "k": "28.2",
+     "level": "behaviour",
+     "says": "Pause it smoothly when he scrolls down and means to read.",
+     "shows": "The picture keeps moving. The text about the person starts right under it, so the motion stays in view while reading.",
+     "how": "Movement at the edge of sight pulls the eye whether the reader wants it or not. Once he has scrolled to the words he has said what he wants to do, and the picture should step back. He asks for it to stop smoothly, so that the stopping is not a second distraction.",
+     "engine": "Behaviour: motion that keeps running next to text being read. Plumber could scroll until the moving thing is partly out of view and text is in view, then read whether it is still animating. Layr’s reference lists the same signal: animated decoration near a point of reading.",
+     "today": "Not checked. For the live harness.",
+     "pins": [
+      {
+       "shot": "home",
+       "x": 240,
+       "y": 75,
+       "w": 960,
+       "h": 421
+      }
+     ]
+    }
+   ],
+   "note": "The web archive’s copy is from August."
   },
   {
    "n": 29,
@@ -1812,8 +2090,43 @@
    "reply": "2112249141137178926",
    "date": "2026-10-19",
    "media": "",
-   "shots": [],
-   "points": []
+   "shots": [
+    {
+     "id": "home",
+     "file": "anders-now.jpg",
+     "w": 1440,
+     "h": 900,
+     "label": "Home on 2026-11-26, after its intro screen"
+    }
+   ],
+   "points": [
+    {
+     "k": "29.1",
+     "level": "behaviour",
+     "says": "Do not block what he is trying to do. If he wants to go to another page while the intro screen is showing, let him.",
+     "shows": "The site opens with an intro screen before the page pictured. The links in the four corners, Work, About, Timeline and People, did not respond until it had finished.",
+     "how": "He arrived knowing where he wanted to go and the site made him wait for its opening first. An intro may play, but the visitor’s own action comes first. In review 9 he praises a site for exactly this: it let him scroll while its animation ran.",
+     "engine": "Behaviour: an intro that locks the page. Plumber could press a link in the first half second after the page appears and see whether anything happens. The same gesture as in review 9.",
+     "today": "Not checked. For the live harness.",
+     "pins": [
+      {
+       "shot": "home",
+       "x": 28,
+       "y": 16,
+       "w": 52,
+       "h": 28
+      },
+      {
+       "shot": "home",
+       "x": 1350,
+       "y": 16,
+       "w": 62,
+       "h": 28
+      }
+     ]
+    }
+   ],
+   "note": "The web archive’s copy is from January 2025."
   },
   {
    "n": 30,
@@ -1822,8 +2135,43 @@
    "reply": "2112249861164892409",
    "date": "2026-10-19",
    "media": "",
-   "shots": [],
-   "points": []
+   "shots": [
+    {
+     "id": "project",
+     "file": "kaeden-whim.jpg",
+     "w": 1440,
+     "h": 900,
+     "label": "A project page on 2026-11-26"
+    }
+   ],
+   "points": [
+    {
+     "k": "30.1",
+     "level": "shape",
+     "says": "The “← all projects” header is not needed. It is redundant unless the site has several levels of addresses. People can just go back in their browser.",
+     "shows": "The site has a menu fixed at the left with About, Projects, Components and Photos, on every page. Projects are one level down. Today a project page starts straight with its title; the header he mentions is gone.",
+     "how": "He asked what the header does that nothing else already does. The menu beside it leads to Projects. The browser’s back button leads there too. A third way to the same place adds a line to read and no ability. He names when it would earn its place: deeper sites, where “back” and “up” stop being the same.",
+     "engine": "Shape: two controls on one screen that go to the same place. Plumber can read where links lead and find a pair with the same destination close together. Whether the second one is redundant depends on how deep the site is, which it can count from the address.",
+     "today": "Removed. The owner agreed.",
+     "pins": [
+      {
+       "shot": "project",
+       "x": 190,
+       "y": 255,
+       "w": 260,
+       "h": 42
+      },
+      {
+       "shot": "project",
+       "x": 488,
+       "y": 82,
+       "w": 220,
+       "h": 58
+      }
+     ]
+    }
+   ],
+   "note": "The web archive’s copy is from November 2025."
   },
   {
    "n": 31,
@@ -1832,8 +2180,82 @@
    "reply": "2112251237005402429",
    "date": "2026-10-19",
    "media": "",
-   "shots": [],
-   "points": []
+   "shots": [
+    {
+     "id": "favicon",
+     "file": "stallboerger-favicon.jpg",
+     "w": 400,
+     "h": 300,
+     "crop": [
+      0,
+      0,
+      256,
+      256
+     ],
+     "label": "The favicon, drawn 16 times larger"
+    },
+    {
+     "id": "home",
+     "file": "stallboerger-now.jpg",
+     "w": 1440,
+     "h": 900,
+     "crop": [
+      0,
+      0,
+      720,
+      900
+     ],
+     "label": "Home on 2026-11-26"
+    }
+   ],
+   "points": [
+    {
+     "k": "31.1",
+     "level": "shape",
+     "says": "Eight out of ten, and no notes on the page itself.",
+     "shows": "A page of one typeface in two greys: a name, a role, eight project names with their years, and six small links at the bottom.",
+     "how": "Nearly everything he praises in this thread is here: one language, nothing that does not carry meaning, text first. It is the nearest thing in the thread to a page he calls fine, which makes it a reference for what he leaves alone.",
+     "engine": "A “fine” example for the judged set. A page like this is where plumber should say little.",
+     "pins": []
+    },
+    {
+     "k": "31.2",
+     "level": "craft",
+     "says": "The favicon does not work at its small size.",
+     "shows": "The icon is three six-pointed stars in a triangle, in mid grey. At the 16 pixels of a browser tab each star is about six pixels across, and its arms are one pixel or less.",
+     "how": "An icon in a tab is drawn at 16 pixels. Detail that needs more than that turns to mush, and grey on a light tab adds low contrast to it. The same rule he applies to thumbnails and faces: a thing has to work at the size it is really shown.",
+     "engine": "Craft, on a surface plumber does not read: the tab icon. With the icon read at 16 pixels, plumber could count how thin its strokes are and how much it differs from the tab behind it. The same new reading as shadcn’s favicon.",
+     "today": "The icon is the same.",
+     "pins": [
+      {
+       "shot": "favicon",
+       "x": 0,
+       "y": 0,
+       "w": 256,
+       "h": 256
+      }
+     ]
+    },
+    {
+     "k": "31.3",
+     "level": "behaviour",
+     "says": "Clicking the links takes him out of the experience.",
+     "shows": "Most project names carry a grey highlight, which marks them as links. They open the projects’ own sites, so each click leaves this one.",
+     "how": "A portfolio is a place to stay and look around. Every project that opens somewhere else ends the visit, and the visitor has to find their way back. He raises the neighbouring point with three other people: say where a link goes before the click.",
+     "engine": "Behaviour: a list of work where every item leaves the site. Plumber can read that each link in the list goes to another address. Whether that breaks the visit is a judgement about what the list is for.",
+     "today": "The links still lead away.",
+     "pins": [
+      {
+       "shot": "home",
+       "x": 28,
+       "y": 218,
+       "w": 184,
+       "h": 128
+      }
+     ]
+    }
+   ],
+   "note": "The web archive’s nearest copy is from 2026-11-13, after the review, and the site looks the same."
   },
   {
    "n": 32,
