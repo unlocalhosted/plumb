@@ -5990,6 +5990,14 @@ into its own browser. Your app isn't changed.", then the findings.
   that decides whether a finding seen after a trial fix is new. It asks both now. This one was fixed from reading;
   no page showed it going wrong. The control page ran clean afterwards: four fixes, nothing raised, everything
   taken back exactly.
+- **Two skills (owner):** "add a skill in our repo where you will spawn a sub agent to go through a x profile and
+  harvest all the tips and suggestion through video / image / text whatever way possible ... and then one more skill
+  to turn those into rules for our engine based on our spec. everytime you extract go through the suggestion see
+  if our current tooling is enough, do we need more capabilities in our engine, be ambitious, correct and adaptable
+  by default." Written as `.claude/skills/harvest-tips` and `.claude/skills/tips-to-checks`. The first sort of
+  gokhan's tips was mine and too cautious by this standard: 15 of 25 were filed as effects with nothing to find. The
+  harvest skill asks, for every technique, what fault it prevents and whether plumber could see it, and writes down
+  the sense the engine lacks when it can't. Neither skill has been run yet.
 - **Proof of the spec itself:** none yet. It is a draft for the owner to read. The first use is the six checks from gokhan's tips
   (`docs/research/gkurt-css-tips.md`, reference logged 2026-11-26 in `docs/references.md`).
 - **Media hooks:** a docs example flipping between Broken and Fixed, beside the same check's finding on a real app.
