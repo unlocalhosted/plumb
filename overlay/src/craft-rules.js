@@ -1763,7 +1763,9 @@ export const scrollbarGutter = {
       ...say(this.id, {}),
       key: this.id, text: utility(el, 'overflow-y') ?? utility(el, 'overflow') ?? 'overflow', props: ['scrollbar-gutter'], value: 'auto', n: 0,
       evidence: { width: r.width, height: r.height }, confidence: 0.8,
-      suggest: { kind: 'class', from: '', to: '[scrollbar-gutter:stable]', why: 'keeps room for the scrollbar' },
+      // sets: what the class does, so a check folded under this one (craft/scroll-cue, the same scroll area) can be
+      // judged on the page this fix leaves and its fix stacked on it: one edit answers both (verdict.js compose)
+      suggest: { kind: 'class', from: '', to: '[scrollbar-gutter:stable]', why: 'keeps room for the scrollbar', sets: { scrollbarGutter: 'stable' } },
     }];
   },
 };
@@ -2769,7 +2771,10 @@ function scrollShadows(ground) {
   return { kind: 'class', from: '', to: `[background:${v.replace(/ /g, '_')}]`, why: 'a shadow at the edge while more is hidden', sets: { background: v, backgroundAttachment: 'local, local, scroll, scroll' } };
 }
 export const scrollCue = {
-  id: 'craft/scroll-cue', family: 'craft', number: [75], owns: ['scroll'], once: 'ancestor', reads: ['style', 'box'],
+  // after: on one scroll area this folds under the scrollbar-gutter finding (both own the scroll). Its fix is stacked
+  // on that one, so taking the fix does not hand the person a second finding on the same list (found by
+  // scripts/proof/fix-undo.mjs, 2026-11-26)
+  id: 'craft/scroll-cue', family: 'craft', number: [75], owns: ['scroll'], once: 'ancestor', after: ['craft/scrollbar-gutter'], reads: ['style', 'box'],
   check({ el, facts }, theme) {
     const s = facts.style(el);
     const y = /auto|scroll/.test(s.overflowY) && el.scrollHeight > el.clientHeight + 4;

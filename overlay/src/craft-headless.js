@@ -342,7 +342,7 @@ export const skeletonMatch = {
 // more is there. The still half (craft/scroll-cue in craft-rules.js) can ask `facts.other('scrolled').cue(el)`:
 // true clears it, false confirms it. This rule speaks by itself only when the pair saw no cue.
 export const scrollCueSeen = {
-  id: 'craft/scroll-cue', family: 'craft', number: [75], owns: ['scroll'], once: 'ancestor', reads: ['style', 'other:scrolled'], pairs: ['scrolled'],
+  id: 'craft/scroll-cue', family: 'craft', number: [75], owns: ['scroll'], once: 'ancestor', after: ['craft/scrollbar-gutter'], reads: ['style', 'other:scrolled'], pairs: ['scrolled'],
   check({ el, facts }, theme) {
     if (facts.other('scrolled')?.cue(el) !== false) return [];
     return [{

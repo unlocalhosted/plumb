@@ -5976,6 +5976,14 @@ into its own browser. Your app isn't changed.", then the findings.
   refused, and at the end the file and the six findings were as at the start. It also found something: after the
   fix that keeps room for a scrollbar, a second finding appears on the same list. Whether the fix causes it or it was
   hidden under the first is not known yet.
+- **The finding, looked into (owner: "Yes, look into it"):** the on-and-off run answered it in one go. With the
+  scrollbar check switched off, the scroll-sign finding was there from the start, so the fix never caused it. It had
+  been folded under the scrollbar finding because both are about the same scroll area. The engine already has a
+  way to stack a folded check's fix on the kept one, so one edit answers both, and it was failing twice here. The
+  scrollbar fix did not say what it sets, so nothing was stacked on it. And the scroll-sign check is written as two
+  rules with one id (one reads the still page, one reads what a scroll showed); the engine asked only the second,
+  which had nothing to say, and marked the finding settled. Fixed both. Proof: the same run now takes one fix on the
+  list, it writes both classes, the finding is cleared, nothing new appears, and undo puts the file back exactly.
 - **Proof of the spec itself:** none yet. It is a draft for the owner to read. The first use is the six checks from gokhan's tips
   (`docs/research/gkurt-css-tips.md`, reference logged 2026-11-26 in `docs/references.md`).
 - **Media hooks:** a docs example flipping between Broken and Fixed, beside the same check's finding on a real app.

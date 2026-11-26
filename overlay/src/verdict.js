@@ -42,6 +42,10 @@ const rank = (m) => (m.family === 'craft' ? m.craft?.confidence ?? 0 : 1);
 
 export function verdicts(items, { rules, facts, theme }) {
   const byId = new Map(rules.map((r) => [r.id, r]));
+  // a check can be written as two rules with one id (craft/scroll-cue: a half that reads the still page, a half that
+  // reads what a scroll showed). byId keeps only the last; composing asks every half, or the one that has nothing to
+  // say here answers for both and the folded finding is marked settled when it is not.
+  const halves = new Map(); for (const r of rules) halves.set(r.id, [...(halves.get(r.id) ?? []), r]);
   return items.map((item) => {
     // recorded drift (debt, exceptions) is the past, kept as it is; only what is new is judged together
     const open = item.marks.filter((m) => m.family === 'craft' || m.ledger === 'new');
@@ -57,7 +61,7 @@ export function verdicts(items, { rules, facts, theme }) {
     }
     if (facts && theme) for (const k of kept) {
       if (k.family !== 'craft') continue;
-      compose(k, under.get(k), item.el, byId, facts, theme);
+      compose(k, under.get(k), item.el, halves, facts, theme);
       verify(k, item.el, byId, rules, facts, theme, marks);
     }
     // a craft mark folded under the theme's (drift outranks it on a shared facet) is still craft's to report: the
@@ -86,16 +90,16 @@ function annotate(m, byId) {
 }
 
 // Runs each folded rule that comes `after` the kept one on the page as the kept edit leaves it, and stacks its edit.
-function compose(k, folded, el, byId, facts, theme) {
+function compose(k, folded, el, halves, facts, theme) {
   let edit = k.craft.suggest;
   // without the values the kept edit sets, the page it leaves can't be read: nothing is stacked on a guess
   if (edit?.kind !== 'class' || !folded.length || !edit.sets || !Object.keys(edit.sets).length || edit.target || edit.moves) return;
   let list = applied(words(classesOf(el)), edit), sets = { ...(edit.sets ?? {}) };
   const whys = [edit.why].filter(Boolean), composed = [], by = {}; // by: class → the rule that wrote it
   for (const f of folded) {
-    const rule = byId.get(f.rule);
-    if (!rule?.after?.includes(k.rule)) continue;
-    const again = facts.with(el, { sets, classes: list.join(' ') }, (virtual) => { try { return rule.check({ el, facts: virtual }, theme) ?? []; } catch { return []; } })
+    const asked = (halves.get(f.rule) ?? []).filter((r) => r.after?.includes(k.rule));
+    if (!asked.length) continue;
+    const again = facts.with(el, { sets, classes: list.join(' ') }, (virtual) => asked.flatMap((rule) => { try { return rule.check({ el, facts: virtual }, theme) ?? []; } catch { return []; } }))
       .find((x) => (x.confidence ?? 0) >= FLOOR && x.suggest?.kind === 'class' && words(x.suggest.from).every((c) => list.includes(c)));
     const note = k.also.find((a) => a.rule === f.rule);
     if (!again) { if (note) note.settled = true; continue; } // the kept edit already answers it
