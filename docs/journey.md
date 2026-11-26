@@ -6009,7 +6009,16 @@ into its own browser. Your app isn't changed.", then the findings.
   written in `docs/research/scroll-batch.md`. Reading the pages changed three things: strict snapping has a firmer
   ground than the tip gave and a second fault beside it; two fixes can't be written until plumber can read a
   project's browser list; and the slide-skipping check has no ground and is held back.
-- **Proof of the spec itself:** none yet. It is a draft for the owner to read. The first use is the six checks from gokhan's tips
+- **The checks, at last (owner: "what happened to original task i gave you ?", then "finish the original task"):**
+  the ask that started this entry was a few more CSS rules, and for most of a day none was built while the spec,
+  the proof tools and the skills grew around it. Six are built now: a paged row with nowhere to rest, strict
+  snapping on a part taller than the view, a part that can never be scrolled to, a snapped part under a stuck bar,
+  a panel that moves the page behind it, and a browser-drawn control in the browser's colour. Proof, on one test
+  page: each speaks once and stays quiet on its near misses; with the six switched off the only findings gone were
+  their own eight; none threw; three written fixes cleared, moved nothing and were undone exactly; all six docs
+  demos, drawn as real scroll areas, pass through their own checks. The docs' list reads 287 checks. Not on a real
+  app yet.
+- **Proof of the spec itself:** the six checks above are the first built to it. It is still a draft for the owner. The first use is the six checks from gokhan's tips
   (`docs/research/gkurt-css-tips.md`, reference logged 2026-11-26 in `docs/references.md`).
 - **Media hooks:** a docs example flipping between Broken and Fixed, beside the same check's finding on a real app.
 
@@ -7788,6 +7797,10 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
+
+- Plumber now catches six scroll and control faults a linter can't see (a carousel that stops mid-card, snapping
+  that hides part of a long section, a panel that drags the page behind it, a checkbox left in the browser's blue),
+  and writes the fix for three. Not yet run on a real app. [Entry 140](#140-a-written-contract-for-adding-a-check-2026-11-26-a-draft)
 - **Spacing is read on a full HD monitor, an HD laptop, an iPhone and a large Samsung in one run.** `plumber craft` now says which spacing problems show only on some screens ("Seen in windows 390px and 412px wide"), so a phone-only one is no longer missed. [Entry](#spacing-at-every-width-on-the-screens-people-own-2026-11-26)
 - The page check (`plumber craft`) works in a React app with no plumber setup: it brings its own copy of the overlay into its own browser and leaves the app alone. On main, not released ([entry](#138-the-page-check-works-in-an-app-with-no-plumber-setup-2026-11-25)).
 - A note written on the page for your agent (X-ray, ↵, then ⌘↵) is saved in the project; the agent reads it with `plumber notes` and is told when one is waiting. On main, not released ([entry](#137-a-note-written-on-the-page-reaches-the-agent-2026-11-25)).

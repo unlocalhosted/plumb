@@ -699,7 +699,7 @@
    "id": "craft/pure-black-white",
    "concern": "craft",
    "name": "Pure white area",
-   "why": "Your other surfaces are tinted; this one escaped.",
+   "why": "Pure white glares on a large area; a slight tint is easier on the eye.",
    "where": "page",
    "tile": "Colour",
    "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
@@ -901,6 +901,60 @@
    "where": "page",
    "tile": "Colour",
    "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
+  },
+  {
+   "id": "craft/snap-rest",
+   "concern": "states",
+   "name": "Row stops between two parts",
+   "why": "A row you page through should come to rest on a whole part.",
+   "where": "page",
+   "tile": null,
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
+  },
+  {
+   "id": "craft/snap-strict",
+   "concern": "states",
+   "name": "Part of this can’t be reached",
+   "why": "Strict snapping is only safe when every part fits the view.",
+   "where": "page",
+   "tile": null,
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
+  },
+  {
+   "id": "craft/snap-unreachable",
+   "concern": "states",
+   "name": "Can’t be scrolled to",
+   "why": "In an area that always snaps, every part needs a place to rest.",
+   "where": "page",
+   "tile": null,
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
+  },
+  {
+   "id": "craft/snap-offset",
+   "concern": "states",
+   "name": "Lands under the bar",
+   "why": "Something brought into view should land where it can be seen whole.",
+   "where": "page",
+   "tile": null,
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
+  },
+  {
+   "id": "craft/scroll-chain",
+   "concern": "states",
+   "name": "Scroll leaks to the page behind",
+   "why": "A scroll should stay in the thing you are scrolling.",
+   "where": "page",
+   "tile": null,
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
+  },
+  {
+   "id": "craft/native-accent",
+   "concern": "craft",
+   "name": "Control in the browser’s colour",
+   "why": "A control should look like it belongs to the product.",
+   "where": "page",
+   "tile": null,
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "craft/column-edge",

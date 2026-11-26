@@ -27,7 +27,8 @@ const ACCESS = new Set(['contrast', 'disabled-contrast', 'hit-target', 'input-zo
 const WORDS = new Set(['tells/status-chain', 'tells/chart-type-title', 'tells/reading-instructions', 'tells/narrating', 'tells/subtitle-echo', 'tells/em-dash', 'tells/stock-words',
   'craft/heading-widow', 'craft/truncate-intent', 'craft/hanging-quote', 'craft/middle-truncate', 'craft/text-wrap-role']);
 const STATES = new Set(['press-feedback', 'press-feedback-probe', 'interruptible', 'interruptible-probe', 'exit-faster', 'menu-pointerdown',
-  'submenu-path', 'tooltip-delay', 'spinner-timing', 'skeleton-match', 'overdrag', 'fixed-height', 'flex-min', 'scroll-cue-seen']);
+  'submenu-path', 'tooltip-delay', 'spinner-timing', 'skeleton-match', 'overdrag', 'fixed-height', 'flex-min', 'scroll-cue-seen',
+  'snap-rest', 'snap-strict', 'snap-unreachable', 'snap-offset', 'scroll-chain']);
 
 /** The concern a finding is about: one of CONCERNS' ids. */
 export function concernOf(mark) {

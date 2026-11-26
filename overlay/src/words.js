@@ -56,6 +56,36 @@ export const CRAFT = {
     line: over ? `The text here runs ${px(over)} past this box’s set height.` : 'This box has a set height and holds text that wraps. A longer sentence or a narrower screen will run past it.',
     reason: 'A box that holds text sets its least height, not its exact height: text grows downward.',
   }),
+  'snap-rest': ({ n }) => ({
+    label: 'Row stops between two parts',
+    line: `These ${n} parts are read one at a time, but the row stops wherever the scroll ends, with a part cut off at each edge.`,
+    reason: 'A row you page through should come to rest on a whole part.',
+  }),
+  'snap-strict': ({ over, x }) => ({
+    label: 'Part of this can’t be reached',
+    line: `A part here is ${px(over)} ${x ? 'wider' : 'taller'} than the view, and the scroll always pulls back to its start. The rest of it can’t be read.`,
+    reason: 'Strict snapping is only safe when every part fits the view.',
+  }),
+  'snap-unreachable': () => ({
+    label: 'Can’t be scrolled to',
+    line: 'The parts beside this one each have a place to rest, and this has none. The scroll is always pulled past it.',
+    reason: 'In an area that always snaps, every part needs a place to rest.',
+  }),
+  'snap-offset': ({ bar }) => ({
+    label: 'Lands under the bar',
+    line: `Each part comes to rest under the ${px(bar)} bar stuck across the top, with its start covered.`,
+    reason: 'Something brought into view should land where it can be seen whole.',
+  }),
+  'scroll-chain': () => ({
+    label: 'Scroll leaks to the page behind',
+    line: 'When this panel reaches its end, the page behind it starts to move.',
+    reason: 'A scroll should stay in the thing you are scrolling.',
+  }),
+  'native-accent': ({ kind }) => ({
+    label: 'Control in the browser’s colour',
+    line: `This ${kind} is drawn in the browser’s own colour, beside buttons in yours.`,
+    reason: 'A control should look like it belongs to the product.',
+  }),
   'scroll-on-demand': ({ empty }) => ({
     label: empty ? 'Scrollbar with nothing to scroll' : 'Scrollbar always shown',
     line: empty ? 'This shows a scrollbar, but there is nothing to scroll.' : 'This always shows a scrollbar, even when what it holds is short.',

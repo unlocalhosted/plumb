@@ -97,6 +97,13 @@ export const STANDARD = {
     'scroll-on-demand': {}, // nothing to tune: it reads whether the scrollbar is always drawn
     'declared-gap': {}, // nothing to tune here: the gap comes from the project around the row
     'list-wrap': { least: 3 }, // parts drawn by one line before a row reads as a list
+    // docs/research/scroll-batch.md. The share and the hue are invented lines, to be tuned on real apps
+    'snap-rest': { least: 3, share: 0.5 }, // parts in the row, and how much of the row's width each takes before it reads as paged
+    'snap-strict': { over: 2 }, // px a part may be past the view before strict snapping hides some of it
+    'snap-unreachable': {},
+    'snap-offset': {},
+    'scroll-chain': {},
+    'native-accent': { hue: 30 }, // degrees between the product's colour and the browser's blue before a control looks foreign
     'image-stretch': { min: 16 }, // smallest picture read
     'background-tile': { min: 48, photo: 64 }, // smallest box read, and the least side of a photo (smaller is a pattern)
     'fixed-column': { narrow: 360, share: 0.5 }, // a narrow phone, and the share of it fixed columns may take (invented, tuned)

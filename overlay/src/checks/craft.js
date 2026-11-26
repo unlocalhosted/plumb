@@ -299,6 +299,15 @@ Object.assign(CRAFT, {
         at: (p) => { x.style.height = p ? '60px' : '150px'; } };
     },
   },
+  'craft/native-accent': {
+    code: ['<input type="checkbox">', '<input type="checkbox" class="accent-emerald-600">'],
+    note: ['The tick is the browser’s blue, beside buttons in your green.', 'The tick wears your colour.'],
+    scene: (s) => {
+      scene(s, '<div style="display:grid;gap:14px;justify-items:start;font:500 13px system-ui;color:#111827"><label style="display:flex;align-items:center;gap:8px"><input class="x" type="checkbox" checked style="width:18px;height:18px;margin:0"> Email me the weekly summary</label><div style="display:flex;gap:8px"><button type="button" style="height:32px;padding:0 14px;border:0;border-radius:8px;background:#059669;color:#fff;font:600 13px system-ui">Save</button><button type="button" style="height:32px;padding:0 14px;border:0;border-radius:8px;background:#059669;color:#fff;font:600 13px system-ui">Save and close</button></div></div>');
+      const x = s.querySelector('.x');
+      return { ...ringed(s, x, ['the browser’s blue', 'your green'], 5), at: (p) => { x.style.accentColor = p ? '#059669' : ''; } };
+    },
+  },
   'craft/scroll-on-demand': {
     code: ['overflow-y-scroll', 'overflow-y-auto'],
     note: ['Three rows fit, yet a scrollbar says there is more.', 'The bar shows only when there is more to see.'],

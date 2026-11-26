@@ -369,4 +369,52 @@ export const STATES = {
       return { ...marked(s, [ov], ['covered', 'reachable'], { pad: 0, round: 10 }), at: (p) => { ov.style.opacity = p ? 0 : 1; } };
     },
   },
+
+  // ── scroll snapping and scroll chaining (docs/research/scroll-batch.md). Each scene is a real scroll area with the
+  // fault on it, so the check itself can be run over the scene (scripts/proof/demo-check.mjs) ──
+  'craft/snap-rest': {
+    code: ['overflow-x-auto', 'overflow-x-auto snap-x snap-mandatory *:snap-start'],
+    note: ['The row stops wherever the scroll ends: one plan cut off at each edge.', 'It comes to rest on a whole plan.'],
+    scene: (s) => {
+      scene(s, `<div class="x" style="display:flex;gap:12px;width:300px;overflow-x:auto;scrollbar-width:none;font:600 13px system-ui;color:#111827">${['Starter', 'Team', 'Business', 'Enterprise'].map((t) => `<div style="flex:none;width:200px;height:96px;display:grid;place-items:center;border-radius:12px;background:#eef2ff;scroll-snap-align:start">${t}</div>`).join('')}</div>`);
+      const x = s.querySelector('.x');
+      return { ...marked(s, [x], ['stops anywhere', 'rests on a plan'], { round: 14 }), at: (p) => { x.style.scrollSnapType = p ? 'x mandatory' : 'none'; x.scrollLeft = p ? 212 : 118; } };
+    },
+  },
+  'craft/snap-strict': {
+    code: ['snap-y snap-mandatory', 'snap-y snap-proximity'],
+    note: ['The long part is taller than the view, and the scroll always pulls back to its top.', 'It snaps when a part is near, and the long one reads through.'],
+    scene: (s) => {
+      scene(s, `<div class="x" style="display:grid;gap:8px;width:230px;height:150px;overflow-y:auto;scrollbar-width:none;scroll-snap-type:y mandatory;font:600 13px system-ui;color:#111827">${[['Overview', 150], ['The full terms', 330], ['Sign', 150]].map(([t, h]) => `<div class="pt" style="height:${h}px;padding:12px;border-radius:12px;background:#eef2ff;scroll-snap-align:start">${t}</div>`).join('')}</div>`);
+      const x = s.querySelector('.x'), long = s.querySelectorAll('.pt')[1];
+      return { ...marked(s, [x], ['always pulled back', 'reads through'], { round: 14 }), at: (p) => { x.style.scrollSnapType = p ? 'y proximity' : 'y mandatory'; x.scrollTop = p ? long.offsetTop + 90 : long.offsetTop; } };
+    },
+  },
+  'craft/snap-unreachable': {
+    code: ['<section>', '<section class="snap-start">'],
+    note: ['Every step but this one has a place to rest, so the scroll is always pulled past it.', 'It rests here like the steps beside it.'],
+    scene: (s) => {
+      scene(s, `<div class="a" style="display:grid;gap:8px;width:230px;height:150px;overflow-y:auto;scrollbar-width:none;scroll-snap-type:y mandatory;font:600 13px system-ui;color:#111827">${['Step one', 'Step two', 'Step three', 'Step four'].map((t, i) => `<div class="pt${i === 2 ? ' x' : ''}" style="height:150px;padding:12px;border-radius:12px;background:${i === 2 ? '#fef3c7' : '#eef2ff'};${i === 2 ? '' : 'scroll-snap-align:start'}">${t}</div>`).join('')}</div>`);
+      const a = s.querySelector('.a'), x = s.querySelector('.x');
+      return { ...marked(s, [a], ['pulled past step three', 'rests on it'], { round: 14 }), at: (p) => { x.style.scrollSnapAlign = p ? 'start' : 'none'; a.scrollTop = p ? x.offsetTop : x.offsetTop - 150 - 8; } };
+    },
+  },
+  'craft/snap-offset': {
+    code: ['snap-y', 'snap-y scroll-pt-8'],
+    note: ['Each month comes to rest under the bar, with its heading covered.', 'Room is kept for the bar: the heading lands below it.'],
+    scene: (s) => {
+      scene(s, `<div class="x" style="width:230px;height:160px;overflow-y:auto;scrollbar-width:none;scroll-snap-type:y mandatory;border-radius:12px;background:#fff;box-shadow:inset 0 0 0 1px #e5e7eb;font:600 13px system-ui;color:#111827"><div class="bar" style="position:sticky;top:0;height:32px;display:flex;align-items:center;padding:0 12px;background:#111827;color:#fff;font-size:12px">Release notes</div>${['November', 'October', 'September'].map((t) => `<div class="pt" style="height:150px;padding:10px 12px;scroll-snap-align:start;box-shadow:inset 0 1px 0 #e5e7eb">${t}</div>`).join('')}</div>`);
+      const x = s.querySelector('.x'), bar = s.querySelector('.bar'), second = s.querySelectorAll('.pt')[1];
+      return { ...marked(s, [bar], ['covers the heading', 'heading clear'], { pad: 2, round: 4 }), at: (p) => { x.style.scrollPaddingTop = p ? '32px' : ''; x.scrollTop = second.offsetTop - (p ? 32 : 0); } };
+    },
+  },
+  'craft/scroll-chain': {
+    code: ['overflow-y-auto', 'overflow-y-auto overscroll-contain'],
+    note: ['At the end of the notes, the page behind starts to move.', 'The scroll stops at the panel’s end.'],
+    scene: (s) => {
+      scene(s, `<div style="width:300px;height:170px;border-radius:12px;background:#f3f4f6;padding:10px;font:500 12px system-ui;color:#6b7280">The page<div class="x" style="position:sticky;top:8px;margin:8px 0 0 auto;width:150px;height:120px;overflow-y:auto;scrollbar-width:none;border-radius:10px;background:#fff;box-shadow:0 6px 18px rgb(0 0 0 / .12);padding:8px 10px;color:#111827">${Array.from({ length: 12 }, (_, i) => `<div style="padding:4px 0">Note ${i + 1}</div>`).join('')}</div></div>`);
+      const x = s.querySelector('.x');
+      return { ...marked(s, [x], ['moves the page too', 'keeps its scroll'], { round: 12 }), at: (p) => { x.style.overscrollBehavior = p ? 'contain' : ''; x.scrollTop = x.scrollHeight; } };
+    },
+  },
 };

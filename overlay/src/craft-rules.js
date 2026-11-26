@@ -37,6 +37,12 @@
  *  list-wrap           —       a row drawn from a list wraps when it is full
  *  declared-gap        —       parts of a row are kept apart by a declared gap, not by left-over space
  *  scroll-on-demand    —       a scrollbar shows only when there is more to scroll
+ *  snap-rest           —       a row read a part at a time rests on a whole part
+ *  snap-strict         —       strict snapping only where every part fits the view
+ *  snap-unreachable    —       every part of a strictly snapping area has a place to rest
+ *  snap-offset         —       a snapped part clears the bar stuck over it
+ *  scroll-chain        —       a panel over the page keeps its scroll to itself
+ *  native-accent       —       a browser-drawn control wears the product's colour
  *  fixed-height        —       a box that holds text sets its least height, not its exact height
  *  sticky-room         —       a sticky side column is not stretched to its row, so it has room to stick
  *  image-fit           —       a picture in a box of another shape is cropped, never stretched
@@ -2977,10 +2983,199 @@ export const actionFit = {
   },
 };
 
+// ── scroll snapping, scroll chaining, native controls (docs/research/scroll-batch.md, grounds read on MDN 2026-11-26) ──
+// Checks from guide advice, with no craft number and no showcase screen (docs/briefs/new-check.md).
+
+const snapOf = (s) => { const [axis = 'none', strict = 'proximity'] = String(s.scrollSnapType || 'none').split(/\s+/); return { axis, strict, on: axis !== 'none', x: /^(?:x|inline|both)$/.test(axis), y: /^(?:y|block|both)$/.test(axis) }; };
+// the children a scroll area lays out: drawn, in flow
+const flowKids = (el, facts) => [...el.children].filter((k) => k.getClientRects().length && !/^(?:absolute|fixed)$/.test(facts.style(k).position));
+
+// A row that is paged rests on a page. A sideways scroll area of like parts, each at least half as wide as the area,
+// is read a part at a time; with no snapping it stops wherever the finger lets go, a part cut in half at each edge.
+// (MDN, Basic concepts of scroll snap: snapping is opted into on the scroll container, and each child names where it
+// snaps.) Small parts (chips, tags) scroll freely and are left alone. The half is an invented line, to be tuned on real apps.
+export const snapRest = {
+  id: 'craft/snap-rest', family: 'craft', number: [], owns: ['snap'], once: 'ancestor', reads: ['style', 'rect'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
+    if (el === document.body || el === document.documentElement) return [];
+    const s = facts.style(el);
+    if (!/^(?:auto|scroll)$/.test(s.overflowX) || el.scrollWidth <= el.clientWidth + 4 || snapOf(s).on) return [];
+    const kids = flowKids(el, facts);
+    if (kids.length < (T.least ?? 3) || !kids.every((k) => k.localName === kids[0].localName)) return [];
+    const w = kids[0].offsetWidth, wide = el.clientWidth;
+    if (!kids.every((k) => Math.abs(k.offsetWidth - w) <= 2)) return [];
+    if (w < wide * (T.share ?? 0.5) || w > wide + 1) return [];
+    return [{
+      ...say(this.id, { n: kids.length }),
+      key: this.id, text: utility(el, 'overflow-x') ?? utility(el, 'overflow') ?? 'overflow-x', props: ['scroll-snap-type'], value: 'none', n: kids.length,
+      evidence: { parts: kids.length, part: w, area: wide }, confidence: 0.82,
+      // one edit on the row: the row snaps, and each part names its start as the place to rest
+      suggest: { kind: 'class', from: '', to: 'snap-x snap-mandatory *:snap-start', why: 'rests on a whole part when the scroll stops', sets: { scrollSnapType: 'x mandatory' } },
+    }];
+  },
+};
+
+// Strict snapping is only safe when every stop fits the view. With `mandatory`, a part taller (or wider) than the
+// scroll area can't be read past its first screen: the scroll is pulled to its start or on to the next part.
+// (MDN, Basic concepts of scroll snap: never use mandatory when a child's content overflows the container.)
+export const snapStrict = {
+  id: 'craft/snap-strict', family: 'craft', number: [], owns: ['snap'], once: 'ancestor', reads: ['style', 'rect'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
+    const s = facts.style(el), snap = snapOf(s);
+    if (!snap.on || snap.strict !== 'mandatory') return [];
+    const over = T.over ?? 2;
+    let worst = 0;
+    for (const k of flowKids(el, facts)) {
+      if (facts.style(k).scrollSnapAlign === 'none') continue;
+      if (snap.y) worst = Math.max(worst, k.offsetHeight - el.clientHeight);
+      if (snap.x) worst = Math.max(worst, k.offsetWidth - el.clientWidth);
+    }
+    if (worst <= over) return [];
+    const cls = /(?:^|\s)(!?snap-mandatory!?)(?:\s|$)/.exec(classesOf(el))?.[1] ?? null;
+    return [{
+      ...say(this.id, { over: Math.round(worst), x: snap.x && !snap.y }),
+      key: this.id, text: cls ?? 'scroll-snap-type', props: ['scroll-snap-type'], value: s.scrollSnapType, n: Math.round(worst),
+      evidence: { over: Math.round(worst), axis: snap.axis }, confidence: 0.88,
+      suggest: cls ? { kind: 'class', from: cls, to: cls.replace('mandatory', 'proximity'), why: 'snaps when a part is near, and lets a long part be read through', sets: { scrollSnapType: `${snap.axis} proximity` } }
+        : { kind: 'advice', text: `Use scroll-snap-type: ${snap.axis} proximity, so a part longer than the view can be read through.` },
+    }];
+  },
+};
+
+// The same ground, its other half: with `mandatory`, a part that names no place to snap can't be brought into view,
+// because the scroll is always pulled to a part that does. (MDN, Basic concepts of scroll snap.) Said on the part,
+// where the fix is written, and only when its neighbours do snap: with none snapping, nothing is pulled anywhere.
+export const snapUnreachable = {
+  id: 'craft/snap-unreachable', family: 'craft', number: [], owns: ['snap'], once: 'ancestor', reads: ['style', 'rect'],
+  check({ el, facts }) {
+    const area = el.parentElement;
+    if (!area) return [];
+    const snap = snapOf(facts.style(area));
+    if (!snap.on || snap.strict !== 'mandatory') return [];
+    const s = facts.style(el);
+    if (s.scrollSnapAlign !== 'none' || /^(?:absolute|fixed|sticky)$/.test(s.position) || !el.getClientRects().length || el.offsetWidth < 8 || el.offsetHeight < 8) return [];
+    const kids = flowKids(area, facts), first = kids.find((k) => facts.style(k).scrollSnapAlign !== 'none');
+    if (!first || kids[0] === el) return []; // nothing snaps, or this is the part the area starts on
+    const to = { start: 'snap-start', center: 'snap-center', end: 'snap-end' }[String(facts.style(first).scrollSnapAlign).split(/\s+/)[0]] ?? 'snap-start';
+    return [{
+      ...say(this.id, {}),
+      key: this.id, text: 'scroll-snap-align', props: ['scroll-snap-align'], value: 'none', n: 0,
+      evidence: { align: facts.style(first).scrollSnapAlign }, confidence: 0.85,
+      suggest: { kind: 'class', from: '', to, why: 'gives it a place to rest, like the parts beside it', sets: { scrollSnapAlign: to.slice(5) } },
+    }];
+  },
+};
+
+// Something brought into view lands where it can be seen whole. A scroll area that snaps, with a bar stuck across its
+// top, rests each part under that bar unless the area keeps room for it. (MDN scroll-padding: it makes room for
+// fixed toolbars and sidebars that would cover content.) The same fault as #73 (a link target under a sticky header),
+// for snapping instead of links.
+export const snapOffset = {
+  id: 'craft/snap-offset', family: 'craft', round: { '*': 'up' }, number: [], owns: ['scroll-padding'], once: 'ancestor', reads: ['style', 'rect'],
+  check({ el, facts }, theme) {
+    if (el === document.body || el === document.documentElement) return [];
+    const s = facts.style(el), snap = snapOf(s);
+    if (!snap.on || !snap.y) return [];
+    const kids = [...el.children].filter((k) => k.getClientRects().length);
+    const bar = kids.find((k) => { const ks = facts.style(k); return ks.position === 'sticky' && px(ks.top) <= 0.5 && k.offsetWidth >= el.clientWidth * 0.6 && k.offsetHeight >= 24 && k.offsetHeight <= 160; });
+    if (!bar) return [];
+    const h = bar.offsetHeight;
+    if (px(s.scrollPaddingTop) >= h - 0.5) return [];
+    const parts = kids.filter((k) => k !== bar && facts.style(k).scrollSnapAlign !== 'none');
+    if (!parts.length || parts.every((k) => px(facts.style(k).scrollMarginTop) >= h - 0.5)) return [];
+    const unit = theme.unit?.() || 4, need = Math.ceil(h / unit - 1e-6) * unit;
+    const rec = recommend({ family: 'spacing', prefix: 'scroll-pt', job: 'header', want: { min: Math.ceil(h), target: need }, round: 'up', from: utility(el, 'scroll-pt') ?? '', token: false, sets: (v) => ({ scrollPaddingTop: v }), theme,
+      advice: () => `Give it scroll-padding-top: ${fmt(Math.ceil(h))}, the bar’s height.` });
+    return [{
+      ...say(this.id, { bar: h }),
+      key: this.id, text: utility(el, 'scroll-pt') ?? 'scroll-padding-top', props: ['scroll-padding-top'], value: s.scrollPaddingTop, n: px(s.scrollPaddingTop),
+      evidence: { bar: h, padding: px(s.scrollPaddingTop) }, confidence: 0.85,
+      suggest: rec.kind === 'class' ? { ...rec, why: `the bar’s ${fmt(Math.ceil(h))}` } : rec,
+    }];
+  },
+};
+
+// A scroll stays in the thing you are scrolling. A scroll area drawn over the page (a side panel, a menu, a chat
+// list: fixed or stuck in place) hands the scroll to the page behind once it reaches its end. (MDN
+// overscroll-behavior: "scroll chaining", and that it is sometimes not wanted.) A scroll area in the page's own flow
+// (a code block, a wide table) is left alone: there, carrying on down the page is what people expect. A dialog is
+// components/dialog-scroll-lock's. The fix is advice: MDN marks the property as not yet in every widely used browser,
+// and plumber can't read a project's browser list.
+export const scrollChain = {
+  id: 'craft/scroll-chain', family: 'craft', number: [], owns: ['overscroll'], once: 'ancestor', reads: ['style', 'rect'],
+  check({ el, facts }) {
+    if (el === document.body || el === document.documentElement || el === document.scrollingElement) return [];
+    const s = facts.style(el);
+    if (!/^(?:auto|scroll)$/.test(s.overflowY) || el.scrollHeight <= el.clientHeight + 4) return [];
+    if (s.overscrollBehaviorY && s.overscrollBehaviorY !== 'auto') return [];
+    const page = document.scrollingElement;
+    if (!page || page.scrollHeight <= page.clientHeight + 4) return []; // nothing behind it to move
+    if (el.closest('dialog, [role="dialog"], [role="alertdialog"], [aria-modal="true"]')) return [];
+    let held = false;
+    for (let n = el, d = 0; n && n !== document.body && d < 4; n = n.parentElement, d++) {
+      const p = facts.style(n).position;
+      if (p === 'fixed' || p === 'sticky') { held = true; break; }
+      // an ancestor that scrolls and contains its own overscroll already stops the chain before the page
+      if (n !== el && /^(?:auto|scroll)$/.test(facts.style(n).overflowY) && facts.style(n).overscrollBehaviorY !== 'auto') return [];
+    }
+    if (!held) return [];
+    return [{
+      ...say(this.id, {}),
+      key: this.id, text: utility(el, 'overflow-y') ?? utility(el, 'overflow') ?? 'overflow-y', props: ['overscroll-behavior'], value: 'auto', n: 0,
+      evidence: { more: Math.round(el.scrollHeight - el.clientHeight), page: Math.round(page.scrollHeight - page.clientHeight) }, confidence: 0.82,
+      suggest: { kind: 'advice', text: 'Add overscroll-behavior: contain (overscroll-contain) where your browsers have it: the scroll then stops at this panel’s end.' },
+    }];
+  },
+};
+
+// A control looks like it belongs to the product. A checkbox, radio, slider or progress bar still drawn by the
+// browser wears the browser's own accent, usually a blue, beside buttons in the product's colour. (MDN accent-color:
+// applies to those four; `auto` is the browser's choice.) The product's colour is read from the page: the most used
+// strong colour on its buttons. A page with none, or whose colour is already a blue near the browser's, is left alone.
+// Advice only, for the same reason as scroll-chain. The hue distance and the strength are invented lines, to be tuned.
+function brandOf(facts) {
+  if (facts.brand !== undefined) return facts.brand;
+  const seen = new Map();
+  for (const b of document.querySelectorAll('button, [role="button"], input[type="submit"], a[class*="bg-"]')) {
+    if (b.closest('plumb-overlay') || !b.getClientRects().length) continue;
+    const c = rgb(facts.style(b).backgroundColor);
+    if (!c || (c[3] ?? 1) < 0.9 || chroma(c) < 0.09) continue;
+    const key = c.slice(0, 3).map((v) => Math.round(v)).join(',');
+    seen.set(key, (seen.get(key) ?? 0) + 1);
+  }
+  const top = [...seen].sort((a, b) => b[1] - a[1])[0];
+  return (facts.brand = top ? top[0].split(',').map(Number) : null);
+}
+const BROWSER_BLUE = [0, 117, 255]; // Chromium's default accent
+export const nativeAccent = {
+  id: 'craft/native-accent', family: 'craft', number: [], owns: ['accent'], once: 'ancestor', reads: ['style', 'census'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
+    if (!el.matches('input[type="checkbox"], input[type="radio"], input[type="range"], progress')) return [];
+    const s = facts.style(el);
+    if (s.appearance === 'none' || s.webkitAppearance === 'none' || (s.accentColor && s.accentColor !== 'auto') || !el.getClientRects().length) return [];
+    if (matchMedia('(forced-colors: active)').matches) return [];
+    const brand = brandOf(facts);
+    if (!brand) return [];
+    const away = Math.abs(((hueOf(brand) - hueOf(BROWSER_BLUE) + 540) % 360) - 180);
+    if (away < (T.hue ?? 30)) return [];
+    const kind = el.localName === 'progress' ? 'progress bar' : { checkbox: 'checkbox', radio: 'radio button', range: 'slider' }[el.type];
+    return [{
+      ...say(this.id, { kind }),
+      key: this.id, text: 'accent-color', props: ['accent-color'], value: 'auto', n: Math.round(away),
+      evidence: { brand: hex(brand), hueAway: Math.round(away) }, confidence: 0.82,
+      suggest: { kind: 'advice', text: `Set accent-color to your own colour (${hex(brand)} is on your buttons) where your browsers have it, on this control or once on the page.` },
+    }];
+  },
+};
+
 export const RULES = [concentricRadius, innerOuterSpacing, textOpacity, halfPixel, hairline, imageOutline, layeredShadow, scaleFromZero, zIndexWar, contentAlign,
   buttonPadding, iconSide, measure, leading, tracking, tabularNums, headingWidow, oneLight, borderOnShadow, contrast, wordsOnLayers, disabledContrast, hitTarget, mediaSize, imageFit, flexMin, imageGround, stickyRoom, fixedHeight, scrollOnDemand, declaredGap, listWrap, imageStretch, backgroundTile, fixedColumn,
   truncateIntent, scrollbarGutter, boldHover, hangingQuote, capsCase, gradientSpace, inputZoom, anchorOffset, middleTruncate,
   textWrapRole, continuousCorners, opticalSizing, tintedShadow, easedScrim, pureBlackWhite, contentSize,
   baselineAlign, iconCap, trimLeading, headingLead, pairSpacing, cardOpticalPadding, textCollision,
   weightLevels, greyLevels, rhythm, elevationLadder,
-  opticalCentre, overshoot, strokeWeight, scrollCue, pressFeedback, exitFaster, interruptible, rowLines, sharedEdges, actionFit, ...RANK_RULES, ...RUN_RULES];
+  opticalCentre, overshoot, strokeWeight, scrollCue, pressFeedback, exitFaster, interruptible, rowLines, sharedEdges, actionFit,
+  snapRest, snapStrict, snapUnreachable, snapOffset, scrollChain, nativeAccent, ...RANK_RULES, ...RUN_RULES];

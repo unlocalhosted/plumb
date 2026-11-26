@@ -2,10 +2,10 @@
 
 2026-11-26. The checks come from gokhan's tips ([gkurt-css-tips.md](gkurt-css-tips.md)). Each row follows the
 contract in [new-check.md](../briefs/new-check.md). The grounds below were opened and read today on MDN; the CSS
-specifications they cite were not opened. Nothing here is built.
+specifications they cite were not opened.
 
-The batch is not ready to build: it has seven checks and the contract asks for ten or more, and a second harvest
-(@maybepratikk) is running. More rows are expected from it.
+**Built the same day:** rows 1 to 6, as `craft/snap-rest`, `snap-strict`, `snap-unreachable`, `snap-offset`,
+`scroll-chain` and `native-accent`. Row 7 is held back. The result is at the end of this file.
 
 ## What the grounds changed
 
@@ -46,4 +46,30 @@ ground with a light scheme) and gets its own row when the batch is filled.
   and 5 depend on what is drawn.
 - Whether plumber's probes can scroll an inner area to its end and see the page move. If they can, row 5 becomes a
   thing plumber has seen happen as well as read from styles.
-- The demos and test pages for these rows are not drawn.
+- The white scrollbar on a dark panel is not built.
+
+## Result (2026-11-26)
+
+Run on the batch's test page (`scripts/proof/pages/scroll-batch.jsx`: each fault once, with the cases to stay quiet
+on beside it), with the proof runs in `scripts/proof/`.
+
+| Check | Speaks on its fault | Quiet on its near misses | Other checks changed | Threw | Fix | Fix proof | Docs demo through its check |
+|---|---|---|---|---|---|---|---|
+| snap-rest | yes, once | chips; a row already snapping | none | no | written | cleared, nothing raised, nothing moved, undo exact, same edit again | holds |
+| snap-strict | yes, once | the same long part with `proximity` | none | no | written | the same | holds |
+| snap-unreachable | yes, once | the parts that do name a place | none | no | written | the same, and the style landed | holds |
+| snap-offset | yes, once | the area with room kept for the bar | none | no | advice on this page | not shown: the page's theme has no spacing step at the bar's 48px, so the fix came as advice. A written fix was not seen | holds |
+| scroll-chain | yes, once | a panel that contains its scroll; a block in the page's flow | none | no | advice | nothing to take | holds |
+| native-accent | yes, three (checkbox, slider, progress bar) | a checkbox already in the product's colour | none | no | advice | nothing to take | holds |
+
+The page had 59 elements and 37 findings with the batch on. With it off, the only findings gone were the batch's
+own eight.
+
+Not shown:
+
+- Any real app. Everything above is one page written for these checks.
+- The parent-and-child and corner cases of the contract's sections 6c and 6d, beyond the near misses listed.
+- A page whose own colour is a blue near the browser's (native-accent should stay quiet).
+- Undo after a restart, past the end of history, and from the page.
+- The demos as a person sees them: they pass through their checks, and nobody has looked at them in the docs.
+- The numbers marked as invented (half the row's width, 30 degrees of hue) are untuned.
