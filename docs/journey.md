@@ -6094,6 +6094,34 @@ into its own browser. Your app isn't changed.", then the findings.
 - **Media hooks:** a bar per law, right against wrong; the counter's hidden digits and the "33,554,400px corner" on
   a circle as the two most telling wrong notes.
 
+### 143. Fixing four causes of wrong notes (2026-11-26)
+
+- **The itch:** Entry 141 found 38 wrong findings in 183 read on crafting-ui, mostly from four causes. The owner:
+  "Yes, fix them".
+- **What changed:**
+  1. *Grouping.* The spacing check compares a group's gap with the gap between groups only along a direction both
+     lay things out in: a grid's column gutter is no longer compared with the space between sections stacked above
+     and below, and a 1px gap that draws a divider is not read as space. A filled box that stops short of its
+     column (a pill, a callout) is an object, not a row to pull out. Cards in a row must be built alike, so a hero's
+     words beside its player are not two cards.
+  2. *Words in drawings.* Line height is not judged inside an SVG, where it does nothing; letter spacing is judged
+     at the size the drawing is shown at; big capitals with a little spacing are left alone; a lone dot or dash is
+     not "punctuation between capitals".
+  3. *Values chosen on purpose.* A fill growing along one axis from zero is a bar filling, not a pop from a point;
+     a figure in a list needs figures in the same column on other rows; a fixed-width column with its words set
+     right is kept; a circle has no corner to make a squircle or to nest; a control as wide as its column is a row.
+  4. *Hidden digits.* Words more than half cut away by a box that clips them are not drawn, so a rolling counter's
+     other digits stop colliding with the words around them.
+- **The proof:** the same 17 pages, before and after, on the test server. 468 places became 399; the 69 that went
+  are line height 27, capitals 15, spacing 12, letter spacing 5, corners 5, words on words 3, and one each of the
+  rest. By my verdicts from entry 141, about 22 of the 38 wrong ones are gone. Nothing I had marked right went. One
+  new finding appeared (a readout's list spaced 8px inside groups 4px apart), which looks right. Not re-scored by
+  reading every finding again, and algorecall is still not run.
+- **Still wrong:** a full-width contents row with no side padding taken for a button; a 10px-rounded pill still read
+  as a row to pull out; the page's own muted grey called a stray; labels joined by dots read as a sentence; three
+  taste checks calling the product's stickers diagrams. In the backlog.
+- **Media hooks:** the rolling price counter before and after; the hero that was "2 cards".
+
 ### 94. The launch film: learning from a video that doesn't explain itself (2026-11-25)
 
 - **The itch:** the owner: "create a launch video now, so show a fix, visual editor, fixes", and "i like how we are
@@ -7853,7 +7881,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   `generator/shots/generate-craftingattention.png` (local).
 
 ## Open gaps
-- **Checks that judge grouping are mostly wrong on a real app.** On crafting-ui the proximity checks were right 0 of 8 and the craft checks 55 of 112; algorecall is not scored yet. [Entry 141](#141-scoring-every-check-on-crafting-ui-2026-11-26)
+- **Checks that judge grouping were mostly wrong on a real app.** Four causes fixed in entry 143 (about 22 of 38 wrong findings gone on crafting-ui); five kinds of wrong note remain, and algorecall is not scored yet. [Entry 141](#141-scoring-every-check-on-crafting-ui-2026-11-26), [entry 143](#143-fixing-four-causes-of-wrong-notes-2026-11-26)
 - **The footer's count is a recording.** It has to be recorded again (`node web/scripts/findings.mjs`, with the dev server up) whenever the homepage changes, and nothing enforces that yet. It was read at 1280px, in light, at rest ([entry](#87-the-footer-is-a-demo-on-our-own-faults-2026-11-22)).
 - **The release checks live outside the repo.** The width sweep, the drawing check and the script that plays the footer are one session's temporary files, so the next deploy starts without them.
 - **Docs can drift from the package again.** Nothing runs their commands at release. The homepage's live-editing clip is from an older overlay, and the overlay's gestures were checked in source, without driving them ([entry](#75-the-docs-said-what-an-older-plumber-did-2026-11-22)).

@@ -147,6 +147,8 @@ export const concentricRadius = {
     const pr = facts.rect(parent), cr = facts.rect(el), b = facts.box(parent);
     // the radius a browser draws is at most half the box: a pill is its height over two, not 9999px
     const drawnR = Math.min(R, pr.width / 2, pr.height / 2), drawnr = Math.min(r, cr.width / 2, cr.height / 2);
+    // a round child (a dot, a puck, a pill) has no corner of its own to follow the parent's: its curve is its shape
+    if (drawnr >= Math.min(cr.width, cr.height) / 2 - 0.5) return [];
     // a circle has no corner to nest in: what sits at its box's corner (a presence dot on an avatar) overlaps the
     // circle's edge, it isn't inside a curve
     if (drawnR >= Math.min(pr.width, pr.height) / 2 - 0.5 && Math.abs(pr.width - pr.height) < 1) return [];
@@ -193,6 +195,23 @@ function flowAxis(s) {
   return null;
 }
 const gapOf = (s, axis) => axis === 'x' ? px(s.columnGap) : axis === 'y' ? px(s.rowGap) : Math.max(px(s.rowGap), px(s.columnGap));
+// how many tracks a grid draws along one direction: 'none' and a single size are one track
+const tracks = (v) => (!v || v === 'none' ? 1 : v.replace(/\[[^\]]*\]/g, ' ').trim().split(/\s+/).filter(Boolean).length);
+// the directions a container really places its children in: a grid with one column stacks them, whatever its column
+// gap says; a flex row that wraps onto more lines uses its row gap too
+function placedAxes(s) {
+  if (/grid/.test(s.display)) {
+    const out = [];
+    if (tracks(s.gridTemplateColumns) > 1) out.push('x');
+    if (tracks(s.gridTemplateRows) > 1) out.push('y');
+    return out.length ? out : ['y'];
+  }
+  if (/flex/.test(s.display)) {
+    const main = /column/.test(s.flexDirection) ? 'y' : 'x';
+    return /wrap/.test(s.flexWrap) ? [main, main === 'x' ? 'y' : 'x'] : [main];
+  }
+  return [];
+}
 
 // #7. Inner spacing ≤ outer spacing: the gap inside a group is smaller than the gap between groups.
 export const innerOuterSpacing = {
@@ -202,7 +221,7 @@ export const innerOuterSpacing = {
     const s = facts.style(el);
     const axis = flowAxis(s);
     if (!axis) return [];
-    const g = gapOf(s, axis);
+    let g = gapOf(s, axis);
     // a group's items: its elements and its bare words (<label>Date of birth<input /></label> is two things)
     const items = facts.kids(el).length + [...el.childNodes].filter((n) => n.nodeType === 3 && n.nodeValue.trim()).length;
     if (g <= 0 || items < 2) return [];
@@ -211,11 +230,17 @@ export const innerOuterSpacing = {
     const ps = facts.style(parent);
     const paxis = flowAxis(ps);
     if (!paxis) return [];
-    // the same direction only: a row's gap between an avatar and its words is not the gap between the rows
-    if (paxis !== 'both' && axis !== 'both' && paxis !== axis) return [];
-    const G = gapOf(ps, paxis);
-    if (G <= 0 || facts.kids(parent).length < 2) return [];
-    if (g <= G + T.min) return [];
+    // the same direction only: a row's gap between an avatar and its words is not the gap between the rows, and a
+    // grid's column gutter is not the space between the sections stacked above and below it
+    if (facts.kids(parent).length < 2) return [];
+    const mine = placedAxes(s), theirs = placedAxes(ps);
+    const along = mine.filter((a) => theirs.includes(a)).map((a) => ({ a, g: gapOf(s, a), G: gapOf(ps, a) }))
+      // a gap of a pixel or two between groups is a drawn line (gap-px over a coloured ground), not space
+      .filter((x) => x.g > 0 && x.G > 2 && x.g > x.G + T.min);
+    if (!along.length) return [];
+    const worst = along.reduce((p, q) => (q.g - q.G > p.g - p.G ? q : p));
+    const G = worst.G;
+    g = worst.g;
     const cls = utility(el, 'gap', { not: /^[xy](?:-|$)/ });
     const text = cls ?? 'gap';
     // tighter than the gap between groups, not equal to it: equal leaves a label exactly between its input and the one
@@ -228,7 +253,7 @@ export const innerOuterSpacing = {
     return [{
       ...say(this.id, { g, G }),
       key: this.id, text, props: ['gap'], value: `${g}px`, n: g,
-      evidence: { inner: g, outer: G, axis }, confidence: 0.9, suggest,
+      evidence: { inner: g, outer: G, axis: worst.a }, confidence: 0.9, suggest,
     }];
   },
 };
@@ -458,8 +483,12 @@ export const scaleFromZero = {
       if (!k) continue;
       const from = [...k.cssRules].find((r) => /(^|,)\s*(from|0%)\s*(,|$)/.test(r.keyText));
       if (!from) continue;
-      const t = `${from.style.transform} ${from.style.scale}`;
-      if (!/scale\(\s*0(\.0+)?\s*(,\s*0(\.0+)?\s*)?\)|scale3d\(\s*0\s*,\s*0|(^|\s)0(\s|$)/.test(t)) continue;
+      const zero = (v) => v !== undefined && parseFloat(v) === 0;
+      const tf = from.style.transform || '', sc = (from.style.scale || '').trim();
+      const m2 = /scale\(\s*([-\d.]+)\s*(?:,\s*([-\d.]+))?\s*\)/.exec(tf), m3 = /scale3d\(\s*([-\d.]+)\s*,\s*([-\d.]+)/.exec(tf);
+      const [sx, sy] = sc && sc !== 'none' ? sc.split(/\s+/) : [];
+      const point = (m2 && zero(m2[1]) && zero(m2[2] ?? m2[1])) || (m3 && zero(m3[1]) && zero(m3[2])) || (sx !== undefined && zero(sx) && zero(sy ?? sx));
+      if (!point) continue;
       found.push(name);
     }
     if (!found.length) return [];
@@ -519,6 +548,10 @@ export const contentAlign = {
     const r = facts.rect(el), pr = facts.rect(parent);
     const column = pr.left + px(ps.borderLeftWidth) + px(ps.paddingLeft);
     if (Math.abs(r.left - column) > 0.5) return []; // the row already bleeds, or sits elsewhere
+    // a filled box that stops short of the column's far edge (a pill, a callout with a max width) is an object set in
+    // the column, and objects line up by their edges; only a row that spans the column bleeds
+    const columnRight = pr.right - px(ps.borderRightWidth) - px(ps.paddingRight);
+    if (r.right < columnRight - 1) return [];
     // a highlighted row among rows like it (a selected item in a list), or an edgeless tint among the sections of a page
     // (a note between a profile and its invoices): either way its words should share the edge its unfilled siblings'
     // words share. A card with a shadow or a border is an object with an edge, and objects line up by their edges, so
@@ -651,6 +684,12 @@ export const buttonPadding = {
     const b = facts.box(el), r = facts.rect(el), s = facts.style(el);
     if (r.height > T.maxHeight || b.pt < 2 || Math.abs(b.pt - b.pb) > 0.5 || Math.abs(b.pl - b.pr) > 0.5) return [];
     if (Math.abs(r.width - r.height) < 2 && px(s.borderTopLeftRadius) >= r.height / 2 - 1) return []; // a round button
+    // as wide as the column it sits in: a row of a list (a question, a menu item), not a button sized by its words
+    const host = el.parentElement;
+    if (host && host !== document.body) {
+      const hr = facts.rect(host), hb = facts.box(host);
+      if (r.width >= hr.width - hb.pl - hb.pr - hb.bl - hb.br - 1) return [];
+    }
     if (b.pl / b.pt >= T.ratio) return [];
     const want = b.pt * T.want.ratio;
     const cls = utility(el, 'px') ?? utility(el, 'p', { not: /^[trblxyse](?:-|$)/ });
@@ -755,11 +794,20 @@ function scaledSize(el) {
   }
   return null;
 }
+// Words drawn in an SVG are sized in the drawing's own units: a 48-unit label in a drawing shown at a quarter of its
+// size is 12px on the screen. The scale the drawing is shown at, 1 for words laid out by the page.
+const drawnScale = (el) => {
+  if (typeof SVGGraphicsElement === 'undefined' || !(el instanceof SVGGraphicsElement)) return 1;
+  const m = el.getScreenCTM?.();
+  return m ? Math.hypot(m.a, m.b) || 1 : 1;
+};
 export const leading = {
   id: 'craft/leading', family: 'craft', number: [14], owns: ['line-height'], once: 'ancestor', reads: ['style', 'rect', 'text'],
   check({ el, facts }, theme) {
     const T = theme.spec(this.id);
     if (!facts.text(el)) return [];
+    // words in a drawing have no line boxes: SVG text is placed line by line by hand, and line-height does nothing
+    if (el.closest('svg')) return [];
     const s = facts.style(el), fs = px(s.fontSize), lh = px(s.lineHeight);
     if (!lh || !fs) return [];
     const ratio = lh / fs, lines = lineCount(el);
@@ -787,10 +835,12 @@ export const tracking = {
   check({ el, facts }, theme) {
     const T = theme.spec(this.id);
     if (!facts.text(el)) return [];
-    const s = facts.style(el), fs = px(s.fontSize);
-    const ls = s.letterSpacing === 'normal' ? 0 : px(s.letterSpacing);
+    // judged at the size a person sees: words in a drawing are scaled with it, and so is their spacing
+    const s = facts.style(el), k = drawnScale(el), fs = px(s.fontSize) * k;
+    const ls = s.letterSpacing === 'normal' ? 0 : px(s.letterSpacing) * k;
     const caps = s.textTransform === 'uppercase' && fs <= T.caps && ls / fs < 0.02;
-    const large = fs >= T.large && ls > 0;
+    // capitals are spaced out at every size; only big lowercase text is tightened
+    const large = fs >= T.large && ls > 0 && s.textTransform !== 'uppercase' && /[a-z]/.test(words(el));
     if (!caps && !large) return [];
     const cls = utility(el, 'tracking');
     const want = caps ? T.want.caps : T.want.display;
@@ -798,7 +848,7 @@ export const tracking = {
       ...say(this.id, { caps, size: fs }),
       key: `${this.id}@${caps ? 'caps' : 'large'}`, text: cls ?? 'letter-spacing', props: ['letter-spacing'], value: s.letterSpacing, n: ls,
       evidence: { fontSize: fs, letterSpacing: ls, uppercase: s.textTransform === 'uppercase' }, confidence: 0.84,
-      suggest: recommend({ family: 'tracking', prefix: 'tracking', job: caps ? 'caps' : 'display', want: { ...want, of: fs }, from: cls ?? '', sets: (v) => ({ letterSpacing: v * fs }), theme,
+      suggest: recommend({ family: 'tracking', prefix: 'tracking', job: caps ? 'caps' : 'display', want: { ...want, of: fs }, from: cls ?? '', sets: (v) => ({ letterSpacing: v * fs / k }), theme,
         label: caps ? 'small capitals need' : 'big text wants', advice: (v) => `Use ${v}em of letter spacing here.` }),
     }];
   },
@@ -822,8 +872,14 @@ export const tabularNums = {
       const table = el.closest('table, [role="table"], [role="grid"]');
       if (!table || rowsOf(facts, table) < T.rows) return [];
     } else if (!ticking) {
-      const list = el.closest('li, [role="listitem"]').parentElement;
+      const row = el.closest('li, [role="listitem"]'), list = row.parentElement;
       if (!list || list.children.length < T.rows) return [];
+      // it stacks only when the other rows hold figures in its column: a clock in a picture inside one row doesn't
+      const me = facts.rect(el), figure = /^[\s$€£¥₹+\-−–.,:%()\d]+$/;
+      const stacked = [...list.children].filter((li) => li !== row && [...li.querySelectorAll('*')].some((n) => !n.children.length
+        && /\d/.test(n.textContent) && figure.test(n.textContent.trim())
+        && (Math.abs(facts.rect(n).right - me.right) < 2 || Math.abs(facts.rect(n).left - me.left) < 2))).length;
+      if (stacked < T.rows - 1) return [];
     }
     const s = facts.style(el);
     if (/tabular-nums/.test(s.fontVariantNumeric) || /"tnum"/.test(s.fontFeatureSettings)) return [];
@@ -1850,6 +1906,9 @@ export const capsCase = {
     if (!facts.text(el)) return [];
     const s = facts.style(el);
     if (s.textTransform !== 'uppercase' && !/^[^a-z]*[A-Z]{3}[^a-z]*$/.test(words(el))) return [];
+    // the feature lifts punctuation to the height of the capitals around it: a lone dot or dash between separate
+    // labels has no capitals of its own to sit beside
+    if ((words(el).match(/[A-Za-z]/g) ?? []).length < 2) return [];
     if (!/[-()@\[\]{}:—–·]/.test(words(el)) || /"case"/.test(s.fontFeatureSettings)) return [];
     return [{
       ...say(this.id, {}),
@@ -2069,6 +2128,8 @@ export const continuousCorners = {
     const s = facts.style(el), r = facts.rect(el);
     const rad = px(s.borderTopLeftRadius);
     if (r.width < T.size * 0.75 || r.height < T.size * 0.75 || rad < T.radius * 0.75) return [];
+    // a circle or a pill is all curve, with no corner to smooth (the computed radius of rounded-full is 33554400px)
+    if (rad >= Math.min(r.width, r.height) / 2 - 0.5) return [];
     const grey = r.width < T.size || r.height < T.size || rad < T.radius;
     // a plain round corner computes as superellipse(1); anything else is already shaped on purpose
     if (!/^(round|superellipse\(1\))?$/.test(s.getPropertyValue('corner-shape').trim())) return [];
@@ -2227,6 +2288,8 @@ export const contentSize = {
     const need = Math.max(...[...range.getClientRects()].map((q) => q.right), 0) - Math.min(...[...range.getClientRects()].map((q) => q.left), Infinity);
     const overflow = el.scrollWidth > el.clientWidth + 1 || lineCount(el) > 1 && s.whiteSpace !== 'normal';
     if (!(overflow || (need > 0 && (inner - need) / inner < T.slack && lineCount(el) > 1))) return [];
+    // a fixed width with its words set right or centred, and nothing cut: a column of figures kept in line on purpose
+    if (!overflow && /right|end|center/.test(s.textAlign)) return [];
     return [{
       ...say(this.id, { w: r.width, need: Math.ceil(need + b.pl + b.pr) }),
       key: this.id, text: cls, props: ['width'], value: `${r.width}px`, n: r.width,
@@ -2466,6 +2529,20 @@ function textLines(facts) {
   // the painted thing the words are drawn on: the nearest box with a fill of its own
   const surfaces = new Map();
   const surfaceOf = (el) => { if (!el || el === document.body) return document.body; let v = surfaces.get(el); if (!v) { const st = facts.style(el), bg = rgb(st.backgroundColor); v = (bg && bg[3] > 0.5) || st.backgroundImage !== 'none' ? el : surfaceOf(el.parentElement); surfaces.set(el, v); } return v; };
+  // the box the words can be seen in: every box above them that clips, met together (a rolling number's window)
+  const clips = new Map();
+  const clipOf = (el) => {
+    if (!el || el === document.body) return null;
+    if (clips.has(el)) return clips.get(el);
+    const up = clipOf(el.parentElement), st = facts.style(el);
+    let v = up;
+    if (st.overflow !== 'visible' || st.clipPath !== 'none') {
+      const r = facts.rect(el);
+      v = up ? { left: Math.max(r.left, up.left), top: Math.max(r.top, up.top), right: Math.min(r.right, up.right), bottom: Math.min(r.bottom, up.bottom) } : { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
+    }
+    clips.set(el, v);
+    return v;
+  };
   for (const el of facts.items ?? []) {
     if (!el.isConnected || !facts.text(el) || el.closest('svg') || !shown(el)) continue;
     const st = facts.style(el), ink = rgb(st.color);
@@ -2480,8 +2557,14 @@ function textLines(facts) {
     for (const n of el.childNodes) {
       if (n.nodeType !== 3 || !/\S/.test(n.nodeValue)) continue;
       const range = document.createRange(); range.selectNodeContents(n);
+      const clip = clipOf(el);
       for (const q of range.getClientRects()) {
         if (q.width <= 2 || q.height <= 2) continue;
+        // more than half of it cut away by a box that clips: not something anyone reads
+        if (clip) {
+          const w = Math.min(q.right, clip.right) - Math.max(q.left, clip.left), h = Math.min(q.bottom, clip.bottom) - Math.max(q.top, clip.top);
+          if (w <= 0 || h <= 0 || w * h < q.width * q.height / 2) continue;
+        }
         const base = q.top + (q.height - (m.ascent + m.descent)) / 2 + m.ascent;
         all.push({ el, block, surface, placed, left: q.left, right: q.right, capTop: base - m.capHeight, base, space, size, words: n.nodeValue.trim().replace(/\s+/g, ' ') });
       }

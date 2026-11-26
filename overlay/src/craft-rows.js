@@ -27,6 +27,15 @@ const visible = (el, facts) => { const r = facts.rect(el); return r.width >= 4 &
 // Cards side by side: at least two children of one tag, each wide enough to hold a card (140px) and holding a
 // button, grouped into lines by overlapping heights (a plan singled out is often taller, and starts higher), with no
 // two in a line overlapping sideways. Widths may differ (a chosen plan is often wider), but not by more than 1.6×.
+// What a card is made of, as counts of its tags (its first 300 elements). Cards in a row are built alike, so their
+// counts point the same way; a hero's words beside its player, or a form beside its picture, do not.
+const make = (el) => { const m = new Map(); let n = 0; for (const d of el.querySelectorAll('*')) { if (++n > 300) break; m.set(d.localName, (m.get(d.localName) ?? 0) + 1); } return m; };
+const alike = (a, b) => {
+  let dot = 0, na = 0, nb = 0;
+  for (const [k, v] of a) { na += v * v; dot += v * (b.get(k) ?? 0); }
+  for (const v of b.values()) nb += v * v;
+  return na && nb ? dot / Math.sqrt(na * nb) : 0;
+};
 export function rowsOf(el, facts) {
   const kids = facts.kids(el);
   if (kids.length < 2 || !kids.every((k) => k.localName === kids[0].localName)) return [];
@@ -44,7 +53,9 @@ export function rowsOf(el, facts) {
     if (Math.max(...ws) / Math.min(...ws) > 1.6) return false;
     const byX = [...line].sort((a, b) => facts.rect(a).left - facts.rect(b).left);
     if (byX.some((k, i) => i && facts.rect(k).left < facts.rect(byX[i - 1]).right - 1)) return false;
-    return line.every((k) => partsOf(k, facts).action);
+    if (!line.every((k) => partsOf(k, facts).action)) return false;
+    const first = make(line[0]);
+    return line.slice(1).every((k) => alike(first, make(k)) >= 0.6);
   });
 }
 
