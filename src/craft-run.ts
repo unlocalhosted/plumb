@@ -32,6 +32,8 @@ export interface CraftRecord {
   by?: 'rule' | 'model'; soft?: boolean; judged?: boolean; file: string | null; line: number | null; column: number | null; component: string | null; tag: string; count: number;
 }
 export interface CraftPage { route: string; url: string; read: number; complete: boolean; findings: CraftRecord[]; spec?: unknown;
+  /** false when the page was still loading or changing at the time limit and was read as it stood */
+  settled?: boolean;
   /** a proof run only: the errors checks threw on this page (the engine hides them, so a broken check looks like a quiet one) */
   thrown?: { rule: string; error: string }[] }
 export interface CraftRunOptions { url: string; routes: string[]; root: string; timeout: number; viewport?: { width: number; height: number }; pairs?: boolean; probe?: boolean; probeBudget?: number; probeDrag?: boolean; judge?: boolean; scope?: string; recordProbe?: string; proof?: { without: string[] };
@@ -299,7 +301,9 @@ export async function craftRun(options: CraftRunOptions): Promise<CraftPage[]> {
         await open(page, url, options.timeout, true);
         // the route's own code and data first: a page judged while its route was still being fetched (a dev server
         // compiles a route on its first visit) was judged as its loading screen (algorecall's /login: 14 elements of 118)
-        await settle(page, Math.min(options.timeout, 30000));
+        // a page still loading at the limit is read as it stands, and said to be (a dev server's first compile of a
+        // data route took longer than the limit on cal.com, and the half-drawn page was read in silence, 2026-11-26)
+        const settled = await settle(page, Math.min(options.timeout, 30000));
         if (options.pairs !== false) await takePairs(browser, url, page, options.timeout);
         if (options.probe !== false && (!options.only?.length || (await ask<{ probe?: boolean }>(page, { op: 'needs' })).probe)) {
           const list = await takeProbes(browser, url, options.timeout, { budget: options.probeBudget ?? 24, drag: options.probeDrag === true, ...(options.scope ? { scope: options.scope } : {}), ...(options.recordProbe ? { record: options.recordProbe } : {}) }).catch(quiet('probes'));
@@ -339,7 +343,7 @@ export async function craftRun(options: CraftRunOptions): Promise<CraftPage[]> {
           for (const record of first.values()) result.findings.push({ ...record, title: record.title + when(record) });
         }
         const thrown = options.proof ? await page.evaluate(() => (globalThis as unknown as { __plumbProof?: { thrown: { rule: string; error: string }[] } }).__plumbProof?.thrown ?? []).catch(() => []) : undefined;
-        pages.push({ ...result, route, url, ...(thrown ? { thrown } : {}) });
+        pages.push({ ...result, route, url, settled, ...(thrown ? { thrown } : {}) });
       } finally { await page.close(); }
     }
     return pages;
@@ -436,6 +440,7 @@ export function formatCraft(pages: CraftPage[], findings: Finding[], root: strin
   const read = pages.reduce((n, page) => n + page.read, 0);
   const lines = [`React Plumber craft: ${pages.length} ${pages.length === 1 ? 'route' : 'routes'}, ${read} elements read, ${findings.length} ${findings.length === 1 ? 'finding' : 'findings'} from the craft, accessibility and generated-look checks. For your tokens, run plumber check.`]; // says what it counts (U35)
   for (const page of pages) if (!page.complete) lines.push(`  ${page.route}: stopped before every element was read (raise --timeout)`);
+  for (const page of pages) if (page.settled === false) lines.push(`  ${page.route}: still loading or changing after 30 s, so it was read as it stood (load it once in a browser, then run again)`);
   // the laws each rule measures, as its records carry them
   const laws = new Map(pages.flatMap(page => page.findings.map(record => [record.rule, record.laws ?? []] as const)));
   for (const finding of findings) {

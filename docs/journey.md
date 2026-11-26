@@ -6419,6 +6419,29 @@ into its own browser. Your app isn't changed.", then the findings.
   per check, not per place, so they need judging again place by place. The 85 queued cal.com places are not judged.
   Nothing runs the comparison by itself after an engine change.
 
+### 156. The first queue judged, and the ledger's first catch (2026-11-26)
+
+- **The itch:** 85 cal.com places waited in the ledger's queue (entry 155). The owner: "Yes, judge them".
+- **The verdicts:** read one by one against cal.com's source: 64 right, 2 wrong, 19 unsure. Most are the same shell
+  and sidebar findings already judged on the event types page; the new kinds are icon buttons named only by a tooltip,
+  a rich-text editor with no name and a label pointing at an id that is not there, a select with no name, a slug field
+  the keyboard will correct, and fields that zoom on iPhone. The unsure ones are things the source alone does not
+  settle (a script that may only block in development, a link said to hold a link that the source does not show).
+  The ledger holds 147 places now.
+- **The two wrong, fixed:** both on the event setup page's side tabs, which cal.com sets to `overflow-scroll` with its
+  scrollbars hidden. The scrollbar check said it "shows a scrollbar with nothing to scroll": it now asks whether a
+  scrollbar is drawn (the box's border edge less its inner width). The shrink check said the column "grows instead of
+  scrolling sideways": a part given its own width (`w-64`) can't grow, so it is no longer the cause.
+- **The ledger's first catch:** the next run failed it. The schedule page was read 42 elements deep where it was
+  judged at 87, and the ledger named the page and its 21 lost right findings before anything else; the 18 "new" ones
+  were the same findings without a line. The page had been read while still loading, after waiting out the 30-second
+  limit, and nothing said so. Now the check marks a page it read before it settled and prints why
+  ("still loading or changing after 30 s"), and the comparison names such a page first. Our scoring runs also open
+  each page in a browser first and wait for its placeholders to go. With that, the same three pages: 88 right kept,
+  0 lost, all 12 wrong gone, nothing new, all three settled.
+- **What is not proven:** why the schedule page was slow that once. The warm-up took 4 to 5 seconds a page, so a cold
+  compile is a guess. If it happens again, the page now says so.
+
 ### 142. The dial in the overlay (2026-11-26)
 
 - **The itch.** The owner asked how a person sees the page's other states: "we need to come up with some way like

@@ -1336,7 +1336,10 @@ export const flexMin = {
     // sideways) and never can, or a line that may not wrap and is pushing out now
     let scrolls = false;
     const held = [...el.querySelectorAll('*')].slice(0, T.depth).some((t) => {
-      const ts = facts.style(t), cut = ts.textOverflow === 'ellipsis', scroller = /^(?:auto|scroll)$/.test(ts.overflowX);
+      // a part that scrolls sideways holds its item open only if it can grow: one given its own width (a w-64 column of
+      // tabs set to overflow-scroll for up and down) never does (cal.com's event setup, 2026-11-26)
+      const ts = facts.style(t), cut = ts.textOverflow === 'ellipsis';
+      const scroller = /^(?:auto|scroll)$/.test(ts.overflowX) && !(utility(t, 'w', { not: /^(?:auto|fit|min|max|full)$/ }) || utility(t, 'size'));
       if (!(cut || scroller || (over > T.over && ts.whiteSpace === 'nowrap')) || itemOf(t) !== el) return false;
       scrolls = scroller && !cut;
       return true;
@@ -1498,7 +1501,10 @@ export const scrollOnDemand = {
   check({ el, facts }) {
     if (el === document.body || el === document.documentElement) return [];
     const s = facts.style(el);
-    const axes = [['y', s.overflowY, el.scrollHeight - el.clientHeight], ['x', s.overflowX, el.scrollWidth - el.clientWidth]].filter(([, v]) => v === 'scroll');
+    // only a scrollbar the page draws: one hidden by the page (no-scrollbar, scrollbar-width: none) takes no room, which
+    // is measured as the box's border edge less its inner width (cal.com's side tabs, 2026-11-26)
+    const drawn = { y: el.offsetWidth - el.clientWidth - px(s.borderLeftWidth) - px(s.borderRightWidth) > 0, x: el.offsetHeight - el.clientHeight - px(s.borderTopWidth) - px(s.borderBottomWidth) > 0 };
+    const axes = [['y', s.overflowY, el.scrollHeight - el.clientHeight], ['x', s.overflowX, el.scrollWidth - el.clientWidth]].filter(([a, v]) => v === 'scroll' && drawn[a]);
     if (!axes.length || s.display === 'none' || el.clientWidth <= 0 || el.clientHeight <= 0) return [];
     // the class that says it: overflow-y-scroll, overflow-x-scroll or overflow-scroll
     const cls = ['overflow-y', 'overflow-x', 'overflow'].map((p) => utility(el, p)).find((c) => c && /(?:^|-)scroll$/.test(c));

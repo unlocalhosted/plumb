@@ -52,9 +52,11 @@ for (const file of runs) {
   const report = JSON.parse(readFileSync(file, 'utf8'));
   for (const page of report.routes ?? []) {
     read[page.route] = page.read;
+    if (page.settled === false) (read.unsettled ??= []).push(page.route);
     for (const x of page.findings) said.set(key(page.route, x), { route: page.route, rule: x.rule, file: x.file, line: x.line, said: x.title });
   }
 }
+const unsettled = read.unsettled ?? []; delete read.unsettled;
 const ran = new Set(Object.keys(read));
 
 // only the pages this run read are compared: a ledger of 18 pages and a run of 3 compare on those 3
@@ -85,6 +87,7 @@ if (asJson) { console.log(JSON.stringify({ app, pages: [...ran], shallow, counts
 
 const line = (v) => `    ${v.route}  ${v.rule}  ${v.file}:${v.line}  ${v.said ? `"${String(v.said).slice(0, 70)}"` : ''}${v.why ? `  (${v.why})` : ''}`;
 console.log(`${app}: ${ran.size} page(s) compared with ${judged.length} judged places`);
+for (const r of unsettled) console.log(`  ! ${r} was still loading when it was read. Run it again before trusting what is gone there.`);
 for (const s of shallow) console.log(`  ! ${s.route} was read ${s.now} elements deep; it was judged at ${s.judged}. What is gone there may be the run.`);
 console.log(`  right and still said  ${out.kept.length}`);
 console.log(`  right and gone        ${out.lost.length}${out.lost.length ? '   <- plumber stopped seeing these' : ''}`);
