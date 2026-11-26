@@ -70,6 +70,8 @@ const RULE_LAWS = {
   'craft/snap-offset': [],
   'craft/scroll-chain': [],
   'craft/native-accent': [],
+  'craft/row-dead-zone': [],
+  'craft/tooltip-cut': [],
   'craft/image-stretch': [],
   'craft/background-tile': [],
   'craft/fixed-column': [],

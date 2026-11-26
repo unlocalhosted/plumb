@@ -295,7 +295,7 @@ async function submenu({ page }: Session, keys: string[], recording?: Recording)
 const PROBE_WINDOW = 280;
 async function tooltips({ page }: Session, keys: string[]): Promise<ProbeRecord[]> {
   const out: ProbeRecord[] = [];
-  const first: { k: string; f: Frame; t1: number }[] = [];
+  const first: { k: string; f: Frame; t1: number; cut: number; side: string | null }[] = [];
   const shown = () => ask<number>(page, { op: 'tips' });
   // away in a run of small moves, as a hand does (a tooltip you can move onto only closes once the pointer has gone clear of it)
   const leave = async () => { await page.mouse.move(2, 2, { steps: 12 }); };
@@ -315,7 +315,9 @@ async function tooltips({ page }: Session, keys: string[]): Promise<ProbeRecord[
     await page.mouse.move(f.cx, f.cy, { steps: 4 });
     const got = await wait;
     if (!got) { misses++; continue; }
-    first.push({ k, f, t1: got.ms });
+    // where it landed, read while it is open: a tooltip that opens past the edge of the screen can't be read
+    const box = await ask<{ cut: number; side: string | null }>(page, { op: 'tipbox' }).catch(() => null);
+    first.push({ k, f, t1: got.ms, cut: box?.cut ?? 0, side: box?.side ?? null });
   }
   await quiet();
   const lead = first[0], next = first[1];
@@ -342,7 +344,7 @@ async function tooltips({ page }: Session, keys: string[]): Promise<ProbeRecord[
       }
     }
   }
-  for (const item of first) out.push({ gesture: 'tooltip', k: item.k, rec: { t1: item.t1, t2: item === lead ? t2 : null, t3: item === lead ? t3 : null } });
+  for (const item of first) out.push({ gesture: 'tooltip', k: item.k, rec: { t1: item.t1, t2: item === lead ? t2 : null, t3: item === lead ? t3 : null, cut: item.cut, side: item.side } });
   return out;
 }
 

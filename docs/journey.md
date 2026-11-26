@@ -6018,6 +6018,13 @@ into its own browser. Your app isn't changed.", then the findings.
   their own eight; none threw; three written fixes cleared, moved nothing and were undone exactly; all six docs
   demos, drawn as real scroll areas, pass through their own checks. The docs' list reads 287 checks. Not on a real
   app yet.
+- **Pratik's tips (owner: "lets pick next rules from next harvest", then "Build all three"):** I first harvested
+  the wrong profile, and had told the owner the stopped Pratik run saved nothing when its 442 posts were in the
+  page's storage and the subagent's record. Recovered, eight tips: five plumber already checks, one in part, two
+  new. Three videos were fetched with the owner's sign-in, read frame by frame and deleted. Built: dead strips
+  between menu rows (a few pixels that belong to no row, so the highlight flickers), a tooltip that opens off the
+  screen (the tooltip probe now reports where it landed), and the panel check widened to menus in popovers. Proof on
+  their test page: each speaks once, is quiet on its near misses, and changes no other check. 289 checks now.
 - **Proof of the spec itself:** the six checks above are the first built to it. It is still a draft for the owner. The first use is the six checks from gokhan's tips
   (`docs/research/gkurt-css-tips.md`, reference logged 2026-11-26 in `docs/references.md`).
 - **Media hooks:** a docs example flipping between Broken and Fixed, beside the same check's finding on a real app.
@@ -7798,6 +7805,8 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
 
+- Plumber now catches a menu whose highlight flickers between rows and a tooltip that opens off the screen, from a
+  designer's own tips. Not yet run on a real app. [Entry 140](#140-a-written-contract-for-adding-a-check-2026-11-26-a-draft)
 - Plumber now catches six scroll and control faults a linter can't see (a carousel that stops mid-card, snapping
   that hides part of a long section, a panel that drags the page behind it, a checkbox left in the browser's blue),
   and writes the fix for three. Not yet run on a real app. [Entry 140](#140-a-written-contract-for-adding-a-check-2026-11-26-a-draft)

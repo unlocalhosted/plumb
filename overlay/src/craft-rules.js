@@ -43,6 +43,7 @@
  *  snap-offset         —       a snapped part clears the bar stuck over it
  *  scroll-chain        —       a panel over the page keeps its scroll to itself
  *  native-accent       —       a browser-drawn control wears the product's colour
+ *  row-dead-zone       —       every pixel of a menu belongs to a row
  *  fixed-height        —       a box that holds text sets its least height, not its exact height
  *  sticky-room         —       a sticky side column is not stretched to its row, so it has room to stick
  *  image-fit           —       a picture in a box of another shape is cropped, never stretched
@@ -3098,7 +3099,7 @@ export const snapOffset = {
 };
 
 // A scroll stays in the thing you are scrolling. A scroll area drawn over the page (a side panel, a menu, a chat
-// list: fixed or stuck in place) hands the scroll to the page behind once it reaches its end. (MDN
+// list: fixed, stuck in place, or positioned out of the page's flow as a popover is) hands the scroll to the page behind once it reaches its end. (MDN
 // overscroll-behavior: "scroll chaining", and that it is sometimes not wanted.) A scroll area in the page's own flow
 // (a code block, a wide table) is left alone: there, carrying on down the page is what people expect. A dialog is
 // components/dialog-scroll-lock's. The fix is advice: MDN marks the property as not yet in every widely used browser,
@@ -3116,7 +3117,8 @@ export const scrollChain = {
     let held = false;
     for (let n = el, d = 0; n && n !== document.body && d < 4; n = n.parentElement, d++) {
       const p = facts.style(n).position;
-      if (p === 'fixed' || p === 'sticky') { held = true; break; }
+      // fixed or stuck in place, or laid over the page out of its flow: a menu or list in a popover (maybepratikk, 2026-11-25)
+      if (p === 'fixed' || p === 'sticky' || p === 'absolute' || n.matches('[popover]')) { held = true; break; }
       // an ancestor that scrolls and contains its own overscroll already stops the chain before the page
       if (n !== el && /^(?:auto|scroll)$/.test(facts.style(n).overflowY) && facts.style(n).overscrollBehaviorY !== 'auto') return [];
     }
@@ -3171,6 +3173,38 @@ export const nativeAccent = {
   },
 };
 
+// Every pixel of a menu belongs to a row. Rows kept apart by a small margin or gap leave strips that belong to no row:
+// the pointer crossing from one to the next hovers nothing for a moment, the highlight flickers, and a click there
+// does nothing. (maybepratikk, 2026-11-18, read from the post and its video: a 4px strip marked "nothing hovered";
+// docs/research/harvests/maybepratikk/tips.md. No specification says this; the ground is the hit-testing itself: a
+// gap is not part of either box.) Read from the boxes: three or more rows stacked in one column, each a control or
+// filled by one, with the same small space between each pair. Rows set well apart are separate things and are left
+// alone. The largest gap read as a strip is an invented line, to be tuned on real apps.
+const rowControl = (k) => (k.matches('a[href], button, [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="option"], [role="tab"], [tabindex="0"]') ? k
+  : (() => { const inner = k.querySelector('a[href], button, [role="menuitem"], [role="option"]'); return inner && inner.offsetWidth >= k.offsetWidth * 0.9 && inner.offsetHeight >= k.offsetHeight * 0.9 ? inner : null; })());
+export const rowDeadZone = {
+  id: 'craft/row-dead-zone', family: 'craft', number: [], owns: ['row-gap'], once: 'ancestor', reads: ['style', 'rect'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
+    const kids = flowKids(el, facts);
+    if (kids.length < (T.least ?? 3) || kids.some((k) => !rowControl(k))) return [];
+    const boxes = kids.map((k) => rowControl(k).getBoundingClientRect());
+    // one column: the same left edge and width, each below the last
+    if (!boxes.every((b) => Math.abs(b.left - boxes[0].left) <= 1 && Math.abs(b.width - boxes[0].width) <= 2) || boxes[0].height > (T.row ?? 56)) return [];
+    const gaps = boxes.slice(1).map((b, i) => b.top - boxes[i].bottom);
+    const gap = Math.min(...gaps), most = Math.max(...gaps);
+    if (gap < (T.min ?? 1) || most > (T.max ?? 8)) return [];
+    const way = px(facts.style(el).rowGap) > 0 ? 'gap' : 'margin';
+    return [{
+      ...say(this.id, { gap: Math.round(gap * 10) / 10, n: kids.length }),
+      key: this.id, text: (way === 'gap' ? utility(el, 'gap-y') ?? utility(el, 'gap') ?? utility(el, 'space-y') : null) ?? way, props: ['row-gap'], value: `${Math.round(gap * 10) / 10}px`, n: gap,
+      evidence: { gap: Math.round(gap * 10) / 10, rows: kids.length, by: way }, confidence: 0.84,
+      // a brief: there is more than one right answer, so the conditions are said and no edit is written
+      suggest: { kind: 'advice', text: `Let the rows touch, and keep the space inside them: more padding on each row, or the hover fill drawn inset (a ::before with inset: ${Math.max(1, Math.round(gap / 2))}px 0). Done when no pixel between two rows hovers nothing, and the menu looks the same at rest.` },
+    }];
+  },
+};
+
 export const RULES = [concentricRadius, innerOuterSpacing, textOpacity, halfPixel, hairline, imageOutline, layeredShadow, scaleFromZero, zIndexWar, contentAlign,
   buttonPadding, iconSide, measure, leading, tracking, tabularNums, headingWidow, oneLight, borderOnShadow, contrast, wordsOnLayers, disabledContrast, hitTarget, mediaSize, imageFit, flexMin, imageGround, stickyRoom, fixedHeight, scrollOnDemand, declaredGap, listWrap, imageStretch, backgroundTile, fixedColumn,
   truncateIntent, scrollbarGutter, boldHover, hangingQuote, capsCase, gradientSpace, inputZoom, anchorOffset, middleTruncate,
@@ -3178,4 +3212,4 @@ export const RULES = [concentricRadius, innerOuterSpacing, textOpacity, halfPixe
   baselineAlign, iconCap, trimLeading, headingLead, pairSpacing, cardOpticalPadding, textCollision,
   weightLevels, greyLevels, rhythm, elevationLadder,
   opticalCentre, overshoot, strokeWeight, scrollCue, pressFeedback, exitFaster, interruptible, rowLines, sharedEdges, actionFit,
-  snapRest, snapStrict, snapUnreachable, snapOffset, scrollChain, nativeAccent, ...RANK_RULES, ...RUN_RULES];
+  snapRest, snapStrict, snapUnreachable, snapOffset, scrollChain, nativeAccent, rowDeadZone, ...RANK_RULES, ...RUN_RULES];

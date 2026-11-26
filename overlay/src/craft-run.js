@@ -81,6 +81,17 @@ async function operate(options) {
   if (op === 'taken') return { frames: await rec.samples.get(options.id), events: JSON.parse(JSON.stringify(rec.events)) };
   if (op === 'since') return JSON.parse(JSON.stringify(rec.since(options.t0, options.except)));
   if (op === 'tip') return rec.tip(options.ms, options.other, options.at, options.from);
+  // where the open tooltip landed: how far it runs past the screen, and on which side (craft/tooltip-cut)
+  if (op === 'tipbox') {
+    let worst = { cut: 0, side: null };
+    for (const n of document.querySelectorAll('[role="tooltip"]')) {
+      if (!n.isConnected || n.closest('plumb-overlay')) continue;
+      const r = n.getBoundingClientRect();
+      if (r.width < 4 || r.height < 4) continue;
+      for (const [side, cut] of [['above', -r.top], ['below', r.bottom - innerHeight], ['left', -r.left], ['right', r.right - innerWidth]]) if (cut > worst.cut) worst = { cut: Math.round(cut), side };
+    }
+    return worst;
+  }
   if (op === 'state') {
     const el = fromKey(options.key);
     const menus = [...document.querySelectorAll('[role="menu"]')].filter((m) => m.getClientRects().length);

@@ -407,3 +407,13 @@ All free under the Unsplash License, hotlinked from images.unsplash.com as Unspl
   rows, scroll areas that drag the page behind them, native controls left in the browser's blue), and 15 that show
   how to build an effect and leave nothing to find.
 - Used in: `docs/research/gkurt-css-tips.md`. No check built yet.
+
+## 2026-11-26 · Pratik's UI tips on X (shared by the owner)
+- What: posts by Pratik ([@maybepratikk](https://x.com/maybepratikk)), a product designer; his "small UI thing" posts
+  of November 2026, most with a short before-and-after video.
+- Why: "use this profile this time", for the harvest skill's first run; then "lets pick next rules from next harvest".
+- What we read from it: eight tips. Five plumber already checks (icon-side padding, bold on hover, the submenu's safe
+  triangle, tabular numbers, nested radius), one in part (a list that scrolls the page behind it), two new (dead
+  strips between menu rows, a tooltip cut off by the screen).
+- Used in: `docs/research/harvests/maybepratikk/tips.md`; the checks `craft/row-dead-zone`, `craft/tooltip-cut` and
+  the widened `craft/scroll-chain`.

@@ -583,7 +583,29 @@ export const HEADLESS = {
   source: (el) => known.get(el) ?? (sources.size ? sources.get(pathKey(el)) ?? null : null),
 };
 
-export const RUN_RULES = [darkElevation, darkWeight, skeletonMatch, scrollCueSeen, spinnerTiming, exitFasterProbe, interruptibleProbe, pressFeedbackProbe, menuPointerdown, tooltipDelay, paletteMotion, submenuPath, overdrag, touchManipulation];
+// A hint has to be readable where it opens. Seen by opening it: the tooltip probe hovers each trigger and reads where
+// the tooltip landed. One that opens above a button at the top of the screen (a toolbar, a header) runs off the edge.
+// (maybepratikk, 2026-11-23, docs/research/harvests/maybepratikk/tips.md; MDN position-try-fallbacks for the fix's
+// ground, not opened.) The probe brings a trigger to the middle of the screen when it can, so this sees the triggers
+// that stay near an edge: in a bar that is fixed or stuck, or at the very top or bottom of the page. Advice: the CSS
+// that flips a tooltip is not in every widely used browser, and plumber can't read a project's browser list.
+export const tooltipCut = {
+  id: 'craft/tooltip-cut', family: 'craft', number: [], owns: ['placement'], once: 'ancestor', reads: ['probe:tooltip'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
+    const p = facts.probe(el, 'tooltip');
+    if (!p || !(p.cut > (T.over ?? 2)) || !p.side) return [];
+    const other = { above: 'below', below: 'above', left: 'the right', right: 'the left' }[p.side];
+    return [{
+      ...say(this.id, { cut: p.cut, side: p.side }),
+      key: this.id, text: 'tooltip', props: ['inset'], value: `${p.cut}px`, n: p.cut,
+      evidence: { cut: p.cut, side: p.side }, confidence: 0.86,
+      suggest: { kind: 'advice', text: `Open it ${other} when there is no room ${p.side}: your tooltip library’s flip option, or position-try-fallbacks where your browsers have it.` },
+    }];
+  },
+};
+
+export const RUN_RULES = [tooltipCut, darkElevation, darkWeight, skeletonMatch, scrollCueSeen, spinnerTiming, exitFasterProbe, interruptibleProbe, pressFeedbackProbe, menuPointerdown, tooltipDelay, paletteMotion, submenuPath, overdrag, touchManipulation];
 
 // the pairs the loaded rules ask for
 export const PAIRS = [...new Set(RUN_RULES.flatMap((r) => r.pairs ?? []))];

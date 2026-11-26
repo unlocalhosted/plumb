@@ -417,4 +417,25 @@ export const STATES = {
       return { ...marked(s, [x], ['moves the page too', 'keeps its scroll'], { round: 12 }), at: (p) => { x.style.overscrollBehavior = p ? 'contain' : ''; x.scrollTop = x.scrollHeight; } };
     },
   },
+
+  // ── from Pratik's tips (docs/research/harvests/maybepratikk/tips.md) ──
+  'craft/row-dead-zone': {
+    code: ['<ul class="grid gap-1">', '<ul class="grid">  rows padded, the fill inset'],
+    note: ['Between two rows, 4px belong to neither: the highlight flickers and a click does nothing.', 'The rows touch, so the pointer is always on one of them.'],
+    scene: (s) => {
+      scene(s, `<div class="x" style="display:grid;gap:4px;width:210px;padding:4px;border-radius:12px;background:#fff;box-shadow:0 6px 18px rgb(0 0 0 / .1), inset 0 0 0 1px #e5e7eb;font:500 13px system-ui;color:#111827">${['Open in new tab', 'Rename', 'Duplicate', 'Copy link'].map((t, i) => `<button class="rw" style="all:unset;box-sizing:border-box;display:block;width:100%;padding:6px 10px;border-radius:7px;cursor:default;${i === 1 ? 'background:#f3f4f6' : ''}">${t}</button>`).join('')}</div>`);
+      const x = s.querySelector('.x'), rows = [...s.querySelectorAll('.rw')];
+      const strip = { getBoundingClientRect: () => { const a = rows[1].getBoundingClientRect(), b = rows[2].getBoundingClientRect(); return new DOMRect(a.left, a.bottom, a.width, Math.max(0, b.top - a.bottom)); } };
+      return { ...marked(s, [strip], ['4px no row owns', 'no dead strip'], { pad: 1, round: 2, right: true }), at: (p) => { x.style.gap = p ? '0px' : '4px'; for (const r of rows) r.style.padding = p ? '8px 10px' : '6px 10px'; } };
+    },
+  },
+  'craft/tooltip-cut': {
+    code: ['<Tooltip side="top">', '<Tooltip side="top" avoidCollisions>'],
+    note: ['The button sits at the top of the screen, and its tooltip opens above it, half off the edge.', 'With no room above, it opens below.'],
+    scene: (s) => {
+      scene(s, '<div style="position:relative;width:260px;height:150px;border-radius:12px;background:#fff;box-shadow:inset 0 0 0 1px #e5e7eb;overflow:hidden;font:600 12px system-ui"><div style="height:40px;display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:0 12px;background:#f3f4f6"><span class="bt" style="display:grid;place-items:center;width:26px;height:26px;border-radius:7px;background:#111827;color:#fff">↑</span></div><span class="x" style="position:absolute;right:8px;top:-9px;padding:4px 8px;border-radius:6px;background:#111827;color:#fff;white-space:nowrap">Copy share link</span></div>');
+      const x = s.querySelector('.x');
+      return { ...marked(s, [x], ['off the screen', 'opens below'], { under: true, round: 8 }), at: (p) => { x.style.top = p ? '44px' : '-9px'; } };
+    },
+  },
 };

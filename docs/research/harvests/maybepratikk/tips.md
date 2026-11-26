@@ -33,6 +33,23 @@ Each tip is in our words; the link is the source.
    anchor positioning is not in every browser.
 3. **The panel check, widened to menus and lists in popovers.** Today's `craft/scroll-chain` misses them.
 
+## Built (2026-11-26)
+
+All three, on their test page (`scripts/proof/pages/menu-batch.jsx`):
+
+| Check | Speaks on its fault | Quiet on | Other checks changed | Threw | Fix | Docs demo through its check |
+|---|---|---|---|---|---|---|
+| `craft/row-dead-zone` | yes, once | rows that touch; three buttons set 16px apart | none | no | a brief, as advice | holds |
+| `craft/tooltip-cut` | yes, once | a tooltip in the same bar that opens below | none | no | advice | can't be run in a still grid: it needs the hover. Its test page is the proof |
+| `craft/scroll-chain`, widened | yes, once on a list positioned out of flow | the same list keeping its scroll | none | no | advice | holds |
+
+One finding of the tooltip-delay check came and went between two runs of the same page. It is a timing reading and
+not caused by these checks.
+
+Not shown: any real app; a tooltip on a trigger the probe can bring to the middle of the screen (it sees the ones
+that stay near an edge); the brief as its own kind of fix (the engine has advice only, so the brief's conditions are
+written into the advice sentence); the numbers for a dead strip (1 to 8px, rows up to 56px tall) are untuned.
+
 ## What the engine can't read yet
 
 - **Pseudo-elements.** A focus ring or a hover fill drawn with `::before` is not an element, so no check reads its

@@ -957,6 +957,15 @@
    "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
+   "id": "craft/row-dead-zone",
+   "concern": "states",
+   "name": "Dead strips between rows",
+   "why": "Every pixel of a menu should belong to a row.",
+   "where": "page",
+   "tile": null,
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
+  },
+  {
    "id": "craft/column-edge",
    "concern": "craft",
    "name": "Off the line",
@@ -973,6 +982,15 @@
    "where": "page",
    "tile": "Controls",
    "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
+  },
+  {
+   "id": "craft/tooltip-cut",
+   "concern": "states",
+   "name": "Tooltip cut off",
+   "why": "A hint has to be readable where it opens.",
+   "where": "page",
+   "tile": null,
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
    "id": "craft/dark-elevation",

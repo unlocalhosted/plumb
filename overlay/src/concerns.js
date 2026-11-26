@@ -28,7 +28,7 @@ const WORDS = new Set(['tells/status-chain', 'tells/chart-type-title', 'tells/re
   'craft/heading-widow', 'craft/truncate-intent', 'craft/hanging-quote', 'craft/middle-truncate', 'craft/text-wrap-role']);
 const STATES = new Set(['press-feedback', 'press-feedback-probe', 'interruptible', 'interruptible-probe', 'exit-faster', 'menu-pointerdown',
   'submenu-path', 'tooltip-delay', 'spinner-timing', 'skeleton-match', 'overdrag', 'fixed-height', 'flex-min', 'scroll-cue-seen',
-  'snap-rest', 'snap-strict', 'snap-unreachable', 'snap-offset', 'scroll-chain']);
+  'snap-rest', 'snap-strict', 'snap-unreachable', 'snap-offset', 'scroll-chain', 'row-dead-zone', 'tooltip-cut']);
 
 /** The concern a finding is about: one of CONCERNS' ids. */
 export function concernOf(mark) {

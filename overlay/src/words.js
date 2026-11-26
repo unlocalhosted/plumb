@@ -56,6 +56,16 @@ export const CRAFT = {
     line: over ? `The text here runs ${px(over)} past this box’s set height.` : 'This box has a set height and holds text that wraps. A longer sentence or a narrower screen will run past it.',
     reason: 'A box that holds text sets its least height, not its exact height: text grows downward.',
   }),
+  'row-dead-zone': ({ gap, n }) => ({
+    label: 'Dead strips between rows',
+    line: `These ${n} rows are ${px(gap)} apart, and those pixels belong to no row. The highlight flickers as the pointer crosses, and a click there does nothing.`,
+    reason: 'Every pixel of a menu should belong to a row.',
+  }),
+  'tooltip-cut': ({ cut, side }) => ({
+    label: 'Tooltip cut off',
+    line: `This tooltip opens ${side}, where ${px(cut)} of it is off the screen.`,
+    reason: 'A hint has to be readable where it opens.',
+  }),
   'snap-rest': ({ n }) => ({
     label: 'Row stops between two parts',
     line: `These ${n} parts are read one at a time, but the row stops wherever the scroll ends, with a part cut off at each edge.`,

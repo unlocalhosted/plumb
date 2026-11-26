@@ -103,6 +103,8 @@ export const STANDARD = {
     'snap-unreachable': {},
     'snap-offset': {},
     'scroll-chain': {},
+    'row-dead-zone': { least: 3, min: 1, max: 8, row: 56 }, // rows before it reads as a menu, the gap read as a dead strip (px), and the tallest row
+    'tooltip-cut': { over: 2 }, // px of a tooltip past the screen's edge before it is said
     'native-accent': { hue: 30 }, // degrees between the product's colour and the browser's blue before a control looks foreign
     'image-stretch': { min: 16 }, // smallest picture read
     'background-tile': { min: 48, photo: 64 }, // smallest box read, and the least side of a photo (smaller is a pattern)
