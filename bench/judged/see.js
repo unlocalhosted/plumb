@@ -128,6 +128,8 @@ const CSS = `
   .side { overflow: auto; min-height: 0; background: var(--pl-paper); padding: var(--pl-space-6) var(--pl-space-6) 48px; display: grid; align-content: start; gap: var(--pl-space-6); }
   .side h2 { font: var(--pl-card-title); margin: 0; } .side p { font: var(--pl-card-meta); color: var(--pl-ink-2); margin: 0; }
   .bar a.path { text-decoration: none; } .acts a { text-decoration: none; }
+  .bar .where { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; } .bar .ask { min-width: 0; } .bar .acts { white-space: nowrap; }
+  .bar { grid-template-columns: minmax(0, 1fr) minmax(0, auto) auto; }
   .steps { display: flex; align-items: center; gap: var(--pl-space-3); flex-wrap: wrap; }
   .steps .chip[aria-pressed="true"] { background: var(--pl-ink); color: var(--pl-paper); }
   .chip.u { --h: var(--pl-sky); --on: var(--pl-sky-on); }
