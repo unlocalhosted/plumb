@@ -6177,6 +6177,14 @@ into its own browser. Your app isn't changed.", then the findings.
   looking page, now lets see what react-plumber finds". The take now rests four seconds on the page before plumber
   opens, and the camera holds wide on it under "An AI made this nice-looking page. Let's see what React Plumber
   finds." before moving in on the Invite button. Stills: `cut3-stills.jpg` (local).
+- **Fixes shown as changes, slowly (2026-11-26).** The owner: "show the transition of fixes based on how to show
+  change … let people take it in nice and easy", and close on "React Plumber keeps AI slop in check". The stills
+  showed why the fixes didn't read: in plumber the Invite fix is an instant colour swap with no motion, and the hex
+  green and the theme's green look almost the same, so slowing plumber's own timings for the recording changed
+  nothing there. The film now draws the design site's change motion over the take: a coral ring draws in on what
+  will change with its value in a pill ("#18b070 hard-coded", "10px, made up"), it turns sky as it lands ("primary,
+  your token", "p-3 · 12px × 20 cards"), and each fix is held about three seconds before the film moves on. Stills:
+  `docs/films/launch-03-draft/change-stills.jpg` (local).
 
 - **One at a time, from any toy (2026-11-26).** The owner: "just fix the things one by one clicking on a single item
   should give the tour like experience". Until now only the main button toured, and it showed 4 of 80 fixes; a single
