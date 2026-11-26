@@ -6374,6 +6374,29 @@ into its own browser. Your app isn't changed.", then the findings.
   exact lines the first run gave. A judged-findings ledger compared across runs needs both to hold still first.
 - **Left on the test server:** the clone and its database (stopped, data kept), for the next round.
 
+### 154. The same page, the same findings (2026-11-26)
+
+- **The itch:** entry 153 found runs on cal.com unsteady, and the owner chose to fix that before building a ledger of
+  judged findings: "Yes, steady runs". A ledger compares runs, so a run has to give the same answer twice.
+- **Two causes:**
+  1. *Read too early.* The check counted a page as ready once the network had been quiet for half a second. A big app
+     goes quiet while its scripts start, then asks for its data: cal.com's event types were read 151 elements deep in
+     one run and 42 in the next, the list not yet drawn. Ready now means still: no request out, nothing added or
+     removed and no loading placeholder (`aria-busy`, `animate-pulse`, a skeleton) for 800ms at once, within the
+     same overall limit as before.
+  2. *A wider line when React kept none.* React's development build records where each element was made for only the
+     first 10,000 elements of a burst. Where plumber is installed it lifts that limit before React starts; when the
+     check brings its own copy into an app (as on cal.com), it arrived after the page had drawn, so a big page lost
+     lines, and how many depended on timing. Then, for an element with no recorded line, locating stepped up to the
+     nearest component's usage: 15 findings on the event setup page named one wrapper line in one run only. The check
+     now lifts the limit before the page's first script in that case too, and an element React did not record is
+     said as not placed, never as the line around it.
+- **The proof:** three cal.com pages (event types, an event's setup, a schedule), each run twice with the fixes: the
+  same elements read (151, 122, 87), the same findings (31, 56, 31), at the same lines, both times. No finding names
+  the wrapper line and none is left unplaced.
+- **Cost:** a page that never stops changing (a clock, a ticker, a looping placeholder) now waits out the full limit,
+  up to 30 seconds, before it is read.
+
 ### 142. The dial in the overlay (2026-11-26)
 
 - **The itch.** The owner asked how a person sees the page's other states: "we need to come up with some way like

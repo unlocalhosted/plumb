@@ -307,6 +307,9 @@ async function usageOf(element, fiber, options) {
       return { ...link, tag: element.localName, via: row.kind === 'call' ? 'call' : 'frame', chain: [link], index: 0 };
     }
   }
+  // React did not record where this element was made (past its cap of 10,000 a burst): that is not placed, and never
+  // the line of a component around it, which changed with timing from run to run (cal.com, 2026-11-26)
+  if (own?.failure?.reason === 'react-stack-limit') return refuse(own.failure.reason, { ...own.failure.detail, step: 'own-unread' });
   let nearest = null;
   for (let up = fiber.return, n = 0; up && n < 64; up = up.return, n++) {
     if (up.tag === 3) break;

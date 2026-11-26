@@ -250,11 +250,21 @@ async function carryOverlay(browser: Browser, root: string, base: string): Promi
   // page: no discovery file is written, so a server the person runs later isn't refused, and nothing is left behind
   const daemon = await serve({ root, overlay: true, origin: new URL(base).origin, port: 0, page: true });
   const client = `http://127.0.0.1:${daemon.info.port}/__plumb/client.js`;
+  // Before the page's first script: lift React's cap on recorded creation lines, as plumb() does where it is installed.
+  // Brought in later, the overlay found a big page already drawn past 10,000 elements, and which elements lost their
+  // line changed with timing (cal.com's event setup, 2026-11-26: 15 findings named one wrapper line in one run only).
+  const early = `(() => { const lift = (r) => { const i = r && r.currentDispatcherRef; if (!i || typeof i !== 'object' || !('recentlyCreatedOwnerStacks' in i)) return;
+      try { Object.defineProperty(i, 'recentlyCreatedOwnerStacks', { configurable: true, get: () => 0, set() {} }); } catch {} };
+    const h = window.__REACT_DEVTOOLS_GLOBAL_HOOK__;
+    if (h && typeof h === 'object') { for (const r of h.renderers?.values?.() ?? []) lift(r); const inject = h.inject; if (typeof inject === 'function') h.inject = function (r) { lift(r); return inject.apply(this, arguments); }; return; }
+    const renderers = new Map();
+    window.__REACT_DEVTOOLS_GLOBAL_HOOK__ = { renderers, supportsFiber: true, isDisabled: false, checkDCE() {}, onCommitFiberRoot() {}, onCommitFiberUnmount() {}, onPostCommitFiberRoot() {},
+      inject(r) { lift(r); const id = renderers.size + 1; renderers.set(id, r); return id; } }; })();`;
   const script = `(() => { if (window !== window.top || !/^https?:$/.test(location.protocol)) return; const add = () => { if (document.querySelector('script[data-plumb-token]')) return;
     const s = document.createElement('script'); s.type = 'module'; s.src = ${JSON.stringify(client)}; s.dataset.plumbToken = ${JSON.stringify(daemon.info.token)}; document.head.append(s); };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', add); else add(); })();`;
   const newContext = browser.newContext.bind(browser);
-  browser.newContext = async (options = {}) => { const context = await newContext({ ...options, bypassCSP: true }); await context.addInitScript(script); return context; };
+  browser.newContext = async (options = {}) => { const context = await newContext({ ...options, bypassCSP: true }); await context.addInitScript(early); await context.addInitScript(script); return context; };
   browser.newPage = async (options = {}) => { const context = await browser.newContext(options), page = await context.newPage(); page.once('close', () => { context.close().catch(() => {}); }); return page; };
   return () => daemon.close();
 }

@@ -67,11 +67,38 @@ export async function open(page: Page, url: string, timeout: number, ready: bool
   }
 }
 
-/** The page has drawn what it will draw: requests quiet (for up to `network` ms), fonts in. */
+/** The page has drawn what it will draw: no request out, nothing added to the page and no loading placeholder, all for
+ * STILL ms at once (for up to `network` ms in all), then fonts in.
+ *
+ * "Network quiet" alone was read too early on a big app: cal.com's event types went quiet while its scripts started up,
+ * then asked for its list, and one run read 151 elements where the next read 42 (2026-11-26). Quiet has to hold while
+ * the page itself stops changing. */
+const STILL = 800;
+const PLACEHOLDER = '[aria-busy="true"], .animate-pulse, [data-loading="true"], [class*="skeleton" i]';
 export async function settle(page: Page, network = 5000): Promise<void> {
+  const end = Date.now() + network;
   await page.waitForLoadState('networkidle', { timeout: network }).catch(() => {});
+  // requests out right now, counted from here on (the overlay's own reads to /__plumb/ are not the page's)
+  let out = 0, last = Date.now();
+  const mine = (r: import('playwright').Request) => !r.url().includes('/__plumb/') && ['fetch', 'xhr', 'script', 'document', 'stylesheet'].includes(r.resourceType());
+  const sent = (r: import('playwright').Request) => { if (mine(r)) { out++; last = Date.now(); } };
+  const done = (r: import('playwright').Request) => { if (mine(r)) { out = Math.max(0, out - 1); last = Date.now(); } };
+  page.on('request', sent); page.on('requestfinished', done); page.on('requestfailed', done);
+  try {
+    while (Date.now() < end) {
+      // the page's own changes for one window: elements added or removed, words changed, a placeholder still up
+      const left = Math.max(0, end - Date.now());
+      const still = await page.evaluate(({ window: ms, placeholder }) => new Promise<boolean>((resolve) => {
+        let changed = false;
+        const watch = new MutationObserver((list) => { if (list.some((m) => m.type === 'characterData' || m.addedNodes.length || m.removedNodes.length)) changed = true; });
+        watch.observe(document.body, { subtree: true, childList: true, characterData: true });
+        setTimeout(() => { watch.disconnect(); resolve(!changed && !document.querySelector(placeholder)); }, ms);
+      }), { window: Math.min(STILL, left), placeholder: PLACEHOLDER }).catch(() => true);
+      if (still && out === 0 && Date.now() - last >= STILL) break;
+      if (!left) break;
+    }
+  } finally { page.off('request', sent); page.off('requestfinished', done); page.off('requestfailed', done); }
   await page.evaluate(() => document.fonts.ready).catch(() => {});
-  await sleep(300);
 }
 
 /** The same route in a page of its own, with the recorder in before the app's first script. */
