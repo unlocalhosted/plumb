@@ -6239,7 +6239,7 @@ into its own browser. Your app isn't changed.", then the findings.
   near-black and colours inside recreations of other apps.
 - **Note:** another session also numbered an entry 143 ("Other data: the first check"), written after this one's.
 
-### 146. The 17 new checks on a real app, and two of them fixed (2026-11-26)
+### 147. The 17 new checks on a real app, and two of them fixed (2026-11-26)
 
 - **The itch:** the 17 checks added on 2026-11-26 had been proven only on test pages written for them. Nobody knew
   how often they would be wrong on a real page.
