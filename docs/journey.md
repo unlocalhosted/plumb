@@ -6166,6 +6166,17 @@ into its own browser. Your app isn't changed.", then the findings.
   the film's copy of the frames only. The film now closes on "React Plumber is an anti-slop linter, looking for 100+
   design issues." Stills: `docs/films/launch-03-draft/captions-stills.jpg`, `cleanup-stills.jpg` (local). Not
   rendered yet.
+- **The Clean up bar was five lines tall (2026-11-26).** The owner: "this toolbar is so big … i already asked buttons
+  to be changed to icon for skip … i dont know when it get undone". It wasn't undone; it never reached this bar. The
+  20 November round changed the single-fix bar, and Clean up builds its own row of buttons, so it kept a text Skip and
+  a Read the whole site button beside Apply, and its note wrapped to three lines. Now Clean up uses the fix bar's
+  pieces: Skip is the same sky picture with its name on hover, and reading the whole site is a link at the end of a
+  one-line note. The bar went from five lines to two (`docs/films/launch-03-draft/cleanup-bar-now.jpg`, local). The
+  wider gap is that each bar draws its own row, so the next round on one can miss the other again.
+- **The film opens on the whole page.** The owner: "start with zoomed out view page, like hey so LLM created this nice
+  looking page, now lets see what react-plumber finds". The take now rests four seconds on the page before plumber
+  opens, and the camera holds wide on it under "An AI made this nice-looking page. Let's see what React Plumber
+  finds." before moving in on the Invite button. Stills: `cut3-stills.jpg` (local).
 
 - **One at a time, from any toy (2026-11-26).** The owner: "just fix the things one by one clicking on a single item
   should give the tour like experience". Until now only the main button toured, and it showed 4 of 80 fixes; a single
