@@ -36,7 +36,7 @@ import { STAMPED, stampOf, sameStamp } from './stamp.js';
 import { declaredColours, loadPalette, paletteOf } from './colours.js';
 import { renameMap } from './colour-system.js';
 import { Scope } from './scope.js';
-import { button } from './kit.js'; // the soft button
+import { button, SKIP_ICON } from './kit.js'; // the soft button, and Skip's picture (the fix bar's, 2026-11-20)
 import { toyOf } from './toys.js'; // each pass's toy
 
 const LAWS = [{ id: 'similarity', name: 'Law of similarity' }, { id: 'cognitive-load', name: 'Cognitive load' }];
@@ -403,8 +403,12 @@ export class Cleanup {
       say = sw ? S.head(p.before, p.after, p.places) : W2.head(this.#p?.cost?.sizesBefore ?? p.before, this.#p?.roles?.length ?? 0);
       more = this.#keptLine() + (sw ? S.sub(p) : this.#pageOnly ? (this.#site?.running ? W.siteReading(this.#site.read, this.#site.route) : this.#site?.error ? `${W.siteFailed} ${this.#site.error}` : W.pageOnly) : W2.why);
       const n = this.#keptPasses().length;
-      acts = (!sw && this.#pageOnly ? b(this.#site?.running ? W.siteBusy : W.readSite, 'site', { quiet: true }) : '') + b(W2.preview, 'preview', { quiet: true, key: 'P' })
-        + (n > 1 ? b(W.applyAll(n), 'apply-all', { key: '↵' }) + b(W.applyThis, 'apply', { quiet: true }) : b('Apply', 'apply', { key: '↵' })) + b('Skip', 'skip', { quiet: true, key: '→' });
+      // the same row as the fix bar (owner, 2026-11-26: "i already asked buttons to be changed to icon for skip"):
+      // Preview and Apply are words, Skip is its picture with the name on hover, and reading the whole site is an
+      // option in the line under the head, not a button beside Apply
+      acts = b(W2.preview, 'preview', { quiet: true, key: 'P' })
+        + (n > 1 ? b(W.applyAll(n), 'apply-all', { key: '↵' }) + b(W.applyThis, 'apply', { quiet: true }) : b('Apply', 'apply', { key: '↵' }))
+        + button('', { cls: 'sm quiet only skip', icon: SKIP_ICON, attrs: `data-cu="skip" aria-label="${esc(W.skipPass)}" data-tip="${esc(W.skipPass)} · →"` });
     }
     // the colour pass offers the project's light and dark roles once the server has them (a quiet entry, never the action)
     // once made, the bar says so with its Undo, and the pass goes on
@@ -416,7 +420,9 @@ export class Cleanup {
     if (rn?.done) { more = `${more ? `${more} ` : ''}${W.colour.names.done(rn.done.names, rn.done.files)}`; acts = b(W.colour.names.undo, 'names-undo', { quiet: true }) + acts; }
     else if (rn?.plan) acts = b(W.colour.names.bar, 'names-open', { quiet: true }) + acts;
     // in preview the detail is what changes: the styles as chips, rolling to their values, and how to compare
-    const detail = s === 'preview' ? `<span class="roles">${chipsHtml(this.#steps().map((x) => x.chip))}</span><span class="cmp">${W2.holdSpace}</span>` : esc(more);
+    const siteOpt = s === 'ready' && !sw && this.#pageOnly && !this.#site?.running && !this.#site?.error;
+    const detail = s === 'preview' ? `<span class="roles">${chipsHtml(this.#steps().map((x) => x.chip))}</span><span class="cmp">${W2.holdSpace}</span>`
+      : siteOpt ? `${esc(this.#keptLine())}${esc(W.pageOnlyShort)} <button type="button" class="cu-lk" data-cu="site">${esc(W.readSite)}</button>` : esc(more);
     return `<div class="one cu-one"><i class="ic big${pop ? ' pop' : ''}">${toyOf(s === 'done' && pop ? 'checkbox' : TOY[k])}</i><span class="lines"><span class="hl">${esc(say)}</span>`
       + `<span class="dt">${detail}</span></span><span class="sep"></span>${strip}${acts}</div>`;
   }

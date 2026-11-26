@@ -1132,6 +1132,8 @@ export const CLEANUP = {
   // the text pass on this page alone, while the site hasn't been read
   pageOnly: 'From this page’s text alone. Read the whole site once and every page gets the same styles.',
   readSite: 'Read the whole site',
+  pageOnlyShort: 'From this page’s text alone.',
+  skipPass: 'Skip this pass',
   keptOnPage: (names) => `Still on the page, not written: ${names.join(', ')}.`,
   applyAll: (n) => `Apply all ${n}`,
   applyThis: 'Only this',

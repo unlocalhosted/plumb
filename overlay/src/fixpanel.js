@@ -122,6 +122,10 @@ const FIX_CSS_BASE = TEXT_EDITOR_CSS + LAYOUT_CSS + `
   .fx .cu-one .lines { min-width: 180px; }
   .fx .cu-one .dt .roles .sh-chips, .fx .cu-one .dt .roles { display: inline-flex; gap: 4px; }
   .fx .cu-one .dt .cmp { margin-left: 6px; white-space: nowrap; }
+  /* reading the whole site is an option in the line, not a button in the row */
+  .fx .cu-one .cu-lk { all: unset; cursor: pointer; font: inherit; color: var(--pl-text-primary); font-weight: 600; text-decoration: underline; text-decoration-color: var(--pl-border-strong); text-underline-offset: 3px; border-radius: 4px; }
+  .fx .cu-one .cu-lk:focus-visible { outline: 2px solid var(--pl-border-focus); outline-offset: 2px; }
+  @media (hover: hover) and (pointer: fine) { .fx .cu-one .cu-lk:hover { text-decoration-color: currentColor; } }
   /* a narrow screen keeps every pass in the strip, smaller (owner, 2026-11-20: "why i am not seeing the toolbar with
      the phases"): showing only the pass in hand hid where Clean up is going */
   @media (max-width: 1080px) { .fx .one .passes { gap: 3px; padding: 0 2px; } .fx .one .ps { width: 17px; height: 17px; } .fx .one .ps.now::before { inset: -4px; border-radius: 7px; } }
