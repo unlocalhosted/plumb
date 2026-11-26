@@ -7008,6 +7008,28 @@ into its own browser. Your app isn't changed.", then the findings.
 - **References:** the perception research in [perception-sources.md](research/perception-sources.md); the expert's
   reviews (entries 153 to 156).
 
+### 158. The seen picture, drawn over real pages (2026-11-26)
+
+- **The itch:** the spec's riskiest claim is that grouping rules measured on dots in a lab will group a real page
+  the way a person does. Asked how sure we were, the answer was about even. The owner: "ok do the first layer and
+  show me".
+- **What was built:** a reader that turns a live page into plain rows of drawn areas (blocks of text, pictures,
+  drawn boxes), a pure module that grows them into a tree by enclosure and by the ratio of gaps, and a view that
+  outlines one level of the tree at a time over the page. Nothing is judged. It is in the judging bench
+  (`bench/judged/see.js`, `seen.js`), at `?seen=1` on any set.
+- **What it showed, on three sites:** on shadcn's page the first level is the page's sections, one outline each, as
+  a person would name them. One level down, the table of numbers splits into a column of labels and a column of
+  values, because the widest empty strip runs between them; a person reads it as rows. On Sam Limby's page the
+  first level is everything above the footer and the footer; the second is the menu, the hero, a label and the
+  project card.
+- **Two faults found by looking, and fixed:** it read a page while its hero was still fading in, so it now waits
+  until two looks 600 ms apart agree; and a box that holds the whole page was taken as the page's one part.
+- **Known oddities, not fixed:** a menu whose words are separated by slashes reads as a pile of overlapping things.
+  Likeness is not used yet, so a list of like things is only a set where space says so.
+- **Not done:** the owner has not yet said whether these are the groups they see. cal.com, the first judged set,
+  was not running, so it was not looked at.
+- **Media hooks:** `http://rauno-21-shadcn-com.localhost:4420/__judge/?seen=1`, levels 1 and 2.
+
 ## Open gaps
 
 - Plumber's page check reads nothing on a public site, because it judges only elements tied to an app's source

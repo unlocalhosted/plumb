@@ -72,7 +72,7 @@ function list(root, base, loaded, soften) {
       const others = Object.keys(s.judges).filter((j) => j !== 'owner' && j !== 'test');
       const said = Object.entries(s.judges).map(([j, n]) => `${esc(j)}: ${n.marks} ${n.marks === 1 ? 'mark' : 'marks'} on ${n.screens} ${n.screens === 1 ? 'screen' : 'screens'}`).join(' · ') || 'not judged yet';
       return `<li><div><b>${esc(s.title)}</b><code>${esc(host(s.app))}</code></div><span class="who">${said}</span>
-        <span class="go">${others.map((j) => `<a class="s-btn" href="${at(s.name, `?judge=${j}&view=1`)}"><span>See ${esc(j)}’s points</span></a>`).join('')}<a class="s-btn q" href="${at(s.name)}"><span>Judge it</span></a></span></li>`;
+        <span class="go">${others.map((j) => `<a class="s-btn" href="${at(s.name, `?judge=${j}&view=1`)}"><span>See ${esc(j)}’s points</span></a>`).join('')}<a class="s-btn bare" href="${at(s.name, '?seen=1')}"><span>What the engine sees</span></a><a class="s-btn q" href="${at(s.name)}"><span>Judge it</span></a></span></li>`;
     }).join('')}</ul></div>`;
   soften(root);
 }

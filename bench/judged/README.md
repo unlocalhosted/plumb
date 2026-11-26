@@ -69,6 +69,20 @@ A set can also say how to reach the state the reviewer was in: `ready.press` (a 
 harvest's `scenes.py`, one site at a time, after the site has been used the way the reviewer used it. One site is
 done: Sam Limby's.
 
+### What the engine sees
+
+`?seen=1` on a set's address draws the seen picture of `docs/briefs/shape-engine.md` over the set's first screen,
+with nothing judged: `http://<set>.localhost:4420/__judge/?seen=1`. It is the spec's first layer, there so a person
+can say whether the engine's groups are the groups they see.
+
+- `see.js` reads the page once it has stopped moving into plain rows, one per drawn area: a block of text, a
+  picture, a drawn box. It uses what is drawn and no tag name, role or source.
+- `seen.js` is pure. It grows the rows into a tree: a drawn box holds what lies in it, and things are split wherever
+  the gap between them is at least 1.5 times the gaps inside them. Things with even gaps stay one run.
+- The view outlines one level of that tree at a time. Pointing at a part says why it was taken as one thing.
+
+It does not use likeness yet, so two things that look the same are not tied together unless space or a box does it.
+
 ### A public site as the app
 
 A set's `app` may be a public site. The server asks the site for each page and passes it on from the set's own

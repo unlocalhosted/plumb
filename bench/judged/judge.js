@@ -77,6 +77,8 @@ class JudgeDesk extends HTMLElement {
     const root = this.attachShadow({ mode: 'open' });
     const [tokens, loaded] = await Promise.all([fetch('/__judge/tokens.css').then((r) => r.text()), call('set')]);
     // the list of sets, or one judge's marks shown read-only over the live site (review.js)
+    // what the engine sees on the set's first screen, drawn and not judged (see.js)
+    if (!loaded.index && new URLSearchParams(location.search).has('seen')) { const { see } = await import('./see.js'); return see(this, root, tokens + SOFT_CSS + CSS, loaded, soften); }
     if (loaded.index || VIEW) { const { show } = await import('./review.js'); return show(this, root, tokens + SOFT_CSS + CSS, loaded, judge, soften); }
     this.set = loaded.set; this.judgements = loaded.judgements; this.scale = 1; this.sel = null; this.drag = null;
     // what makes the app ready to be judged (set.json, `ready`): its own switches for questions that come from how
