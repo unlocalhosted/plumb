@@ -1074,6 +1074,24 @@
    "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
+   "id": "craft/text-fixed",
+   "concern": "access",
+   "name": "Text ignores your text size",
+   "why": "Text should grow when the person makes it grow.",
+   "where": "page",
+   "tile": null,
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
+  },
+  {
+   "id": "craft/text-clips",
+   "concern": "access",
+   "name": "Cuts off at a larger text size",
+   "why": "Bigger text needs room.",
+   "where": "page",
+   "tile": null,
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
+  },
+  {
    "id": "craft/dark-elevation",
    "concern": "craft",
    "name": "Shadow does nothing in dark",

@@ -382,6 +382,25 @@ Object.assign(CRAFT, {
       return { ...ringed(s, x, ['a blank line as the gap', 'a margin'], 5), at: (p) => { if (p) { y.remove(); z.style.cssText = 'display:block;margin-top:12px'; } else { z.before(y); z.style.cssText = ''; } } };
     },
   },
+  // ── the larger-text reality (docs/briefs/realities.md): each scene is drawn as the page is with a bigger text size set ──
+  'craft/text-fixed': {
+    code: ['text-[14px]', 'text-[0.875rem]'],
+    note: ['With a larger text size set, the heading grew and this line stayed at 14px.', 'Written in rem, it is 14px today and grows with the rest.'],
+    scene: (s) => {
+      scene(s, '<div style="width:270px;font-family:system-ui;color:#111827"><div style="font-size:24px;font-weight:700;margin-bottom:8px">Invoices</div><div class="x" style="font-size:14px;line-height:1.45;color:#374151">Payment is taken from the card ending 4242.</div></div>');
+      const x = s.querySelector('.x');
+      return { ...ringed(s, x, ['stayed at 14px', 'grew with the rest'], 5, 18, true), at: (p) => { x.style.fontSize = p ? '21px' : '14px'; } };
+    },
+  },
+  'craft/text-clips': {
+    code: ['h-[40px] overflow-hidden', 'min-h-[40px]'],
+    note: ['With a larger text size set, the words no longer fit and the box cuts them off.', 'The box grows with its words.'],
+    scene: (s) => {
+      scene(s, '<div class="x" style="width:230px;height:40px;overflow:hidden;box-sizing:border-box;padding:8px 12px;border-radius:8px;background:#eef2ff;font:500 21px/1.35 system-ui;color:#1e1b4b">Download every invoice as a PDF</div>');
+      const x = s.querySelector('.x');
+      return { ...ringed(s, x, ['cut off', 'room to grow'], 5), at: (p) => { x.style.height = p ? 'auto' : '40px'; x.style.overflow = p ? 'visible' : 'hidden'; } };
+    },
+  },
   'craft/native-accent': {
     code: ['<input type="checkbox">', '<input type="checkbox" class="accent-emerald-600">'],
     note: ['The tick is the browser’s blue, beside buttons in your green.', 'The tick wears your colour.'],

@@ -81,6 +81,8 @@ const RULE_LAWS = {
   'craft/type-viewport': [],
   'craft/br-spacing': [],
   'craft/tooltip-cut': [],
+  'craft/text-fixed': [],
+  'craft/text-clips': [],
   'craft/image-stretch': [],
   'craft/background-tile': [],
   'craft/fixed-column': [],

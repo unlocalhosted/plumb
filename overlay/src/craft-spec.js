@@ -108,6 +108,8 @@ export const STANDARD = {
     'link-in-text': { around: 20, lightness: 3 }, // lightness: WCAG F73's 3:1 between a link and its sentence; // letters of running text beside a link before it counts as in a sentence (invented)
     'icon-soft': { icon: 64 }, // the largest drawn size, in px, read as an icon (invented)
     'row-dead-zone': { least: 3, min: 1, max: 8, row: 56 }, // rows before it reads as a menu, the gap read as a dead strip (px), and the tallest row
+    'text-fixed': { grow: 1.15 }, // how much a line must grow, when the default grows by half, to count as following it
+    'text-clips': { over: 4 }, // px cut off at the larger text size before it is said
     'tooltip-cut': { over: 2 }, // px of a tooltip past the screen's edge before it is said
     'native-accent': { hue: 30 }, // degrees between the product's colour and the browser's blue before a control looks foreign
     'image-stretch': { min: 16 }, // smallest picture read

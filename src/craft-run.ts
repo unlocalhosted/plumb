@@ -113,17 +113,37 @@ async function takeScrolled(browser: Browser, url: string, timeout: number): Pro
 
 const quiet = (what: string) => (error: unknown) => { if (process.env.PLUMBER_DEBUG) process.stderr.write(`craft: ${what}: ${(error as Error).message}\n`); return null; };
 
+/**
+ * The larger-text reality (docs/briefs/realities.md): the page as someone has it who set their browser's default text
+ * size to 24px instead of 16px. The default is the browser's own setting, changed here through the debugging protocol;
+ * if it did not take (a probe sized `medium` is not 24px), nothing is returned and the checks that read it stay quiet.
+ */
+const LARGER_TEXT = 24;
+async function takeLargerText(browser: Browser, url: string, timeout: number): Promise<unknown> {
+  return inside(browser, url, { viewport: desktop }, timeout, async page => {
+    await open(page, url, timeout, false);
+    await settle(page);
+    const medium = await page.evaluate(() => { const i = document.createElement('i'); i.style.cssText = 'font-size:medium;position:absolute;visibility:hidden'; document.body.append(i); const v = parseFloat(getComputedStyle(i).fontSize); i.remove(); return v; });
+    if (Math.abs(medium - LARGER_TEXT) > 0.5) throw new Error(`the default text size stayed at ${medium}px`);
+    return ask(page, { op: 'snapshot' });
+  }, async page => {
+    const session = await page.context().newCDPSession(page);
+    await session.send('Page.setFontSizes' as never, { fontSizes: { standard: LARGER_TEXT, fixed: Math.round(LARGER_TEXT * 13 / 16) } } as never);
+  });
+}
+
 /** The pairs this page gives a reason to take, handed to the page that is read. A pair that fails is a rule that stays quiet. */
 async function takePairs(browser: Browser, url: string, main: Page, timeout: number): Promise<void> {
   // asked once the page has settled: what it fetches on mount (a list loading its rows) comes after the overlay is ready
   await settle(main);
-  const needs = await ask<{ dark: boolean; scrolled: boolean; held: boolean }>(main, { op: 'needs' });
+  const needs = await ask<{ dark: boolean; scrolled: boolean; held: boolean; bigtext?: boolean }>(main, { op: 'needs' });
   const give = async (condition: string, data: unknown) => { if (process.env.PLUMBER_DEBUG) process.stderr.write(`craft: ${condition} pair ${JSON.stringify(data)?.slice(0, 600)}\n`); if (data) await ask(main, { op: 'pair', condition, data }); };
   if (needs.dark) await give('dark', await inside(browser, url, { viewport: desktop, colorScheme: 'dark' }, timeout, async page => {
     await open(page, url, timeout, false); await settle(page); return ask(page, { op: 'snapshot' });
   }).catch(quiet('dark')));
   if (needs.scrolled) await give('scrolled', await takeScrolled(browser, url, timeout).catch(quiet('scrolled')));
   if (needs.held) await give('held', await takeHeld(browser, url, timeout).catch(quiet('held')));
+  if (needs.bigtext) await give('bigtext', await takeLargerText(browser, url, timeout).catch(quiet('bigtext')));
 }
 
 // The windows a page is read in: a full HD monitor, an HD laptop (the main read's own), an iPhone, a large Samsung phone.

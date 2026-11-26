@@ -6047,6 +6047,14 @@ into its own browser. Your app isn't changed.", then the findings.
   various ways as well." Written as a proposal, `docs/briefs/realities.md`: the same page opened under one changed
   condition at a time (larger text, other data, zoom, right to left, failed pictures, touch, print), read again and
   compared with the plain reading. Nothing built.
+- **The first reality, built:** larger text. The way in was the debugging protocol's own setting for the default
+  text size, and the place to put it was already there: the page check takes second readings (dark, scrolled, held)
+  only when a check asks for one. Two checks ask for this one. Proof on a test page: of three lines, the two written
+  in pixels were found and the one in rem was not; a pixel-sized box that cuts its words at the larger size was
+  found; the fix that rewrites 14px as 0.875rem cleared its finding and moved nothing. The owner asked how a person
+  would see realities ("state of pages saved but user can cycle through them ?"); the direction written down is a
+  dial cycled in the overlay, changing the live page where it can and showing a saved picture where it can't. Not
+  designed yet.
 - **Proof of the spec itself:** the six checks above are the first built to it. It is still a draft for the owner. The first use is the six checks from gokhan's tips
   (`docs/research/gkurt-css-tips.md`, reference logged 2026-11-26 in `docs/references.md`).
 - **Media hooks:** a docs example flipping between Broken and Fixed, beside the same check's finding on a real app.

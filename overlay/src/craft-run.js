@@ -140,7 +140,7 @@ async function operate(options) {
   if (op === 'probes') { probesIn(options.list); return true; }
   if (op === 'needs') {
     const fetched = performance.getEntriesByType('resource').some((e) => (e.initiatorType === 'fetch' || e.initiatorType === 'xmlhttprequest') && !e.name.includes('/__plumb/'));
-    return { dark: PAIRS.includes('dark') && hasDarkStyles(), scrolled: PAIRS.includes('scrolled') && scrollers().length > 0, held: PAIRS.includes('held') && fetched };
+    return { dark: PAIRS.includes('dark') && hasDarkStyles(), scrolled: PAIRS.includes('scrolled') && scrollers().length > 0, held: PAIRS.includes('held') && fetched, bigtext: PAIRS.includes('bigtext') };
   }
   if (op === 'snapshot') { resetKeys(); return snapshot(); }
   if (op === 'scrollers') { resetKeys(); return scrollers(); }

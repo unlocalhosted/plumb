@@ -5,7 +5,7 @@
  * them. The live overlay loads this module too: with nothing handed in, every reader answers null and every rule here
  * stays quiet, so a rule is never judged on facts it does not have.
  *
- *  HEADLESS.other(condition, facts)  a view of the same route under `dark` | `touch` | `held` | `scrolled`, keyed by
+ *  HEADLESS.other(condition, facts)  a view of the same route under `dark` | `touch` | `held` | `scrolled` | `bigtext`, keyed by
  *                                    the element's place in the page; null when that pair was not taken
  *  HEADLESS.probe(el, gesture)       the recorded timeline of one gesture on one element; null when not probed
  *  HEADLESS.source(el)               { component, library, role, props, handlers } from the server's index; null before
@@ -126,6 +126,11 @@ const VIEWS = {
       },
     };
   },
+  // bigtext: the page with the default text size raised: a record per element, its font size and what it cuts off there
+  bigtext(records) {
+    const by = new Map(records.map((r) => [r.k, r]));
+    return { get: (el) => by.get(pathKey(el)) ?? null };
+  },
   // scrolled: for each scroll container, whether anything at its edges changes with the scroll position
   scrolled(list) {
     const by = new Map(list.map((r) => [r.k, r]));
@@ -147,6 +152,8 @@ export function snapshot() {
     out.push({
       k, t: el.localName, x: round1(r.x), y: round1(r.y), w: round1(r.width), h: round1(r.height),
       sh: s.boxShadow, bg: toRgb(s.backgroundColor), fg: toRgb(s.color), fw: s.fontWeight, fs: s.fontSize, ls: s.letterSpacing,
+      // how far its content runs past a box that clips (the larger-text reality reads it)
+      cl: /hidden|clip/.test(`${s.overflowX} ${s.overflowY}`) ? Math.max(0, el.scrollHeight - el.clientHeight, el.scrollWidth - el.clientWidth) : 0,
       sm: s.getPropertyValue('-webkit-font-smoothing'), pos: s.position, gp: groundFrom(el.parentElement), own: [...el.childNodes].some((n) => n.nodeType === 3 && /\S/.test(n.nodeValue)),
     });
   };
@@ -614,7 +621,57 @@ export const tooltipCut = {
   },
 };
 
-export const RUN_RULES = [tooltipCut, darkElevation, darkWeight, skeletonMatch, scrollCueSeen, spinnerTiming, exitFasterProbe, interruptibleProbe, pressFeedbackProbe, menuPointerdown, tooltipDelay, paletteMotion, submenuPath, overdrag, touchManipulation];
+// ── the larger-text reality (docs/briefs/realities.md): the same page opened with the person's default text size set
+// to 24px instead of 16px, as someone who needs bigger text has it. Each element's size and box there is compared
+// with the page as it is read. ──
+
+// Text grows when the person makes it grow. Text whose size is written in pixels stays where it is when the default
+// text size goes up: everything around it grows and it does not. (WCAG 1.4.4 Resize Text.) Read by opening the page
+// with a larger default and comparing each line's size. The fix keeps today's size and writes it in rem.
+export const textFixed = {
+  id: 'craft/text-fixed', family: 'craft', number: [], owns: ['text-scale'], once: 'ancestor', reads: ['style', 'text', 'other:bigtext'], pairs: ['bigtext'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
+    const b = facts.other('bigtext')?.get(el);
+    if (!b || !b.own || !facts.text(el)) return [];
+    const base = px(facts.style(el).fontSize), grown = px(b.fs);
+    if (!base || grown >= base * (T.grow ?? 1.15)) return []; // the default grew by half; this grew with it
+    const cls = utility(el, 'text');
+    const m = /^(!?)text-\[(\d*\.?\d+)px\](!?)$/.exec(cls ?? '');
+    const rem = Math.round((base / 16) * 10000) / 10000;
+    return [{
+      ...say(this.id, { size: base }),
+      key: this.id, text: cls ?? 'font-size', props: ['font-size'], value: `${base}px`, n: base,
+      evidence: { size: base, atLargerText: grown, reality: 'larger text (24px default)' }, confidence: 0.86,
+      // the same size today, written so it follows the person's setting; it can't be tried without opening the reality again
+      suggest: m ? { kind: 'class', from: cls, to: `${m[1]}text-[${Math.round((Number(m[2]) / 16) * 10000) / 10000}rem]${m[3]}`, why: 'the same size today, and it grows with the person’s text size', sets: {} }
+        : { kind: 'advice', text: `Write this size as ${rem}rem instead of ${base}px: the same today, and it grows with the person’s text size.` },
+    }];
+  },
+};
+
+// Bigger text needs room. A box that shows all its words today and cuts them off when the text is larger was sized
+// for one text size. Read in the same reality: a box that clips, clean at the default and overflowing at the larger
+// one. A box that scrolls is left alone (its words are still reachable), and so is one that clips already.
+export const textClips = {
+  id: 'craft/text-clips', family: 'craft', number: [], owns: ['text-room'], once: 'ancestor', reads: ['style', 'rect', 'other:bigtext'], pairs: ['bigtext'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
+    const b = facts.other('bigtext')?.get(el);
+    if (!b || !(b.cl > (T.over ?? 4)) || !el.textContent.trim()) return [];
+    const s = facts.style(el);
+    if (!/hidden|clip/.test(`${s.overflowX} ${s.overflowY}`)) return [];
+    if (Math.max(el.scrollHeight - el.clientHeight, el.scrollWidth - el.clientWidth) > 1) return []; // cut off already: not this reality's doing
+    return [{
+      ...say(this.id, { over: Math.round(b.cl) }),
+      key: this.id, text: utility(el, 'h') ?? utility(el, 'overflow') ?? 'overflow', props: ['overflow'], value: s.overflowY, n: Math.round(b.cl),
+      evidence: { cutAtLargerText: Math.round(b.cl), reality: 'larger text (24px default)' }, confidence: 0.84,
+      suggest: { kind: 'advice', text: 'Give it room to grow with its words: a least height instead of a set one, or let the line wrap.' },
+    }];
+  },
+};
+
+export const RUN_RULES = [tooltipCut, textFixed, textClips, darkElevation, darkWeight, skeletonMatch, scrollCueSeen, spinnerTiming, exitFasterProbe, interruptibleProbe, pressFeedbackProbe, menuPointerdown, tooltipDelay, paletteMotion, submenuPath, overdrag, touchManipulation];
 
 // the pairs the loaded rules ask for
 export const PAIRS = [...new Set(RUN_RULES.flatMap((r) => r.pairs ?? []))];

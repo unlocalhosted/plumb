@@ -106,6 +106,16 @@ export const CRAFT = {
     line: `These ${n} rows are ${px(gap)} apart, and those pixels belong to no row. The highlight flickers as the pointer crosses, and a click there does nothing.`,
     reason: 'Every pixel of a menu should belong to a row.',
   }),
+  'text-fixed': ({ size }) => ({
+    label: 'Text ignores your text size',
+    line: `This text stays at ${px(size)} when someone sets a larger text size in their browser. Everything around it grows and it does not.`,
+    reason: 'Text should grow when the person makes it grow.',
+  }),
+  'text-clips': ({ over }) => ({
+    label: 'Cuts off at a larger text size',
+    line: `With a larger text size set in the browser, ${px(over)} of what this holds is cut off.`,
+    reason: 'Bigger text needs room.',
+  }),
   'tooltip-cut': ({ cut, side }) => ({
     label: 'Tooltip cut off',
     line: `This tooltip opens ${side}, where ${px(cut)} of it is off the screen.`,
