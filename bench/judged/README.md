@@ -54,6 +54,11 @@ is not finished.
 `app` is where the app runs. `appDir` is its folder, from this repository's root; it is used to record which commit
 drew the screen. A set judges one app. `width` is the width every screen is shown at.
 
+`ready` says what makes the app fit to be judged: the app's own switches for questions that come from how the copy
+was set up and not from its design. Today it takes `cookies`, set before the first screen is shown. Cal.com asks
+every visitor whose clock differs from the demo user's to change timezone, on every page; its own "don't show
+again" cookie is `calcom-timezone-dialog`.
+
 An app that runs on another machine has no folder here. Its set gives `code` in place of `appDir`, with the
 repository and commit written by hand, and `app` is the local end of a tunnel to it. `sets/calcom` is one: cal.com on
 the test server, reached with `ssh -N -L 3000:localhost:3000 vm-agent`.
@@ -69,7 +74,7 @@ the test server, reached with `ssh -N -L 3000:localhost:3000 vm-agent`.
 | `marks` | `{ n, x, y, w, h, words, weight, afterMs, scrollY }`: a box in page pixels, the judge's words, and `small`, `wrong` or `hurts` |
 | `done` | the judge said nothing else is wrong here |
 
-`sets/<name>/screens/<screen>.json`, written when a screen is finished: the screen as plain data (`snapshot.js`).
+`sets/<name>/screens/<screen>.<judge>.json`, written when a screen is finished: the screen as plain data (`snapshot.js`).
 For every element, in tree order, it holds its tag, parent, box, own words, classes, the line it was written on and
 45 style values. It also records the window, the browser, and the app's commit with the number of changed files. A
 mark is tied to elements by comparing boxes, so a mark leads to source lines.

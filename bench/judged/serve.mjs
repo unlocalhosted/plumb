@@ -8,7 +8,7 @@
 //
 // Nothing the app sends is changed. What a judge says is kept in the set's folder:
 //   judgements/<screen>.<judge>.json   the looks and the marks, saved as they are made
-//   screens/<screen>.json              the screen as plain data, taken when the judge says the screen is done
+//   screens/<screen>.<judge>.json      the screen as plain data, taken when the judge says the screen is done
 import http from 'node:http';
 import net from 'node:net';
 import { execFile } from 'node:child_process';
@@ -79,7 +79,8 @@ async function judging(req, res, url) {
   if (req.method === 'POST' && saving && known.has(saving[2])) {
     const value = await body(req);
     if (saving[1] === 'judgement') await keep(join(setDir, 'judgements'), `${saving[2]}.${judge}.json`, value);
-    else await keep(join(setDir, 'screens'), `${saving[2]}.json`, { ...value, code: await code() });
+    // kept per judge: the screen is what that judge was looking at, and one judge's run never replaces another's
+    else await keep(join(setDir, 'screens'), `${saving[2]}.${judge}.json`, { ...value, code: await code() });
     return json(res, 200, { ok: true });
   }
   return json(res, 404, { error: 'not a judging address' });

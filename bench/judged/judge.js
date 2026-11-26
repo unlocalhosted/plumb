@@ -71,6 +71,9 @@ class JudgeDesk extends HTMLElement {
     const root = this.attachShadow({ mode: 'open' });
     const [tokens, loaded] = await Promise.all([fetch('/__judge/tokens.css').then((r) => r.text()), call('set')]);
     this.set = loaded.set; this.judgements = loaded.judgements; this.scale = 1; this.sel = null; this.drag = null;
+    // what makes the app ready to be judged (set.json, `ready`): its own switches for questions that come from how
+    // the copy was set up, not from its design. The frame shares this origin, so a cookie set here is the app's too.
+    for (const [name, value] of Object.entries(this.set.ready?.cookies ?? {})) document.cookie = `${name}=${value}; path=/; max-age=7776000`;
     root.innerHTML = `<style>${tokens}${SOFT_CSS}${CSS}</style>
       <header class="bar">
         <div class="where"><b class="count"></b><code class="path"></code></div>

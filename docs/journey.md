@@ -6605,7 +6605,16 @@ into its own browser. Your app isn't changed.", then the findings.
   another session was running on the test server. A second set, `sets/calcom`, judges seven of its screens through
   a tunnel, signed in as its demo user. A made-up mark on the event types list covered the right row ("Tennis
   class" and its three tags). Cal.com's elements carry no source line there, so a mark leads to elements only.
+- **What went wrong on the owner's first try:** "the harness is wrong it keeps showing me on every page". Cal.com
+  asks any visitor whose clock differs from the demo user's to change timezone, on every page, and the judging layer
+  sat on top of the question. The owner's clicks on its buttons were saved as "looks" on two screens. The cause was
+  ours: a copy set up for testing shows questions that are not part of the design, and the harness left the judge to
+  clear them. Now a set says what makes its app ready (`ready` in `set.json`); for cal.com that is the app's own
+  "don't show again" cookie. With the cookie cleared the question showed on a bookings page; through the judging
+  page it stayed away on four screens in a row. A test run of ours had also replaced the saved data of those two
+  screens, so screens are now kept per judge. The two spoiled judgements were moved to `set-aside/`.
 - **Not shown:** no real judgement has been made yet. Nothing scores plumber against the marks. No test covers it.
+  A click meant for the app is still taken as a look unless Space is held.
 - **Media hooks:** the judging page with one mark and its note open over cal.com's event types list.
 - **References:** Layr's chapter and the research behind it, both in [references.md](references.md) under 2026-11-26.
 

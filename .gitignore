@@ -60,3 +60,4 @@ docs/films/*-draft/
 # judged set (bench/judged): what a judge said and the screens as data stay local; the app may be private
 /bench/judged/sets/*/judgements/
 /bench/judged/sets/*/screens/
+/bench/judged/sets/*/set-aside/

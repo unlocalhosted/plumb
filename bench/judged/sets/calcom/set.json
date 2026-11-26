@@ -2,6 +2,7 @@
   "name": "calcom",
   "app": "http://localhost:3000",
   "code": { "repository": "https://github.com/calcom/cal.com", "commit": "ae027bb70e694e2d2c44569f398d6cbcee0389b1", "note": "a throwaway copy on the test server, seeded with demo data and signed in as the demo user" },
+  "ready": { "cookies": { "calcom-timezone-dialog": "1" } },
   "width": 1280,
   "screens": [
     { "id": "event-types", "path": "/event-types" },
