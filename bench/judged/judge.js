@@ -1,9 +1,10 @@
 // The judging page (bench/judged/README.md). One screen at a time, the real app in a frame, and a layer over it:
-//   look   the judge clicks the first three things their eye went to (or skips)
+//   look   the judge points at the first three things their eye went to and presses 1, 2, 3 (or skips)
 //   mark   the judge drags a box round anything that looks wrong, says what is off and how much it matters
 //   done   "Nothing else here": the screen is saved as plain data, and what is not marked counts as fine
 // Plumber's own overlay is hidden in the frame, so the judge never sees what plumber thinks. Every change is saved
-// as it is made. Holding Space lets the pointer through to the app.
+// as it is made. The page under the layer is still: a click on it records nothing and presses nothing. Holding
+// Space lets the pointer through to the app.
 import { SOFT_CSS, soften } from './soft.js';
 import { snapshot } from './snapshot.js';
 
@@ -33,10 +34,14 @@ const CSS = `
     box-shadow: 0 1px 2px rgb(0 0 0 / .06), 0 10px 28px -14px rgb(0 0 0 / .22); }
   iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
   .layer { position: absolute; inset: 0; overflow: hidden; touch-action: none; }
-  .layer.look { cursor: cell; } .layer.mark { cursor: crosshair; } .layer.using { pointer-events: none; }
+  .layer.look { cursor: default; } .layer.mark { cursor: crosshair; } .layer.using { pointer-events: none; }
   .page { position: absolute; left: 0; top: 0; width: 0; height: 0; }
   .dot { position: absolute; width: 24px; height: 24px; margin: -12px 0 0 -12px; border-radius: 50%; background: var(--pl-sky); color: var(--pl-sky-on);
     font: 700 12px/24px var(--pl-round); text-align: center; box-shadow: 0 0 0 2px var(--pl-halo); pointer-events: none; animation: land 160ms var(--ease) both; }
+  .dot.ghost { opacity: .6; animation: none; margin: 8px 0 0 8px; }
+  .hint { position: absolute; width: 252px; padding: 8px 10px; border-radius: 10px; background: var(--pl-ink); color: var(--pl-paper); font: var(--pl-card-meta);
+    box-shadow: 0 10px 24px -12px rgb(0 0 0 / .4); pointer-events: none; animation: land 160ms var(--ease) both; }
+  .hint kbd { font: var(--pl-card-code); padding: 0 5px; border-radius: 5px; background: color-mix(in oklab, var(--pl-paper) 22%, transparent); }
   .box { --h: var(--pl-pink); --on: var(--pl-pink-on); position: absolute; box-sizing: border-box; padding: 0; margin: 0; background: transparent;
     border: 2px solid var(--h); border-radius: 4px; box-shadow: 0 0 0 1.5px var(--pl-halo), inset 0 0 0 1.5px var(--pl-halo); cursor: pointer; }
   .box[data-w="small"] { --h: var(--pl-butter); --on: var(--pl-butter-on); } .box[data-w="hurts"] { --h: var(--pl-coral); --on: var(--pl-coral-on); }
@@ -99,6 +104,7 @@ class JudgeDesk extends HTMLElement {
     this.layer.addEventListener('pointermove', (e) => this.move(e));
     this.layer.addEventListener('pointerup', (e) => this.up(e));
     this.layer.addEventListener('pointercancel', () => { this.drag = null; this.draw(); });
+    this.layer.addEventListener('pointerleave', () => { this.pointer = null; this.ghost?.remove(); });
     window.addEventListener('keydown', (e) => this.key(e, true));
     window.addEventListener('keyup', (e) => this.key(e, false));
     window.addEventListener('blur', () => this.use(false));
@@ -158,25 +164,54 @@ class JudgeDesk extends HTMLElement {
     const typing = e.target?.closest?.('input, textarea, select, [contenteditable]') || e.composedPath?.()[0]?.matches?.('input, textarea');
     if (e.code === 'Space' && !typing) { e.preventDefault(); this.use(down); return; }
     if (!down || typing) return;
+    if (this.i < this.set.screens.length && this.step === 'look') {
+      // a look is the next number pressed while pointing: a click can never be mistaken for one
+      const j = this.now;
+      if (e.key === String(j.looks.length + 1) && this.pointer && !this.layer.classList.contains('using')) { j.looks.push({ ...this.pointer, afterMs: this.since() }); this.changed(); this.draw(); }
+      else if (e.key === 'Backspace' && j.looks.length) { j.looks.pop(); this.changed(); this.draw(); }
+      return;
+    }
     if (e.key === 'Escape') { this.drag = null; this.sel = null; this.draw(); }
     if ((e.key === 'Backspace' || e.key === 'Delete') && this.sel !== null) this.remove(this.sel);
   }
-  use(on) { this.layer.classList.toggle('using', !!on); }
+  use(on) { this.layer.classList.toggle('using', !!on); if (on) this.ghost?.remove(); }
+
+  // while looking, the pointer carries the number the next key press will leave
+  follow() {
+    if (!this.pointer || this.layer.classList.contains('using')) return this.ghost?.remove();
+    if (!this.ghost?.isConnected) { this.ghost = document.createElement('i'); this.ghost.className = 'dot ghost'; this.page.append(this.ghost); }
+    this.ghost.textContent = this.now.looks.length + 1;
+    this.ghost.style.cssText = `left:${this.pointer.x}px;top:${this.pointer.y}px`;
+  }
+  // a click on the still page is answered and never kept: it says what would record a look, and how to reach the app
+  hint(at) {
+    this.root.querySelector('.hint')?.remove();
+    const tip = document.createElement('div'); tip.className = 'hint'; tip.setAttribute('role', 'status');
+    tip.innerHTML = `Press <kbd>${this.now.looks.length + 1}</kbd> to put a look here. Hold <kbd>Space</kbd> to click the page.`;
+    tip.style.cssText = `left:${Math.max(8, Math.min(at.x - 126, this.set.width - 260))}px;top:${at.y + 24}px`;
+    this.page.append(tip);
+    clearTimeout(this.hintTimer); this.hintTimer = setTimeout(() => tip.remove(), 2600);
+  }
 
   down(e) {
     if (e.button !== 0 || e.target.closest('.note')) return;
+    if (this.step === 'look') return this.hint(this.at(e));
     const box = e.target.closest('.box');
     if (box && this.step === 'mark') { this.sel = Number(box.dataset.n); this.draw(true); return; }
     this.layer.setPointerCapture(e.pointerId);
     this.drag = { from: this.at(e), to: this.at(e) };
     if (this.step === 'mark') { this.sel = null; this.draw(); }
   }
-  move(e) { if (!this.drag) return; this.drag.to = this.at(e); if (this.step === 'mark') this.draw(); }
+  move(e) {
+    this.pointer = this.at(e);
+    if (this.step === 'look') return this.follow();
+    if (!this.drag) return;
+    this.drag.to = this.pointer; this.draw();
+  }
   up(e) {
     if (!this.drag) return;
     const { from } = this.drag, to = this.at(e); this.drag = null;
     const j = this.now;
-    if (this.step === 'look') { j.looks.push({ x: to.x, y: to.y, afterMs: this.since() }); this.changed(); return this.draw(); }
     const x = Math.min(from.x, to.x), y = Math.min(from.y, to.y), w = Math.abs(to.x - from.x), h = Math.abs(to.y - from.y);
     if (w < 6 || h < 6) return this.draw();
     const n = j.marks.reduce((m, k) => Math.max(m, k.n), 0) + 1;
@@ -199,7 +234,7 @@ class JudgeDesk extends HTMLElement {
     const j = this.now, step = this.step;
     $('.count').textContent = `Screen ${this.i + 1} of ${n}`; $('.path').textContent = this.screen.path;
     $('.ask').innerHTML = step === 'look'
-      ? `Click the first three things your eye went to. <b>${j.looks.length} of 3</b>`
+      ? `Point at the ${['first', 'second', 'third'][j.looks.length]} thing your eye went to and press <kbd>${j.looks.length + 1}</kbd>.`
       : 'Drag a box round anything that looks wrong. Hold <kbd>Space</kbd> to use the page.';
     $('.skip').hidden = step !== 'look'; $('.next').hidden = step !== 'mark';
     $('.next span').textContent = j.marks.length ? 'Nothing else here' : 'Nothing wrong here';
@@ -222,6 +257,7 @@ class JudgeDesk extends HTMLElement {
     const m = step === 'mark' && j.marks.find((k) => k.n === this.sel);
     if (m) this.note(m, focus);
     this.place();
+    if (step === 'look') this.follow();
   }
 
   // the small card under a selected mark: what is off, how much it matters, or take the mark away

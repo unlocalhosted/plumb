@@ -16,11 +16,12 @@ missed, and what plumber flagged that a person would not flag.
 
 Each screen is the live app at a fixed width, with a layer over it.
 
-- **First, three looks.** Click the first three things your eye went to, in order. Skip if you already know the
-  screen.
+- **First, three looks.** Point at the first thing your eye went to and press 1. Do the same with 2 and 3 for the
+  next two. Backspace takes the last one back. Skip if you already know the screen.
 - **Then, marks.** Drag a box round anything that looks wrong. Say what is off in your own words and pick how much
   it matters: Small, Wrong or Hurts. Click a mark to change it; Remove, Backspace or Delete takes it away.
-- **Hold Space** to use the page under the layer: hover, click, open a menu. The wheel scrolls the page at any time.
+- **Hold Space** to use the page under the layer: hover, click, open a menu. Without Space the page is still: a
+  click on it presses nothing and records nothing. The wheel scrolls the page at any time.
 - **Nothing else here** finishes the screen. From then on, whatever you did not mark counts as fine.
 
 Everything is saved as you go. Closing the tab loses nothing, and opening it again returns to the first screen that
@@ -69,7 +70,7 @@ the test server, reached with `ssh -N -L 3000:localhost:3000 vm-agent`.
 
 | Field | Meaning |
 |---|---|
-| `looks` | up to three `{ x, y, afterMs }`: where the eye went, in page pixels, and how long after the screen appeared |
+| `looks` | up to three `{ x, y, afterMs }`: where the judge pointed for 1, 2 and 3, in page pixels, and how long after the screen appeared |
 | `looksSkipped` | the judge skipped the looks |
 | `marks` | `{ n, x, y, w, h, words, weight, afterMs, scrollY }`: a box in page pixels, the judge's words, and `small`, `wrong` or `hurts` |
 | `done` | the judge said nothing else is wrong here |
