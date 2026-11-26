@@ -6552,8 +6552,32 @@ into its own browser. Your app isn't changed.", then the findings.
 - **Media hooks:** the two docs examples (a total on two lines, a card that cuts its rows), each with its Broken and
   Fixed switch.
 
+### 151. A judged set: real screens marked by a person (2026-11-26)
+
+- **The itch:** the owner wants plumber to "look at the shape rather than the details", and for design laws to
+  become "applied science in itself". A science needs something to be tested against, and plumber had nothing.
+- **How we found it:** reading the research behind the perception laws
+  ([perception-sources.md](research/perception-sources.md)). Every number in it came from dots and simple shapes in
+  a lab. No real page of ours carried a person's own marks to compare with.
+- **The system behind it:** each check was proven on real apps one at a time, with a before and an after. A person
+  was never asked to look at a whole screen unprompted. So what an expert sees and plumber misses was never counted.
+- **What we tried, what we chose and why:** pictures of screens from a headless browser were the first plan. The
+  laptop's swap was nearly full (19.6 of 20 GB), and the server would draw system fonts differently, so the judge
+  would mark faults that are not the app's. We chose to judge the live app in the person's own browser. A small
+  server stands in front of the app, so the judging page can read the screen it is judging.
+- **The fix and the proof:** `bench/judged`. The judge clicks the first three things they looked at, drags a box
+  round anything wrong, says what is off and how much it matters, and finishes the screen. Plumber's overlay is
+  hidden. Tried once on the crafting-ui home page with a made-up mark: the mark covered five elements, each with its
+  source line (`src/pages/home/Play.tsx`), and the screen was saved as 1,175 elements, 1,172 of them with a source
+  line, with the app's commit. That test data was deleted.
+- **Not shown:** no real judgement has been made yet. Nothing scores plumber against the marks. No test covers it.
+- **Media hooks:** the judging page with one mark and its note open over the crafting-ui home page.
+- **References:** Layr's chapter and the research behind it, both in [references.md](references.md) under 2026-11-26.
+
 ## Open gaps
 
+- The judged set ([entry 151](#151-a-judged-set-real-screens-marked-by-a-person-2026-11-26)) has a judging page
+  and no judgements yet. Nothing scores plumber against a person's marks, and the marks are kept only on the laptop.
 - Without setup, the page check found 70 problems where the same page wired in finds 72 (10 fixes against 14). Not
   explained yet ([entry 138](#138-the-page-check-works-in-an-app-with-no-plumber-setup-2026-11-25)).
 - The fixes of entry 81 (caret, app errors, broken config on Vite) are committed and not published. The site runs

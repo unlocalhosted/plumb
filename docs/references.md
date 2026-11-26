@@ -427,3 +427,32 @@ All free under the Unsplash License, hotlinked from images.unsplash.com as Unspl
   drawn by CSS, text sized by the window alone, blank lines as spacing); nine it already checks; two where plumber's
   own check disagrees with the tip.
 - Used in: `docs/research/harvests/css-protips/tips.md`. Nothing built yet.
+
+## 2026-11-26 · Layr's reference on perception and visual hierarchy (shared by the owner)
+- What: [layr.design/reference/perception-visual-hierarchy](https://layr.design/reference/perception-visual-hierarchy),
+  one chapter of an open design reference written for people and for AI agents. It holds eight laws (aesthetic-usability,
+  common region, proximity, Prägnanz, similarity, uniform connectedness, selective attention, Von Restorff), each with
+  five signals to look for and a note on when not to apply it. It is a secondary source: each law page cites only
+  the matching Laws of UX page, which cites Wikipedia and blog posts.
+- Why: "go through these and see how our new engine approach would be able to model these rules and laws", asked
+  while we were deciding how plumber could judge the shape of a page and not single values.
+- What we read from it: its main idea is to compare what the page looks like it means with what the product means.
+  That gives five pairs to check: near against belongs-to, enclosed against scope, alike against same role, linked
+  against related, loud against important. Of its 40 signals, by our reading and with nothing run, 22 could be judged
+  from the drawn page and the code, 15 need a reading plumber lacks today (what a thing is for, or where a connecting
+  line starts and ends), and 3 need an understanding of the product.
+- What is theirs and what is ours: theirs is the comparison and the "do not over-apply" notes, which say where each
+  law stops holding. Ours is measuring the page and writing the fix; Layr gives an agent words to review by.
+- Used in: `docs/research/perception-sources.md`, where the research behind the eight laws was read the same day.
+  Nothing built yet.
+
+## 2026-11-26 · Research behind the perception laws (found by us)
+- What: Wagemans and others (2012), "A Century of Gestalt Psychology in Visual Perception", parts
+  [I](https://pmc.ncbi.nlm.nih.gov/articles/PMC3482144/) and [II](https://pmc.ncbi.nlm.nih.gov/articles/PMC3728284/);
+  Wolfe and Horowitz (2017), ["Five Factors that Guide Attention in Visual Search"](https://pmc.ncbi.nlm.nih.gov/articles/PMC9879335/);
+  Hunt (1995), ["What von Restorff really did"](https://link.springer.com/article/10.3758/BF03214414), abstract only.
+- Why: the owner, about Layr's sources: "you can read the references i want worlds best design sense". Layr's
+  sources held no measurements, so we read the research reviews.
+- What we read from it: nearness has a measured law that depends on a ratio of distances; cues for grouping add up;
+  regularity can be counted; salience has two rules. One law is misnamed on Layr and Laws of UX.
+- Used in: `docs/research/perception-sources.md`. Nothing built yet.

@@ -1,0 +1,13 @@
+{
+  "name": "first",
+  "app": "http://localhost:5180",
+  "appDir": "../crafting-ui",
+  "width": 1280,
+  "screens": [
+    { "id": "home", "path": "/" },
+    { "id": "interfaces", "path": "/interfaces" },
+    { "id": "craft", "path": "/interfaces/craft" },
+    { "id": "motion", "path": "/motion" },
+    { "id": "motion-primitives", "path": "/motion/primitives" }
+  ]
+}

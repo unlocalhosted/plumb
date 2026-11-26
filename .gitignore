@@ -56,3 +56,7 @@ docs/films/*-draft/
 
 # plumber's craft engine, built for the site by web/scripts/engine.mjs
 /web/public/engine/
+
+# judged set (bench/judged): what a judge said and the screens as data stay local; the app may be private
+/bench/judged/sets/*/judgements/
+/bench/judged/sets/*/screens/
