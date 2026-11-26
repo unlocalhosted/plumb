@@ -678,7 +678,7 @@ export const textFixed = {
     // stylesheet the unit can't be read, so a size that is not a whole or half pixel is taken as worked out (a guess)
     if (/vw|vh|vmin|vmax|cq|calc|var\(|clamp|min\(|max\(|em\b|%/.test(written.replace(/rem\b/g, '')) || Math.abs(base * 2 - Math.round(base * 2)) > 0.01) return [];
     const m = /^(!?)text-\[(\d*\.?\d+)px\](!?)$/.exec(cls ?? '');
-    const rem = Math.round((base / 16) * 10000) / 10000;
+    const rem = Math.round((base / 16) * 100000) / 100000;
     return [{
       ...say(this.id, { size: base }),
       key: this.id, text: cls ?? 'font-size', props: ['font-size'], value: `${base}px`, n: base,
@@ -687,7 +687,7 @@ export const textFixed = {
       // hear it once and take one fix (found on a real app, 2026-11-26: 55 notes on five pages). craft-run.js merges them
       fold: 'page',
       // the same size today, written so it follows the person's setting; it can't be tried without opening the reality again
-      suggest: m ? { kind: 'class', from: cls, to: `${m[1]}text-[${Math.round((Number(m[2]) / 16) * 10000) / 10000}rem]${m[3]}`, why: 'the same size today, and it grows with the person’s text size', sets: {} }
+      suggest: m ? { kind: 'class', from: cls, to: `${m[1]}text-[${Math.round((Number(m[2]) / 16) * 100000) / 100000}rem]${m[3]}`, why: 'the same size today, and it grows with the person’s text size', sets: {} }
         : { kind: 'advice', text: `Write this size as ${rem}rem instead of ${base}px: the same today, and it grows with the person’s text size.` },
     }];
   },

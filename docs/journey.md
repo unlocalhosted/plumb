@@ -6429,6 +6429,29 @@ into its own browser. Your app isn't changed.", then the findings.
   live page does not show this check at all, so nothing changed there.
 - **Media hooks:** the findings list for the Standards page before (15 lines of one sentence) and after (one).
 
+### 148. The one fix, taken on a real app (2026-11-26)
+
+- **The itch:** the fix that rewrites every pixel-sized label had only been taken on a test page with two places.
+  The owner: "Yes, try it".
+- **How we found it:** a throwaway copy of crafting-ui on the owner's server (commit `006e80b`), with plumber at
+  `223f1c5f`. Five pages were checked, the fix was taken with `plumber apply`, the diff was read, and it was undone.
+- **What happened:** the note carried 47 places. 30 were written, across 8 files, in one go: 30 lines changed, each
+  a pixel class becoming its rem class (`text-[12px]` to `text-[0.75rem]`, `text-[9px]` to `text-[0.5625rem]`).
+  One undo put all 8 files back, with no file differing afterwards.
+- **The system behind the 17 that were not written:** the fix looks for the class on the element's own line. In 14
+  places the class is held in a variable (`const lettering = 'measure text-[11px] …'`, used on many elements). In 3
+  it is passed to a link component, so the finding points inside the component, where the class isn't written.
+  The first run reported all 17 as "changed since the page check", which was false. Each now gives the engine's
+  own reason.
+- **What we chose:** say the true reason now. Writing those places is its own piece: the overlay already follows a
+  class to the variable or the call that holds it, and the command line's fix for a page finding does not use that
+  yet. A single page fix has the same limit, so it is older than the fold.
+- **Also changed:** the rem value was rounded to four places, which turned 10.5px into 0.6563rem (10.5008px). It is
+  now written to five (0.65625rem). Not run again after this change.
+- **Not shown:** the pages were not looked at after the fix, at the default size or at the larger one. The check was
+  run again after the fix in the first try but its result for this note was not read.
+- **Media hooks:** the diff of 30 lines; the apply's own printout with its two groups of reasons.
+
 ## Open gaps
 
 - Without setup, the page check found 70 problems where the same page wired in finds 72 (10 fixes against 14). Not
