@@ -3265,7 +3265,11 @@ export const emptyBox = {
     const s = facts.style(el);
     if (s.display === 'none' || s.backgroundImage !== 'none') return [];
     if (['::before', '::after'].some((p) => !/^(?:none|normal)$/.test(getComputedStyle(el, p).content))) return [];
-    const r = facts.rect(el), room = (r.width >= 1 && r.height >= 1) || px(s.marginTop) + px(s.marginBottom) > 0;
+    const r = facts.rect(el);
+    // kept for a screen reader and hidden from the eye (sr-only: a pixel, clipped, out of the flow): an empty status
+    // line of that kind is waiting to speak, and takes no room (found on a real app, 2026-11-26)
+    if ((r.width <= 2 && r.height <= 2) || /^(?:absolute|fixed)$/.test(s.position) || (s.clipPath && s.clipPath !== 'none') || (s.clip && s.clip !== 'auto')) return [];
+    const room = (r.width >= 1 && r.height >= 1) || px(s.marginTop) + px(s.marginBottom) > 0;
     if (!room) return [];
     const bare = el.childNodes.length === 0; // :empty is true only with nothing inside, not even a space
     return [{

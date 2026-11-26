@@ -24,6 +24,8 @@ export function App() {
       {/* quiet: the same line with words, and a divider that is empty by design */}
       <p id="said" className="rounded-md bg-red-50 p-3 text-sm text-red-700">That card was declined.</p>
       <div id="rule" className="h-px bg-slate-200" />
+      {/* quiet: a status line kept for screen readers, hidden from the eye, empty until there is news */}
+      <p id="announce" role="status" className="sr-only">{error}</p>
 
       {/* link-in-text: a link in a sentence, told apart by colour alone */}
       <p className="text-base text-slate-700">Read the <a id="plain" href="#terms" className="text-indigo-600">terms of service</a> before you continue with the upgrade to the team plan.</p>
