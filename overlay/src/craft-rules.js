@@ -552,6 +552,8 @@ export const contentAlign = {
     // the column, and objects line up by their edges; only a row that spans the column bleeds
     const columnRight = pr.right - px(ps.borderRightWidth) - px(ps.paddingRight);
     if (r.right < columnRight - 1) return [];
+    // a strip holding its own drawn button (an install command and its Copy) is a component with an edge, like a field
+    if ([...el.querySelectorAll('button, [role="button"], input')].some((b) => (rgb(facts.style(b).backgroundColor)?.[3] ?? 0) > 0 || px(facts.style(b).borderTopWidth) > 0)) return [];
     // a highlighted row among rows like it (a selected item in a list), or an edgeless tint among the sections of a page
     // (a note between a profile and its invoices): either way its words should share the edge its unfilled siblings'
     // words share. A card with a shadow or a border is an object with an edge, and objects line up by their edges, so
@@ -684,6 +686,8 @@ export const buttonPadding = {
     const b = facts.box(el), r = facts.rect(el), s = facts.style(el);
     if (r.height > T.maxHeight || b.pt < 2 || Math.abs(b.pt - b.pb) > 0.5 || Math.abs(b.pl - b.pr) > 0.5) return [];
     if (Math.abs(r.width - r.height) < 2 && px(s.borderTopLeftRadius) >= r.height / 2 - 1) return []; // a round button
+    // side padding gives a drawn shape room around its words; a control drawn as words alone (a text tab) has no shape
+    if ((rgb(s.backgroundColor)?.[3] ?? 0) === 0 && s.boxShadow === 'none' && px(s.borderLeftWidth) === 0 && px(s.borderTopWidth) === 0) return [];
     // as wide as the column it sits in: a row of a list (a question, a menu item), not a button sized by its words
     const host = el.parentElement;
     if (host && host !== document.body) {
@@ -2645,6 +2649,17 @@ export const greyLevels = {
     if (c.sample < T.sample || c.clusters.length <= 3) return [];
     const k = c.clusters.find((x) => x.members.includes(el));
     if (!k || k.count / c.sample > T.minority || c.clusters.slice(0, 3).includes(k)) return [];
+    // the page's own ink is never a stray, however many faint labels outnumber it on one page
+    const own = facts.style(el).color;
+    if (own === facts.style(document.body).color) return [];
+    // nor a colour set by one of the theme's colour tokens (text-muted), on this element or the one it inherits from
+    for (let n = el; n && n !== document.body; n = n.parentElement) {
+      if (n !== el && facts.style(n).color !== own) break;
+      const token = classesOf(n).split(/\s+/).find((x) => { if (!x.startsWith('text-') || x.includes(':')) return false; const name = x.slice(5).split('/')[0];
+        // the theme's list, or a named colour class the page's own styles define (an inline theme leaves no variable to read)
+        return (theme.colors?.() ?? []).some((t) => name === t.short) || (!PALETTE.test(name) && !name.startsWith('[') && colourClasses().has(x)); });
+      if (token) return [];
+    }
     const majority = c.clusters.slice(0, 3);
     const near = majority.map((x) => x.value).sort((a, b) => Math.hypot(...a.map((v, i) => v - k.value[i])) - Math.hypot(...b.map((v, i) => v - k.value[i])))[0];
     const cls = colourClass(el, 'text', theme) ?? classesOf(el).split(/\s+/).find((x) => /^text-\[#/.test(x)) ?? null;
@@ -2657,6 +2672,21 @@ export const greyLevels = {
     }];
   },
 };
+
+// The single-class rules in the page's styles that set a text colour (.text-muted { color: … }), read once per set of
+// sheets: a named class there is the project's own colour, a decision, whatever its value.
+let COLOUR_CLASSES = null;
+function colourClasses() {
+  if (COLOUR_CLASSES?.n === document.styleSheets.length) return COLOUR_CLASSES.set;
+  const set = new Set();
+  const walk = (rules) => { for (const r of rules) {
+    if (r.cssRules?.length && !r.selectorText) walk(r.cssRules);
+    else if (r.selectorText && r.style?.color) for (const sel of r.selectorText.split(',')) { const m = /^\s*\.((?:\\.|[\w-])+)\s*$/.exec(sel); if (m) set.add(m[1].replace(/\\(.)/g, '$1')); }
+  } };
+  for (const sheet of document.styleSheets) { try { walk(sheet.cssRules); } catch { /* another origin's sheet */ } }
+  COLOUR_CLASSES = { n: document.styleSheets.length, set };
+  return set;
+}
 
 // #12. Vertical rhythm: a stack whose gap is off the gaps the page keeps to.
 export const rhythm = {

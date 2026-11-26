@@ -99,6 +99,10 @@ export const statusChain = rule('status-chain', 'text', 'p,div,span,small,li,dd,
   if (text.length > 160 || el.closest(`nav, footer, [aria-label*="breadcrumb" i], ${CODE}, ${CONTROL}, table`)) return;
   const count = (text.match(SEPARATORS) ?? []).length;
   if (count < 2 || el.querySelectorAll('a').length >= 2) return;
+  // a row of cells (a grid row, a table-like list) holds its separators in different cells: no one line reads as a chain
+  if (/grid/.test(facts.style(el).display) && [...el.children].filter((k) => trimmed(k.textContent)).length >= 2) return;
+  // one kind of value in a sequence (32 · 36 · 40, sizes or steps) is a list, not facts about different things
+  if (text.split(SEPARATORS).every((p) => /^\s*[-+−]?\d[\d.,]*\s*(?:px|rem|em|ms|s|f|%)?\s*$/.test(p))) return;
   // said once, on the innermost element that holds the whole chain
   if ([...el.children].some((k) => (trimmed(k.textContent).match(SEPARATORS) ?? []).length >= count)) return;
   if (facts.rect(el).height > px(facts.style(el).lineHeight === 'normal' ? px(facts.style(el).fontSize) * 1.4 : facts.style(el).lineHeight) * 2.2 || !shown(el, facts)) return;
@@ -442,6 +446,8 @@ export const detailedDiagram = rule('detailed-diagram', 'drawing', 'div,figure,s
     if (r.width < 120 || r.height < 80) continue;
     const parts = [...svg.querySelectorAll(PARTS)].filter((p) => !p.closest('defs, symbol, mask, clipPath, pattern, marker')).length;
     if (parts < 24 || !shown(el, facts)) continue;
+    // a diagram explains with words on it; a drawing with none (an icon, a sticker, an illustration) is a picture
+    if (!svg.querySelector('text, foreignObject')) continue;
     return found(this, el, { parts }, { value: `${parts} drawn parts`, confidence: 0.8, advice: 'Cut it to the one thing it shows, or replace it with a sentence.' });
   }
 });

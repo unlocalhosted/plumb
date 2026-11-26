@@ -6211,6 +6211,34 @@ into its own browser. Your app isn't changed.", then the findings.
   fixed, and it sounds like a colleague where "enforcer" sounded like police. It is also short, so the heading is
   back at its full size at every width. Passed over: "a design system keeper" and "a drift fixer".
 
+### 144. The last five kinds of wrong note (2026-11-26)
+
+- **The itch:** entry 143 left five kinds of wrong finding on crafting-ui. The owner: "Fix the five left".
+- **Two were my mistakes, not plumber's.** The capitals check on the standards page points at a figure caption, a
+  real 8-word sentence set in capitals, and the technique labels it flags run to seven words in 11px capitals. Both
+  are right; the check is unchanged.
+- **What changed:**
+  1. *Button padding.* Side padding gives a drawn shape room around its words; a control drawn as words alone (the
+     home page's text tabs) has no shape, so it is left alone.
+  2. *Pulling a row out.* A strip that holds its own drawn button (the install command and its Copy) is a component
+     with an edge, like a field, not a row to pull out to the column.
+  3. *Text greys.* On the Interfaces page the check called the page's own body ink a stray, because faint labels
+     outnumber body text there. The page's ink is never a stray now, and neither is a colour set by a class the
+     project's own styles define (`text-muted`). The engine's list of theme colours missed this app's muted grey,
+     because the app declares its colours inline in the theme; the check now reads the page's style rules instead.
+  4. *Busy diagrams* (the owner's taste check). A drawing with no words on it is a picture (an icon, a sticker), not
+     a diagram.
+  5. *Too much in one line* (the owner's taste check). A row of grid cells is not one line, and a sequence of one
+     kind of value ("32 · 36 · 40") is a list.
+- **The proof:** all 18 pages again on the test server: 399 findings became 373. The grey fix took two more runs of
+  four pages: first the ink went but the muted grey stayed; then both went. Of the 38 findings I marked wrong in
+  entry 141, 30 are gone, 2 were my mistake, and 6 remain. Nothing marked right went.
+- **Still wrong:** a timeline region named "Timeline" while it shows its marks; two lone "·" separators under the
+  contrast bar; axis ticks placed by hand read as a declared gap; a part of a scaled drawing landing between
+  pixels; a measuring guide in the hero read as a divider. Four greys stay flagged and are fair: a button's own
+  near-black and colours inside recreations of other apps.
+- **Note:** another session also numbered an entry 143 ("Other data: the first check"), written after this one's.
+
 ### 142. The dial in the overlay (2026-11-26)
 
 - **The itch.** The owner asked how a person sees the page's other states: "we need to come up with some way like
@@ -7905,7 +7933,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   `generator/shots/generate-craftingattention.png` (local).
 
 ## Open gaps
-- **Checks that judge grouping were mostly wrong on a real app.** Four causes fixed in entry 143 (about 22 of 38 wrong findings gone on crafting-ui); five kinds of wrong note remain, and algorecall is not scored yet. [Entry 141](#141-scoring-every-check-on-crafting-ui-2026-11-26), [entry 143](#143-fixing-four-causes-of-wrong-notes-2026-11-26)
+- **Wrong notes on a real app.** Of 38 wrong findings on crafting-ui, 30 are fixed (entries 143 and 144), 2 were my misjudgement, 6 remain; algorecall is not scored yet. [Entry 141](#141-scoring-every-check-on-crafting-ui-2026-11-26), [entry 143](#143-fixing-four-causes-of-wrong-notes-2026-11-26), [entry 144](#144-the-last-five-kinds-of-wrong-note-2026-11-26)
 - **The footer's count is a recording.** It has to be recorded again (`node web/scripts/findings.mjs`, with the dev server up) whenever the homepage changes, and nothing enforces that yet. It was read at 1280px, in light, at rest ([entry](#87-the-footer-is-a-demo-on-our-own-faults-2026-11-22)).
 - **The release checks live outside the repo.** The width sweep, the drawing check and the script that plays the footer are one session's temporary files, so the next deploy starts without them.
 - **Docs can drift from the package again.** Nothing runs their commands at release. The homepage's live-editing clip is from an older overlay, and the overlay's gestures were checked in source, without driving them ([entry](#75-the-docs-said-what-an-older-plumber-did-2026-11-22)).

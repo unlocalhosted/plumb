@@ -248,11 +248,9 @@ and icon passes' cases, and the palette after a write, were tested again through
 
 ### Craft suggestions
 
-- Still wrong on crafting-ui after journey entry 143 (2026-11-26): craft/button-padding takes a full-width contents
-  row with no side padding for a text button (pages/home/Contents.tsx); craft/content-align still reads a
-  10px-rounded tinted pill as a row to pull out; craft/grey-levels calls the design system's own muted grey a stray;
-  experience/caps-long reads labels joined by dots as one sentence; tells/detailed-diagram fires on the product's
-  stickers and icons, tells/status-chain on a table row's cells.
+- Still wrong on crafting-ui after journey entry 144 (2026-11-26): a11y/label-in-name on a timeline region that shows
+  its marks; craft/contrast on lone "·" separators; craft/declared-gap on axis ticks placed by hand; craft/half-pixel on
+  a part inside a scaled drawing; tells/divider on a measuring guide in the hero. Algorecall not scored since 11-15.
 - craft/concentric-radius reads an SVG's box, so an icon drawn as a circle inside a square SVG is flagged against
   its card's corner (six false notes on algorecall's Today stack, 2026-11-20).
 - craft/shared-edges is written for a card: on a section laid out in columns it counts each designed column as a new
