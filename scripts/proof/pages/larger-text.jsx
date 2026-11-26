@@ -12,6 +12,9 @@ export function App() {
       {/* text-fixed, with a written fix: a pixel size in a class */}
       <p id="fixed-class" className="text-[14px] text-slate-700">Payment is taken from the card ending 4242.</p>
 
+      {/* text-fixed again, another size: the same habit, so the page gets one note and one fix that writes both */}
+      <p id="fixed-class-2" className="text-[12px] text-slate-500">Card details are kept by the payment provider.</p>
+
       {/* text-fixed, as advice: a pixel size written inline */}
       <p id="fixed-inline" style={{ fontSize: '13px' }} className="text-slate-700">Receipts are sent to the billing address.</p>
 

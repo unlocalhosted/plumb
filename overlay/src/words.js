@@ -106,9 +106,10 @@ export const CRAFT = {
     line: `These ${n} rows are ${px(gap)} apart, and those pixels belong to no row. The highlight flickers as the pointer crosses, and a click there does nothing.`,
     reason: 'Every pixel of a menu should belong to a row.',
   }),
-  'text-fixed': ({ size }) => ({
+  'text-fixed': ({ size, many }) => ({
     label: 'Text ignores your text size',
-    line: `This text stays at ${px(size)} when someone sets a larger text size in their browser. Everything around it grows and it does not.`,
+    line: many > 1 ? `Sizes written in pixels here stay as they are when someone sets a larger text size in their browser. Everything around them grows and they do not.`
+      : `This text stays at ${px(size)} when someone sets a larger text size in their browser. Everything around it grows and it does not.`,
     reason: 'Text should grow when the person makes it grow.',
   }),
   'text-clips': ({ over }) => ({

@@ -31,6 +31,7 @@ import { request } from './api.js';
 import { Facts, Theme, spec } from './craft.js';
 import { RULES, textCollision } from './craft-rules.js';
 import { lawsOf } from './laws.js';
+import { say } from './words.js';
 import { STAMPED } from './stamp.js';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -262,10 +263,19 @@ async function readOnce(overlay, { timeout = 60000, quiet = 600, grey = false, s
         // a finding about something that isn't on the page at rest (a palette) names where its code lives itself
         const own = m.craft?.evidence?.at;
         const site = own?.file ? own : at?.file ? at : null;
-        const key = [m.rule, m.text, site ? `${site.file}:${site.line}:${site.column}` : item.file ?? ''].join('|');
+        // a check that speaks of a habit (fold: 'page') is one finding for the page: every place it was found is
+        // kept on it, each with its own fix, so one note carries one fix that writes them all
+        const fold = m.craft?.fold === 'page';
+        const place = fold && site ? { file: site.file, line: site.line, column: site.column, text: m.text, ...(m.craft?.suggest?.kind === 'class' ? { from: m.craft.suggest.from ?? '', to: m.craft.suggest.to } : {}) } : null;
+        const key = fold ? `${m.rule}|page` : [m.rule, m.text, site ? `${site.file}:${site.line}:${site.column}` : item.file ?? ''].join('|');
         const hit = found.get(key);
-        if (hit) { hit.count++; continue; }
+        if (hit) {
+          hit.count++;
+          if (place && !hit.places.some((p) => p.file === place.file && p.line === place.line && p.column === place.column && p.text === place.text)) hit.places.push(place);
+          continue;
+        }
         found.set(key, {
+          ...(fold ? { places: place ? [place] : [] } : {}),
           rule: m.rule, title: m.title, because: m.because, action: m.action, laws: m.laws ?? null, text: m.text, value: m.value ?? null,
           confidence: m.craft?.confidence ?? null, evidence: m.craft?.evidence ?? {},
           // what decided it: a fixed rule over the drawn page, or a model reading the words (evidence.model names it)
@@ -277,6 +287,8 @@ async function readOnce(overlay, { timeout = 60000, quiet = 600, grey = false, s
         });
       }
     }
+    // a folded finding found in more than one place says so in its words
+    for (const f of found.values()) if (f.places?.length > 1) Object.assign(f, (({ title, because }) => ({ title, because }))(say(f.rule, { ...f.evidence, many: f.places.length })));
     const result = { route: location.pathname + location.search, url: location.href, read: blueprint.items.length, complete, findings: JSON.parse(JSON.stringify([...found.values()])),
       // the standard the page was judged against (docs/briefs/craft-spec.md): the project's, once the server handed it over
       spec: spec.loaded ? JSON.parse(JSON.stringify(spec.value)) : null };

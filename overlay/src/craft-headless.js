@@ -683,6 +683,9 @@ export const textFixed = {
       ...say(this.id, { size: base }),
       key: this.id, text: cls ?? 'font-size', props: ['font-size'], value: `${base}px`, n: base,
       evidence: { size: base, atLargerText: grown, reality: 'larger text (24px default)' }, confidence: 0.86,
+      // one habit, one note: a page that writes its small sizes in pixels does it everywhere, and a person wants to
+      // hear it once and take one fix (found on a real app, 2026-11-26: 55 notes on five pages). craft-run.js merges them
+      fold: 'page',
       // the same size today, written so it follows the person's setting; it can't be tried without opening the reality again
       suggest: m ? { kind: 'class', from: cls, to: `${m[1]}text-[${Math.round((Number(m[2]) / 16) * 10000) / 10000}rem]${m[3]}`, why: 'the same size today, and it grows with the person’s text size', sets: {} }
         : { kind: 'advice', text: `Write this size as ${rem}rem instead of ${base}px: the same today, and it grows with the person’s text size.` },

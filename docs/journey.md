@@ -6405,6 +6405,30 @@ into its own browser. Your app isn't changed.", then the findings.
 - **Media hooks:** the Standards page at the default text size beside the same page at 24px, where the small labels
   stay small.
 
+### 147. One note for a habit, one fix that writes every place (2026-11-26)
+
+- **The itch:** after entry 146 the larger-text check still gave 55 notes on five crafting-ui pages, all for one
+  habit: small labels sized in pixels. The owner: "Yes, one per page".
+- **How we found it:** the list of 55. Every line was the same sentence with a different file and line.
+- **The system behind it:** the page check keeps one finding per check, per class, per place in the source. That
+  suits a fault that belongs to one element. A habit is one decision made many times, so it came out as many
+  findings, each with its own small fix to take one at a time.
+- **What we tried, what we chose:** folding the notes in the report alone would have left one note whose fix wrote
+  only the first place, which is worse than 55 fixes that each work. So a check can now say its finding is a habit.
+  The page check then keeps one finding for the page with every place on it, and each place keeps its own swap
+  (`text-[11px]` to `text-[0.6875rem]` here, `text-[13px]` to `text-[0.8125rem]` there). Taking the fix writes all
+  of them and records one undo. A place that changed since the check is skipped and named. In the command line's
+  list, a habit seen on several pages is one finding for the run, since the same header is on every page.
+- **The fix and the proof:** on the same five pages, 55 notes became 5, one per page, carrying 19, 8, 3, 15 and 10
+  places, every one with its fix written. On the checks' test page, with two pixel classes and one inline pixel
+  size, one fix cleared the note, landed, moved nothing, and undo put the file back exactly.
+- **Not shown:** the fix was not taken on crafting-ui (it writes to source). The proof run reports the test page's
+  fix as raising a finding on the inline-sized line. My reading is that this is the same folded note, now standing
+  on the one place left that has no written fix; I did not open the file between the two steps to confirm both
+  classes were written. A pixel size written inline or in a stylesheet still has no written fix. The overlay on the
+  live page does not show this check at all, so nothing changed there.
+- **Media hooks:** the findings list for the Standards page before (15 lines of one sentence) and after (one).
+
 ## Open gaps
 
 - Without setup, the page check found 70 problems where the same page wired in finds 72 (10 fixes against 14). Not
@@ -8093,6 +8117,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
 
+- A habit is now one note. A page that sizes its small text in pixels gets one finding with every place on it, and one fix that rewrites them all and undoes as one: 55 notes on five real pages became 5. [Entry 147](#147-one-note-for-a-habit-one-fix-that-writes-every-place-2026-11-26)
 - The larger-text check now says a fixed size once, where it is set, and leaves fluid sizes alone: 113 notes on five real pages became 55, each with its fix written. [Entry 146](#146-the-larger-text-checks-meet-a-real-app-2026-11-26)
 - Plumber now tries a table with longer names than yours and says when the other columns move, with the fix
   written. Proven on a test page, not yet on a real app. [Entry 143](#143-other-data-the-first-check-2026-11-26)

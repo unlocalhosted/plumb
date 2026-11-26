@@ -27,6 +27,8 @@ export interface CraftRecord {
   /** its place in the page (craft-headless.js pathKey), for a picture of it */
   path?: string;
   suggest?: { kind: string; from?: string; to?: string; text?: string; why?: string; site?: { file: string; line: number; column: number } } | null;
+  /** a finding about a habit (one per page): every place it was found, each with the classes its fix swaps there */
+  places?: { file: string; line: number; column: number; text: string; from?: string; to?: string }[];
   by?: 'rule' | 'model'; soft?: boolean; judged?: boolean; file: string | null; line: number | null; column: number | null; component: string | null; tag: string; count: number;
 }
 export interface CraftPage { route: string; url: string; read: number; complete: boolean; findings: CraftRecord[]; spec?: unknown;
@@ -375,8 +377,11 @@ const sourceOf = (file: string): string => { let t = sources.get(file); if (t ==
 /** The page's records in the CLI's Finding shape: one per rule and source site, ready for SARIF. */
 export function craftFindings(pages: CraftPage[], root: string): Finding[] {
   const found = new Map<string, Finding>();
+  const folds = new Map<string, { record: CraftRecord; places: Map<string, NonNullable<CraftRecord['places']>[number]> }>();
   for (const page of pages) for (const record of page.findings) {
     if (!record.file) continue; // an element Plumb cannot place has no line to name
+    // a habit found on several pages is one finding for the run: the same header is on every page
+    if (record.places?.length) { const f = folds.get(record.rule) ?? { record, places: new Map<string, NonNullable<CraftRecord['places']>[number]>() }; for (const p of record.places) f.places.set(`${p.file}:${p.line}:${p.column}:${p.text}`, p); folds.set(record.rule, f); continue; }
     const file = resolve(root, record.file);
     // a badge or a dot that renders only under a condition shows real state: the tells pack keeps it (pack-tells.js)
     if (BOUND_RULES.has(record.rule) && boundInSource(sourceOf(file), record.line ?? 1, record.column ?? 1)) continue;
@@ -393,6 +398,16 @@ export function craftFindings(pages: CraftPage[], root: string): Finding[] {
     const fix = (record.suggest?.kind === 'class' || elsewhere) && record.suggest!.to?.trim() ? record.suggest! : undefined;
     const apply = fix ? { key: fixKey(key), from: fix.from ?? '', to: fix.to!, ...(fix.why ? { why: fix.why } : {}), ...(elsewhere ? { at: { file: resolve(root, elsewhere.file), line: elsewhere.line, column: elsewhere.column } } : {}) } : undefined;
     found.set(key, { ...(apply ? { apply } : {}), ...makeFinding({ key, rule: record.rule, family: 'craft', severity: (record as { soft?: boolean }).soft ? 'info' : 'error', sites: [site], declaration, decisions: [],
+      title: record.title, because: record.because, ...(record.action ? { action: record.action } : {}) }), ...(docs ? { docs } : {}) });
+  }
+  for (const [rule, { record, places }] of folds) {
+    const all = [...places.values()].sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line || a.column - b.column);
+    const sites: Site[] = all.map(p => ({ file: resolve(root, p.file), line: p.line, column: p.column, text: p.to ? `${p.from} → ${p.to}` : p.text }));
+    const written = all.filter(p => p.to).map(p => ({ file: resolve(root, p.file), line: p.line, column: p.column, from: p.from ?? '', to: p.to! }));
+    const key = `${rule}:page`, docs = docsUrl(rule), first = written[0];
+    const apply = first ? { key: fixKey(key), from: first.from, to: first.to, ...(record.suggest?.why ? { why: record.suggest.why } : {}), at: { file: first.file, line: first.line, column: first.column }, more: written.slice(1) } : undefined;
+    const declaration: Declaration = { prop: rule, value: record.text, refs: [], when: [], site: sites[0]!, owner: { kind: 'element', name: record.component ?? record.tag }, origin: 'class' };
+    found.set(key, { ...(apply ? { apply } : {}), ...makeFinding({ key, rule, family: 'craft', severity: (record as { soft?: boolean }).soft ? 'info' : 'error', sites, declaration, decisions: [],
       title: record.title, because: record.because, ...(record.action ? { action: record.action } : {}) }), ...(docs ? { docs } : {}) });
   }
   return [...found.values()].sort((a, b) => a.sites[0]!.file.localeCompare(b.sites[0]!.file) || a.sites[0]!.line - b.sites[0]!.line || a.rule.localeCompare(b.rule));

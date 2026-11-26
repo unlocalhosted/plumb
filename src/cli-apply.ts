@@ -35,7 +35,9 @@ export interface ApplyCommand { root: string; config?: string; key: string; toke
  * A page check's fixes (`plumber craft --url`), kept so `plumber apply p…` can take one without reading the page
  * again (a page check takes most of a minute). The newest run wins; each fix is guarded again when it is written.
  */
-interface PageFix { file: string; line: number; column: number; from: string; to: string; title: string; rule: string; url?: string; path?: string }
+interface PageFix { file: string; line: number; column: number; from: string; to: string; title: string; rule: string; url?: string; path?: string;
+  /** the other places this fix is written (a habit found across a page): all go in one apply, and come out in one undo */
+  more?: { file: string; line: number; column: number; from: string; to: string }[] }
 const pageFixesFile = (root: string) => join(cacheDirectory(root), 'page-fixes.json');
 const isPageKey = (key: string) => /^p[0-9a-f]{9}$/.test(key);
 export async function keepPageFixes(root: string, findings: readonly Finding[], places: ReadonlyMap<string, { url: string; path: string }> = new Map()): Promise<void> {
@@ -45,7 +47,8 @@ export async function keepPageFixes(root: string, findings: readonly Finding[], 
     const site = finding.apply?.at ?? finding.sites[0];
     if (!finding.apply || !site) continue;
     delete kept[finding.apply.key];
-    kept[finding.apply.key] = { file: relative(root, site.file).replaceAll('\\', '/'), line: site.line, column: site.column, from: finding.apply.from, to: finding.apply.to, title: finding.title, rule: finding.rule, ...places.get(finding.apply.key) };
+    kept[finding.apply.key] = { file: relative(root, site.file).replaceAll('\\', '/'), line: site.line, column: site.column, from: finding.apply.from, to: finding.apply.to, title: finding.title, rule: finding.rule, ...places.get(finding.apply.key),
+      ...(finding.apply.more?.length ? { more: finding.apply.more.map(m => ({ ...m, file: relative(root, m.file).replaceAll('\\', '/') })) } : {}) };
   }
   const entries = Object.entries(kept).slice(-500);
   ignoreCache(root);
@@ -64,6 +67,7 @@ async function applyPageFix({ root, config, key }: ApplyCommand): Promise<string
   const session = await Session.create({ root, ...(config === undefined ? {} : { config }) });
   try {
     const path = join(root, fix.file), before = await readSource(root, path);
+    if (fix.more?.length) return await applyEverywhere(root, key, fix, kept, session);
     try { await session.swap({ file: path, hash: before.hash, line: fix.line, column: fix.column, from: fix.from, to: fix.to }); }
     catch (error) {
       // the element moved or changed since the page was read: say so, and how to get a fresh fix
@@ -79,6 +83,32 @@ async function applyPageFix({ root, config, key }: ApplyCommand): Promise<string
     return [`Applied ${fix.from ? `${fix.from} → ${fix.to}` : `+${fix.to}`} at ${fix.file}:${fix.line} (${fix.rule}).`,
       ...shots, `Undo: plumber undo ${entry.id}`, 'Next: look at the pictures, or run the page check again.', ''].join('\n');
   } finally { await session.close(); }
+}
+
+/**
+ * A fix for a habit: the same kind of swap in every place the page check found it. Each place is guarded as a single
+ * fix is; one that changed since the check is skipped and named. All of it is one entry for `plumber undo`.
+ */
+async function applyEverywhere(root: string, key: string, fix: PageFix, kept: Record<string, PageFix>, session: { swap(edit: { file: string; hash: string; line: number; column: number; from: string; to: string }): Promise<unknown> }): Promise<string> {
+  const places = [{ file: fix.file, line: fix.line, column: fix.column, from: fix.from, to: fix.to }, ...fix.more!];
+  const befores = new Map<string, string>(), skipped: string[] = [];
+  let written = 0;
+  for (const place of places) {
+    const path = join(root, place.file), now = await readSource(root, path);
+    if (!befores.has(place.file)) befores.set(place.file, now.text);
+    try { await session.swap({ file: path, hash: now.hash, line: place.line, column: place.column, from: place.from, to: place.to }); written++; }
+    catch (error) { if (!(error instanceof UsageError)) throw error; skipped.push(`${place.file}:${place.line}`); }
+  }
+  if (!written) throw new UsageError('Every place changed since the page check, so nothing was written. Run the page check again for a fresh fix.', 'stale-file');
+  const files: Kept['files'] = [];
+  for (const [file, text] of befores) { const after = await readSource(root, join(root, file)); if (after.text !== text) files.push({ file, before: text, hashAfter: after.hash }); }
+  const entry: Kept = { id: randomBytes(4).toString('hex'), at: new Date().toISOString(), label: `${fix.rule} in ${written} places`, files };
+  await keep(root, [...await history(root), entry]);
+  delete kept[key];
+  await writeFile(pageFixesFile(root), JSON.stringify(kept));
+  return [`Applied in ${written} ${written === 1 ? 'place' : 'places'} across ${files.length} ${files.length === 1 ? 'file' : 'files'} (${fix.rule}).`,
+    ...skipped.length ? [`Not written, changed since the page check: ${skipped.join(', ')}`] : [],
+    `Undo: plumber undo ${entry.id}`, 'Next: run the page check again.', ''].join('\n');
 }
 
 /**
