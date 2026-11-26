@@ -6782,8 +6782,46 @@ into its own browser. Your app isn't changed.", then the findings.
   repository yet.
 - **Media hooks:** the tab bar with the owner's box on it, beside plumber's corner finding for the same component.
 
+### 153. An expert's eye on forty real sites: Rauno's portfolio reviews (2026-11-26)
+
+- **The itch:** the judged set had one judge and one mark. The owner: "i have one more data point for same thing ...
+  it has much more better data point", a thread where Rauno Freiberg reviewed portfolios people sent him. Then:
+  "understand his intuition and how he has figured things out and then bring those intuition here whether they
+  belong to high category shape like this or implementation level as craft rules", "do it thorough 1 by 1 dont
+  rush", and, when a first pass only listed his replies, "annotate the original portfolio screenshot with the
+  feedback rauno has given".
+- **How we found it:** by reading all 47 of his replies in the thread and opening each of the 40 sites. For 19 sites
+  the web archive had a copy near the review day; for five he had posted his own screen recording, and for seven his
+  own picture.
+- **The system behind it:** a list of critiques loses what the critic was looking at. The value is the pair, the
+  page and the judgement on it, so each point is pinned on the page: his frame where he made one, the archive's copy
+  where it is close, today's page otherwise.
+- **What we tried, what we chose and why:** screenshots came from the test server, because the laptop had no memory
+  to spare. One site turned the server's browser away, so its pictures are frames of his own recording. The owner
+  suggested the judging harness for annotating; we kept archived stills as the base because the sites have changed
+  since, and left the live harness for the points about motion.
+- **The fix and the proof:** `docs/research/harvests/raunofreiberg-portfolio-reviews/`. `reviews.json` holds 120
+  points from 40 reviews: what he said in our words, what the page shows, how he got there, where it belongs in
+  plumber, and what the page is like today. 100 points are pinned, with 139 pins. `intuitions.md` sorts them: 37
+  about shape, 21 craft, 41 behaviour, 21 content. Counted by the script that built the page.
+- **What it showed:** his largest group of shape points is "alike, but not the same role", which is the
+  looks-like against means idea. On one page he drew boxes round the blocks and judged their proportions, the idea
+  this work started from, done by hand. Eight of his points are checks plumber already has. Thirteen ways of looking
+  (a very wide screen, scrollbars always shown, text selected, a phone pulled past its end) produced about thirty of
+  the points. Nineteen points were fixed by the sites' owners afterwards, so they are real before and after pairs.
+- **Not shown:** 53 points were not checked against the live page, most because they are about motion. The live
+  harness for those is not built. The sorting and every "how he got there" are our reading of one line and a page.
+  No check was written from any of it.
+- **Media hooks:** `local/annotated.html` (served at localhost:4421 while its small server runs): review 40, where
+  his own picture has the boxes drawn on it; review 21, the headings before and after; review 10, the strip of menu
+  frames showing the oval.
+- **References:** the thread, in [references.md](references.md) under 2026-11-26.
+
 ## Open gaps
 
+- Rauno's portfolio reviews ([entry 153](#153-an-experts-eye-on-forty-real-sites-raunos-portfolio-reviews-2026-11-26))
+  are read and pinned, but 53 of the 120 points were not checked on the live page, the live harness for his motion
+  points is not built, and none of his intuitions is a check yet. His points are not loaded into the judged set.
 - The judged set has seven screens from one judge ([entry 152](#152-the-first-judged-set-seven-calcom-screens-one-mark-2026-11-26)).
   The comparison with plumber was done by hand once; no script scores it. The owner has not yet said which of
   plumber's findings on those screens they agree with. The marks are kept only on the laptop.

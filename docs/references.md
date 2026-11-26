@@ -476,6 +476,7 @@ All free under the Unsplash License, hotlinked from images.unsplash.com as Unspl
 - What we read from it: an expert's unprompted look at 40 real sites, which is what the judged set is for. The web
   archive holds many of the sites as they were that week, so a review can be read against the page he saw, and
   against today's page where the owner fixed it.
-- Used in: `docs/research/harvests/raunofreiberg-portfolio-reviews/` (`reviews.json`, and `build.mjs`, which draws
-  each review pinned on its page). His words and the screenshots stay in that folder's `local/`, out of git. One
-  portfolio of 40 is done so far.
+- Used in: `docs/research/harvests/raunofreiberg-portfolio-reviews/`: `reviews.json` (all 40 reviews, 120 points),
+  `intuitions.md` (his intuitions sorted by kind), and `build.mjs`, which draws each review pinned on its page. His
+  words and the screenshots stay in that folder's `local/`, out of git.
+  [Journey entry 153](journey.md#153-an-experts-eye-on-forty-real-sites-raunos-portfolio-reviews-2026-11-26).
