@@ -61,3 +61,6 @@ docs/films/*-draft/
 /bench/judged/sets/*/judgements/
 /bench/judged/sets/*/screens/
 /bench/judged/sets/*/set-aside/
+
+# harvests: screenshots of other people's sites and their posts word for word stay local
+/docs/research/harvests/*/local/

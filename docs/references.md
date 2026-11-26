@@ -464,3 +464,18 @@ All free under the Unsplash License, hotlinked from images.unsplash.com as Unspl
   help you out". The judged set should come from apps known for good design.
 - What it changed: the judged set's main set is now cal.com (seven screens), not our own crafting-ui.
 - Used in: `bench/judged/sets/calcom`; [journey entry 151](journey.md#151-a-judged-set-real-screens-marked-by-a-person-2026-11-26).
+
+## 2026-11-26 · Rauno Freiberg's portfolio reviews (shared by the owner)
+- What: [the thread](https://x.com/raunofreiberg/status/2112202758048669799) of 2026-10-19 where Rauno Freiberg asked
+  for portfolios and answered 40 of them, in 47 replies, some with his own screenshots and screen recordings.
+- Why: "i have one more data point for same thing ... it has much more better data point", about the judged set.
+  Then: "ingest this data carefully every point has to be understood with detail use image and even opn the
+  portfolios ... understand his intuition and how he has figured things out and then bring those intuition here
+  whether they belong to high category shape like this or implementation level as craft rules", and "annotate the
+  original portfolio screenshot with the feedback rauno has given".
+- What we read from it: an expert's unprompted look at 40 real sites, which is what the judged set is for. The web
+  archive holds many of the sites as they were that week, so a review can be read against the page he saw, and
+  against today's page where the owner fixed it.
+- Used in: `docs/research/harvests/raunofreiberg-portfolio-reviews/` (`reviews.json`, and `build.mjs`, which draws
+  each review pinned on its page). His words and the screenshots stay in that folder's `local/`, out of git. One
+  portfolio of 40 is done so far.
