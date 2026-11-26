@@ -6479,6 +6479,29 @@ into its own browser. Your app isn't changed.", then the findings.
   run again after the fix in the first try but its result for this note was not read.
 - **Media hooks:** the diff of 30 lines; the apply's own printout with its two groups of reasons.
 
+### 149. A fix follows the class to where it is written (2026-11-26)
+
+- **The itch:** the one fix for pixel-sized text wrote 30 of 47 places on crafting-ui. The other 17 held the class
+  in a variable or passed it through a link component. The owner: "Yes, follow it".
+- **How we found it:** entry 148's run, and the engine's own reasons for each refused place.
+- **The system behind it:** a fix from the page check knew one thing about a place: the line of the element. It
+  looked for the class on that line and gave up when it wasn't there. The overlay has asked a better question for a
+  long time: where is each class of this element written? The answer can be the element, a variable its className
+  reads, or the place a component is used. The command line never asked it.
+- **What we chose:** ask the same question. The page check now keeps, for each place of a habit, the usages above
+  the element. Taking the fix asks where each class is written and writes it there. A string that several places
+  read is written once. The single page fix (not a habit) still writes only on the element's line.
+- **The fix and the proof:** on the throwaway copy of crafting-ui (commit `006e80b`, plumber `661ecf3b`), the fix
+  now covers 47 of 47 places in 38 edits across 13 files: 30 on the element, 3 where the link component is used, and
+  5 in variables (`const lettering = 'measure text-[11px] …'` in three files, and one called `L`). One undo put all
+  13 files back, with no file differing. On the test page one fix writes a class on two lines, a variable two lines
+  read, and a class passed into a component, leaves the inline size, and undoes exactly.
+- **Not shown:** the pages were not looked at after the fix. A variable that other, larger text also reads was not
+  met; the size stays the same today, so the edit is safe there, but it was not tried. The proof run still reads the
+  note left on the inline-sized line as a new finding.
+- **Media hooks:** the apply's printout ("Applied for 47 of 47 places, in 38 edits across 13 files"); the three-line
+  diff of the `lettering` variable.
+
 ## Open gaps
 
 - Without setup, the page check found 70 problems where the same page wired in finds 72 (10 fixes against 14). Not
@@ -8167,6 +8190,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
 
+- A fix for a habit now writes each class where it really is: on the element, in the variable that holds it, or where a component is used. On a copy of a real app the fixed-size fix went from 30 of 47 places to all 47, and one undo took it all back. [Entry 149](#149-a-fix-follows-the-class-to-where-it-is-written-2026-11-26)
 - A habit is now one note. A page that sizes its small text in pixels gets one finding with every place on it, and one fix that rewrites them all and undoes as one: 55 notes on five real pages became 5. [Entry 147](#147-one-note-for-a-habit-one-fix-that-writes-every-place-2026-11-26)
 - The larger-text check now says a fixed size once, where it is set, and leaves fluid sizes alone: 113 notes on five real pages became 55, each with its fix written. [Entry 146](#146-the-larger-text-checks-meet-a-real-app-2026-11-26)
 - Plumber now tries a table with longer names than yours and says when the other columns move, with the fix
