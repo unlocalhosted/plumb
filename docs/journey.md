@@ -6442,6 +6442,25 @@ into its own browser. Your app isn't changed.", then the findings.
 - **What is not proven:** why the schedule page was slow that once. The warm-up took 4 to 5 seconds a page, so a cold
   compile is a guess. If it happens again, the page now says so.
 
+### 157. All 18 cal.com pages judged (2026-11-26)
+
+- **The itch:** the ledger held three of cal.com's 18 pages (entry 156). The owner: "Yes, judge them".
+- **How:** the other 15 pages run with today's build, each opened in a browser first. All settled. Their 345 places
+  not yet in the ledger came to 225 kinds (a check at a line: a sidebar finding on 15 pages is one); 21 carried a
+  verdict already given for the same check and line on another page, and the rest were read against the source.
+- **The verdicts:** 280 right, 0 wrong, 65 unsure. Real faults among them: 78 "Details" links on the apps page that
+  all say the same thing, category tabs that are clickable list items a keyboard cannot reach, an 810px logo drawn at
+  48px and stretched 16% out of shape, settings labels not tied to their selects, an email asked for in a plain text
+  field, password fields with no autocomplete, two main regions on one page, a 256px app card that a longer name runs
+  out of. The unsure ones are the kinds already left unsure on the first three pages (an icon-and-word button's
+  padding, two parts far apart in a row, a settings toggle's name) plus a select's weight. Three of the pages
+  (workflows, teams, insights) are cal.com's 404 page in this copy; their findings are the 404 page's.
+- **Where it stands:** 491 judged places on 18 pages. Today's build against them: 367 right and still said, none lost,
+  every one of the 33 wrong places gone, nothing new. Of the places it can be scored on, the page check is right on
+  every one, with 91 left unsure and one reader (me) behind every verdict.
+- **What that does not say:** it says plumber is not wrong on cal.com as far as one reader can tell. It says nothing
+  about what plumber misses there; that is the judged set's half (entries 151 and 152).
+
 ### 142. The dial in the overlay (2026-11-26)
 
 - **The itch.** The owner asked how a person sees the page's other states: "we need to come up with some way like
