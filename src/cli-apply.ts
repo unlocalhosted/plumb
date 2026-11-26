@@ -91,15 +91,18 @@ async function applyPageFix({ root, config, key }: ApplyCommand): Promise<string
  */
 async function applyEverywhere(root: string, key: string, fix: PageFix, kept: Record<string, PageFix>, session: { swap(edit: { file: string; hash: string; line: number; column: number; from: string; to: string }): Promise<unknown> }): Promise<string> {
   const places = [{ file: fix.file, line: fix.line, column: fix.column, from: fix.from, to: fix.to }, ...fix.more!];
-  const befores = new Map<string, string>(), skipped: string[] = [];
+  const befores = new Map<string, string>(), skipped = new Map<string, string[]>();
   let written = 0;
   for (const place of places) {
     const path = join(root, place.file), now = await readSource(root, path);
     if (!befores.has(place.file)) befores.set(place.file, now.text);
     try { await session.swap({ file: path, hash: now.hash, line: place.line, column: place.column, from: place.from, to: place.to }); written++; }
-    catch (error) { if (!(error instanceof UsageError)) throw error; skipped.push(`${place.file}:${place.line}`); }
+    // a place that can't be written says why in the engine's own words: the class is held in a variable or passed
+    // through a component, or the line changed since the check (found on a real app, 2026-11-26: 17 of 47 places)
+    catch (error) { if (!(error instanceof UsageError)) throw error; const why = error.message.split('\n')[0]!.replace(/\.$/, ''); skipped.set(why, [...skipped.get(why) ?? [], `${place.file}:${place.line}`]); }
   }
-  if (!written) throw new UsageError('Every place changed since the page check, so nothing was written. Run the page check again for a fresh fix.', 'stale-file');
+  const left = [...skipped].map(([why, at]) => `- ${at.length} not written (${why}): ${[...new Set(at)].join(', ')}`);
+  if (!written) throw new UsageError(['No place could be written.', ...left].join('\n'));
   const files: Kept['files'] = [];
   for (const [file, text] of befores) { const after = await readSource(root, join(root, file)); if (after.text !== text) files.push({ file, before: text, hashAfter: after.hash }); }
   const entry: Kept = { id: randomBytes(4).toString('hex'), at: new Date().toISOString(), label: `${fix.rule} in ${written} places`, files };
@@ -107,7 +110,7 @@ async function applyEverywhere(root: string, key: string, fix: PageFix, kept: Re
   delete kept[key];
   await writeFile(pageFixesFile(root), JSON.stringify(kept));
   return [`Applied in ${written} ${written === 1 ? 'place' : 'places'} across ${files.length} ${files.length === 1 ? 'file' : 'files'} (${fix.rule}).`,
-    ...skipped.length ? [`Not written, changed since the page check: ${skipped.join(', ')}`] : [],
+    ...left,
     `Undo: plumber undo ${entry.id}`, 'Next: run the page check again.', ''].join('\n');
 }
 
