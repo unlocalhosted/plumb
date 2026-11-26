@@ -9,7 +9,7 @@ is what plumber says that a person would not stand behind.
 
 ## A ledger
 
-One file per app (`calcom.json`): the app's pinned commit, how it was set up and run, the pages, how deep each page
+One file per app (`calcom.json`, `crafting-ui.json`, `algorecall.json`): the app's pinned commit, how it was set up and run, the pages, how deep each page
 was read when it was judged, and one entry per judged place.
 
 A place is a page, a check, a file and a line. Each entry keeps what plumber said, the verdict, why, when, and who

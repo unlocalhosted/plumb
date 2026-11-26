@@ -251,6 +251,11 @@ and icon passes' cases, and the palette after a write, were tested again through
 - Still wrong on crafting-ui after journey entry 144 (2026-11-26): a11y/label-in-name on a timeline region that shows
   its marks; craft/contrast on lone "·" separators; craft/declared-gap on axis ticks placed by hand; craft/half-pixel on
   a part inside a scaled drawing; tells/divider on a measuring guide in the hero.
+- Wrong on the answer keys of 2026-11-27 (journey entry 160), 48 on crafting-ui and 22 on algorecall, in kinds: a
+  film frame or drawing judged as page (a whole frame read as an icon, its fonts, greys and absolutely placed line
+  height); separator dots, dashes and slashes judged for contrast and weight; a fixed set in the code read as a list
+  that can grow; a horizontal scroller told it shifts sideways (craft/scrollbar-gutter); short ornamental rules read
+  as dividers; craft/elevation-ladder chaining near levels until 18px is told to become 8px.
 - A page that never stops changing (a clock, a ticker, a looping placeholder) waits out the check's full limit, up to
   30 s, before it is read (since 2026-11-26, when "ready" became "still"). Runs on cal.com are steady now.
 - Algorecall (2026-11-26, journey entry 149): the 22 wrong findings are fixed. Not measured by any check now: an icon a

@@ -6495,6 +6495,29 @@ into its own browser. Your app isn't changed.", then the findings.
 - **What that does not say:** it says plumber is not wrong on cal.com as far as one reader can tell. It says nothing
   about what plumber misses there; that is the judged set's half (entries 151 and 152).
 
+### 160. Answer keys for crafting-ui and algorecall (2026-11-27)
+
+- **The itch:** only cal.com had an answer key, the ledger of judged findings (entries 155 to 157). A change to plumber
+  that hurt crafting-ui or algorecall would go unnoticed. The owner asked "why do we need this?", and then said to
+  build them.
+- **How:** today's build ran on all 34 pages (18 on crafting-ui, 16 on algorecall), one page at a time on the test
+  server. Every page settled. Their 964 findings come to 635 places (a check at a line). Each place was read against
+  the app's source at the commit that ran, and its verdict holds on every page where it shows.
+- **The verdicts:** crafting-ui 418 right, 48 wrong, 26 unsure; algorecall 406 right, 22 wrong, 36 unsure. On the
+  places it can be scored on, plumber is right 90% of the time on crafting-ui and 95% on algorecall.
+- **What the wrong ones are:** most of crafting-ui's are inside film frames and drawings: a whole frame read as an icon
+  with a thick stroke, a frame's own fonts and greys judged against the page's, the line height of words placed
+  absolutely. Also a fixed set of three things in the code read as a list that can grow, and separator dots, dashes
+  and a slash judged for contrast as if they were words. On algorecall: a horizontal scroller told its scrollbar
+  would push the content sideways, short ornamental rules read as dividers, and one shadow check that chains close
+  levels together until 18px is told to become 8px.
+- **The fix and the proof:** both keys checked against the runs they came from: every place judged, nothing new,
+  nothing lost. They are `bench/verdicts/crafting-ui.json` and `bench/verdicts/algorecall.json`. They keep checks,
+  files, lines, plumber's words and verdicts, never the apps' source.
+- **What it does not say:** one reader (me) behind every verdict, and nothing about what plumber misses. The 70 wrong
+  places are not fixed yet.
+- **Media hooks:** the compare report beside a page's findings, before and after a fix of one of the wrong kinds.
+
 ### 142. The dial in the overlay (2026-11-26)
 
 - **The itch.** The owner asked how a person sees the page's other states: "we need to come up with some way like
@@ -8777,6 +8800,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
 
+- crafting-ui and algorecall now have answer keys like cal.com's: 956 judged places on 34 pages, so a change that makes plumber worse on either app shows in one command. Plumber is right on 90% and 95% of the places scored; the 70 wrong ones are listed. [Entry 160](#160-answer-keys-for-crafting-ui-and-algorecall-2026-11-27)
 - On the dial, Longer words now also says what lost its place: a table column that moves, cards whose buttons stop lining up, a badge that gets squeezed, each with its fix shown on the page. [Entry 154](#154-other-data-on-the-dial-2026-11-26)
 - Plumber now tries cards and list rows with a longer name: it says when a row of cards stops lining up, when a badge gets squeezed, and when a label pushes its row out, each with the fix written. Quiet on six real pages; seen firing on a test page only. [Entry 152](#152-other-data-cards-and-list-rows-2026-11-26)
 - Plumber now tries a table with bigger numbers and with ten times the rows: it says when a total would break onto two lines or run out of its column, and when rows would be cut off out of reach, with the fix written for two of the three. Seen on a test page only. [Entry 151](#151-other-data-bigger-numbers-and-more-rows-2026-11-26)
