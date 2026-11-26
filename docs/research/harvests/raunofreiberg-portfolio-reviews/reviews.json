@@ -12,8 +12,144 @@
    "reply": "2112205197707448375",
    "date": "2026-10-19",
    "media": "video",
-   "shots": [],
-   "points": []
+   "shots": [
+    {
+     "id": "home",
+     "file": "dhrv-vid-home.jpg",
+     "w": 1426,
+     "h": 924,
+     "label": "Home, a frame from his own screen recording on 2026-10-19"
+    },
+    {
+     "id": "blog",
+     "file": "dhrv-vid-blog.jpg",
+     "w": 1426,
+     "h": 924,
+     "label": "The blog list in his recording, just after he pressed the post"
+    },
+    {
+     "id": "menu",
+     "file": "dhrv-vid-menu.jpg",
+     "w": 1426,
+     "h": 924,
+     "label": "The command menu in his recording"
+    },
+    {
+     "id": "crafts",
+     "file": "dhrv-vid-crafts.jpg",
+     "w": 1426,
+     "h": 924,
+     "label": "The Crafts page in his recording"
+    },
+    {
+     "id": "now",
+     "file": "dhrv-now.jpg",
+     "w": 1440,
+     "h": 900,
+     "label": "Home on 2026-11-26 (dark, because our browser asks for dark)"
+    }
+   ],
+   "points": [
+    {
+     "k": "1.1",
+     "level": "shape",
+     "says": "It looks very much like read.cv, and he likes that.",
+     "shows": "A single narrow column of small text on an empty page, a name, one line about the job, then short labelled lists. That is the layout the profile site read.cv made familiar.",
+     "how": "He placed the site in a family he already knows before judging anything in it. Everything after this is judged against what that family promises: calm, text first, nothing in the way.",
+     "engine": "Shape: which known kind of page this is. Plumber has no idea of kinds of page. A model that has seen many sites could name the kind, and the kind then says what to expect.",
+     "pins": []
+    },
+    {
+     "k": "1.2",
+     "level": "craft",
+     "says": "The first thing he did was make the text bigger, and he has perfect eyesight and a large display. Body text at 15 or 16 would work better; 15 is his current favourite.",
+     "shows": "In his recording the body text measures about 13px with a 20px line, in a column about 546 pixels wide on a window 1,426 wide. On the page today the same text is 16px and the small text 14px.",
+     "how": "He did not measure anything. He noticed what his own hand did: he reached for zoom before reading a word. If a reader with good eyes on a good screen has to do that, the size is wrong, whatever the number is. The number came afterwards, from what he has settled on in his own work.",
+     "engine": "Craft: body text that is too small. A plain reading of the size of running text, which plumber can already take. The threshold is his (15 to 16) and would need its own source. The larger lesson is the test he used: what does a reader do first.",
+     "today": "Fixed: body text went from about 13px to 16px.",
+     "pins": [
+      {
+       "shot": "home",
+       "x": 507,
+       "y": 190,
+       "w": 570,
+       "h": 142
+      }
+     ]
+    },
+    {
+     "k": "1.3",
+     "level": "behaviour",
+     "says": "Pressing a post on the blog list does not open it. The page only plays its little animation. He suspects something is taking the clicks.",
+     "shows": "In the recording he presses the post title and a burst of small characters appears where he pressed, the site’s pointer effect. The page stays where it is.",
+     "how": "A press on a title in a list has one expected result: the thing opens. He pressed, saw decoration answer in place of the page, and named the likely cause straight away, an invisible layer on top of the link.",
+     "engine": "Behaviour: a control that something else covers. Plumber has a check for a control with another element on top of it. Whether it catches this case is not tested. The effect layer here is the kind of thing that check should look for.",
+     "today": "Not checked by pressing. The post title is a link in today’s page.",
+     "pins": [
+      {
+       "shot": "blog",
+       "x": 507,
+       "y": 378,
+       "w": 570,
+       "h": 96
+      }
+     ]
+    },
+    {
+     "k": "1.4",
+     "level": "behaviour",
+     "says": "A few links in the command menu are broken.",
+     "shows": "The menu lists pages, settings and actions, some marked with an arrow for links that leave the site. The recording does not show which ones failed.",
+     "how": "He opened the menu and tried the entries one after another. A menu is a list of promises; he checked each one.",
+     "engine": "Behaviour: a link that leads nowhere. It needs every link followed and the answer read, which the page check does not do today.",
+     "today": "Not checked.",
+     "pins": [
+      {
+       "shot": "menu",
+       "x": 488,
+       "y": 108,
+       "w": 610,
+       "h": 478
+      }
+     ]
+    },
+    {
+     "k": "1.5",
+     "level": "behaviour",
+     "says": "Going to Crafts shows an ugly flash of the page without its styles.",
+     "shows": "Crafts is a separate site with its own typefaces and layout. For a moment while it loads, the page is drawn before its styles arrive. A still frame cannot show it.",
+     "how": "He watched the moment between two pages. A page is judged while it arrives too, and here the first thing it showed was its unfinished state.",
+     "engine": "Behaviour over time: what a page looks like in its first moments. Plumber reads a page once it has settled. It would need to look at the first frames of a page arriving and compare them with the settled page.",
+     "today": "Not checked.",
+     "pins": []
+    },
+    {
+     "k": "1.6",
+     "level": "shape",
+     "says": "Every surface feels like a different portfolio: home, the command menu, Crafts and the blog.",
+     "shows": "Home and the blog are small grey text in one column. The command menu is a warm tinted panel with rounded rows and a peach highlight. Crafts has a large serif heading and a grid of bordered cards with colourful pictures. Nothing is shared between them: not the typeface, not the colours, not the density.",
+     "how": "He moved through the site and kept a picture of each place in mind. Each one is good alone. Side by side they do not look made by the same hand, and a portfolio is exactly the place where that is being judged.",
+     "engine": "Shape, across pages: one visual language through a whole site. Plumber judges one page at a time. It would need a short description of each page’s look (typefaces, colours, corner sizes, density) and a way to say when one page shares too little with the others. The same judgement returns in his review of his own site and in the shadcn favicon.",
+     "today": "Not checked. The owner said he was in the middle of moving the site to a different stack.",
+     "pins": [
+      {
+       "shot": "crafts",
+       "x": 85,
+       "y": 92,
+       "w": 1335,
+       "h": 826
+      },
+      {
+       "shot": "menu",
+       "x": 488,
+       "y": 108,
+       "w": 610,
+       "h": 478
+      }
+     ]
+    }
+   ],
+   "note": "The pins are on frames from Rauno’s own recording, so they show the site as he saw it. The site sits behind a check that turned our server’s browser away, so today’s picture comes from the browser pane."
   },
   {
    "n": 3,
@@ -22,8 +158,240 @@
    "reply": "2112283887963623537",
    "date": "2026-10-19",
    "media": "",
-   "shots": [],
-   "points": []
+   "shots": [
+    {
+     "id": "home",
+     "file": "rauno-arc.jpg",
+     "w": 1440,
+     "h": 900,
+     "label": "Home as the web archive saved it on 2026-10-17, two days before the thread"
+    },
+    {
+     "id": "craft",
+     "file": "rauno-craft-arc.jpg",
+     "w": 1440,
+     "h": 900,
+     "label": "Craft, same archive day"
+    },
+    {
+     "id": "projects",
+     "file": "rauno-projects-arc.jpg",
+     "w": 1440,
+     "h": 900,
+     "label": "Projects, same archive day"
+    },
+    {
+     "id": "notes",
+     "file": "rauno-notes-arc.jpg",
+     "w": 1440,
+     "h": 900,
+     "label": "Field Notes, same archive day"
+    }
+   ],
+   "points": [
+    {
+     "k": "3.1",
+     "level": "behaviour",
+     "says": "The reveal animation, where content is uncovered by a moving cut-out, belongs to 2020.",
+     "shows": "A still cannot show it. The home page opens with large shapes, such as the yellow circle, that are uncovered as the page arrives.",
+     "how": "He knows when an effect was in fashion, and an effect that everyone used in one year dates the work to that year. This is knowledge of the field, not something on the page.",
+     "engine": "Taste, tied to time. Plumber cannot know what is dated. The nearest thing it has is its family of checks for marks of a period or of a generated page. A model that has seen many sites by year could say “this effect peaked in 2020”. To be looked at live.",
+     "pins": []
+    },
+    {
+     "k": "3.2",
+     "level": "behaviour",
+     "says": "Why be clever. Why not scroll down like everything else.",
+     "shows": "The home page is a row of large sheets laid side by side, 6,648 pixels wide. You move through it sideways. The next sheet is cut off at the right edge of the screen.",
+     "how": "Scrolling down is the one gesture every visitor already knows. A page that asks for another gesture spends the visitor’s attention on how to move, and gets nothing back for it.",
+     "engine": "Behaviour: a page whose main direction is sideways. Plumber can read it directly: the page is far wider than the window and no taller. The same idea is in review 15, where a list scrolls sideways and a mouse wheel cannot move it.",
+     "pins": [
+      {
+       "shot": "home",
+       "x": 1284,
+       "y": 132,
+       "w": 156,
+       "h": 635
+      }
+     ]
+    },
+    {
+     "k": "3.3",
+     "level": "shape",
+     "says": "Can he do something other than a white sheet on a grey canvas.",
+     "shows": "Every page of the site is the same recipe: white rounded sheets on a light grey ground (the ground is rgb 237, 237, 237).",
+     "how": "He recognises a recipe that has become a default, his own included. Once a look is everywhere it stops saying anything about the person who chose it.",
+     "engine": "Shape, as a cliché. This is the same family as plumber’s checks for marks of a generated screen: a look that is common enough to be a tell. It needs knowledge of what is common, which comes from many sites, not from this one.",
+     "pins": [
+      {
+       "shot": "home",
+       "x": 191,
+       "y": 132,
+       "w": 1058,
+       "h": 635
+      }
+     ]
+    },
+    {
+     "k": "3.4",
+     "level": "content",
+     "says": "Writing about yourself in the third person is a pose.",
+     "shows": "The headline reads “Rauno Freiberg is an Estonian interaction designer working with Vercel and Devouring Details”, set at 85px.",
+     "how": "On a personal site the reader knows who is speaking. Third person puts on a voice from a press release, and he hears it as trying to look important.",
+     "engine": "Content and voice. Only a model that reads the words can judge it. Not a check on what is drawn.",
+     "pins": [
+      {
+       "shot": "home",
+       "x": 240,
+       "y": 186,
+       "w": 530,
+       "h": 176
+      }
+     ]
+    },
+    {
+     "k": "3.5",
+     "level": "shape",
+     "says": "The navigation is too obscure, and it does not cover pages deeper in the site.",
+     "shows": "The whole navigation is a strip of three small empty rectangles with thin strokes between them, 194 pixels wide at the top centre. The current page’s rectangle is filled yellow. There are no words. Field Notes has no rectangle at all, so on that page nothing is marked.",
+     "how": "He asked two things of it. Can a stranger tell what each mark is and where they are now? No: three identical boxes. Does every page have a place in it? No: some addresses fall outside it. A navigation that needs to be learned and still has gaps is failing at its only job.",
+     "engine": "Shape: controls that look identical and carry no words, and a current page with no marked item. Plumber already flags a control with no name a screen reader can say. The second half, a page that is in no menu, needs the menu’s links compared with the page’s own address.",
+     "pins": [
+      {
+       "shot": "home",
+       "x": 612,
+       "y": 54,
+       "w": 216,
+       "h": 38
+      },
+      {
+       "shot": "notes",
+       "x": 30,
+       "y": 30,
+       "w": 180,
+       "h": 44
+      }
+     ]
+    },
+    {
+     "k": "3.6",
+     "level": "shape",
+     "says": "You cannot tell which links open a new tab and which stay on the site.",
+     "shows": "The sheets on the home page are all links and all look alike. Devouring Details and History of Software Design leave the site; Craft, Projects and Field Notes stay. On Craft the button says “View Production” for some and “Read Essay” for others, with no mark of where each goes.",
+     "how": "Leaving a site is a different act from moving inside it, and a visitor wants to know which one they are about to do. Here the two kinds of link look the same, so every click is a small gamble. He says the same to two other people in the thread.",
+     "engine": "Shape: alike, but not the same role. Plumber can read where each link goes and whether it opens a new tab, then find groups of links that look the same and mix the two kinds. Review 36 gives the limit: a link whose own words name another place (GitHub, X, mail) needs no mark.",
+     "pins": [
+      {
+       "shot": "home",
+       "x": 1278,
+       "y": 98,
+       "w": 120,
+       "h": 24
+      },
+      {
+       "shot": "craft",
+       "x": 491,
+       "y": 413,
+       "w": 458,
+       "h": 39
+      }
+     ]
+    },
+    {
+     "k": "3.7",
+     "level": "shape",
+     "says": "His essays, the deep work, are buried next to flashy clips.",
+     "shows": "Craft is three columns of cards, about 9,600 pixels tall. An essay card (“Novelty”, with a “Read Essay” button) is one card among short looping clips, the same size and style as the rest.",
+     "how": "He ranked his own content by worth and then looked at what the page ranks first. The page gives the essays the same weight as eye-catching clips, and moving pictures win the eye. So what he values most is what a visitor is least likely to find.",
+     "engine": "Shape: the loudest thing should be what matters most. Plumber can measure what is loud (motion, size, colour). What matters most here is the author’s own judgement, which no reading of the page gives. A model can guess (an essay outranks a clip), with low certainty.",
+     "pins": [
+      {
+       "shot": "craft",
+       "x": 487,
+       "y": 467,
+       "w": 467,
+       "h": 293
+      }
+     ]
+    },
+    {
+     "k": "3.8",
+     "level": "shape",
+     "says": "On Craft it is easy to miss which entries can be clicked.",
+     "shows": "Some cards are links and some are only clips. The single cue is a pale grey bar under the card with two words on it. A card without the bar looks the same in every other way.",
+     "how": "The reverse of what he told shadcn. There, things looked clickable and were not. Here things are clickable and barely look it. He scanned the grid and could not sort the cards by eye.",
+     "engine": "Shape: the same role, but not alike enough to be seen as a group. Plumber can list which cards are links and compare how they look with the ones that are not. If the difference is one faint bar, the two groups are too alike.",
+     "pins": [
+      {
+       "shot": "craft",
+       "x": 963,
+       "y": 147,
+       "w": 468,
+       "h": 305
+      },
+      {
+       "shot": "craft",
+       "x": 491,
+       "y": 413,
+       "w": 458,
+       "h": 39
+      }
+     ]
+    },
+    {
+     "k": "3.9",
+     "level": "shape",
+     "says": "Each page is its own world from its own period. Only the navigation ties them together.",
+     "shows": "Home is huge type on white sheets. Craft is a dense grid of clips. Projects is nine short lines in the middle of an empty page. Field Notes is full-screen red lettering. They share the strip at the top and little else.",
+     "how": "The same judgement he gave the first site in the thread, turned on himself: he walked through the pages and they do not look made at one time by one hand.",
+     "engine": "Shape, across pages. The same new reading as point 1.6: a short description of each page’s look and a way to compare them.",
+     "pins": []
+    },
+    {
+     "k": "3.10",
+     "level": "shape",
+     "says": "The navigation throws some pages off balance.",
+     "shows": "On Projects the strip sits alone at the top centre, far above a short list that starts a third of the way down. On Craft it floats above three full columns.",
+     "how": "He looked at each page as a composition and asked whether the strip belongs to it. A fixed element that suits one page’s weight can sit awkwardly on another whose content is lighter or placed elsewhere.",
+     "engine": "Shape: balance. Plumber could compare where the visual weight of the content sits with where the fixed element sits, page by page. The research we read warns that scores of whole-page balance match human judgement only modestly, so this would be a weak signal.",
+     "pins": [
+      {
+       "shot": "projects",
+       "x": 612,
+       "y": 54,
+       "w": 216,
+       "h": 38
+      }
+     ]
+    },
+    {
+     "k": "3.11",
+     "level": "content",
+     "says": "A joke: four more reasons the navigation is bad, with none given.",
+     "shows": "Nothing to show. It is his third remark about the navigation in twelve lines.",
+     "how": "The repetition is the information: of everything on his site, the navigation is what he regrets most.",
+     "engine": "Nothing to build. It adds weight to points 3.5 and 3.10.",
+     "pins": []
+    },
+    {
+     "k": "3.12",
+     "level": "content",
+     "says": "Projects and Craft overlap, and one is far heavier than the other.",
+     "shows": "Projects is nine links. Craft is about 9,600 pixels of cards. History of Software Design and Devouring Details appear on both.",
+     "how": "He asked what each page is for. Two pages that answer the same question, one long and one almost empty, mean the site’s structure was never decided.",
+     "engine": "Content and structure, across pages. Plumber could notice the same destinations listed on two pages and a large difference in how much each page holds. Whether that is a fault needs judgement.",
+     "pins": [
+      {
+       "shot": "projects",
+       "x": 350,
+       "y": 310,
+       "w": 744,
+       "h": 476
+      }
+     ]
+    }
+   ],
+   "note": "He wrote this about his own site after a friend posted it as a joke, so each line is a rule he holds, stated without softening. The archive copy is from two days before."
   },
   {
    "n": 4,
@@ -32,8 +400,85 @@
    "reply": "2112206438105759757",
    "date": "2026-10-19",
    "media": "",
-   "shots": [],
-   "points": []
+   "shots": [
+    {
+     "id": "wide",
+     "file": "shubhransh-wide.jpg",
+     "w": 2560,
+     "h": 1440,
+     "crop": [
+      90,
+      0,
+      2380,
+      1440
+     ],
+     "label": "First screen on 2026-11-26 at 2560 pixels wide, the width of the display he reviewed on"
+    }
+   ],
+   "points": [
+    {
+     "k": "4.1",
+     "level": "shape",
+     "says": "The row of project tiles is cut off carelessly. It ends neither on the page’s vertical line nor on the edge of the white area.",
+     "shows": "The page is a white area between two vertical lines, with a narrower column of content inside it. The tiles slide sideways in a row that is wider than the screen, so the row has to be cut somewhere. Today, at his width, it is cut exactly on the two vertical lines. The owner answered that it looked fine on his own screen and that he had not thought about other screens, so what Rauno saw was a cut that fell between the lines on a wide display.",
+     "how": "A place where things are cut off is an edge, and the eye reads every edge as a decision. This page already draws its edges: two vertical lines and a content column. An edge that lands on neither one is a new line with no reason behind it, and that reads as sloppy. He saw it because his display is much wider than the one the page was built on.",
+     "engine": "Shape: every edge should sit on a line the layout already has. Plumber can list the places where content is cut (boxes that hide what overflows them) and check that each cut lands on a container edge or a shared line. It has to look at several widths, a very wide one included, because the fault only exists there. The wide look is the new part.",
+     "today": "Looks fixed: the row now ends on the vertical lines at 2560 wide. The web archive only has this site from April, six months before the review, so the page as he saw it could not be recovered.",
+     "pins": [
+      {
+       "shot": "wide",
+       "x": 124,
+       "y": 793,
+       "w": 2312,
+       "h": 444
+      }
+     ]
+    },
+    {
+     "k": "4.2",
+     "level": "behaviour",
+     "says": "The four section links in the hero are not much use. Choosing one scrolls you down the page, and after that you cannot get back to them.",
+     "shows": "Under the introduction sit four links with counts: product releases, design systems, iOS and macOS apps, AI work and labs. Three of them jump to a section further down this long page (about 6,600 pixels). They live only in the hero. The bar at the top holds different links, to other pages.",
+     "how": "He used it. He picked one section, landed there, wanted the next one, and found the control had left the screen. A menu that takes you away from itself works once. Navigation has to stay within reach of every place it sends you.",
+     "engine": "Behaviour: a set of links that scroll the same page should still be reachable after one is followed. Plumber already tries gestures on a page. This one would follow a same-page link, then ask whether the group it belonged to is still on screen or pinned. Needs a new gesture, no new idea.",
+     "today": "Unchanged on 2026-11-26.",
+     "pins": [
+      {
+       "shot": "wide",
+       "x": 845,
+       "y": 688,
+       "w": 860,
+       "h": 46
+      }
+     ]
+    },
+    {
+     "k": "4.3",
+     "level": "shape",
+     "says": "Make the logo smaller and the text bigger. His eyes skip the big wordmark, however long it took to make, because eyes go to words that say something.",
+     "shows": "The largest thing on the first screen after the photo is the name drawn as a logo, a picture about 480 pixels wide. The two lines that say who he is are 17px, in black at half strength. Body text elsewhere on the site is set at 12px.",
+     "how": "A logo is recognised in a glance and then there is nothing left in it to read. A sentence keeps the eye because it carries news. So size should go to the thing that carries information, not to the thing that took effort. He noticed his own eye passing over the wordmark and going looking for text.",
+     "engine": "Shape: the loudest thing on a screen should be the thing that says the most. Plumber can already rank what is biggest and darkest on the first screen. Knowing that a sentence about the person says more than their name drawn as a picture needs a judgement about meaning, which is the job for a model.",
+     "today": "Unchanged on 2026-11-26.",
+     "pins": [
+      {
+       "shot": "wide",
+       "x": 1040,
+       "y": 418,
+       "w": 482,
+       "h": 86
+      },
+      {
+       "shot": "wide",
+       "x": 845,
+       "y": 524,
+       "w": 872,
+       "h": 62
+      }
+     ]
+    }
+   ],
+   "note": "What he saw in October could not be recovered for this site; the pins are on today’s page at his display width."
   },
   {
    "n": 5,
@@ -42,8 +487,71 @@
    "reply": "2112208379716231406",
    "date": "2026-10-19",
    "media": "",
-   "shots": [],
-   "points": []
+   "shots": [
+    {
+     "id": "home",
+     "file": "samlimby-now.jpg",
+     "w": 1440,
+     "h": 900,
+     "label": "Home on 2026-11-26"
+    }
+   ],
+   "points": [
+    {
+     "k": "5.1",
+     "level": "behaviour",
+     "says": "Hovering the two photos in the hero feels abrupt. The one behind jumps in front at once, and that is not satisfying.",
+     "shows": "Two tilted photos overlap at the right of the hero, a smaller one behind and a larger one in front. On hover their order swaps. Which is in front is a single switch in the browser, so it changes in one frame.",
+     "how": "Something coming forward is a physical event: it lifts, travels and settles. A photo that is suddenly on top has skipped the event. He felt the missing movement before he looked for the cause, then named the cause exactly, the stacking order changing with nothing in between.",
+     "engine": "Behaviour: a change that cannot be eased, used where a movement is expected. Plumber already tries hovering things and reads what changes. It could say when a hover changes which element is on top while nothing moves or fades to carry it.",
+     "today": "The photos are still there. The hover was not tried again.",
+     "pins": [
+      {
+       "shot": "home",
+       "x": 800,
+       "y": 98,
+       "w": 512,
+       "h": 460
+      }
+     ]
+    },
+    {
+     "k": "5.2",
+     "level": "content",
+     "says": "Two similar photos of yourself may not help. Dig for an idea: the favicon is already a drawn avatar of him, so something clever could be done with showing himself as photo and as avatar.",
+     "shows": "Both pictures are casual photos of the same person, one standing in a field and one close up in a street. The site’s tab icon is a drawn portrait of him.",
+     "how": "Each thing on a page should add something the others do not. The second photo repeats the first. He then looked around the site for material already there, found the drawn portrait in the tab, and proposed joining the two into one idea. It is the same habit as with shadcn’s favicon: he reads the tab icon as part of the design.",
+     "engine": "Content and concept. A model could notice two pictures of the same subject side by side; whether that is redundant is taste. Nothing to check in what is drawn.",
+     "pins": [
+      {
+       "shot": "home",
+       "x": 800,
+       "y": 98,
+       "w": 512,
+       "h": 460
+      }
+     ]
+    },
+    {
+     "k": "5.3",
+     "level": "content",
+     "says": "The case studies are behind a password. He understands why, but a visitor without the password is left with a few screen recordings. Put something on the table for everyone else.",
+     "shows": "The first project title carries a lock icon, and the card under it plays a recording of the product. The written case study opens only with a password.",
+     "how": "He arrived as the visitor the page was not built for: someone without the key. From there the site has almost nothing to say. A page should be judged from its worst-equipped visitor too, the way an app is judged by its empty state.",
+     "engine": "Content and flow: a list where the main items lead to a locked door. Plumber could follow the links and see that they end at a password form. Deciding that this leaves too little for the public is a judgement about content.",
+     "today": "The lock is still on the first project.",
+     "pins": [
+      {
+       "shot": "home",
+       "x": 104,
+       "y": 662,
+       "w": 404,
+       "h": 48
+      }
+     ]
+    }
+   ],
+   "note": "The archive copy from 2026-10-04 caught only an intro screen with a “Skip intro” link, so the pins are on today’s page."
   },
   {
    "n": 6,
@@ -52,8 +560,53 @@
    "reply": "2112209209911640165",
    "date": "2026-10-19",
    "media": "video",
-   "shots": [],
-   "points": []
+   "shots": [
+    {
+     "id": "viewer",
+     "file": "stefan-vid-viewer.jpg",
+     "w": 1453,
+     "h": 1080,
+     "label": "A project opened, a frame from his own screen recording on 2026-10-19"
+    },
+    {
+     "id": "home",
+     "file": "stefan-vid-home.jpg",
+     "w": 1453,
+     "h": 1080,
+     "label": "Home in the same recording"
+    }
+   ],
+   "points": [
+    {
+     "k": "6.1",
+     "level": "behaviour",
+     "says": "A viewer for stepping through work is basic equipment. If he cannot see at once how to move through it, he closes the tab.",
+     "shows": "Pressing a tile opens the piece alone on a dark screen, with a strip of small thumbnails along the bottom. There are no arrows on the screen. A round arrow, pointing left or right, appears only at the pointer, depending on which side of the screen the pointer is. In his recording the pointer wanders before he finds it.",
+     "how": "Some parts of a site are places to be inventive and some are plumbing. Stepping to the next picture is plumbing: everyone has done it a thousand times and expects it to work without thought. He gave it a second, did not see how, and stated the cost plainly: the visitor leaves. The owner’s answer calls it an accessibility fix, which is the same fault seen from the keyboard.",
+     "engine": "Behaviour: a control that cannot be seen until you are already on it. Plumber already flags controls with no name. Here it would ask, for anything that opens a set of items one at a time, whether a next and a previous control are visible and can be reached by keyboard.",
+     "today": "Not checked. The owner said he was fixing it.",
+     "pins": [
+      {
+       "shot": "viewer",
+       "x": 650,
+       "y": 915,
+       "w": 790,
+       "h": 140
+      }
+     ]
+    },
+    {
+     "k": "6.2",
+     "level": "behaviour",
+     "says": "The transitions feel slow.",
+     "shows": "In the recording, opening a piece and moving between pieces each take long enough to watch. He gives no number.",
+     "how": "Movement between items of the same kind is travel, and travel should be nearly free. When he has to wait for an animation before he can look at the next thing, the animation is in the way. He says the same to two other people, each time about pages meant to feel quick.",
+     "engine": "Behaviour: how long a movement takes. Plumber has checks on motion and can read how long a transition runs. It has no principle yet for how long is too long when moving between items; his remark is a lead, and the number needs its own source.",
+     "today": "Not checked.",
+     "pins": []
+    }
+   ],
+   "note": "His recording is the evidence here. The web archive only has this site from May."
   },
   {
    "n": 7,
@@ -62,8 +615,103 @@
    "reply": "2112210362875388095",
    "date": "2026-10-19",
    "media": "",
-   "shots": [],
-   "points": []
+   "shots": [
+    {
+     "id": "full",
+     "file": "thamer-now-full.jpg",
+     "w": 1440,
+     "h": 1684,
+     "crop": [
+      360,
+      0,
+      720,
+      1684
+     ],
+     "label": "The whole home page on 2026-11-26"
+    }
+   ],
+   "points": [
+    {
+     "k": "7.1",
+     "level": "shape",
+     "says": "The dithered picture style is out of fashion.",
+     "shows": "The hero is a photo of a bridge turned into coarse black dots, in a rounded card 380 pixels wide.",
+     "how": "Knowledge of the field, as with the dated animation on his own site. A treatment that was everywhere for a season now marks a page as following that season.",
+     "engine": "Taste, tied to time. The same family as plumber’s checks for marks of a period. Recognising a dithered picture needs a model that looks at the image.",
+     "today": "The picture is still there. The owner answered that he meant to build on it.",
+     "pins": [
+      {
+       "shot": "full",
+       "x": 530,
+       "y": 64,
+       "w": 380,
+       "h": 475
+      }
+     ]
+    },
+    {
+     "k": "7.2",
+     "level": "shape",
+     "says": "The page would look clearly better with the hero picture removed.",
+     "shows": "The picture fills most of the first screen. His name starts 655 pixels down, and the first line about what he does is below that. Everything under the picture is plain text in one column 512 pixels wide.",
+     "how": "He ran the page without the element in his head and compared. The picture says nothing about the person, and it pushes everything that does off the first screen. When taking something away makes the page better, the thing was costing more than it gave.",
+     "engine": "Shape: the largest thing on the first screen should carry meaning. Plumber can measure how much of the first screen a picture takes and how far down the first words are. That the picture says nothing about him is a judgement of content, for a model.",
+     "today": "Unchanged.",
+     "pins": [
+      {
+       "shot": "full",
+       "x": 530,
+       "y": 64,
+       "w": 380,
+       "h": 475
+      },
+      {
+       "shot": "full",
+       "x": 464,
+       "y": 648,
+       "w": 200,
+       "h": 30
+      }
+     ]
+    },
+    {
+     "k": "7.3",
+     "level": "shape",
+     "says": "He likes the small game but it is too close to the dinosaur game in Chrome. Push it further, make it his own, and let it run the full width of the window. That would also break the rigid look of a résumé. It could even replace the hero picture.",
+     "shows": "The game is a canvas 512 by 183 pixels, the same width as every other block on the page, near the bottom under the heading “Journey”.",
+     "how": "Two thoughts. A borrowed idea has to be changed enough to become yours. And a page where every block has the same width has no accent: the one piece with character should be the one allowed to break the column. He is moving emphasis to where the personality is.",
+     "engine": "Shape: rhythm. Plumber can see that every block shares one width, so nothing is set apart. It cannot say which block deserves to break out; that is a design proposal. This belongs with the layout generator more than with a check.",
+     "today": "The game is still the width of the column.",
+     "pins": [
+      {
+       "shot": "full",
+       "x": 464,
+       "y": 1341,
+       "w": 512,
+       "h": 183
+      }
+     ]
+    },
+    {
+     "k": "7.4",
+     "level": "craft",
+     "says": "The rows under Work cannot be clicked across their whole width, only on the name.",
+     "shows": "Each row is a year, a name and a short description on one line. Today the whole row, 512 by 45 pixels, is one link.",
+     "how": "He clicked where the row is, not where the word is. A row reads as one object, so the whole object should answer. He found the gap by missing.",
+     "engine": "Craft: the part that answers a click is smaller than the thing that looks clickable. Plumber has a check for strips between rows that do nothing. This is its neighbour: compare each link’s own box with the box of the row it sits in.",
+     "today": "Fixed: the whole row is the link.",
+     "pins": [
+      {
+       "shot": "full",
+       "x": 464,
+       "y": 1163,
+       "w": 512,
+       "h": 45
+      }
+     ]
+    }
+   ],
+   "note": "The web archive has no copy of this site, so the pins are on today’s page."
   },
   {
    "n": 8,
@@ -72,8 +720,78 @@
    "reply": "2112210988065767473",
    "date": "2026-10-19",
    "media": "montek.jpg",
-   "shots": [],
-   "points": []
+   "shots": [
+    {
+     "id": "his",
+     "file": "montek-rauno.jpg",
+     "w": 2048,
+     "h": 1174,
+     "label": "The picture Rauno attached: a project visual he found deeper in the site"
+    },
+    {
+     "id": "home",
+     "file": "montek-now.jpg",
+     "w": 1440,
+     "h": 900,
+     "label": "Home on 2026-11-26, marked “Updated October 2026”"
+    }
+   ],
+   "points": [
+    {
+     "k": "8.1",
+     "level": "craft",
+     "says": "The page shows a scrollbar even when there is nothing to scroll. Set the system to always show scrollbars and you will catch it.",
+     "shows": "On a Mac, scrollbars hide until you scroll, so a page that forces one looks fine to its author. With them always shown, an empty track sits at the edge of the page.",
+     "how": "He keeps his system set to show scrollbars all the time, on purpose, because it shows faults the default hides. He is not reporting a bug so much as handing over the test that finds a whole family of them.",
+     "engine": "Craft, and a condition to look under. Plumber has a check for scrolling that is switched on all the time when it should appear only when needed. His advice adds the condition: read the page with classic, always-visible scrollbars, the way plumber already re-reads it at larger text.",
+     "today": "Not checked.",
+     "pins": []
+    },
+    {
+     "k": "8.2",
+     "level": "craft",
+     "says": "There is no point in thumbnails this small. Nothing in them can be made out.",
+     "shows": "What he saw could not be recovered: the archive copy is broken. Today each project shows pictures 546 pixels wide in a row that runs off the right edge.",
+     "how": "A picture has a job, to show the thing. Below some size it stops doing the job and becomes a grey patch that still takes room and attention. The same judgement as the sponsor faces on shadcn’s page.",
+     "engine": "Craft: a picture drawn too small for what it holds. Plumber can compare the size a picture is drawn at with the size it was made at. Whether its content survives the shrink needs a look at the picture itself.",
+     "today": "Fixed: the pictures are large.",
+     "pins": [
+      {
+       "shot": "home",
+       "x": 438,
+       "y": 565,
+       "w": 548,
+       "h": 309
+      }
+     ]
+    },
+    {
+     "k": "8.3",
+     "level": "content",
+     "says": "He has beautiful pictures of his projects, like the one attached. Why are they not on the front page?",
+     "shows": "The picture he attached is a careful render of an old computer running a terminal, from one project’s own page. The front page at the time led with text and the tiny thumbnails.",
+     "how": "He went one level down, found the best thing on the site, and asked why a visitor has to dig for it. Most visitors judge from the first page and never go deeper. He says the same to four other people in this thread: lead with your strongest material.",
+     "engine": "Content: what goes first. Plumber would have to compare pages, find that the richest picture lives on an inner page while the front page is mostly text, and say so. A model has to judge “richest”.",
+     "today": "Changed: the front page now shows large project pictures.",
+     "pins": [
+      {
+       "shot": "his",
+       "x": 540,
+       "y": 190,
+       "w": 830,
+       "h": 830
+      },
+      {
+       "shot": "home",
+       "x": 438,
+       "y": 565,
+       "w": 548,
+       "h": 309
+      }
+     ]
+    }
+   ],
+   "note": "The web archive’s copy is from February and fails to load, so what he saw could not be pinned. Today’s page already shows his advice applied."
   },
   {
    "n": 9,
@@ -82,8 +800,96 @@
    "reply": "2112212024159527123",
    "date": "2026-10-19",
    "media": "",
-   "shots": [],
-   "points": []
+   "shots": [
+    {
+     "id": "home",
+     "file": "shreyas-now.jpg",
+     "w": 1440,
+     "h": 900,
+     "label": "Home on 2026-11-26, after its opening animation has finished"
+    }
+   ],
+   "points": [
+    {
+     "k": "9.1",
+     "level": "behaviour",
+     "says": "He likes that he can scroll while the opening animation is still playing.",
+     "shows": "The hero is a set of painted cut-outs and a notebook that arrive in sequence when the page opens. The page can be scrolled during it.",
+     "how": "Praise first, and it names the rule he checks on every site with an intro: the visitor’s hands are never tied while the designer’s sequence plays. He says the opposite to another person in the thread, whose intro screen blocks a click.",
+     "engine": "Behaviour: an intro must not lock the page. Plumber could try to scroll in the first half second and see whether the page moves.",
+     "pins": [
+      {
+       "shot": "home",
+       "x": 180,
+       "y": 90,
+       "w": 1160,
+       "h": 410
+      }
+     ]
+    },
+    {
+     "k": "9.2",
+     "level": "behaviour",
+     "says": "Go one step further: if he scrolls, cancel the animation.",
+     "shows": "Scrolling during the intro moves the page while the cut-outs keep arriving above.",
+     "how": "Scrolling is the visitor saying “I am going on”. From that moment the intro is playing to nobody, so it should finish at once. The visitor’s action outranks the sequence.",
+     "engine": "Behaviour: motion that keeps running after the visitor has moved on. Plumber could scroll during an intro and read whether its animations are still running afterwards.",
+     "today": "Not checked. For the live harness.",
+     "pins": [
+      {
+       "shot": "home",
+       "x": 180,
+       "y": 90,
+       "w": 1160,
+       "h": 410
+      }
+     ]
+    },
+    {
+     "k": "9.3",
+     "level": "behaviour",
+     "says": "The sequence of movements could be better. While the hero is still doing something interesting, the content below starts to come in and cuts across it. Overlap can work; here it feels abrupt.",
+     "shows": "Two things move at once in different places: the cut-outs in the hero, and the “Selected work” block under it fading in.",
+     "how": "Motion has a stage, and one thing holds it at a time. A second movement that begins before the first has landed takes the eye away from both. He allows that overlap can be right when one movement hands over to the next; here they are unrelated.",
+     "engine": "Behaviour over time: entrances that overlap. The browser can list running animations with their start and length, so plumber could say when two unrelated regions are arriving at the same moment. Whether an overlap is a handover or a clash needs judgement.",
+     "today": "Not checked. For the live harness.",
+     "pins": [
+      {
+       "shot": "home",
+       "x": 180,
+       "y": 90,
+       "w": 1160,
+       "h": 410
+      },
+      {
+       "shot": "home",
+       "x": 375,
+       "y": 545,
+       "w": 690,
+       "h": 190
+      }
+     ]
+    },
+    {
+     "k": "9.4",
+     "level": "behaviour",
+     "says": "Click quickly back and forth between a project page and home. The transition breaks easily.",
+     "shows": "Each project opens with a transition from the home page. Starting a second one before the first ends leaves the page in a broken state.",
+     "how": "He hands over a test, as he did with the scrollbar setting: do the thing fast and repeatedly. An animation must be safe to interrupt at any point, because real hands do not wait for it to end.",
+     "engine": "Behaviour under stress. Plumber already has the idea of pushing a page until it breaks. This adds a gesture: trigger a transition, trigger its reverse before it ends, several times, then check that the page ends in the state it would reach slowly.",
+     "today": "Not checked. For the live harness.",
+     "pins": [
+      {
+       "shot": "home",
+       "x": 1020,
+       "y": 598,
+       "w": 42,
+       "h": 42
+      }
+     ]
+    }
+   ],
+   "note": "All four points are about movement, so a still picture only shows where they happen. The web archive’s copy is from March 2025, an earlier design."
   },
   {
    "n": 10,
