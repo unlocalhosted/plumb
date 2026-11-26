@@ -6155,6 +6155,17 @@ into its own browser. Your app isn't changed.", then the findings.
   Clean up looked past the page. `docs/films/launch-03-draft/rough-cut-1.mp4` (local).
 - **Media hooks:** the reference's frame sheet beside the shot plan; `take/editor-syncing.jpg` and
   `take/after-sync.jpg` (local) show the bug.
+- **Captions and a quieter Clean up (2026-11-26).** The owner on rough cut 1: "our interaction doesn't work without
+  narration", and the yellow under Clean up's bar ("20% of screen looking yellow") is ugly. The gestures are key
+  presses and a two-finger scroll, so nothing on screen says what is happening. Now seven spoken lines run under the
+  take, written as the problem a person has: the AI hard-coded a hex green that isn't your colour token, plumber
+  swaps in `bg-primary`; a made-up 10px padding becomes `p-3` on all 20 cards; 17 places move onto four shared text
+  styles. Two lines of the approved script were wrong (it said the page had seven text sizes; plumber's own words say
+  2) and were rewritten to what the take shows. The yellow is plumber drawing the room it adds under the page. I first
+  quieted it in plumber; the owner wanted the product left alone, so that commit is reverted and the dots are faded in
+  the film's copy of the frames only. The film now closes on "React Plumber is an anti-slop linter, looking for 100+
+  design issues." Stills: `docs/films/launch-03-draft/captions-stills.jpg`, `cleanup-stills.jpg` (local). Not
+  rendered yet.
 
 - **One at a time, from any toy (2026-11-26).** The owner: "just fix the things one by one clicking on a single item
   should give the tour like experience". Until now only the main button toured, and it showed 4 of 80 fixes; a single
