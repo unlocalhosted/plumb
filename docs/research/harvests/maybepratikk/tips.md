@@ -17,11 +17,11 @@ Each tip is in our words; the link is the source.
 | [Bold on hover makes tabs jump](https://x.com/maybepratikk/status/2121151672756138484): reserve the bold width with a hidden copy | 11-13 | text | **Checked**: `craft/bold-hover` |
 | [A submenu needs a safe triangle](https://x.com/maybepratikk/status/2122239986926027042): the pointer can cut across other rows without closing it | 11-16 | text | **Checked**: `craft/submenu-path` |
 | [Tabular numbers in tables and live data](https://x.com/maybepratikk/status/2117890135945822554) | 11-04 | text | **Checked**: `craft/tabular-nums` |
-| [Primary button breakdown](https://x.com/maybepratikk/status/2117621821034185116) | 11-03 | not read: the content is in two pictures that were not opened | Not sorted |
+| [Primary button breakdown](https://x.com/maybepratikk/status/2117621821034185116): the recipe for one button (fill, a thin see-through stroke in a darker shade of the fill, two small drop shadows and two inner shadows, all in the fill's hue), and a sheet of every button kind at rest, hovered, focused and disabled, in light and dark | 11-03 | two pictures, opened | **Checked**, as far as it is a rule: `craft/border-on-shadow` (a see-through border on a raised surface), `craft/tinted-shadow` (shadows in the surface's hue), `craft/layered-shadow`, `craft/hairline`. The rest is a worked example, with no fault in it |
 
 ## Counts
 
-8 tips sorted: 5 checked, 1 checked in part, 2 new. 1 not read.
+9 tips sorted: 6 checked, 1 checked in part, 2 new.
 
 ## The next rules
 
@@ -58,5 +58,6 @@ written into the advice sentence); the numbers for a dead strip (1 to 8px, rows 
 
 ## Not reached
 
-- The pictures in his posts (288 posts carry one) were not opened, so a tip that lives only in a picture is missed.
+- The pictures in his other posts (288 posts carry one) were not opened, so a tip that lives only in a picture is
+  missed. The button post's two were.
 - Posts before 2024-06-30, and anything the searches did not return.
