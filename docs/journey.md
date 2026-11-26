@@ -6788,6 +6788,20 @@ into its own browser. Your app isn't changed.", then the findings.
   project's own check asked for.
 - **Media hooks:** the dial on the test page at Longer words, on the card note, switching Broken and Fixed.
 
+### 155. Other data on a page that has a table (2026-11-26)
+
+- **The itch:** none of the other-data checks had read a real table. crafting-ui has none.
+- **How we found it:** the six checks, run narrow on the sloppy ledger example (our own demo page, with a Members
+  table of three columns and two rows). 54 seconds, one finding.
+- **What it said:** with a longer name the other columns move 97px. Looked at by hand with "Ada Lovelace-Byron
+  King" in place of "Ada": Role moves from 203px to 525px and Last seen from 672px to 803px.
+- **The fix, seen on the page:** `w-full table-fixed`. The columns sit at 352px and 672px with the short name and
+  with the long one, and no cell spills.
+- **Not shown:** the fix was put on by hand in the browser, not written to the file. The other five checks were
+  quiet here, and the page has cards. This is still our own example. Two apps of the owner's have tables
+  (algorecall, craftingattention) and were not run. 54 seconds is slow for a narrow run and the cause is not known.
+- **Media hooks:** the Members table with the long name, before and after.
+
 ### 151. A judged set: real screens marked by a person (2026-11-26)
 
 - **The itch:** the owner wants plumber to "look at the shape rather than the details", and for design laws to
