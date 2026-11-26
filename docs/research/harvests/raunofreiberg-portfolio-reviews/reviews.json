@@ -893,13 +893,119 @@
   },
   {
    "n": 10,
-   "who": "@jscraik (their post is gone; site not yet found)",
-   "site": "",
+   "who": "Jamie Scott Craik (@jscraik)",
+   "site": "https://jscraik.com/",
    "reply": "2112213558016577899",
    "date": "2026-10-19",
    "media": "video",
-   "shots": [],
-   "points": []
+   "shots": [
+    {
+     "id": "home",
+     "file": "jscraik-vid-home.jpg",
+     "w": 863,
+     "h": 381,
+     "label": "Home, a frame from his own screen recording on 2026-10-19"
+    },
+    {
+     "id": "nav",
+     "file": "jscraik-nav-strip.jpg",
+     "w": 1726,
+     "h": 1820,
+     "label": "Only the menu, eight frames a second from his recording, read down the left column and then the right"
+    }
+   ],
+   "points": [
+    {
+     "k": "10.1",
+     "level": "shape",
+     "says": "Make the second heading the first one.",
+     "shows": "The largest thing on the page is the name, in a tall serif. Under it, much smaller, is the line that says what he does: software, developer tools and practical AI-assisted work.",
+     "how": "A name tells a stranger nothing yet. The line about the work is the news, so it should be the headline and the name can sign it. He says the same to two others in the thread, about a logo and about an intro screen.",
+     "engine": "Shape: the loudest thing should be the thing that says the most. Plumber can see which text is largest. Knowing that it is a person’s name and that the smaller line carries the meaning is a reading of the words, for a model.",
+     "pins": [
+      {
+       "shot": "home",
+       "x": 58,
+       "y": 198,
+       "w": 356,
+       "h": 72
+      },
+      {
+       "shot": "home",
+       "x": 58,
+       "y": 0,
+       "w": 430,
+       "h": 132
+      }
+     ]
+    },
+    {
+     "k": "10.2",
+     "level": "craft",
+     "says": "The menu’s highlight changes between an oval and a pill. Ovals look awkward, even when they are on screen only for a moment.",
+     "shows": "One rounded shape sits behind the menu. At rest it is a long pill behind every item. On hover it shrinks to a small pill behind one word. On the way it passes through wide flattened ovals, visible in several frames of the strip.",
+     "how": "He watches the frames in between, not only the start and the end. A transition is made of every shape it passes through, and each of those is seen. Here the corner rounding is tied to the width, so as the width changes the shape stops being a pill.",
+     "engine": "Craft, in motion: an ugly in-between. Plumber records frames when it tries a hover. It could measure the moving shape in each frame and say when corners that started as a clean half-circle become an ellipse on the way.",
+     "pins": [
+      {
+       "shot": "nav",
+       "x": 112,
+       "y": 164,
+       "w": 566,
+       "h": 52
+      },
+      {
+       "shot": "nav",
+       "x": 255,
+       "y": 1004,
+       "w": 312,
+       "h": 52
+      }
+     ]
+    },
+    {
+     "k": "10.3",
+     "level": "shape",
+     "says": "The menu works differently from item to item. Some scroll him down the page, others go to a new page.",
+     "shows": "In the recording, Work scrolls the same page down to “All work”, and About opens a separate page. The five items look identical.",
+     "how": "Items in one menu look the same, so he expected them to do the same kind of thing. The first surprised him one way and the next another way. After that he cannot predict the rest.",
+     "engine": "Shape: alike, but not the same role, the same fault as the headings on shadcn’s page. Plumber can read where each menu link leads and say when one menu mixes jumps within the page with links to other pages.",
+     "pins": [
+      {
+       "shot": "nav",
+       "x": 958,
+       "y": 30,
+       "w": 674,
+       "h": 44
+      }
+     ]
+    },
+    {
+     "k": "10.4",
+     "level": "behaviour",
+     "says": "The menu also glitches when he navigates. A detail like this loses points in a portfolio review. And without the animation, nobody would have looked at the menu and thought it needed motion.",
+     "shows": "After a click the shape behind the menu ends up in the wrong place in several frames: covering half of “Work”, or stopping short so that “Contact” sits outside it.",
+     "how": "The cost and the gain are not equal. A plain menu is never held against anyone. An animated one that breaks is seen by everyone. So motion is worth adding only where it can be made solid, and he would rather see none than see it fail.",
+     "engine": "Behaviour: a part left in the wrong place after movement. Plumber could compare where the shape rests after a navigation with where it rests on a fresh load. The wider lesson is for ranking: a broken flourish matters more than a missing one.",
+     "pins": [
+      {
+       "shot": "nav",
+       "x": 1050,
+       "y": 1636,
+       "w": 462,
+       "h": 48
+      },
+      {
+       "shot": "nav",
+       "x": 1130,
+       "y": 800,
+       "w": 300,
+       "h": 48
+      }
+     ]
+    }
+   ],
+   "note": "The person’s own post is gone. The site was identified from the name in Rauno’s recording and the address is inferred from the handle; it answers today but was not captured."
   },
   {
    "n": 11,
@@ -908,8 +1014,41 @@
    "reply": "2112213817694515571",
    "date": "2026-10-19",
    "media": "",
-   "shots": [],
-   "points": []
+   "shots": [
+    {
+     "id": "home",
+     "file": "lochie-now.jpg",
+     "w": 1440,
+     "h": 900,
+     "crop": [
+      0,
+      0,
+      760,
+      680
+     ],
+     "label": "Home on 2026-11-26"
+    }
+   ],
+   "points": [
+    {
+     "k": "11.1",
+     "level": "content",
+     "says": "A joke between friends: “not enough motion”.",
+     "shows": "The page is plain, unstyled HTML on purpose: the browser’s default serif, default blue links, a small smiley, and one line of green text that tilts. Its owner is known for motion work and lists his easing and text-animation libraries on this same page.",
+     "how": "The humour is the gap between who made the page and what the page is. There is no critique in it. It does show that he reads a site against what he knows of its maker.",
+     "engine": "Nothing to build. Kept so that no reply from the thread is missing.",
+     "pins": [
+      {
+       "shot": "home",
+       "x": 30,
+       "y": 600,
+       "w": 220,
+       "h": 50
+      }
+     ]
+    }
+   ],
+   "note": "Not a review. The owner answered “solid notes”."
   },
   {
    "n": 12,
@@ -918,8 +1057,102 @@
    "reply": "2112215072546410950",
    "date": "2026-10-19",
    "media": "",
-   "shots": [],
-   "points": []
+   "shots": [
+    {
+     "id": "home",
+     "file": "jerry-now.jpg",
+     "w": 1440,
+     "h": 900,
+     "label": "Home on 2026-11-26"
+    },
+    {
+     "id": "og",
+     "file": "jerry-og.jpg",
+     "w": 1200,
+     "h": 630,
+     "label": "The picture shown when the site is shared, on 2026-11-26"
+    }
+   ],
+   "points": [
+    {
+     "k": "12.1",
+     "level": "shape",
+     "says": "From the share picture he expected a different site.",
+     "shows": "The share picture is black text on white with nothing else: the introduction, the menu and the links. The site itself is a wall of large colourful videos beside that text.",
+     "how": "The share picture is the first surface he met, and it made a promise about the kind of site behind it: quiet, typographic. The site broke that promise in the first second. The third time in this thread that he judges the surfaces around a page as part of it.",
+     "engine": "Shape, across surfaces: the same new reading as shadcn’s favicon. Read the share picture and compare its look with the page’s first screen.",
+     "today": "Not known whether the share picture has changed since.",
+     "pins": [
+      {
+       "shot": "og",
+       "x": 0,
+       "y": 0,
+       "w": 1200,
+       "h": 630
+      }
+     ]
+    },
+    {
+     "k": "12.2",
+     "level": "craft",
+     "says": "The videos on the index are cropped oddly, and some look low quality on his display.",
+     "shows": "Each tile is about 518 pixels wide. The pictures behind them were made at 720 by 438, 540 by 405 and 412 by 589 pixels. His display draws two device pixels for every page pixel, so a 518-pixel tile needs a picture about 1,036 wide to stay sharp. The 412 by 589 picture is also tall where its tile is nearly square, so about a third of it is cut away.",
+     "how": "He sees softness because his screen is denser than the files, and he sees the crop because the frame’s proportions and the content’s do not match, so something meaningful is lost at the edges. He names his display each time, as a reminder that the author’s screen is not the reader’s.",
+     "engine": "Craft, two readings plumber can already take: a picture with fewer pixels than the space it fills needs on a dense screen, and a picture whose proportions differ from its frame so that it is cropped. Plumber has a check on how a picture fits its frame; the sharpness one would be new.",
+     "today": "The sizes above were read from today’s page.",
+     "pins": [
+      {
+       "shot": "home",
+       "x": 832,
+       "y": 490,
+       "w": 520,
+       "h": 410
+      },
+      {
+       "shot": "home",
+       "x": 305,
+       "y": 579,
+       "w": 518,
+       "h": 321
+      }
+     ]
+    },
+    {
+     "k": "12.3",
+     "level": "shape",
+     "says": "The tiles differ a lot in how much there is to look at. Some are full of fine interface detail, another is only a gradient changing. Give them a more even level of detail. He adds that software is hard to show well, because the work is mostly rectangles.",
+     "shows": "Side by side on the first screen: a dense screenshot with a sidebar, a list and lines of code; and a dark tile holding one progress ring and two lines of text.",
+     "how": "Tiles in one grid are read as equals, so the eye compares them. When one is rich and its neighbour nearly empty, the empty one looks like less work, whatever the project was. He is asking for the set to be evened out, not for any one tile to change.",
+     "engine": "Shape: members of one set should be alike in weight. Plumber could measure how much detail each picture holds (how many edges, how much variation) and say when one tile in a grid is far from the others. That needs the pixels of the pictures, which most checks do not read today.",
+     "today": "The contrast between tiles is still there.",
+     "pins": [
+      {
+       "shot": "home",
+       "x": 832,
+       "y": 17,
+       "w": 520,
+       "h": 422
+      },
+      {
+       "shot": "home",
+       "x": 305,
+       "y": 579,
+       "w": 518,
+       "h": 321
+      }
+     ]
+    },
+    {
+     "k": "12.4",
+     "level": "content",
+     "says": "The Play page is fun, but give him a reason to draw something. If the drawing stays on his own machine he will not bother.",
+     "shows": "Play is a page where a visitor can draw. Nothing is kept or shown to anyone else.",
+     "how": "He asked what he would get for the effort. A toy with no audience and no trace gives nothing back, so the effort is not made. A shared wall, or anything that keeps the mark, would change the answer.",
+     "engine": "Content and motive. Nothing in the drawn page to check.",
+     "pins": []
+    }
+   ],
+   "note": "The web archive’s copy from 2026-10-12 shows a blank first screen, so the pins are on today’s page."
   },
   {
    "n": 13,
@@ -928,8 +1161,54 @@
    "reply": "2112215917077684673",
    "date": "2026-10-19",
    "media": "",
-   "shots": [],
-   "points": []
+   "shots": [
+    {
+     "id": "home",
+     "file": "manish-now.jpg",
+     "w": 1440,
+     "h": 900,
+     "label": "Home on 2026-11-26, after the owner changed it"
+    }
+   ],
+   "points": [
+    {
+     "k": "13.1",
+     "level": "craft",
+     "says": "The text under Projects is tiny and hard to read. Text that cannot be read turns into clutter. Remove it or make it bigger.",
+     "shows": "What he saw could not be recovered. Today the project names and their one-line descriptions are large and easy to read, at the same size as the rest of the page.",
+     "how": "Small text is not a quiet version of text. Once it drops below what the eye can read comfortably it stops being words and becomes grey texture that still asks to be looked at. So there are two honest choices, readable or gone. It is the same rule he applies to tiny thumbnails and tiny sponsor faces.",
+     "engine": "Craft: text set below a readable size. Plumber can read the size of every run of text. The rule he adds is about ranking: unreadable text is worse than missing text, because it costs attention and gives nothing.",
+     "today": "Fixed: the text is large.",
+     "pins": [
+      {
+       "shot": "home",
+       "x": 352,
+       "y": 560,
+       "w": 700,
+       "h": 340
+      }
+     ]
+    },
+    {
+     "k": "13.2",
+     "level": "shape",
+     "says": "The layout that sits to the left is interesting, but he cannot place the window anywhere on his screen that makes the text or the blog posts comfortable to read. It is always a little too far away or off centre.",
+     "shows": "What he saw could not be recovered. Today the text is one column in the middle of the window, 648 pixels wide, its centre on the centre of the screen.",
+     "how": "He tried to fix it with his hands first, moving and resizing the window, and only then called it a fault. On a wide display a column pinned to one side makes the reader turn towards it. Reading wants the text where the eyes already rest.",
+     "engine": "Shape, at page level, seen only on a wide screen. Plumber could open the page at a very wide window and measure how far the main column of text sits from the middle. The wide look is the same new condition as in review 4.",
+     "today": "Fixed: the column is centred.",
+     "pins": [
+      {
+       "shot": "home",
+       "x": 396,
+       "y": 90,
+       "w": 650,
+       "h": 380
+      }
+     ]
+    }
+   ],
+   "note": "The owner said he would improve it, and today’s page shows both points answered. The web archive only has an earlier design from January, so the page he reviewed is not shown."
   },
   {
    "n": 14,
@@ -938,8 +1217,46 @@
    "reply": "2112217807697903816",
    "date": "2026-10-19",
    "media": "",
-   "shots": [],
-   "points": []
+   "shots": [
+    {
+     "id": "home",
+     "file": "veronezi-now.jpg",
+     "w": 1440,
+     "h": 900,
+     "label": "Home on 2026-11-26, after the owner changed it"
+    }
+   ],
+   "points": [
+    {
+     "k": "14.1",
+     "level": "shape",
+     "says": "There is a label explaining how the filter works. If he thinks it is unclear, he should make the filter clearer and not explain it. Instructions are not always wrong, but that area already has a lot of text stacked in it, and one more line adds visual weight.",
+     "shows": "What he saw could not be recovered: the archive has no copy. Today the page has no filter and no instruction line. It is an introduction, a strip of pictures, and two plain lists.",
+     "how": "A line that tells you how to use a control is the designer admitting the control does not explain itself. He treats the instruction as a symptom and points at the cause. He also weighs every line of text as weight on the page: in a column already heavy with words, the cheapest fix makes the area heavier.",
+     "engine": "Shape: a control that needs words to be understood. When we read Layr’s list we marked this as something plumber could not see. Rauno shows the signal: instruction text sitting next to a control. Plumber could find short text beside a control that tells the reader what to do. Reading it as an instruction needs a model or a word list.",
+     "today": "Gone: no filter and no instructions on the page.",
+     "pins": []
+    },
+    {
+     "k": "14.2",
+     "level": "content",
+     "says": "His visual playground says a lot about him, but it is hidden at the very bottom behind a link. Bring some of it back to the index.",
+     "shows": "Today a strip of large pictures and clips runs right under the introduction and off the right edge of the screen, before any list.",
+     "how": "He found the most telling work at the end of the page, one click away, and asked for it to be moved to where visitors decide. The fourth time in this thread he says: lead with your strongest material.",
+     "engine": "Content: what goes first. Plumber would have to find that the richest pictures are behind a link while the first screen is text, which means comparing pages and judging “richest”.",
+     "today": "Done: the pictures are now the second thing on the page.",
+     "pins": [
+      {
+       "shot": "home",
+       "x": 388,
+       "y": 366,
+       "w": 1052,
+       "h": 456
+      }
+     ]
+    }
+   ],
+   "note": "The web archive has no copy of this site. The owner called it great feedback, and today’s page shows both points answered, so it is the “after”."
   },
   {
    "n": 15,
@@ -948,8 +1265,68 @@
    "reply": "2112218673188368808",
    "date": "2026-10-19",
    "media": "video",
-   "shots": [],
-   "points": []
+   "shots": [
+    {
+     "id": "open",
+     "file": "griep-vid-open.jpg",
+     "w": 863,
+     "h": 324,
+     "label": "A card’s “Learn more” opened, a frame from his own screen recording on 2026-10-19"
+    },
+    {
+     "id": "closed",
+     "file": "griep-vid-closed.jpg",
+     "w": 863,
+     "h": 324,
+     "label": "The same row before it is opened"
+    }
+   ],
+   "points": [
+    {
+     "k": "15.1",
+     "level": "behaviour",
+     "says": "Let him scroll the list with an ordinary mouse wheel. Many people do not know how to scroll sideways without a trackpad.",
+     "shows": "The projects are wide cards in a single row that runs off both sides of the screen. Moving through them means scrolling sideways.",
+     "how": "He pictured a visitor with different equipment from his own: a mouse with one wheel that only goes up and down. For that person the row is stuck. He says the related thing about his own site, which also scrolls sideways.",
+     "engine": "Behaviour, under another condition: a mouse with a wheel and nothing else. Plumber can find a list that scrolls sideways and check whether it offers arrows or answers a vertical wheel. A new condition to look under, alongside larger text and other widths.",
+     "today": "Not checked. The owner wrote that he applied the feedback.",
+     "pins": [
+      {
+       "shot": "closed",
+       "x": 0,
+       "y": 0,
+       "w": 863,
+       "h": 64
+      }
+     ]
+    },
+    {
+     "k": "15.2",
+     "level": "behaviour",
+     "says": "The “Learn more” part is awkward. When he presses something to open it, he expects to close it from the same place. Here he has to travel all the way across to an “x”, which makes him less willing to open the next one.",
+     "shows": "Pressing the “Learn more” pill opens a panel of text. The pill becomes a heading. The only way to close is a small “x” at the far right of the panel, about 590 pixels from where the pointer already is.",
+     "how": "Opening and closing are one gesture seen from two sides, so they should live in one place: the hand is already there. He also names the cost that matters. If closing is a chore, a visitor stops opening, and the content behind every other “Learn more” goes unread. The price of looking decides how much gets looked at.",
+     "engine": "Behaviour: a switch that opens from one place and closes from another. Plumber can try it: press a control, see something open, press the same control again, and see whether it closes. If it does not, measure how far away the control that closes it is.",
+     "today": "Not checked. The owner wrote that he applied the feedback.",
+     "pins": [
+      {
+       "shot": "open",
+       "x": 148,
+       "y": 72,
+       "w": 98,
+       "h": 40
+      },
+      {
+       "shot": "open",
+       "x": 734,
+       "y": 76,
+       "w": 36,
+       "h": 36
+      }
+     ]
+    }
+   ],
+   "note": "His recording is the evidence. The web archive only has this site from July 2025."
   },
   {
    "n": 16,
@@ -958,8 +1335,54 @@
    "reply": "2112219370713706682",
    "date": "2026-10-19",
    "media": "",
-   "shots": [],
-   "points": []
+   "shots": [
+    {
+     "id": "home",
+     "file": "memo-now.jpg",
+     "w": 1440,
+     "h": 900,
+     "label": "Home on 2026-11-26 (a still picture does not show the custom pointer)"
+    }
+   ],
+   "points": [
+    {
+     "k": "16.1",
+     "level": "behaviour",
+     "says": "The custom cursor does not tell him clearly when he is over something he can click. The text does change a little, but he does not feel sure using the mouse this way, because he does not know where the edges of this cursor are.",
+     "shows": "The site replaces the system pointer with its own shape. Links answer a hover with a small change in the text.",
+     "how": "The system pointer does two jobs people stop noticing: its tip marks an exact spot, and it turns into a hand over anything clickable. A custom shape takes both away unless it gives them back. He noticed the loss as a feeling first, of not being sure, then found the reason: he could not tell which part of the shape does the pointing.",
+     "engine": "Behaviour: a page that hides the system pointer. Plumber can read that the pointer is switched off, then hover the links and measure how much each one changes. If the change is below what the eye notices, the page has removed a signal and not replaced it.",
+     "today": "Not checked.",
+     "pins": [
+      {
+       "shot": "home",
+       "x": 724,
+       "y": 18,
+       "w": 58,
+       "h": 30
+      }
+     ]
+    },
+    {
+     "k": "16.2",
+     "level": "behaviour",
+     "says": "Going to the Work page sets off a whole chain of content jumping into place. On a reload that would be acceptable. On the first click it makes a bad first impression.",
+     "shows": "The Work page is reached from the top menu. As it arrives, its parts land one after another and push each other around.",
+     "how": "He separates two moments that look alike. A reload is rare and forgiven. The first click into the work is the moment the visitor is paying most attention, and the page spends it rearranging itself.",
+     "engine": "Behaviour over time: content that moves after it first appears. Browsers report these jumps, and plumber could listen for them while it follows a link, not only when a page first loads.",
+     "today": "Not checked. For the live harness.",
+     "pins": [
+      {
+       "shot": "home",
+       "x": 724,
+       "y": 18,
+       "w": 58,
+       "h": 30
+      }
+     ]
+    }
+   ],
+   "note": "Both points need the live page. The web archive’s copy is from September."
   },
   {
    "n": 17,
@@ -968,8 +1391,72 @@
    "reply": "2112220155707289906",
    "date": "2026-10-19",
    "media": "",
-   "shots": [],
-   "points": []
+   "shots": [
+    {
+     "id": "home",
+     "file": "blvdmitry-now.jpg",
+     "w": 1440,
+     "h": 900,
+     "label": "Home on 2026-11-26"
+    }
+   ],
+   "points": [
+    {
+     "k": "17.1",
+     "level": "craft",
+     "says": "Give the page a steady space for the scrollbar, for the sake of the tabs.",
+     "shows": "Three tabs sit under the introduction: Projects, Experience, Talks and articles. Each shows a different amount of content. When a short tab follows a long one the scrollbar goes away, the page gets wider by its width, and everything steps sideways.",
+     "how": "He has scrollbars always showing, so he sees the page jump each time a tab changes its length. He does not describe the fault. He names the one CSS property that ends it, because for him this is a known fault with a known cure.",
+     "engine": "Craft, and plumber already has it: a check that says content moves sideways when the scrollbar appears, with this same property as its fix. His review confirms the check is one an expert makes by eye.",
+     "today": "Not checked by switching tabs.",
+     "pins": [
+      {
+       "shot": "home",
+       "x": 428,
+       "y": 268,
+       "w": 316,
+       "h": 48
+      }
+     ]
+    },
+    {
+     "k": "17.2",
+     "level": "content",
+     "says": "The Reshaped project does not come across at its real breadth and depth. It reads as a hobby project with a few components. Show the effort.",
+     "shows": "Reshaped is a full design system for React and Figma. On the page it is one paragraph and a handful of small demo boxes, each with a single button in it.",
+     "how": "He knows the project is large, and compared what he knows with what the page shows. The presentation has to be in proportion to the work. Three demo boxes say “three components”, whatever the paragraph above them claims.",
+     "engine": "Content: whether the showing matches the size of the thing. Plumber cannot know how big a project really is. Nothing to check in what is drawn.",
+     "today": "Still shown as a paragraph and a few demos.",
+     "pins": [
+      {
+       "shot": "home",
+       "x": 430,
+       "y": 354,
+       "w": 580,
+       "h": 546
+      }
+     ]
+    },
+    {
+     "k": "17.3",
+     "level": "shape",
+     "says": "All the articles link to other sites. He would like to know that before clicking. Mark the destination in the list, perhaps with an icon.",
+     "shows": "The list sits under the third tab. On today’s first screen the one link that leaves, “Visit website”, does carry an arrow icon.",
+     "how": "The same point he makes about his own site: leaving is a different act from moving within, and a link should say which it is before the click. Here every item in the list leaves, so the list as a whole needed the mark.",
+     "engine": "Shape: links that look like the site’s own but go elsewhere. Plumber can read where each link in a list leads and say when links that leave the site carry no sign of it.",
+     "today": "Not checked under the tab.",
+     "pins": [
+      {
+       "shot": "home",
+       "x": 888,
+       "y": 356,
+       "w": 122,
+       "h": 28
+      }
+     ]
+    }
+   ],
+   "note": "The web archive’s copy is from July, so the pins are on today’s page."
   },
   {
    "n": 18,
@@ -978,8 +1465,81 @@
    "reply": "2112222116569346469",
    "date": "2026-10-19",
    "media": "gert-krathish.jpg",
-   "shots": [],
-   "points": []
+   "shots": [
+    {
+     "id": "his",
+     "file": "gert-rauno.jpg",
+     "w": 2048,
+     "h": 886,
+     "label": "The picture Rauno attached: the hero headline with its text selected"
+    },
+    {
+     "id": "home",
+     "file": "gert-now.jpg",
+     "w": 1440,
+     "h": 900,
+     "label": "First screen on 2026-11-26"
+    },
+    {
+     "id": "work",
+     "file": "gert-now-full.jpg",
+     "w": 1440,
+     "h": 7360,
+     "crop": [
+      150,
+      960,
+      1140,
+      1360
+     ],
+     "label": "The first project further down the page, on 2026-11-26"
+    }
+   ],
+   "points": [
+    {
+     "k": "18.1",
+     "level": "behaviour",
+     "says": "He does not see why projects open in a panel over the page and not at their own address. He cannot hold Command and click each one to open them all in tabs and compare. He does not want to commit to one project; he wants to scan everything, and this way of opening discourages that.",
+     "shows": "At the time, pressing a project opened it in a layer over the home page. Today each project is a real link to its own page, such as /design/avail, with an “Explore project” link under it.",
+     "how": "He described how he really reviews a portfolio: open everything in tabs, flip between them, close what is weak. A link lets the visitor choose how to browse. A panel makes the designer’s choice for them, one item at a time. To a second person who defended the panel as quicker, he answered that a panel that animates can never beat tabs already open.",
+     "engine": "Behaviour, and also “looks like a link, is not one”. Plumber can see a list of cards that respond to a press but are not links with an address. That is enough to say they cannot be opened in a new tab. Plumber already has a check for clickable things that are not real controls; this is its neighbour.",
+     "today": "Fixed: the projects are links to their own pages.",
+     "pins": [
+      {
+       "shot": "work",
+       "x": 190,
+       "y": 1000,
+       "w": 1060,
+       "h": 1280
+      }
+     ]
+    },
+    {
+     "k": "18.2",
+     "level": "craft",
+     "says": "Selecting the text in the hero looks broken.",
+     "shows": "His picture shows the three lines of the headline selected. The highlight bands of neighbouring lines overlap each other, and the letters turn dark blue on blue and can barely be read. The headline is set with its lines about as tall as its letters, so the bands have nowhere to go but into each other.",
+     "how": "He drags across text on every site as a habit, the way he sets scrollbars to always show. Selection is a state of the page like hover or focus, and most designers never look at it.",
+     "engine": "Craft, under another condition: text selected. Plumber could select the large text on a page and read two things: whether the bands of neighbouring lines overlap, and whether the selected letters still stand out from the highlight. A new condition, in the same family as hover and focus.",
+     "today": "The headline is set the same way today. The selection was not tried.",
+     "pins": [
+      {
+       "shot": "his",
+       "x": 95,
+       "y": 85,
+       "w": 1700,
+       "h": 670
+      },
+      {
+       "shot": "home",
+       "x": 96,
+       "y": 140,
+       "w": 984,
+       "h": 372
+      }
+     ]
+    }
+   ],
+   "note": "The web archive’s copy is from January. Today’s page shows his first point answered."
   },
   {
    "n": 19,
@@ -988,8 +1548,58 @@
    "reply": "2112252051979751670",
    "date": "2026-10-19",
    "media": "gert-krathish.jpg",
-   "shots": [],
-   "points": []
+   "shots": [
+    {
+     "id": "work",
+     "file": "krathish-now-full.jpg",
+     "w": 1440,
+     "h": 2179,
+     "crop": [
+      150,
+      700,
+      1140,
+      960
+     ],
+     "label": "The project cards on 2026-11-26"
+    }
+   ],
+   "points": [
+    {
+     "k": "19.1",
+     "level": "behaviour",
+     "says": "The same words he sent to Gert Tali, pasted again: projects open in a panel and not at their own address, so he cannot open them all in tabs and compare.",
+     "shows": "The projects are a grid of large cards. On today’s page each card is still a button, not a link, so pressing it opens the project over the page.",
+     "how": "He saw the same pattern twice in an hour and gave the same answer, which shows it is a fixed rule for him and not a reaction to one site.",
+     "engine": "The same check as point 18.1. This site is the “before” and Gert Tali’s is the “after”.",
+     "today": "Unchanged: the cards are buttons.",
+     "pins": [
+      {
+       "shot": "work",
+       "x": 175,
+       "y": 758,
+       "w": 549,
+       "h": 412
+      },
+      {
+       "shot": "work",
+       "x": 716,
+       "y": 758,
+       "w": 549,
+       "h": 412
+      }
+     ]
+    },
+    {
+     "k": "19.2",
+     "level": "behaviour",
+     "says": "The owner replied that a panel should encourage people to go through more case studies, because they move in and out faster. Rauno’s answer: not really. The panel has motion. Opening everything and switching between tabs will always be faster.",
+     "shows": "Opening and closing the panel each play an animation.",
+     "how": "He measures speed from the visitor’s side. The owner counted clicks. Rauno counted waiting: every animation is time the visitor cannot skip, and it is paid again on each project. Tabs are paid for once.",
+     "engine": "A reason for ranking, not a new check: where a panel stands in for a page, any animation on it is a cost paid on every item. It supports the remark about slow transitions in reviews 6, 36 and 38.",
+     "pins": []
+    }
+   ],
+   "note": "Rauno attached the same picture as in his reply to Gert Tali. It shows Gert’s headline, so it is not repeated here."
   },
   {
    "n": 21,
