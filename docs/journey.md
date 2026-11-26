@@ -6199,8 +6199,16 @@ into its own browser. Your app isn't changed.", then the findings.
   the page inside stays usable. Esc goes back to the page as it is, then closes.
 - **The proof.** Looked at on crafting-ui's front page: the Larger text stop said "4 things don't hold up" and kept
   its 4 after the dial moved on; stepping past the last stop came back to the page as it was. No tests yet.
-- **Not done.** A stop has no count until it has been visited, so the dial does not yet say where the trouble is
-  before you go. Walking with the arrows passes through Typing, Lists and Action fails, which act on the page. A
+- **Counts before the visit (the same day).** The owner: "Yes, count ahead". When the bar opens, a hidden copy of
+  the page is taken through six of the stops one after another, and each count lands on its stop as it is known; a
+  stop where everything held up gets a tick. On crafting-ui's front page all six were filled in about 30 seconds
+  and the copy was removed. Two things found on the way. A browser will not load a page inside a copy of itself
+  inside another copy, so the hidden copy squeezes itself for the narrow stop. And the narrow stop counted 4, then
+  2 breaks that a live visit did not show, because it was measured after the typing stop had touched the copy; it
+  is now measured first, and agreed with the live visit (none).
+- **Not done.** Action fails has no count ahead: it waits for a press. A count ahead can differ from the live
+  visit (larger text said 3 ahead and 4 live on that page; cause not looked for). The copy is the page as it
+  loads, not the state you have clicked your way into. Walking with the arrows passes through Typing, Lists and Action fails, which act on the page. A
   finding from the page check that exists only at larger text does not yet turn the dial from its element. Light
   scheme and phone width not looked at.
 - **Media hooks.** A screen recording of ← → on a real page, the count staying on each stop behind you.

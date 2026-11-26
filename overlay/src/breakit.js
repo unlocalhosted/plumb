@@ -49,6 +49,10 @@
  *  dial     the toys are stops on a dial in the bar (docs/briefs/realities.md, option A, picked by the owner on
  *           2026-11-26): the page as it is, then one stop per toy. A stop is its toy and, once it has been tried, how
  *           many things did not hold up there. One at a time; the bar opens on the page as it is
+ *  ahead    when the bar opens, a hidden copy of the page (an iframe of this URL, as Narrower uses) is taken through
+ *           every stop that needs no press from you, one after another, and each count lands on its stop as it is
+ *           known: the dial says where the trouble is before you go there. A visit to a stop replaces its count with
+ *           what the live page shows. Action fails waits for your press, so it has no count ahead
  *  press    a ringed thing on the page is pressed on its ring to read what is wrong with it; the page inside stays usable
  *  keys     Alt+S opens and closes. ← → between stops, ↑ ↓ between breaks, Esc back to the page as it is, then closes
  * Nothing here writes to source.
@@ -445,6 +449,12 @@ const STEP = 16, NARROWEST = 320;
 function setWidth(w) { if (!stage) return; stage.width = w; stage.frame.style.width = `${w}px`; const pill = host?.shadowRoot.querySelector('.wpx'); if (pill) pill.textContent = `${w}px`; }
 
 async function narrower() {
+  // the hidden copy that counts ahead squeezes itself: a browser will not load a page inside a copy of itself inside another copy
+  if (window.name === 'plumb-ahead' && frameElement) {
+    stage = { frame: frameElement, from: Math.min(innerWidth, 1440), width: 0, sweeping: true, self: frameElement.style.width };
+    setWidth(stage.from);
+    return squeeze(stage);
+  }
   const root = host.shadowRoot, box = root.querySelector('.stage');
   box.innerHTML = '<span class="wpx"></span><iframe title="This page, narrower"></iframe>';
   stage = { frame: box.querySelector('iframe'), from: Math.min(innerWidth - 32, 1440), width: 0, sweeping: true };
@@ -455,6 +465,9 @@ async function narrower() {
   stage.frame.src = location.href;
   await loaded; await new Promise((r) => setTimeout(r, 900));   // the app's first render, its fonts
   const mine = stage; if (!mine || toy !== 'narrower') return;
+  return squeeze(mine);
+}
+async function squeeze(mine) {
   const win = mine.frame.contentWindow, base = measure(win, { all: true }), first = new Map();
   // squeeze a step a frame: you watch the page give way, and each break is caught at the width it starts
   for (let w = mine.from - STEP; ; w = Math.max(NARROWEST, w - STEP)) {
@@ -481,6 +494,7 @@ function showAt(i) {
   paint();
 }
 function unstage() {
+  if (stage?.self != null) stage.frame.style.width = stage.self;
   stage = null;
   const box = host?.shadowRoot.querySelector('.stage');
   if (box) { box.classList.remove('on'); box.innerHTML = ''; }
@@ -1144,6 +1158,40 @@ const STOPS = [
 ];
 const seen = new Map();   // toy id → how many things did not hold up there, once it has been tried
 const turn = (dir) => { const i = STOPS.findIndex(([id]) => id === toy); setToy(STOPS[(i + dir + STOPS.length) % STOPS.length][0]); };
+const isBusy = () => !!(growing || sorting || stage?.sweeping || probing || typing || listing || act?.phase === 'watching');
+/** For the copy that counts ahead: how many things do not hold up at the stop it is on, or null while it is still trying. */
+export const readAhead = () => { if (!toy || isBusy()) return null; paint(); return isBusy() ? null : notes.length; };
+
+// ── counting ahead: a hidden copy of the page, taken through the stops ──
+const AHEAD = 'plumb-ahead', AHEAD_ORDER = ['narrower', 'bigger', 'longer', 'extreme', 'typing', 'lists'];   // narrower first, on a copy nothing has touched (after Typing it counted breaks that were not there); lists last: it may have to reload its page
+let ahead = null;   // { frame } while a copy is counting
+const nap = (ms) => new Promise((r) => setTimeout(r, ms));
+async function countAhead() {
+  if (window.name === AHEAD || ahead) return;   // a copy never makes a copy
+  const todo = AHEAD_ORDER.filter((id) => !seen.has(id));
+  if (!todo.length) return;
+  const frame = document.createElement('iframe'), mine = ahead = { frame };
+  frame.name = AHEAD; frame.tabIndex = -1; frame.setAttribute('aria-hidden', 'true');
+  frame.style.cssText = `position:fixed;left:0;top:0;width:${innerWidth}px;height:${innerHeight}px;border:0;visibility:hidden;pointer-events:none`;
+  try {
+    const loaded = new Promise((r) => frame.addEventListener('load', r, { once: true }));
+    frame.src = location.href; host.shadowRoot.append(frame);
+    await loaded; await nap(900);   // the app's first render, its fonts
+    if (ahead !== mine) return;
+    const copy = await new frame.contentWindow.Function('u', 'return import(u)')(import.meta.url);
+    copy.showBreakIt();
+    for (const id of todo) {
+      copy.setToy(id); await nap(400);
+      let n = null;
+      for (const until = performance.now() + 25000; performance.now() < until && ahead === mine; await nap(150)) { n = copy.readAhead(); if (n != null) { await nap(150); n = copy.readAhead(); if (n != null) break; } }
+      if (ahead !== mine) return;
+      if (n != null && !seen.has(id)) { seen.set(id, n); if (toy !== id) paint(); }
+      copy.setToy(null); await nap(500);   // the copy back as it was, and settled, before the next stop is measured against it
+    }
+  } catch (error) { console.debug('[plumb] Break it could not count ahead on a copy of this page; each stop still counts when you visit it.', error); }
+  finally { frame.remove(); if (ahead === mine) ahead = null; }
+}
+
 function headline(busy) {
   if (!toy) return 'Your page, as it is';
   const name = STOPS.find(([id]) => id === toy)[1];
@@ -1172,7 +1220,7 @@ function paint() {
     const again = keep ? notes.findIndex((n) => n.el === keep) : -1;
     index = again >= 0 ? again : Math.min(index, Math.max(0, notes.length - 1));
   }
-  const busy = growing || sorting || stage?.sweeping || probing || typing || listing || act?.phase === 'watching';
+  const busy = isBusy();
   const n = toy && !busy ? notes[index] : null;
   const step = notes.length > 1 && n ? `<span class="step"><button class="prev" aria-label="Previous break" ${index ? '' : 'disabled'}>‹</button>${index + 1} of ${notes.length}<button class="next" aria-label="Next break" ${index < notes.length - 1 ? '' : 'disabled'}>›</button></span>` : '<span></span>';
   const sw = n && fixFor(n) ? `<div class="modes fix" role="group" aria-label="Show this broken or fixed (F)">${[['broken', 'Broken'], ['fixed', 'Fixed']].map(([id, l]) => `<button data-fix="${id}" aria-pressed="${!!fixed === (id === 'fixed')}">${l}</button>`).join('')}</div>` : '<span></span>';
@@ -1182,7 +1230,7 @@ function paint() {
   const root = host.shadowRoot;
   root.querySelector('.marks').innerHTML = toy && !busy ? marks() : '';
   if (toy && !busy) seen.set(toy, notes.length);
-  const stop = ([id, name, face]) => { const k = seen.get(id); return button(k ? `<b class="n">${k}</b>` : '', { cls: 'sm quiet stop', icon: toyOf(face), attrs: `data-toy="${id ?? ''}" aria-pressed="${toy === id}" aria-label="${name}${k ? `, ${k} to look at` : ''}" title="${name}"` }); };
+  const stop = ([id, name, face]) => { const k = seen.get(id); return button(k ? `<b class="n">${k}</b>` : k === 0 ? '<b class="n">✓</b>' : '', { cls: 'sm quiet stop', icon: toyOf(face), attrs: `data-toy="${id ?? ''}" aria-pressed="${toy === id}" aria-label="${name}${k ? `, ${k} to look at` : k === 0 ? ', everything holds up' : ''}" title="${name}"` }); };
   root.querySelector('.bar').innerHTML = `<div class="dial"><div class="say"><p class="head">${esc(headline(busy))}</p><p class="verdict">${esc(verdict())}</p></div><span class="stops" role="toolbar" aria-label="Ways to break this page">${STOPS.map(stop).join('')}</span></div>
       ${toy === 'action' ? `<div class="modes" role="group" aria-label="How it goes wrong">${[['fail', 'Fails'], ['slow', 'Slow']].map(([id, l]) => `<button data-mode="${id}" aria-pressed="${mode === id}">${l}</button>`).join('')}</div>` : ''}
       ${note}`;
@@ -1225,10 +1273,12 @@ export function showBreakIt() {
   addEventListener('scroll', later, { capture: true, passive: true });
   addEventListener('resize', later, { passive: true });
   paint();
+  countAhead();
 }
 export function hideBreakIt() {
   if (!host) return;
   setToy(null);
+  ahead = null;
   removeEventListener('scroll', later, { capture: true });
   removeEventListener('resize', later);
   cancelAnimationFrame(frame); frame = 0;

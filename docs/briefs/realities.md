@@ -109,8 +109,8 @@ already one of these; what the dial looks like.
 
 The owner picked A. It is built as Break it's bar, which already put the live page into seven of these states: the
 toys are now stops on a dial (the page as it is, then one per toy), each with its count once tried. ← → walk the
-stops, ↑ ↓ the breaks, a ring is pressed on its edge, Esc goes back. Open: counts before a visit, the stops that act
-on the page, and C's way in from an element.
+stops, ↑ ↓ the breaks, a ring is pressed on its edge, Esc goes back. Counts land on the stops before a visit, from a hidden copy of the page taken through them when the bar opens. Open:
+a count ahead that differs from the live visit, the stops that act on the page, and C's way in from an element.
 
 ## What it costs
 
