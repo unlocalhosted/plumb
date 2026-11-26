@@ -70,7 +70,8 @@ for (let i = 0; i < 200 && still < 5; i++) { grab(); window.scrollBy(0, 2500); a
 window.__posts.size;
 ```
 
-3. Save the merged list to `docs/research/harvests/<handle>/posts.json`.
+3. Save the merged list to `docs/research/harvests/<handle>/posts.json` after every search, not once at the end.
+   A list kept only in the page is lost when the page moves on or the run is stopped.
 4. Write down the coverage in plain numbers: which searches were run, how many posts each gave, the date of the
    oldest one reached, and the profile's own post count. A harvest that reached 41 of 721 posts says so.
 5. Downloads are limited in the brief, since nobody is watching: videos from this handle's own posts only, at most
@@ -139,3 +140,7 @@ Turning the new checks into code is the `tips-to-checks` skill.
   25 tips; the videos were not watched. 15 tips were filed as "an effect, nothing to find" without asking what
   fault each technique prevents. The owner's standard is higher than that, so the sort in
   `docs/research/gkurt-css-tips.md` is due to be redone with this skill.
+- **2026-11-26, @maybepratikk, stopped by the owner after about eight minutes** ("i think he doesn't have more
+  now"). The subagent had searched in the browser and saved nothing: its list of posts lived only in the page, and
+  was gone when it moved to the next search. No file, no download. So the list is saved after every search, and a
+  run that is stopped early still leaves what it had.
