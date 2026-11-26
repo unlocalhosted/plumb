@@ -411,6 +411,26 @@ Object.assign(CRAFT, {
       return { ...ringed(s, x, ['the amounts moved', 'columns hold'], 5), at: (p) => { x.style.tableLayout = p ? 'fixed' : 'auto'; } };
     },
   },
+  // the scene is drawn with a figure three digits longer than the column was built for
+  'craft/figure-breaks': {
+    code: ['<td class="text-right">', '<td class="text-right whitespace-nowrap">'],
+    note: ['A bigger total arrived and broke onto two lines. It reads as two numbers.', 'The figure stays on one line however long it gets.'],
+    scene: (s) => {
+      scene(s, '<table style="width:250px;table-layout:fixed;border-collapse:collapse;font:400 13px/1.4 system-ui;color:#111827"><tbody>' + [['Acme Co', '9,871,240.00 USD'], ['Northwind', '310.00 USD'], ['Globex', '2,075.50 USD']].map((r, i) => `<tr style="border-top:1px solid #e5e7eb"><td style="padding:8px 10px">${r[0]}</td><td class="${i ? '' : 'x'}" style="padding:8px 10px;text-align:right;width:112px">${r[1]}</td></tr>`).join('') + '</tbody></table>');
+      const x = s.querySelector('.x');
+      return { ...ringed(s, x, ['two lines', 'one line'], 5), at: (p) => { x.style.whiteSpace = p ? 'nowrap' : ''; } };
+    },
+  },
+  // the scene is drawn with more rows than the box was built for
+  'craft/rows-cut': {
+    code: ['<div class="h-40 overflow-hidden">', '<div class="h-40 overflow-hidden overflow-y-auto">'],
+    note: ['More rows arrived. The box cuts them off and nothing scrolls to them.', 'The rows past the edge can be scrolled to.'],
+    scene: (s) => {
+      scene(s, '<div class="x" style="width:240px;height:132px;overflow:hidden;border-radius:10px;background:#fff;box-shadow:inset 0 0 0 1px #e5e7eb;font:400 13px/1.4 system-ui;color:#111827"><table style="width:100%;border-collapse:collapse"><tbody>' + ['Acme Co', 'Northwind', 'Globex', 'Initech', 'Umbrella', 'Hooli', 'Stark', 'Wayne'].map((n, i) => `<tr style="border-top:1px solid #e5e7eb"><td style="padding:8px 10px">${n}</td><td style="padding:8px 10px;text-align:right">${(i + 1) * 310}.00</td></tr>`).join('') + '</tbody></table></div>');
+      const x = s.querySelector('.x');
+      return { ...ringed(s, x, ['rows cut off', 'scrolls'], 5), at: (p) => { x.style.overflowY = p ? 'auto' : 'hidden'; } };
+    },
+  },
   'craft/native-accent': {
     code: ['<input type="checkbox">', '<input type="checkbox" class="accent-emerald-600">'],
     note: ['The tick is the browser’s blue, beside buttons in your green.', 'The tick wears your colour.'],

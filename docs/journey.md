@@ -6524,6 +6524,34 @@ into its own browser. Your app isn't changed.", then the findings.
   test covers the option.
 - **Media hooks:** the three timings side by side.
 
+### 151. Other data: bigger numbers and more rows (2026-11-26)
+
+- **The itch:** the other-data state had one check, for longer names in a table. The owner: "Yes, other data".
+- **How we found it:** the owner's own example of this state was a table of amounts. A page is built on the numbers
+  and the row count it has today, and the next customer has a bigger total and a longer list.
+- **The system behind it:** the page check reads the page with today's data. Nothing on the page says what a bigger
+  number or more rows would do, so plumber now tries both while the table is open for the longer names.
+- **What we chose:** two readings and two checks, in the same second visit to the page.
+  - Every cell that holds a figure gets three more digits. A figure that sat on one line and now breaks onto two, or
+    runs out of its cell, is said. A figure with a space in it (a currency code) breaks; one without runs out.
+  - The body's rows are tried ten times over, 60 at most. Rows that land past a box that clips and does not scroll
+    are said, on that box.
+- **The fix:** a figure that breaks gets `whitespace-nowrap`, written. A box that cuts rows gets `overflow-y-auto`,
+  written. A figure that runs out of a column held at a set width gets the width it needs in words ("Give this
+  column 128px, where it has 92px"). That one should be written too. It isn't, because when the engine tried the
+  wider class on the test app it tried 24px where 128px was asked, so the fix never settled. The cause is in how
+  the engine picks a width step and was not looked into.
+- **The proof so far:** a look on the test page, about 6 seconds a time with the narrow run: one finding each for the
+  figure that runs out, the figure that breaks and the box that cuts its rows; quiet on a column kept on one line and
+  on a box that scrolls. The docs list is at 303 checks.
+- **Not shown:** the on-and-off run and fix-and-undo have not been run for these two (they run once the batch has
+  settled). Not run on a real app: crafting-ui has no `<table>`. The ground for "a figure is one thing" is the
+  reading itself, with no outside source opened; the ground for clipped rows is the CSS overflow rule, written from
+  memory. Fewer rows and no rows are not built: taking rows out of the page does not make the app draw its empty
+  state, so that needs the app's own data to change. Lists and cards are not read.
+- **Media hooks:** the two docs examples (a total on two lines, a card that cuts its rows), each with its Broken and
+  Fixed switch.
+
 ## Open gaps
 
 - Without setup, the page check found 70 problems where the same page wired in finds 72 (10 fixes against 14). Not
@@ -8212,6 +8240,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
 
+- Plumber now tries a table with bigger numbers and with ten times the rows: it says when a total would break onto two lines or run out of its column, and when rows would be cut off out of reach, with the fix written for two of the three. Seen on a test page only. [Entry 151](#151-other-data-bigger-numbers-and-more-rows-2026-11-26)
 - The page check can be told to run only the checks you name: a look at one change takes 7 to 15 seconds on a real page, down from about two minutes. [Entry 150](#150-a-narrow-run-so-a-look-takes-seconds-2026-11-26)
 - A fix for a habit now writes each class where it really is: on the element, in the variable that holds it, or where a component is used. On a copy of a real app the fixed-size fix went from 30 of 47 places to all 47, and one undo took it all back. [Entry 149](#149-a-fix-follows-the-class-to-where-it-is-written-2026-11-26)
 - A habit is now one note. A page that sizes its small text in pixels gets one finding with every place on it, and one fix that rewrites them all and undoes as one: 55 notes on five real pages became 5. [Entry 147](#147-one-note-for-a-habit-one-fix-that-writes-every-place-2026-11-26)

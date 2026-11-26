@@ -19,6 +19,21 @@ export function App() {
       {/* quiet: the name column cuts its words at a set width */}
       <table id="cuts"><Body cell="max-w-[160px] truncate" /></table>
 
+      {/* figure-breaks: a narrow amount column that wraps; a figure three digits longer breaks onto two lines */}
+      <table id="breaks" className="w-[300px] table-fixed"><tbody>{ROWS.map((r) => <tr key={r[0]} className="border-t border-slate-200"><td className="px-3 py-2">{r[0]}</td><td className="w-[92px] px-3 py-2 text-right">{r[2]}</td></tr>)}</tbody></table>
+
+      {/* figure-breaks, the other way: a figure with a space in it (a currency code) breaks onto a second line */}
+      <table id="wraps" className="w-[300px] table-fixed"><tbody>{ROWS.map((r) => <tr key={r[0]} className="border-t border-slate-200"><td className="px-3 py-2">{r[0]}</td><td className="w-[132px] px-3 py-2 text-right">{r[2].slice(1)} USD</td></tr>)}</tbody></table>
+
+      {/* quiet: the same column kept on one line */}
+      <table id="holds" className="w-[300px]"><tbody>{ROWS.map((r) => <tr key={r[0]} className="border-t border-slate-200"><td className="px-3 py-2">{r[0]}</td><td className="px-3 py-2 text-right whitespace-nowrap">{r[2]}</td></tr>)}</tbody></table>
+
+      {/* rows-cut: a card with a set height that clips; ten times the rows fall past its edge and nothing scrolls */}
+      <div id="clipped" className="h-[160px] overflow-hidden rounded-lg border border-slate-200"><table className="w-full table-fixed"><Body /></table></div>
+
+      {/* quiet: the same card scrolls */}
+      <div id="scrolls" className="h-[160px] overflow-y-auto rounded-lg border border-slate-200"><table className="w-full table-fixed"><Body /></table></div>
+
       {/* quiet: one row is not a list of data */}
       <table id="one"><tbody><tr><td className="px-3 py-2">Total</td><td className="px-3 py-2">$3,625.50</td></tr></tbody></table>
     </main>

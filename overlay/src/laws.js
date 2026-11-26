@@ -84,6 +84,8 @@ const RULE_LAWS = {
   'craft/text-fixed': [],
   'craft/text-clips': [],
   'craft/columns-jump': [],
+  'craft/figure-breaks': [],
+  'craft/rows-cut': [],
   'craft/image-stretch': [],
   'craft/background-tile': [],
   'craft/fixed-column': [],

@@ -122,6 +122,16 @@ export const CRAFT = {
     line: `With a longer name in one column, the other columns move ${px(moved)}. The next page of rows will not line up with this one.`,
     reason: 'A column stays where the eye left it.',
   }),
+  'figure-breaks': ({ was, wraps }) => ({
+    label: 'A bigger number breaks',
+    line: wraps ? `${was} sits on one line today. Three digits longer, it breaks onto a second line and reads as two numbers.` : `${was} fits its cell today. Three digits longer, it runs out of it.`,
+    reason: 'A figure is one thing, and stays on one line.',
+  }),
+  'rows-cut': ({ cut, to }) => ({
+    label: 'More rows are cut off',
+    line: `With ${to} rows, ${px(cut)} of the table falls past this box’s edge. It clips and does not scroll, so those rows can’t be reached.`,
+    reason: 'Every row can be reached.',
+  }),
   'tooltip-cut': ({ cut, side }) => ({
     label: 'Tooltip cut off',
     line: `This tooltip opens ${side}, where ${px(cut)} of it is off the screen.`,

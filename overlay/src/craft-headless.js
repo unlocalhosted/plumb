@@ -169,6 +169,36 @@ export function otherData() {
     const after = read();
     for (const [t, d] of put) t.data = d;
     out.push({ k: pathKey(table), col: pick, name: words(cols[pick][0]).slice(0, 30), before, after });
+
+    // bigger numbers: every cell that holds a figure gets three more digits (1,240.00 becomes 9,871,240.00, the
+    // customer who spends a thousand times more). A figure that sat on one line and now sits on two, or runs out of
+    // its cell, was given room for today's numbers only
+    const lines = (c) => { const r = document.createRange(); r.selectNodeContents(c); return new Set([...r.getClientRects()].filter((b) => b.width > 0).map((b) => Math.round(b.top))).size; };
+    const spill = (c) => { const r = document.createRange(); r.selectNodeContents(c); const b = r.getBoundingClientRect(), box = c.getBoundingClientRect(); return Math.max(0, round1(b.right - box.right), round1(box.left - b.left)); };
+    for (const c of cols.flat()) {
+      const w = words(c);
+      if (!/^(?:[A-Z]{3}\s?)?[^A-Za-z\d]{0,3}\d[\d.,\u00a0 ]*\d?\s?[^A-Za-z\d]{0,3}(?:\s?[A-Z]{3})?$/.test(w) || !/\d/.test(w) || c.children.length > 1) continue;
+      const t = [...c.childNodes].find((x) => x.nodeType === 3 && /\d/.test(x.data)) ?? (c.firstElementChild && [...c.firstElementChild.childNodes].find((x) => x.nodeType === 3 && /\d/.test(x.data)));
+      if (!t) continue;
+      const was = t.data, l0 = lines(c), s0 = spill(c);
+      t.data = was.replace(/\d/, '9,871,$&');
+      const l1 = lines(c), s1 = spill(c);
+      t.data = was;
+      if (l0 === 1 && (l1 > 1 || s1 > s0 + 2)) out.push({ k: pathKey(c), num: { wraps: l1 > 1, spill: Math.round(s1), was: w.slice(0, 20) } });
+    }
+
+    // more rows: the body's rows ten times over (at most 60), as a fuller account has. Rows that land past a box that
+    // clips and does not scroll can't be reached at all
+    const body = table.tBodies[0], clones = [];
+    const clip = (() => { for (let n = table.parentElement; n && n !== document.body; n = n.parentElement) { const s = getComputedStyle(n); if (/hidden|clip/.test(s.overflowY)) return n; if (/auto|scroll/.test(s.overflowY)) return null; } return null; })();
+    if (clip && body) {
+      const over = () => Math.max(0, Math.round(table.getBoundingClientRect().bottom - (clip.getBoundingClientRect().top + clip.clientTop + clip.clientHeight)));
+      const o0 = over();
+      for (let i = 0; rows.length + clones.length < 60 && i < rows.length * 9; i++) { const c = rows[i % rows.length].cloneNode(true); clones.push(c); body.appendChild(c); }
+      const o1 = over();
+      for (const c of clones) c.remove();
+      if (o0 <= 1 && o1 > 8) out.push({ k: pathKey(clip), rows: { cut: o1, from: rows.length, to: rows.length + clones.length } });
+    }
   }
   return out;
 }
@@ -747,7 +777,54 @@ export const columnsJump = {
   },
 };
 
-export const RUN_RULES = [tooltipCut, textFixed, textClips, columnsJump, darkElevation, darkWeight, skeletonMatch, scrollCueSeen, spinnerTiming, exitFasterProbe, interruptibleProbe, pressFeedbackProbe, menuPointerdown, tooltipDelay, paletteMotion, submenuPath, overdrag, touchManipulation];
+// A figure is one thing. An amount that fits its cell today and breaks onto a second line when the number is three
+// digits longer reads as two numbers, and its row grows taller than the rows around it. Read in the other-data
+// reality. The fix keeps the figure on one line; a table laid out by its contents then gives the column the room.
+// (The ground is the reading itself: no outside source was opened for this one, so it is marked as ours.)
+export const figureBreaks = {
+  id: 'craft/figure-breaks', family: 'craft', number: [], on: 'td,th', owns: ['white-space'], once: 'ancestor', reads: ['style', 'rect', 'other:data'], pairs: ['data'],
+  check({ el, facts }) {
+    const d = facts.other('data')?.get(el)?.num;
+    if (!d) return [];
+    const s = facts.style(el);
+    const held = /nowrap|pre\b/.test(s.whiteSpace), wide = utility(el, 'w');
+    if (d.wraps && held) return [];
+    // the room the longer figure asks for with its padding kept, on the 4px grid so the project's own width step can
+    // say it. It is settled once the figure no longer leaves the cell
+    const side = /right|end/.test(s.textAlign) ? px(s.paddingLeft) : px(s.paddingRight);
+    const need = Math.ceil((facts.rect(el).width + d.spill + side) / 4) * 4;
+    if (!d.wraps && px(s.width) >= facts.rect(el).width + d.spill - 0.5) return [];
+    return [{
+      ...say(this.id, { was: d.was, wraps: d.wraps }),
+      key: this.id, text: utility(el, 'whitespace') ?? 'white-space', props: ['white-space'], value: s.whiteSpace, n: d.spill,
+      evidence: { figure: d.was, wraps: d.wraps, runsOut: d.spill, reality: 'other data (three more digits in each figure)' }, confidence: 0.82,
+      // a figure with no space in it can't break: it runs out of a column held at a set width. Where that width is a
+      // class on the cell, it is made wide enough for the longer figure; it can't be tried without the reality again
+      suggest: d.wraps ? { kind: 'class', from: '', to: 'whitespace-nowrap', why: 'the figure stays on one line however long it gets', sets: { whiteSpace: 'nowrap' } }
+        // written once the engine's width steps are right: tried on a test app it put 24px where 128px was asked (backlog)
+        : { kind: 'advice', text: `Give this column ${need}px, where it has ${Math.round(facts.rect(el).width)}px: room for a figure three digits longer with its padding kept.` },
+    }];
+  },
+};
+
+// Every row can be reached. A table inside a box with a set height that clips shows today's rows; with ten times as
+// many, the rest are cut off and nothing scrolls to them. Read in the other-data reality. (CSS Overflow: content
+// clipped by overflow: hidden gets no scrolling mechanism. Read from memory, not opened today.) The fix lets the box scroll.
+export const rowsCut = {
+  id: 'craft/rows-cut', family: 'craft', number: [], owns: ['overflow-y'], once: 'ancestor', reads: ['style', 'other:data'], pairs: ['data'],
+  check({ el, facts }) {
+    const d = facts.other('data')?.get(el)?.rows;
+    if (!d || /auto|scroll/.test(facts.style(el).overflowY)) return []; // it scrolls: the rows are reachable
+    return [{
+      ...say(this.id, { cut: d.cut, to: d.to }),
+      key: this.id, text: utility(el, 'overflow-y') ?? utility(el, 'overflow') ?? 'overflow', props: ['overflow-y'], value: facts.style(el).overflowY, n: d.cut,
+      evidence: { cut: d.cut, rowsToday: d.from, rowsTried: d.to, reality: 'other data (ten times the rows)' }, confidence: 0.84,
+      suggest: { kind: 'class', from: '', to: 'overflow-y-auto', why: 'the rows past the edge can be scrolled to', sets: { overflowY: 'auto' } },
+    }];
+  },
+};
+
+export const RUN_RULES = [tooltipCut, textFixed, textClips, columnsJump, figureBreaks, rowsCut, darkElevation, darkWeight, skeletonMatch, scrollCueSeen, spinnerTiming, exitFasterProbe, interruptibleProbe, pressFeedbackProbe, menuPointerdown, tooltipDelay, paletteMotion, submenuPath, overdrag, touchManipulation];
 
 // the pairs the loaded rules ask for
 export const PAIRS = [...new Set(RUN_RULES.flatMap((r) => r.pairs ?? []))];
