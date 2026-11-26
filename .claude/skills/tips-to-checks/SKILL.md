@@ -74,6 +74,10 @@ A check written as two rules with one id keeps every field the same in both, exc
 
 Then rebuild the docs' list: `node web/scripts/checks.mjs`.
 
+While a check is being written, look at it with the narrow run, on one page of a real app:
+`plumber craft --url <dev server> --routes <page> --only <the check's id>`. It takes seconds. The proofs below run once,
+for the whole batch, when the owner says the work has settled.
+
 ## 4. Prove the batch, once
 
 Build first (`npm run build`), then:

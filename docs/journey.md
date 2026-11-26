@@ -6506,6 +6506,24 @@ into its own browser. Your app isn't changed.", then the findings.
 - **Media hooks:** the apply's printout ("Applied for 47 of 47 places, in 38 edits across 13 files"); the three-line
   diff of the `lettering` variable.
 
+### 150. A narrow run, so a look takes seconds (2026-11-26)
+
+- **The itch:** the owner: "the iteration speed is very slow, why do you keep running full check for each iteration
+  this way we wont be able to do much".
+- **How we found it:** counting what ran after each small edit that afternoon: a full rebuild, a five-page check with
+  every extra reading, the fix-and-undo run, and three round trips to the server.
+- **The system behind it:** the page check had no way to be told "only this check". The cheapest honest look was the
+  whole thing, so the whole thing ran every time.
+- **What we chose:** `plumber craft --only <check,check>`. It runs the named checks alone, takes only the readings
+  they ask for (dark, scrolled, larger text, other data), tries gestures only when one of them reads a gesture, and
+  reads the other window widths only when one of them owns spacing there.
+- **The fix and the proof:** on one crafting-ui page (Standards), timed once each on the laptop: the full check 116s;
+  one check that needs the larger-text reading 15s; one plain check 7s. The narrow runs gave the same findings for
+  their checks as the full run did (1 and 4).
+- **Not shown:** a check that reads a gesture still took 107s narrow, because every gesture kind is still tried. No
+  test covers the option.
+- **Media hooks:** the three timings side by side.
+
 ## Open gaps
 
 - Without setup, the page check found 70 problems where the same page wired in finds 72 (10 fixes against 14). Not
@@ -8194,6 +8212,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
 
+- The page check can be told to run only the checks you name: a look at one change takes 7 to 15 seconds on a real page, down from about two minutes. [Entry 150](#150-a-narrow-run-so-a-look-takes-seconds-2026-11-26)
 - A fix for a habit now writes each class where it really is: on the element, in the variable that holds it, or where a component is used. On a copy of a real app the fixed-size fix went from 30 of 47 places to all 47, and one undo took it all back. [Entry 149](#149-a-fix-follows-the-class-to-where-it-is-written-2026-11-26)
 - A habit is now one note. A page that sizes its small text in pixels gets one finding with every place on it, and one fix that rewrites them all and undoes as one: 55 notes on five real pages became 5. [Entry 147](#147-one-note-for-a-habit-one-fix-that-writes-every-place-2026-11-26)
 - The larger-text check now says a fixed size once, where it is set, and leaves fluid sizes alone: 113 notes on five real pages became 55, each with its fix written. [Entry 146](#146-the-larger-text-checks-meet-a-real-app-2026-11-26)

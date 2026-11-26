@@ -34,7 +34,9 @@ export interface CraftRecord {
 export interface CraftPage { route: string; url: string; read: number; complete: boolean; findings: CraftRecord[]; spec?: unknown;
   /** a proof run only: the errors checks threw on this page (the engine hides them, so a broken check looks like a quiet one) */
   thrown?: { rule: string; error: string }[] }
-export interface CraftRunOptions { url: string; routes: string[]; root: string; timeout: number; viewport?: { width: number; height: number }; pairs?: boolean; probe?: boolean; probeBudget?: number; probeDrag?: boolean; judge?: boolean; scope?: string; recordProbe?: string; proof?: { without: string[] } }
+export interface CraftRunOptions { url: string; routes: string[]; root: string; timeout: number; viewport?: { width: number; height: number }; pairs?: boolean; probe?: boolean; probeBudget?: number; probeDrag?: boolean; judge?: boolean; scope?: string; recordProbe?: string; proof?: { without: string[] };
+  /** a narrow run: only these checks, with only the readings and gestures they ask for */
+  only?: string[] }
 
 const missing = `The headless run needs Playwright, an optional dependency.
   → npm i -D playwright && npx playwright install chromium
@@ -261,8 +263,8 @@ async function carryOverlay(browser: Browser, root: string, base: string): Promi
  * A proof run (docs/briefs/new-check.md §6a): every page this run opens is judged without the named checks, and the
  * errors checks throw are kept (overlay/src/craft.js reads globalThis.__plumbProof).
  */
-function proofRun(browser: Browser, without: string[]): void {
-  const script = `globalThis.__plumbProof = { without: ${JSON.stringify(without)}, thrown: [] };`;
+function proofRun(browser: Browser, without: string[], only: string[] = []): void {
+  const script = `globalThis.__plumbProof = { without: ${JSON.stringify(without)}, only: ${JSON.stringify(only)}, thrown: [] };`;
   const newContext = browser.newContext.bind(browser);
   browser.newContext = async (options = {}) => { const context = await newContext(options); await context.addInitScript(script); return context; };
   browser.newPage = async (options = {}) => { const context = await browser.newContext(options), page = await context.newPage(); page.once('close', () => { context.close().catch(() => {}); }); return page; };
@@ -278,7 +280,7 @@ export async function craftRun(options: CraftRunOptions): Promise<CraftPage[]> {
       process.stderr.write('Plumber isn\'t set up in this app\'s dev server, so the check brings its own copy into its own browser. Your app isn\'t changed.\n');
       stopOwn = await carryOverlay(browser, options.root, base);
     }
-    if (options.proof) proofRun(browser, options.proof.without);
+    if (options.proof || options.only?.length) proofRun(browser, options.proof?.without ?? [], options.only);
     for (const route of options.routes) {
       const url = new URL(route, base).href;
       // motion on: a page loaded with reduced motion hides every animation from every rule
@@ -289,7 +291,7 @@ export async function craftRun(options: CraftRunOptions): Promise<CraftPage[]> {
         // compiles a route on its first visit) was judged as its loading screen (algorecall's /login: 14 elements of 118)
         await settle(page, Math.min(options.timeout, 30000));
         if (options.pairs !== false) await takePairs(browser, url, page, options.timeout);
-        if (options.probe !== false) {
+        if (options.probe !== false && (!options.only?.length || (await ask<{ probe?: boolean }>(page, { op: 'needs' })).probe)) {
           const list = await takeProbes(browser, url, options.timeout, { budget: options.probeBudget ?? 24, drag: options.probeDrag === true, ...(options.scope ? { scope: options.scope } : {}), ...(options.recordProbe ? { record: options.recordProbe } : {}) }).catch(quiet('probes'));
           if (process.env.PLUMBER_DEBUG) process.stderr.write(`craft: probes ${JSON.stringify(list)?.slice(0, 1500)}\n`);
           if (list?.length) await ask(page, { op: 'probes', list });
@@ -311,7 +313,9 @@ export async function craftRun(options: CraftRunOptions): Promise<CraftPage[]> {
           result.findings.push(...await judge(page, result.grey, { root: options.root, asking: asking && !process.env.CI }));
           delete result.grey;
         }
-        if (options.probe !== false && !options.scope) {
+        // a narrow run reads the other widths only when one of its checks owns spacing there, or is the one about words meeting
+        const widths = !options.only?.length || options.only.includes('craft/text-collision') || (await ask<string[]>(page, { op: 'spacing' })).some(id => options.only!.includes(id));
+        if (options.probe !== false && !options.scope && widths) {
           // one finding per place: the main read's, else the first state that shows it (widest first, at rest first),
           // with every width that showed it
           const place = (record: CraftRecord) => `${record.rule}|${record.file}:${record.line}:${record.column}`;

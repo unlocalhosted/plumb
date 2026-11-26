@@ -141,7 +141,10 @@ async function operate(options) {
   if (op === 'probes') { probesIn(options.list); return true; }
   if (op === 'needs') {
     const fetched = performance.getEntriesByType('resource').some((e) => (e.initiatorType === 'fetch' || e.initiatorType === 'xmlhttprequest') && !e.name.includes('/__plumb/'));
-    return { dark: PAIRS.includes('dark') && hasDarkStyles(), scrolled: PAIRS.includes('scrolled') && scrollers().length > 0, held: PAIRS.includes('held') && fetched, bigtext: PAIRS.includes('bigtext'), data: PAIRS.includes('data') && !!document.querySelector('table tbody tr + tr') };
+    // a narrow run takes only the readings its checks ask for, and tries gestures only when one of them reads a gesture
+    const only = globalThis.__plumbProof?.only?.length ? new Set(globalThis.__plumbProof.only) : null;
+    const pairs = only ? [...new Set(RULES.filter((r) => only.has(r.id)).flatMap((r) => r.pairs ?? []))] : PAIRS;
+    return { dark: pairs.includes('dark') && hasDarkStyles(), scrolled: pairs.includes('scrolled') && scrollers().length > 0, held: pairs.includes('held') && fetched, bigtext: pairs.includes('bigtext'), data: pairs.includes('data') && !!document.querySelector('table tbody tr + tr') , probe: !only || RULES.some((r) => only.has(r.id) && (r.reads ?? []).some((x) => String(x).startsWith('probe:'))) };
   }
   if (op === 'snapshot') { resetKeys(); return snapshot(); }
   if (op === 'otherdata') { resetKeys(); return otherData(); }

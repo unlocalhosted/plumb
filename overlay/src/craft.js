@@ -503,9 +503,11 @@ export class Craft {
     // a proof run (scripts/proof/on-off.mjs, docs/briefs/new-check.md §6a) names checks to leave out, to see what the
     // others say without them: globalThis.__plumbProof = { without: [ids], thrown: [] }, set before the page loads
     const without = new Set(globalThis.__plumbProof?.without ?? []);
+    // a narrow run (plumber craft --only <ids>): the named checks alone, for a look at one change in seconds
+    const only = globalThis.__plumbProof?.only?.length ? new Set(globalThis.__plumbProof.only) : null;
     return (this.#active = this.#rules.flatMap((r) => {
       const s = this.#theme.spec(r.id);
-      return s.enabled === false || without.has(r.id) ? [] : [Object.assign(Object.create(r), { tier: typeof s.tier === 'number' ? s.tier : r.tier ?? TIER.craft })];
+      return s.enabled === false || without.has(r.id) || (only && !only.has(r.id)) ? [] : [Object.assign(Object.create(r), { tier: typeof s.tier === 'number' ? s.tier : r.tier ?? TIER.craft })];
     }));
   }
   get theme() { return this.#theme; }
