@@ -6325,6 +6325,35 @@ into its own browser. Your app isn't changed.", then the findings.
 - **Media hooks.** The docs example (What Plumber checks, "Columns move with the data"), Broken and Fixed.
 - Reference: css-protips (`docs/references.md`), `docs/briefs/realities.md`.
 
+### 146. The larger-text checks meet a real app (2026-11-26)
+
+- **The itch:** the two checks for larger text, and the one for other data, had only been run on pages written for
+  them. The owner: "Yes, run them".
+- **How we found it:** five crafting-ui pages (home, Interfaces, Primitives, Standards, Motion vocabulary) were
+  checked with every extra reading on. The larger-text check spoke 112 times, and the box-that-cuts check once. The
+  columns check said nothing, because the app has no `<table>`: its two tables are divs with grid rows whose columns
+  have set widths, so there was nothing to find.
+- **The system behind it:** the check asked "did this line of text grow by half?" of every element that holds words.
+  Three kinds of wrong note came from that question.
+  - A size is set once and inherited. Every span inside an 11px tab said it again, with advice, because the class
+    was on its parent.
+  - A heading sized `clamp(2rem, 3.6vw, 3rem)` grew from 46px to 48px. It follows the person's setting and was
+    told to "write 46.08px as rem".
+  - Sizes worked out from the window or from a variable (a hero letter, a drawn miniature phone) were called pixels.
+  The one box-that-cuts note was a row of chips that fades out at its right edge, which is drawn to run off.
+- **What we chose:** the check speaks once, on the element that sets the size. It stays quiet when the size moved at
+  all, and when the size is worked out (vw, calc, a variable, em). Where the rule sits in a stylesheet the unit
+  can't be read, so a size that isn't a whole or half pixel is taken as worked out. That last part is a guess. A box
+  with a fade mask is left alone.
+- **The fix and the proof:** on the same five pages, 113 notes became 55. All 55 are a `text-[Npx]` class, each with
+  the rem class written (`text-[11px]` to `text-[0.6875rem]`). The checks' own test page still gives 2 and 1, no
+  other check changed, nothing threw. Source: the two runs' results in the session scratchpad, not kept.
+- **Not shown:** none of the 55 fixes was taken (the fix run writes to source). A size set in pixels by a stylesheet
+  rule, not a class, was not seen on these pages after the change, so that path is unproven. 55 notes for one habit
+  is still a lot for five pages, and wants one note for the page.
+- **Media hooks:** the Standards page at the default text size beside the same page at 24px, where the small labels
+  stay small.
+
 ## Open gaps
 
 - Without setup, the page check found 70 problems where the same page wired in finds 72 (10 fixes against 14). Not
@@ -8013,6 +8042,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
 
+- The larger-text check now says a fixed size once, where it is set, and leaves fluid sizes alone: 113 notes on five real pages became 55, each with its fix written. [Entry 146](#146-the-larger-text-checks-meet-a-real-app-2026-11-26)
 - Plumber now tries a table with longer names than yours and says when the other columns move, with the fix
   written. Proven on a test page, not yet on a real app. [Entry 143](#143-other-data-the-first-check-2026-11-26)
 - Break it is now a dial: step through the ways a page can break with the arrow keys, and each stop keeps the

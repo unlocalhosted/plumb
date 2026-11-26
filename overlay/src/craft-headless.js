@@ -662,10 +662,21 @@ export const textFixed = {
   check({ el, facts }, theme) {
     const T = theme.spec(this.id);
     const b = facts.other('bigtext')?.get(el);
-    if (!b || !b.own || !facts.text(el)) return [];
+    if (!b || !el.textContent.trim()) return [];
     const base = px(facts.style(el).fontSize), grown = px(b.fs);
-    if (!base || grown >= base * (T.grow ?? 1.15)) return []; // the default grew by half; this grew with it
-    const cls = utility(el, 'text');
+    // it moved at all: the size follows the person's setting (a clamp between rem ends grows less than the default
+    // does, and is still theirs to grow). Found on a real app, 2026-11-26: clamp(2rem, 3.6vw, 3rem) read as fixed
+    if (!base || grown >= base * (T.grow ?? 1.15) || grown > base + 0.5) return [];
+    // said once, where the size is set: the element that carries the size class or style, or the first whose size
+    // differs from its parent's. Its children only inherit it (found on a real app: every span in a tab said it again)
+    const cls = [...el.classList].find((c) => /^!?text-\[(?:length:)?[^\]]*\d[^\]]*\]!?$/.test(c) && !/#|rgb|hsl|oklch|color:/.test(c)) ?? null;
+    const written = cls ?? el.style.fontSize;
+    const parent = el.parentElement;
+    if (!written && parent && Math.abs(px(facts.style(parent).fontSize) - base) < 0.01) return [];
+    // a size worked out from the window, a variable or its parent (vw, calc, em) is not written in pixels: the window
+    // sizes are craft/type-viewport's, and a drawing scaled by a variable is a drawing. Where the rule is in a
+    // stylesheet the unit can't be read, so a size that is not a whole or half pixel is taken as worked out (a guess)
+    if (/vw|vh|vmin|vmax|cq|calc|var\(|clamp|min\(|max\(|em\b|%/.test(written.replace(/rem\b/g, '')) || Math.abs(base * 2 - Math.round(base * 2)) > 0.01) return [];
     const m = /^(!?)text-\[(\d*\.?\d+)px\](!?)$/.exec(cls ?? '');
     const rem = Math.round((base / 16) * 10000) / 10000;
     return [{
@@ -690,6 +701,8 @@ export const textClips = {
     if (!b || !(b.cl > (T.over ?? 4)) || !el.textContent.trim()) return [];
     const s = facts.style(el);
     if (!/hidden|clip/.test(`${s.overflowX} ${s.overflowY}`)) return [];
+    // a row that fades out at its edge is drawn to run off: more words there is what the fade is for (found on a real app, 2026-11-26)
+    if ([s.maskImage, s.webkitMaskImage].some((m) => m && m !== 'none')) return [];
     if (Math.max(el.scrollHeight - el.clientHeight, el.scrollWidth - el.clientWidth) > 1) return []; // cut off already: not this reality's doing
     return [{
       ...say(this.id, { over: Math.round(b.cl) }),
