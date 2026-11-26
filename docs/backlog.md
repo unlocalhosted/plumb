@@ -251,6 +251,9 @@ and icon passes' cases, and the palette after a write, were tested again through
 - Still wrong on crafting-ui after journey entry 144 (2026-11-26): a11y/label-in-name on a timeline region that shows
   its marks; craft/contrast on lone "·" separators; craft/declared-gap on axis ticks placed by hand; craft/half-pixel on
   a part inside a scaled drawing; tells/divider on a measuring guide in the hero.
+- cal.com (2026-11-26, journey entry 153): runs are not steady on a big Next.js app. How much of a page is read changes
+  between runs (event types: 151 elements, then 42), and findings sometimes point at a wrapper line instead of their own
+  (event setup: 15 at EventTypeWebWrapper.tsx:185). Wording: other checks may also say "every side" or round values.
 - Algorecall (2026-11-26, journey entry 149): the 22 wrong findings are fixed. Not measured by any check now: an icon a
   little off across stacked tiles (the problems page's topic tray, the All tile 1.4px low); 19 findings marked unsure
   were not judged again.

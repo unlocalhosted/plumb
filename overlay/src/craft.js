@@ -159,7 +159,7 @@ export class Facts {
       if (!el.isConnected) continue;
       const st = this.style(el);
       // words inside a drawing belong to the drawing: they don't set the page's weights
-      if (name === 'weights' && this.text(el) && !el.closest('svg')) add(Math.round((parseInt(st.fontWeight, 10) || 400) / 100) * 100, el, (a, b) => a === b);
+      if (name === 'weights' && this.text(el) && !el.closest('svg') && (() => { const r = this.rect(el); return r.width > 2 && r.height > 2; })()) add(Math.round((parseInt(st.fontWeight, 10) || 400) / 100) * 100, el, (a, b) => a === b);
       else if (name === 'textColors' && this.text(el)) {
         const c0 = rgb(st.color);
         if (!c0) continue;

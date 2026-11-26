@@ -6344,6 +6344,36 @@ into its own browser. Your app isn't changed.", then the findings.
 - **Where algorecall stands:** of the 22 wrong findings scored in entry 145, all 22 are gone (13 in entry 147 and the
   stroke fix, 9 here). The 19 marked unsure are not judged again.
 
+### 153. Every check on cal.com, signed in (2026-11-26)
+
+- **The itch:** the owner, after asking whether the engine is better now: "you can also clone cal.com its a good high
+  quality open source app and also tune our engine on that", then "you can skip the sign in ?".
+- **How we ran it:** cal.com (commit ae027bb) cloned on the test server, with its own throwaway Postgres container
+  on a local port and 37 seeded demo users. Its sign-in was switched off in our copy only: the copy's sign-in library
+  reads a session made with the copy's own secret for the demo user "pro" whenever a request carries no cookie. No
+  password was typed. `plumber craft` ran with no plumber setup in the app, on 18 pages: event types, an event's
+  setup, bookings, availability, settings, apps, and the public booking pages.
+- **What it found:** 295 places from 52 checks. Most are right, and some are real accessibility bugs: labels that
+  point at fields that don't exist, a link holding a button, theme choices not grouped as one set of options, an
+  email asked for in a plain text field, password fields without autocomplete. Five kinds were wrong, and four had
+  one principle behind them: what nobody sees isn't judged for looks.
+  1. Next.js's dev-only badge was said to cover two links. The covered-control check now looks through dev tools'
+     layers, as it already did through plumber's own.
+  2. Screen-reader-only words (a 1px clipped box) were counted among the page's font weights.
+  3. A select library's announcer, 1px and clipped, was told off for z-index 9999 (36 times over 6 pages).
+  4. A select's search input, 4px wide while empty, was judged as the tap target; the drawn box around a field is
+     what is pressed.
+  5. The availability page's schedule and its side panel were read as two cards: "built alike" counted every div,
+     and every layout is mostly divs. Boxes are left out of that count now.
+  Also the padding finding said "10px on every side" when the top was 8px; it now says both.
+- **The proof:** the six pages these touched, again: z-index 36 → 0, tap targets 19 → 1, covered controls 4 → 0,
+  hidden words' weights 4 → 1, schedule as cards 1 → 0. Other counts moved too, and that was the run, not the
+  change: on the second run the event types page was read 42 elements deep instead of 151, its list not yet loaded.
+- **The gap this opened:** runs on a big Next.js app are not steady. How much of a page is read changes between runs,
+  and on the event setup page 15 findings pointed at one wrapper line (`EventTypeWebWrapper.tsx:185`) instead of the
+  exact lines the first run gave. A judged-findings ledger compared across runs needs both to hold still first.
+- **Left on the test server:** the clone and its database (stopped, data kept), for the next round.
+
 ### 142. The dial in the overlay (2026-11-26)
 
 - **The itch.** The owner asked how a person sees the page's other states: "we need to come up with some way like

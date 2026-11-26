@@ -246,8 +246,9 @@ export const controlCovered = rule('control-covered', 'cover', 'button,a,input,s
   const r = facts.rect(el), x = r.left + r.width / 2, y = r.top + r.height / 2;
   if (r.width < 16 || r.height < 16 || x < 0 || y < 0 || x > window.innerWidth || y > window.innerHeight) return;
   if (facts.style(el).pointerEvents === 'none' || el.closest('[inert]')) return;
-  // (plumber's own layer may be drawn over the page: looked through)
-  const top = document.elementsFromPoint(x, y).find((t) => !t.closest('plumb-overlay'));
+  // (plumber's own layer may be drawn over the page, and so may a dev server's badge or error layer: looked through,
+  // since no one using the app ever sees them; found on cal.com, 2026-11-26: Next's dev badge "covered" two links)
+  const top = document.elementsFromPoint(x, y).find((t) => !t.closest('plumb-overlay, nextjs-portal, vite-error-overlay, astro-dev-toolbar, vite-plugin-checker-error-overlay'));
   if (!top || top === el || el.contains(top) || top.contains(el)) return;
   // its own label drawn over it (a styled checkbox), an open layer above the page, or a bar that stays put while the page scrolls under it
   if (top.closest('label')?.control === el || top.closest('dialog, [popover], [role="dialog"], [role="menu"], [role="listbox"], [role="tooltip"]')) return;

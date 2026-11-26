@@ -514,6 +514,8 @@ export const zIndexWar = {
     const s = facts.style(el);
     const z = parseInt(s.zIndex, 10);
     if (!(z > T.above) || s.position === 'fixed') return [];
+    // a box kept out of sight for screen readers (a 1px clipped announcer, as a select library draws) stacks over nothing
+    { const r = facts.rect(el); if (r.width <= 2 || r.height <= 2) return []; }
     // a top-level overlay (a direct child of body, or a dialog) is allowed its height
     if (el.parentElement === document.body || el.matches('dialog, [role="dialog"], [popover]')) return [];
     const cls = utility(el, 'z');
@@ -708,7 +710,7 @@ export const buttonPadding = {
     const to = sides.kind === 'class' ? `${sides.to}${top?.kind === 'class' ? ` ${top.to}` : ''}` : null;
     const sets = { ...(sides.sets ?? { paddingLeft: want, paddingRight: want }), ...(top?.kind === 'class' ? top.sets : {}) };
     return [{
-      ...say(this.id, { side: b.pl }),
+      ...say(this.id, { side: b.pl, top: b.pt }),
       key: this.id, text: cls ?? 'padding', props: ['padding-left', 'padding-right'], value: `${b.pl}px`, n: b.pl,
       evidence: { across: b.pl, down: b.pt }, confidence: 0.86,
       suggest: cls && to ? { kind: 'class', from: cls, to, why: `${fmt(want)} on the sides, ${fmt(b.pt)} on top`, sets, ...(sides.alternatives ? { alternatives: sides.alternatives } : {}) } : { kind: 'advice', text: `Use ${fmt(want)} on the sides and ${fmt(b.pt)} on top.` },
@@ -1207,6 +1209,14 @@ export const hitTarget = {
     if (el.matches('input[type="checkbox"], input[type="radio"]') && el.closest('label')) return []; // its label is the target
     const T = theme.spec(this.id);
     const r = facts.rect(el), { min, long } = T;
+    // a field drawn by the box around it (a select's search input, 4px wide while empty): the drawn box is what is pressed
+    if (el.matches('input, textarea')) {
+      for (let p = el.parentElement, d = 0; p && d < 4; p = p.parentElement, d++) {
+        const ps = facts.style(p), pr = facts.rect(p);
+        const drawnBox = (rgb(ps.backgroundColor)?.[3] ?? 0) > 0 || px(ps.borderTopWidth) > 0 || ps.boxShadow !== 'none';
+        if (drawnBox && pr.width >= min && pr.height >= min) return [];
+      }
+    }
     // a wide, short row (a summary across the page) is easy to hit along its length
     if (r.width >= min && r.height >= min || r.width === 0 || r.height === 0 || Math.max(r.width, r.height) >= long) return [];
     const short = Math.min(r.width, r.height);
@@ -2630,6 +2640,8 @@ export const weightLevels = {
   check({ el, facts }, theme) {
     const T = theme.spec(this.id);
     if (!facts.text(el) || !facts.census || el.closest('svg')) return [];
+    // words kept for screen readers only (a 1px clipped box) are never seen, so their weight is no one's choice
+    { const r = facts.rect(el); if (r.width <= 2 || r.height <= 2) return []; }
     const c = facts.census('weights');
     if (c.sample < T.sample || c.clusters.length <= 3) return [];
     const w = Math.round((parseInt(facts.style(el).fontWeight, 10) || 400) / 100) * 100;

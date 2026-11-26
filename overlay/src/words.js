@@ -268,9 +268,9 @@ export const CRAFT = {
     line: `These words start ${px(pl)} in from the words around them.`,
     reason: 'Line up the words, not the boxes. Let the background stick out.',
   }),
-  'button-padding': ({ side }) => ({
+  'button-padding': ({ side, top }) => ({
     label: 'Sides too tight',
-    line: `${px(side)} on every side. Text buttons need about twice as much on the sides.`,
+    line: `${top === undefined || Math.abs(top - side) < 0.5 ? `${px(side)} on every side` : `${px(side)} on the sides and ${px(top)} on top`}. Text buttons need about twice as much on the sides.`,
     reason: 'Words are wide, so equal padding looks cramped left and right.',
   }),
   'icon-side': ({ side, less }) => ({

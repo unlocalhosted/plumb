@@ -29,7 +29,10 @@ const visible = (el, facts) => { const r = facts.rect(el); return r.width >= 4 &
 // two in a line overlapping sideways. Widths may differ (a chosen plan is often wider), but not by more than 1.6×.
 // What a card is made of, as counts of its tags (its first 300 elements). Cards in a row are built alike, so their
 // counts point the same way; a hero's words beside its player, or a form beside its picture, do not.
-const make = (el) => { const m = new Map(); let n = 0; for (const d of el.querySelectorAll('*')) { if (++n > 300) break; m.set(d.localName, (m.get(d.localName) ?? 0) + 1); } return m; };
+// Boxes (div, span) are left out: every layout is mostly boxes, so counting them made a schedule and its side panel
+// look alike (cal.com, 2026-11-26). What a card is made of is its words, controls, lists and pictures.
+const BOXES = new Set(['div', 'span']);
+const make = (el) => { const m = new Map(); let n = 0; for (const d of el.querySelectorAll('*')) { if (++n > 300) break; if (BOXES.has(d.localName)) continue; m.set(d.localName, (m.get(d.localName) ?? 0) + 1); } return m; };
 const alike = (a, b) => {
   let dot = 0, na = 0, nb = 0;
   for (const [k, v] of a) { na += v * v; dot += v * (b.get(k) ?? 0); }
