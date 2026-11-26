@@ -6974,6 +6974,22 @@ into its own browser. Your app isn't changed.", then the findings.
   about behaviour, 29 about shape, 15 about craft detail; 32 still rest on his sentence alone.
 - **Open:** whether plumber gets a way to judge a page it has no source for. Not decided.
 
+### 157. The spec for judging shape, part one (2026-11-26)
+
+- **The itch:** after the audit, the work drifted into scoring today's plumber against the expert's sites and into
+  a proposal to make plumber judge pages without source. The owner: "we are working on engine spec why you shift to
+  plumber stay on the task".
+- **The system behind it:** each finding along the way was turned into the next piece of work, and the spec, the
+  thing all of it was for, was never started.
+- **What we chose:** write the core first, short, for the owner's read: [shape-engine.md](briefs/shape-engine.md).
+  The page is read twice, as seen and as meant, and a finding is a disagreement between the two. Five comparisons
+  from the two pictures, three more that came out of the reviews, one judgement with three outcomes. It sits on the
+  foundations already signed off and changes none.
+- **Not done:** part two, the detail of each reading and each number with its source. Nothing is built. Four
+  decisions wait for the owner, listed in the draft's section 9.
+- **References:** the perception research in [perception-sources.md](research/perception-sources.md); the expert's
+  reviews (entries 153 to 156).
+
 ## Open gaps
 
 - Plumber's page check reads nothing on a public site, because it judges only elements tied to an app's source
