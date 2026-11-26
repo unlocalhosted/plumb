@@ -320,6 +320,10 @@ One layer at a time, each looked at on real screens before the next starts.
 6. **Enclosed.**
 7. **Loud against important.** Last, because its numbers have the least under them.
 
+Changed on 2026-11-26, after layer 1: alike against same role was started before near. The expert's reviews hold
+seven cases of it on pages that can be opened today and almost none of near, and a layer with nothing to test
+against would only add findings.
+
 Every layer is a pack of pure rules over the snapshot. None changes a check plumber has. Where a new reading and an
 old check speak about the same place, the old check stays until the new one has been shown to agree with the judges
 at least as often.

@@ -7044,6 +7044,32 @@ into its own browser. Your app isn't changed.", then the findings.
   was not running, so it was not looked at.
 - **Media hooks:** `http://rauno-21-shadcn-com.localhost:4420/__judge/?seen=1`, levels 1 and 2.
 
+### 159. Look against role: the engine finds the headings he found (2026-11-26)
+
+- **The itch:** the owner looked at the groups drawn over real pages and said yes, those are the groups they see.
+  The next layer had to be one with judged cases to test against, so alike against same role went before near.
+- **What was built:** a reading of every piece of text with its look and its role, and a pure judgement over it
+  (`bench/judged/alike.js`). It reports text drawn exactly like the things that can be pressed, things that can be
+  pressed drawn exactly like plain text, and one row of look-alike links that act in two ways.
+- **The test:** shadcn's page as the web archive kept it the day after the review, served as a still. The engine
+  made one finding there: three pieces of text drawn exactly like four things that can be pressed, namely
+  "shadcn/numbers", "shadcn/newsletter" and "Sponsors". Those are the three headings Rauno pointed at and the three
+  we had measured by hand.
+- **On five more of his pages, as they are today:** shadcn's page now gives the same three headings, drawn like the
+  five headings that are links, with the underline gone from all of them. Two pages gave nothing, and each holds a
+  point of his this cut should or could not reach: a menu whose items look alike and act differently (missed, cause
+  not found), and two panels drawn as one (not about text, so not covered). Two pages gave three findings he did not
+  make.
+- **The count, said plainly:** of three judged cases on these pages, one found. Of five findings, one matches a
+  judge. The other four are not shown to be wrong: he wrote a few lines per site and did not list everything. His
+  reviews can say what the engine misses. They cannot say how much of what it finds is noise. That needs a person
+  to look at the findings.
+- **Narrowed after the first run:** a link that leaves the site beside one that stays made three findings on the
+  first page and no judge had marked one, so it is no longer judged.
+- **A fault seen and not fixed:** on one site the grouping read no drawn areas at all while the text reading found
+  the page's text.
+- **Media hooks:** `http://rauno-21b-shadcn-as-he-saw-it.localhost:4420/__judge/?seen=1`, "Look against role".
+
 ## Open gaps
 
 - Plumber's page check reads nothing on a public site, because it judges only elements tied to an app's source

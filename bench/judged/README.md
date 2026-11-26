@@ -81,7 +81,18 @@ can say whether the engine's groups are the groups they see.
   the gap between them is at least 1.5 times the gaps inside them. Things with even gaps stay one run.
 - The view outlines one level of that tree at a time. Pointing at a part says why it was taken as one thing.
 
-It does not use likeness yet, so two things that look the same are not tied together unless space or a box does it.
+The grouping does not use likeness yet, so two things that look the same are not tied together unless space or a
+box does it.
+
+The same view has a second reading, "Look against role", the spec's layer on alike against same role in its first
+cut. `see.js` reads every piece of text with its look (face, size, weight, colour, underline) and its role (plain, a
+link to a page, a link down this page, a link away, a control). `alike.js`, pure, reports text drawn exactly like the
+things that can be pressed, things that can be pressed drawn exactly like plain text, and one row of look-alike links
+where some jump down the page and some open another. Nothing it says has been checked by a judge.
+
+To test against a page as a reviewer saw it, make a set whose app is the web archive and whose screen path is the
+copy's address in its `if_` form, with `"scripts": false`: the copy is then served as a still. One exists locally
+for shadcn's page of 2026-10-20 (`sets/rauno-21b-shadcn-as-he-saw-it`, not in git).
 
 ### A public site as the app
 

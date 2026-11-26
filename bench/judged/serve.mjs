@@ -37,6 +37,7 @@ const FILES = {
   '/__judge/review.js': [join(here, 'review.js'), 'text/javascript; charset=utf-8'],
   '/__judge/see.js': [join(here, 'see.js'), 'text/javascript; charset=utf-8'],
   '/__judge/seen.js': [join(here, 'seen.js'), 'text/javascript; charset=utf-8'],
+  '/__judge/alike.js': [join(here, 'alike.js'), 'text/javascript; charset=utf-8'],
   '/__judge/soft.js': [join(here, '../../overlay/src/soft.js'), 'text/javascript; charset=utf-8'],
   '/__judge/tokens.css': [join(here, '../../overlay/src/tokens.css'), 'text/css; charset=utf-8'],
 };
@@ -163,6 +164,9 @@ function pass(req, res, { name, set, app }) {
     }
     // these describe the site's own origin, which this is not: one forbids framing, one lists allowed origins
     delete out['x-frame-options']; delete out['content-security-policy']; delete out['content-security-policy-report-only'];
+    // a set may ask for its pages as stills (set.json, "scripts": false): a copy kept by the web archive is one, and
+    // its scripts break when they find themselves at another address
+    if (set.scripts === false) out['content-security-policy'] = "script-src 'none'";
     res.writeHead(answer.statusCode ?? 502, out); answer.pipe(res);
   });
   up.on('error', (e) => { if (!res.headersSent) res.writeHead(502, { 'content-type': 'text/plain; charset=utf-8' }); res.end(`${set.app} did not answer (${e.code ?? e.message}). If it is a local app, start it, then reload.`); });

@@ -4,8 +4,12 @@
 //   read(win)   looks at the page once and gives plain rows, one per drawn area (a block of text, a picture, a drawn
 //               box, a line), each with the drawn box it lies in. No tag name, role or source is used to decide
 //               what a unit is: only what is drawn.
+//   pieces(win, site)  every piece of text with its look (what is drawn about its letters, as one string) and its
+//               role (what the page is built to do with it), for alike.js. The look is read from styles; the role
+//               from tags, roles and addresses, which is the weaker reading the spec allows where there is no source.
 //   see(...)    the view: the page in a frame, the tree from seen.js outlined over it one level at a time.
 import { grow, levels, RATIO } from './seen.js';
+import { judge } from './alike.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const host = (url) => url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
@@ -68,6 +72,56 @@ export function inkBox(parts) {
   return x1 < x0 ? { left: 0, top: 0, width: 0, height: 0 } : { left: x0, top: y0, width: x1 - x0, height: y1 - y0 };
 }
 
+const CARRIER = 'a[href], button, [role="button"], [role="link"], [role="tab"], [role="menuitem"], input, select, textarea, summary';
+const bare = (h) => h.replace(/^www\./, '');
+// a link kept by the web archive points at the archive: the address it stood for is inside its path
+const real = (url) => { const m = url.host === 'web.archive.org' && /^\/web\/\d+[a-z_]*\/(https?:\/\/.+)$/.exec(url.pathname + url.search + url.hash); try { return m ? new URL(m[1]) : url; } catch { return url; } };
+
+export function pieces(win, site) {
+  const doc = win.document, rows = [], els = [], sets = new Map();
+  const here = real(new URL(win.location.href)), home = here.host === win.location.host ? bare(site) : bare(here.host);
+  const ctx = Object.assign(doc.createElement('canvas'), { width: 1, height: 1 }).getContext('2d', { willReadFrequently: true }), known = new Map();
+  const colour = (c) => { if (!known.has(c)) { ctx.clearRect(0, 0, 1, 1); ctx.fillStyle = '#000'; ctx.fillStyle = c; ctx.fillRect(0, 0, 1, 1); known.set(c, [...ctx.getImageData(0, 0, 1, 1).data]); } return known.get(c); };
+  const hex = (c) => `#${c.slice(0, 3).map((v) => v.toString(16).padStart(2, '0')).join('')}`;
+  const roleOf = (el) => {
+    const c = el.closest(CARRIER);
+    if (!c) return ['plain', null];
+    if (c.localName !== 'a' && c.getAttribute('role') !== 'link') return ['control', c];
+    const raw = c.getAttribute('href') ?? '';
+    if (raw.startsWith('#')) return ['jump', c];
+    let to; try { to = real(new URL(raw, win.location.href)); } catch { return ['page', c]; }
+    if (!/^https?:$/.test(to.protocol)) return ['leaves', c];
+    if (to.host !== win.location.host && bare(to.host) !== home) return ['leaves', c];
+    return [to.hash && to.pathname.replace(/\/$/, '') === here.pathname.replace(/\/$/, '') ? 'jump' : 'page', c];
+  };
+  // a line under the letters, however it is drawn: on the element, on what it flows inside, or as a bottom border
+  const lined = (el) => {
+    for (let e = el, n = 0; e && n < 6; e = e.parentElement, n++) {
+      const st = win.getComputedStyle(e);
+      if (st.textDecorationLine.includes('underline') || (st.display === 'inline' && parseFloat(st.borderBottomWidth) > 0 && st.borderBottomStyle !== 'none')) return true;
+      if (st.display !== 'inline') break;
+    }
+    return false;
+  };
+  for (const el of doc.body.querySelectorAll('*')) {
+    if (NEVER.has(el.localName) || PICTURE.has(el.localName) || el.closest('svg')) continue;
+    const parts = []; let text = '';
+    for (const n of el.childNodes) if (n.nodeType === 3 && n.nodeValue.trim()) { const r = doc.createRange(); r.selectNodeContents(n); parts.push(r); text += ` ${n.nodeValue.trim()}`; }
+    if (!parts.length || !/[\p{L}\p{N}]/u.test(text) || el.checkVisibility?.({ checkOpacity: true, checkVisibilityCSS: true }) === false) continue;
+    const box = inkBox(parts); if (box.width < 3 || box.height < 3) continue;
+    const st = win.getComputedStyle(el), [role, carrier] = roleOf(el), under = lined(el);
+    // a carrier with a fill or an outline of its own is a button: its letters are not compared with bare text
+    const cs = carrier && win.getComputedStyle(carrier), boxed = cs && (colour(cs.backgroundColor)[3] >= 128 || parseFloat(cs.borderTopWidth) > 0);
+    const ink = hex(colour(st.color)), family = st.fontFamily.split(',')[0].replace(/["']/g, '').trim();
+    const look = [family, st.fontSize, st.fontWeight, ink, under ? 'u' : '', st.textTransform, st.fontStyle, boxed ? `box${hex(colour(cs.backgroundColor))}` : ''].join('|');
+    const words = [`${parseFloat(st.fontSize)}px`, `weight ${st.fontWeight}`, ink, under ? 'underlined' : 'no underline', boxed ? 'in a box of its own' : ''].filter(Boolean).join(', ');
+    let holder = (carrier ?? el).parentElement; if (holder?.localName === 'li') holder = holder.parentElement;
+    if (!sets.has(holder)) sets.set(holder, sets.size);
+    rows.push({ look, words, role, set: sets.get(holder), text: text.trim().replace(/\s+/g, ' ').slice(0, 60) }); els.push({ el, parts });
+  }
+  return { rows, els };
+}
+
 const CSS = `
   .desk.two { display: grid; grid-template-columns: minmax(0, 1fr) 360px; }
   .view { position: relative; overflow: hidden; min-height: 0; }
@@ -89,7 +143,26 @@ const CSS = `
   .g.on { background: color-mix(in oklab, var(--h) 22%, transparent); }
   .g.leaf { border-width: 1.5px; border-radius: 4px; box-shadow: none; }
   .layer.using { pointer-events: none; }
+  .modes { display: flex; gap: var(--pl-space-3); } .modes .chip[aria-pressed="true"] { background: var(--pl-ink); color: var(--pl-paper); }
+  .pane { display: grid; align-content: start; gap: var(--pl-space-6); }
+  .t-odd { --h: var(--pl-pink); } .g.odd { border-width: 3px; border-radius: 6px; }
+  .finds { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pl-space-3); }
+  .finds button { display: grid; gap: var(--pl-space-2); width: 100%; text-align: left; padding: var(--pl-space-5); border: 0; border-radius: 14px; background: var(--pl-paper-2); color: inherit; cursor: pointer; font: inherit; }
+  .finds button[aria-pressed="true"] { outline: 2.5px solid var(--pl-pink); }
+  .finds b { font: var(--pl-card-body); } .finds span { font: var(--pl-card-meta); color: var(--pl-ink-2); }
+  .finds em { font: var(--pl-card-code); font-style: normal; color: var(--pl-ink); }
 `;
+
+const WAYS = { page: 'open another page of the site', jump: 'jump down this page', leaves: 'leave the site', control: 'do something here' };
+const many = (n, one, more) => `${n} ${n === 1 ? one : more}`;
+const SAID = {
+  'looks-pressable': (f, rows) => ['Looks pressable, and is not', `${many(f.odd.length, 'piece of text is', 'pieces of text are')} drawn exactly like ${f.many.length} things that can be pressed. Nothing happens when you press ${f.odd.length === 1 ? 'it' : 'them'}.`],
+  'pressable-plain': (f, rows) => ['Can be pressed, and does not look it', `${many(f.odd.length, 'thing that can be pressed is', 'things that can be pressed are')} drawn exactly like ${f.many.length} pieces of plain text. At rest nothing says which is which.`],
+  'one-set-two-ways': (f, rows) => {
+    const jumps = [...f.many, ...f.odd].filter((i) => rows[i].role === 'jump').length, rest = f.many.length + f.odd.length - jumps;
+    return ['One row of links, two kinds', `These links sit together and look the same. ${many(jumps, 'jumps', 'jump')} down this page and ${many(rest, 'opens', 'open')} another page.`];
+  },
+};
 
 const HOW = {
   box: (n) => `A drawn box. ${n.how ? `Inside, ${INNER[n.how.type](n.how, n.children.length)}` : n.children.length === 1 ? 'It holds one thing.' : ''}`,
@@ -120,6 +193,9 @@ export function see(el, root, base, loaded, soften) {
     <main class="desk two">
       <div class="view"><div class="stage"><iframe title="The page being read"></iframe><div class="layer"><div class="seen"></div></div></div></div>
       <aside class="side">
+        <div class="modes"><button type="button" class="chip" data-mode="groups" aria-pressed="true">Groups</button><button type="button" class="chip" data-mode="alike" aria-pressed="false">Look against role</button></div>
+        <div class="pane alike" hidden></div>
+        <div class="pane groups">
         <div><h2>Level</h2><p>Level 1 is the parts the page first falls into. Each level after splits those parts again.</p></div>
         <div class="steps"></div>
         <div class="now"><b>Point at a part</b><span>to see why the engine took it as one thing.</span></div>
@@ -130,6 +206,7 @@ export function see(el, root, base, loaded, soften) {
           <li class="t-pile"><i></i><div><b>A pile</b><span>Things that overlap.</span></div></li>
           <li class="t-unit"><i></i><div><b>A single thing</b><span>A block of text or a picture.</span></div></li>
         </ul>
+        </div>
         <p class="tally"></p>
       </aside>
     </main>`;
@@ -138,6 +215,7 @@ export function see(el, root, base, loaded, soften) {
   const frame = $('iframe'), layer = $('.layer'), seen = $('.seen'), stage = $('.stage'), view = $('.view');
   const screen = set.screens[0];
   let scale = 1, got = null, tree = null, flat = [], level = 1, units = false, over = null, held = false;
+  let mode = 'groups', found = null, pick = null;
 
   const fit = () => {
     const w = screen?.width ?? set.width ?? 1440, room = view.clientWidth - 32, tallness = view.clientHeight - 32;
@@ -152,8 +230,22 @@ export function see(el, root, base, loaded, soften) {
     return x1 < x0 ? { x: 0, y: 0, w: 0, h: 0 } : { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
   };
   let shown = [];
+  // look against role: the odd pieces of every finding, or one finding's odd pieces among the ones they look like
+  const drawAlike = () => {
+    const html = [];
+    const put = (i, cls) => { const r = inkBox(found.els[i].parts); if (r.width) html.push(`<div class="g ${cls}" style="left:${r.left - 4}px;top:${r.top - 3}px;width:${r.width + 8}px;height:${r.height + 6}px"></div>`); };
+    if (pick !== null) { const f = found.findings[pick]; f.many.forEach((i) => put(i, 't-run leaf')); f.odd.forEach((i) => put(i, 't-odd odd')); }
+    else for (const f of found.findings) f.odd.forEach((i) => put(i, 't-odd odd'));
+    seen.innerHTML = html.join('');
+  };
+  const list = () => {
+    const rows = found.rows;
+    $('.alike').innerHTML = `<div><h2>Look against role</h2><p>Pieces of text that are drawn exactly alike and are not the same kind of thing. This is what the reading says. No judge has checked it.</p></div>
+      ${found.findings.length ? `<ul class="finds">${found.findings.map((f, k) => { const [title, body] = SAID[f.kind](f, rows); return `<li><button type="button" data-find="${k}" aria-pressed="${k === pick}"><b>${title}</b><span>${esc(body)}</span><span>${f.odd.slice(0, 6).map((i) => `<em>${esc(rows[i].text)}</em>`).join(' · ')}${f.odd.length > 6 ? ` and ${f.odd.length - 6} more` : ''}</span><span>Drawn as: ${esc(rows[f.odd[0]].words)}</span></button></li>`; }).join('')}</ul>` : '<p>Nothing on this page looks like one thing and is another.</p>'}`;
+  };
   const draw = () => {
     if (!tree) return;
+    if (mode === 'alike') return drawAlike();
     const h = stage.clientHeight, w = stage.clientWidth, html = [];
     shown = [];
     const add = (n, leaf) => {
@@ -185,6 +277,7 @@ export function see(el, root, base, loaded, soften) {
     $('.tally').textContent = 'Waiting for the page to stop moving.';
     const settled = await still();
     got = read(win); tree = grow(got.units); flat = levels(tree); over = null;
+    found = pieces(win, new URL(set.app).host); found.findings = judge(found.rows); pick = null; list();
     const count = (k) => got.units.filter((u) => u.kind === k).length;
     $('.tally').textContent = `${count('text')} blocks of text, ${count('picture')} pictures, ${count('box')} drawn boxes and ${count('line')} lines, read at ${win.innerWidth} wide.${settled ? '' : ' The page was still moving after 8 seconds, so it was read as it stood.'}`;
     steps(); draw();
@@ -233,7 +326,18 @@ export function see(el, root, base, loaded, soften) {
   });
   layer.addEventListener('pointerleave', () => { over = null; draw(); });
   $('.side').addEventListener('click', (e) => {
-    const l = e.target.closest('[data-level]'), u = e.target.closest('[data-units]');
+    const l = e.target.closest('[data-level]'), u = e.target.closest('[data-units]'), m = e.target.closest('[data-mode]'), f = e.target.closest('[data-find]');
+    if (m) {
+      mode = m.dataset.mode;
+      for (const b of root.querySelectorAll('[data-mode]')) b.setAttribute('aria-pressed', String(b.dataset.mode === mode));
+      $('.pane.alike').hidden = mode !== 'alike'; $('.pane.groups').hidden = mode !== 'groups';
+      return draw();
+    }
+    if (f && found) {
+      pick = pick === Number(f.dataset.find) ? null : Number(f.dataset.find); list();
+      if (pick !== null) found.els[found.findings[pick].odd[0]].el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      return draw();
+    }
     if (l) level = Number(l.dataset.level); else if (u) units = !units; else return;
     steps(); draw();
   });
