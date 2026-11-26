@@ -3293,6 +3293,12 @@ export const nativeAccent = {
     if (!el.matches('input[type="checkbox"], input[type="radio"], input[type="range"], progress')) return [];
     const s = facts.style(el);
     if (s.appearance === 'none' || s.webkitAppearance === 'none' || (s.accentColor && s.accentColor !== 'auto') || !el.getClientRects().length) return [];
+    // a native input kept for forms behind a control the page draws itself (Base UI, Radix, React Aria: a pixel,
+    // clipped, see-through, or hidden from both the eye and the keyboard) is never seen, so its accent is nobody's
+    // (found on a real app, 2026-11-26: Base UI's switch, checkbox and slider)
+    const r = el.getBoundingClientRect();
+    if (r.width <= 2 || r.height <= 2 || parseFloat(s.opacity) < 0.05 || s.visibility === 'hidden' || (s.clipPath && s.clipPath !== 'none') || (s.clip && s.clip !== 'auto')
+      || (el.getAttribute('aria-hidden') === 'true' && el.tabIndex < 0)) return [];
     if (matchMedia('(forced-colors: active)').matches) return [];
     const brand = brandOf(facts);
     if (!brand) return [];
@@ -3326,12 +3332,25 @@ export const rowDeadZone = {
     const T = theme.spec(this.id);
     const kids = flowKids(el, facts);
     if (kids.length < (T.least ?? 3) || kids.some((k) => !rowControl(k))) return [];
+    // a menu is a list of choices: rows that are controls themselves, or items of a list or menu. Blocks that each
+    // hold a control (a list of questions, each a heading with a button) are separate things set apart on purpose
+    // (found on a real app, 2026-11-26: a page's questions, 8px apart)
+    const listed = el.matches('ul, ol, menu, nav, [role="menu"], [role="menubar"], [role="listbox"], [role="tablist"], [role="radiogroup"], [role="list"], [role="group"], [role="toolbar"]');
+    if (!listed && kids.some((k) => rowControl(k) !== k)) return [];
     const boxes = kids.map((k) => rowControl(k).getBoundingClientRect());
     // one column: the same left edge and width, each below the last
     if (!boxes.every((b) => Math.abs(b.left - boxes[0].left) <= 1 && Math.abs(b.width - boxes[0].width) <= 2) || boxes[0].height > (T.row ?? 56)) return [];
     const gaps = boxes.slice(1).map((b, i) => b.top - boxes[i].bottom);
     const gap = Math.min(...gaps), most = Math.max(...gaps);
     if (gap < (T.min ?? 1) || most > (T.max ?? 8)) return [];
+    // rows that touch, with the space between their controls taken by the rows' own drawn rule: the strip is the
+    // divider, part of a row, and a line a pixel wide is not a place anyone aims for (found on a real app, 2026-11-26)
+    if (kids.some((k) => rowControl(k) !== k)) {
+      const rows = kids.map((k) => k.getBoundingClientRect());
+      const touch = rows.slice(1).every((b, i) => b.top - rows[i].bottom <= 0.5);
+      const rule = (i) => px(facts.style(kids[i]).borderBottomWidth) + px(facts.style(kids[i + 1]).borderTopWidth);
+      if (touch && gaps.every((g, i) => g <= rule(i) + 0.5)) return [];
+    }
     // a row whose own ::before or ::after already reaches into the gap owns those pixels: nothing is dead
     const controls = kids.map(rowControl), half = gap / 2;
     const reach = (c) => ['::before', '::after'].some((p) => { const ps = getComputedStyle(c, p); return ps.content !== 'none' && ps.position === 'absolute' && px(ps.top) <= -half + 0.5 && px(ps.bottom) <= -half + 0.5; });

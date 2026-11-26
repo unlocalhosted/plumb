@@ -76,6 +76,12 @@ export function App() {
         <label className="grid gap-1 text-sm text-slate-800">Storage used <progress id="bar" value="40" max="100" /></label>
         {/* quiet: already in the product's colour */}
         <label className="flex items-center gap-2 text-sm text-slate-800"><input id="own" type="checkbox" defaultChecked className="accent-emerald-600" /> Keep me signed in</label>
+        {/* quiet: a switch the page draws itself, with the native input kept for forms and hidden, as Base UI does */}
+        <label className="relative flex items-center gap-2 text-sm text-slate-800">
+          <span className="inline-flex h-5 w-9 items-center rounded-full bg-emerald-600 p-0.5"><span className="size-4 translate-x-4 rounded-full bg-white" /></span>
+          <input id="hidden-native" type="checkbox" defaultChecked aria-hidden="true" tabIndex={-1} style={{ position: 'absolute', width: 1, height: 1, margin: -1, padding: 0, border: 0, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' }} />
+          Send me reminders
+        </label>
         <div className="flex gap-3">
           <button type="submit" className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white">Save</button>
           <button type="button" className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white">Save and close</button>

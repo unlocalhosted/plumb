@@ -42,6 +42,14 @@ export function App() {
       <ul id="apart" className="grid w-56 gap-4">
         {actions.slice(0, 3).map((a) => <li key={a}><button className="w-full rounded-lg bg-slate-100 px-3 py-3 text-left text-sm text-slate-800">{a}</button></li>)}
       </ul>
+      {/* quiet: rows ruled by their own line, a link filling each; the pixel between two links is the divider */}
+      <ul id="ruled" className="w-56">
+        {actions.map((a) => <li key={a} className="border-t border-slate-200 first:border-t-0"><a href={`#${a}`} className="block py-2 text-sm text-slate-800">{a}</a></li>)}
+      </ul>
+      {/* quiet: questions, each a heading holding its button, set apart by space alone; not a menu */}
+      <div id="questions" className="grid w-56 gap-2">
+        {actions.slice(0, 3).map((a) => <div key={a}><h3><button className="w-full py-2 text-left text-sm text-slate-800">{a}?</button></h3></div>)}
+      </div>
 
       {/* scroll-chain, widened: a list in a popover, positioned out of the page's flow */}
       <div className="relative h-10">
