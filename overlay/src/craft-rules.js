@@ -3302,7 +3302,20 @@ export const scrollChain = {
       // an ancestor that scrolls and contains its own overscroll already stops the chain before the page
       if (n !== el && /^(?:auto|scroll)$/.test(facts.style(n).overflowY) && facts.style(n).overscrollBehaviorY !== 'auto') return [];
     }
-    if (!held) return [];
+    // or a side of the page: a column as tall as most of the window, with another column beside it. The hand rests
+    // in it as it would in a fixed panel, and at its end the page moves instead (found on a real app, 2026-11-26: a
+    // lesson's film-and-drawing column). A tall block with nothing beside it, a code block or a table, is the page's
+    // own reading flow, and chaining there is expected
+    if (!held) {
+      const r = el.getBoundingClientRect();
+      if (r.height < innerHeight * 0.6 || !el.parentElement) return [];
+      const beside = [...el.parentElement.children].some((k) => {
+        if (k === el) return false;
+        const b = k.getBoundingClientRect();
+        return b.width > 0 && Math.min(b.bottom, r.bottom) - Math.max(b.top, r.top) > r.height * 0.5 && (b.left >= r.right - 1 || b.right <= r.left + 1);
+      });
+      if (!beside) return [];
+    }
     return [{
       ...say(this.id, {}),
       key: this.id, text: utility(el, 'overflow-y') ?? utility(el, 'overflow') ?? 'overflow-y', props: ['overscroll-behavior'], value: 'auto', n: 0,

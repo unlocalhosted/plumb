@@ -6296,8 +6296,12 @@ into its own browser. Your app isn't changed.", then the findings.
   leaves alone a box given its height on purpose. The scroll check now counts a placed box as over the page only when
   it reaches outside the box it sits in, as a popover does. Both findings are gone on the real pages, and each proof
   page still catches its fault once.
-- **Still open:** two possible misses for `scroll-chain` (a side column filling the screen, a palette's list), not
-  confirmed.
+- **The two possible misses, measured:** neither was a miss. The lesson pages' side column is sized to the window and
+  never has anything to scroll (712 of 712px at 1280×800, the same at two other sizes). The palette's list exists
+  only after a click and sits in a dialog, which another check owns. The look did find a real gap: the scroll check's
+  own spec asks it to catch a scroll area filling a side of the page, and the code only knew about fixed and
+  absolute panels. It now catches a scroll column most of the window tall with another column beside it. The proof
+  page catches the new case, and the real pages gained no finding.
 - **Media hooks:** the Base UI switch beside its hidden input; the practice list with its 4px strips.
 
 ### 145. Scoring every check on algorecall (2026-11-26)

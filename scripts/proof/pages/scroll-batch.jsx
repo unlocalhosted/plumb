@@ -75,6 +75,14 @@ export function App() {
         </div>
       </div>
 
+      {/* scroll-chain: a column that fills a side of the page, beside another, in the page's flow */}
+      <section className="grid h-[80vh] grid-cols-2 gap-4">
+        <div id="side" className="min-h-0 overflow-y-auto rounded-lg bg-slate-50 p-3 text-sm text-slate-800">
+          {[...notes, ...notes].map((n, i) => <p key={i} className="py-1">{n}</p>)}
+        </div>
+        <div className="rounded-lg bg-slate-100 p-3 text-sm text-slate-800">The open note</div>
+      </section>
+
       {/* native-accent: browser-drawn controls beside green buttons */}
       <form className="grid gap-4">
         <label className="flex items-center gap-2 text-sm text-slate-800"><input id="box" type="checkbox" defaultChecked /> Email me the weekly summary</label>
