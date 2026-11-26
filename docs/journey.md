@@ -6397,6 +6397,28 @@ into its own browser. Your app isn't changed.", then the findings.
 - **Cost:** a page that never stops changing (a clock, a ticker, a looping placeholder) now waits out the full limit,
   up to 30 seconds, before it is read.
 
+### 155. A ledger of judged findings (2026-11-26)
+
+- **The itch:** every round today ended in "about 22 of 38 gone", counted by hand from my notes. Nothing kept which
+  finding was right or wrong, so the next change to the engine could quietly undo a fix or lose a real finding. The
+  owner: "Yes, build the ledger", once runs were steady (entry 154).
+- **What it is:** `bench/verdicts`. One file per app holds the app's pinned commit, how it was set up and run, how
+  deep each page was read, and one entry per judged place (a page, a check, a file and a line): what plumber said,
+  right, wrong or unsure, why, when and by whom. `compare.mjs` takes any run of the page check and says, for the
+  judged places on the pages it ran: right and still said, right and gone (it exits with 1: plumber stopped seeing
+  something real), wrong and still said, wrong and gone, unsure. Places nobody has judged go to a queue; a judged
+  queue merges back with `--merge`. A page read much shallower than when it was judged is named first.
+- **Where it sits:** beside the judged set (`bench/judged`, entries 151 and 152), which measures the other half:
+  what a person sees that plumber misses. This one measures what plumber says that a person would not stand behind.
+- **The first ledger:** cal.com, 62 places. The event types page judged in full (24 right, 7 unsure) and every place
+  of the five wrong kinds found in entry 153 across 18 pages (31 wrong). All judged by me, one reader.
+- **The proof:** the run from before entry 153's fixes shows all 31 wrong places still said. The steady run from
+  entry 154 shows all 24 right places kept, the 10 wrong places on its three pages gone, and 85 places queued for
+  judging.
+- **Not yet:** crafting-ui and algorecall have no ledger; their verdicts from entries 141 and 145 were kept as counts
+  per check, not per place, so they need judging again place by place. The 85 queued cal.com places are not judged.
+  Nothing runs the comparison by itself after an engine change.
+
 ### 142. The dial in the overlay (2026-11-26)
 
 - **The itch.** The owner asked how a person sees the page's other states: "we need to come up with some way like
