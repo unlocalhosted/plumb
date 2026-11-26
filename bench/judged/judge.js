@@ -9,6 +9,7 @@ import { SOFT_CSS, soften } from './soft.js';
 import { snapshot } from './snapshot.js';
 
 const judge = new URLSearchParams(location.search).get('judge') || 'owner';
+const VIEW = new URLSearchParams(location.search).has('view');
 const call = async (path, value) => {
   const res = await fetch(`/__judge/${path}?judge=${encodeURIComponent(judge)}`, value === undefined ? undefined
     : { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(value) });
@@ -75,6 +76,8 @@ class JudgeDesk extends HTMLElement {
   async connectedCallback() {
     const root = this.attachShadow({ mode: 'open' });
     const [tokens, loaded] = await Promise.all([fetch('/__judge/tokens.css').then((r) => r.text()), call('set')]);
+    // the list of sets, or one judge's marks shown read-only over the live site (review.js)
+    if (loaded.index || VIEW) { const { show } = await import('./review.js'); return show(this, root, tokens + SOFT_CSS + CSS, loaded, judge, soften); }
     this.set = loaded.set; this.judgements = loaded.judgements; this.scale = 1; this.sel = null; this.drag = null;
     // what makes the app ready to be judged (set.json, `ready`): its own switches for questions that come from how
     // the copy was set up, not from its design. The frame shares this origin, so a cookie set here is the app's too.
@@ -114,6 +117,7 @@ class JudgeDesk extends HTMLElement {
   }
 
   get screen() { return this.set.screens[this.i]; }
+  get width() { return this.screen?.width ?? this.set.width; } // a screen may be judged at its own width
   get now() { return this.judgements[this.screen.id]; }
   get step() { const j = this.now; return j.looksSkipped || j.looks.length >= 3 ? 'mark' : 'look'; }
 
@@ -124,7 +128,7 @@ class JudgeDesk extends HTMLElement {
     this.stage.hidden = over; this.root.querySelector('.end').hidden = !over;
     if (over) return this.draw();
     const s = this.screen;
-    this.judgements[s.id] ??= { screen: s.id, judge, path: s.path, width: this.set.width, startedAt: new Date().toISOString(), looks: [], looksSkipped: false, marks: [], done: false };
+    this.judgements[s.id] ??= { screen: s.id, judge, path: s.path, width: this.width, startedAt: new Date().toISOString(), looks: [], looksSkipped: false, marks: [], done: false };
     this.shownAt = null;
     this.frame.src = s.path;
     this.fit(); this.draw();
@@ -146,7 +150,7 @@ class JudgeDesk extends HTMLElement {
 
   fit() {
     if (!this.set) return;
-    const w = this.set.width, room = this.desk.clientWidth - 32, tall = this.desk.clientHeight - 32;
+    const w = this.width, room = this.desk.clientWidth - 32, tall = this.desk.clientHeight - 32;
     this.scale = Math.min(1, room / w);
     Object.assign(this.stage.style, { width: `${w}px`, height: `${Math.max(200, tall / this.scale)}px`, transform: `translateX(-50%) scale(${this.scale})` });
   }
@@ -188,7 +192,7 @@ class JudgeDesk extends HTMLElement {
     this.root.querySelector('.hint')?.remove();
     const tip = document.createElement('div'); tip.className = 'hint'; tip.setAttribute('role', 'status');
     tip.innerHTML = `Press <kbd>${this.now.looks.length + 1}</kbd> to put a look here. Hold <kbd>Space</kbd> to click the page.`;
-    tip.style.cssText = `left:${Math.max(8, Math.min(at.x - 126, this.set.width - 260))}px;top:${at.y + 24}px`;
+    tip.style.cssText = `left:${Math.max(8, Math.min(at.x - 126, this.width - 260))}px;top:${at.y + 24}px`;
     this.page.append(tip);
     clearTimeout(this.hintTimer); this.hintTimer = setTimeout(() => tip.remove(), 2600);
   }
@@ -262,7 +266,7 @@ class JudgeDesk extends HTMLElement {
 
   // the small card under a selected mark: what is off, how much it matters, or take the mark away
   note(m, focus) {
-    const win = this.frame.contentWindow, bottom = (win?.scrollY ?? 0) + (win?.innerHeight ?? 800), right = this.set.width;
+    const win = this.frame.contentWindow, bottom = (win?.scrollY ?? 0) + (win?.innerHeight ?? 800), right = this.width;
     const card = document.createElement('form'); card.className = 'note';
     const below = m.y + m.h + 10 + 110 < bottom;
     card.style.cssText = `left:${Math.max(8, Math.min(m.x, right - 288))}px;top:${below ? m.y + m.h + 10 : Math.max((win?.scrollY ?? 0) + 8, m.y - 120)}px`;

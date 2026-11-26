@@ -18,35 +18,41 @@
      "file": "dhrv-vid-home.jpg",
      "w": 1426,
      "h": 924,
-     "label": "Home, a frame from his own screen recording on 2026-10-19"
+     "label": "Home, a frame from his own screen recording on 2026-10-19",
+     "of": "his"
     },
     {
      "id": "blog",
      "file": "dhrv-vid-blog.jpg",
      "w": 1426,
      "h": 924,
-     "label": "The blog list in his recording, just after he pressed the post"
+     "label": "The blog list in his recording, just after he pressed the post",
+     "of": "his"
     },
     {
      "id": "menu",
      "file": "dhrv-vid-menu.jpg",
      "w": 1426,
      "h": 924,
-     "label": "The command menu in his recording"
+     "label": "The command menu in his recording",
+     "of": "his"
     },
     {
      "id": "crafts",
      "file": "dhrv-vid-crafts.jpg",
      "w": 1426,
      "h": 924,
-     "label": "The Crafts page in his recording"
+     "label": "The Crafts page in his recording",
+     "of": "his"
     },
     {
      "id": "now",
      "file": "dhrv-now.jpg",
      "w": 1440,
      "h": 900,
-     "label": "Home on 2026-11-26 (dark, because our browser asks for dark)"
+     "label": "Home on 2026-11-26 (dark, because our browser asks for dark)",
+     "of": "live",
+     "path": "/"
     }
    ],
    "points": [
@@ -164,28 +170,36 @@
      "file": "rauno-arc.jpg",
      "w": 1440,
      "h": 900,
-     "label": "Home as the web archive saved it on 2026-10-17, two days before the thread"
+     "label": "Home as the web archive saved it on 2026-10-17, two days before the thread",
+     "of": "archive",
+     "path": "/"
     },
     {
      "id": "craft",
      "file": "rauno-craft-arc.jpg",
      "w": 1440,
      "h": 900,
-     "label": "Craft, same archive day"
+     "label": "Craft, same archive day",
+     "of": "archive",
+     "path": "/craft"
     },
     {
      "id": "projects",
      "file": "rauno-projects-arc.jpg",
      "w": 1440,
      "h": 900,
-     "label": "Projects, same archive day"
+     "label": "Projects, same archive day",
+     "of": "archive",
+     "path": "/projects"
     },
     {
      "id": "notes",
      "file": "rauno-notes-arc.jpg",
      "w": 1440,
      "h": 900,
-     "label": "Field Notes, same archive day"
+     "label": "Field Notes, same archive day",
+     "of": "archive",
+     "path": "/notes"
     }
    ],
    "points": [
@@ -412,7 +426,9 @@
       2380,
       1440
      ],
-     "label": "First screen on 2026-11-26 at 2560 pixels wide, the width of the display he reviewed on"
+     "label": "First screen on 2026-11-26 at 2560 pixels wide, the width of the display he reviewed on",
+     "of": "live",
+     "path": "/"
     }
    ],
    "points": [
@@ -493,7 +509,9 @@
      "file": "samlimby-now.jpg",
      "w": 1440,
      "h": 900,
-     "label": "Home on 2026-11-26"
+     "label": "Home on 2026-11-26",
+     "of": "live",
+     "path": "/"
     }
    ],
    "points": [
@@ -566,14 +584,16 @@
      "file": "stefan-vid-viewer.jpg",
      "w": 1453,
      "h": 1080,
-     "label": "A project opened, a frame from his own screen recording on 2026-10-19"
+     "label": "A project opened, a frame from his own screen recording on 2026-10-19",
+     "of": "his"
     },
     {
      "id": "home",
      "file": "stefan-vid-home.jpg",
      "w": 1453,
      "h": 1080,
-     "label": "Home in the same recording"
+     "label": "Home in the same recording",
+     "of": "his"
     }
    ],
    "points": [
@@ -627,7 +647,9 @@
       720,
       1684
      ],
-     "label": "The whole home page on 2026-11-26"
+     "label": "The whole home page on 2026-11-26",
+     "of": "live",
+     "path": "/"
     }
    ],
    "points": [
@@ -726,14 +748,17 @@
      "file": "montek-rauno.jpg",
      "w": 2048,
      "h": 1174,
-     "label": "The picture Rauno attached: a project visual he found deeper in the site"
+     "label": "The picture Rauno attached: a project visual he found deeper in the site",
+     "of": "his"
     },
     {
      "id": "home",
      "file": "montek-now.jpg",
      "w": 1440,
      "h": 900,
-     "label": "Home on 2026-11-26, marked “Updated October 2026”"
+     "label": "Home on 2026-11-26, marked “Updated October 2026”",
+     "of": "live",
+     "path": "/"
     }
    ],
    "points": [
@@ -806,7 +831,9 @@
      "file": "shreyas-now.jpg",
      "w": 1440,
      "h": 900,
-     "label": "Home on 2026-11-26, after its opening animation has finished"
+     "label": "Home on 2026-11-26, after its opening animation has finished",
+     "of": "live",
+     "path": "/"
     }
    ],
    "points": [
@@ -904,14 +931,16 @@
      "file": "jscraik-vid-home.jpg",
      "w": 863,
      "h": 381,
-     "label": "Home, a frame from his own screen recording on 2026-10-19"
+     "label": "Home, a frame from his own screen recording on 2026-10-19",
+     "of": "his"
     },
     {
      "id": "nav",
      "file": "jscraik-nav-strip.jpg",
      "w": 1726,
      "h": 1820,
-     "label": "Only the menu, eight frames a second from his recording, read down the left column and then the right"
+     "label": "Only the menu, eight frames a second from his recording, read down the left column and then the right",
+     "of": "his"
     }
    ],
    "points": [
@@ -1026,7 +1055,9 @@
       760,
       680
      ],
-     "label": "Home on 2026-11-26"
+     "label": "Home on 2026-11-26",
+     "of": "live",
+     "path": "/"
     }
    ],
    "points": [
@@ -1063,14 +1094,17 @@
      "file": "jerry-now.jpg",
      "w": 1440,
      "h": 900,
-     "label": "Home on 2026-11-26"
+     "label": "Home on 2026-11-26",
+     "of": "live",
+     "path": "/"
     },
     {
      "id": "og",
      "file": "jerry-og.jpg",
      "w": 1200,
      "h": 630,
-     "label": "The picture shown when the site is shared, on 2026-11-26"
+     "label": "The picture shown when the site is shared, on 2026-11-26",
+     "of": "surface"
     }
    ],
    "points": [
@@ -1167,7 +1201,9 @@
      "file": "manish-now.jpg",
      "w": 1440,
      "h": 900,
-     "label": "Home on 2026-11-26, after the owner changed it"
+     "label": "Home on 2026-11-26, after the owner changed it",
+     "of": "live",
+     "path": "/"
     }
    ],
    "points": [
@@ -1223,7 +1259,9 @@
      "file": "veronezi-now.jpg",
      "w": 1440,
      "h": 900,
-     "label": "Home on 2026-11-26, after the owner changed it"
+     "label": "Home on 2026-11-26, after the owner changed it",
+     "of": "live",
+     "path": "/"
     }
    ],
    "points": [
@@ -1271,14 +1309,16 @@
      "file": "griep-vid-open.jpg",
      "w": 863,
      "h": 324,
-     "label": "A card’s “Learn more” opened, a frame from his own screen recording on 2026-10-19"
+     "label": "A card’s “Learn more” opened, a frame from his own screen recording on 2026-10-19",
+     "of": "his"
     },
     {
      "id": "closed",
      "file": "griep-vid-closed.jpg",
      "w": 863,
      "h": 324,
-     "label": "The same row before it is opened"
+     "label": "The same row before it is opened",
+     "of": "his"
     }
    ],
    "points": [
@@ -1341,7 +1381,9 @@
      "file": "memo-now.jpg",
      "w": 1440,
      "h": 900,
-     "label": "Home on 2026-11-26 (a still picture does not show the custom pointer)"
+     "label": "Home on 2026-11-26 (a still picture does not show the custom pointer)",
+     "of": "live",
+     "path": "/"
     }
    ],
    "points": [
@@ -1397,7 +1439,9 @@
      "file": "blvdmitry-now.jpg",
      "w": 1440,
      "h": 900,
-     "label": "Home on 2026-11-26"
+     "label": "Home on 2026-11-26",
+     "of": "live",
+     "path": "/"
     }
    ],
    "points": [
@@ -1471,14 +1515,17 @@
      "file": "gert-rauno.jpg",
      "w": 2048,
      "h": 886,
-     "label": "The picture Rauno attached: the hero headline with its text selected"
+     "label": "The picture Rauno attached: the hero headline with its text selected",
+     "of": "his"
     },
     {
      "id": "home",
      "file": "gert-now.jpg",
      "w": 1440,
      "h": 900,
-     "label": "First screen on 2026-11-26"
+     "label": "First screen on 2026-11-26",
+     "of": "live",
+     "path": "/"
     },
     {
      "id": "work",
@@ -1491,7 +1538,9 @@
       1140,
       1360
      ],
-     "label": "The first project further down the page, on 2026-11-26"
+     "label": "The first project further down the page, on 2026-11-26",
+     "of": "live",
+     "path": "/"
     }
    ],
    "points": [
@@ -1560,7 +1609,9 @@
       1140,
       960
      ],
-     "label": "The project cards on 2026-11-26"
+     "label": "The project cards on 2026-11-26",
+     "of": "live",
+     "path": "/"
     }
    ],
    "points": [
@@ -1620,7 +1671,9 @@
       60,
       520,
       1500
-     ]
+     ],
+     "of": "archive",
+     "path": "/"
     },
     {
      "id": "now",
@@ -1633,7 +1686,9 @@
       60,
       520,
       1590
-     ]
+     ],
+     "of": "live",
+     "path": "/"
     },
     {
      "id": "favicon",
@@ -1646,14 +1701,16 @@
       0,
       256,
       256
-     ]
+     ],
+     "of": "surface"
     },
     {
      "id": "og",
      "file": "shadcn-og.jpg",
      "w": 1200,
      "h": 630,
-     "label": "The picture shown when the site is shared"
+     "label": "The picture shown when the site is shared",
+     "of": "surface"
     }
    ],
    "points": [
@@ -1754,7 +1811,9 @@
       680,
       820
      ],
-     "label": "Home on 2026-11-26"
+     "label": "Home on 2026-11-26",
+     "of": "live",
+     "path": "/"
     }
    ],
    "points": [
@@ -1799,7 +1858,9 @@
      "file": "pdepablo-arc.jpg",
      "w": 1440,
      "h": 900,
-     "label": "Home as the web archive saved it on 2026-10-09, ten days before the review, after its opening sequence"
+     "label": "Home as the web archive saved it on 2026-10-09, ten days before the review, after its opening sequence",
+     "of": "archive",
+     "path": "/"
     }
    ],
    "points": [
@@ -1844,7 +1905,8 @@
      "file": "gurbinder-rauno.jpg",
      "w": 1336,
      "h": 204,
-     "label": "The picture Rauno attached: the introduction as it stood on 2026-10-19"
+     "label": "The picture Rauno attached: the introduction as it stood on 2026-10-19",
+     "of": "his"
     }
    ],
    "points": [
@@ -1882,7 +1944,9 @@
      "file": "clint-now.jpg",
      "w": 1440,
      "h": 900,
-     "label": "Home on 2026-11-26, after the owner’s changes"
+     "label": "Home on 2026-11-26, after the owner’s changes",
+     "of": "live",
+     "path": "/"
     }
    ],
    "points": [
@@ -1966,7 +2030,9 @@
      "file": "lucas-now.jpg",
      "w": 1440,
      "h": 900,
-     "label": "First screen on 2026-11-26"
+     "label": "First screen on 2026-11-26",
+     "of": "live",
+     "path": "/"
     }
    ],
    "points": [
@@ -2002,7 +2068,9 @@
       720,
       960
      ],
-     "label": "The projects part of the home page on 2026-11-26"
+     "label": "The projects part of the home page on 2026-11-26",
+     "of": "live",
+     "path": "/"
     }
    ],
    "points": [
@@ -2040,7 +2108,9 @@
      "file": "kyle-now.jpg",
      "w": 1440,
      "h": 900,
-     "label": "First screen on 2026-11-26"
+     "label": "First screen on 2026-11-26",
+     "of": "live",
+     "path": "/"
     }
    ],
    "points": [
@@ -2096,7 +2166,9 @@
      "file": "anders-now.jpg",
      "w": 1440,
      "h": 900,
-     "label": "Home on 2026-11-26, after its intro screen"
+     "label": "Home on 2026-11-26, after its intro screen",
+     "of": "live",
+     "path": "/"
     }
    ],
    "points": [
@@ -2141,7 +2213,9 @@
      "file": "kaeden-whim.jpg",
      "w": 1440,
      "h": 900,
-     "label": "A project page on 2026-11-26"
+     "label": "A project page on 2026-11-26",
+     "of": "live",
+     "path": "/projects/whim"
     }
    ],
    "points": [
@@ -2192,7 +2266,8 @@
       256,
       256
      ],
-     "label": "The favicon, drawn 16 times larger"
+     "label": "The favicon, drawn 16 times larger",
+     "of": "surface"
     },
     {
      "id": "home",
@@ -2205,7 +2280,9 @@
       720,
       900
      ],
-     "label": "Home on 2026-11-26"
+     "label": "Home on 2026-11-26",
+     "of": "live",
+     "path": "/"
     }
    ],
    "points": [
@@ -2276,7 +2353,9 @@
       680,
       600
      ],
-     "label": "The Writing list on the home page, 2026-11-26"
+     "label": "The Writing list on the home page, 2026-11-26",
+     "of": "live",
+     "path": "/"
     }
    ],
    "points": [
@@ -2320,7 +2399,9 @@
       1320,
       760
      ],
-     "label": "The top of the home page on 2026-11-26"
+     "label": "The top of the home page on 2026-11-26",
+     "of": "live",
+     "path": "/"
     },
     {
      "id": "praise",
@@ -2333,7 +2414,9 @@
       1320,
       900
      ],
-     "label": "The testimonials further down the same page"
+     "label": "The testimonials further down the same page",
+     "of": "live",
+     "path": "/"
     }
    ],
    "points": [
@@ -2415,7 +2498,9 @@
      "file": "praveen-now.jpg",
      "w": 1440,
      "h": 900,
-     "label": "Home on 2026-11-26"
+     "label": "Home on 2026-11-26",
+     "of": "live",
+     "path": "/"
     }
    ],
    "points": [
@@ -2488,7 +2573,9 @@
      "file": "antonsten-arc.jpg",
      "w": 1440,
      "h": 900,
-     "label": "Home as the web archive saved it on 2026-10-27, eight days after the review"
+     "label": "Home as the web archive saved it on 2026-10-27, eight days after the review",
+     "of": "archive",
+     "path": "/"
     }
    ],
    "points": [
@@ -2576,7 +2663,9 @@
      "file": "chandra-now.jpg",
      "w": 1440,
      "h": 900,
-     "label": "Home on 2026-11-26"
+     "label": "Home on 2026-11-26",
+     "of": "live",
+     "path": "/"
     },
     {
      "id": "foot",
@@ -2589,7 +2678,9 @@
       760,
       103
      ],
-     "label": "The footer of the same page"
+     "label": "The footer of the same page",
+     "of": "live",
+     "path": "/"
     }
    ],
    "points": [
@@ -2672,7 +2763,9 @@
      "file": "raymond-now.jpg",
      "w": 1440,
      "h": 900,
-     "label": "Home on 2026-11-26, after the owner changed it"
+     "label": "Home on 2026-11-26, after the owner changed it",
+     "of": "live",
+     "path": "/"
     }
    ],
    "points": [
@@ -2728,7 +2821,9 @@
      "file": "maxleiter-now.jpg",
      "w": 1440,
      "h": 900,
-     "label": "Home on 2026-11-26"
+     "label": "Home on 2026-11-26",
+     "of": "live",
+     "path": "/"
     }
    ],
    "points": [
@@ -2816,7 +2911,9 @@
      "file": "corentin-now.jpg",
      "w": 1440,
      "h": 900,
-     "label": "Home on 2026-11-26"
+     "label": "Home on 2026-11-26",
+     "of": "live",
+     "path": "/"
     }
    ],
    "points": [
@@ -2896,14 +2993,16 @@
      "file": "rizwana-rauno-1.jpg",
      "w": 2048,
      "h": 1596,
-     "label": "The picture Rauno attached: he drew a box round each block of content and wrote its size and proportions on it"
+     "label": "The picture Rauno attached: he drew a box round each block of content and wrote its size and proportions on it",
+     "of": "his"
     },
     {
      "id": "stars",
      "file": "rizwana-rauno-2.png",
      "w": 616,
      "h": 266,
-     "label": "His second picture: a testimonial with its five stars"
+     "label": "His second picture: a testimonial with its five stars",
+     "of": "his"
     },
     {
      "id": "page",
@@ -2916,7 +3015,9 @@
       820,
       960
      ],
-     "label": "The “Making” and “Hearing” sections as the web archive saved them on 2026-10-16, three days before the review"
+     "label": "The “Making” and “Hearing” sections as the web archive saved them on 2026-10-16, three days before the review",
+     "of": "archive",
+     "path": "/"
     }
    ],
    "points": [
@@ -3047,14 +3148,17 @@
      "file": "pedro-arc.jpg",
      "w": 1440,
      "h": 900,
-     "label": "Home as the web archive saved it on 2026-10-18, the day before the review"
+     "label": "Home as the web archive saved it on 2026-10-18, the day before the review",
+     "of": "archive",
+     "path": "/"
     },
     {
      "id": "phone",
      "file": "pedro-rauno.jpg",
      "w": 942,
      "h": 2048,
-     "label": "The picture Rauno attached: the same page on his phone, pulled past its end"
+     "label": "The picture Rauno attached: the same page on his phone, pulled past its end",
+     "of": "his"
     }
    ],
    "points": [
@@ -3196,28 +3300,32 @@
      "file": "shuding-rauno-1.jpg",
      "w": 942,
      "h": 2048,
-     "label": "Rauno’s first picture: the end of an article on his phone"
+     "label": "Rauno’s first picture: the end of an article on his phone",
+     "of": "his"
     },
     {
      "id": "code",
      "file": "shuding-rauno-2.jpg",
      "w": 1854,
      "h": 678,
-     "label": "His second picture: highlighted words in a code block, enlarged, with his red marks under the seams"
+     "label": "His second picture: highlighted words in a code block, enlarged, with his red marks under the seams",
+     "of": "his"
     },
     {
      "id": "bar",
      "file": "shuding-rauno-3.png",
      "w": 1346,
      "h": 192,
-     "label": "His third picture: the scrollbar under a code block"
+     "label": "His third picture: the scrollbar under a code block",
+     "of": "his"
     },
     {
      "id": "jump",
      "file": "shuding-vid-blank.jpg",
      "w": 1576,
      "h": 916,
-     "label": "A frame from his screen recording: the moment after pressing “about” from far down an article"
+     "label": "A frame from his screen recording: the moment after pressing “about” from far down an article",
+     "of": "his"
     }
    ],
    "points": [

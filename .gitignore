@@ -64,3 +64,4 @@ docs/films/*-draft/
 
 # harvests: screenshots of other people's sites and their posts word for word stay local
 /docs/research/harvests/*/local/
+/bench/judged/sets/rauno-*/

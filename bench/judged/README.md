@@ -6,13 +6,15 @@ missed, and what plumber flagged that a person would not flag.
 ## Judging
 
 1. Start the app you want judged (its own dev server).
-2. Start the judging server in front of it:
+2. Start the judging server over every set:
 
    ```bash
-   ~/.claude/bin/dev-server "$PWD/bench/judged" node serve.mjs sets/first
+   ~/.claude/bin/dev-server "$PWD/bench/judged" node serve.mjs sets
    ```
 
-3. Open `http://localhost:4420/__judge/`.
+3. Open `http://localhost:4420/__judge/` for the list of sets. Each set has its own address,
+   `http://<set>.localhost:4420/__judge/`, so two sets open in two tabs keep their own cookies and do not disturb
+   each other. (`node serve.mjs sets/calcom` serves that one set at `http://localhost:4420/__judge/`.)
 
 Each screen is the live app at a fixed width, with a layer over it.
 
@@ -26,6 +28,38 @@ Each screen is the live app at a fixed width, with a layer over it.
 
 Everything is saved as you go. Closing the tab loses nothing, and opening it again returns to the first screen that
 is not finished.
+
+## Seeing another judge's marks
+
+`http://<set>.localhost:4420/__judge/?judge=<name>&view=1` shows that judge's marks over the live site, read-only,
+with every point listed beside the page. The list of sets links to it.
+
+- A solid box is drawn where the point sits on today's page. A dashed box was placed from an older copy of the
+  page and may have moved. A point with no box is only in the list: it was made on the reviewer's own picture, or it
+  is about movement.
+- Choosing a point opens what the page shows, how the reviewer got there, where it belongs in plumber and what the
+  page is like today, and scrolls the page to its box.
+- Holding Space lets the pointer through, so a point about hover or motion can be tried where it happens.
+
+### A reviewer as a judge
+
+`from-reviews.mjs` turns a file of pinned reviews into sets, one per reviewed site, with the reviewer as the judge:
+
+```bash
+node bench/judged/from-reviews.mjs docs/research/harvests/raunofreiberg-portfolio-reviews/reviews.json rauno
+```
+
+Each pin on a picture of the live page becomes a box. Each box is tied to the nearest element with words (from the
+element list captured with the picture), and the review page moves the box with that element, because a page can
+lay out differently in another window. The sets it writes (`sets/rauno-*`) are ignored by git and made again from
+the reviews file.
+
+### A public site as the app
+
+A set's `app` may be a public site. The server asks the site for each page and passes it on from the set's own
+address. It drops two response headers on the way, the one that forbids framing and the one that lists allowed
+origins, because the page is now served from another origin and they no longer describe it. Nothing else is changed.
+A site behind a bot check will show that check; the server does not try to get past it.
 
 ## Rules that keep it a fair test
 

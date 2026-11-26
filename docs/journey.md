@@ -6832,9 +6832,18 @@ into its own browser. Your app isn't changed.", then the findings.
   this work started from, done by hand. Eight of his points are checks plumber already has. Thirteen ways of looking
   (a very wide screen, scrollbars always shown, text selected, a phone pulled past its end) produced about thirty of
   the points. Nineteen points were fixed by the sites' owners afterwards, so they are real before and after pairs.
-- **Not shown:** 53 points were not checked against the live page, most because they are about motion. The live
-  harness for those is not built. The sorting and every "how he got there" are our reading of one line and a page.
-  No check was written from any of it.
+- **Then, the same day: his points on the live sites.** The owner asked for them to be loaded into the judging page
+  as a second judge. `bench/judged/from-reviews.mjs` turns the reviews into 40 sets with `rauno` as the judge: 98
+  boxes on pages and 44 points with no place on today's page, which are listed beside it. The judging server now
+  serves every set at its own address and can stand in front of a public site. A read-only view shows a judge's
+  points over the live site, with Space to try a hover or a transition where it happens. All 40 sites answered
+  through the server. On one site the boxes sat about 100 pixels too high, because the page lays out differently in
+  a taller window than the one the pictures were taken in. Each box is now tied to an element with words near its
+  top and moves with it: on that site both boxes then landed exactly on the two cards (175,966 and 716,966). All 98
+  boxes are tied.
+- **Not shown:** 53 points were not checked against the live page, most because they are about motion; the live view
+  makes that possible and nobody has done it yet. Only five of the 40 sites were looked at in the live view. The
+  sorting and every "how he got there" are our reading of one line and a page. No check was written from any of it.
 - **Media hooks:** `local/annotated.html` (served at localhost:4421 while its small server runs): review 40, where
   his own picture has the boxes drawn on it; review 21, the headings before and after; review 10, the strip of menu
   frames showing the oval.
@@ -6843,8 +6852,8 @@ into its own browser. Your app isn't changed.", then the findings.
 ## Open gaps
 
 - Rauno's portfolio reviews ([entry 153](#153-an-experts-eye-on-forty-real-sites-raunos-portfolio-reviews-2026-11-26))
-  are read and pinned, but 53 of the 120 points were not checked on the live page, the live harness for his motion
-  points is not built, and none of his intuitions is a check yet. His points are not loaded into the judged set.
+  are read, pinned and loaded into the judging page as a second judge, but 53 of the 120 points were not checked on
+  the live page, only five sites were looked at in the live view, and none of his intuitions is a check yet.
 - The judged set has seven screens from one judge ([entry 152](#152-the-first-judged-set-seven-calcom-screens-one-mark-2026-11-26)).
   The comparison with plumber was done by hand once; no script scores it. The owner has not yet said which of
   plumber's findings on those screens they agree with. The marks are kept only on the laptop.
