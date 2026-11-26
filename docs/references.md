@@ -417,3 +417,13 @@ All free under the Unsplash License, hotlinked from images.unsplash.com as Unspl
   strips between menu rows, a tooltip cut off by the screen).
 - Used in: `docs/research/harvests/maybepratikk/tips.md`; the checks `craft/row-dead-zone`, `craft/tooltip-cut` and
   the widened `craft/scroll-chain`.
+
+## 2026-11-26 · CSS Protips (shared by the owner)
+- What: [allthingssmitty/css-protips](https://github.com/allthingssmitty/css-protips), Matt Smith's list of 34 CSS
+  tips (CC0).
+- Why: "no stop lets pick these ones up now", with the link: the next source of rules after gokhan's and Pratik's.
+- What we read from it: nine faults plumber could check today (a broken image, an empty box that still draws, a link
+  that looks like its sentence, a divider under the last row, a full-width box that sticks out, a soft icon, words
+  drawn by CSS, text sized by the window alone, blank lines as spacing); nine it already checks; two where plumber's
+  own check disagrees with the tip.
+- Used in: `docs/research/harvests/css-protips/tips.md`. Nothing built yet.
