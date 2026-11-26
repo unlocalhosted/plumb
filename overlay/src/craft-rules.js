@@ -98,7 +98,9 @@ const SIDE_RADIUS = /^(?:[trblse]|tl|tr|bl|br|ss|se|es|ee)(?:-|$)/;
 
 // Whether an element's corner can be seen at all: a fill, a border, a shadow, a clip, or replaced content.
 function cornerShows(el, s) {
-  if (REPLACED.has(el.localName)) return true;
+  // a picture, a video or a canvas paints to its corners; an SVG paints only its shapes, so it has a corner only when
+  // it is given a fill, a border or a clip like any box (below)
+  if (REPLACED.has(el.localName) && el.localName !== 'svg') return true;
   const bg = rgb(s.backgroundColor);
   if (bg && bg[3] > 0) return true;
   if (s.backgroundImage !== 'none') return true;
@@ -291,6 +293,9 @@ export const textOpacity = {
 export const halfPixel = {
   id: 'craft/half-pixel', family: 'craft', number: [37], owns: ['transform'], once: 'ancestor', reads: ['style', 'rect', 'text'],
   check({ el, facts }, theme) {
+    // a shape inside a drawing is placed in the drawing's own units and scaled with it: its fractions are the
+    // drawing's, and the drawing itself is what lands on pixels or not
+    if (el.ownerSVGElement) return [];
     const s = facts.style(el);
     const r = facts.rect(el);
     // the whole translation: the transform matrix plus the individual `translate` (Tailwind v4's -translate-x-1/2),
@@ -2618,7 +2623,7 @@ export const weightLevels = {
   id: 'craft/weight-levels', family: 'craft', number: [17], owns: ['font-weight'], once: 'ancestor', reads: ['style', 'text', 'census'],
   check({ el, facts }, theme) {
     const T = theme.spec(this.id);
-    if (!facts.text(el) || !facts.census) return [];
+    if (!facts.text(el) || !facts.census || el.closest('svg')) return [];
     const c = facts.census('weights');
     if (c.sample < T.sample || c.clusters.length <= 3) return [];
     const w = Math.round((parseInt(facts.style(el).fontWeight, 10) || 400) / 100) * 100;
@@ -2844,6 +2849,11 @@ export const overshoot = {
 
 // #50. An icon's stroke follows the weight of the words beside it, the way this app pairs them.
 const weightBand = (w) => ((parseInt(w, 10) || 400) >= 600 ? 'bold' : 'regular');
+// An icon set beside words is drawn at about their size; an svg more than twice their size is a drawing with a
+// caption (a pattern's glyph and its name). So is a small one with words in it or more than 16 shapes (a problem's
+// illustration shown at icon size): its strokes say nothing about how the app pairs icons with text
+const drawingBeside = (svg, host, facts) => (svg.clientWidth || facts.rect(svg).width) > 2 * (px(facts.style(host).fontSize) || 16)
+  || !!svg.querySelector('text, foreignObject') || svg.querySelectorAll('path, circle, rect, line, polyline, polygon, ellipse').length > 16;
 const strokePairs = (facts) => {
   const out = [];
   for (const el of facts.items) {
@@ -2851,7 +2861,7 @@ const strokePairs = (facts) => {
     const svg = facts.kids(el).find((k) => k.localName === 'svg');
     if (!svg) continue;
     const host = facts.text(el) ? el : facts.kids(el).find((k) => k !== svg && facts.text(k));
-    const w = host && facts.stroke(svg);
+    const w = host && !drawingBeside(svg, host, facts) && facts.stroke(svg);
     if (w) out.push({ el, svg, w, band: weightBand(facts.style(host).fontWeight) });
   }
   return out;
@@ -2871,7 +2881,7 @@ export const strokeWeight = {
         suggest: { kind: 'class', from: '', to: '[&>svg_*]:[vector-effect:non-scaling-stroke]', target: ':scope > svg *', why: 'the stroke the small icons have', sets: { vectorEffect: 'non-scaling-stroke' } } }];
     }
     const host = facts.text(el) ? el : facts.kids(el).find((k) => k !== svg && facts.text(k));
-    if (!host) return [];
+    if (!host || drawingBeside(svg, host, facts)) return [];
     // the app's own pairing, learnt once per pass: for each weight band, the stroke most of its icons use
     facts.strokes ??= strokePairs(facts);
     const band = weightBand(facts.style(host).fontWeight), same = facts.strokes.filter((p) => p.band === band);

@@ -6239,6 +6239,33 @@ into its own browser. Your app isn't changed.", then the findings.
   near-black and colours inside recreations of other apps.
 - **Note:** another session also numbered an entry 143 ("Other data: the first check"), written after this one's.
 
+### 146. The 17 new checks on a real app, and two of them fixed (2026-11-26)
+
+- **The itch:** the 17 checks added on 2026-11-26 had been proven only on test pages written for them. Nobody knew
+  how often they would be wrong on a real page.
+- **How we found it:** all 17 checks, with gestures on, over 84 of crafting-ui's 174 pages on the test server
+  (every page except 90 icon pages built from one template). That is 19,276 elements, and every finding was read
+  against the source. Full write-up: [real-app-run-2026-11-26.md](research/real-app-run-2026-11-26.md).
+- **What it found:** 33 findings from 10 places in the source. One place is right (a practice list whose rows sit 4px
+  apart, so the pointer hovers nothing between them), seven are wrong and two are arguable. Thirteen checks said
+  nothing, mostly because the app already does what they ask (its one carousel snaps, its viewport type sizes all
+  have rem limits, its links in sentences are underlined). Switching the 17 off changed no other check's findings,
+  apart from five unexplained differences on two animated pages.
+- **The system behind it:** each check read a page part as something it is not.
+  - The control check took the hidden native input that Base UI keeps for forms for the control a person sees. The
+    visible switch, checkbox and slider are drawn by the library.
+  - The menu check took a row's own 1px divider line for a gap between rows.
+  - The menu check also took a list of questions, set apart on purpose, for a menu.
+  - The empty-box check took screen-reader status lines for empty boxes. That was fixed during the run, in eff41067.
+- **The fix and the proof:** the control check now skips an input nobody can see. The menu check now judges only
+  lists of choices, and counts a row's own rule as part of the row. On the real pages, the three wrong control
+  findings and both wrong menu findings are gone, and the right one is still there. The proof pages carry the new
+  near misses, and still speak on their faults: the control check 3 times, the menu check once.
+- **Not fixed:** an empty line kept on purpose to stop a jump under the film (`empty-box`), and a demo's inner
+  scroll area read as laid over the page (`scroll-chain`). Both are arguable. Two possible misses for
+  `scroll-chain` are not confirmed.
+- **Media hooks:** the Base UI switch beside its hidden input; the practice list with its 4px strips.
+
 ### 145. Scoring every check on algorecall (2026-11-26)
 
 - **The itch:** the second half of the owner's question about how accurate the checks are. Algorecall had not been
@@ -6261,6 +6288,30 @@ into its own browser. Your app isn't changed.", then the findings.
   two columns of tracks read as two cards.
 - **Not fixed:** nothing changed in the checks. In the backlog.
 - **Media hooks:** the locked skill cards whose names read at contrast 0 (a real find); the 342-part hero drawing.
+
+### 147. Drawings are not the page (2026-11-26)
+
+- **The itch:** entry 145 found 13 of algorecall's 22 wrong findings had one cause: shapes and words inside SVG
+  drawings judged as if they were parts of the page. The owner: "Yes, fix it".
+- **The system behind it:** entry 143 taught the type checks that a drawing has its own units. Four more checks
+  still read a drawing's insides as page parts.
+- **What changed:** one rule, in four places. A drawing paints only its shapes, so its box has no corner to nest
+  unless it is given a fill, a border or a clip. A shape inside a drawing is placed in the drawing's units, so it is
+  not judged for landing between pixels; the drawing as a whole still is. Words inside a drawing (a bold number in a
+  problem's icon) don't count among the page's font weights. And an svg beside words is an icon only when it is
+  about their size, has no words of its own and has 16 shapes or fewer; a larger or detailed one (a pattern's glyph,
+  a problem's illustration shown small) doesn't set the "usual icon stroke".
+- **The proof:** algorecall's 16 pages again, then the three pages with stroke findings once more. 300 findings
+  became 290. Gone: all 4 corner findings on drawings, both pixel findings on glyph paths (the one real 1px line
+  that lands between pixels stayed), the 4 bold numbers in icons, and the dropdown's icon told it should be 0.5px.
+  11 of the 13 are gone.
+- **Still open:** the stroke check now learns a different "usual" stroke on each page (0.5px on the tree page, 1px
+  on curriculum, 1.3px on advanced frontend) and still flags the Mint button's icon at 1.3 to 1.9px. It may be a
+  real difference or a pool that still holds drawings; I can't tell without looking at the page. With the drawings'
+  words out of the weight count, the weight check's picture of each page changed; its 11 findings on page text were
+  there before and were not judged again.
+- **Note:** another session's uncommitted edits in the same file (a native input under a drawn control, rows of a
+  list) were left out of this commit.
 
 ### 142. The dial in the overlay (2026-11-26)
 
@@ -7985,7 +8036,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   `generator/shots/generate-craftingattention.png` (local).
 
 ## Open gaps
-- **Wrong notes on a real app.** Of 38 wrong findings on crafting-ui, 30 are fixed (entries 143 and 144), 2 were my misjudgement, 6 remain. On algorecall 22 of 153 read are wrong, 13 of them shapes inside SVG drawings judged as page parts ([entry 145](#145-scoring-every-check-on-algorecall-2026-11-26)). [Entry 141](#141-scoring-every-check-on-crafting-ui-2026-11-26), [entry 143](#143-fixing-four-causes-of-wrong-notes-2026-11-26), [entry 144](#144-the-last-five-kinds-of-wrong-note-2026-11-26)
+- **Wrong notes on a real app.** Of 38 wrong findings on crafting-ui, 30 are fixed (entries 143 and 144), 2 were my misjudgement, 6 remain. On algorecall 22 of 153 read were wrong; 11 of the 13 caused by SVG drawings are fixed ([entry 145](#145-scoring-every-check-on-algorecall-2026-11-26), [entry 147](#147-drawings-are-not-the-page-2026-11-26)). [Entry 141](#141-scoring-every-check-on-crafting-ui-2026-11-26), [entry 143](#143-fixing-four-causes-of-wrong-notes-2026-11-26), [entry 144](#144-the-last-five-kinds-of-wrong-note-2026-11-26)
 - **The footer's count is a recording.** It has to be recorded again (`node web/scripts/findings.mjs`, with the dev server up) whenever the homepage changes, and nothing enforces that yet. It was read at 1280px, in light, at rest ([entry](#87-the-footer-is-a-demo-on-our-own-faults-2026-11-22)).
 - **The release checks live outside the repo.** The width sweep, the drawing check and the script that plays the footer are one session's temporary files, so the next deploy starts without them.
 - **Docs can drift from the package again.** Nothing runs their commands at release. The homepage's live-editing clip is from an older overlay, and the overlay's gestures were checked in source, without driving them ([entry](#75-the-docs-said-what-an-older-plumber-did-2026-11-22)).

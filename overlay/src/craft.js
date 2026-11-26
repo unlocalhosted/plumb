@@ -158,7 +158,8 @@ export class Facts {
     for (const el of this.items) {
       if (!el.isConnected) continue;
       const st = this.style(el);
-      if (name === 'weights' && this.text(el)) add(Math.round((parseInt(st.fontWeight, 10) || 400) / 100) * 100, el, (a, b) => a === b);
+      // words inside a drawing belong to the drawing: they don't set the page's weights
+      if (name === 'weights' && this.text(el) && !el.closest('svg')) add(Math.round((parseInt(st.fontWeight, 10) || 400) / 100) * 100, el, (a, b) => a === b);
       else if (name === 'textColors' && this.text(el)) {
         const c0 = rgb(st.color);
         if (!c0) continue;
