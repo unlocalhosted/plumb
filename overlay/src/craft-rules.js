@@ -2854,15 +2854,26 @@ const weightBand = (w) => ((parseInt(w, 10) || 400) >= 600 ? 'bold' : 'regular')
 // illustration shown at icon size): its strokes say nothing about how the app pairs icons with text
 const drawingBeside = (svg, host, facts) => (svg.clientWidth || facts.rect(svg).width) > 2 * (px(facts.style(host).fontSize) || 16)
   || !!svg.querySelector('text, foreignObject') || svg.querySelectorAll('path, circle, rect, line, polyline, polygon, ellipse').length > 16;
+// Each kind of icon counts once: a pairing is a decision made where the icon is written, not each time a list draws it.
+// Counted per copy, one 7px lock on fifteen locked cards outvoted every other icon on algorecall's tree page and set
+// "the usual stroke" at 0.5px (2026-11-26). A kind is the icon (its class, or its first shape) at a size and a weight.
+const iconKind = (svg, w, band) => {
+  const shape = svg.querySelector('path, circle, rect, line, polyline, polygon, ellipse');
+  return `${svg.getAttribute('class') || shape?.getAttribute('d')?.slice(0, 40) || shape?.localName || ''}|${Math.round(svg.clientWidth || 0)}|${Math.round(w * 4)}|${band}`;
+};
 const strokePairs = (facts) => {
-  const out = [];
+  const out = [], seen = new Set();
   for (const el of facts.items) {
     if (!el.isConnected) continue;
     const svg = facts.kids(el).find((k) => k.localName === 'svg');
     if (!svg) continue;
     const host = facts.text(el) ? el : facts.kids(el).find((k) => k !== svg && facts.text(k));
     const w = host && !drawingBeside(svg, host, facts) && facts.stroke(svg);
-    if (w) out.push({ el, svg, w, band: weightBand(facts.style(host).fontWeight) });
+    if (!w) continue;
+    const band = weightBand(facts.style(host).fontWeight), kind = iconKind(svg, w, band);
+    if (seen.has(kind)) continue;
+    seen.add(kind);
+    out.push({ el, svg, w, band });
   }
   return out;
 };
