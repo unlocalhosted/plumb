@@ -50,7 +50,7 @@ function anchorFor(pin, els) {
   return best ? { tag: best.tag, text: best.text, dx: best.dx, dy: best.dy } : undefined;
 }
 
-let sets = 0, boxes = 0, loose = 0, tied = 0;
+let sets = 0, boxes = 0, loose = 0, tied = 0, scenes = 0;
 for (const review of data.reviews) {
   if (!review.site || !review.points?.length) continue;
   const name = `${judge}-${String(review.n).padStart(2, '0')}-${slug(review.site)}`;
@@ -66,6 +66,8 @@ for (const review of data.reviews) {
   for (const point of review.points) {
     const text = { ref: point.k, level: point.level, words: point.says, shows: point.shows, how: point.how, engine: point.engine, today: point.today ?? '', basis: point.basis, unseen: point.unseen ?? '', has: point.has ?? [], pair: point.pair ?? '' };
     // today's page first; the archive's copy only when no pin sits on today's page
+    // a point with a scene is shown as the reviewer met it, on the live page, and has no box
+    if (point.scene) { marks.get('home').push({ ...text, placed: false, scene: point.scene }); scenes++; continue; }
     const pins = (point.pins ?? []).filter((pin) => shots[pin.shot]?.path);
     const live = pins.filter((pin) => shots[pin.shot].of === 'live');
     const placed = live.length ? live : pins.filter((pin) => shots[pin.shot].of === 'archive');
@@ -87,11 +89,11 @@ for (const review of data.reviews) {
   await rm(dir, { recursive: true, force: true });
   await mkdir(join(dir, 'judgements'), { recursive: true });
   const origin = new URL(review.site).origin;
-  await writeFile(join(dir, 'set.json'), `${JSON.stringify({ name, title: review.who, app: origin, width: 1440, review: { judge, reply: `https://x.com/raunofreiberg/status/${review.reply}`, date: review.date, note: review.note ?? '' }, screens: [...screens.values()] }, null, 1)}\n`);
+  await writeFile(join(dir, 'set.json'), `${JSON.stringify({ name, title: review.who, app: origin, width: 1440, ...(review.ready ? { ready: review.ready } : {}), review: { judge, reply: `https://x.com/raunofreiberg/status/${review.reply}`, date: review.date, note: review.note ?? '' }, screens: [...screens.values()] }, null, 1)}\n`);
   for (const screen of screens.values()) {
     const list = marks.get(screen.id).map((m, i) => ({ n: i + 1, ...m }));
     await writeFile(join(dir, 'judgements', `${screen.id}.${judge}.json`), `${JSON.stringify({ screen: screen.id, judge, path: screen.path, width: screen.width ?? 1440, source: file, looks: [], looksSkipped: true, marks: list, done: true }, null, 1)}\n`);
   }
   sets++;
 }
-console.log(`${sets} sets for judge "${judge}": ${boxes} boxes on pages (${tied} tied to an element), ${loose} points with no place on today's page`);
+console.log(`${sets} sets for judge "${judge}": ${boxes} boxes on pages (${tied} tied to an element), ${scenes} points shown as scenes, ${loose} points with no place on today's page`);

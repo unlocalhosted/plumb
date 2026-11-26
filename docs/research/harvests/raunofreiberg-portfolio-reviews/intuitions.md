@@ -182,7 +182,7 @@ mostly about something else:
 - **A page that has changed since.** Seventeen boxes sit where a fault used to be.
 - **Something we never saw.** Twenty-nine boxes are our guess at where his sentence applies.
 
-What should replace the box is not built and not agreed. The proposal: each point is shown as he met it. The page is
+What replaces the box is built for one site, Sam Limby's (`scenes.py`), and the owner has agreed to that much. Each point is shown as he met it. The page is
 put in the state he was in. The mark is tied to the things by name, two of them when the point is a comparison. Where
 the page has changed, his view stands beside today's. Where we have not seen it, there is no mark, only his sentence
 and the words "not seen yet".

@@ -6921,13 +6921,36 @@ into its own browser. Your app isn't changed.", then the findings.
 - **Media hooks:** the review view of Sam Limby's site with boxes over the opening screen
   (`http://rauno-05-samlimby-com.localhost:4420/__judge/?judge=rauno&view=1`).
 
+### 155. One site redone as he met it: Sam Limby's three points (2026-11-26)
+
+- **The itch:** the owner on the boxes over the live sites: "i feel the annotation you gave to raunos point are not
+  accurate and depicting his thoughts really on the live site well". They agreed to one site redone before the rest.
+- **How we found it:** by using Sam Limby's site the way Rauno did. The pointer went onto the photo behind, and the
+  page was read every frame while it answered.
+- **The system behind it:** entry 154. One rectangle from one still was the mark for every kind of point. This site
+  showed two more causes: it opens with a five-second screen of the name, and it scrolls inside a box of its own, so
+  nothing tied to the window's scroll could follow it.
+- **What we chose:** a point carries a scene. It names the things the point is about, found on the live page and
+  followed as they move; the words that tie two of them together; what to do with your own hand; and things that
+  are not on the page. The set says how to reach the state he was in. For a point about a hover the page does not
+  replay anything: the pointer goes through and the reader does what he did.
+- **The fix and the proof:** his first point is now measured, not taken on his word. Under the pointer the photo
+  behind is drawn on top by the next frame, about 20 thousandths of a second later, and only then grows by about 5
+  percent over more than a second. His third point was wrong in our text: all four projects carry a lock, not the
+  first one, and each opens on a page that holds one password box. In the review view the two photos are outlined
+  and bracketed, the hover works through the layer, pressing a project opens the password page, and "Back to the
+  page" returns.
+- **Not done:** the other 39 sites still have boxes. The judging page's own marks still follow the window's scroll.
+- **Media hooks:** `http://rauno-05-samlimby-com.localhost:4420/__judge/?judge=rauno&view=1`, first point open, with
+  the pointer on the photo behind.
+
 ## Open gaps
 
 - Rauno's portfolio reviews ([entry 153](#153-an-experts-eye-on-forty-real-sites-raunos-portfolio-reviews-2026-11-26))
   are read, pinned and loaded into the judging page as a second judge. The audit
   ([entry 154](#154-the-audit-before-the-spec-what-was-seen-what-plumber-has-what-a-box-can-say-2026-11-26)) found
   that 53 of the 120 points rest on his sentence alone and that only 14 of the 98 boxes on live sites mark one clear
-  thing that is there today. What replaces the box is proposed and not agreed. None of his intuitions is a check, and
+  thing that is there today. One site is redone as scenes ([entry 155](#155-one-site-redone-as-he-met-it-sam-limbys-three-points-2026-11-26)); 39 still have boxes. None of his intuitions is a check, and
   no check of plumber's has been run on a page he reviewed.
 - Three of plumber's checks say the opposite of his advice on a page he reviewed (text hidden while a typeface
   loads, a picture far larger than it is drawn, a file path as decoration). Each needs one more reading before it

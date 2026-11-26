@@ -54,6 +54,21 @@ element list captured with the picture), and the review page moves the box with 
 lay out differently in another window. The sets it writes (`sets/rauno-*`) are ignored by git and made again from
 the reviews file.
 
+### A point shown as the reviewer met it
+
+A box from a still picture cannot show a point about a hover, a comparison, or a page that opens with an intro. Such
+a point carries a scene, and the review page draws the scene in place of a box:
+
+- `show`: the things the point is about, found on the live page by the site's own names and followed as they move
+- `join`: the words that tie the first two together, when the point compares them
+- `try`: what to do with your own hand. While the point is open, the pointer goes through to the site
+- `beside`: things that are not on the page, such as the tab icon, shown in the list
+
+A set can also say how to reach the state the reviewer was in: `ready.press` (a control to press once, such as
+"Skip intro") and `ready.until` (the page has arrived when this element can be seen). Scenes are written in the
+harvest's `scenes.py`, one site at a time, after the site has been used the way the reviewer used it. One site is
+done: Sam Limby's.
+
 ### A public site as the app
 
 A set's `app` may be a public site. The server asks the site for each page and passes it on from the set's own
@@ -117,6 +132,9 @@ mark is tied to elements by comparing boxes, so a mark leads to source lines.
 The judge is `owner` unless the address says otherwise: `/__judge/?judge=someone`.
 
 ## Missing so far
+
+- Marks made while judging follow the window's scroll. A site that scrolls inside a box of its own (Sam Limby's does)
+  leaves them behind. The review page's scenes follow the things themselves; the judging page does not yet.
 
 - It does not score plumber against the marks.
 - It judges one state of each screen. A menu opened with Space can be marked, but the saved screen is the page as it

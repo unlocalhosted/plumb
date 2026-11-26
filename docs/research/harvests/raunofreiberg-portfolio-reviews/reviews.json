@@ -610,10 +610,10 @@
      "k": "5.1",
      "level": "behaviour",
      "says": "Hovering the two photos in the hero feels abrupt. The one behind jumps in front at once, and that is not satisfying.",
-     "shows": "Two tilted photos overlap at the right of the hero, a smaller one behind and a larger one in front. By his report their order swaps on hover, at once.",
+     "shows": "Two tilted photos overlap in the hero, a smaller one behind and a larger one in front. Under the pointer the one behind is drawn on top by the very next frame, about 20 thousandths of a second later. Only then does it start to grow, by about 5 percent, and that takes more than a second to settle. So the order changes before anything has moved, and the movement that follows explains nothing.",
      "how": "Something coming forward is a physical event: it lifts, travels and settles. A photo that is suddenly on top has skipped the event. He felt the missing movement before he looked for the cause, then named the cause exactly, the stacking order changing with nothing in between.",
      "engine": "Behaviour: a change that cannot be eased, used where a movement is expected. Plumber already tries hovering things and reads what changes. It could say when a hover changes which element is on top while nothing moves or fades to carry it.",
-     "today": "The photos are still there. The hover was not tried again.",
+     "today": "Unchanged. Tried and timed on the live page on 2026-11-26.",
      "pins": [
       {
        "shot": "home",
@@ -623,9 +623,22 @@
        "h": 460
       }
      ],
-     "basis": "word",
-     "unseen": "The swap. We did not hover the photos.",
-     "has": []
+     "basis": "measured",
+     "has": [],
+     "scene": {
+      "show": [
+       {
+        "sel": ".home-hero__photo--portrait",
+        "name": "Behind"
+       },
+       {
+        "sel": ".home-hero__photo--secondary",
+        "name": "In front"
+       }
+      ],
+      "join": "change places under the pointer",
+      "try": "Move the pointer onto the photo behind, then away. Watch the moment it comes to the front."
+     }
     },
     {
      "k": "5.2",
@@ -644,16 +657,36 @@
       }
      ],
      "basis": "seen",
-     "has": []
+     "has": [],
+     "scene": {
+      "show": [
+       {
+        "sel": ".home-hero__photo--portrait",
+        "name": "Him, in a field"
+       },
+       {
+        "sel": ".home-hero__photo--secondary",
+        "name": "Him, in a street"
+       }
+      ],
+      "join": "the same person twice",
+      "beside": [
+       {
+        "src": "/icon.png",
+        "name": "The tab icon"
+       }
+      ]
+     },
+     "today": "Unchanged on 2026-11-26."
     },
     {
      "k": "5.3",
      "level": "content",
      "says": "The case studies are behind a password. He understands why, but a visitor without the password is left with a few screen recordings. Put something on the table for everyone else.",
-     "shows": "The first project title carries a lock icon, and the card under it plays a recording of the product. The written case study opens only with a password.",
+     "shows": "All four projects carry a lock beside their title. Each card plays a recording of the product, and hovering it says the case study is password protected. Pressing a card opens a page that holds one password box and two buttons.",
      "how": "He arrived as the visitor the page was not built for: someone without the key. From there the site has almost nothing to say. A page should be judged from its worst-equipped visitor too, the way an app is judged by its empty state.",
      "engine": "Content and flow: a list where the main items lead to a locked door. Plumber could follow the links and see that they end at a password form. Deciding that this leaves too little for the public is a judgement about content.",
-     "today": "The lock is still on the first project.",
+     "today": "Unchanged on 2026-11-26: four projects, four locks.",
      "pins": [
       {
        "shot": "home",
@@ -663,11 +696,25 @@
        "h": 48
       }
      ],
-     "basis": "seen",
-     "has": []
+     "basis": "measured",
+     "has": [],
+     "scene": {
+      "show": [
+       {
+        "sel": ".icon-project_card",
+        "all": true,
+        "name": "Locked"
+       }
+      ],
+      "try": "Press any of the four projects. Each one opens on a password box and nothing else."
+     }
     }
    ],
-   "note": "The archive copy from 2026-10-04 caught only an intro screen with a “Skip intro” link, so the pins are on today’s page."
+   "note": "Redone on 2026-11-26 by using the live site as he did. The site opens with a screen of the name that lasts about five seconds; this view skips it. The page scrolls inside a box of its own, which is why the earlier boxes did not follow it.",
+   "ready": {
+    "press": "Skip intro",
+    "until": ".home-hero__photo--secondary"
+   }
   },
   {
    "n": 6,
