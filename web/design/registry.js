@@ -58,6 +58,8 @@ export const GROUPS = [
       lede: 'A heading has hard-coded type and you want it on the right style, fast and sure. Four ways that let the page and plumber do the work instead of a panel of controls. Each runs on the same piece of someone’s app.' },
     { id: 'colour-ideas', hue: 'pink', toy: 'fill', name: 'Colour picker: three ideas', says: 'Decided: nearest first, with every colour by role (B with C). Now on Token pickers. Kept as the record.', ready: true,
       lede: 'Colour isn’t like the other pickers: no size to order by, many tokens in roles, and a light and a dark value each. A hard-coded colour stays the same in dark mode; a token follows it. Three ways to pick, on the same piece of someone’s app.' },
+    { id: 'realities', hue: 'sky', toy: 'size', name: 'Realities: three ways to show them', says: 'Your page under larger text, other data, right to left. Where it breaks, and how you see it. Three prototypes.', ready: true,
+      lede: 'Plumber opens your page under conditions nobody looked at and finds what does not hold up. How should you see that? Three ways, each live on the same invoices screen: a dial in the bar, a sheet of small pages, and a mark on the element.' },
     { id: 'in-use', hue: 'pink', toy: 'button', name: 'A button in use', says: 'Press plumber’s own buttons and see, frame by frame, what goes wrong and how to fix it.', ready: true,
       lede: 'A button is judged while it is used, not only at rest. Press one of plumber’s own buttons: when you let go, its filmstrip opens under it, with what went wrong and the fix.' },
   ], 'Ideas tried side by side before one was chosen, kept as the record.'],

@@ -6055,9 +6055,44 @@ into its own browser. Your app isn't changed.", then the findings.
   would see realities ("state of pages saved but user can cycle through them ?"); the direction written down is a
   dial cycled in the overlay, changing the live page where it can and showing a saved picture where it can't. Not
   designed yet.
+- **The dial, designed (owner: "Yes, design the dial"):** three prototypes on the design site, each live on the same
+  invoices screen and built from the overlay's own pieces: a dial in the bar, a sheet of small pages, and a mark on
+  the element you hold. The dial is the pick, with one thing taken from the third: a finding leads to its reality.
+  The first draw of the dial put names on all five stops and ran out of room for the words; the stops became toys
+  with a count, which is what the visual language asks for anyway. Media: `/design/realities`, the dial at larger
+  text with two things ringed in coral.
 - **Proof of the spec itself:** the six checks above are the first built to it. It is still a draft for the owner. The first use is the six checks from gokhan's tips
   (`docs/research/gkurt-css-tips.md`, reference logged 2026-11-26 in `docs/references.md`).
 - **Media hooks:** a docs example flipping between Broken and Fixed, beside the same check's finding on a real app.
+
+### 141. How often plumber is right, scored on a real app (2026-11-26)
+
+- **The itch:** the owner asked "how accurate our design laws are working for us?". Nobody knew. The checks are tied
+  to laws of UX (Fitts, proximity, similarity and others) by a table written once by hand, and the only scored run
+  was algorecall on 2026-11-15: 17 of 19 findings true, from 11 checks.
+- **How we found it:** every check, run with `plumber craft` from main on 17 of crafting-ui's pages on the test
+  server. 468 places from 71 checks. I read 183 of them against the app's source (all of a small check's places, up
+  to 12 of a big one's) and marked each right, wrong or unsure. One judge, me; nobody else checked the marks.
+- **What it found:** 117 right, 38 wrong, 28 unsure: 64% right, 75% of those that could be decided. By kind of
+  check: the HTML guide's checks 14 of 14, the owner's taste checks 29 of 34, accessibility and components 10 of 12,
+  craft checks 55 of 112. 42 of the 71 checks had nothing wrong.
+- **The laws:** checks tied to Fitts's law were right 4 of 4, cognitive load 5 of 7. Checks tied to proximity were
+  right 0 of 8, common region 2 of 7, Prägnanz 1 of 4, similarity 7 of 15. The checks that judge layout and
+  grouping are the weak ones.
+- **The system behind it:** most wrong notes come from four causes. (1) A check reads things it shouldn't judge as
+  text: words inside drawings and diagrams, whose sizes are the drawing's own units (line height 7 of 8 wrong,
+  letter spacing 3 of 4). (2) A check guesses a group from the boxes and guesses wrong: a column gutter compared
+  with row spacing, a hero's text and picture taken for two cards, a tinted box's padding read as misalignment.
+  (3) A check misses why a value was chosen: a progress bar that grows from zero, a phone mock-up's "9:41", a
+  fixed-width number column. (4) A counter's digits hidden by their window read as words on top of words.
+- **Also found:** the contrast check said 57 places, nearly all one cause (the faint grey token); 89 icons' "Replay"
+  buttons are one finding per line, which is right. The icons page never counted as read through. The workshop page
+  didn't load the overlay. Algorecall was not scored this time: each page took almost three minutes and the test
+  server ran low on memory, so the run was stopped after one page.
+- **Not fixed:** nothing changed in the checks. The proximity and common-region checks, line height and letter
+  spacing in drawings, and the wrong notes above are in the backlog.
+- **Media hooks:** a bar per law, right against wrong; the counter's hidden digits and the "33,554,400px corner" on
+  a circle as the two most telling wrong notes.
 
 ### 94. The launch film: learning from a video that doesn't explain itself (2026-11-25)
 

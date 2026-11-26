@@ -33,6 +33,7 @@ const LOAD = {
   pickers: () => import('./parts/pickers.js'),
   'text-ideas': () => import('./parts/text-ideas.js'),
   'colour-ideas': () => import('./parts/colour-ideas.js'),
+  realities: () => import('./parts/realities.js'),
   space: () => import('./parts/space.js'),
   motion: () => import('./parts/motion.js'),
   'change-motion': () => import('./parts/change-motion.js'),

@@ -67,6 +67,40 @@ A direction, not a design. The component has not been through the look and inter
   text"), and choosing it turns the dial there.
 - **Everything is put back.** Leaving a stop restores the page exactly, the way Break it does.
 
+### The design page (2026-11-26)
+
+Three prototypes, live on the same invoices screen, on the design site: `/design/realities`
+(`web/design/parts/realities.js`), drawn with the overlay's own tokens, cards, toy buttons and toys. They differ in
+kind, as the interaction principles ask:
+
+- **A. A dial in the bar.** The bar's second state. Five stops (as it is, larger text, other data, right to left,
+  pictures fail), each its toy and a count. ← and → step, a press picks, Esc goes back. The page changes in place and
+  what did not hold up is ringed in coral; pressing a ringed thing says what is wrong with it in the bar.
+- **B. A sheet of small pages.** Every reality drawn at once, small; picking one makes it the big one.
+- **C. On the element.** No dial. A thing that breaks somewhere carries the toy of that reality; hold it and the
+  page becomes that reality for as long as it is held.
+
+Picked, for the owner to confirm: **A, with C's way in** (a finding that belongs to a reality says so on its
+element, and choosing it turns the dial there). B opens a large thing over the page and hides small faults at a
+third of their size. C only works once you know which element to ask.
+
+The checklist, answered for A:
+
+| Question | Answer |
+|---|---|
+| The one question | Where does this page break, and what breaks there? Nothing on the dial is about anything else |
+| On real UI, with options to compare | An invoices screen; three options live on one page. One case only so far: not one page per reality |
+| The problem in plain words | "Larger text: 2 things don't hold up", then "This line stays at 13px. Everything around it grew." |
+| Each fact once, one loud thing | The count is on the stop and in the headline (twice; to settle). Coral is only on the page |
+| The choice on the element | The broken things are marked on the page, and pressed there. The dial never covers the page |
+| Small, nothing big opens | One row in the bar. B is the option that breaks this |
+| Click, arrows, Enter, Esc | Click, ← →, Esc work on one model. No drag (the stops have no order to drag through). Enter does nothing yet |
+| Feedback before the click | Each stop shows its count before you go to it |
+| One body, scaled, interruptible, reduced motion | The page's text size moves as one over 320ms and can be interrupted; reduced motion switches at once. The other realities cut, with no transition yet |
+
+Not done: the light scheme was not looked at; a phone width was not looked at; a fix taken while in a reality is
+not drawn; the count is said twice.
+
 Not known: whether a reality applied live reads the same as the headless one (larger text set from inside the page
 is a change to the root size, which is not the browser's own setting); how the dial sits with Break it, which is
 already one of these; what the dial looks like.
