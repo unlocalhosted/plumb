@@ -66,7 +66,9 @@
      "pins": [],
      "basis": "seen",
      "has": [],
-     "pair": "kind"
+     "pair": "kind",
+     "engine_case": false,
+     "engine_case_why_not": "The site turns our browser away."
     },
     {
      "k": "1.2",
@@ -87,7 +89,9 @@
      ],
      "basis": "seen",
      "unseen": "The 13px is an estimate from frames of his recording, not a reading of the page.",
-     "has": []
+     "has": [],
+     "engine_case": false,
+     "engine_case_why_not": "No longer on the page."
     },
     {
      "k": "1.3",
@@ -114,7 +118,9 @@
        "how": "near",
        "note": "Not tried on this page."
       }
-     ]
+     ],
+     "engine_case": false,
+     "engine_case_why_not": "The site turns our browser away."
     },
     {
      "k": "1.4",
@@ -135,7 +141,9 @@
      ],
      "basis": "word",
      "unseen": "Which links failed. His recording does not show it and we did not press them.",
-     "has": []
+     "has": [],
+     "engine_case": false,
+     "engine_case_why_not": "The site turns our browser away."
     },
     {
      "k": "1.5",
@@ -148,7 +156,9 @@
      "pins": [],
      "basis": "word",
      "unseen": "The flash. We did not watch the page arrive.",
-     "has": []
+     "has": [],
+     "engine_case": false,
+     "engine_case_why_not": "The site turns our browser away."
     },
     {
      "k": "1.6",
@@ -176,7 +186,9 @@
      ],
      "basis": "seen",
      "has": [],
-     "pair": "one-language"
+     "pair": "one-language",
+     "engine_case": false,
+     "engine_case_why_not": "The site turns our browser away."
     }
    ],
    "note": "The pins are on frames from Rauno’s own recording, so they show the site as he saw it. The site sits behind a check that turned our server’s browser away, so today’s picture comes from the browser pane."
@@ -238,7 +250,8 @@
      "basis": "word",
      "unseen": "The animation. We did not watch the page arrive, so which effect he means is our guess.",
      "has": [],
-     "pair": "kind"
+     "pair": "kind",
+     "engine_case": true
     },
     {
      "k": "3.2",
@@ -269,7 +282,8 @@
        "name": "More to the side, and no sign of it",
        "how": "near"
       }
-     ]
+     ],
+     "engine_case": true
     },
     {
      "k": "3.3",
@@ -289,7 +303,8 @@
      ],
      "basis": "measured",
      "has": [],
-     "pair": "kind"
+     "pair": "kind",
+     "engine_case": true
     },
     {
      "k": "3.4",
@@ -308,7 +323,9 @@
       }
      ],
      "basis": "measured",
-     "has": []
+     "has": [],
+     "engine_case": false,
+     "engine_case_why_not": "Advice about the work, not about the page."
     },
     {
      "k": "3.5",
@@ -347,7 +364,8 @@
        "how": "near",
        "note": "For a screen reader, not for the eye."
       }
-     ]
+     ],
+     "engine_case": true
     },
     {
      "k": "3.6",
@@ -374,7 +392,8 @@
      ],
      "basis": "measured",
      "has": [],
-     "pair": "alike-role"
+     "pair": "alike-role",
+     "engine_case": true
     },
     {
      "k": "3.7",
@@ -394,7 +413,8 @@
      ],
      "basis": "measured",
      "has": [],
-     "pair": "loud-important"
+     "pair": "loud-important",
+     "engine_case": true
     },
     {
      "k": "3.8",
@@ -421,7 +441,8 @@
      ],
      "basis": "measured",
      "has": [],
-     "pair": "alike-role"
+     "pair": "alike-role",
+     "engine_case": true
     },
     {
      "k": "3.9",
@@ -433,7 +454,8 @@
      "pins": [],
      "basis": "seen",
      "has": [],
-     "pair": "one-language"
+     "pair": "one-language",
+     "engine_case": true
     },
     {
      "k": "3.10",
@@ -453,7 +475,8 @@
      ],
      "basis": "seen",
      "has": [],
-     "pair": "regular"
+     "pair": "regular",
+     "engine_case": true
     },
     {
      "k": "3.11",
@@ -465,7 +488,9 @@
      "pins": [],
      "basis": "word",
      "unseen": "Nothing to see: it is a joke with no content.",
-     "has": []
+     "has": [],
+     "engine_case": false,
+     "engine_case_why_not": "Advice about the work, not about the page."
     },
     {
      "k": "3.12",
@@ -484,7 +509,9 @@
       }
      ],
      "basis": "measured",
-     "has": []
+     "has": [],
+     "engine_case": false,
+     "engine_case_why_not": "Advice about the work, not about the page."
     }
    ],
    "note": "He wrote this about his own site after a friend posted it as a joke, so each line is a rule he holds, stated without softening. The archive copy is from two days before."
@@ -534,7 +561,8 @@
      "basis": "word",
      "unseen": "The cut he saw. Today the row ends on the two lines at 2,560 wide. Whether the owner changed it or his window was another width is not known.",
      "has": [],
-     "pair": "enclosed-scope"
+     "pair": "enclosed-scope",
+     "engine_case": true
     },
     {
      "k": "4.2",
@@ -554,7 +582,8 @@
       }
      ],
      "basis": "measured",
-     "has": []
+     "has": [],
+     "engine_case": true
     },
     {
      "k": "4.3",
@@ -582,7 +611,8 @@
      ],
      "basis": "measured",
      "has": [],
-     "pair": "loud-important"
+     "pair": "loud-important",
+     "engine_case": true
     }
    ],
    "note": "What he saw in October could not be recovered for this site; the pins are on today’s page at his display width."
@@ -638,7 +668,23 @@
       ],
       "join": "change places under the pointer",
       "try": "Move the pointer onto the photo behind, then away. Watch the moment it comes to the front."
-     }
+     },
+     "case": {
+      "state": "After the opening screen, with the pointer moved onto the photo behind.",
+      "signal": "Under the pointer one thing comes to the front of another it overlaps. The order changes in the first frame, and its own movement takes about a second.",
+      "measured": "Stacking order 1 to 3 at 23 ms. Scale 1.00 to 1.05, still settling at 1,055 ms. Read every frame on the live page, 2026-11-26.",
+      "expect": {
+       "on": ".home-hero__photo--portrait",
+       "say": "Comes to the front at once, then moves. (Our wording, not his.)"
+      },
+      "insight": "A change of order between overlapping things has no in-between. Paired with a movement, it has to happen where the movement has carried the two clear of each other, or the eye sees a cut.",
+      "plumber": {
+       "ran": "2026-11-26",
+       "verdict": "not read",
+       "why": "The page check read no elements on this site, on the home page and on a project page. It judges only elements tied to the app’s own source, and a public site has none."
+      }
+     },
+     "engine_case": true
     },
     {
      "k": "5.2",
@@ -677,7 +723,9 @@
        }
       ]
      },
-     "today": "Unchanged on 2026-11-26."
+     "today": "Unchanged on 2026-11-26.",
+     "engine_case": false,
+     "engine_case_why_not": "Advice about the work, not about the page."
     },
     {
      "k": "5.3",
@@ -707,7 +755,9 @@
        }
       ],
       "try": "Press any of the four projects. Each one opens on a password box and nothing else."
-     }
+     },
+     "engine_case": false,
+     "engine_case_why_not": "Advice about the work, not about the page."
     }
    ],
    "note": "Redone on 2026-11-26 by using the live site as he did. The site opens with a screen of the name that lasts about five seconds; this view skips it. The page scrolls inside a box of its own, which is why the earlier boxes did not follow it.",
@@ -761,7 +811,8 @@
      ],
      "basis": "seen",
      "has": [],
-     "pair": "kind"
+     "pair": "kind",
+     "engine_case": true
     },
     {
      "k": "6.2",
@@ -786,7 +837,8 @@
        "how": "near",
        "note": "One case of the same reason: do not make people wait on motion."
       }
-     ]
+     ],
+     "engine_case": true
     }
    ],
    "note": "His recording is the evidence here. The web archive only has this site from May."
@@ -835,7 +887,8 @@
      ],
      "basis": "measured",
      "has": [],
-     "pair": "kind"
+     "pair": "kind",
+     "engine_case": true
     },
     {
      "k": "7.2",
@@ -863,7 +916,8 @@
      ],
      "basis": "measured",
      "has": [],
-     "pair": "loud-important"
+     "pair": "loud-important",
+     "engine_case": true
     },
     {
      "k": "7.3",
@@ -884,7 +938,8 @@
      ],
      "basis": "measured",
      "has": [],
-     "pair": "enclosed-scope"
+     "pair": "enclosed-scope",
+     "engine_case": true
     },
     {
      "k": "7.4",
@@ -916,7 +971,9 @@
        "name": "Too small to tap",
        "how": "near"
       }
-     ]
+     ],
+     "engine_case": false,
+     "engine_case_why_not": "No longer on the page."
     }
    ],
    "note": "The web archive has no copy of this site, so the pins are on today’s page."
@@ -965,7 +1022,8 @@
        "name": "Scrollbar always shown",
        "how": "same"
       }
-     ]
+     ],
+     "engine_case": true
     },
     {
      "k": "8.2",
@@ -986,7 +1044,9 @@
      ],
      "basis": "word",
      "unseen": "The page he saw could not be recovered. Only today’s page was read.",
-     "has": []
+     "has": [],
+     "engine_case": false,
+     "engine_case_why_not": "No longer on the page."
     },
     {
      "k": "8.3",
@@ -1014,7 +1074,9 @@
      ],
      "basis": "seen",
      "has": [],
-     "pair": "loud-important"
+     "pair": "loud-important",
+     "engine_case": false,
+     "engine_case_why_not": "Advice about the work, not about the page."
     }
    ],
    "note": "The web archive’s copy is from February and fails to load, so what he saw could not be pinned. Today’s page already shows his advice applied."
@@ -1056,7 +1118,8 @@
      ],
      "basis": "word",
      "unseen": "That the page scrolls during the opening. Not tried.",
-     "has": []
+     "has": [],
+     "engine_case": true
     },
     {
      "k": "9.2",
@@ -1077,7 +1140,8 @@
      ],
      "basis": "word",
      "unseen": "That the opening carries on after a scroll. Not tried.",
-     "has": []
+     "has": [],
+     "engine_case": true
     },
     {
      "k": "9.3",
@@ -1105,7 +1169,8 @@
      ],
      "basis": "word",
      "unseen": "The timing. We saw the two blocks, not when each one arrives.",
-     "has": []
+     "has": [],
+     "engine_case": true
     },
     {
      "k": "9.4",
@@ -1133,7 +1198,8 @@
        "how": "near",
        "note": "One element, not a change of page."
       }
-     ]
+     ],
+     "engine_case": true
     }
    ],
    "note": "All four points are about movement, so a still picture only shows where they happen. The web archive’s copy is from March 2025, an earlier design."
@@ -1189,7 +1255,8 @@
      ],
      "basis": "seen",
      "has": [],
-     "pair": "loud-important"
+     "pair": "loud-important",
+     "engine_case": true
     },
     {
      "k": "10.2",
@@ -1215,7 +1282,8 @@
       }
      ],
      "basis": "seen",
-     "has": []
+     "has": [],
+     "engine_case": true
     },
     {
      "k": "10.3",
@@ -1235,7 +1303,8 @@
      ],
      "basis": "seen",
      "has": [],
-     "pair": "alike-role"
+     "pair": "alike-role",
+     "engine_case": true
     },
     {
      "k": "10.4",
@@ -1261,7 +1330,8 @@
       }
      ],
      "basis": "seen",
-     "has": []
+     "has": [],
+     "engine_case": true
     }
    ],
    "note": "The person’s own post is gone. The site was identified from the name in Rauno’s recording and the address is inferred from the handle; it answers today but was not captured."
@@ -1308,7 +1378,9 @@
       }
      ],
      "basis": "seen",
-     "has": []
+     "has": [],
+     "engine_case": false,
+     "engine_case_why_not": "Advice about the work, not about the page."
     }
    ],
    "note": "Not a review. The owner answered “solid notes”."
@@ -1359,7 +1431,8 @@
      ],
      "basis": "measured",
      "has": [],
-     "pair": "one-language"
+     "pair": "one-language",
+     "engine_case": true
     },
     {
      "k": "12.2",
@@ -1386,7 +1459,8 @@
       }
      ],
      "basis": "measured",
-     "has": []
+     "has": [],
+     "engine_case": true
     },
     {
      "k": "12.3",
@@ -1414,7 +1488,8 @@
      ],
      "basis": "seen",
      "has": [],
-     "pair": "alike-role"
+     "pair": "alike-role",
+     "engine_case": true
     },
     {
      "k": "12.4",
@@ -1426,7 +1501,9 @@
      "pins": [],
      "basis": "word",
      "unseen": "Whether a drawing is kept or shared. Not checked.",
-     "has": []
+     "has": [],
+     "engine_case": false,
+     "engine_case_why_not": "Advice about the work, not about the page."
     }
    ],
    "note": "The web archive’s copy from 2026-10-12 shows a blank first screen, so the pins are on today’s page."
@@ -1470,7 +1547,9 @@
      "basis": "word",
      "unseen": "The page he saw could not be recovered. Only today’s page was read.",
      "has": [],
-     "pair": "loud-important"
+     "pair": "loud-important",
+     "engine_case": false,
+     "engine_case_why_not": "No longer on the page."
     },
     {
      "k": "13.2",
@@ -1492,7 +1571,9 @@
      "basis": "word",
      "unseen": "The page he saw could not be recovered. Only today’s page was read.",
      "has": [],
-     "pair": "regular"
+     "pair": "regular",
+     "engine_case": false,
+     "engine_case_why_not": "No longer on the page."
     }
    ],
    "note": "The owner said he would improve it, and today’s page shows both points answered. The web archive only has an earlier design from January, so the page he reviewed is not shown."
@@ -1534,7 +1615,9 @@
        "how": "same",
        "note": "Not tried on this page."
       }
-     ]
+     ],
+     "engine_case": false,
+     "engine_case_why_not": "No longer on the page."
     },
     {
      "k": "14.2",
@@ -1556,7 +1639,9 @@
      "basis": "word",
      "unseen": "The page he saw could not be recovered. Only today’s page was read.",
      "has": [],
-     "pair": "loud-important"
+     "pair": "loud-important",
+     "engine_case": false,
+     "engine_case_why_not": "Advice about the work, not about the page."
     }
    ],
    "note": "The web archive has no copy of this site. The owner called it great feedback, and today’s page shows both points answered, so it is the “after”."
@@ -1622,7 +1707,8 @@
        "how": "near",
        "note": "The keyboard, not the mouse wheel."
       }
-     ]
+     ],
+     "engine_case": true
     },
     {
      "k": "15.2",
@@ -1651,7 +1737,8 @@
      "basis": "seen",
      "unseen": "The 590 pixels is an estimate from his recording.",
      "has": [],
-     "pair": "near-belongs"
+     "pair": "near-belongs",
+     "engine_case": true
     }
    ],
    "note": "His recording is the evidence. The web archive only has this site from July 2025."
@@ -1694,7 +1781,8 @@
      ],
      "basis": "word",
      "unseen": "The pointer and the hover. A still shows neither and we did not hover.",
-     "has": []
+     "has": [],
+     "engine_case": true
     },
     {
      "k": "16.2",
@@ -1727,7 +1815,8 @@
        "name": "Skeleton is the wrong size",
        "how": "near"
       }
-     ]
+     ],
+     "engine_case": true
     }
    ],
    "note": "Both points need the live page. The web archive’s copy is from September."
@@ -1781,7 +1870,8 @@
        "name": "Selected tab changes size",
        "how": "near"
       }
-     ]
+     ],
+     "engine_case": true
     },
     {
      "k": "17.2",
@@ -1801,7 +1891,9 @@
       }
      ],
      "basis": "seen",
-     "has": []
+     "has": [],
+     "engine_case": false,
+     "engine_case_why_not": "Advice about the work, not about the page."
     },
     {
      "k": "17.3",
@@ -1823,7 +1915,8 @@
      "basis": "word",
      "unseen": "The list of articles under the third tab was not opened.",
      "has": [],
-     "pair": "alike-role"
+     "pair": "alike-role",
+     "engine_case": true
     }
    ],
    "note": "The web archive’s copy is from July, so the pins are on today’s page."
@@ -1896,7 +1989,9 @@
        "how": "near",
        "note": "Plumber’s check is for a box playing a button. His point is a button that should be a link."
       }
-     ]
+     ],
+     "engine_case": false,
+     "engine_case_why_not": "No longer on the page."
     },
     {
      "k": "18.2",
@@ -1923,7 +2018,8 @@
       }
      ],
      "basis": "seen",
-     "has": []
+     "has": [],
+     "engine_case": true
     }
    ],
    "note": "The web archive’s copy is from January. Today’s page shows his first point answered."
@@ -1985,7 +2081,8 @@
        "how": "near",
        "note": "The same neighbour as 18.1."
       }
-     ]
+     ],
+     "engine_case": true
     },
     {
      "k": "19.2",
@@ -2008,7 +2105,8 @@
        "name": "Shortcut opens slowly",
        "how": "near"
       }
-     ]
+     ],
+     "engine_case": true
     }
    ],
    "note": "Rauno attached the same picture as in his reply to Gert Tali. It shows Gert’s headline, so it is not repeated here."
@@ -2094,7 +2192,8 @@
      ],
      "basis": "measured",
      "has": [],
-     "pair": "one-language"
+     "pair": "one-language",
+     "engine_case": true
     },
     {
      "k": "21.2",
@@ -2115,7 +2214,8 @@
      ],
      "basis": "measured",
      "has": [],
-     "pair": "one-language"
+     "pair": "one-language",
+     "engine_case": true
     },
     {
      "k": "21.3",
@@ -2164,7 +2264,9 @@
        "note": "The reverse case: a link that looks like text. Nothing for text that looks like a link."
       }
      ],
-     "pair": "alike-role"
+     "pair": "alike-role",
+     "engine_case": false,
+     "engine_case_why_not": "No longer on the page."
     }
    ],
    "note": "The archive copy is from the day after his reply, and it still shows the underlined headings he describes, so it is taken as what he saw. Screenshots are drawn by a Linux browser at 1440 pixels wide; the site loads its own typefaces, so the letters match a Mac."
@@ -2221,7 +2323,8 @@
      "basis": "word",
      "unseen": "The other two pages. Only the home page was captured, so the button’s place on each page is his report.",
      "has": [],
-     "pair": "one-language"
+     "pair": "one-language",
+     "engine_case": true
     }
    ],
    "note": "The web archive has no copy of this site."
@@ -2272,7 +2375,9 @@
      "basis": "word",
      "unseen": "The opening sequence. We did not watch it.",
      "has": [],
-     "pair": "loud-important"
+     "pair": "loud-important",
+     "engine_case": false,
+     "engine_case_why_not": "Advice about the work, not about the page."
     }
    ],
    "note": "The opening sequence itself is not in a still picture. For the live harness."
@@ -2313,7 +2418,9 @@
       }
      ],
      "basis": "seen",
-     "has": []
+     "has": [],
+     "engine_case": false,
+     "engine_case_why_not": "Advice about the work, not about the page."
     }
    ],
    "note": "His picture is the evidence. The web archive’s copy is from May."
@@ -2356,7 +2463,9 @@
      ],
      "basis": "word",
      "unseen": "The greeting’s animation. The owner said he removed it.",
-     "has": []
+     "has": [],
+     "engine_case": false,
+     "engine_case_why_not": "No longer on the page."
     },
     {
      "k": "25.2",
@@ -2377,7 +2486,8 @@
      ],
      "basis": "word",
      "unseen": "How the bar’s items arrive.",
-     "has": []
+     "has": [],
+     "engine_case": true
     },
     {
      "k": "25.3",
@@ -2404,7 +2514,9 @@
        "name": "Border fights the shadow",
        "how": "same"
       }
-     ]
+     ],
+     "engine_case": false,
+     "engine_case_why_not": "No longer on the page."
     },
     {
      "k": "25.4",
@@ -2417,7 +2529,9 @@
      "pins": [],
      "basis": "word",
      "unseen": "The transition. The owner said he replaced it with a fade; we saw neither.",
-     "has": []
+     "has": [],
+     "engine_case": false,
+     "engine_case_why_not": "No longer on the page."
     }
    ],
    "note": "The owner reported back in the thread that he had dropped the greeting animation, blended borders and shadows, and replaced the busy transition with a fade. Today’s page is the “after”; the web archive has no copy of the “before”."
@@ -2452,7 +2566,8 @@
      "pins": [],
      "basis": "word",
      "unseen": "The entrances. We measured the page’s length, not its motion.",
-     "has": []
+     "has": [],
+     "engine_case": true
     }
    ],
    "note": "A point about movement over a whole page, so there is nothing to pin on a still. The web archive’s copy is from March."
@@ -2501,7 +2616,9 @@
      ],
      "basis": "word",
      "unseen": "The page he saw could not be recovered. Only today’s page was read.",
-     "has": []
+     "has": [],
+     "engine_case": false,
+     "engine_case_why_not": "Advice about the work, not about the page."
     }
    ],
    "note": "The web archive’s copy is from April, so the long list he saw is not shown."
@@ -2543,7 +2660,8 @@
       }
      ],
      "basis": "seen",
-     "has": []
+     "has": [],
+     "engine_case": true
     },
     {
      "k": "28.2",
@@ -2571,7 +2689,8 @@
        "how": "near",
        "note": "About a visitor’s setting, not about reading beside motion."
       }
-     ]
+     ],
+     "engine_case": true
     }
    ],
    "note": "The web archive’s copy is from August."
@@ -2621,7 +2740,8 @@
      ],
      "basis": "word",
      "unseen": "The intro and the blocked press. Not tried.",
-     "has": []
+     "has": [],
+     "engine_case": true
     }
    ],
    "note": "The web archive’s copy is from January 2025."
@@ -2678,7 +2798,9 @@
        "how": "near",
        "note": "One place under two names."
       }
-     ]
+     ],
+     "engine_case": false,
+     "engine_case_why_not": "No longer on the page."
     }
    ],
    "note": "The web archive’s copy is from November 2025."
@@ -2732,7 +2854,9 @@
      "pins": [],
      "basis": "seen",
      "has": [],
-     "pair": "kind"
+     "pair": "kind",
+     "engine_case": false,
+     "engine_case_why_not": "A joke, or no fault named."
     },
     {
      "k": "31.2",
@@ -2752,7 +2876,8 @@
       }
      ],
      "basis": "measured",
-     "has": []
+     "has": [],
+     "engine_case": true
     },
     {
      "k": "31.3",
@@ -2772,7 +2897,8 @@
       }
      ],
      "basis": "measured",
-     "has": []
+     "has": [],
+     "engine_case": true
     }
    ],
    "note": "The web archive’s nearest copy is from 2026-11-13, after the review, and the site looks the same."
@@ -2820,7 +2946,9 @@
       }
      ],
      "basis": "measured",
-     "has": []
+     "has": [],
+     "engine_case": false,
+     "engine_case_why_not": "Advice about the work, not about the page."
     }
    ],
    "note": "The web archive has no copy of this site."
@@ -2882,7 +3010,9 @@
       }
      ],
      "basis": "seen",
-     "has": []
+     "has": [],
+     "engine_case": false,
+     "engine_case_why_not": "Advice about the work, not about the page."
     },
     {
      "k": "33.2",
@@ -2910,7 +3040,8 @@
        "how": "near",
        "note": "No check asks for a pause control."
       }
-     ]
+     ],
+     "engine_case": true
     },
     {
      "k": "33.3",
@@ -2921,7 +3052,9 @@
      "engine": "Content: length of a quotation. Plumber could count the words in each. The limit is his.",
      "pins": [],
      "basis": "seen",
-     "has": []
+     "has": [],
+     "engine_case": false,
+     "engine_case_why_not": "Advice about the work, not about the page."
     },
     {
      "k": "33.4",
@@ -2941,7 +3074,9 @@
       }
      ],
      "basis": "measured",
-     "has": []
+     "has": [],
+     "engine_case": false,
+     "engine_case_why_not": "Advice about the work, not about the page."
     }
    ],
    "note": "The web archive has no copy of this site. The owner called the notes solid."
@@ -2985,7 +3120,9 @@
      "basis": "word",
      "unseen": "The coloured icons he saw. Today they are grey.",
      "has": [],
-     "pair": "loud-important"
+     "pair": "loud-important",
+     "engine_case": false,
+     "engine_case_why_not": "No longer on the page."
     },
     {
      "k": "34.2",
@@ -3012,7 +3149,8 @@
       }
      ],
      "basis": "seen",
-     "has": []
+     "has": [],
+     "engine_case": true
     },
     {
      "k": "34.3",
@@ -3026,7 +3164,8 @@
      "basis": "word",
      "unseen": "The blog. It was not captured.",
      "has": [],
-     "pair": "enclosed-scope"
+     "pair": "enclosed-scope",
+     "engine_case": true
     }
    ],
    "note": "The web archive’s copy is from August."
@@ -3076,7 +3215,8 @@
        "how": "opposite",
        "note": "Plumber flags hidden text. He asks for it here."
       }
-     ]
+     ],
+     "engine_case": true
     },
     {
      "k": "35.2",
@@ -3109,7 +3249,9 @@
        "name": "Subtitle says it again",
        "how": "same"
       }
-     ]
+     ],
+     "engine_case": false,
+     "engine_case_why_not": "Advice about the work, not about the page."
     },
     {
      "k": "35.3",
@@ -3137,7 +3279,8 @@
      ],
      "basis": "measured",
      "has": [],
-     "pair": "regular"
+     "pair": "regular",
+     "engine_case": true
     }
    ],
    "note": "The archive copy is from just after the review and matches what he describes."
@@ -3194,7 +3337,8 @@
        "how": "near"
       }
      ],
-     "pair": "kind"
+     "pair": "kind",
+     "engine_case": true
     },
     {
      "k": "36.2",
@@ -3215,7 +3359,8 @@
      ],
      "basis": "seen",
      "unseen": "What he saw on his Mac. Our capture is from a Linux browser.",
-     "has": []
+     "has": [],
+     "engine_case": true
     },
     {
      "k": "36.3",
@@ -3242,7 +3387,8 @@
       }
      ],
      "basis": "seen",
-     "has": []
+     "has": [],
+     "engine_case": true
     },
     {
      "k": "36.4",
@@ -3256,7 +3402,8 @@
      "basis": "word",
      "unseen": "The writing page. It did not load for our capture.",
      "has": [],
-     "pair": "loud-important"
+     "pair": "loud-important",
+     "engine_case": true
     }
    ],
    "note": "The web archive’s copy is from August. The writing page did not load for our capture."
@@ -3299,7 +3446,9 @@
      ],
      "basis": "word",
      "unseen": "The page he saw could not be recovered. Only today’s page was read.",
-     "has": []
+     "has": [],
+     "engine_case": false,
+     "engine_case_why_not": "No longer on the page."
     },
     {
      "k": "37.2",
@@ -3321,7 +3470,9 @@
      "basis": "word",
      "unseen": "The page he saw could not be recovered. Only today’s page was read.",
      "has": [],
-     "pair": "loud-important"
+     "pair": "loud-important",
+     "engine_case": false,
+     "engine_case_why_not": "Advice about the work, not about the page."
     }
    ],
    "note": "The web archive has no copy of this site. Today’s page shows both points answered."
@@ -3371,7 +3522,8 @@
        "how": "near"
       }
      ],
-     "pair": "kind"
+     "pair": "kind",
+     "engine_case": true
     },
     {
      "k": "38.2",
@@ -3399,7 +3551,8 @@
      ],
      "basis": "seen",
      "has": [],
-     "pair": "alike-role"
+     "pair": "alike-role",
+     "engine_case": true
     },
     {
      "k": "38.3",
@@ -3444,7 +3597,8 @@
        "note": "Plumber calls a file path used as decoration a template habit. He asks for this page’s desktop idea to be carried further, not removed. Not tried on this page."
       }
      ],
-     "pair": "one-language"
+     "pair": "one-language",
+     "engine_case": true
     }
    ],
    "note": "The web archive has no copy of this site."
@@ -3495,7 +3649,8 @@
      "basis": "word",
      "unseen": "That the cube turns and ignores the pointer. Not tried.",
      "has": [],
-     "pair": "linked-related"
+     "pair": "linked-related",
+     "engine_case": true
     },
     {
      "k": "39.2",
@@ -3508,7 +3663,8 @@
      "pins": [],
      "basis": "word",
      "unseen": "Project pages. Not captured.",
-     "has": []
+     "has": [],
+     "engine_case": true
     },
     {
      "k": "39.3",
@@ -3542,7 +3698,8 @@
        "name": "Words lose their ground",
        "how": "near"
       }
-     ]
+     ],
+     "engine_case": true
     }
    ],
    "note": "The web archive’s copy is from July."
@@ -3628,7 +3785,8 @@
        "note": "Inside cards in a row only."
       }
      ],
-     "pair": "regular"
+     "pair": "regular",
+     "engine_case": true
     },
     {
      "k": "40.2",
@@ -3649,7 +3807,8 @@
      ],
      "basis": "measured",
      "has": [],
-     "pair": "loud-important"
+     "pair": "loud-important",
+     "engine_case": true
     },
     {
      "k": "40.3",
@@ -3677,7 +3836,9 @@
        "note": "The same reading, the opposite fix."
       }
      ],
-     "pair": "loud-important"
+     "pair": "loud-important",
+     "engine_case": false,
+     "engine_case_why_not": "Advice about the work, not about the page."
     },
     {
      "k": "40.4",
@@ -3699,7 +3860,8 @@
      "basis": "word",
      "unseen": "The hover. Not tried.",
      "has": [],
-     "pair": "alike-role"
+     "pair": "alike-role",
+     "engine_case": true
     },
     {
      "k": "40.5",
@@ -3727,7 +3889,8 @@
      ],
      "basis": "seen",
      "has": [],
-     "pair": "kind"
+     "pair": "kind",
+     "engine_case": true
     }
    ],
    "note": "He wrote that he was very tired, then drew the boxes himself. The web archive’s copy is from three days before, so the measurements are of the page he saw."
@@ -3785,7 +3948,8 @@
      ],
      "basis": "word",
      "unseen": "The reset. We did not leave the page and come back.",
-     "has": []
+     "has": [],
+     "engine_case": true
     },
     {
      "k": "41.2",
@@ -3812,7 +3976,8 @@
        "name": "Hidden, but takes focus",
        "how": "near"
       }
-     ]
+     ],
+     "engine_case": true
     },
     {
      "k": "41.3",
@@ -3845,7 +4010,8 @@
        "name": "Dark page, light browser parts",
        "how": "near"
       }
-     ]
+     ],
+     "engine_case": true
     },
     {
      "k": "41.4",
@@ -3865,7 +4031,8 @@
       }
      ],
      "basis": "seen",
-     "has": []
+     "has": [],
+     "engine_case": true
     },
     {
      "k": "41.5",
@@ -3887,7 +4054,9 @@
      "basis": "seen",
      "unseen": "Whether any pill leads to a page. We read the words, we did not press each pill.",
      "has": [],
-     "pair": "linked-related"
+     "pair": "linked-related",
+     "engine_case": false,
+     "engine_case_why_not": "Advice about the work, not about the page."
     },
     {
      "k": "41.6",
@@ -3908,7 +4077,8 @@
      ],
      "basis": "word",
      "unseen": "The end of the game. We did not play to the fifteenth reveal.",
-     "has": []
+     "has": [],
+     "engine_case": true
     }
    ],
    "note": "The archive copy is from the day before the review. Four of the six points are about a phone or the keyboard, which a desktop picture cannot show; his own phone picture covers two of them."
@@ -3973,7 +4143,8 @@
       }
      ],
      "basis": "seen",
-     "has": []
+     "has": [],
+     "engine_case": true
     },
     {
      "k": "42.2",
@@ -4007,7 +4178,8 @@
       }
      ],
      "basis": "seen",
-     "has": []
+     "has": [],
+     "engine_case": true
     },
     {
      "k": "42.3",
@@ -4027,7 +4199,8 @@
       }
      ],
      "basis": "seen",
-     "has": []
+     "has": [],
+     "engine_case": true
     },
     {
      "k": "42.4",
@@ -4054,7 +4227,8 @@
       }
      ],
      "basis": "seen",
-     "has": []
+     "has": [],
+     "engine_case": true
     },
     {
      "k": "42.5",
@@ -4081,7 +4255,8 @@
        "note": "Inside one card."
       }
      ],
-     "pair": "regular"
+     "pair": "regular",
+     "engine_case": true
     },
     {
      "k": "42.6",
@@ -4100,7 +4275,8 @@
        "name": "Picture didn’t load",
        "how": "same"
       }
-     ]
+     ],
+     "engine_case": true
     }
    ],
    "note": "He opened with “not making it easy”: the site is good and the notes are fine points. The web archive’s copy is from three days before."

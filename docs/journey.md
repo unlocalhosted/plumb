@@ -6955,8 +6955,30 @@ into its own browser. Your app isn't changed.", then the findings.
 - **Media hooks:** `http://rauno-05-samlimby-com.localhost:4420/__judge/?judge=rauno&view=1`, first point open, with
   the pointer on the photo behind.
 
+### 156. Plumber reads nothing on a public site (2026-11-26)
+
+- **The itch:** the owner, asked whether redoing all forty sites would help the engine: "i only want which contribute
+  to engine and insight extraction". The plan was to keep the points that can become test cases, measure each, and
+  run plumber on those pages once to count what it catches.
+- **How we found it:** the first run. `plumber craft` on Sam Limby's home page and on one of his project pages, through
+  the judging server: 0 elements read, 0 findings, both times.
+- **The system behind it:** plumber's page check judges only elements tied to the app's own source, because a finding
+  is supposed to end in a line to fix. A public site has no source, so nothing is handed to the checks. The comment in
+  the reader says so: an element outside the project's source "has no line to fix, so it is left be". On the public
+  address itself the check did not even start: it could not load itself into the page.
+- **What it means:** none of his thirty live sites can be scored by plumber as it stands. The cases still hold as
+  measured signals, and the first is written: the photo that comes to the front in one frame and then moves for a
+  second (point 5.1, `case` in `reviews.json`).
+- **The count:** 79 of his 120 points can feed the engine, on 30 sites. Dropped: 21 that are advice about the person's
+  work, 14 no longer on the page, 5 on a site that turns our browser away, 1 with no fault named. Of the 79, 35 are
+  about behaviour, 29 about shape, 15 about craft detail; 32 still rest on his sentence alone.
+- **Open:** whether plumber gets a way to judge a page it has no source for. Not decided.
+
 ## Open gaps
 
+- Plumber's page check reads nothing on a public site, because it judges only elements tied to an app's source
+  ([entry 156](#156-plumber-reads-nothing-on-a-public-site-2026-11-26)). Until it can, an expert's review of a live
+  site cannot be scored against it.
 - Rauno's portfolio reviews ([entry 153](#153-an-experts-eye-on-forty-real-sites-raunos-portfolio-reviews-2026-11-26))
   are read, pinned and loaded into the judging page as a second judge. The audit
   ([entry 154](#154-the-audit-before-the-spec-what-was-seen-what-plumber-has-what-a-box-can-say-2026-11-26)) found
