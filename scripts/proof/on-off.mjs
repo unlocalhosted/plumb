@@ -8,11 +8,9 @@
 //   --json     print the result as JSON
 //
 // Needs a built dist (npm run build). Exit code 1 when another check's findings differ or anything threw.
-import { cp, rm } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { repo, servePage } from './serve.mjs';
 
-const repo = fileURLToPath(new URL('../../', import.meta.url));
 const args = process.argv.slice(2);
 const flag = (name) => args.includes(`--${name}`);
 const value = (name) => { const i = args.indexOf(`--${name}`); return i < 0 ? null : args[i + 1]; };
@@ -25,23 +23,6 @@ if (!rules.length || (!value('url') && !value('page'))) {
 }
 
 const { craftRun } = await import(join(repo, 'dist/craft-run.js'));
-
-// a throwaway app drawn from one file, served with plumber's own plugin (as bench/tells/run.mjs does). Never
-// git-ignored: plumber finds an app's files through git, and an ignored folder reads as an app with no source
-async function servePage(file) {
-  const { createServer } = await import('vite');
-  const { default: tailwindcss } = await import('@tailwindcss/vite');
-  const { plumb } = await import('@unlocalhosted/react-plumber/vite');
-  const root = join(repo, 'fixtures/.proof-app');
-  await rm(root, { recursive: true, force: true });
-  await cp(join(repo, 'overlay/demo/src'), join(root, 'src'), { recursive: true });
-  await cp(join(repo, 'overlay/demo/index.html'), join(root, 'index.html'));
-  await cp(resolve(file), join(root, 'src/App.jsx'));
-  const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [tailwindcss(), plumb({ watch: false })],
-    oxc: { jsx: { runtime: 'automatic', development: true } }, logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
-  await server.listen();
-  return { url: `http://127.0.0.1:${server.httpServer.address().port}/`, root, close: async () => { await server.close(); await rm(root, { recursive: true, force: true }); } };
-}
 
 // where a finding is, and what it says. Two findings with the same place are the same finding; what it says is
 // compared apart, so a changed suggestion is told from a finding that came or went.

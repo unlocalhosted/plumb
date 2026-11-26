@@ -5966,6 +5966,16 @@ into its own browser. Your app isn't changed.", then the findings.
   switching off the faded-button check brought back the general contrast finding it quiets ("Contrast is 24 on the
   APCA scale at 14px"), and the run reported that one difference. On the sloppy-screens page (108 elements, 74
   findings) switching off the em-dash check changed nothing else and no check threw. Not run on a real app yet.
+- **The second proof tool (owner: "Fix and undo run"):** `scripts/proof/fix-undo.mjs` takes every fix a page offers
+  through the commands an agent uses, one at a time, and for each asks: is its finding gone, did anything new
+  appear, is the computed style what the fix said, did any box outside it move, does taking it twice change nothing,
+  does undo put the file back exactly, and does taking it again write the same bytes. Then it takes back the oldest
+  under newer ones, tries an undo after a hand edit, and undoes everything newest first. Proof, on a control page
+  with five fixes in one file: all five cleared, no box outside moved, every undo put the file back exactly, the
+  oldest was refused with nothing written ("changed since this apply, so nothing was undone"), the hand edit was
+  refused, and at the end the file and the six findings were as at the start. It also found something: after the
+  fix that keeps room for a scrollbar, a second finding appears on the same list. Whether the fix causes it or it was
+  hidden under the first is not known yet.
 - **Proof of the spec itself:** none yet. It is a draft for the owner to read. The first use is the six checks from gokhan's tips
   (`docs/research/gkurt-css-tips.md`, reference logged 2026-11-26 in `docs/references.md`).
 - **Media hooks:** a docs example flipping between Broken and Fixed, beside the same check's finding on a real app.

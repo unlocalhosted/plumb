@@ -288,6 +288,13 @@ Checks from a guide or a list are sorted first and built together, ten or more a
   on and off, prints every other check's finding that came, went or changed, and counts the errors checks threw.
   Tried on one control page, where switching off the faded-button check brought back the general contrast finding it
   quiets. Not yet run on a real app, and not yet run with hover, width and gesture states.
+- Built 2026-11-26: the fix and undo run (`scripts/proof/fix-undo.mjs`), through the same commands an agent uses.
+  For each fix: cleared, what it raised, whether it landed, what moved, twice is once, undo straight away, and taken
+  again. Then: rest, the oldest taken back under newer ones, undo after a hand edit, and everything taken back.
+  Tried on one control page with five fixes in one file. Every undo claim held there. One fix raised another
+  finding (see the backlog). Open: it cannot tell a finding a fix caused from one that was folded under the fixed
+  finding; it runs only on a throwaway page, since it writes to source; a long style value is not judged for
+  landing; it does not cover undo after a restart, past the end of history, or from the page.
 - Which of the other proofs in section 6 plumber can already run. The engine tries a fix against its own check and against
   higher-ranked checks. I have not found a run that compares findings with a check on and off, one that takes every
   fix until the page rests, or one that measures what moved. Those are likely new tools, and they come before the
