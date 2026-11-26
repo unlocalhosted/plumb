@@ -6879,11 +6879,59 @@ into its own browser. Your app isn't changed.", then the findings.
   frames showing the oval.
 - **References:** the thread, in [references.md](references.md) under 2026-11-26.
 
+### 154. The audit before the spec: what was seen, what plumber has, what a box can say (2026-11-26)
+
+- **The itch:** before any spec for judging shape, the owner asked for a check of the work so far: "i want to make
+  sure you've done things correctly, your understanding and marks are aligned and none of this should lead to any
+  buggy thing", then "a hygiene check of understanding, meaning, intuition, mapping to approaches about shape". While
+  it ran they added: "i feel the annotation you gave to raunos point are not accurate and depicting his thoughts
+  really on the live site well".
+- **How we found it:** by going back to the sources. His 47 replies were read again against what we wrote he said.
+  Plumber's catalogue of 306 checks was read in full, with the comments above its checks that compare things. The
+  harness code was read line by line. Two live sites were opened in the review view.
+- **The system behind it:** three habits produced the errors. Plumber was described from memory of its first batch
+  of craft checks, so its checks that compare rows, cards, gaps and weights were missed. A sentence of his was turned
+  into a description of the page and written as if we had watched it. And every point was given the same kind of
+  mark, a rectangle from one still picture, whatever the point was about.
+- **What we found:**
+  - His words were retold correctly in 117 of 120 points. Three carried something he did not say (a friendship, a
+    click, the meaning of "in reverse") and are reworded.
+  - For 27 points we read the page, for 40 we saw the thing in a recording or picture, and for 53 we have only his
+    sentence. Of the 41 points about behaviour, 27 are in the last group.
+  - Six of his points are the same judgement as a check plumber has, 24 have a neighbouring check, and three run
+    against one. The clearest: plumber flags text hidden while its typeface loads, and he asks for a headline to be
+    held back because its stand-in face is so unlike the real one.
+  - Plumber already judges "a little off is a slip, far off is a choice" inside one list. It has four separate ways
+    of deciding what a group is, one per check, and none compares across groups, across pages, or a look against a
+    role.
+  - Twenty-seven of the 120 points are a case of one of the five comparisons the shape idea rests on. Another 21 are
+    shape in a wider sense: edges that nearly agree, one language across a site, the kind of page.
+  - Of the 98 boxes on live sites, 14 mark one clear thing that is on the page today. On Sam Limby's site the boxes
+    for two photos float over an opening screen where the photos are not shown yet.
+  - Three harness bugs: a half-written file could be read as a judgement, a failed save was retried for whichever
+    screen the judge had moved to, and a change on the next screen could cancel the save of the one before.
+- **The fix and the proof:** `reviews.json` now says for each point how we know it, what we did not see, which of
+  plumber's checks touch it and which comparison it is a case of; `audit.py` holds every change and checks each
+  check's name against the catalogue. `intuitions.md` is corrected and opens with the three corrections. The server
+  answered 200 with a half-written file and an unreadable file in a set's folder and read neither. A test judge's two
+  looks on a cal.com screen were saved and then removed.
+- **Not fixed:** the boxes. What should replace them is written at the end of `intuitions.md` as a proposal and
+  waits for the owner. No check of plumber's was run on any reviewed page. The cal.com app the first judged set
+  points at was not running on the server when this was tested, so its frame was blank.
+- **Media hooks:** the review view of Sam Limby's site with boxes over the opening screen
+  (`http://rauno-05-samlimby-com.localhost:4420/__judge/?judge=rauno&view=1`).
+
 ## Open gaps
 
 - Rauno's portfolio reviews ([entry 153](#153-an-experts-eye-on-forty-real-sites-raunos-portfolio-reviews-2026-11-26))
-  are read, pinned and loaded into the judging page as a second judge, but 53 of the 120 points were not checked on
-  the live page, only five sites were looked at in the live view, and none of his intuitions is a check yet.
+  are read, pinned and loaded into the judging page as a second judge. The audit
+  ([entry 154](#154-the-audit-before-the-spec-what-was-seen-what-plumber-has-what-a-box-can-say-2026-11-26)) found
+  that 53 of the 120 points rest on his sentence alone and that only 14 of the 98 boxes on live sites mark one clear
+  thing that is there today. What replaces the box is proposed and not agreed. None of his intuitions is a check, and
+  no check of plumber's has been run on a page he reviewed.
+- Three of plumber's checks say the opposite of his advice on a page he reviewed (text hidden while a typeface
+  loads, a picture far larger than it is drawn, a file path as decoration). Each needs one more reading before it
+  can tell the two cases apart.
 - The judged set has seven screens from one judge ([entry 152](#152-the-first-judged-set-seven-calcom-screens-one-mark-2026-11-26)).
   The comparison with plumber was done by hand once; no script scores it. The owner has not yet said which of
   plumber's findings on those screens they agree with. The marks are kept only on the laptop.

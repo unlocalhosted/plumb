@@ -7,6 +7,10 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+const KNOW = { measured: 'Read from the page or a copy of it.', seen: 'Seen in his recording or picture, or in ours.', word: 'His sentence only.' };
+const HOW = { same: 'the same judgement', near: 'a neighbour', opposite: 'says the opposite' };
+const know = (p) => `${KNOW[p.basis] ?? ''}${p.unseen ? ` Not seen by us: ${p.unseen}` : ''}`;
+const checks = (p) => (p.has ?? []).map((h) => `“${h.name}” (${HOW[h.how]})${h.note ? `: ${h.note}` : ''}`).join(' ');
 const here = dirname(fileURLToPath(import.meta.url));
 const data = JSON.parse(readFileSync(join(here, 'reviews.json'), 'utf8'));
 const tokens = readFileSync(join(here, '../../../../overlay/src/tokens.css'), 'utf8');
@@ -57,7 +61,7 @@ const section = (r) => `<section id="r${r.n}">
     <ol>${r.points.map((p) => `<li><span class="n" data-l="${p.level}">${p.k.split('.')[1]}</span><div>
       <p class="where">${esc(LEVELS[p.level][0])}${p.pins?.length ? '' : ' · no single place on the page'}</p>
       <p class="said">${esc(p.says)}</p>
-      <dl><dt>The page shows</dt><dd>${esc(p.shows)}</dd><dt>How he got there</dt><dd>${esc(p.how)}</dd><dt>For plumber</dt><dd>${esc(p.engine)}</dd>${p.today ? `<dt>Today</dt><dd>${esc(p.today)}</dd>` : ''}</dl></div></li>`).join('')}</ol>
+      <dl><dt>The page shows</dt><dd>${esc(p.shows)}</dd><dt>How we know</dt><dd>${esc(know(p))}</dd><dt>How he got there</dt><dd>${esc(p.how)}</dd><dt>For plumber</dt><dd>${esc(p.engine)}</dd>${p.has?.length ? `<dt>Plumber’s checks</dt><dd>${esc(checks(p))}</dd>` : ''}${p.today ? `<dt>Today</dt><dd>${esc(p.today)}</dd>` : ''}</dl></div></li>`).join('')}</ol>
   </div>${r.note ? `<p class="note">${esc(r.note)}</p>` : ''}</section>`;
 
 const done = data.reviews.filter((r) => r.points?.length);

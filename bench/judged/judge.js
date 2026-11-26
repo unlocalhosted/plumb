@@ -283,18 +283,21 @@ class JudgeDesk extends HTMLElement {
     if (focus) input.focus({ preventScroll: true });
   }
 
-  changed() {
-    const id = this.screen.id, said = this.root.querySelector('.saved');
-    clearTimeout(this.timer);
-    this.timer = setTimeout(async () => {
+  // One waiting save per screen: a change on the next screen never cancels the save of the one before it, and a save
+  // that failed is tried again for the screen it belonged to, wherever the judge is by then.
+  changed(id = this.screen.id) {
+    const said = this.root.querySelector('.saved');
+    this.timers ??= new Map();
+    clearTimeout(this.timers.get(id));
+    this.timers.set(id, setTimeout(async () => {
       try { await call(`judgement/${id}`, this.judgements[id]); said.className = 'saved'; said.textContent = 'Saved'; }
-      catch { said.className = 'saved bad'; said.textContent = 'Not saved yet, trying again'; this.timer = setTimeout(() => this.changed(), 2000); }
-    }, 250);
+      catch { said.className = 'saved bad'; said.textContent = 'Not saved yet, trying again'; this.timers.set(id, setTimeout(() => this.changed(id), 2000)); }
+    }, 250));
   }
 
   async finish() {
     const id = this.screen.id, j = this.now, said = this.root.querySelector('.saved');
-    clearTimeout(this.timer);
+    clearTimeout(this.timers?.get(id));
     said.className = 'saved'; said.textContent = 'Saving the screen';
     try {
       const win = this.frame.contentWindow;

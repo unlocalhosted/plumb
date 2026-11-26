@@ -63,7 +63,10 @@
      "shows": "A single narrow column of small text on an empty page, a name, one line about the job, then short labelled lists. That is the layout the profile site read.cv made familiar.",
      "how": "He placed the site in a family he already knows before judging anything in it. Everything after this is judged against what that family promises: calm, text first, nothing in the way.",
      "engine": "Shape: which known kind of page this is. Plumber has no idea of kinds of page. A model that has seen many sites could name the kind, and the kind then says what to expect.",
-     "pins": []
+     "pins": [],
+     "basis": "seen",
+     "has": [],
+     "pair": "kind"
     },
     {
      "k": "1.2",
@@ -81,7 +84,10 @@
        "w": 570,
        "h": 142
       }
-     ]
+     ],
+     "basis": "seen",
+     "unseen": "The 13px is an estimate from frames of his recording, not a reading of the page.",
+     "has": []
     },
     {
      "k": "1.3",
@@ -98,6 +104,15 @@
        "y": 378,
        "w": 570,
        "h": 96
+      }
+     ],
+     "basis": "seen",
+     "has": [
+      {
+       "id": "experience/control-covered",
+       "name": "Something sits on top of this",
+       "how": "near",
+       "note": "Not tried on this page."
       }
      ]
     },
@@ -117,17 +132,23 @@
        "w": 610,
        "h": 478
       }
-     ]
+     ],
+     "basis": "word",
+     "unseen": "Which links failed. His recording does not show it and we did not press them.",
+     "has": []
     },
     {
      "k": "1.5",
      "level": "behaviour",
      "says": "Going to Crafts shows an ugly flash of the page without its styles.",
-     "shows": "Crafts is a separate site with its own typefaces and layout. For a moment while it loads, the page is drawn before its styles arrive. A still frame cannot show it.",
+     "shows": "Crafts is a separate site with its own typefaces and layout. The flash of an unstyled page while it loads is his report.",
      "how": "He watched the moment between two pages. A page is judged while it arrives too, and here the first thing it showed was its unfinished state.",
      "engine": "Behaviour over time: what a page looks like in its first moments. Plumber reads a page once it has settled. It would need to look at the first frames of a page arriving and compare them with the settled page.",
      "today": "Not checked.",
-     "pins": []
+     "pins": [],
+     "basis": "word",
+     "unseen": "The flash. We did not watch the page arrive.",
+     "has": []
     },
     {
      "k": "1.6",
@@ -152,7 +173,10 @@
        "w": 610,
        "h": 478
       }
-     ]
+     ],
+     "basis": "seen",
+     "has": [],
+     "pair": "one-language"
     }
    ],
    "note": "The pins are on frames from Rauno’s own recording, so they show the site as he saw it. The site sits behind a check that turned our server’s browser away, so today’s picture comes from the browser pane."
@@ -207,10 +231,14 @@
      "k": "3.1",
      "level": "behaviour",
      "says": "The reveal animation, where content is uncovered by a moving cut-out, belongs to 2020.",
-     "shows": "A still cannot show it. The home page opens with large shapes, such as the yellow circle, that are uncovered as the page arrives.",
+     "shows": "The home page holds large shapes, such as a yellow circle. How they arrive is his report: content uncovered by a moving cut-out.",
      "how": "He knows when an effect was in fashion, and an effect that everyone used in one year dates the work to that year. This is knowledge of the field, not something on the page.",
      "engine": "Taste, tied to time. Plumber cannot know what is dated. The nearest thing it has is its family of checks for marks of a period or of a generated page. A model that has seen many sites by year could say “this effect peaked in 2020”. To be looked at live.",
-     "pins": []
+     "pins": [],
+     "basis": "word",
+     "unseen": "The animation. We did not watch the page arrive, so which effect he means is our guess.",
+     "has": [],
+     "pair": "kind"
     },
     {
      "k": "3.2",
@@ -226,6 +254,20 @@
        "y": 132,
        "w": 156,
        "h": 635
+      }
+     ],
+     "basis": "measured",
+     "has": [
+      {
+       "id": "experience/page-overflow-x",
+       "name": "Page scrolls sideways",
+       "how": "near",
+       "note": "Plumber reads a page that scrolls sideways as an accident. Here it is the design."
+      },
+      {
+       "id": "experience/scroll-no-hint",
+       "name": "More to the side, and no sign of it",
+       "how": "near"
       }
      ]
     },
@@ -244,7 +286,10 @@
        "w": 1058,
        "h": 635
       }
-     ]
+     ],
+     "basis": "measured",
+     "has": [],
+     "pair": "kind"
     },
     {
      "k": "3.4",
@@ -261,7 +306,9 @@
        "w": 530,
        "h": 176
       }
-     ]
+     ],
+     "basis": "measured",
+     "has": []
     },
     {
      "k": "3.5",
@@ -284,6 +331,21 @@
        "y": 30,
        "w": 180,
        "h": 44
+      }
+     ],
+     "basis": "measured",
+     "has": [
+      {
+       "id": "a11y/control-name",
+       "name": "No name for screen readers",
+       "how": "near",
+       "note": "The first half: controls with no words."
+      },
+      {
+       "id": "components/nav-current",
+       "name": "Navigation does not mark this page",
+       "how": "near",
+       "note": "For a screen reader, not for the eye."
       }
      ]
     },
@@ -309,7 +371,10 @@
        "w": 458,
        "h": 39
       }
-     ]
+     ],
+     "basis": "measured",
+     "has": [],
+     "pair": "alike-role"
     },
     {
      "k": "3.7",
@@ -326,7 +391,10 @@
        "w": 467,
        "h": 293
       }
-     ]
+     ],
+     "basis": "measured",
+     "has": [],
+     "pair": "loud-important"
     },
     {
      "k": "3.8",
@@ -350,7 +418,10 @@
        "w": 458,
        "h": 39
       }
-     ]
+     ],
+     "basis": "measured",
+     "has": [],
+     "pair": "alike-role"
     },
     {
      "k": "3.9",
@@ -359,7 +430,10 @@
      "shows": "Home is huge type on white sheets. Craft is a dense grid of clips. Projects is nine short lines in the middle of an empty page. Field Notes is full-screen red lettering. They share the strip at the top and little else.",
      "how": "The same judgement he gave the first site in the thread, turned on himself: he walked through the pages and they do not look made at one time by one hand.",
      "engine": "Shape, across pages. The same new reading as point 1.6: a short description of each page’s look and a way to compare them.",
-     "pins": []
+     "pins": [],
+     "basis": "seen",
+     "has": [],
+     "pair": "one-language"
     },
     {
      "k": "3.10",
@@ -376,7 +450,10 @@
        "w": 216,
        "h": 38
       }
-     ]
+     ],
+     "basis": "seen",
+     "has": [],
+     "pair": "regular"
     },
     {
      "k": "3.11",
@@ -385,7 +462,10 @@
      "shows": "Nothing to show. It is his third remark about the navigation in twelve lines.",
      "how": "The repetition is the information: of everything on his site, the navigation is what he regrets most.",
      "engine": "Nothing to build. It adds weight to points 3.5 and 3.10.",
-     "pins": []
+     "pins": [],
+     "basis": "word",
+     "unseen": "Nothing to see: it is a joke with no content.",
+     "has": []
     },
     {
      "k": "3.12",
@@ -402,7 +482,9 @@
        "w": 744,
        "h": 476
       }
-     ]
+     ],
+     "basis": "measured",
+     "has": []
     }
    ],
    "note": "He wrote this about his own site after a friend posted it as a joke, so each line is a rule he holds, stated without softening. The archive copy is from two days before."
@@ -439,7 +521,7 @@
      "shows": "The page is a white area between two vertical lines, with a narrower column of content inside it. The tiles slide sideways in a row that is wider than the screen, so the row has to be cut somewhere. Today, at his width, it is cut exactly on the two vertical lines. The owner answered that it looked fine on his own screen and that he had not thought about other screens, so what Rauno saw was a cut that fell between the lines on a wide display.",
      "how": "A place where things are cut off is an edge, and the eye reads every edge as a decision. This page already draws its edges: two vertical lines and a content column. An edge that lands on neither one is a new line with no reason behind it, and that reads as sloppy. He saw it because his display is much wider than the one the page was built on.",
      "engine": "Shape: every edge should sit on a line the layout already has. Plumber can list the places where content is cut (boxes that hide what overflows them) and check that each cut lands on a container edge or a shared line. It has to look at several widths, a very wide one included, because the fault only exists there. The wide look is the new part.",
-     "today": "Looks fixed: the row now ends on the vertical lines at 2560 wide. The web archive only has this site from April, six months before the review, so the page as he saw it could not be recovered.",
+     "today": "No fault at 2,560 wide today: the row ends on the two vertical lines. Whether that is a fix is not known. The web archive only has this site from April, six months before the review.",
      "pins": [
       {
        "shot": "wide",
@@ -448,7 +530,11 @@
        "w": 2312,
        "h": 444
       }
-     ]
+     ],
+     "basis": "word",
+     "unseen": "The cut he saw. Today the row ends on the two lines at 2,560 wide. Whether the owner changed it or his window was another width is not known.",
+     "has": [],
+     "pair": "enclosed-scope"
     },
     {
      "k": "4.2",
@@ -466,7 +552,9 @@
        "w": 860,
        "h": 46
       }
-     ]
+     ],
+     "basis": "measured",
+     "has": []
     },
     {
      "k": "4.3",
@@ -491,7 +579,10 @@
        "w": 872,
        "h": 62
       }
-     ]
+     ],
+     "basis": "measured",
+     "has": [],
+     "pair": "loud-important"
     }
    ],
    "note": "What he saw in October could not be recovered for this site; the pins are on today’s page at his display width."
@@ -519,7 +610,7 @@
      "k": "5.1",
      "level": "behaviour",
      "says": "Hovering the two photos in the hero feels abrupt. The one behind jumps in front at once, and that is not satisfying.",
-     "shows": "Two tilted photos overlap at the right of the hero, a smaller one behind and a larger one in front. On hover their order swaps. Which is in front is a single switch in the browser, so it changes in one frame.",
+     "shows": "Two tilted photos overlap at the right of the hero, a smaller one behind and a larger one in front. By his report their order swaps on hover, at once.",
      "how": "Something coming forward is a physical event: it lifts, travels and settles. A photo that is suddenly on top has skipped the event. He felt the missing movement before he looked for the cause, then named the cause exactly, the stacking order changing with nothing in between.",
      "engine": "Behaviour: a change that cannot be eased, used where a movement is expected. Plumber already tries hovering things and reads what changes. It could say when a hover changes which element is on top while nothing moves or fades to carry it.",
      "today": "The photos are still there. The hover was not tried again.",
@@ -531,7 +622,10 @@
        "w": 512,
        "h": 460
       }
-     ]
+     ],
+     "basis": "word",
+     "unseen": "The swap. We did not hover the photos.",
+     "has": []
     },
     {
      "k": "5.2",
@@ -548,7 +642,9 @@
        "w": 512,
        "h": 460
       }
-     ]
+     ],
+     "basis": "seen",
+     "has": []
     },
     {
      "k": "5.3",
@@ -566,7 +662,9 @@
        "w": 404,
        "h": 48
       }
-     ]
+     ],
+     "basis": "seen",
+     "has": []
     }
    ],
    "note": "The archive copy from 2026-10-04 caught only an intro screen with a “Skip intro” link, so the pins are on today’s page."
@@ -613,7 +711,10 @@
        "w": 790,
        "h": 140
       }
-     ]
+     ],
+     "basis": "seen",
+     "has": [],
+     "pair": "kind"
     },
     {
      "k": "6.2",
@@ -623,7 +724,22 @@
      "how": "Movement between items of the same kind is travel, and travel should be nearly free. When he has to wait for an animation before he can look at the next thing, the animation is in the way. He says the same to two other people, each time about pages meant to feel quick.",
      "engine": "Behaviour: how long a movement takes. Plumber has checks on motion and can read how long a transition runs. It has no principle yet for how long is too long when moving between items; his remark is a lead, and the number needs its own source.",
      "today": "Not checked.",
-     "pins": []
+     "pins": [],
+     "basis": "seen",
+     "unseen": "How long. We watched his recording and did not time it.",
+     "has": [
+      {
+       "id": "craft/exit-faster",
+       "name": "Leaves as slowly as it came",
+       "how": "near"
+      },
+      {
+       "id": "craft/palette-motion",
+       "name": "Shortcut opens slowly",
+       "how": "near",
+       "note": "One case of the same reason: do not make people wait on motion."
+      }
+     ]
     }
    ],
    "note": "His recording is the evidence here. The web archive only has this site from May."
@@ -669,7 +785,10 @@
        "w": 380,
        "h": 475
       }
-     ]
+     ],
+     "basis": "measured",
+     "has": [],
+     "pair": "kind"
     },
     {
      "k": "7.2",
@@ -694,7 +813,10 @@
        "w": 200,
        "h": 30
       }
-     ]
+     ],
+     "basis": "measured",
+     "has": [],
+     "pair": "loud-important"
     },
     {
      "k": "7.3",
@@ -712,7 +834,10 @@
        "w": 512,
        "h": 183
       }
-     ]
+     ],
+     "basis": "measured",
+     "has": [],
+     "pair": "enclosed-scope"
     },
     {
      "k": "7.4",
@@ -729,6 +854,20 @@
        "y": 1163,
        "w": 512,
        "h": 45
+      }
+     ],
+     "basis": "word",
+     "unseen": "The page he saw could not be recovered. Only today’s page was read.",
+     "has": [
+      {
+       "id": "craft/row-dead-zone",
+       "name": "Dead strips between rows",
+       "how": "near"
+      },
+      {
+       "id": "craft/hit-target",
+       "name": "Too small to tap",
+       "how": "near"
       }
      ]
     }
@@ -766,11 +905,20 @@
      "k": "8.1",
      "level": "craft",
      "says": "The page shows a scrollbar even when there is nothing to scroll. Set the system to always show scrollbars and you will catch it.",
-     "shows": "On a Mac, scrollbars hide until you scroll, so a page that forces one looks fine to its author. With them always shown, an empty track sits at the edge of the page.",
+     "shows": "His report, with the way to see it. On a Mac scrollbars hide until you scroll, so a page that forces one looks fine to its author.",
      "how": "He keeps his system set to show scrollbars all the time, on purpose, because it shows faults the default hides. He is not reporting a bug so much as handing over the test that finds a whole family of them.",
      "engine": "Craft, and a condition to look under. Plumber has a check for scrolling that is switched on all the time when it should appear only when needed. His advice adds the condition: read the page with classic, always-visible scrollbars, the way plumber already re-reads it at larger text.",
      "today": "Not checked.",
-     "pins": []
+     "pins": [],
+     "basis": "word",
+     "unseen": "The empty scrollbar track. We did not read the page with scrollbars always shown.",
+     "has": [
+      {
+       "id": "craft/scroll-on-demand",
+       "name": "Scrollbar always shown",
+       "how": "same"
+      }
+     ]
     },
     {
      "k": "8.2",
@@ -788,7 +936,10 @@
        "w": 548,
        "h": 309
       }
-     ]
+     ],
+     "basis": "word",
+     "unseen": "The page he saw could not be recovered. Only today’s page was read.",
+     "has": []
     },
     {
      "k": "8.3",
@@ -813,7 +964,10 @@
        "w": 548,
        "h": 309
       }
-     ]
+     ],
+     "basis": "seen",
+     "has": [],
+     "pair": "loud-important"
     }
    ],
    "note": "The web archive’s copy is from February and fails to load, so what he saw could not be pinned. Today’s page already shows his advice applied."
@@ -841,7 +995,7 @@
      "k": "9.1",
      "level": "behaviour",
      "says": "He likes that he can scroll while the opening animation is still playing.",
-     "shows": "The hero is a set of painted cut-outs and a notebook that arrive in sequence when the page opens. The page can be scrolled during it.",
+     "shows": "The hero is a set of painted cut-outs and a notebook. By his report they arrive in sequence and the page can be scrolled meanwhile.",
      "how": "Praise first, and it names the rule he checks on every site with an intro: the visitor’s hands are never tied while the designer’s sequence plays. He says the opposite to another person in the thread, whose intro screen blocks a click.",
      "engine": "Behaviour: an intro must not lock the page. Plumber could try to scroll in the first half second and see whether the page moves.",
      "pins": [
@@ -852,13 +1006,16 @@
        "w": 1160,
        "h": 410
       }
-     ]
+     ],
+     "basis": "word",
+     "unseen": "That the page scrolls during the opening. Not tried.",
+     "has": []
     },
     {
      "k": "9.2",
      "level": "behaviour",
      "says": "Go one step further: if he scrolls, cancel the animation.",
-     "shows": "Scrolling during the intro moves the page while the cut-outs keep arriving above.",
+     "shows": "By his report the opening keeps playing after he scrolls.",
      "how": "Scrolling is the visitor saying “I am going on”. From that moment the intro is playing to nobody, so it should finish at once. The visitor’s action outranks the sequence.",
      "engine": "Behaviour: motion that keeps running after the visitor has moved on. Plumber could scroll during an intro and read whether its animations are still running afterwards.",
      "today": "Not checked. For the live harness.",
@@ -870,13 +1027,16 @@
        "w": 1160,
        "h": 410
       }
-     ]
+     ],
+     "basis": "word",
+     "unseen": "That the opening carries on after a scroll. Not tried.",
+     "has": []
     },
     {
      "k": "9.3",
      "level": "behaviour",
      "says": "The sequence of movements could be better. While the hero is still doing something interesting, the content below starts to come in and cuts across it. Overlap can work; here it feels abrupt.",
-     "shows": "Two things move at once in different places: the cut-outs in the hero, and the “Selected work” block under it fading in.",
+     "shows": "The hero and the “Selected work” block under it are two separate regions. By his report the lower one starts to arrive while the hero is still moving.",
      "how": "Motion has a stage, and one thing holds it at a time. A second movement that begins before the first has landed takes the eye away from both. He allows that overlap can be right when one movement hands over to the next; here they are unrelated.",
      "engine": "Behaviour over time: entrances that overlap. The browser can list running animations with their start and length, so plumber could say when two unrelated regions are arriving at the same moment. Whether an overlap is a handover or a clash needs judgement.",
      "today": "Not checked. For the live harness.",
@@ -895,15 +1055,18 @@
        "w": 690,
        "h": 190
       }
-     ]
+     ],
+     "basis": "word",
+     "unseen": "The timing. We saw the two blocks, not when each one arrives.",
+     "has": []
     },
     {
      "k": "9.4",
      "level": "behaviour",
      "says": "Click quickly back and forth between a project page and home. The transition breaks easily.",
-     "shows": "Each project opens with a transition from the home page. Starting a second one before the first ends leaves the page in a broken state.",
+     "shows": "Each project has its own page. By his report the transition between it and home breaks when the two are pressed quickly in turn.",
      "how": "He hands over a test, as he did with the scrollbar setting: do the thing fast and repeatedly. An animation must be safe to interrupt at any point, because real hands do not wait for it to end.",
-     "engine": "Behaviour under stress. Plumber already has the idea of pushing a page until it breaks. This adds a gesture: trigger a transition, trigger its reverse before it ends, several times, then check that the page ends in the state it would reach slowly.",
+     "engine": "Behaviour under stress. Plumber has this judgement for one element: it closes a thing part of the way into its entrance and checks that the motion carries on from where it is. His case is the same judgement on a change of page, which plumber does not try.",
      "today": "Not checked. For the live harness.",
      "pins": [
       {
@@ -912,6 +1075,16 @@
        "y": 598,
        "w": 42,
        "h": 42
+      }
+     ],
+     "basis": "word",
+     "unseen": "The break. Not tried.",
+     "has": [
+      {
+       "id": "craft/interruptible",
+       "name": "Can’t reverse midway",
+       "how": "near",
+       "note": "One element, not a change of page."
       }
      ]
     }
@@ -966,7 +1139,10 @@
        "w": 430,
        "h": 132
       }
-     ]
+     ],
+     "basis": "seen",
+     "has": [],
+     "pair": "loud-important"
     },
     {
      "k": "10.2",
@@ -990,7 +1166,9 @@
        "w": 312,
        "h": 52
       }
-     ]
+     ],
+     "basis": "seen",
+     "has": []
     },
     {
      "k": "10.3",
@@ -1007,7 +1185,10 @@
        "w": 674,
        "h": 44
       }
-     ]
+     ],
+     "basis": "seen",
+     "has": [],
+     "pair": "alike-role"
     },
     {
      "k": "10.4",
@@ -1031,7 +1212,9 @@
        "w": 300,
        "h": 48
       }
-     ]
+     ],
+     "basis": "seen",
+     "has": []
     }
    ],
    "note": "The person’s own post is gone. The site was identified from the name in Rauno’s recording and the address is inferred from the handle; it answers today but was not captured."
@@ -1064,7 +1247,7 @@
     {
      "k": "11.1",
      "level": "content",
-     "says": "A joke between friends: “not enough motion”.",
+     "says": "One line: “not enough motion”. We read it as a joke, because the page lists its owner’s own motion libraries.",
      "shows": "The page is plain, unstyled HTML on purpose: the browser’s default serif, default blue links, a small smiley, and one line of green text that tilts. Its owner is known for motion work and lists his easing and text-animation libraries on this same page.",
      "how": "The humour is the gap between who made the page and what the page is. There is no critique in it. It does show that he reads a site against what he knows of its maker.",
      "engine": "Nothing to build. Kept so that no reply from the thread is missing.",
@@ -1076,7 +1259,9 @@
        "w": 220,
        "h": 50
       }
-     ]
+     ],
+     "basis": "seen",
+     "has": []
     }
    ],
    "note": "Not a review. The owner answered “solid notes”."
@@ -1124,7 +1309,10 @@
        "w": 1200,
        "h": 630
       }
-     ]
+     ],
+     "basis": "measured",
+     "has": [],
+     "pair": "one-language"
     },
     {
      "k": "12.2",
@@ -1132,7 +1320,7 @@
      "says": "The videos on the index are cropped oddly, and some look low quality on his display.",
      "shows": "Each tile is about 518 pixels wide. The pictures behind them were made at 720 by 438, 540 by 405 and 412 by 589 pixels. His display draws two device pixels for every page pixel, so a 518-pixel tile needs a picture about 1,036 wide to stay sharp. The 412 by 589 picture is also tall where its tile is nearly square, so about a third of it is cut away.",
      "how": "He sees softness because his screen is denser than the files, and he sees the crop because the frame’s proportions and the content’s do not match, so something meaningful is lost at the edges. He names his display each time, as a reminder that the author’s screen is not the reader’s.",
-     "engine": "Craft, two readings plumber can already take: a picture with fewer pixels than the space it fills needs on a dense screen, and a picture whose proportions differ from its frame so that it is cropped. Plumber has a check on how a picture fits its frame; the sharpness one would be new.",
+     "engine": "Craft, two readings. A picture with fewer pixels than the space it fills on a dense screen: plumber has this for icons only. A picture cropped because its proportions differ from its frame: plumber’s check on a picture’s frame is about stretching, not cropping. Both would be new.",
      "today": "The sizes above were read from today’s page.",
      "pins": [
       {
@@ -1149,7 +1337,9 @@
        "w": 518,
        "h": 321
       }
-     ]
+     ],
+     "basis": "measured",
+     "has": []
     },
     {
      "k": "12.3",
@@ -1174,16 +1364,22 @@
        "w": 518,
        "h": 321
       }
-     ]
+     ],
+     "basis": "seen",
+     "has": [],
+     "pair": "alike-role"
     },
     {
      "k": "12.4",
      "level": "content",
      "says": "The Play page is fun, but give him a reason to draw something. If the drawing stays on his own machine he will not bother.",
-     "shows": "Play is a page where a visitor can draw. Nothing is kept or shown to anyone else.",
+     "shows": "Play is a page where a visitor can draw. That the drawing stays on the visitor’s own machine is his reading.",
      "how": "He asked what he would get for the effort. A toy with no audience and no trace gives nothing back, so the effort is not made. A shared wall, or anything that keeps the mark, would change the answer.",
      "engine": "Content and motive. Nothing in the drawn page to check.",
-     "pins": []
+     "pins": [],
+     "basis": "word",
+     "unseen": "Whether a drawing is kept or shared. Not checked.",
+     "has": []
     }
    ],
    "note": "The web archive’s copy from 2026-10-12 shows a blank first screen, so the pins are on today’s page."
@@ -1223,7 +1419,11 @@
        "w": 700,
        "h": 340
       }
-     ]
+     ],
+     "basis": "word",
+     "unseen": "The page he saw could not be recovered. Only today’s page was read.",
+     "has": [],
+     "pair": "loud-important"
     },
     {
      "k": "13.2",
@@ -1241,7 +1441,11 @@
        "w": 650,
        "h": 380
       }
-     ]
+     ],
+     "basis": "word",
+     "unseen": "The page he saw could not be recovered. Only today’s page was read.",
+     "has": [],
+     "pair": "regular"
     }
    ],
    "note": "The owner said he would improve it, and today’s page shows both points answered. The web archive only has an earlier design from January, so the page he reviewed is not shown."
@@ -1271,9 +1475,19 @@
      "says": "There is a label explaining how the filter works. If he thinks it is unclear, he should make the filter clearer and not explain it. Instructions are not always wrong, but that area already has a lot of text stacked in it, and one more line adds visual weight.",
      "shows": "What he saw could not be recovered: the archive has no copy. Today the page has no filter and no instruction line. It is an introduction, a strip of pictures, and two plain lists.",
      "how": "A line that tells you how to use a control is the designer admitting the control does not explain itself. He treats the instruction as a symptom and points at the cause. He also weighs every line of text as weight on the page: in a column already heavy with words, the cheapest fix makes the area heavier.",
-     "engine": "Shape: a control that needs words to be understood. When we read Layr’s list we marked this as something plumber could not see. Rauno shows the signal: instruction text sitting next to a control. Plumber could find short text beside a control that tells the reader what to do. Reading it as an instruction needs a model or a word list.",
+     "engine": "Shape: a control that needs words to be understood. Plumber has this judgement already, with nearly his sentence as its reason: if it needs instructions, change the thing. Earlier in this work we said plumber could not see it. That was wrong. Whether the check fires on a filter with a label was not tried, because the label is gone.",
      "today": "Gone: no filter and no instructions on the page.",
-     "pins": []
+     "pins": [],
+     "basis": "word",
+     "unseen": "The page he saw could not be recovered. Only today’s page was read.",
+     "has": [
+      {
+       "id": "tells/reading-instructions",
+       "name": "Explains how to read",
+       "how": "same",
+       "note": "Not tried on this page."
+      }
+     ]
     },
     {
      "k": "14.2",
@@ -1291,7 +1505,11 @@
        "w": 1052,
        "h": 456
       }
-     ]
+     ],
+     "basis": "word",
+     "unseen": "The page he saw could not be recovered. Only today’s page was read.",
+     "has": [],
+     "pair": "loud-important"
     }
    ],
    "note": "The web archive has no copy of this site. The owner called it great feedback, and today’s page shows both points answered, so it is the “after”."
@@ -1338,6 +1556,25 @@
        "w": 863,
        "h": 64
       }
+     ],
+     "basis": "seen",
+     "has": [
+      {
+       "id": "experience/scroll-no-hint",
+       "name": "More to the side, and no sign of it",
+       "how": "near"
+      },
+      {
+       "id": "craft/scroll-cue",
+       "name": "Hidden content, no hint",
+       "how": "near"
+      },
+      {
+       "id": "experience/scroll-keyboard",
+       "name": "Scrolls for the mouse only",
+       "how": "near",
+       "note": "The keyboard, not the mouse wheel."
+      }
      ]
     },
     {
@@ -1363,7 +1600,11 @@
        "w": 36,
        "h": 36
       }
-     ]
+     ],
+     "basis": "seen",
+     "unseen": "The 590 pixels is an estimate from his recording.",
+     "has": [],
+     "pair": "near-belongs"
     }
    ],
    "note": "His recording is the evidence. The web archive only has this site from July 2025."
@@ -1391,7 +1632,7 @@
      "k": "16.1",
      "level": "behaviour",
      "says": "The custom cursor does not tell him clearly when he is over something he can click. The text does change a little, but he does not feel sure using the mouse this way, because he does not know where the edges of this cursor are.",
-     "shows": "The site replaces the system pointer with its own shape. Links answer a hover with a small change in the text.",
+     "shows": "By his report the site draws its own pointer, and links answer a hover with a small change in the text.",
      "how": "The system pointer does two jobs people stop noticing: its tip marks an exact spot, and it turns into a hand over anything clickable. A custom shape takes both away unless it gives them back. He noticed the loss as a feeling first, of not being sure, then found the reason: he could not tell which part of the shape does the pointing.",
      "engine": "Behaviour: a page that hides the system pointer. Plumber can read that the pointer is switched off, then hover the links and measure how much each one changes. If the change is below what the eye notices, the page has removed a signal and not replaced it.",
      "today": "Not checked.",
@@ -1403,13 +1644,16 @@
        "w": 58,
        "h": 30
       }
-     ]
+     ],
+     "basis": "word",
+     "unseen": "The pointer and the hover. A still shows neither and we did not hover.",
+     "has": []
     },
     {
      "k": "16.2",
      "level": "behaviour",
      "says": "Going to the Work page sets off a whole chain of content jumping into place. On a reload that would be acceptable. On the first click it makes a bad first impression.",
-     "shows": "The Work page is reached from the top menu. As it arrives, its parts land one after another and push each other around.",
+     "shows": "The Work page is reached from the top menu. By his report its parts jump into place as it arrives.",
      "how": "He separates two moments that look alike. A reload is rare and forgiven. The first click into the work is the moment the visitor is paying most attention, and the page spends it rearranging itself.",
      "engine": "Behaviour over time: content that moves after it first appears. Browsers report these jumps, and plumber could listen for them while it follows a link, not only when a page first loads.",
      "today": "Not checked. For the live harness.",
@@ -1420,6 +1664,21 @@
        "y": 18,
        "w": 58,
        "h": 30
+      }
+     ],
+     "basis": "word",
+     "unseen": "The jumping. We did not watch the Work page arrive.",
+     "has": [
+      {
+       "id": "html/img-size",
+       "name": "Image with no size",
+       "how": "near",
+       "note": "One cause of content jumping, read on a settled page."
+      },
+      {
+       "id": "craft/skeleton-match",
+       "name": "Skeleton is the wrong size",
+       "how": "near"
       }
      ]
     }
@@ -1449,7 +1708,7 @@
      "k": "17.1",
      "level": "craft",
      "says": "Give the page a steady space for the scrollbar, for the sake of the tabs.",
-     "shows": "Three tabs sit under the introduction: Projects, Experience, Talks and articles. Each shows a different amount of content. When a short tab follows a long one the scrollbar goes away, the page gets wider by its width, and everything steps sideways.",
+     "shows": "Three tabs sit under the introduction: Projects, Experience, Talks and articles. Each holds a different amount of content. He named only the fix, keeping room for the scrollbar.",
      "how": "He has scrollbars always showing, so he sees the page jump each time a tab changes its length. He does not describe the fault. He names the one CSS property that ends it, because for him this is a known fault with a known cure.",
      "engine": "Craft, and plumber already has it: a check that says content moves sideways when the scrollbar appears, with this same property as its fix. His review confirms the check is one an expert makes by eye.",
      "today": "Not checked by switching tabs.",
@@ -1460,6 +1719,20 @@
        "y": 268,
        "w": 316,
        "h": 48
+      }
+     ],
+     "basis": "word",
+     "unseen": "The fault. He gave only the fix; that the page steps sideways between tabs is our inference, and it was not tried.",
+     "has": [
+      {
+       "id": "craft/scrollbar-gutter",
+       "name": "Jumps when it scrolls",
+       "how": "same"
+      },
+      {
+       "id": "components/tab-shift",
+       "name": "Selected tab changes size",
+       "how": "near"
       }
      ]
     },
@@ -1479,7 +1752,9 @@
        "w": 580,
        "h": 546
       }
-     ]
+     ],
+     "basis": "seen",
+     "has": []
     },
     {
      "k": "17.3",
@@ -1497,7 +1772,11 @@
        "w": 122,
        "h": 28
       }
-     ]
+     ],
+     "basis": "word",
+     "unseen": "The list of articles under the third tab was not opened.",
+     "has": [],
+     "pair": "alike-role"
     }
    ],
    "note": "The web archive’s copy is from July, so the pins are on today’s page."
@@ -1560,6 +1839,16 @@
        "w": 1060,
        "h": 1280
       }
+     ],
+     "basis": "word",
+     "unseen": "The panel he saw. Today the projects are links.",
+     "has": [
+      {
+       "id": "a11y/native-over-role",
+       "name": "A div playing a button",
+       "how": "near",
+       "note": "Plumber’s check is for a box playing a button. His point is a button that should be a link."
+      }
      ]
     },
     {
@@ -1585,7 +1874,9 @@
        "w": 984,
        "h": 372
       }
-     ]
+     ],
+     "basis": "seen",
+     "has": []
     }
    ],
    "note": "The web archive’s copy is from January. Today’s page shows his first point answered."
@@ -1638,16 +1929,39 @@
        "w": 549,
        "h": 412
       }
+     ],
+     "basis": "measured",
+     "has": [
+      {
+       "id": "a11y/native-over-role",
+       "name": "A div playing a button",
+       "how": "near",
+       "note": "The same neighbour as 18.1."
+      }
      ]
     },
     {
      "k": "19.2",
      "level": "behaviour",
      "says": "The owner replied that a panel should encourage people to go through more case studies, because they move in and out faster. Rauno’s answer: not really. The panel has motion. Opening everything and switching between tabs will always be faster.",
-     "shows": "Opening and closing the panel each play an animation.",
+     "shows": "By his report the panel opens and closes with motion.",
      "how": "He measures speed from the visitor’s side. The owner counted clicks. Rauno counted waiting: every animation is time the visitor cannot skip, and it is paid again on each project. Tabs are paid for once.",
      "engine": "A reason for ranking, not a new check: where a panel stands in for a page, any animation on it is a cost paid on every item. It supports the remark about slow transitions in reviews 6, 36 and 38.",
-     "pins": []
+     "pins": [],
+     "basis": "word",
+     "unseen": "The motion of the panel. Not timed.",
+     "has": [
+      {
+       "id": "craft/exit-faster",
+       "name": "Leaves as slowly as it came",
+       "how": "near"
+      },
+      {
+       "id": "craft/palette-motion",
+       "name": "Shortcut opens slowly",
+       "how": "near"
+      }
+     ]
     }
    ],
    "note": "Rauno attached the same picture as in his reply to Gert Tali. It shows Gert’s headline, so it is not repeated here."
@@ -1730,7 +2044,10 @@
        "w": 256,
        "h": 256
       }
-     ]
+     ],
+     "basis": "measured",
+     "has": [],
+     "pair": "one-language"
     },
     {
      "k": "21.2",
@@ -1748,12 +2065,15 @@
        "w": 430,
        "h": 232
       }
-     ]
+     ],
+     "basis": "measured",
+     "has": [],
+     "pair": "one-language"
     },
     {
      "k": "21.3",
      "level": "shape",
-     "says": "Links and section headings are styled the same way. He took the headings for links, clicked one, and nothing happened.",
+     "says": "Links and section headings are styled the same way. He assumed he could click the headings, and could not.",
      "shows": "Every link on the page has a thin underline. On the archived page all seven section headings have the same underline, in nearly the same dark colour and the same weight. Four of the headings are links (shadcn/copper, shadcn/ui, shadcn/ds, shadcn/registry). Three are not (shadcn/numbers, shadcn/newsletter, Sponsors), and nothing drawn tells the two kinds apart. Two of the dead headings even share the “shadcn/…” wording with real links in the sentence above.",
      "how": "Things that look the same are read as the same kind of thing, and on the web an underline means “this is a link”. He read the underline, predicted a click would work, and tested the prediction by clicking. It failed, so the look was making a promise the page did not keep.",
      "engine": "Shape, the purest case in this thread of “looks like it means” against “means”: alike, but not the same role. Plumber already has what it needs. Collect the look that real links share on this page (underline, colour, weight), then find anything with that look that is not a link. No new reading is needed.",
@@ -1787,7 +2107,17 @@
        "w": 130,
        "h": 33
       }
-     ]
+     ],
+     "basis": "measured",
+     "has": [
+      {
+       "id": "craft/link-in-text",
+       "name": "Link looks like the text",
+       "how": "near",
+       "note": "The reverse case: a link that looks like text. Nothing for text that looks like a link."
+      }
+     ],
+     "pair": "alike-role"
     }
    ],
    "note": "The archive copy is from the day after his reply, and it still shows the underlined headings he describes, so it is taken as what he saw. Screenshots are drawn by a Linux browser at 1440 pixels wide; the site loads its own typefaces, so the letters match a Mac."
@@ -1840,7 +2170,11 @@
        "w": 552,
        "h": 74
       }
-     ]
+     ],
+     "basis": "word",
+     "unseen": "The other two pages. Only the home page was captured, so the button’s place on each page is his report.",
+     "has": [],
+     "pair": "one-language"
     }
    ],
    "note": "The web archive has no copy of this site."
@@ -1868,7 +2202,7 @@
      "k": "23.1",
      "level": "content",
      "says": "The intro is nice, but use it to say something. Think of it as a prelude. Is your name really the most interesting thing you want a visitor to know as they come in?",
-     "shows": "The site opens with a short sequence built on his name before the page settles into what is pictured. The sentence about what he believes, that new technology only matters if people can understand, trust and enjoy it, sits below in small grey type.",
+     "shows": "On the settled page the sentence about what he believes, that new technology only matters if people can understand, trust and enjoy it, sits in small grey type. By his report the site opens with a sequence built on the name.",
      "how": "An opening sequence is the one moment when a visitor gives a site their full attention and cannot yet scroll past. He asks what that moment is being spent on. A name can be read anywhere on the page. A point of view can only be planted once, first. The same thought as “make the second heading the first” in review 10.",
      "engine": "Content: what the first seconds say. Plumber could note that a page opens with a sequence and read which words it shows. Judging that a name says less than a belief is for a model.",
      "today": "Not checked.",
@@ -1887,7 +2221,11 @@
        "w": 570,
        "h": 96
       }
-     ]
+     ],
+     "basis": "word",
+     "unseen": "The opening sequence. We did not watch it.",
+     "has": [],
+     "pair": "loud-important"
     }
    ],
    "note": "The opening sequence itself is not in a still picture. For the live harness."
@@ -1926,7 +2264,9 @@
        "w": 1210,
        "h": 150
       }
-     ]
+     ],
+     "basis": "seen",
+     "has": []
     }
    ],
    "note": "His picture is the evidence. The web archive’s copy is from May."
@@ -1966,7 +2306,10 @@
        "w": 172,
        "h": 40
       }
-     ]
+     ],
+     "basis": "word",
+     "unseen": "The greeting’s animation. The owner said he removed it.",
+     "has": []
     },
     {
      "k": "25.2",
@@ -1984,7 +2327,10 @@
        "w": 144,
        "h": 56
       }
-     ]
+     ],
+     "basis": "word",
+     "unseen": "How the bar’s items arrive.",
+     "has": []
     },
     {
      "k": "25.3",
@@ -2002,17 +2348,29 @@
        "w": 320,
        "h": 490
       }
+     ],
+     "basis": "word",
+     "unseen": "The border and shadow he saw. The owner said he blended them.",
+     "has": [
+      {
+       "id": "craft/border-on-shadow",
+       "name": "Border fights the shadow",
+       "how": "same"
+      }
      ]
     },
     {
      "k": "25.4",
      "level": "behaviour",
      "says": "Going into a project’s page feels sloppy. The items leave abruptly and there is a lot of movement in opposing directions.",
-     "shows": "Pressing a card opened its page with the other cards and labels each leaving their own way. Today that is a plain fade.",
+     "shows": "By his report, pressing a card sent the other cards and labels off in different directions. The owner says it is now a plain fade.",
      "how": "Things that move the same way are read as one group; that is one of the oldest findings about how we see. Here every part went its own way, so the eye had nothing to follow and the change felt like a scatter. One direction, or none, is calm.",
      "engine": "Behaviour, and a shape in motion: parts of one change should move together. Plumber could sample where things are across the frames of a change and say when they travel in clashing directions.",
      "today": "Fixed: the owner replaced it with a quiet fade.",
-     "pins": []
+     "pins": [],
+     "basis": "word",
+     "unseen": "The transition. The owner said he replaced it with a fade; we saw neither.",
+     "has": []
     }
    ],
    "note": "The owner reported back in the thread that he had dropped the greeting animation, blended borders and shadows, and replaced the busy transition with a fade. Today’s page is the “after”; the web archive has no copy of the “before”."
@@ -2040,11 +2398,14 @@
      "k": "26.1",
      "level": "behaviour",
      "says": "The one-after-another entrance gets overdone after a while. Consider fading things in by section.",
-     "shows": "The page is about 5,900 pixels long with four sections. As the visitor scrolls, the items in each section arrive one at a time.",
+     "shows": "The page is about 5,900 pixels long with four sections. By his report the items in each arrive one after another on scroll.",
      "how": "A stagger is a small pleasure the first time and a wait the tenth time. On a long page it repeats for every block, so the reader keeps being held back by the same trick. He suggests the coarser unit: let a whole section arrive at once. It is the limit of his own advice in the previous review, where he asked for a stagger and added “very subtly”.",
      "engine": "Behaviour over time: the same entrance repeated down a page. Plumber could count how many separate entrances a visitor sits through while scrolling a page, and the time they add up to. How many is too many needs its own source.",
      "today": "Not checked. For the live harness.",
-     "pins": []
+     "pins": [],
+     "basis": "word",
+     "unseen": "The entrances. We measured the page’s length, not its motion.",
+     "has": []
     }
    ],
    "note": "A point about movement over a whole page, so there is nothing to pin on a still. The web archive’s copy is from March."
@@ -2090,7 +2451,10 @@
        "w": 110,
        "h": 36
       }
-     ]
+     ],
+     "basis": "word",
+     "unseen": "The page he saw could not be recovered. Only today’s page was read.",
+     "has": []
     }
    ],
    "note": "The web archive’s copy is from April, so the long list he saw is not shown."
@@ -2130,13 +2494,15 @@
        "w": 268,
        "h": 32
       }
-     ]
+     ],
+     "basis": "seen",
+     "has": []
     },
     {
      "k": "28.2",
      "level": "behaviour",
      "says": "Pause it smoothly when he scrolls down and means to read.",
-     "shows": "The picture keeps moving. The text about the person starts right under it, so the motion stays in view while reading.",
+     "shows": "The text about the person starts right under the moving picture. By his report the picture keeps moving while he reads.",
      "how": "Movement at the edge of sight pulls the eye whether the reader wants it or not. Once he has scrolled to the words he has said what he wants to do, and the picture should step back. He asks for it to stop smoothly, so that the stopping is not a second distraction.",
      "engine": "Behaviour: motion that keeps running next to text being read. Plumber could scroll until the moving thing is partly out of view and text is in view, then read whether it is still animating. Layr’s reference lists the same signal: animated decoration near a point of reading.",
      "today": "Not checked. For the live harness.",
@@ -2147,6 +2513,16 @@
        "y": 75,
        "w": 960,
        "h": 421
+      }
+     ],
+     "basis": "word",
+     "unseen": "That the picture keeps moving while one reads. A still cannot show it.",
+     "has": [
+      {
+       "id": "experience/motion-no-opt-out",
+       "name": "Motion that cannot be turned off",
+       "how": "near",
+       "note": "About a visitor’s setting, not about reading beside motion."
       }
      ]
     }
@@ -2176,7 +2552,7 @@
      "k": "29.1",
      "level": "behaviour",
      "says": "Do not block what he is trying to do. If he wants to go to another page while the intro screen is showing, let him.",
-     "shows": "The site opens with an intro screen before the page pictured. The links in the four corners, Work, About, Timeline and People, did not respond until it had finished.",
+     "shows": "The page pictured has links in its four corners: Work, About, Timeline and People. By his report an intro screen comes first and the links do not answer until it has finished.",
      "how": "He arrived knowing where he wanted to go and the site made him wait for its opening first. An intro may play, but the visitor’s own action comes first. In review 9 he praises a site for exactly this: it let him scroll while its animation ran.",
      "engine": "Behaviour: an intro that locks the page. Plumber could press a link in the first half second after the page appears and see whether anything happens. The same gesture as in review 9.",
      "today": "Not checked. For the live harness.",
@@ -2195,7 +2571,10 @@
        "w": 62,
        "h": 28
       }
-     ]
+     ],
+     "basis": "word",
+     "unseen": "The intro and the blocked press. Not tried.",
+     "has": []
     }
    ],
    "note": "The web archive’s copy is from January 2025."
@@ -2241,6 +2620,16 @@
        "y": 82,
        "w": 220,
        "h": 58
+      }
+     ],
+     "basis": "word",
+     "unseen": "The header he saw. The owner agreed and it is gone today.",
+     "has": [
+      {
+       "id": "experience/link-target-renamed",
+       "name": "One place, two names",
+       "how": "near",
+       "note": "One place under two names."
       }
      ]
     }
@@ -2293,7 +2682,10 @@
      "shows": "A page of one typeface in two greys: a name, a role, eight project names with their years, and six small links at the bottom.",
      "how": "Nearly everything he praises in this thread is here: one language, nothing that does not carry meaning, text first. It is the nearest thing in the thread to a page he calls fine, which makes it a reference for what he leaves alone.",
      "engine": "A “fine” example for the judged set. A page like this is where plumber should say little.",
-     "pins": []
+     "pins": [],
+     "basis": "seen",
+     "has": [],
+     "pair": "kind"
     },
     {
      "k": "31.2",
@@ -2311,7 +2703,9 @@
        "w": 256,
        "h": 256
       }
-     ]
+     ],
+     "basis": "measured",
+     "has": []
     },
     {
      "k": "31.3",
@@ -2329,7 +2723,9 @@
        "w": 184,
        "h": 128
       }
-     ]
+     ],
+     "basis": "measured",
+     "has": []
     }
    ],
    "note": "The web archive’s nearest copy is from 2026-11-13, after the review, and the site looks the same."
@@ -2375,7 +2771,9 @@
        "w": 470,
        "h": 480
       }
-     ]
+     ],
+     "basis": "measured",
+     "has": []
     }
    ],
    "note": "The web archive has no copy of this site."
@@ -2435,13 +2833,15 @@
        "w": 780,
        "h": 780
       }
-     ]
+     ],
+     "basis": "seen",
+     "has": []
     },
     {
      "k": "33.2",
      "level": "behaviour",
      "says": "Let him control or pause the carousel if he wants to read.",
-     "shows": "The testimonials move on by themselves.",
+     "shows": "By his report the testimonials move on by themselves.",
      "how": "Reading takes as long as it takes, and the reader does not choose that speed. Text that leaves before it is finished makes the reader lose their place and start again, or give up. Anything that moves text needs a way to hold it still.",
      "engine": "Behaviour: text that moves on a timer with no control. Plumber can see that a block of text changes by itself and look for a pause or arrow control beside it. Accessibility rules ask for the same thing, so there is a standard to cite.",
      "today": "Not checked. For the live harness.",
@@ -2453,6 +2853,16 @@
        "w": 780,
        "h": 780
       }
+     ],
+     "basis": "word",
+     "unseen": "That the testimonials move on by themselves. Not watched.",
+     "has": [
+      {
+       "id": "experience/motion-no-opt-out",
+       "name": "Motion that cannot be turned off",
+       "how": "near",
+       "note": "No check asks for a pause control."
+      }
      ]
     },
     {
@@ -2462,7 +2872,9 @@
      "shows": "The testimonials run to a paragraph each.",
      "how": "Praise is skimmed, not studied. Two sentences get read. A paragraph gets skipped, and then even its best line is lost. In a carousel that keeps moving, as here, a long one cannot be finished in time at all.",
      "engine": "Content: length of a quotation. Plumber could count the words in each. The limit is his.",
-     "pins": []
+     "pins": [],
+     "basis": "seen",
+     "has": []
     },
     {
      "k": "33.4",
@@ -2480,7 +2892,9 @@
        "w": 160,
        "h": 36
       }
-     ]
+     ],
+     "basis": "measured",
+     "has": []
     }
    ],
    "note": "The web archive has no copy of this site. The owner called the notes solid."
@@ -2520,7 +2934,11 @@
        "w": 100,
        "h": 34
       }
-     ]
+     ],
+     "basis": "word",
+     "unseen": "The coloured icons he saw. Today they are grey.",
+     "has": [],
+     "pair": "loud-important"
     },
     {
      "k": "34.2",
@@ -2545,7 +2963,9 @@
        "w": 176,
        "h": 290
       }
-     ]
+     ],
+     "basis": "seen",
+     "has": []
     },
     {
      "k": "34.3",
@@ -2555,7 +2975,11 @@
      "how": "A column sized for comfortable reading is narrow, and a picture squeezed into it is small for no reason of its own. Text and pictures want different widths. Letting pictures break out also gives a long article a rhythm, the same idea as the game he wanted to break the column in review 7.",
      "engine": "Shape: a picture limited by a container sized for text. Plumber can compare a picture’s drawn width with its real width and with the column it sits in, and say when the column is the only thing keeping it small.",
      "today": "Not checked.",
-     "pins": []
+     "pins": [],
+     "basis": "word",
+     "unseen": "The blog. It was not captured.",
+     "has": [],
+     "pair": "enclosed-scope"
     }
    ],
    "note": "The web archive’s copy is from August."
@@ -2585,7 +3009,7 @@
      "says": "Hold the headline back until its typeface has loaded. The swap from the stand-in face is ugly.",
      "shows": "The headline is set in a thin handwriting face. Until that face arrives, the browser draws the words in an ordinary one, then replaces it. The two could hardly be more different in width and height, so the headline jumps.",
      "how": "He watched the page arrive. A swap between two similar faces is a flicker. A swap from a plain sans to a tall script is a change of shape of the biggest thing on the page, in the first second. For this one element he prefers a brief blank to a wrong picture.",
-     "engine": "Craft, over time. Plumber has a check on how a typeface is told to load. His remark refines it: the cost of the swap depends on how different the stand-in is, which plumber could measure by drawing the same words in both faces and comparing the boxes.",
+     "engine": "Craft, over time, and plumber says the opposite. Its check flags text that is hidden while its typeface loads, and tells the page to show a stand-in at once. He asks for this headline to be held back, because the stand-in is so unlike the real face that the swap is worse than the wait. Both are right in their case. What decides is how different the two faces are, which plumber could measure by drawing the same words in both and comparing the boxes. Until it does, its advice would be wrong on this page.",
      "today": "Not checked.",
      "pins": [
       {
@@ -2594,6 +3018,16 @@
        "y": 236,
        "w": 604,
        "h": 172
+      }
+     ],
+     "basis": "word",
+     "unseen": "The swap. We saw the two faces, not the moment one replaces the other.",
+     "has": [
+      {
+       "id": "experience/font-display",
+       "name": "Text hidden while its font loads",
+       "how": "opposite",
+       "note": "Plumber flags hidden text. He asks for it here."
       }
      ]
     },
@@ -2620,6 +3054,14 @@
        "w": 510,
        "h": 88
       }
+     ],
+     "basis": "measured",
+     "has": [
+      {
+       "id": "tells/subtitle-echo",
+       "name": "Subtitle says it again",
+       "how": "same"
+      }
      ]
     },
     {
@@ -2645,7 +3087,10 @@
        "w": 86,
        "h": 30
       }
-     ]
+     ],
+     "basis": "measured",
+     "has": [],
+     "pair": "regular"
     }
    ],
    "note": "The archive copy is from just after the review and matches what he describes."
@@ -2688,11 +3133,21 @@
      "k": "36.1",
      "level": "behaviour",
      "says": "The sluggish page transitions work against the page’s own design language, which is utility.",
-     "shows": "The site is plain small type on black: lists of titles and dates, a search box, no pictures. Moving between pages plays a transition slow enough to notice.",
+     "shows": "The site is plain small type on black: lists of titles and dates, a search box, no pictures. By his report moving between pages plays a slow transition.",
      "how": "He read what the page promises from how it looks: a tool, quick and without ceremony. Then the first click contradicted it. The fault is not that the transition is slow in seconds. It is that the motion says one thing and the look says another. He makes the same point to the next person in the thread.",
      "engine": "Behaviour against shape: what the motion says should agree with what the look says. Plumber can time a transition. Saying that a page “looks like a tool” needs a judgement about the kind of page, the same one as in point 1.1.",
      "today": "Not checked. For the live harness.",
-     "pins": []
+     "pins": [],
+     "basis": "word",
+     "unseen": "The transition. Not timed.",
+     "has": [
+      {
+       "id": "craft/palette-motion",
+       "name": "Shortcut opens slowly",
+       "how": "near"
+      }
+     ],
+     "pair": "kind"
     },
     {
      "k": "36.2",
@@ -2710,7 +3165,10 @@
        "w": 96,
        "h": 34
       }
-     ]
+     ],
+     "basis": "seen",
+     "unseen": "What he saw on his Mac. Our capture is from a Linux browser.",
+     "has": []
     },
     {
      "k": "36.3",
@@ -2735,7 +3193,9 @@
        "w": 188,
        "h": 28
       }
-     ]
+     ],
+     "basis": "seen",
+     "has": []
     },
     {
      "k": "36.4",
@@ -2745,7 +3205,11 @@
      "how": "A decoration is judged at the count it will really appear at. One corner mark is a detail. Thirty of them down a list become a pattern louder than the titles. He tested the motif against the real length of the list.",
      "engine": "Shape: a decoration repeated until it outweighs the content. Plumber could count how many times a small ornament repeats in one view and compare its total ink with the text’s. This is a case for trying a component with more data than the designer drew, which plumber already does for tables.",
      "today": "Not checked.",
-     "pins": []
+     "pins": [],
+     "basis": "word",
+     "unseen": "The writing page. It did not load for our capture.",
+     "has": [],
+     "pair": "loud-important"
     }
    ],
    "note": "The web archive’s copy is from August. The writing page did not load for our capture."
@@ -2785,7 +3249,10 @@
        "w": 464,
        "h": 140
       }
-     ]
+     ],
+     "basis": "word",
+     "unseen": "The page he saw could not be recovered. Only today’s page was read.",
+     "has": []
     },
     {
      "k": "37.2",
@@ -2803,7 +3270,11 @@
        "w": 380,
        "h": 524
       }
-     ]
+     ],
+     "basis": "word",
+     "unseen": "The page he saw could not be recovered. Only today’s page was read.",
+     "has": [],
+     "pair": "loud-important"
     }
    ],
    "note": "The web archive has no copy of this site. Today’s page shows both points answered."
@@ -2831,7 +3302,7 @@
      "k": "38.1",
      "level": "behaviour",
      "says": "The slow page transitions clash with the look of the site, which is a terminal-like operating system obsessed with speed.",
-     "shows": "The home page is drawn as a desktop: a bar across the top with a clock, folders and files as icons, monospaced labels. Opening something plays a transition slow enough to notice.",
+     "shows": "The home page is drawn as a desktop: a bar across the top with a clock, folders and files as icons, monospaced labels. By his report opening something plays a slow transition.",
      "how": "The same judgement he gave the site before this one. He read what the look promises, a machine that answers at once, and the first click took its time. A computer desktop that eases gently between windows is acting against its own costume.",
      "engine": "Behaviour against shape: the motion should agree with what the look says. Plumber can time the transition. Reading the page as “an operating system” is the judgement about kinds of page from point 1.1.",
      "today": "Not checked. For the live harness.",
@@ -2843,7 +3314,17 @@
        "w": 1440,
        "h": 40
       }
-     ]
+     ],
+     "basis": "word",
+     "unseen": "The transition. Not timed.",
+     "has": [
+      {
+       "id": "craft/palette-motion",
+       "name": "Shortcut opens slowly",
+       "how": "near"
+      }
+     ],
+     "pair": "kind"
     },
     {
      "k": "38.2",
@@ -2868,7 +3349,10 @@
        "w": 372,
        "h": 614
       }
-     ]
+     ],
+     "basis": "seen",
+     "has": [],
+     "pair": "alike-role"
     },
     {
      "k": "38.3",
@@ -2893,7 +3377,27 @@
        "w": 106,
        "h": 30
       }
-     ]
+     ],
+     "basis": "seen",
+     "has": [
+      {
+       "id": "tells/flavour-badge",
+       "name": "Badge for flavour",
+       "how": "near"
+      },
+      {
+       "id": "tells/tag-row",
+       "name": "Row of tags",
+       "how": "near"
+      },
+      {
+       "id": "tells/code-breadcrumb",
+       "name": "Path as decoration",
+       "how": "opposite",
+       "note": "Plumber calls a file path used as decoration a template habit. He asks for this page’s desktop idea to be carried further, not removed. Not tried on this page."
+      }
+     ],
+     "pair": "one-language"
     }
    ],
    "note": "The web archive has no copy of this site."
@@ -2920,8 +3424,8 @@
     {
      "k": "39.1",
      "level": "behaviour",
-     "says": "He is disappointed that he cannot play with the cube. A further idea: when he hovers a face, highlight the matching project in the list, or the other way round.",
-     "shows": "A cube covered in project pictures turns in the middle of the page. To its right a column of project names scrolls by. The two do not react to the pointer or to each other.",
+     "says": "He is disappointed that he cannot play with the cube. He adds a question: highlight the project in the list “in reverse” on hover? We read that as the cube and the list answering each other.",
+     "shows": "A cube covered in project pictures sits in the middle of the page, with a column of project names to its right. By his report the cube cannot be played with.",
      "how": "The cube looks like an object, so his hand went to it, and it did not answer. A thing that looks touchable and is not is a small let-down. Then he saw two views of the same set, pictures on the cube and names in the list, with nothing linking them, and proposed the link.",
      "engine": "Behaviour: something that looks like an object and ignores the pointer. Plumber can try pressing and dragging on a large moving element and see that nothing changes. Whether it “looks touchable” is a judgement. The second half is a design idea, not a fault.",
      "today": "Not checked. The owner called the points fair.",
@@ -2940,7 +3444,11 @@
        "w": 128,
        "h": 900
       }
-     ]
+     ],
+     "basis": "word",
+     "unseen": "That the cube turns and ignores the pointer. Not tried.",
+     "has": [],
+     "pair": "linked-related"
     },
     {
      "k": "39.2",
@@ -2950,15 +3458,18 @@
      "how": "His way of reviewing again: he wants to go through everything fast. A project page with no next and previous makes him go back to the list each time. The same need as opening every project in its own tab.",
      "engine": "Behaviour: a page that is one of a series and offers no way to the next. Plumber can tell a page belongs to a series from its address and from the list that links to it, then look for links to its neighbours.",
      "today": "Not checked.",
-     "pins": []
+     "pins": [],
+     "basis": "word",
+     "unseen": "Project pages. Not captured.",
+     "has": []
     },
     {
      "k": "39.3",
      "level": "craft",
      "says": "When the page reaches the orange footer, change the menu text and the rulers along the edges to white or black.",
-     "shows": "The menu and the pixel rulers along the top and left edges are fixed in place, in grey on black. At the bottom of the page they sit over a footer in the same orange as the large letters, where grey no longer stands out.",
+     "shows": "The menu and the pixel rulers along the top and left edges are grey on black. The footer is the same orange as the large letters. By his report the menu and rulers end up over that orange.",
      "how": "Things fixed to the window pass over every background the page has. He scrolled to the end, where the background changes most, and looked at them there. A colour chosen for the top of a page is only right for the top.",
-     "engine": "Craft: contrast of fixed elements over each background they cross. Plumber checks contrast where things sit when the page loads. This asks for the check to be repeated at each scroll position where the background under a fixed element changes.",
+     "engine": "Craft: contrast of fixed things over each ground they cross. Plumber has the judgement for a layer that slides under words. This is the same judgement with the page scrolling under fixed words, which needs the page read at more than one scroll position.",
      "today": "Not checked.",
      "pins": [
       {
@@ -2974,6 +3485,15 @@
        "y": 0,
        "w": 1440,
        "h": 22
+      }
+     ],
+     "basis": "word",
+     "unseen": "The menu over the orange footer. We did not scroll there.",
+     "has": [
+      {
+       "id": "craft/words-on-layers",
+       "name": "Words lose their ground",
+       "how": "near"
       }
      ]
     }
@@ -3051,7 +3571,17 @@
        "w": 432,
        "h": 534
       }
-     ]
+     ],
+     "basis": "seen",
+     "has": [
+      {
+       "id": "craft/shared-edges",
+       "name": "Lines start on different edges",
+       "how": "near",
+       "note": "Inside cards in a row only."
+      }
+     ],
+     "pair": "regular"
     },
     {
      "k": "40.2",
@@ -3069,7 +3599,10 @@
        "w": 952,
        "h": 334
       }
-     ]
+     ],
+     "basis": "measured",
+     "has": [],
+     "pair": "loud-important"
     },
     {
      "k": "40.3",
@@ -3077,7 +3610,7 @@
      "says": "The “Making” section has great hand-drawn art for each item. Why is it so tiny? Make it big.",
      "shows": "Each item under Making has a drawing beside its name, shown 32 pixels wide. The files behind them are 947, 1,148 and 303 pixels wide.",
      "how": "He found the best material on the page being used as a bullet point. Size should follow worth. The drawings are the most personal thing she has made, so they should be the largest thing in that section, not the smallest.",
-     "engine": "Content, with a strong signal plumber can read: a picture drawn at a small fraction of the size it was made at. A drawing made at 1,148 pixels and shown at 32 is being held back about 35 times. Whether it deserves more room is his judgement; the ratio would tell plumber where to look.",
+     "engine": "Content, with a signal plumber already reads: a picture drawn at a small fraction of the size it was made at. Plumber’s check says the file is too big for its place and should be smaller. He says the place is too small for the drawing. One reading, two opposite fixes; which one holds depends on what the picture is.",
      "today": "Not checked.",
      "pins": [
       {
@@ -3087,13 +3620,23 @@
        "w": 530,
        "h": 246
       }
-     ]
+     ],
+     "basis": "measured",
+     "has": [
+      {
+       "id": "html/img-oversized",
+       "name": "Image far bigger than drawn",
+       "how": "opposite",
+       "note": "The same reading, the opposite fix."
+      }
+     ],
+     "pair": "loud-important"
     },
     {
      "k": "40.4",
      "level": "behaviour",
      "says": "When he hovers the picture it changes its position and its border, so he expects it to do something.",
-     "shows": "The photo on the first screen moves and gains a border under the pointer. It is not a link or a control.",
+     "shows": "By his report the photo on the first screen moves and gains a border under the pointer. Nothing on the page says it leads anywhere.",
      "how": "A response to the pointer is a promise that a click will do something. The picture makes the promise and has nothing behind it. The same family as the underlined headings on shadcn’s page, reached through hover.",
      "engine": "Behaviour, and “looks like a control, is not one”. Plumber already tries hovering things and reads what changes. It could say when an element answers a hover clearly and is neither a link nor a control.",
      "today": "Not checked. For the live harness.",
@@ -3105,7 +3648,11 @@
        "w": 592,
        "h": 708
       }
-     ]
+     ],
+     "basis": "word",
+     "unseen": "The hover. Not tried.",
+     "has": [],
+     "pair": "alike-role"
     },
     {
      "k": "40.5",
@@ -3130,7 +3677,10 @@
        "w": 110,
        "h": 34
       }
-     ]
+     ],
+     "basis": "seen",
+     "has": [],
+     "pair": "kind"
     }
    ],
    "note": "He wrote that he was very tired, then drew the boxes himself. The web archive’s copy is from three days before, so the measurements are of the page he saw."
@@ -3166,7 +3716,7 @@
      "k": "41.1",
      "level": "behaviour",
      "says": "The home page forgets which parts he has already unlocked and read when he comes back from another page.",
-     "shows": "The introduction is a long blurred text. A few phrases are clear and end in a pill, such as PEDRO, RAYCAST and BARCELONA. Pressing a pill clears more of the text, and a counter at the top right keeps score out of 15. Leaving the page and returning sets it back to nought.",
+     "shows": "The introduction is a long blurred text. A few phrases are clear and end in a pill, such as PEDRO, RAYCAST and BARCELONA. Pressing a pill clears more of the text, and a counter at the top right keeps score out of 15. By his report, leaving the page and returning sets it back to nought.",
      "how": "He did some work on the page, left, came back, and the work was gone. Anything a visitor has done is theirs. A page that throws it away tells them not to bother a second time.",
      "engine": "Behaviour: state lost on the way back. Plumber could change something on a page, follow a link, come back and compare. A new gesture built from ones it has.",
      "today": "Not checked.",
@@ -3185,13 +3735,16 @@
        "w": 122,
        "h": 36
       }
-     ]
+     ],
+     "basis": "word",
+     "unseen": "The reset. We did not leave the page and come back.",
+     "has": []
     },
     {
      "k": "41.2",
      "level": "craft",
      "says": "He can move the keyboard focus onto the pills inside the blurred text, but they cannot be read when focused.",
-     "shows": "Pills further along sit inside text that is still blurred. The Tab key reaches them, and the focus lands on something that cannot be read.",
+     "shows": "Pills further along sit inside text that is still blurred. By his report the Tab key reaches them, and the focus lands on something that cannot be read.",
      "how": "He walks through every page with the keyboard as well as the mouse. Focus must always land on something a person can see and understand. Here the keyboard can go where the eye cannot follow.",
      "engine": "Craft, and close to a check plumber has: something that can be tabbed to while hidden from screen readers. This is its visual twin: something that can be tabbed to while blurred. Plumber can read the blur on whatever takes focus.",
      "today": "Not checked.",
@@ -3203,6 +3756,15 @@
        "w": 194,
        "h": 40
       }
+     ],
+     "basis": "word",
+     "unseen": "The focus on blurred text. We did not walk the Tab key through it.",
+     "has": [
+      {
+       "id": "a11y/hidden-focusable",
+       "name": "Hidden, but takes focus",
+       "how": "near"
+      }
      ]
     },
     {
@@ -3211,7 +3773,7 @@
      "says": "On a phone, in Safari, the bars at the top and bottom do not match the body of the page.",
      "shows": "In his phone picture the page is near black and so is the area behind the status bar. The area behind the browser’s bottom bar is white.",
      "how": "On a phone the browser paints its own strips above and below the page, in a colour the page can set. He treats those strips as part of the design. A dark page between a dark strip and a white one looks unfinished. The same habit as with favicons and share pictures: the page includes its frame.",
-     "engine": "Craft, on a surface around the page. Plumber could read the colour the page declares for the browser’s bars and the colour behind the page, and compare both with the page’s own background. A small, exact check.",
+     "engine": "Craft, on a surface around the page. Plumber has a neighbour: a dark page whose browser parts stay light, because the page never says it is dark. The bars of a phone browser take their colour from two other things, the declared theme colour and the colour behind the page. Reading those would be new.",
      "today": "Not checked.",
      "pins": [
       {
@@ -3227,6 +3789,14 @@
        "y": 0,
        "w": 942,
        "h": 146
+      }
+     ],
+     "basis": "seen",
+     "has": [
+      {
+       "id": "experience/color-scheme-missing",
+       "name": "Dark page, light browser parts",
+       "how": "near"
       }
      ]
     },
@@ -3246,7 +3816,9 @@
        "w": 942,
        "h": 506
       }
-     ]
+     ],
+     "basis": "seen",
+     "has": []
     },
     {
      "k": "41.5",
@@ -3264,13 +3836,17 @@
        "w": 268,
        "h": 28
       }
-     ]
+     ],
+     "basis": "seen",
+     "unseen": "Whether any pill leads to a page. We read the words, we did not press each pill.",
+     "has": [],
+     "pair": "linked-related"
     },
     {
      "k": "41.6",
      "level": "behaviour",
      "says": "When he has revealed all the content he reaches a dead end.",
-     "shows": "After the fifteenth reveal the counter is full and nothing further is offered.",
+     "shows": "By his report, after the last reveal nothing further is offered.",
      "how": "He finished what the page asked of him and the page had nothing to say next. The end of a task is where a visitor is most willing to be sent somewhere. He makes the same point about the end of a long article in the next review.",
      "engine": "Behaviour: a flow with no next step at its end. Layr’s reference has this as one of its own two laws, the complete flow. Plumber would have to carry a flow to its end and see whether anything new is offered.",
      "today": "Not checked.",
@@ -3282,7 +3858,10 @@
        "w": 48,
        "h": 24
       }
-     ]
+     ],
+     "basis": "word",
+     "unseen": "The end of the game. We did not play to the fifteenth reveal.",
+     "has": []
     }
    ],
    "note": "The archive copy is from the day before the review. Four of the six points are about a phone or the keyboard, which a desktop picture cannot show; his own phone picture covers two of them."
@@ -3345,7 +3924,9 @@
        "w": 942,
        "h": 470
       }
-     ]
+     ],
+     "basis": "seen",
+     "has": []
     },
     {
      "k": "42.2",
@@ -3377,7 +3958,9 @@
        "w": 60,
        "h": 206
       }
-     ]
+     ],
+     "basis": "seen",
+     "has": []
     },
     {
      "k": "42.3",
@@ -3395,7 +3978,9 @@
        "w": 1066,
        "h": 30
       }
-     ]
+     ],
+     "basis": "seen",
+     "has": []
     },
     {
      "k": "42.4",
@@ -3420,30 +4005,309 @@
        "w": 1380,
        "h": 860
       }
-     ]
+     ],
+     "basis": "seen",
+     "has": []
     },
     {
      "k": "42.5",
      "level": "shape",
      "says": "The bullets of his lists do not follow the vertical line that the typography has set.",
-     "shows": "Every paragraph in an article starts on one left edge. In a list, neither the bullet nor the text after it sits on that edge.",
+     "shows": "His report: in a list, the bullets do not sit on the left edge that the paragraphs share.",
      "how": "A column of text draws a line down the page with its left edge, and the eye runs along it. Anything that starts a little to one side of that line reads as slightly loose. He names the line, the key line, which is how people who set type talk about it.",
-     "engine": "Shape: edges that should share a line. Plumber can collect the left edges of every block in a column and find the ones that miss the common edge by a little. The same reading as the carousel edge in review 4, and the clearest case for counting how many things agree on a line.",
+     "engine": "Shape: edges that should share a line. Plumber has this judgement inside one group: rows of a menu or a list whose words start a few pixels off the edge the others keep. His case is across groups, a list against the paragraphs around it, which plumber does not compare.",
      "today": "Not checked.",
-     "pins": []
+     "pins": [],
+     "basis": "word",
+     "unseen": "The lists. No article with a list was captured.",
+     "has": [
+      {
+       "id": "craft/column-edge",
+       "name": "Off the line",
+       "how": "near",
+       "note": "Inside one list."
+      },
+      {
+       "id": "craft/shared-edges",
+       "name": "Lines start on different edges",
+       "how": "near",
+       "note": "Inside one card."
+      }
+     ],
+     "pair": "regular"
     },
     {
      "k": "42.6",
      "level": "behaviour",
      "says": "The lead picture on one article, the one about Cobe, is broken.",
-     "shows": "Not captured.",
+     "shows": "His report. The article was not captured.",
      "how": "He opened the articles one by one. A broken picture at the top of a page is the first thing a visitor sees there.",
-     "engine": "Behaviour: a picture that did not load. One of the faults we listed from the CSS tips harvest; plumber can read that an image has no pixels.",
+     "engine": "Behaviour: a picture that did not load. Plumber has this check.",
      "today": "Not checked.",
-     "pins": []
+     "pins": [],
+     "basis": "word",
+     "unseen": "The broken picture. Not captured.",
+     "has": [
+      {
+       "id": "craft/image-broken",
+       "name": "Picture didn’t load",
+       "how": "same"
+      }
+     ]
     }
    ],
    "note": "He opened with “not making it easy”: the site is good and the notes are fine points. The web archive’s copy is from three days before."
   }
- ]
+ ],
+ "replies": [
+  {
+   "id": "2112205197707448375",
+   "kind": "review",
+   "to": 1
+  },
+  {
+   "id": "2112283887963623537",
+   "kind": "review",
+   "to": 3
+  },
+  {
+   "id": "2112206438105759757",
+   "kind": "review",
+   "to": 4
+  },
+  {
+   "id": "2112208379716231406",
+   "kind": "review",
+   "to": 5
+  },
+  {
+   "id": "2112209209911640165",
+   "kind": "review",
+   "to": 6
+  },
+  {
+   "id": "2112210362875388095",
+   "kind": "review",
+   "to": 7
+  },
+  {
+   "id": "2112210988065767473",
+   "kind": "review",
+   "to": 8
+  },
+  {
+   "id": "2112212024159527123",
+   "kind": "review",
+   "to": 9
+  },
+  {
+   "id": "2112213558016577899",
+   "kind": "review",
+   "to": 10
+  },
+  {
+   "id": "2112213817694515571",
+   "kind": "review",
+   "to": 11
+  },
+  {
+   "id": "2112215072546410950",
+   "kind": "review",
+   "to": 12
+  },
+  {
+   "id": "2112215917077684673",
+   "kind": "review",
+   "to": 13
+  },
+  {
+   "id": "2112217807697903816",
+   "kind": "review",
+   "to": 14
+  },
+  {
+   "id": "2112218673188368808",
+   "kind": "review",
+   "to": 15
+  },
+  {
+   "id": "2112219370713706682",
+   "kind": "review",
+   "to": 16
+  },
+  {
+   "id": "2112220155707289906",
+   "kind": "review",
+   "to": 17
+  },
+  {
+   "id": "2112222116569346469",
+   "kind": "review",
+   "to": 18
+  },
+  {
+   "id": "2112252051979751670",
+   "kind": "review",
+   "to": 19
+  },
+  {
+   "id": "2112242556230623496",
+   "kind": "review",
+   "to": 21
+  },
+  {
+   "id": "2112243581956301303",
+   "kind": "review",
+   "to": 22
+  },
+  {
+   "id": "2112244235596411091",
+   "kind": "review",
+   "to": 23
+  },
+  {
+   "id": "2112245094170423576",
+   "kind": "review",
+   "to": 24
+  },
+  {
+   "id": "2112246065340535193",
+   "kind": "review",
+   "to": 25
+  },
+  {
+   "id": "2112246328973820204",
+   "kind": "review",
+   "to": 26
+  },
+  {
+   "id": "2112248626705768718",
+   "kind": "review",
+   "to": 27
+  },
+  {
+   "id": "2112248959448268918",
+   "kind": "review",
+   "to": 28
+  },
+  {
+   "id": "2112249141137178926",
+   "kind": "review",
+   "to": 29
+  },
+  {
+   "id": "2112249861164892409",
+   "kind": "review",
+   "to": 30
+  },
+  {
+   "id": "2112251237005402429",
+   "kind": "review",
+   "to": 31
+  },
+  {
+   "id": "2112251652388642953",
+   "kind": "review",
+   "to": 32
+  },
+  {
+   "id": "2112252580294279172",
+   "kind": "review",
+   "to": 33
+  },
+  {
+   "id": "2112253376561873132",
+   "kind": "review",
+   "to": 34
+  },
+  {
+   "id": "2112254552846238090",
+   "kind": "review",
+   "to": 35
+  },
+  {
+   "id": "2112255229626384558",
+   "kind": "review",
+   "to": 36
+  },
+  {
+   "id": "2112255727263773115",
+   "kind": "review",
+   "to": 37
+  },
+  {
+   "id": "2112281662545633581",
+   "kind": "review",
+   "to": 38
+  },
+  {
+   "id": "2112289979485270066",
+   "kind": "review",
+   "to": 39
+  },
+  {
+   "id": "2112306110371680642",
+   "kind": "review",
+   "to": 40
+  },
+  {
+   "id": "2112472453398085824",
+   "kind": "review",
+   "to": 41
+  },
+  {
+   "id": "2112511431371264043",
+   "kind": "review",
+   "to": 42
+  },
+  {
+   "id": "2112205408794198275",
+   "kind": "joke",
+   "what": "On his own site, posted by a friend: two words of mock dismissal. His real notes on it are review 3."
+  },
+  {
+   "id": "2112209428371902773",
+   "kind": "joke",
+   "what": "A joke about cycling, under the same post."
+  },
+  {
+   "id": "2112223129674076448",
+   "kind": "aside",
+   "what": "To everyone: an apology that he may not reach every link."
+  },
+  {
+   "id": "2112253696167796919",
+   "kind": "point",
+   "to": "19.2",
+   "what": "His answer to the owner about panels and tabs."
+  },
+  {
+   "id": "2112256817782825114",
+   "kind": "aside",
+   "what": "Under review 15: one word, confirming that the second pointer in his recording came from the recording software."
+  },
+  {
+   "id": "2112270096135795106",
+   "kind": "point",
+   "to": "21.2",
+   "what": "His follow-up: names would give sponsors more of a spotlight than small pictures."
+  },
+  {
+   "id": "2112306169813360685",
+   "kind": "point",
+   "to": "40.5",
+   "what": "His follow-up, with a picture: the outline stars read as none."
+  }
+ ],
+ "pairs": {
+  "alike-role": "Alike, and the same role",
+  "loud-important": "Loud, and what matters",
+  "near-belongs": "Near, and belongs together",
+  "enclosed-scope": "Enclosed, and in one scope",
+  "linked-related": "Linked, and related",
+  "regular": "Edges and proportion that nearly agree",
+  "one-language": "One language across a page, a site and its surfaces",
+  "kind": "The kind of page and what it promises"
+ },
+ "audited": "2026-11-26"
 }

@@ -69,6 +69,14 @@ async function keep(dir, name, value) {
   await writeFile(temp, `${JSON.stringify(value, null, 1)}\n`);
   await rename(temp, file);
 }
+// A judgement's file is <screen>.<judge>.json and nothing else: a save that was cut short leaves a file with a longer
+// name beside it, which is never read. A file that cannot be read as a judgement is passed over, and said in the log,
+// so one bad file never takes the whole set's page down.
+const KEPT = /^([a-z0-9-]+)\.([a-z0-9-]+)\.json$/;
+async function kept(file) {
+  try { return JSON.parse(await readFile(file, 'utf8')); }
+  catch (e) { console.error(`not read: ${file} (${e.message})`); return null; }
+}
 // which code drew the screen: the app's commit and whether files had changed since it. An app that runs elsewhere
 // says its commit in set.json.
 async function code(set) {
@@ -84,9 +92,10 @@ async function code(set) {
 async function judges(dir) {
   const out = {};
   for (const name of await readdir(join(dir, 'judgements')).catch(() => [])) {
-    const [, who, ext] = name.split('.');
-    if (ext !== 'json') continue;
-    const j = JSON.parse(await readFile(join(dir, 'judgements', name), 'utf8'));
+    const who = KEPT.exec(name)?.[2];
+    if (!who) continue;
+    const j = await kept(join(dir, 'judgements', name));
+    if (!j) continue;
     out[who] ??= { screens: 0, marks: 0 };
     out[who].screens += j.done ? 1 : 0; out[who].marks += j.marks?.length ?? 0;
   }
@@ -113,8 +122,9 @@ async function judging(req, res, url, name) {
   if (req.method === 'GET' && url.pathname === '/__judge/set') {
     const judgements = {};
     for (const file of await readdir(join(dir, 'judgements')).catch(() => [])) {
-      const [id, who, ext] = file.split('.');
-      if (ext === 'json' && who === judge && known.has(id)) judgements[id] = JSON.parse(await readFile(join(dir, 'judgements', file), 'utf8'));
+      const [, id, who] = KEPT.exec(file) ?? [];
+      const j = who === judge && known.has(id) ? await kept(join(dir, 'judgements', file)) : null;
+      if (j) judgements[id] = j;
     }
     const all = await names(), at = all.indexOf(name);
     return json(res, 200, { set, judge, judgements, port, list: !one, before: all[at - 1] ?? null, after: all[at + 1] ?? null });

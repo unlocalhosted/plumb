@@ -110,7 +110,7 @@ function review(el, root, base, loaded, judge, soften) {
       return `<li class="item${m.ref === sel ? ' sel' : ''}"><button type="button" data-ref="${m.ref}" aria-expanded="${m.ref === sel}">
         <span class="num lvl" data-l="${m.level}">${num(m.ref)}</span><span class="kind">${LEVELS[m.level][0]}${where ? ` · ${where}` : ''}</span>
         <p class="words">${esc(m.words)}</p>
-        ${m.ref === sel ? `<dl class="more"><dt>The page shows</dt><dd>${esc(m.shows)}</dd><dt>How he got there</dt><dd>${esc(m.how)}</dd><dt>For plumber</dt><dd>${esc(m.engine)}</dd>${m.today ? `<dt>Today</dt><dd>${esc(m.today)}</dd>` : ''}</dl>` : ''}
+        ${m.ref === sel ? `<dl class="more"><dt>The page shows</dt><dd>${esc(m.shows)}</dd>${m.basis ? `<dt>How we know</dt><dd>${esc(know(m))}</dd>` : ''}<dt>How he got there</dt><dd>${esc(m.how)}</dd><dt>For plumber</dt><dd>${esc(m.engine)}</dd>${m.has?.length ? `<dt>Plumber’s checks</dt><dd>${esc(checks(m))}</dd>` : ''}${m.today ? `<dt>Today</dt><dd>${esc(m.today)}</dd>` : ''}</dl>` : ''}
       </button></li>`;
     }).join('');
     $('.note2').textContent = set.review?.note ?? '';
@@ -169,6 +169,10 @@ function review(el, root, base, loaded, judge, soften) {
   if (screens.length) show(0); else $('.note2').textContent = `${judge} has no marks in this set.`;
 }
 
+const KNOW = { measured: 'Read from the page or a copy of it.', seen: 'Seen in his recording or picture, or in ours.', word: 'His sentence only.' };
+const HOW = { same: 'the same judgement', near: 'a neighbour', opposite: 'says the opposite' };
+const know = (p) => `${KNOW[p.basis] ?? ''}${p.unseen ? ` Not seen by us: ${p.unseen}` : ''}`;
+const checks = (p) => (p.has ?? []).map((h) => `“${h.name}” (${HOW[h.how]})${h.note ? `: ${h.note}` : ''}`).join(' ');
 export function show(el, root, base, loaded, judge, soften) {
   if (loaded.index) list(root, base, loaded, soften); else review(el, root, base, loaded, judge, soften);
 }

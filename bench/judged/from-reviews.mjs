@@ -58,8 +58,13 @@ for (const review of data.reviews) {
   const shots = Object.fromEntries(review.shots.map((s) => [s.id, s]));
   const screens = new Map([['/', { id: 'home', path: '/' }]]);
   const marks = new Map([['home', []]]);
+  const widths = new Map(); // the widths of the pictures that carry pins, per page
+  for (const point of review.points) for (const pin of point.pins ?? []) {
+    const shot = shots[pin.shot];
+    if (shot?.path && (shot.of === 'live' || shot.of === 'archive')) widths.set(shot.path, (widths.get(shot.path) ?? new Set()).add(shot.w));
+  }
   for (const point of review.points) {
-    const text = { ref: point.k, level: point.level, words: point.says, shows: point.shows, how: point.how, engine: point.engine, today: point.today ?? '' };
+    const text = { ref: point.k, level: point.level, words: point.says, shows: point.shows, how: point.how, engine: point.engine, today: point.today ?? '', basis: point.basis, unseen: point.unseen ?? '', has: point.has ?? [], pair: point.pair ?? '' };
     // today's page first; the archive's copy only when no pin sits on today's page
     const pins = (point.pins ?? []).filter((pin) => shots[pin.shot]?.path);
     const live = pins.filter((pin) => shots[pin.shot].of === 'live');
@@ -67,8 +72,12 @@ for (const review of data.reviews) {
     if (!placed.length) { marks.get('home').push({ ...text, placed: false }); loose++; continue; }
     for (const pin of placed) {
       const shot = shots[pin.shot];
-      if (!screens.has(shot.path)) { screens.set(shot.path, { id: screenId(shot.path), path: shot.path }); marks.set(screenId(shot.path), []); }
-      const screen = screens.get(shot.path);
+      // a screen is a page at a width: a box drawn on a 2,560-wide picture is in other pixels than one drawn at 1,440
+      // (a page pinned at one width only keeps its plain name, and that width)
+      const split = widths.get(shot.path).size > 1 && shot.w !== 1440;
+      const key = split ? `${shot.path} @${shot.w}` : shot.path;
+      if (!screens.has(key)) { const id = split ? `${screenId(shot.path)}-${shot.w}` : screenId(shot.path); screens.set(key, { id, path: shot.path }); marks.set(id, []); }
+      const screen = screens.get(key);
       if (shot.w !== 1440) screen.width = shot.w;
       const anchor = anchorFor(pin, await elements(shot));
       marks.get(screen.id).push({ ...text, placed: true, approx: shot.of === 'archive', x: pin.x, y: pin.y, w: pin.w, h: pin.h, anchor, from: shot.label });
