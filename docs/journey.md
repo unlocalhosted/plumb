@@ -6993,8 +6993,18 @@ into its own browser. Your app isn't changed.", then the findings.
   The page is read twice, as seen and as meant, and a finding is a disagreement between the two. Five comparisons
   from the two pictures, three more that came out of the reviews, one judgement with three outcomes. It sits on the
   foundations already signed off and changes none.
-- **Not done:** part two, the detail of each reading and each number with its source. Nothing is built. Four
-  decisions wait for the owner, listed in the draft's section 9.
+- **Part two, the same day**, after the owner agreed to the idea ("Yes, write part two"): each reading with how it
+  is computed, its three outcomes, the words it says, what it stands on and what is not known; the page in more than
+  one state; every number in one table; the order of work. Of eight numbers, two have a published source (the ratio
+  of gaps at which a grouping reads one way, and the count of sameness links). The rest are plumber's conventions or
+  nothing, and the spec says none is used until it has been run against judged screens.
+- **What re-reading the review changed:** joined means sharing a border, not only a drawn line; the review does not
+  say which cue wins when two disagree, and says cues do not always add up; one source cited in part one had not
+  been read and was taken out. The two expert points sorted under "joined" were about things that answer each other,
+  so that pair has no judged case and is left out of the first build.
+- **Not done:** nothing is built. Five decisions wait for the owner, listed in the draft's section 9. The first
+  layer proposed is the seen picture drawn over a page with nothing judged, so the owner can say whether its groups
+  are the ones they see.
 - **References:** the perception research in [perception-sources.md](research/perception-sources.md); the expert's
   reviews (entries 153 to 156).
 
