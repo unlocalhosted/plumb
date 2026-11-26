@@ -6622,10 +6622,38 @@ into its own browser. Your app isn't changed.", then the findings.
 - **Media hooks:** the judging page with one mark and its note open over cal.com's event types list.
 - **References:** Layr's chapter and the research behind it, both in [references.md](references.md) under 2026-11-26.
 
+### 152. The first judged set: seven cal.com screens, one mark (2026-11-26)
+
+- **The itch:** the judging page existed and nobody had judged with it. Until someone did, "plumber sees details,
+  not shape" was a belief.
+- **How we found it:** the owner judged seven cal.com screens, signed in as the demo user: 21 looks and one mark.
+  The mark is on the tabs above the bookings list: "can't say but like the text size and everything like too
+  cramped and doesnt give a feeling of like tabs". Another session had run plumber's page check on the same seven
+  pages of the same copy that day, on the test server.
+- **What the two say side by side:** the owner marked 1 thing. Plumber reported 244 on the same seven screens, 198
+  of them findings it stands behind. About 117 are things no look can show (screen-reader names, phone zoom, how
+  the page loads). About 76 are things plumber says look wrong at rest, which the owner looked at and left alone.
+- **The one thing the owner saw, plumber did not say.** Plumber had one finding on that tab bar: its 10px corner
+  sits 2px inside a 10px corner. The saved screen shows what the owner felt and could not name. The chosen tab has
+  the same text colour and weight as the others, and its only difference is a near-black fill on a near-black
+  strip. The tabs are 2px apart with no edge between them, so the five labels sit 16px from each other and read as
+  a row of words. Each tab is 31px high with the line as tall as the letters, beside a 38px Filter button.
+- **The looks:** the "Bookings" item in the side menu, the only one with an orange count on it, was looked at on 3
+  of 7 screens. On the profile page the first look went to the red "Delete account" button. Both fit the two rules
+  of loudness in [perception-sources.md](research/perception-sources.md): different from its neighbours, among
+  neighbours that are alike.
+- **What it does not show:** one judge, seven screens, each judged in under a minute, so "left alone" means "not
+  seen at a glance", not "right". The looks are self-reported. The owner's browser draws text at 112.5%, so the
+  screens were judged with 15.75px where plumber's run read 14px; padding grew with it. The counts came from a
+  throwaway script over the saved screens and the other session's result files; no script for it is in the
+  repository yet.
+- **Media hooks:** the tab bar with the owner's box on it, beside plumber's corner finding for the same component.
+
 ## Open gaps
 
-- The judged set ([entry 151](#151-a-judged-set-real-screens-marked-by-a-person-2026-11-26)) has a judging page
-  and no judgements yet. Nothing scores plumber against a person's marks, and the marks are kept only on the laptop.
+- The judged set has seven screens from one judge ([entry 152](#152-the-first-judged-set-seven-calcom-screens-one-mark-2026-11-26)).
+  The comparison with plumber was done by hand once; no script scores it. The owner has not yet said which of
+  plumber's findings on those screens they agree with. The marks are kept only on the laptop.
 - Without setup, the page check found 70 problems where the same page wired in finds 72 (10 fixes against 14). Not
   explained yet ([entry 138](#138-the-page-check-works-in-an-app-with-no-plumber-setup-2026-11-25)).
 - The fixes of entry 81 (caret, app errors, broken config on Vite) are committed and not published. The site runs
