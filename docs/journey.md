@@ -6025,6 +6025,14 @@ into its own browser. Your app isn't changed.", then the findings.
   between menu rows (a few pixels that belong to no row, so the highlight flickers), a tooltip that opens off the
   screen (the tooltip probe now reports where it landed), and the panel check widened to menus in popovers. Proof on
   their test page: each speaks once, is quiet on its near misses, and changes no other check. 289 checks now.
+- **Advice that should have been a fix (owner: "bro dead strips can be fixable no ?", then "these seems fixable why
+  we are restricting to advice"):** three of the new checks gave advice for reasons that did not hold. The dead
+  strips have a fix that moves nothing: each row's hit area reaches half the gap up and down through an invisible
+  ::after, written once on the list. The panel and the browser-coloured control were held back because their CSS
+  is not in every browser; but a browser without it ignores the line and behaves as it does today, so the fix can
+  only help. The spec's rule was wrong and is changed: a newer feature makes a fix advice only when the page would
+  be worse without it. All three write their fix now (the control's in the class its own buttons wear), and each was
+  taken, checked and undone exactly on the test pages. The tooltip check still gives advice.
 - **Proof of the spec itself:** the six checks above are the first built to it. It is still a draft for the owner. The first use is the six checks from gokhan's tips
   (`docs/research/gkurt-css-tips.md`, reference logged 2026-11-26 in `docs/references.md`).
 - **Media hooks:** a docs example flipping between Broken and Fixed, beside the same check's finding on a real app.

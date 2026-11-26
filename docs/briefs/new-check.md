@@ -182,7 +182,7 @@ checks again after the edit and reports anything new that fires and anything tha
 | It can be taken back | Undo returns the file exactly as it was |
 | It says how far it reaches | A fix written into a shared class or component changes every place that uses it. The check counts those places and judges each one. If any of them was right as it stood, the fix is written on the one element or becomes advice |
 | It holds in every state | The fix is written for the width, colour scheme and state in which the fault was seen, and the other widths and states are checked for change |
-| The project's browsers have it | A fix that needs a newer CSS feature is offered only when the project's browser list has it. Until plumber can read that list, such a fix is advice |
+| It is safe where a browser lacks it | A fix that uses a newer CSS feature is written when a browser without the feature ignores it and the page stays as it was (`overscroll-behavior`, `accent-color`). It is advice only when the page would be worse without the feature than it is today, until plumber can read the project's browser list |
 
 **Undo across time.** A fix can be taken back from history, later and out of order, so taking it back has to be
 shown at each of these points and not only straight after the fix:

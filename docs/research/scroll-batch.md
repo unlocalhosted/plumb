@@ -59,8 +59,8 @@ on beside it), with the proof runs in `scripts/proof/`.
 | snap-strict | yes, once | the same long part with `proximity` | none | no | written | the same | holds |
 | snap-unreachable | yes, once | the parts that do name a place | none | no | written | the same, and the style landed | holds |
 | snap-offset | yes, once | the area with room kept for the bar | none | no | advice on this page | not shown: the page's theme has no spacing step at the bar's 48px, so the fix came as advice. A written fix was not seen | holds |
-| scroll-chain | yes, once | a panel that contains its scroll; a block in the page's flow | none | no | advice | nothing to take | holds |
-| native-accent | yes, three (checkbox, slider, progress bar) | a checkbox already in the product's colour | none | no | advice | nothing to take | holds |
+| scroll-chain | yes, once | a panel that contains its scroll; a block in the page's flow | none | no | written since (`overscroll-contain`) | cleared, nothing raised, undo exact | holds |
+| native-accent | yes, three (checkbox, slider, progress bar) | a checkbox already in the product's colour | none | no | written since (the buttons' own colour class, as an accent) | cleared, nothing raised, undo exact | holds |
 
 The page had 59 elements and 37 findings with the batch on. With it off, the only findings gone were the batch's
 own eight.

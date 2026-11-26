@@ -3102,8 +3102,8 @@ export const snapOffset = {
 // list: fixed, stuck in place, or positioned out of the page's flow as a popover is) hands the scroll to the page behind once it reaches its end. (MDN
 // overscroll-behavior: "scroll chaining", and that it is sometimes not wanted.) A scroll area in the page's own flow
 // (a code block, a wide table) is left alone: there, carrying on down the page is what people expect. A dialog is
-// components/dialog-scroll-lock's. The fix is advice: MDN marks the property as not yet in every widely used browser,
-// and plumber can't read a project's browser list.
+// components/dialog-scroll-lock's. MDN marks the property as not yet in every widely used browser; a browser without
+// it ignores the declaration and behaves as before, so the fix is written (owner, 2026-11-26: "these seems fixable").
 export const scrollChain = {
   id: 'craft/scroll-chain', family: 'craft', number: [], owns: ['overscroll'], once: 'ancestor', reads: ['style', 'rect'],
   check({ el, facts }) {
@@ -3127,7 +3127,8 @@ export const scrollChain = {
       ...say(this.id, {}),
       key: this.id, text: utility(el, 'overflow-y') ?? utility(el, 'overflow') ?? 'overflow-y', props: ['overscroll-behavior'], value: 'auto', n: 0,
       evidence: { more: Math.round(el.scrollHeight - el.clientHeight), page: Math.round(page.scrollHeight - page.clientHeight) }, confidence: 0.82,
-      suggest: { kind: 'advice', text: 'Add overscroll-behavior: contain (overscroll-contain) where your browsers have it: the scroll then stops at this panel’s end.' },
+      // written: a browser without the property ignores it and scrolls as it does today, so the fix can only help
+      suggest: { kind: 'class', from: '', to: 'overscroll-contain', why: 'the scroll stops at this panel’s end', sets: { overscrollBehaviorY: 'contain' } },
     }];
   },
 };
@@ -3136,7 +3137,7 @@ export const scrollChain = {
 // browser wears the browser's own accent, usually a blue, beside buttons in the product's colour. (MDN accent-color:
 // applies to those four; `auto` is the browser's choice.) The product's colour is read from the page: the most used
 // strong colour on its buttons. A page with none, or whose colour is already a blue near the browser's, is left alone.
-// Advice only, for the same reason as scroll-chain. The hue distance and the strength are invented lines, to be tuned.
+// Written, for the same reason as scroll-chain. The hue distance and the strength are invented lines, to be tuned.
 function brandOf(facts) {
   if (facts.brand !== undefined) return facts.brand;
   const seen = new Map();
@@ -3145,10 +3146,12 @@ function brandOf(facts) {
     const c = rgb(facts.style(b).backgroundColor);
     if (!c || (c[3] ?? 1) < 0.9 || chroma(c) < 0.09) continue;
     const key = c.slice(0, 3).map((v) => Math.round(v)).join(',');
-    seen.set(key, (seen.get(key) ?? 0) + 1);
+    const had = seen.get(key) ?? { n: 0, cls: null };
+    // the class that gives a button this colour, when it is written as one (bg-emerald-600): the project's own name for it
+    seen.set(key, { n: had.n + 1, cls: had.cls ?? utility(b, 'bg', { not: /^(?:\[|transparent|inherit|current|none|gradient|linear|radial|conic|clip|origin|fixed|local|scroll|no-repeat|repeat|cover|contain|center|top|bottom|left|right|blend)/ }) });
   }
-  const top = [...seen].sort((a, b) => b[1] - a[1])[0];
-  return (facts.brand = top ? top[0].split(',').map(Number) : null);
+  const top = [...seen].sort((a, b) => b[1].n - a[1].n)[0];
+  return (facts.brand = top ? Object.assign(top[0].split(',').map(Number), { cls: top[1].cls }) : null);
 }
 const BROWSER_BLUE = [0, 117, 255]; // Chromium's default accent
 export const nativeAccent = {
@@ -3168,7 +3171,9 @@ export const nativeAccent = {
       ...say(this.id, { kind }),
       key: this.id, text: 'accent-color', props: ['accent-color'], value: 'auto', n: Math.round(away),
       evidence: { brand: hex(brand), hueAway: Math.round(away) }, confidence: 0.82,
-      suggest: { kind: 'advice', text: `Set accent-color to your own colour (${hex(brand)} is on your buttons) where your browsers have it, on this control or once on the page.` },
+      // written in the project's own words: the colour class its buttons wear, as an accent. A browser without
+      // accent-color ignores it and draws the control as it does today
+      suggest: { kind: 'class', from: '', to: brand.cls ? brand.cls.replace(/^(!?)bg-/, '$1accent-') : `accent-[${hex(brand)}]`, why: `${brand.cls ? brand.cls.replace(/^!?bg-/, '') : hex(brand)}, the colour of your buttons`, sets: { accentColor: `rgb(${brand.slice(0, 3).join(', ')})` } },
     }];
   },
 };
@@ -3179,7 +3184,8 @@ export const nativeAccent = {
 // docs/research/harvests/maybepratikk/tips.md. No specification says this; the ground is the hit-testing itself: a
 // gap is not part of either box.) Read from the boxes: three or more rows stacked in one column, each a control or
 // filled by one, with the same small space between each pair. Rows set well apart are separate things and are left
-// alone. The largest gap read as a strip is an invented line, to be tuned on real apps.
+// alone. The largest gap read as a strip is an invented line, to be tuned on real apps. The fix keeps the look: the
+// rows' hit areas are stretched to meet, which is one of the right answers and the only one that moves nothing.
 const rowControl = (k) => (k.matches('a[href], button, [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="option"], [role="tab"], [tabindex="0"]') ? k
   : (() => { const inner = k.querySelector('a[href], button, [role="menuitem"], [role="option"]'); return inner && inner.offsetWidth >= k.offsetWidth * 0.9 && inner.offsetHeight >= k.offsetHeight * 0.9 ? inner : null; })());
 export const rowDeadZone = {
@@ -3194,13 +3200,25 @@ export const rowDeadZone = {
     const gaps = boxes.slice(1).map((b, i) => b.top - boxes[i].bottom);
     const gap = Math.min(...gaps), most = Math.max(...gaps);
     if (gap < (T.min ?? 1) || most > (T.max ?? 8)) return [];
+    // a row whose own ::before or ::after already reaches into the gap owns those pixels: nothing is dead
+    const controls = kids.map(rowControl), half = gap / 2;
+    const reach = (c) => ['::before', '::after'].some((p) => { const ps = getComputedStyle(c, p); return ps.content !== 'none' && ps.position === 'absolute' && px(ps.top) <= -half + 0.5 && px(ps.bottom) <= -half + 0.5; });
+    if (controls.every(reach)) return [];
+    // the fix: each row's hit area grows half the gap up and down, through an invisible ::after. The rows then meet in
+    // the middle of the strip; nothing moves and the fill is unchanged. Written once, on the list, for all its rows.
+    const direct = controls.every((c, i) => c === kids[i]);
+    const nested = !direct && controls.every((c, i) => c.parentElement === kids[i] && c.localName === controls[0].localName && kids[i].localName === kids[0].localName);
+    const free = controls.every((c) => { const cs = facts.style(c); return cs.overflowY === 'visible' && cs.display !== 'inline' && getComputedStyle(c, '::after').content === 'none' && /^(?:static|relative)$/.test(cs.position); });
+    const v = direct ? '*:' : nested ? `[&>${kids[0].localName}>${controls[0].localName}]:` : null;
+    const reachPx = Math.ceil(half);
+    const written = v && free ? { kind: 'class', from: '', to: `${v}relative ${v}after:absolute ${v}after:inset-x-0 ${v}after:inset-y-[-${reachPx}px]`, why: `each row reaches ${reachPx}px into the gap, so every pixel belongs to a row; nothing moves`, sets: {} } : null;
     const way = px(facts.style(el).rowGap) > 0 ? 'gap' : 'margin';
     return [{
       ...say(this.id, { gap: Math.round(gap * 10) / 10, n: kids.length }),
       key: this.id, text: (way === 'gap' ? utility(el, 'gap-y') ?? utility(el, 'gap') ?? utility(el, 'space-y') : null) ?? way, props: ['row-gap'], value: `${Math.round(gap * 10) / 10}px`, n: gap,
       evidence: { gap: Math.round(gap * 10) / 10, rows: kids.length, by: way }, confidence: 0.84,
-      // a brief: there is more than one right answer, so the conditions are said and no edit is written
-      suggest: { kind: 'advice', text: `Let the rows touch, and keep the space inside them: more padding on each row, or the hover fill drawn inset (a ::before with inset: ${Math.max(1, Math.round(gap / 2))}px 0). Done when no pixel between two rows hovers nothing, and the menu looks the same at rest.` },
+      // written when the rows can take an ::after of their own; else the conditions a good answer meets, as advice
+      suggest: written ?? { kind: 'advice', text: `Let the rows touch, and keep the space inside them: more padding on each row, or the hover fill drawn inset (a ::before with inset: ${Math.max(1, Math.round(gap / 2))}px 0). Done when no pixel between two rows hovers nothing, and the menu looks the same at rest.` },
     }];
   },
 };
