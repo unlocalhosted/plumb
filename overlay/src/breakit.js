@@ -152,7 +152,7 @@ function heard(records) {
 
 async function grow() {
   if (!tally) { sorting = true; paint(); await sortAll(); sorting = false; if (!on) return; }
-  before = measure();
+  before = measure(); lined = lineup();
   observer = new MutationObserver(heard);
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
   quietly(() => stretchUnder(document.body, still ? 1 : 0));
@@ -174,7 +174,7 @@ function shrink() {
     if (node.nodeType === 3) { if (node.data === rec.now) node.data = rec.orig; }
     else if (node.placeholder === rec.now.trim()) node.placeholder = rec.orig;
   }
-  held.clear(); notes = []; index = 0; before = null;
+  held.clear(); notes = []; index = 0; before = null; lined = null;
 }
 
 // ── where words come from ───────────────────────────────
@@ -352,6 +352,9 @@ function say(b) {
       ? { title: `${b.count > 1 ? `${name} and ${b.count - 1} more stay` : `${name} stays`} ${b.px}px when the reader asks for bigger text.`, why: `${b.count > 1 ? 'They all use' : 'It uses'} ${b.cls}, a size in pixels. ${b.cls.replace(/\[[\d.]+px\]/, `[${rem}]`)} looks the same and grows with the reader's setting.` }
       : { title: `${name} stays ${b.px}px when the reader asks for bigger text.`, why: `Its size is set in pixels${b.count > 1 ? `, here and in ${b.count - 1} more place${b.count > 2 ? 's' : ''} drawn by the same line` : ''}. In rem (${rem}) it would grow with the reader's setting.` };
   }
+  if (b.kind === 'moved') return { title: `${name} and its column move ${b.by}px.`, why: 'The table sizes each column by what is in it, so a longer name pushes the others. The next page of rows will not line up with this one. A fixed table layout keeps each column where it is.' };
+  if (b.kind === 'uneven') return { title: `${name} drops ${b.by}px below the others.`, why: 'These cards ended on one line only because their titles were alike. Pin each card’s last part to its bottom.' };
+  if (b.kind === 'squeezed') return { title: `${name} gets squeezed.`, why: `It was ${b.was}px wide and is ${b.now}px beside the longer words. Stop it shrinking, and it keeps its width.` };
   if (b.kind === 'spill') return { title: `${name} runs out of its box.`, why: b.edge === 'screen' ? `It runs ${b.by}px off the screen.` : `It crosses the box's edge by ${b.by}px.` };
   if (b.kind === 'overlap') return { title: `${name} runs into “${nameOf(b.other)}”.`, why: 'The two sets of words now sit on top of each other.' };
   const what = b.cause ? `“${nameOf(b.cause) || b.cause.localName}”` : 'Something';
@@ -364,8 +367,74 @@ const cap = (t) => t.replace(/^[a-z]/, (c) => c.toUpperCase());
 function judge() {
   const now = measure();
   const fresh = [...now.values()].filter((b) => (!before?.has(b.el) || before.get(b.el).kind !== b.kind) && !old(b, before));
-  const order = { sideways: 0, cut: 1, overlap: 2, spill: 3 };
+  // what lost its place without being cut or covered: read only where longer words are on the page
+  if (toy === 'longer' && lined) for (const d of drifted(lined)) if (!fresh.some((b) => b.el === d.el)) fresh.push(d);
+  const order = { sideways: 0, cut: 1, overlap: 2, spill: 3, moved: 4, uneven: 5, squeezed: 6 };
   return fresh.sort((a, b) => order[a.kind] - order[b.kind] || (a.rect?.top ?? 0) - (b.rect?.top ?? 0)).map((b) => { const t = say(b); return { ...b, ...t, title: cap(t.title), source: sourceOf(b.el) }; });
+}
+
+// ── other data: what lined up before the words grew ─────────
+// A longer name does more than cut and cover. A table laid out by its contents moves its other columns; cards whose
+// buttons were level go ragged; a badge beside a name gives up its width. None of these is a cut or an overlap, so
+// they are read against how things lined up before (the page check's other-data checks: craft/columns-jump,
+// craft/foot-drifts, craft/trail-squeezed; docs/briefs/realities.md). Data is what repeats: three or more siblings
+// built the same way.
+let lined = null;
+const boxOf = (e) => e.getBoundingClientRect();
+const flow = (e) => e.getClientRects().length > 0 && !/absolute|fixed/.test(cssOf(e).position);
+const flexRow = (e) => cssOf(e).display.includes('flex') && !cssOf(e).flexDirection.startsWith('column') && cssOf(e).flexWrap === 'nowrap';
+function lineup() {
+  const tables = [], cards = [], rows = [];
+  for (const t of document.querySelectorAll('table')) {
+    const row = t.tBodies[0]?.rows[0];
+    if (!row || t.closest(OURS) || t.tBodies[0].rows.length < 2 || cssOf(t).tableLayout === 'fixed') continue;
+    const x = boxOf(t).left;
+    tables.push({ t, cols: [...row.cells].map((c) => ({ c, left: boxOf(c).left - x })) });
+  }
+  let groups = 0;
+  for (const parent of document.querySelectorAll('body *')) {
+    if (groups >= 40) break;
+    if (parent.children.length < 3 || parent.children.length > 60 || parent.closest(`${OURS}, table, svg`)) continue;
+    const kids = [...parent.children].filter(flow);
+    if (kids.length < 3 || kids.slice(0, 3).some((k) => k.localName !== kids[0].localName || k.className !== kids[0].className || k.children.length !== kids[0].children.length)) continue;
+    const b = kids.map(boxOf);
+    if (b.slice(0, 3).every((r) => Math.abs(r.top - b[0].top) <= 2) && b[1].left > b[0].left && kids[0].children.length >= 2 && b[0].height >= 60) {
+      const row = kids.filter((k, i) => Math.abs(b[i].top - b[0].top) <= 2), feet = row.map((k) => k.lastElementChild);
+      const y = feet.map((f) => boxOf(f).bottom);
+      if (Math.max(...y) - Math.min(...y) <= 1) { cards.push({ row, feet }); groups++; }
+    } else if (b.every((r, i) => !i || r.top >= b[i - 1].bottom - 1)) {
+      let any = false;
+      for (const k of kids.slice(0, 12)) {
+        const row = flexRow(k) ? k : k.children.length === 1 && flexRow(k.firstElementChild) ? k.firstElementChild : null;
+        const parts = row ? [...row.children].filter(flow) : [];
+        if (parts.length >= 2) { rows.push({ trail: parts.at(-1), w: boxOf(parts.at(-1)).width }); any = true; }
+      }
+      if (any) groups++;
+    }
+  }
+  return { tables, cards, rows };
+}
+function drifted(was) {
+  const out = [], said = new Set();
+  const once = (el, note) => { const k = `${note.kind}|${sourceOf(el) ?? ''}`; if (sourceOf(el) && said.has(k)) return; said.add(k); out.push({ el, rect: boxOf(el), ...note }); };
+  for (const { t, cols } of was.tables) {
+    if (!t.isConnected) continue;
+    const x = boxOf(t).left;
+    const far = cols.slice(1).map((c) => ({ c: c.c, by: Math.round(Math.abs(boxOf(c.c).left - x - c.left)) })).sort((a, b) => b.by - a.by)[0];
+    if (far && far.by >= 16) once(far.c, { kind: 'moved', box: t, by: far.by });
+  }
+  for (const { row, feet } of was.cards) {
+    if (row.some((k) => !k.isConnected) || feet.some((f) => !f.isConnected)) continue;
+    const ends = row.map((k) => boxOf(k).bottom), y = feet.map((f) => boxOf(f).bottom);
+    const drift = Math.round(Math.max(...y) - Math.min(...y));
+    if (Math.max(...ends) - Math.min(...ends) <= 1 && drift > 4) once(feet[y.indexOf(Math.max(...y))], { kind: 'uneven', card: row[y.indexOf(Math.max(...y))], cards: row, by: drift });
+  }
+  for (const { trail, w } of was.rows) {
+    if (!trail.isConnected) continue;
+    const now = boxOf(trail).width;
+    if (w - now > 2) once(trail, { kind: 'squeezed', was: Math.round(w), now: Math.round(now) });
+  }
+  return out;
 }
 
 // ── drawing ─────────────────────────────────────────────────
@@ -986,6 +1055,13 @@ function partRoot(list) {
 }
 /** How to show a note's advice on the page, or null when plumber has no fix to show for it. Returns undo. */
 function fixFor(n) {
+  // other data: the same edits the page check writes (table-fixed; flex flex-col with the last part at the bottom; shrink-0)
+  if (n?.kind === 'moved') return () => restyle(n.box, { tableLayout: 'fixed', ...(n.box.getBoundingClientRect().width >= (n.box.parentElement?.clientWidth ?? 0) - 2 ? {} : { width: '100%' }) });
+  if (n?.kind === 'squeezed') return () => restyle(n.el, { flexShrink: '0' });
+  if (n?.kind === 'uneven') return () => {
+    const undos = n.cards.flatMap((card) => { const last = card.lastElementChild, own = /^inline/.test(cssOf(last).display); return [restyle(card, { display: 'flex', flexDirection: 'column' }), restyle(last, { marginTop: 'auto', ...(own ? { alignSelf: 'flex-start' } : {}) })]; });
+    return () => undos.reverse().forEach((u) => u());
+  };
   if (!n?.live && n?.kind !== 'locked') return null;
   if (n.kind === 'locked') return () => {
     const rem = `${+(n.px / 16).toFixed(4)}rem`;
@@ -1266,6 +1342,9 @@ const later = () => { if (host && !frame) frame = requestAnimationFrame(paint); 
 /** What the note says while its fix is shown: the same stress, and what the fix does about it. */
 function fixedTitle(n) {
   if (n.kind === 'locked') return `With rem, ${n.count > 1 ? 'these grow' : 'it grows'} with the reader's setting.`;
+  if (n.kind === 'moved') return 'With a fixed table layout, each column stays where it is.';
+  if (n.kind === 'uneven') return 'With each card’s last part pinned to its bottom, they line up again.';
+  if (n.kind === 'squeezed') return 'With shrinking stopped, it keeps its width.';
   if (n.kind === 'grows') return (n.sentence ?? inSentence(n.field)) ? 'With the fix, the words wrap inside the sentence and can all be read back.' : 'With the fix, the field keeps its width and the text scrolls inside it.';
   if (n.kind === 'stretch' && norm(n.el?.innerText ?? '')) return `With the fix, the one left keeps its ${n.keep}px.`;
   return 'With the fix, the part leaves itself out.';
@@ -1314,14 +1393,17 @@ export const toggleBreakIt = () => (host ? hideBreakIt() : showBreakIt());
 export const readFixed = () => fixed && { title: fixedTitle(fixed.n), moved: fixed.moved ?? [] };
 export const readBreaks = () => notes.map(({ kind, title, why, source }) => ({ kind, title, why, source }));
 
-addEventListener('keydown', (event) => {
+function onKey(event) {
   const at = event.composedPath()[0];
   if (at?.isContentEditable || at?.matches?.('input, textarea, select')) return;
   if (event.altKey && event.code === 'KeyS' && !event.repeat && !event.metaKey && !event.ctrlKey) { event.preventDefault(); event.stopPropagation(); toggleBreakIt(); return; }
   if (!host || event.altKey || event.metaKey || event.ctrlKey) return;
   const k = { ArrowLeft: () => turn(-1), ArrowRight: () => turn(1), ArrowUp: () => go(-1), ArrowDown: () => go(1), Escape: () => (toy ? setToy(null) : hideBreakIt()), f: toggleFix, F: toggleFix }[event.key];
   if (k) { event.preventDefault(); event.stopPropagation(); k(); }
-}, true);
+}
+addEventListener('keydown', onKey, true);
+// a hot update loads this module again: the old copy's shortcut goes with it, or Alt+S would toggle twice
+import.meta.hot?.dispose(() => removeEventListener('keydown', onKey, true));
 /** Where each run of words on the page comes from, as sorted for Longer words. */
 export const readKinds = () => [...kinds].filter(([n]) => n.isConnected).map(([n, kind]) => ({ words: (held.get(n)?.orig ?? n.data).trim().slice(0, 40), kind }));
 /** Put one kind of extreme content into every place that can change (or none, to put the words back). */

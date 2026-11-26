@@ -6662,6 +6662,33 @@ into its own browser. Your app isn't changed.", then the findings.
   app. The build folder was emptied twice mid-run by another session's build, and the run had to be started again.
 - **Media hooks:** the fix-and-undo printout before and after, for the figure that breaks.
 
+### 154. Other data on the dial (2026-11-26)
+
+- **The itch:** the six other-data checks lived only in the page check. The owner: "Yes, the dial".
+- **How we found it:** reading the dial's code before adding a stop. It already tries other data, in three stops:
+  Longer words stretches every run of words that is data, Extreme content tries no words, one letter, sixty letters
+  and a nine-digit number, and Lists hands a list none, one and a hundred of its items through React. A fourth stop
+  would have repeated them.
+- **The system behind it:** what the dial lacked was a way to see three of the breaks. It reads words that are cut,
+  covered, or run out of their box. A column that moves, a row of cards that goes ragged and a badge that gives up
+  its width are none of those: nothing is cut, the thing has only lost its place.
+- **What we chose:** no new stop. Before Longer words stretches the page, the dial notes how things line up: where
+  each table column sits, which rows of cards end level, how wide each row's trailing part is. After, it says what
+  moved, with the same fixes the page check writes shown on the page (Broken and Fixed).
+- **The proof:** on the checks' test page, Longer words gave 5 breaks where it gave 1: a column that moves 66px, one
+  that moves 26px, a button that drops 20px below the others, and a badge squeezed from 82px to 64px. Showing the
+  card fix put the three buttons back on one line, each as wide as its words.
+- **What the dial showed about our own fix:** with the fixed table layout shown on a table that keeps its words on
+  one line, the dial said the fix moves the problem: the longer name now runs into the date beside it. The page
+  check writes that same fix, so it has the same fault there. Not fixed yet.
+- **Not shown:** a real app (crafting-ui has no tables, and the dial stretches only words that are data, which the
+  test page had to be changed to have). The count the dial shows ahead for this stop was not looked at. The squeezed
+  fix was not opened. A figure that breaks onto two lines and rows cut off are left to Extreme content and Lists,
+  and were not tried there. No test.
+- **Also changed:** the dial's keyboard shortcut is now a named handler that a hot update removes, which the
+  project's own check asked for.
+- **Media hooks:** the dial on the test page at Longer words, on the card note, switching Broken and Fixed.
+
 ### 151. A judged set: real screens marked by a person (2026-11-26)
 
 - **The itch:** the owner wants plumber to "look at the shape rather than the details", and for design laws to
@@ -8419,6 +8446,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
 
+- On the dial, Longer words now also says what lost its place: a table column that moves, cards whose buttons stop lining up, a badge that gets squeezed, each with its fix shown on the page. [Entry 154](#154-other-data-on-the-dial-2026-11-26)
 - Plumber now tries cards and list rows with a longer name: it says when a row of cards stops lining up, when a badge gets squeezed, and when a label pushes its row out, each with the fix written. Quiet on six real pages; seen firing on a test page only. [Entry 152](#152-other-data-cards-and-list-rows-2026-11-26)
 - Plumber now tries a table with bigger numbers and with ten times the rows: it says when a total would break onto two lines or run out of its column, and when rows would be cut off out of reach, with the fix written for two of the three. Seen on a test page only. [Entry 151](#151-other-data-bigger-numbers-and-more-rows-2026-11-26)
 - The page check can be told to run only the checks you name: a look at one change takes 7 to 15 seconds on a real page, down from about two minutes. [Entry 150](#150-a-narrow-run-so-a-look-takes-seconds-2026-11-26)

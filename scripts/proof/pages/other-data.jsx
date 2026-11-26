@@ -1,7 +1,11 @@
 // The test page for the other-data reality (docs/briefs/realities.md): the page is opened again and one column of
 // each table gets words twice as long, as the next page of rows has. A table laid out by its contents lets the
 // other columns move; one with a fixed layout, set widths or a column that cuts its words holds.
-const ROWS = [['Acme Co', '3 Nov', '$1,240.00'], ['Northwind Traders', '28 Oct', '$310.00'], ['Globex', '14 Oct', '$2,075.50']];
+// The names are put together when the page runs, as names from a server are: the overlay's dial stretches only words
+// that are data, and words typed whole in this file are the author's copy.
+const j = (...parts) => parts.join('');
+const ROWS = [[j('Acme', ' Co'), '3 Nov', '$1,240.00'], [j('Northwind', ' Traders'), '28 Oct', '$310.00'], [j('Glo', 'bex'), '14 Oct', '$2,075.50']];
+const PLANS = [j('Star', 'ter'), j('Te', 'am'), j('Comp', 'any')];
 const Body = ({ cell = '' }) => (
   <tbody>{ROWS.map((r) => <tr key={r[0]} className="border-t border-slate-200">{r.map((c, i) => <td key={i} className={`px-3 py-2 ${i === 0 ? cell : ''}`}>{c}</td>)}</tr>)}</tbody>
 );
@@ -35,10 +39,10 @@ export function App() {
       <div id="scrolls" className="h-[160px] overflow-y-auto rounded-lg border border-slate-200"><table className="w-full table-fixed"><Body /></table></div>
 
       {/* foot-drifts: three cards whose buttons line up only because the titles are alike */}
-      <div id="cards" className="grid grid-cols-3 gap-3">{['Starter', 'Team', 'Company'].map((n) => <div key={n} className="rounded-lg border border-slate-200 p-3"><h3 className="font-medium">{n}</h3><p className="mt-1 text-slate-500">For small jobs.</p><button className="mt-3 rounded bg-slate-900 px-2 py-1 text-white">Choose</button></div>)}</div>
+      <div id="cards" className="grid grid-cols-3 gap-3">{PLANS.map((n) => <div key={n} className="rounded-lg border border-slate-200 p-3"><h3 className="font-medium">{n}</h3><p className="mt-1 text-slate-500">For small jobs.</p><button className="mt-3 rounded bg-slate-900 px-2 py-1 text-white">Choose</button></div>)}</div>
 
       {/* quiet: the same cards with the button pinned to the bottom */}
-      <div id="cards-pinned" className="grid grid-cols-3 gap-3">{['Starter', 'Team', 'Company'].map((n) => <div key={n} className="flex flex-col rounded-lg border border-slate-200 p-3"><h3 className="font-medium">{n}</h3><p className="mt-1 text-slate-500">For small jobs.</p><button className="mt-auto rounded bg-slate-900 px-2 py-1 text-white">Choose</button></div>)}</div>
+      <div id="cards-pinned" className="grid grid-cols-3 gap-3">{PLANS.map((n) => <div key={n} className="flex flex-col rounded-lg border border-slate-200 p-3"><h3 className="font-medium">{n}</h3><p className="mt-1 text-slate-500">For small jobs.</p><button className="mt-auto rounded bg-slate-900 px-2 py-1 text-white">Choose</button></div>)}</div>
 
       {/* trail-squeezed: a badge beside a name gives up its width when the name is longer */}
       <ul id="squeezed" className="grid w-[260px] gap-1">{ROWS.map((r) => <li key={r[0]} className="flex items-center gap-2 rounded border border-slate-200 px-2 py-1"><span>{r[0]}</span><span className="ml-auto overflow-hidden rounded bg-emerald-100 px-2 text-emerald-800">Paid in full</span></li>)}</ul>
