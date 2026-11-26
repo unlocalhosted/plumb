@@ -966,6 +966,87 @@
    "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
   },
   {
+   "id": "craft/image-broken",
+   "concern": "craft",
+   "name": "Picture didn’t load",
+   "why": "A picture the page asks for should be there.",
+   "where": "page",
+   "tile": null,
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
+  },
+  {
+   "id": "craft/empty-box",
+   "concern": "craft",
+   "name": "Empty, and still taking room",
+   "why": "Something that holds nothing should take no room.",
+   "where": "page",
+   "tile": null,
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
+  },
+  {
+   "id": "craft/link-in-text",
+   "concern": "access",
+   "name": "Link looks like the text",
+   "why": "A link in a sentence has to show without relying on colour.",
+   "where": "page",
+   "tile": null,
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
+  },
+  {
+   "id": "craft/last-divider",
+   "concern": "craft",
+   "name": "Divider after the last row",
+   "why": "A divider sits between two rows.",
+   "where": "page",
+   "tile": null,
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
+  },
+  {
+   "id": "craft/box-overflow",
+   "concern": "craft",
+   "name": "Sticks out of its parent",
+   "why": "A box told to fill its parent should fit inside it.",
+   "where": "page",
+   "tile": null,
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
+  },
+  {
+   "id": "craft/icon-soft",
+   "concern": "craft",
+   "name": "Icon is soft on sharp screens",
+   "why": "An icon should be as sharp as the text beside it.",
+   "where": "page",
+   "tile": null,
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
+  },
+  {
+   "id": "craft/css-words",
+   "concern": "access",
+   "name": "Words drawn by CSS",
+   "why": "Words belong in the page.",
+   "where": "page",
+   "tile": null,
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
+  },
+  {
+   "id": "craft/type-viewport",
+   "concern": "access",
+   "name": "Text doesn’t grow with zoom",
+   "why": "Text should grow when the person makes it grow.",
+   "where": "page",
+   "tile": "Text size",
+   "fix": "Take the suggested value in the fix bar or the X-ray. Plumber previews it on the element."
+  },
+  {
+   "id": "craft/br-spacing",
+   "concern": "craft",
+   "name": "Blank lines used as spacing",
+   "why": "Space is set by the layout, not by blank lines.",
+   "where": "page",
+   "tile": null,
+   "fix": "Fix it at the place Plumber names, or send your agent a note with that place."
+  },
+  {
    "id": "craft/column-edge",
    "concern": "craft",
    "name": "Off the line",

@@ -56,6 +56,51 @@ export const CRAFT = {
     line: over ? `The text here runs ${px(over)} past this box’s set height.` : 'This box has a set height and holds text that wraps. A longer sentence or a narrower screen will run past it.',
     reason: 'A box that holds text sets its least height, not its exact height: text grows downward.',
   }),
+  'image-broken': () => ({
+    label: 'Picture didn’t load',
+    line: 'This picture was asked for and nothing came back, so the page shows a hole where it should be.',
+    reason: 'A picture the page asks for should be there.',
+  }),
+  'empty-box': ({ tag }) => ({
+    label: 'Empty, and still taking room',
+    line: `This ${tag === 'ul' || tag === 'ol' || tag === 'dl' ? 'list' : tag === 'p' ? 'paragraph' : tag?.[0] === 'h' ? 'heading' : 'element'} holds nothing, yet it still draws its box and keeps its space.`,
+    reason: 'Something that holds nothing should take no room.',
+  }),
+  'link-in-text': ({ same }) => ({
+    label: 'Link looks like the text',
+    line: same ? 'This link looks exactly like the words around it.' : 'This link is told from the words around it by colour alone.',
+    reason: 'A link in a sentence has to show without relying on colour.',
+  }),
+  'last-divider': ({ n, doubled }) => ({
+    label: 'Divider after the last row',
+    line: doubled ? `All ${n} rows carry a divider, the last one too, where it doubles the box’s own edge.` : `All ${n} rows carry a divider, the last one too, where there is nothing below to divide it from.`,
+    reason: 'A divider sits between two rows.',
+  }),
+  'box-overflow': ({ over }) => ({
+    label: 'Sticks out of its parent',
+    line: `This is set to fill its parent, and its padding is added on top, so it sticks out by ${px(over)}.`,
+    reason: 'A box told to fill its parent should fit inside it.',
+  }),
+  'icon-soft': ({ has, drawn }) => ({
+    label: 'Icon is soft on sharp screens',
+    line: `This is a ${has}px picture drawn at ${px(drawn)}. A sharp screen needs twice the drawn size, so it reads soft.`,
+    reason: 'An icon should be as sharp as the text beside it.',
+  }),
+  'css-words': ({ words }) => ({
+    label: 'Words drawn by CSS',
+    line: `“${words}” is drawn by CSS, not written in the page. It can’t be selected, copied, searched for or translated.`,
+    reason: 'Words belong in the page.',
+  }),
+  'type-viewport': ({ value }) => ({
+    label: 'Text doesn’t grow with zoom',
+    line: `This text is sized by the window alone (${value}), so zooming the page leaves it the same size.`,
+    reason: 'Text should grow when the person makes it grow.',
+  }),
+  'br-spacing': ({ n }) => ({
+    label: 'Blank lines used as spacing',
+    line: `${n} line breaks in a row make this gap. No spacing step sets it, and a screen reader may read out blank lines.`,
+    reason: 'Space is set by the layout, not by blank lines.',
+  }),
   'row-dead-zone': ({ gap, n }) => ({
     label: 'Dead strips between rows',
     line: `These ${n} rows are ${px(gap)} apart, and those pixels belong to no row. The highlight flickers as the pointer crosses, and a click there does nothing.`,

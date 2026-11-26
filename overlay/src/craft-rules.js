@@ -44,6 +44,15 @@
  *  scroll-chain        —       a panel over the page keeps its scroll to itself
  *  native-accent       —       a browser-drawn control wears the product's colour
  *  row-dead-zone       —       every pixel of a menu belongs to a row
+ *  image-broken        —       a picture that was asked for is there
+ *  empty-box           —       something that holds nothing takes no room
+ *  link-in-text        —       a link in a sentence shows without relying on colour
+ *  last-divider        —       a divider sits between two rows, not after the last
+ *  box-overflow        —       a box told to fill its parent fits inside it
+ *  icon-soft           —       an icon has the pixels a sharp screen needs
+ *  css-words           —       words are in the page, not drawn by CSS
+ *  type-viewport       —       text grows when the person makes it grow
+ *  br-spacing          —       space is set by the layout, not by blank lines
  *  fixed-height        —       a box that holds text sets its least height, not its exact height
  *  sticky-room         —       a sticky side column is not stretched to its row, so it has room to stick
  *  image-fit           —       a picture in a box of another shape is cropped, never stretched
@@ -3223,6 +3232,257 @@ export const rowDeadZone = {
   },
 };
 
+// ── from CSS Protips (docs/research/harvests/css-protips/tips.md): nine faults the tips prevent, read on the page ──
+
+const isBitmap = (el) => { const src = el.currentSrc || el.getAttribute('src') || ''; return !!src && !/\.svg(?:[?#]|$)/i.test(src) && !/^data:image\/svg/i.test(src); };
+
+// A picture that did not load is a hole in the page: an empty box, or the browser's broken-image mark and the alt
+// words in its place. (The HTML standard's "broken" state of an image: the load finished and there is no picture.)
+// Plumber can see it and cannot mend it: the right address is the project's to know.
+export const imageBroken = {
+  id: 'craft/image-broken', family: 'craft', number: [], on: 'img', owns: ['image-load'], once: 'ancestor', reads: ['style'],
+  check({ el }) {
+    if (el.localName !== 'img' || !el.complete || el.naturalWidth > 0 || !isBitmap(el) || !el.getClientRects().length) return [];
+    const src = el.getAttribute('src') ?? el.currentSrc;
+    return [{
+      ...say(this.id, {}),
+      key: this.id, text: 'src', props: ['src'], value: String(src).slice(-60), n: 0,
+      evidence: { src: String(src).slice(0, 200) }, confidence: 0.95,
+      suggest: { kind: 'advice', text: `Nothing loads from ${String(src).length > 48 ? `…${String(src).slice(-48)}` : src}. Fix the address, or the file it points to.` },
+    }];
+  },
+};
+
+// Something that holds no content should take no room. An element made to hold words or items (a paragraph, a
+// heading, a list, an error line) that is empty still draws its padding, border and background and still keeps its
+// margins: a blank chip, or a gap where nothing is. (CSS Protips, "Use :empty to hide empty HTML elements"; MDN :empty.)
+// Boxes that are empty by design (a divider, a dot, a spacer, a skeleton) are not these elements and are left alone.
+const HOLDS = 'p, h1, h2, h3, h4, h5, h6, ul, ol, dl, blockquote, figcaption, label, legend, caption, [role="alert"], [role="status"]';
+export const emptyBox = {
+  id: 'craft/empty-box', family: 'craft', number: [], on: 'p,h1,h2,h3,h4,h5,h6,ul,ol,dl,blockquote,figcaption,label,legend,caption,[role="alert"],[role="status"]', owns: ['empty'], once: 'ancestor', reads: ['style', 'rect'],
+  check({ el, facts }) {
+    if (!el.matches(HOLDS) || el.children.length || el.textContent.trim() || el.closest('[aria-hidden="true"]')) return [];
+    const s = facts.style(el);
+    if (s.display === 'none' || s.backgroundImage !== 'none') return [];
+    if (['::before', '::after'].some((p) => !/^(?:none|normal)$/.test(getComputedStyle(el, p).content))) return [];
+    const r = facts.rect(el), room = (r.width >= 1 && r.height >= 1) || px(s.marginTop) + px(s.marginBottom) > 0;
+    if (!room) return [];
+    const bare = el.childNodes.length === 0; // :empty is true only with nothing inside, not even a space
+    return [{
+      ...say(this.id, { tag: el.localName }),
+      key: this.id, text: el.localName, props: ['display'], value: s.display, n: Math.round(r.height),
+      evidence: { height: Math.round(r.height), margin: px(s.marginTop) + px(s.marginBottom) }, confidence: 0.84,
+      suggest: bare ? { kind: 'class', from: '', to: 'empty:hidden', why: 'takes no room while it holds nothing', sets: { display: 'none' }, moves: true }
+        : { kind: 'advice', text: 'Draw it only when it has something to hold (it has a space inside, so :empty would not match it).' },
+    }];
+  },
+};
+
+// A link in a sentence has to look like a link without relying on colour. One with no underline, no heavier weight
+// and no other mark is told from the words around it by colour alone, or not at all. (WCAG 1.4.1 Use of Color, and its
+// failure F73: links in text that differ only by colour; read 2026-11-26.) Links in a menu, a list of links or a button are not in a
+// sentence and are left alone: the words around a link are what make it need the mark.
+export const linkInText = {
+  id: 'craft/link-in-text', family: 'craft', number: [], on: 'a', owns: ['text-decoration'], once: 'ancestor', reads: ['style', 'text'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
+    if (el.localName !== 'a' || !el.hasAttribute('href') || !el.textContent.trim() || !el.getClientRects().length) return [];
+    const host = el.parentElement;
+    if (!host) return [];
+    const around = [...host.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join('').trim().length;
+    if (around < (T.around ?? 20)) return [];
+    const s = facts.style(el), hs = facts.style(host);
+    const lined = (st) => /underline/.test(st.textDecorationLine ?? '');
+    if (lined(s) || [...el.querySelectorAll('*')].some((n) => lined(facts.style(n)))) return [];
+    if (px(s.borderBottomWidth) > 0 || Number(s.fontWeight) - Number(hs.fontWeight) >= 200 || s.fontStyle !== hs.fontStyle) return [];
+    const bg = rgb(s.backgroundColor);
+    if (bg && (bg[3] ?? 1) > 0.05) return []; // a chip or a highlighted link is marked another way
+    // F73 passes a link that is lighter or darker than its sentence by 3:1 or more: lightness is not colour
+    const lum = (c) => { const [r, g, b] = c.slice(0, 3).map((v) => { const x = v / 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+    const lc = rgb(s.color), tc = rgb(hs.color);
+    if (lc && tc) { const a = lum(lc), b = lum(tc); if ((Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05) >= (T.lightness ?? 3)) return []; }
+    return [{
+      ...say(this.id, { same: s.color === hs.color }),
+      key: this.id, text: utility(el, 'decoration') ?? 'text-decoration', props: ['text-decoration-line'], value: s.textDecorationLine, n: 0,
+      evidence: { color: s.color, around: hs.color }, confidence: 0.85,
+      suggest: { kind: 'class', from: /(?:^|\s)(!?no-underline!?)(?:\s|$)/.exec(classesOf(el))?.[1] ?? '', to: 'underline', why: 'a link in a sentence shows without relying on colour', sets: { textDecorationLine: 'underline' } },
+    }];
+  },
+};
+
+// A divider sits between two things. Rows that each carry the same line, the last one too, end on a line that
+// separates the last row from nothing: it doubles the box's own edge or runs into its rounded corner. (CSS Protips,
+// ":not() to apply/unapply borders". No standard says this; the ground is the word divider.) Said only where the rows
+// end flush against the edge of a box (it has a border, a rounded corner or a clip); a free-standing list may end on a rule.
+export const lastDivider = {
+  // owns the end of the run, not the dividers: tells/divider judges whether rows should be split by lines at all, and
+  // both are said. Sharing its facet hid that finding until this one was fixed (found by scripts/proof/on-off.mjs).
+  id: 'craft/last-divider', family: 'craft', number: [], owns: ['divider-end'], once: 'ancestor', reads: ['style', 'rect'],
+  check({ el, facts }) {
+    const kids = flowKids(el, facts);
+    if (kids.length < 3 || !kids.every((k) => k.localName === kids[0].localName)) return [];
+    const es = facts.style(el), er = el.getBoundingClientRect(), last = kids.at(-1), lr = last.getBoundingClientRect();
+    for (const [Side, short, column] of [['Bottom', 'b', true], ['Right', 'r', false]]) {
+      const ks = kids.map((k) => facts.style(k));
+      if (!ks.every((st) => px(st[`border${Side}Width`]) > 0 && st[`border${Side}Style`] !== 'none' && st[`border${Side}Color`] === ks[0][`border${Side}Color`])) continue;
+      const rects = kids.map((k) => k.getBoundingClientRect());
+      const stacked = rects.slice(1).every((r, i) => (column ? r.top >= rects[i].bottom - 1 && Math.abs(r.left - rects[0].left) <= 1 : r.left >= rects[i].right - 1 && Math.abs(r.top - rects[0].top) <= 1));
+      if (!stacked) continue;
+      const edge = column ? er.bottom - px(es.borderBottomWidth) : er.right - px(es.borderRightWidth);
+      if (Math.abs((column ? lr.bottom : lr.right) - edge) > 1) continue; // space after the last row: the line is not on the box's edge
+      const boxed = px(es[`border${Side}Width`]) > 0 || px(es.borderBottomRightRadius) > 0 || es.overflowX !== 'visible' || es.overflowY !== 'visible';
+      if (!boxed) continue;
+      return [{
+        ...say(this.id, { n: kids.length, doubled: px(es[`border${Side}Width`]) > 0 }),
+        key: this.id, text: `border-${short}`, props: [`border-${Side.toLowerCase()}-width`], value: ks.at(-1)[`border${Side}Width`], n: kids.length,
+        evidence: { rows: kids.length, side: Side.toLowerCase() }, confidence: 0.84,
+        // written once, on the list: its last row loses the line
+        suggest: { kind: 'class', from: '', to: `[&>*:last-child]:border-${short}-0`, why: 'the last row has nothing below it to be divided from', sets: {}, moves: true },
+      }];
+    }
+    return [];
+  },
+};
+
+// A box told to fill its parent should fit inside it. Sized by its content box, its padding and border are added on
+// top of the full width, so it sticks out of its parent by exactly that much. (MDN box-sizing: with content-box, the
+// width does not include padding or border.) Read from what is measured: content-box, wider than the room its parent
+// gives, by its own padding and border and nothing else.
+export const boxOverflow = {
+  id: 'craft/box-overflow', family: 'craft', number: [], owns: ['box-sizing'], once: 'ancestor', reads: ['style', 'rect'],
+  check({ el, facts }) {
+    const s = facts.style(el);
+    if (s.boxSizing !== 'content-box' || /inline|table|contents|none/.test(s.display) || /^(?:absolute|fixed)$/.test(s.position)) return [];
+    if (/^(?:img|svg|video|canvas|iframe|input|textarea|select|button|html|body)$/.test(el.localName)) return [];
+    const parent = el.parentElement;
+    if (!parent || parent === document.documentElement) return [];
+    const ps = facts.style(parent);
+    const room = parent.clientWidth - px(ps.paddingLeft) - px(ps.paddingRight);
+    const own = px(s.paddingLeft) + px(s.paddingRight) + px(s.borderLeftWidth) + px(s.borderRightWidth);
+    const over = el.offsetWidth - room;
+    if (own < 2 || room <= 0 || Math.abs(over - own) > 1) return [];
+    return [{
+      ...say(this.id, { over: Math.round(over) }),
+      key: this.id, text: utility(el, 'box') ?? 'box-sizing', props: ['box-sizing'], value: 'content-box', n: Math.round(over),
+      evidence: { over: Math.round(over), padding: Math.round(own) }, confidence: 0.9,
+      suggest: { kind: 'class', from: utility(el, 'box') ?? '', to: 'box-border', why: 'its padding and border count inside its width', sets: { boxSizing: 'border-box' } },
+    }];
+  },
+};
+
+// An icon is drawn sharp. A small bitmap drawn at more than half its own pixel size has fewer pixels than a sharp
+// (2×) screen needs, and reads soft beside vector text. (CSS Protips, "Use SVG for icons".) An image that offers
+// another file for sharp screens (srcset) is left alone; the size that counts as an icon is an invented line.
+export const iconSoft = {
+  id: 'craft/icon-soft', family: 'craft', number: [], on: 'img', owns: ['image-pixels'], once: 'ancestor', reads: ['style', 'rect'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
+    if (el.localName !== 'img' || !el.complete || !el.naturalWidth || !isBitmap(el) || el.hasAttribute('srcset') || el.closest('picture')) return [];
+    const r = facts.rect(el), w = el.offsetWidth || r.width, h = el.offsetHeight || r.height;
+    if (w < 8 || w > (T.icon ?? 64) || h > (T.icon ?? 64)) return [];
+    if (el.naturalWidth >= w * 2 - 1) return [];
+    return [{
+      ...say(this.id, { has: el.naturalWidth, drawn: Math.round(w) }),
+      key: this.id, text: 'src', props: ['src'], value: `${el.naturalWidth}px`, n: el.naturalWidth,
+      evidence: { pixels: el.naturalWidth, drawn: Math.round(w) }, confidence: 0.82,
+      suggest: { kind: 'advice', text: `Use an SVG, or a file at least ${Math.round(w * 2)}px wide: it is drawn at ${Math.round(w)}px and a sharp screen needs twice that.` },
+    }];
+  },
+};
+
+// What the page's own stylesheets say that computed style does not keep: words drawn by ::before and ::after, and
+// font sizes written in viewport units alone. Read once a second at most; a stylesheet from another origin can't be
+// read and is skipped.
+const WORDY = /[A-Za-z]{3,}/;
+let sheets = { at: -1e9, words: [], fluid: [] };
+function sheetFacts() {
+  if (performance.now() - sheets.at < 1000) return sheets;
+  const words = [], fluid = [];
+  const walk = (rules) => {
+    for (const r of rules) {
+      if (r.cssRules?.length) { try { walk(r.cssRules); } catch { /* unreadable */ } }
+      if (!r.selectorText || !r.style) continue;
+      // any rule that gives a ::before or ::after its content: what it draws is read from the element, since the
+      // value is often a variable here (Tailwind writes content: var(--tw-content))
+      if (r.style.content && /::?(?:before|after)/.test(r.selectorText)) {
+        for (const sel of r.selectorText.split(',')) { const m = /^(.*?)::?(before|after)\s*$/.exec(sel.trim()); if (m) words.push({ sel: m[1].trim() || '*', pseudo: m[2] }); }
+      }
+      const fs = r.style.fontSize;
+      if (fs && /\d(?:vw|vh|vmin|vmax|vi|vb|[sdl]v[wh])\b/.test(fs) && !/\d(?:rem|em|px|pt|%|ch|ex)\b/.test(fs)) fluid.push({ sel: r.selectorText, value: fs });
+    }
+  };
+  for (const sheet of document.styleSheets) { try { walk(sheet.cssRules); } catch { /* another origin */ } }
+  return (sheets = { at: performance.now(), words, fluid });
+}
+const matchesAny = (el, list) => list.find((x) => { try { return el.matches(x.sel); } catch { return false; } });
+
+// Words belong in the page. Words drawn by CSS (::before, ::after) can't be selected, copied, found by a search of
+// the page or translated with the rest, and some readers skip them. (MDN content: generated content is not in the
+// DOM.) A mark or a symbol drawn that way is fine; words are said.
+export const cssWords = {
+  id: 'craft/css-words', family: 'craft', number: [], owns: ['content'], once: 'ancestor', reads: ['style'],
+  check({ el }) {
+    const list = sheetFacts().words;
+    if (!list.length) return [];
+    if (!el.getClientRects().length) return [];
+    // every pseudo-element a rule gives this element, read as it is drawn: the strings in its content
+    let text = '', pseudo = null;
+    for (const x of list) {
+      let on = false; try { on = el.matches(x.sel); } catch { /* a selector this can't read */ }
+      if (!on) continue;
+      const c = getComputedStyle(el, `::${x.pseudo}`).content;
+      const said = (c.match(/"(?:[^"\\]|\\.)*"/g) ?? []).map((q) => q.slice(1, -1)).join(' ').trim();
+      if (WORDY.test(said)) { text = said; pseudo = x.pseudo; break; }
+    }
+    if (!text) return [];
+    return [{
+      ...say(this.id, { words: text.slice(0, 40) }),
+      key: this.id, text: 'content', props: ['content'], value: text.slice(0, 40), n: text.length,
+      evidence: { words: text.slice(0, 80), pseudo }, confidence: 0.82,
+      suggest: { kind: 'advice', text: `Write “${text.slice(0, 40)}” in the markup, not in CSS content: drawn by CSS it can’t be selected, copied or translated.` },
+    }];
+  },
+};
+
+// Text grows when the person makes it grow. A font size written in viewport units alone follows the window and
+// nothing else: zooming the page leaves it the same size. (WCAG 1.4.4 Resize Text.) A size with a part that follows
+// the text size (a rem in a calc or a clamp) is fine. The answer changes how the type scales, so it is advice.
+export const typeViewport = {
+  id: 'craft/type-viewport', family: 'craft', number: [], owns: ['font-size'], once: 'ancestor', reads: ['style', 'text'],
+  check({ el, facts }) {
+    const list = sheetFacts().fluid;
+    if (!list.length || !facts.text(el)) return [];
+    const hit = matchesAny(el, list);
+    if (!hit) return [];
+    return [{
+      ...say(this.id, { value: hit.value }),
+      key: this.id, text: utility(el, 'text') ?? 'font-size', props: ['font-size'], value: hit.value, n: 0,
+      evidence: { written: hit.value }, confidence: 0.84,
+      suggest: { kind: 'advice', text: `Give ${hit.value} a part that follows the text size: clamp(1rem, ${hit.value}, 2.5rem), or calc(1rem + ${hit.value}).` },
+    }];
+  },
+};
+
+// Space is set by the layout. Two line breaks in a row are a gap made of blank lines: no spacing step sets it, it
+// can't change with the screen, and a screen reader may say "blank". (CSS Protips, citing Harry Roberts.) Said on the
+// first break of the run. The mending is a change of structure (two paragraphs, or a margin), so it is advice.
+export const brSpacing = {
+  id: 'craft/br-spacing', family: 'craft', number: [], on: 'br', owns: ['line-break'], once: 'ancestor', reads: ['style'],
+  check({ el }) {
+    if (el.localName !== 'br') return [];
+    const beside = (n, dir) => { let x = n[dir]; while (x && x.nodeType === 3 && !x.textContent.trim()) x = x[dir]; return x; };
+    const next = beside(el, 'nextSibling'), prev = beside(el, 'previousSibling');
+    if (next?.localName !== 'br' || prev?.localName === 'br') return [];
+    let n = 1; for (let x = next; x?.localName === 'br'; x = beside(x, 'nextSibling')) n++;
+    return [{
+      ...say(this.id, { n }),
+      key: this.id, text: 'br', props: ['display'], value: `${n} breaks`, n,
+      evidence: { breaks: n }, confidence: 0.84,
+      suggest: { kind: 'advice', text: 'Make these two paragraphs, or put the space in a margin: the gap then follows your spacing steps.' },
+    }];
+  },
+};
+
 export const RULES = [concentricRadius, innerOuterSpacing, textOpacity, halfPixel, hairline, imageOutline, layeredShadow, scaleFromZero, zIndexWar, contentAlign,
   buttonPadding, iconSide, measure, leading, tracking, tabularNums, headingWidow, oneLight, borderOnShadow, contrast, wordsOnLayers, disabledContrast, hitTarget, mediaSize, imageFit, flexMin, imageGround, stickyRoom, fixedHeight, scrollOnDemand, declaredGap, listWrap, imageStretch, backgroundTile, fixedColumn,
   truncateIntent, scrollbarGutter, boldHover, hangingQuote, capsCase, gradientSpace, inputZoom, anchorOffset, middleTruncate,
@@ -3230,4 +3490,5 @@ export const RULES = [concentricRadius, innerOuterSpacing, textOpacity, halfPixe
   baselineAlign, iconCap, trimLeading, headingLead, pairSpacing, cardOpticalPadding, textCollision,
   weightLevels, greyLevels, rhythm, elevationLadder,
   opticalCentre, overshoot, strokeWeight, scrollCue, pressFeedback, exitFaster, interruptible, rowLines, sharedEdges, actionFit,
-  snapRest, snapStrict, snapUnreachable, snapOffset, scrollChain, nativeAccent, rowDeadZone, ...RANK_RULES, ...RUN_RULES];
+  snapRest, snapStrict, snapUnreachable, snapOffset, scrollChain, nativeAccent, rowDeadZone,
+  imageBroken, emptyBox, linkInText, lastDivider, boxOverflow, iconSoft, cssWords, typeViewport, brSpacing, ...RANK_RULES, ...RUN_RULES];

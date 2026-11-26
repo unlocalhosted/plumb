@@ -144,6 +144,7 @@ try {
     step.chased = step.appeared.filter((k) => fixed.has(k));
     step.lands = sets ? landed(drawn.style, sets) : null;
     step.moved = moved(boxes, drawn, fix.record.path);
+    step.movesByDesign = fix.record.suggest?.moves === true;
     fixed.add(fix.id);
     if (!step.cleared) skipped.add(fix.id);
     now = after; boxes = drawn;
@@ -177,7 +178,8 @@ for (const s of result.steps) {
   if (!s.cleared) bad.push(`${s.finding}: still found after its fix`);
   if (s.appeared.length) bad.push(`${s.finding}: its fix raised ${s.appeared.join(', ')}`);
   if (s.lands?.some((l) => l.ok === false)) bad.push(`${s.finding}: did not land (${s.lands.filter((l) => l.ok === false).map((l) => `${l.prop} is ${l.got}, wanted ${l.want}`).join('; ')})`);
-  if (s.moved.others.length || s.moved.page) bad.push(`${s.finding}: moved ${s.moved.others.length} boxes outside itself${s.moved.page ? `, page ${s.moved.page}` : ''}`);
+  // a fix that says it moves the layout (it removes a box, or a line) is expected to shift what comes after it
+  if ((s.moved.others.length || s.moved.page) && !s.movesByDesign) bad.push(`${s.finding}: moved ${s.moved.others.length} boxes outside itself${s.moved.page ? `, page ${s.moved.page}` : ''}`);
   if (!s.twice) bad.push(`${s.finding}: taking it twice changed the file again`);
   if (!s.undo.ok || !s.undo.filesExact || !s.undo.findingsBack) bad.push(`${s.finding}: undo straight away (${JSON.stringify(s.undo)})`);
   if (!s.sameEdit) bad.push(`${s.finding}: taken again, it wrote something else`);
@@ -195,6 +197,7 @@ else {
     console.log(`\n${s.finding}\n  ${s.edit}`);
     if (s.refused) { console.log(`  not taken: ${s.refused}`); continue; }
     console.log(`  cleared ${yes(s.cleared)} · raised ${s.appeared.length ? s.appeared.join(', ') : 'nothing'} · lands ${!s.lands ? 'not said by the fix' : s.lands.some((l) => l.ok === false) ? 'NO' : s.lands.every((l) => l.ok) ? 'yes' : 'not judged (a long value)'} · twice is once ${yes(s.twice)}`);
+    if (s.movesByDesign && s.moved.others.length) console.log('  (the fix says it moves the layout: what follows shifts by design)');
     console.log(`  moved: ${s.moved.inside} inside it, ${s.moved.parents.length} parents, ${s.moved.others.length} others${s.moved.page ? `, page ${s.moved.page}` : ''}${s.moved.gone || s.moved.new ? `, ${s.moved.gone} gone, ${s.moved.new} new` : ''}`);
     for (const o of s.moved.others.slice(0, 6)) console.log(`      ${o}`);
     console.log(`  undo straight away: files exact ${yes(s.undo.filesExact)}, findings back ${yes(s.undo.findingsBack)} · taken again writes the same ${yes(s.sameEdit)}`);

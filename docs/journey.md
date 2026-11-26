@@ -6036,6 +6036,17 @@ into its own browser. Your app isn't changed.", then the findings.
   open, so the probe now keeps the tooltip's classes and the line that draws it, and the command line can write a
   fix on a line other than the finding's own. On the test page the tooltip's side class was swapped on its own line,
   the finding cleared, and undo put the file back exactly.
+- **CSS Protips (owner: "lets pick these ones up now", with the link; then "Build all nine"):** 34 tips read, nine
+  faults plumber could see, all nine built the same day. The proof runs earned their keep twice in one batch: the
+  words-drawn-by-CSS check never spoke on its own test page (Tailwind writes the content as a variable), and the
+  last-divider check silently hid an existing finding on the same list. Both were mended before anything was
+  committed. Reading the sources changed one check: WCAG's F73 passes a link that differs from its sentence by 3:1
+  of lightness, so the link check stays quiet there. 298 checks now.
+- **Realities (owner):** "we should bring these kind of capabilities to plumber and it should do more time of
+  experiments, imagine how doctor strange went in 14 million realities plumber should try simulating the page in
+  various ways as well." Written as a proposal, `docs/briefs/realities.md`: the same page opened under one changed
+  condition at a time (larger text, other data, zoom, right to left, failed pictures, touch, print), read again and
+  compared with the plain reading. Nothing built.
 - **Proof of the spec itself:** the six checks above are the first built to it. It is still a draft for the owner. The first use is the six checks from gokhan's tips
   (`docs/research/gkurt-css-tips.md`, reference logged 2026-11-26 in `docs/references.md`).
 - **Media hooks:** a docs example flipping between Broken and Fixed, beside the same check's finding on a real app.
@@ -7816,6 +7827,9 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
 
+- Plumber now catches nine more everyday faults from a well-known tips list: a picture that didn't load, an empty
+  error box still taking room, a link that looks like its sentence, a divider after the last row, and five more;
+  it writes the fix for four. Not yet run on a real app. [Entry 140](#140-a-written-contract-for-adding-a-check-2026-11-26-a-draft)
 - Plumber now catches a menu whose highlight flickers between rows and a tooltip that opens off the screen, from a
   designer's own tips. Not yet run on a real app. [Entry 140](#140-a-written-contract-for-adding-a-check-2026-11-26-a-draft)
 - Plumber now catches six scroll and control faults a linter can't see (a carousel that stops mid-card, snapping

@@ -21,7 +21,7 @@ export const CONCERNS = [
 ];
 
 const BY_PACK = { a11y: 'access', html: 'access', forms: 'access', security: 'access', tells: 'slop', experience: 'states', components: 'states' };
-const ACCESS = new Set(['contrast', 'disabled-contrast', 'hit-target', 'input-zoom', 'text-collision', 'touch-manipulation']);
+const ACCESS = new Set(['contrast', 'disabled-contrast', 'hit-target', 'input-zoom', 'text-collision', 'touch-manipulation', 'link-in-text', 'type-viewport', 'css-words']);
 // what the words say and how they read: the tells about wording (they were all Anti-slop, and Words had none), and the
 // craft rules about how a line breaks or is cut
 const WORDS = new Set(['tells/status-chain', 'tells/chart-type-title', 'tells/reading-instructions', 'tells/narrating', 'tells/subtitle-echo', 'tells/em-dash', 'tells/stock-words',

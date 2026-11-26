@@ -299,6 +299,89 @@ Object.assign(CRAFT, {
         at: (p) => { x.style.height = p ? '60px' : '150px'; } };
     },
   },
+  // ── from CSS Protips (docs/research/harvests/css-protips/tips.md). Each scene is real markup with the fault on it ──
+  'craft/image-broken': {
+    code: ['<img src="/team-photo.png">  (nothing there)', '<img src="/team.png">'],
+    note: ['The address returns nothing, so the page shows a hole and the alt words.', 'The picture is there.'],
+    scene: (s) => {
+      scene(s, '<img class="x" alt="The team at the offsite" src="data:image/png;base64,AAAA" style="display:block;width:190px;height:110px;border-radius:10px;background:#f3f4f6;font:500 12px system-ui;color:#6b7280">');
+      const x = s.querySelector('.x');
+      return { ...ringed(s, x, ['didn’t load', 'loaded'], 6), at: (p) => { x.src = p ? "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==" : 'data:image/png;base64,AAAA'; x.style.background = p ? '#c7d2fe' : '#f3f4f6'; } };
+    },
+  },
+  'craft/empty-box': {
+    code: ['<p class="error">', '<p class="error empty:hidden">'],
+    note: ['There is no error, yet its red box is drawn between the field and the button.', 'With nothing to say, it takes no room.'],
+    scene: (s) => {
+      scene(s, '<div style="display:grid;gap:10px;width:220px;font:500 13px system-ui;color:#111827"><span style="height:34px;border-radius:8px;box-shadow:inset 0 0 0 1px #d1d5db;display:flex;align-items:center;padding:0 10px;color:#6b7280">name@example.com</span><p class="x" style="margin:0;padding:10px 12px;min-height:14px;border-radius:8px;background:#fef2f2"></p><span class="btn2" style="justify-content:center;height:34px;background:#4f46e5">Continue</span></div>');
+      const x = s.querySelector('.x');
+      return { ...ringed(s, x, ['empty, still drawn', 'takes no room'], 5), at: (p) => { x.style.display = p ? 'none' : ''; } };
+    },
+  },
+  'craft/link-in-text': {
+    code: ['<a class="text-indigo-600">', '<a class="text-indigo-600 underline">'],
+    note: ['The link differs from the sentence by colour alone.', 'Underlined, it reads as a link to everyone.'],
+    scene: (s) => {
+      scene(s, '<p style="width:260px;margin:0;font:400 14px/1.55 system-ui;color:#374151">Read the <a class="x" href="#terms" style="color:#4f46e5;text-decoration:none">terms of service</a> before you continue with the upgrade to the team plan.</p>');
+      const x = s.querySelector('.x');
+      return { ...ringed(s, x, ['colour alone', 'underlined'], 3), at: (p) => { x.style.textDecoration = p ? 'underline' : 'none'; } };
+    },
+  },
+  'craft/last-divider': {
+    code: ['<li class="border-b">  on every row', '<ul class="[&>*:last-child]:border-b-0">'],
+    note: ['The last row’s line doubles the box’s own edge.', 'Lines sit between rows only.'],
+    scene: (s) => {
+      scene(s, `<ul class="x" style="list-style:none;margin:0;padding:0;width:220px;border:1px solid #cbd5e1;border-radius:10px;overflow:hidden;font:500 13px system-ui;color:#111827">${['Profile', 'Billing', 'Members'].map((t) => `<li style="padding:9px 12px;border-bottom:1px solid #cbd5e1">${t}</li>`).join('')}</ul>`);
+      const x = s.querySelector('.x'), last = x.lastElementChild;
+      return { ...ringed(s, last, ['a line after the last row', 'between rows only'], 3, 18, true), at: (p) => { last.style.borderBottomWidth = p ? '0' : '1px'; } };
+    },
+  },
+  'craft/box-overflow': {
+    code: ['box-content w-full px-4', 'box-border w-full px-4'],
+    note: ['Told to fill its parent, with its padding added on top: it sticks out by 32px.', 'Padding counts inside the width, so it fits.'],
+    scene: (s) => {
+      scene(s, '<div style="width:190px;padding:10px 0;border-radius:10px;background:#f3f4f6"><div class="x" style="box-sizing:content-box;width:100%;padding:8px 16px;background:#c7d2fe;font:500 13px system-ui;color:#1e1b4b">Usage this month</div></div>');
+      const x = s.querySelector('.x');
+      return { ...ringed(s, x, ['sticks out 32px', 'fits'], 4), at: (p) => { x.style.boxSizing = p ? 'border-box' : 'content-box'; } };
+    },
+  },
+  'craft/icon-soft': {
+    code: ['<img src="icon.png">  24px file, drawn at 24px', '<img src="icon.svg">'],
+    note: ['A sharp screen needs 48 pixels here and the file has fewer: the icon reads soft.', 'A vector is sharp at any size.'],
+    scene: (s) => {
+      scene(s, '<span style="display:flex;align-items:center;gap:8px;font:500 14px system-ui;color:#111827"><img class="x" alt="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==" style="width:24px;height:24px;border-radius:6px;background:#818cf8"> Export</span>');
+      const x = s.querySelector('.x');
+      return { ...ringed(s, x, ['too few pixels', 'a vector'], 5), at: (p) => { x.src = p ? "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='9' fill='%234f46e5'/%3E%3C/svg%3E" : "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="; x.style.background = p ? 'none' : '#818cf8'; } };
+    },
+  },
+  'craft/css-words': {
+    code: ['after:content-[\'New\']', '<span>New</span>'],
+    note: ['“New” is drawn by CSS: it can’t be selected, copied or translated.', 'Written in the page, it is text like the rest.'],
+    scene: (s) => {
+      scene(s, '<style>.ck-new::after{content:"New";margin-left:8px;padding:1px 6px;border-radius:6px;background:#d1fae5;color:#065f46;font-size:11px}</style><span class="x ck-new" style="font:600 14px system-ui;color:#111827">Reports</span>');
+      const x = s.querySelector('.x'), real = Object.assign(document.createElement('b'), { textContent: 'New' });
+      real.style.cssText = 'margin-left:8px;padding:1px 6px;border-radius:6px;background:#d1fae5;color:#065f46;font:600 11px system-ui';
+      return { ...ringed(s, x, ['drawn by CSS', 'in the page'], 5), at: (p) => { x.classList.toggle('ck-new', !p); if (p) x.append(real); else real.remove(); } };
+    },
+  },
+  'craft/type-viewport': {
+    code: ['text-[2.4vw]', 'text-[clamp(1rem,2.4vw,2rem)]'],
+    note: ['Sized by the window alone: zooming the page leaves this heading the same size.', 'With ends that follow the text size, it grows when the person zooms.'],
+    scene: (s) => {
+      scene(s, '<style>.ck-vw{font-size:2.4vw}</style><div class="x ck-vw" style="font-family:system-ui;font-weight:700;color:#111827;white-space:nowrap">Quarterly review</div>');
+      const x = s.querySelector('.x');
+      return { ...ringed(s, x, ['follows the window only', 'follows your text size'], 5), at: (p) => { x.classList.toggle('ck-vw', !p); x.style.fontSize = p ? 'clamp(1rem, 2.4vw, 2rem)' : ''; } };
+    },
+  },
+  'craft/br-spacing': {
+    code: ['line one<br><br>line two', '<p>line one</p><p>line two</p>'],
+    note: ['The gap is a blank line: no spacing step sets it.', 'The gap is a margin, on your scale.'],
+    scene: (s) => {
+      scene(s, '<p class="x" style="width:240px;margin:0;font:400 14px/1.5 system-ui;color:#374151"><span>Ship to the office on Hill Street.</span><br><br class="y"><span class="z">Bill to the address on file.</span></p>');
+      const x = s.querySelector('.x'), y = s.querySelector('.y'), z = s.querySelector('.z');
+      return { ...ringed(s, x, ['a blank line as the gap', 'a margin'], 5), at: (p) => { if (p) { y.remove(); z.style.cssText = 'display:block;margin-top:12px'; } else { z.before(y); z.style.cssText = ''; } } };
+    },
+  },
   'craft/native-accent': {
     code: ['<input type="checkbox">', '<input type="checkbox" class="accent-emerald-600">'],
     note: ['The tick is the browser’s blue, beside buttons in your green.', 'The tick wears your colour.'],
