@@ -6541,6 +6541,11 @@ into its own browser. Your app isn't changed.", then the findings.
   column 128px, where it has 92px"). That one should be written too. It isn't, because when the engine tried the
   wider class on the test app it tried 24px where 128px was asked, so the fix never settled. The cause is in how
   the engine picks a width step and was not looked into.
+- **The width fault, found the same day:** the engine reads a `w-` or `h-` class as a space and rounds it to the
+  theme's nearest named spacing step. The test app names spaces up to 24px, so a 128px column was tried at 24px. A
+  size is now a named step only when it is exactly one. Otherwise it is said on the project's number scale, or kept
+  as written. The third fix is now written too: `w-[92px]` becomes `w-32`. Seen on the test page only. No other
+  check's fix was compared before and after this change.
 - **The proof so far:** a look on the test page, about 6 seconds a time with the narrow run: one finding each for the
   figure that runs out, the figure that breaks and the box that cuts its rows; quiet on a column kept on one line and
   on a box that scrolls. The docs list is at 303 checks.
