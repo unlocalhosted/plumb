@@ -105,6 +105,13 @@ Not known: whether a reality applied live reads the same as the headless one (la
 is a change to the root size, which is not the browser's own setting); how the dial sits with Break it, which is
 already one of these; what the dial looks like.
 
+### In the overlay (2026-11-26)
+
+The owner picked A. It is built as Break it's bar, which already put the live page into seven of these states: the
+toys are now stops on a dial (the page as it is, then one per toy), each with its count once tried. ← → walk the
+stops, ↑ ↓ the breaks, a ring is pressed on its edge, Esc goes back. Open: counts before a visit, the stops that act
+on the page, and C's way in from an element.
+
 ## What it costs
 
 Each reality is at least one more load of the page. Twelve realities on every page is twelve times the wait. So a

@@ -6183,6 +6183,29 @@ into its own browser. Your app isn't changed.", then the findings.
   fixed, and it sounds like a colleague where "enforcer" sounded like police. It is also short, so the heading is
   back at its full size at every width. Passed over: "a design system keeper" and "a drift fixer".
 
+### 142. The dial in the overlay (2026-11-26)
+
+- **The itch.** The owner asked how a person sees the page's other states: "we need to come up with some way like
+  state of pages saved but user can cycle through them". Of three prototypes on the design site they picked the first:
+  "A, the dial".
+- **How we found it.** Reading the overlay before building. Break it already puts the live page into seven of these
+  states (longer words, a narrow window, extreme content, typing, lists, a failed action, larger text) and rings what
+  broke. A second bar beside it would have been the same thing twice.
+- **The system behind it.** Break it grew as a row of named buttons, one per stress. Nothing on a button said what
+  it would find, and the arrow keys moved between breaks, so there was no way to walk the states.
+- **What we chose.** The dial is the next shape of that bar, with no new surface. Each state is a stop: its toy and, once it has
+  been tried, how many things did not hold up there. The first stop is the page as it is. ← and → walk the stops and
+  the page changes in place. ↑ and ↓ walk the breaks at a stop, and a ring on the page can be pressed on its edge to read it, so
+  the page inside stays usable. Esc goes back to the page as it is, then closes.
+- **The proof.** Looked at on crafting-ui's front page: the Larger text stop said "4 things don't hold up" and kept
+  its 4 after the dial moved on; stepping past the last stop came back to the page as it was. No tests yet.
+- **Not done.** A stop has no count until it has been visited, so the dial does not yet say where the trouble is
+  before you go. Walking with the arrows passes through Typing, Lists and Action fails, which act on the page. A
+  finding from the page check that exists only at larger text does not yet turn the dial from its element. Light
+  scheme and phone width not looked at.
+- **Media hooks.** A screen recording of ← → on a real page, the count staying on each stop behind you.
+- Reference: the design page `/design/realities` and `docs/briefs/realities.md`.
+
 ## Open gaps
 
 - Without setup, the page check found 70 problems where the same page wired in finds 72 (10 fixes against 14). Not
@@ -7871,6 +7894,8 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
 
+- Break it is now a dial: step through the ways a page can break with the arrow keys, and each stop keeps the
+  count of what broke there. The page itself changes, and is put back. [Entry 142](#142-the-dial-in-the-overlay-2026-11-26)
 - Plumber now catches nine more everyday faults from a well-known tips list: a picture that didn't load, an empty
   error box still taking room, a link that looks like its sentence, a divider after the last row, and five more;
   it writes the fix for four. Not yet run on a real app. [Entry 140](#140-a-written-contract-for-adding-a-check-2026-11-26-a-draft)

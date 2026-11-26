@@ -46,14 +46,20 @@
  *           get a server error, or are held 4 seconds in Slow. Then plumber watches and says what a person meets: no
  *           words saying it failed, a button left disabled or still saying "Creating…", a spinner that never stops;
  *           in Slow, nothing showing it is working, and a button that can be pressed twice
- *  toys     one at a time; the bar opens with none on. Picking one turns the last one off
- *  keys     Alt+S opens and closes. ← → between breaks, Esc closes
+ *  dial     the toys are stops on a dial in the bar (docs/briefs/realities.md, option A, picked by the owner on
+ *           2026-11-26): the page as it is, then one stop per toy. A stop is its toy and, once it has been tried, how
+ *           many things did not hold up there. One at a time; the bar opens on the page as it is
+ *  press    a ringed thing on the page is pressed on its ring to read what is wrong with it; the page inside stays usable
+ *  keys     Alt+S opens and closes. ← → between stops, ↑ ↓ between breaks, Esc back to the page as it is, then closes
  * Nothing here writes to source.
  * ───────────────────────────────────────────────────────── */
 
 import { send } from './net.js';
 import { locate } from './locate.js';
 import { request } from './api.js';
+import { BUTTON_CSS, button } from './kit.js';
+import { TOY_DEFS, toyOf } from './toys.js';
+import { soften } from './soft.js';
 
 const tokensCss = await send(new URL('./tokens.css', import.meta.url)).then((response) => response.text()).catch((error) => {
   console.warn('[plumb] React Plumber could not load its styles, so it stays hidden. Your app is not affected; reload to try again.', error);
@@ -379,6 +385,17 @@ svg.page { position: absolute; inset: 0; width: 100%; height: 100%; overflow: vi
 .bar { position: absolute; left: 50%; bottom: 16px; translate: -50% 0; width: min(860px, calc(100vw - 32px)); box-sizing: border-box;
   display: grid; gap: 10px; padding: 12px 14px 14px; background: var(--pl-paper); color: var(--pl-ink);
   border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-card); pointer-events: auto; font: var(--pl-card-body); }
+.dial { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.dial .say { display: grid; gap: 2px; min-width: 0; }
+.dial .head { margin: 0; font: var(--pl-round-w2, 700) 14px/18px var(--pl-round); color: var(--pl-ink); }
+.stops { display: inline-flex; gap: 6px; padding-top: 2px; flex: none; }
+.stop .ic { display: block; width: 18px; height: 18px; } .stop .ic svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.stop .top { padding: 0 9px; gap: 5px; }
+.stop .n { font: 600 11px/1 var(--pl-mono); opacity: .8; }
+.tb.quiet.stop[aria-pressed="true"] { --hue: var(--pl-pink-block); --base: color-mix(in oklab, var(--pl-pink-block) 70%, #000); --on: var(--pl-pink-block-on); color: var(--pl-pink-block-on); }
+.tb.quiet.stop[aria-pressed="true"] .top { background: linear-gradient(180deg, color-mix(in oklab, var(--pl-pink-block) 88%, #fff), var(--pl-pink-block)); color: var(--pl-pink-block-on); box-shadow: inset 0 1.5px 0 0 color-mix(in oklab, #fff 45%, transparent), inset 0 -2px 0 0 color-mix(in oklab, #000 12%, transparent); }
+.hit { fill: transparent; pointer-events: fill; cursor: pointer; }
+.note .title { color: var(--pl-coral-ink, var(--pl-ink)); }
 .toys { display: flex; gap: 6px; align-items: center; }
 .toy { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 12px 0 6px; border: 0; border-radius: var(--pl-radius-pill);
   background: var(--pl-paper-2); color: var(--pl-ink-2); font: var(--pl-text-label); font-size: 12px; cursor: pointer;
@@ -1054,7 +1071,8 @@ function marks() {
     const B = 6, band = `M${x - B} ${y - B}h${w + 2 * B}v${h + 2 * B}h${-(w + 2 * B)}z M${x} ${y}v${h}h${w}v${-h}z`;
     const ok = i === index && fixed;
     const fill = i === index && !ok ? `<path class="hand" fill-rule="evenodd" d="${band}"/>` : '';
-    return `<g class="mark">${fill}<rect class="halo" x="${x}" y="${y}" width="${w}" height="${h}" rx="6"/><rect class="ring${ok ? ' ok' : ''}" x="${x}" y="${y}" width="${w}" height="${h}" rx="6"${i === index ? '' : ' opacity=".55"'}/></g>`;
+    const hit = i !== index ? `<path class="hit" data-i="${i}" fill-rule="evenodd" d="${band}"/>` : '';
+    return `<g class="mark">${fill}${hit}<rect class="halo" x="${x}" y="${y}" width="${w}" height="${h}" rx="6"/><rect class="ring${ok ? ' ok' : ''}" x="${x}" y="${y}" width="${w}" height="${h}" rx="6"${i === index ? '' : ' opacity=".55"'}/></g>`;
   }).join('');
 }
 
@@ -1066,7 +1084,7 @@ function ring(r, hand, ok = false) {
 }
 const count = (n, one, many) => (n === 1 ? `one ${one}` : `${n} ${many}`);
 function verdict() {
-  if (!toy) return 'Pick a toy to break this screen on purpose. Your page stays usable.';
+  if (!toy) return 'Step through the ways it can break with ← and →. Your page stays usable.';
   if (toy === 'narrower') {
     if (!stage || stage.sweeping) return `Squeezing a copy of this page from ${stage?.from ?? innerWidth}px down to ${NARROWEST}px…`;
     if (!notes.length) return `From ${stage.from}px down to ${NARROWEST}px, nothing breaks.`;
@@ -1113,24 +1131,36 @@ function verdict() {
   return of + `At twice the length, ${count(notes.length, 'thing breaks', 'things break')}.`;
 }
 
-const TOYS = [
-  ['longer', 'Longer words', LONGER],
-  ['narrower', 'Narrower', '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 8h4M14.5 8h-4"/><path d="M3.5 5.5 6 8l-2.5 2.5M12.5 5.5 10 8l2.5 2.5"/><path d="M8 3v10" opacity=".6"/></svg>'],
-  ['extreme', 'Extreme content', '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="5" width="3" height="6" rx="1" opacity=".6"/><rect x="6" y="5" width="8.5" height="6" rx="1"/><path d="M8 8h4.5"/></svg>'],
-  ['typing', 'Typing', '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="4" width="13" height="8" rx="2"/><path d="M4.5 8h4"/><path d="M10.5 6v4" opacity=".7"/></svg>'],
-  ['lists', 'Lists', '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 4h8M5.5 8h8M5.5 12h8"/><path d="M2.5 4h0M2.5 8h0M2.5 12h0" stroke-width="2.2"/></svg>'],
-  ['action', 'Action fails', '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="4" width="13" height="8" rx="2.5"/><path d="M6.5 6.5l3 3M9.5 6.5l-3 3"/></svg>'],
-  ['bigger', 'Bigger text', '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 12.5l2-5 2 5M2.3 10.8h2.4"/><path d="M7.5 13.5l3-10 3 10M8.7 10h3.6"/></svg>'],
+// the dial's stops: the page as it is, then each toy. [toy id, name, its toy, who meets this page]
+const STOPS = [
+  [null, 'As it is', 'card'],
+  ['longer', 'Longer words', 'text'],
+  ['narrower', 'Narrower', 'width'],
+  ['extreme', 'Extreme content', 'badge'],
+  ['typing', 'Typing', 'input'],
+  ['lists', 'Lists', 'list'],
+  ['action', 'Action fails', 'error'],
+  ['bigger', 'Larger text', 'type'],
 ];
+const seen = new Map();   // toy id → how many things did not hold up there, once it has been tried
+const turn = (dir) => { const i = STOPS.findIndex(([id]) => id === toy); setToy(STOPS[(i + dir + STOPS.length) % STOPS.length][0]); };
+function headline(busy) {
+  if (!toy) return 'Your page, as it is';
+  const name = STOPS.find(([id]) => id === toy)[1];
+  if (busy || (toy === 'action' && act?.phase !== 'done' && !notes.length)) return name;
+  return notes.length ? `${name}: ${notes.length === 1 ? '1 thing doesn’t' : `${notes.length} things don’t`} hold up` : `${name}: everything holds up`;
+}
 
 function skeleton() {
-  host.shadowRoot.innerHTML = `<style>${tokensCss}${CSS_TEXT}</style><div class="stage"></div>
+  host.shadowRoot.innerHTML = `<style>${tokensCss}${BUTTON_CSS}${CSS_TEXT}</style>${TOY_DEFS}<div class="stage"></div>
     <svg class="page"><defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line class="hatch" x1="0" y1="0" x2="0" y2="6"/></pattern></defs><g class="marks"></g></svg>
     <div class="bar" role="region" aria-label="Break it" aria-live="polite"></div>`;
   host.shadowRoot.querySelector('.bar').addEventListener('click', (e) => {
     const b = e.target.closest('button'); if (!b) return;
-    if (b.dataset.fix) { if ((b.dataset.fix === 'fixed') !== !!fixed) toggleFix(); } else if (b.dataset.mode) setMode(b.dataset.mode); else if (b.dataset.toy) setToy(b.dataset.toy); else if (b.classList.contains('prev')) go(-1); else if (b.classList.contains('next')) go(1);
+    if (b.dataset.fix) { if ((b.dataset.fix === 'fixed') !== !!fixed) toggleFix(); } else if (b.dataset.mode) setMode(b.dataset.mode); else if ('toy' in b.dataset) { if ((b.dataset.toy || null) !== toy) setToy(b.dataset.toy || null); } else if (b.classList.contains('prev')) go(-1); else if (b.classList.contains('next')) go(1);
   });
+  soften(host.shadowRoot.querySelector('.bar'));
+  host.shadowRoot.querySelector('.marks').addEventListener('click', (e) => { const i = e.target.closest('.hit')?.dataset.i; if (i != null) go(Number(i) - index); });
 }
 
 function paint() {
@@ -1151,9 +1181,11 @@ function paint() {
   const note = n ? `<div class="note${fixed ? ' is-fixed' : ''}"><div class="say"><p class="title">${esc(fixed ? fixedTitle(n) + after : n.title)}</p><p class="why">${esc(n.why)}${n.source ? ` <span class="src">${esc(n.source)}</span>` : ''}</p></div>${sw}${step}</div>` : '';
   const root = host.shadowRoot;
   root.querySelector('.marks').innerHTML = toy && !busy ? marks() : '';
-  root.querySelector('.bar').innerHTML = `<div class="toys">${TOYS.map(([id, label, face]) => `<button class="toy" data-toy="${id}" aria-pressed="${toy === id}"><span class="face">${face}</span>${label}</button>`).join('')}</div>
+  if (toy && !busy) seen.set(toy, notes.length);
+  const stop = ([id, name, face]) => { const k = seen.get(id); return button(k ? `<b class="n">${k}</b>` : '', { cls: 'sm quiet stop', icon: toyOf(face), attrs: `data-toy="${id ?? ''}" aria-pressed="${toy === id}" aria-label="${name}${k ? `, ${k} to look at` : ''}" title="${name}"` }); };
+  root.querySelector('.bar').innerHTML = `<div class="dial"><div class="say"><p class="head">${esc(headline(busy))}</p><p class="verdict">${esc(verdict())}</p></div><span class="stops" role="toolbar" aria-label="Ways to break this page">${STOPS.map(stop).join('')}</span></div>
       ${toy === 'action' ? `<div class="modes" role="group" aria-label="How it goes wrong">${[['fail', 'Fails'], ['slow', 'Slow']].map(([id, l]) => `<button data-mode="${id}" aria-pressed="${mode === id}">${l}</button>`).join('')}</div>` : ''}
-      <p class="verdict">${esc(verdict())}</p>${note}`;
+      ${note}`;
 }
 const later = () => { if (host && !frame) frame = requestAnimationFrame(paint); };
 
@@ -1211,7 +1243,7 @@ addEventListener('keydown', (event) => {
   if (at?.isContentEditable || at?.matches?.('input, textarea, select')) return;
   if (event.altKey && event.code === 'KeyS' && !event.repeat && !event.metaKey && !event.ctrlKey) { event.preventDefault(); event.stopPropagation(); toggleBreakIt(); return; }
   if (!host || event.altKey || event.metaKey || event.ctrlKey) return;
-  const k = { ArrowLeft: () => go(-1), ArrowRight: () => go(1), Escape: hideBreakIt, f: toggleFix, F: toggleFix }[event.key];
+  const k = { ArrowLeft: () => turn(-1), ArrowRight: () => turn(1), ArrowUp: () => go(-1), ArrowDown: () => go(1), Escape: () => (toy ? setToy(null) : hideBreakIt()), f: toggleFix, F: toggleFix }[event.key];
   if (k) { event.preventDefault(); event.stopPropagation(); k(); }
 }, true);
 /** Where each run of words on the page comes from, as sorted for Longer words. */
