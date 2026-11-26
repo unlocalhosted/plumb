@@ -34,6 +34,8 @@ const CSS = `
   .g[data-off] { opacity: 0 !important; }
   .key { display: inline-grid; place-items: center; min-width: 30px; height: 24px; padding: 0 7px; border-radius: 6px; background: #f3f4f6; box-shadow: inset 0 -2px 0 #d1d5db; font: 600 11px system-ui; color: #374151; }
 `;
+// the scenes' own styles, for a page that draws a scene outside the docs' tile (scripts/proof/demo-check.mjs)
+export const CHECK_CSS = MOTION_CSS + CSS;
 
 // a colour that changes on one element, its value a name (the colour checks)
 const colourCheck = ({ html, pick, from, to, prop = 'background', labels, after }) => (s) => {
