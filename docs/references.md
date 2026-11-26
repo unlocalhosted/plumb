@@ -397,3 +397,13 @@ All free under the Unsplash License, hotlinked from images.unsplash.com as Unspl
   product and there are no captions, because the words typed into the tool say what is happening; three examples of
   the same gesture, about four seconds each; one pull-back at the end shows the whole page.
 - Used in: the launch film's script and shot plan (journey entry 94).
+
+## 2026-11-26 · gokhan's CSS tips on X (shared by the owner)
+- What: the "CSS tip" posts by gokhan ([@gkurttech](https://x.com/gkurttech)), a near-daily series since 2026-10-31
+  with a few older ones. 25 tips collected from a search of his posts for "css".
+- Why: "search this profiless css tip it has a lot of them, first collect them , then see how many we already have
+  and then how many we can add to our engine".
+- What we read from it: 3 tips plumber already checks, 2 it checks in part, 5 that can become 6 new checks (snapping
+  rows, scroll areas that drag the page behind them, native controls left in the browser's blue), and 15 that show
+  how to build an effect and leave nothing to find.
+- Used in: `docs/research/gkurt-css-tips.md`. No check built yet.

@@ -29,8 +29,10 @@ export interface CraftRecord {
   suggest?: { kind: string; from?: string; to?: string; text?: string; why?: string } | null;
   by?: 'rule' | 'model'; soft?: boolean; judged?: boolean; file: string | null; line: number | null; column: number | null; component: string | null; tag: string; count: number;
 }
-export interface CraftPage { route: string; url: string; read: number; complete: boolean; findings: CraftRecord[]; spec?: unknown }
-export interface CraftRunOptions { url: string; routes: string[]; root: string; timeout: number; viewport?: { width: number; height: number }; pairs?: boolean; probe?: boolean; probeBudget?: number; probeDrag?: boolean; judge?: boolean; scope?: string; recordProbe?: string }
+export interface CraftPage { route: string; url: string; read: number; complete: boolean; findings: CraftRecord[]; spec?: unknown;
+  /** a proof run only: the errors checks threw on this page (the engine hides them, so a broken check looks like a quiet one) */
+  thrown?: { rule: string; error: string }[] }
+export interface CraftRunOptions { url: string; routes: string[]; root: string; timeout: number; viewport?: { width: number; height: number }; pairs?: boolean; probe?: boolean; probeBudget?: number; probeDrag?: boolean; judge?: boolean; scope?: string; recordProbe?: string; proof?: { without: string[] } }
 
 const missing = `The headless run needs Playwright, an optional dependency.
   → npm i -D playwright && npx playwright install chromium
@@ -229,6 +231,17 @@ async function carryOverlay(browser: Browser, root: string, base: string): Promi
   return () => daemon.close();
 }
 
+/**
+ * A proof run (docs/briefs/new-check.md §6a): every page this run opens is judged without the named checks, and the
+ * errors checks throw are kept (overlay/src/craft.js reads globalThis.__plumbProof).
+ */
+function proofRun(browser: Browser, without: string[]): void {
+  const script = `globalThis.__plumbProof = { without: ${JSON.stringify(without)}, thrown: [] };`;
+  const newContext = browser.newContext.bind(browser);
+  browser.newContext = async (options = {}) => { const context = await newContext(options); await context.addInitScript(script); return context; };
+  browser.newPage = async (options = {}) => { const context = await browser.newContext(options), page = await context.newPage(); page.once('close', () => { context.close().catch(() => {}); }); return page; };
+}
+
 /** Open every route in headless Chromium and run the craft engine over the whole page. */
 export async function craftRun(options: CraftRunOptions): Promise<CraftPage[]> {
   const browser = await launchChromium();
@@ -239,6 +252,7 @@ export async function craftRun(options: CraftRunOptions): Promise<CraftPage[]> {
       process.stderr.write('Plumber isn\'t set up in this app\'s dev server, so the check brings its own copy into its own browser. Your app isn\'t changed.\n');
       stopOwn = await carryOverlay(browser, options.root, base);
     }
+    if (options.proof) proofRun(browser, options.proof.without);
     for (const route of options.routes) {
       const url = new URL(route, base).href;
       // motion on: a page loaded with reduced motion hides every animation from every rule
@@ -284,7 +298,8 @@ export async function craftRun(options: CraftRunOptions): Promise<CraftPage[]> {
           }
           for (const record of first.values()) result.findings.push({ ...record, title: record.title + when(record) });
         }
-        pages.push({ ...result, route, url });
+        const thrown = options.proof ? await page.evaluate(() => (globalThis as unknown as { __plumbProof?: { thrown: { rule: string; error: string }[] } }).__plumbProof?.thrown ?? []).catch(() => []) : undefined;
+        pages.push({ ...result, route, url, ...(thrown ? { thrown } : {}) });
       } finally { await page.close(); }
     }
     return pages;

@@ -490,9 +490,12 @@ export class Craft {
   get rules() {
     if (this.#active && this.#spec === SPEC.value) return this.#active;
     this.#spec = SPEC.value;
+    // a proof run (scripts/proof/on-off.mjs, docs/briefs/new-check.md §6a) names checks to leave out, to see what the
+    // others say without them: globalThis.__plumbProof = { without: [ids], thrown: [] }, set before the page loads
+    const without = new Set(globalThis.__plumbProof?.without ?? []);
     return (this.#active = this.#rules.flatMap((r) => {
       const s = this.#theme.spec(r.id);
-      return s.enabled === false ? [] : [Object.assign(Object.create(r), { tier: typeof s.tier === 'number' ? s.tier : r.tier ?? TIER.craft })];
+      return s.enabled === false || without.has(r.id) ? [] : [Object.assign(Object.create(r), { tier: typeof s.tier === 'number' ? s.tier : r.tier ?? TIER.craft })];
     }));
   }
   get theme() { return this.#theme; }
@@ -663,14 +666,15 @@ export class Craft {
     const quieted = () => {
       if (quiet) return quiet;
       quiet = new Set();
-      for (const rule of rules) if (rule.scope && rule.refines) { try { if (rule.scope({ el, facts })) for (const r of rule.refines) quiet.add(r); } catch {} }
+      for (const rule of rules) if (rule.scope && rule.refines) { try { if (rule.scope({ el, facts })) for (const r of rule.refines) quiet.add(r); } catch (error) { globalThis.__plumbProof?.thrown?.push({ rule: rule.id, error: `scope: ${String(error?.message ?? error).slice(0, 200)}` }); } }
       return quiet;
     };
     const pc = P && performance.now();
     const judge = (rule) => {
       if (quieted().has(rule.id)) return [];
       let found = [];
-      try { found = rule.check({ el, facts }, this.#theme) ?? []; } catch { found = []; } // a rule's error is its own, never the page's
+      // a rule's error is its own, never the page's; a proof run keeps it, since a rule that throws looks like a quiet one
+      try { found = rule.check({ el, facts }, this.#theme) ?? []; } catch (error) { found = []; globalThis.__plumbProof?.thrown?.push({ rule: rule.id, error: String(error?.message ?? error).slice(0, 200) }); }
       // a mark's key is unique on its element: a rule that finds two things here without keys of its own gets #2, #3…, so
       // taking one never marks the other taken, and one preview never undoes the other (docs/invariants/overlay.md #10)
       const kept = found.filter((f) => (f.confidence ?? 0) >= FLOOR), seen = new Map();

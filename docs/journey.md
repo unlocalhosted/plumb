@@ -5934,6 +5934,42 @@ into its own browser. Your app isn't changed.", then the findings.
   stretch after the fourth stop passes with nothing said.
 - **Media hooks:** a screen recording of today's section next to the rebuilt one.
 
+### 140. A written contract for adding a check (2026-11-26, a draft)
+
+- **The itch:** the owner, after 25 CSS tips from gokhan's posts were sorted into what plumber has and what it could
+  add: "we should add a spec for adding a new check, i want a demo for it to be added on what we check in docs
+  wherever it lies appropriately along with deterministic fix or we can use embed type check with jev type model".
+- **How we found it:** by counting the docs' own list of checks. 281 checks; all 266 judged on the page have an
+  example in the docs; 59 of the 258 counted on 2026-11-22 can write their fix; one asks a model what words mean.
+- **The system behind it:** checks were added by habit. The habit covered the example and left the fix as advice
+  most of the time, and no document said when a model may judge.
+- **What we chose:** one contract (`docs/briefs/new-check.md`). A check comes with its case, how it judges
+  (measured, meaning, or source), its fix (written and deterministic, words, or advice with a reason), its words, a
+  demo under its concern on the docs page, and proof. A model is asked only where no measurement can decide, only
+  about the few candidates the page has narrowed to, and the check is silent when no model is set.
+- **Then the owner added:** "make sure it verifies how it wont affect any other check and wont introduce a bug or
+  any messy situation as a side effect, it has to prove this to be said its valid, think of more corner cases,
+  hierarchical situation". The engine was read for how one check reaches another: a shared facet, quieting, rank, a
+  swallowed error, the kept answer, time. The spec now asks for proof against each, for the fix (nothing new fires,
+  nothing else moves, it lands, it rests, it can be taken back, it says how far a shared class reaches), for ten
+  parent-and-child cases and thirteen corner cases. A check with a claim not shown stays switched off.
+- **And:** "if there is a way to check for a problem but no deterministic fix as its subjective, find a way to add
+  it, as it still will add value and would help user to find fix either himself or with llm". The first draft
+  treated a check without a written fix as second-rate. It now has a fourth kind of fix, a brief: plumber finds the
+  problem for certain and hands over what a good answer must do, without writing the answer.
+- **Undo across time (owner):** "we provide a way from history to undo a change so undo across time should also be
+  verfied". The spec has a table for it: straight away, after newer fixes, after a hand edit, as part of a group,
+  newest first through a whole page, after a restart, from the page and from the command line.
+- **The first proof tool (owner: "Proof tools first"):** a run that judges the same pages with named checks on and
+  off (`scripts/proof/on-off.mjs`). The engine gained a switch only a proof run sets: leave these checks out, and
+  keep the errors checks throw, which it otherwise hides. Proof: on a control page with a faded coloured button,
+  switching off the faded-button check brought back the general contrast finding it quiets ("Contrast is 24 on the
+  APCA scale at 14px"), and the run reported that one difference. On the sloppy-screens page (108 elements, 74
+  findings) switching off the em-dash check changed nothing else and no check threw. Not run on a real app yet.
+- **Proof of the spec itself:** none yet. It is a draft for the owner to read. The first use is the six checks from gokhan's tips
+  (`docs/research/gkurt-css-tips.md`, reference logged 2026-11-26 in `docs/references.md`).
+- **Media hooks:** a docs example flipping between Broken and Fixed, beside the same check's finding on a real app.
+
 ### 94. The launch film: learning from a video that doesn't explain itself (2026-11-25)
 
 - **The itch:** the owner: "create a launch video now, so show a fix, visual editor, fixes", and "i like how we are
