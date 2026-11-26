@@ -6206,8 +6206,16 @@ into its own browser. Your app isn't changed.", then the findings.
   inside another copy, so the hidden copy squeezes itself for the narrow stop. And the narrow stop counted 4, then
   2 breaks that a live visit did not show, because it was measured after the typing stop had touched the copy; it
   is now measured first, and agreed with the live visit (none).
-- **Not done.** Action fails has no count ahead: it waits for a press. A count ahead can differ from the live
-  visit (larger text said 3 ahead and 4 live on that page; cause not looked for). The copy is the page as it
+- **The count that differed.** Larger text said 3 ahead and 4 on a live visit. Both were read side by side: the
+  same three causes of text that does not grow. The fourth is two labels in the page's opening drawing running into
+  each other, and it shows only when the stop is picked while the page is still playing its opening, or after the
+  page adds those labels some seconds later. The system: every stop measures the page first and blames itself for
+  what is new after, so the page's own movement was counted as a break. Now every stop waits for the page to be
+  still (the same words, boxes and height twice running, three seconds at most) before it measures, and the bar says
+  it is waiting. Picked during the opening, larger text now says 3. What is left is honest: the live stop judges
+  again as the page changes and went to 4 when the labels arrived; the copy read once, before they did.
+- **Not done.** Action fails has no count ahead: it waits for a press. A count ahead is one
+  reading of a page that may change later (below). The copy is the page as it
   loads, not the state you have clicked your way into. Walking with the arrows passes through Typing, Lists and Action fails, which act on the page. A
   finding from the page check that exists only at larger text does not yet turn the dial from its element. Light
   scheme and phone width not looked at.

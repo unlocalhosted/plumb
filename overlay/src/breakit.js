@@ -1041,22 +1041,47 @@ let toy = null;
 export function setToy(next) {
   unfix();
   if (next === toy) next = null;
-  if (toy === 'longer') { on = false; shrink(); }
-  if (toy === 'narrower') unstage();
-  if (toy === 'bigger') unbig();
-  if (toy === 'extreme') { unswap(); probing = false; }
-  if (toy === 'action') disarm();
-  if (toy === 'typing') { unshow(); typing = false; }
-  if (toy === 'lists') { unsize(); listing = false; unlistenCrash(); if (wrecked) { wrecked = false; location.reload(); } }
+  if (!waiting) {   // a toy still waiting for a still page never started: there is nothing of its to put back
+    if (toy === 'longer') { on = false; shrink(); }
+    if (toy === 'narrower') unstage();
+    if (toy === 'bigger') unbig();
+    if (toy === 'extreme') { unswap(); probing = false; }
+    if (toy === 'action') disarm();
+    if (toy === 'typing') { unshow(); typing = false; }
+    if (toy === 'lists') { unsize(); listing = false; unlistenCrash(); if (wrecked) { wrecked = false; location.reload(); } }
+  }
   toy = next; notes = []; index = 0;
-  if (toy === 'longer') { on = true; grow(); }
-  if (toy === 'narrower') narrower();
-  if (toy === 'bigger') bigger();
-  if (toy === 'extreme') extreme();
-  if (toy === 'action') arm();
-  if (toy === 'typing') typeAll();
-  if (toy === 'lists') sizeAll();
+  const run = ++runs;
+  waiting = !!toy;
   paint();
+  if (!toy) return;
+  // every toy measures the page first and blames itself for what is new after. A page still playing its opening, or
+  // still putting back the last toy, would have its own movement counted as breaks: so the page is still first
+  still().then(() => {
+    if (run !== runs || !host) return;
+    waiting = false;
+    if (toy === 'longer') { on = true; grow(); }
+    if (toy === 'narrower') narrower();
+    if (toy === 'bigger') bigger();
+    if (toy === 'extreme') extreme();
+    if (toy === 'action') arm();
+    if (toy === 'typing') typeAll();
+    if (toy === 'lists') sizeAll();
+    paint();
+  });
+}
+let runs = 0, waiting = false;
+const STILL_MS = 3000;   // a page that never stops moving (a ticker) is not waited for longer than this
+/** Resolves when the page has stopped changing: the same words, boxes and height twice running, 120ms apart. */
+async function still() {
+  const sig = () => `${document.body.innerText.length}|${document.documentElement.scrollHeight}|${document.body.getElementsByTagName('*').length}`;
+  let last = sig();
+  for (const until = performance.now() + STILL_MS; performance.now() < until;) {
+    await new Promise((r) => setTimeout(r, 120));
+    const now = sig();
+    if (now === last) return;
+    last = now;
+  }
 }
 export const setLonger = (yes) => setToy(yes ? 'longer' : null);
 
@@ -1099,6 +1124,7 @@ function ring(r, hand, ok = false) {
 const count = (n, one, many) => (n === 1 ? `one ${one}` : `${n} ${many}`);
 function verdict() {
   if (!toy) return 'Step through the ways it can break with ← and →. Your page stays usable.';
+  if (waiting) return 'Waiting for your page to stop moving, so its own motion is not counted…';
   if (toy === 'narrower') {
     if (!stage || stage.sweeping) return `Squeezing a copy of this page from ${stage?.from ?? innerWidth}px down to ${NARROWEST}px…`;
     if (!notes.length) return `From ${stage.from}px down to ${NARROWEST}px, nothing breaks.`;
@@ -1158,7 +1184,7 @@ const STOPS = [
 ];
 const seen = new Map();   // toy id → how many things did not hold up there, once it has been tried
 const turn = (dir) => { const i = STOPS.findIndex(([id]) => id === toy); setToy(STOPS[(i + dir + STOPS.length) % STOPS.length][0]); };
-const isBusy = () => !!(growing || sorting || stage?.sweeping || probing || typing || listing || act?.phase === 'watching');
+const isBusy = () => !!(waiting || growing || sorting || stage?.sweeping || probing || typing || listing || act?.phase === 'watching');
 /** For the copy that counts ahead: how many things do not hold up at the stop it is on, or null while it is still trying. */
 export const readAhead = () => { if (!toy || isBusy()) return null; paint(); return isBusy() ? null : notes.length; };
 
