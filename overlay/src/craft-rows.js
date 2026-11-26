@@ -54,6 +54,9 @@ export function rowsOf(el, facts) {
     const byX = [...line].sort((a, b) => facts.rect(a).left - facts.rect(b).left);
     if (byX.some((k, i) => i && facts.rect(k).left < facts.rect(byX[i - 1]).right - 1)) return false;
     if (!line.every((k) => partsOf(k, facts).action)) return false;
+    // a card is a thing you take in at once: drawn as a shape, or no taller than the screen. Tall undrawn columns (two
+    // lists of tracks side by side) are columns of a layout, and their parts never line up across
+    if (!line.every((k) => drawn(facts.style(k)) || facts.rect(k).height <= innerHeight)) return false;
     const first = make(line[0]);
     return line.slice(1).every((k) => alike(first, make(k)) >= 0.6);
   });

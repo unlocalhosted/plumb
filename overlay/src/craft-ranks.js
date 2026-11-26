@@ -161,7 +161,8 @@ function matchSet(facts, g, out, rowOf) {
   if (g.length < MIN_GROUP) return;
   const add = (el, f) => out.set(el, [...(out.get(el) ?? []), { ...f, row: rowOf?.(el) ?? null }]);
   // an icon beside its label: where its middle sits against the words' middle
-  const dy = g.map((el) => { const i = iconOf(el), t = firstWords(facts, el); if (!i || !t) return null; const b = facts.rect(i); return (b.top + b.bottom) / 2 - (t.box.top + t.box.bottom) / 2; });
+  // only an icon on the words' line is beside them: one above or below them is laid out apart, not misaligned
+  const dy = g.map((el) => { const i = iconOf(el), t = firstWords(facts, el); if (!i || !t) return null; const b = facts.rect(i); if (b.bottom <= t.box.top || b.top >= t.box.bottom) return null; return (b.top + b.bottom) / 2 - (t.box.top + t.box.bottom) / 2; });
   const withIcon = dy.filter((x) => x !== null);
   if (withIcon.length >= MIN_GROUP) {
     const m = mode(withIcon, 0.5);

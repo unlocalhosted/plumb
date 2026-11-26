@@ -169,6 +169,15 @@ export class Facts {
         const G = labOf(g);
         this.pageL ??= labOf(this.ground(document.body))[0];
         if (Math.hypot(G[1], G[2]) >= 0.04 || Math.abs(G[0] - this.pageL) > 0.25) continue;
+        // a gradient fill under the words (a dark card drawn as a gradient) is a surface of its own, though the ground
+        // read through it is the page's: words on it belong to it
+        let onFill = false;
+        for (let n = el; n && n !== document.body; n = n.parentElement) {
+          const ns = this.style(n), nb = rgb(ns.backgroundColor);
+          if (/gradient\(/.test(ns.backgroundImage)) { onFill = true; break; }
+          if (nb && nb[3] > 0.5) break;
+        }
+        if (onFill) continue;
         const mixed = [0, 1, 2].map((i) => c0[i] * o + g[i] * (1 - o));
         const L = labOf(mixed);
         if (Math.hypot(L[1], L[2]) >= 0.04) continue; // a semantic colour (a link, an accent) is not a level of grey

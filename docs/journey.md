@@ -6313,6 +6313,33 @@ into its own browser. Your app isn't changed.", then the findings.
 - **Note:** another session's uncommitted edits in the same file (a native input under a drawn control, rows of a
   list) were left out of this commit.
 
+### 149. The last wrong notes on algorecall (2026-11-26)
+
+- **The itch:** after entries 145 and 147, nine wrong findings were left on algorecall, from seven checks. The owner:
+  "fix the eight left on algorecall" (my count of eight was wrong: it was nine, and the four title-and-value
+  findings I listed with them were ones I had marked unsure, not wrong; they are unchanged).
+- **The fixes, one cause each:**
+  1. *Text greys.* The achievement cards are dark, drawn with a gradient, and the census read the page's light ground
+     through it, so their greys were counted against the light page's. Words on a gradient fill now belong to it.
+  2. *Room for a scrollbar.* A strip that scrolls sideways was told to reserve a vertical scrollbar's width (a
+     sideways scroll makes the browser report the other direction as scrollable too). A strip with nothing to scroll
+     down is left alone.
+  3. *A row that can't wrap.* A week's seven days were told the row might grow. Equal slots that share a row
+     (flex-1) are a set laid out to fill it, and each narrows with the row.
+  4. *Spacing rhythm.* A cover's 44px gap was called a stray from the page's 8.8px. A stray is a near miss; a gap more
+     than twice the widest step is a break set on purpose.
+  5. *Icons beside labels.* An icon 200px away from a label was measured as "beside" it. Only an icon on the words'
+     line is now compared.
+  6. *Cards in a row* (row heights and shared edges both). Two tall undrawn columns of tracks were read as two cards.
+     A card is now drawn as a shape or no taller than the screen.
+- **The proof:** the seven pages those checks spoke on, again on the test server: all nine are gone. One finding I had
+  marked right went too: an icon 1.4px lower than its neighbours in the problems page's topic tray. Those tiles stack
+  the icon above its label, so the check's "beside their labels" never held there; the difference across tiles is
+  real, and no check measures it now. Four shadow findings came back with the page's level read as 20px instead of
+  18px, the same findings.
+- **Where algorecall stands:** of the 22 wrong findings scored in entry 145, all 22 are gone (13 in entry 147 and the
+  stroke fix, 9 here). The 19 marked unsure are not judged again.
+
 ### 142. The dial in the overlay (2026-11-26)
 
 - **The itch.** The owner asked how a person sees the page's other states: "we need to come up with some way like
@@ -8083,7 +8110,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   `generator/shots/generate-craftingattention.png` (local).
 
 ## Open gaps
-- **Wrong notes on a real app.** Of 38 wrong findings on crafting-ui, 30 are fixed (entries 143 and 144), 2 were my misjudgement, 6 remain. On algorecall 22 of 153 read were wrong; 11 of the 13 caused by SVG drawings are fixed ([entry 145](#145-scoring-every-check-on-algorecall-2026-11-26), [entry 147](#147-drawings-are-not-the-page-2026-11-26)). [Entry 141](#141-scoring-every-check-on-crafting-ui-2026-11-26), [entry 143](#143-fixing-four-causes-of-wrong-notes-2026-11-26), [entry 144](#144-the-last-five-kinds-of-wrong-note-2026-11-26)
+- **Wrong notes on a real app.** Of 38 wrong findings on crafting-ui, 30 are fixed (entries 143 and 144), 2 were my misjudgement, 6 remain. On algorecall 22 of 153 read were wrong; all 22 are fixed (entries 147 and 149) ([entry 145](#145-scoring-every-check-on-algorecall-2026-11-26), [entry 147](#147-drawings-are-not-the-page-2026-11-26)). [Entry 141](#141-scoring-every-check-on-crafting-ui-2026-11-26), [entry 143](#143-fixing-four-causes-of-wrong-notes-2026-11-26), [entry 144](#144-the-last-five-kinds-of-wrong-note-2026-11-26)
 - **The footer's count is a recording.** It has to be recorded again (`node web/scripts/findings.mjs`, with the dev server up) whenever the homepage changes, and nothing enforces that yet. It was read at 1280px, in light, at rest ([entry](#87-the-footer-is-a-demo-on-our-own-faults-2026-11-22)).
 - **The release checks live outside the repo.** The width sweep, the drawing check and the script that plays the footer are one session's temporary files, so the next deploy starts without them.
 - **Docs can drift from the package again.** Nothing runs their commands at release. The homepage's live-editing clip is from an older overlay, and the overlay's gestures were checked in source, without driving them ([entry](#75-the-docs-said-what-an-older-plumber-did-2026-11-22)).

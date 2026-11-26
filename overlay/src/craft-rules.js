@@ -1635,6 +1635,9 @@ export const listWrap = {
     if (el.matches('[role="tablist"], [role="toolbar"], [role="menubar"], [role="radiogroup"]')) return [];
     const kids = [...el.children].filter((k) => k.getClientRects().length && !/^(?:absolute|fixed)$/.test(facts.style(k).position));
     if (kids.length < (T.least ?? 3)) return [];
+    // equal slots sharing the row (flex-1: the days of a week, the steps of a form) are a set laid out to fill it, not a
+    // list that grows; each slot narrows as the row does
+    if (kids.every((k) => { const ks = facts.style(k); return parseFloat(ks.flexGrow) >= 1 && parseFloat(ks.flexBasis) === 0; })) return [];
     // drawn by one line of code: the same source stamp (file:line:column), so a map over data. A part that is the root of
     // a component (a Link) carries the component's own line, the same for every Link anywhere: its place is the line
     // that uses the component, read from React's tree
@@ -1838,6 +1841,9 @@ export const scrollbarGutter = {
     if (el === document.body || el === document.documentElement) return [];
     const s = facts.style(el);
     if (!/auto/.test(s.overflowY) || s.scrollbarGutter !== 'auto') return [];
+    // a strip that scrolls sideways (overflow-x-auto computes overflow-y as auto too) with nothing to scroll down: its
+    // scrollbar runs along the bottom and never takes width from what is in it
+    if (/auto|scroll/.test(s.overflowX) && el.scrollWidth > el.clientWidth + 1 && el.scrollHeight <= el.clientHeight + 1) return [];
     const r = facts.rect(el);
     if (r.width < T.width || r.height < T.height) return [];
     return [{
@@ -2715,6 +2721,9 @@ export const rhythm = {
     // is the page's structure, not a stray value
     const stacks = facts.kids(el).filter((k) => { const ks = facts.style(k); return /flex|grid/.test(ks.display) && facts.kids(k).length >= 2 && px(ks.rowGap === 'normal' ? 0 : ks.rowGap) > 0; });
     if (stacks.length && g > Math.max(...steps)) return [];
+    // a stray is a near miss of the rhythm (18 where the page keeps 16); a gap more than twice the widest step is a
+    // break set on purpose (a cover's title standing apart), not a value that drifted
+    if (g > 2 * Math.max(...steps)) return [];
     const near = steps.slice().sort((a, b) => Math.abs(a - g) - Math.abs(b - g))[0];
     const cls = utility(el, 'gap', { not: /^x(?:-|$)/ });
     const rec = recommend({ family: 'spacing', prefix: 'gap', job: 'stack', want: { min: near - 0.5, max: near + 0.5, target: near }, from: cls ?? '', token: false, sets: (v) => ({ rowGap: v, columnGap: v }), theme, advice: () => `Use ${fmt(near)}, the page’s rhythm.` });
