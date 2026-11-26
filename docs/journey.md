@@ -6614,7 +6614,11 @@ into its own browser. Your app isn't changed.", then the findings.
   page it stayed away on four screens in a row. A test run of ours had also replaced the saved data of those two
   screens, so screens are now kept per judge. The two spoiled judgements were moved to `set-aside/`.
 - **Not shown:** no real judgement has been made yet. Nothing scores plumber against the marks. No test covers it.
-  A click meant for the app is still taken as a look unless Space is held.
+- **And the click itself:** during the looks, any click on the page was a look, so a click meant for the app was
+  saved as one. The owner chose to end that. A look is now the next number key, pressed while pointing: 1, 2, 3,
+  with Backspace to take one back, and the pointer carries the number it will leave. A click on the still page
+  records nothing and presses nothing; it answers with how to put a look and how to reach the app. Tried on
+  cal.com: two clicks, one on a nav link, left no look and did not move the app; 1, 2, Backspace, 2, 3 left three.
 - **Media hooks:** the judging page with one mark and its note open over cal.com's event types list.
 - **References:** Layr's chapter and the research behind it, both in [references.md](references.md) under 2026-11-26.
 
