@@ -1,5 +1,5 @@
 import { readFile, writeFile, mkdir, rename } from 'node:fs/promises';
-import { join, relative } from 'node:path';
+import { isAbsolute, join, relative } from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { cacheDirectory, ignoreCache } from './paths.js';
 import { UsageError } from './errors.js';
@@ -37,7 +37,7 @@ export interface ApplyCommand { root: string; config?: string; key: string; toke
  */
 interface PageFix { file: string; line: number; column: number; from: string; to: string; title: string; rule: string; url?: string; path?: string;
   /** the other places this fix is written (a habit found across a page): all go in one apply, and come out in one undo */
-  more?: { file: string; line: number; column: number; from: string; to: string }[] }
+  more?: { file: string; line: number; column: number; from: string; to: string; chain?: { file: string; line: number; column: number }[] }[] }
 const pageFixesFile = (root: string) => join(cacheDirectory(root), 'page-fixes.json');
 const isPageKey = (key: string) => /^p[0-9a-f]{9}$/.test(key);
 export async function keepPageFixes(root: string, findings: readonly Finding[], places: ReadonlyMap<string, { url: string; path: string }> = new Map()): Promise<void> {
@@ -86,30 +86,54 @@ async function applyPageFix({ root, config, key }: ApplyCommand): Promise<string
 }
 
 /**
- * A fix for a habit: the same kind of swap in every place the page check found it. Each place is guarded as a single
- * fix is; one that changed since the check is skipped and named. All of it is one entry for `plumber undo`.
+ * A fix for a habit: the same kind of swap in every place the page check found it, as one entry for `plumber undo`.
+ * Each class is written where it really is (the session's class-site, as the overlay asks it): on the element's own
+ * line, in the variable its className reads, or at the usage that passes it into a component. A string several places
+ * read is written once. A place whose class is in no plain string, or that changed since the check, is skipped and named.
  */
-async function applyEverywhere(root: string, key: string, fix: PageFix, kept: Record<string, PageFix>, session: { swap(edit: { file: string; hash: string; line: number; column: number; from: string; to: string }): Promise<unknown> }): Promise<string> {
-  const places = [{ file: fix.file, line: fix.line, column: fix.column, from: fix.from, to: fix.to }, ...fix.more!];
-  const befores = new Map<string, string>(), skipped = new Map<string, string[]>();
-  let written = 0;
+type Place = NonNullable<PageFix['more']>[number];
+interface Target { file: string; line: number; column: number; from: string; to: string; at?: { line: number; column: number }; of?: { file: string; line: number; column: number; chain: NonNullable<Place['chain']> }; where: string }
+async function applyEverywhere(root: string, key: string, fix: PageFix, kept: Record<string, PageFix>, session: import('./session/index.js').Session): Promise<string> {
+  const places: Place[] = fix.more!;
+  const skipped = new Map<string, string[]>(), targets = new Map<string, Target>();
+  const skip = (why: string, place: Place) => { const w = why.split('\n')[0]!.replace(/\.$/, ''); skipped.set(w, [...skipped.get(w) ?? [], `${place.file}:${place.line}`]); };
+  let covered = 0;
   for (const place of places) {
-    const path = join(root, place.file), now = await readSource(root, path);
-    if (!befores.has(place.file)) befores.set(place.file, now.text);
-    try { await session.swap({ file: path, hash: now.hash, line: place.line, column: place.column, from: place.from, to: place.to }); written++; }
-    // a place that can't be written says why in the engine's own words: the class is held in a variable or passed
-    // through a component, or the line changed since the check (found on a real app, 2026-11-26: 17 of 47 places)
-    catch (error) { if (!(error instanceof UsageError)) throw error; const why = error.message.split('\n')[0]!.replace(/\.$/, ''); skipped.set(why, [...skipped.get(why) ?? [], `${place.file}:${place.line}`]); }
+    try {
+      const chain = place.chain ?? [];
+      const answer = await session.classSite(place.file, place.line, place.column, place.from, chain);
+      const sites = place.from.split(/\s+/).filter(Boolean).length === 1 ? answer.classes.find(c => c.class === place.from)?.sites ?? [] : [];
+      if (!sites.length) { skip(answer.classes.find(c => c.class === place.from)?.refused ?? answer.refused ?? `${place.from} is not written in a plain string here`, place); continue; }
+      for (const site of sites) {
+        const id = `${site.file}:${site.string.line}:${site.string.column}:${place.from}`;
+        if (!targets.has(id)) targets.set(id, { file: site.element.file, line: site.element.line, column: site.element.column, from: place.from, to: place.to,
+          // the element's own className is written as a single page fix is; a variable or a usage is pinned to its string
+          ...(site.kind === 'own' ? {} : { at: { line: site.string.line, column: site.string.column }, of: { file: place.file, line: place.line, column: place.column, chain } }),
+          where: site.kind === 'variable' ? `the variable ${site.variable ?? ''}`.trim() : site.kind === 'usage' ? 'where a component is used' : 'the element' });
+      }
+      covered++;
+    } catch (error) { if (!(error instanceof UsageError)) throw error; skip(error.message, place); }
+  }
+  const befores = new Map<string, string>(), kinds = new Map<string, number>();
+  let strings = 0;
+  for (const target of targets.values()) {
+    const name = (isAbsolute(target.file) ? relative(root, target.file) : target.file).replaceAll('\\', '/'), path = join(root, name), now = await readSource(root, path);
+    if (!befores.has(name)) befores.set(name, now.text);
+    try {
+      await session.swap({ file: path, hash: now.hash, line: target.line, column: target.column, from: target.from, to: target.to, ...(target.at ? { at: target.at, of: target.of! } : {}) });
+      strings++; kinds.set(target.where, (kinds.get(target.where) ?? 0) + 1);
+    } catch (error) { if (!(error instanceof UsageError)) throw error; skip(error.message, { file: name, line: target.line, column: target.column, from: target.from, to: target.to }); }
   }
   const left = [...skipped].map(([why, at]) => `- ${at.length} not written (${why}): ${[...new Set(at)].join(', ')}`);
-  if (!written) throw new UsageError(['No place could be written.', ...left].join('\n'));
+  if (!strings) throw new UsageError(['No place could be written.', ...left].join('\n'));
   const files: Kept['files'] = [];
   for (const [file, text] of befores) { const after = await readSource(root, join(root, file)); if (after.text !== text) files.push({ file, before: text, hashAfter: after.hash }); }
-  const entry: Kept = { id: randomBytes(4).toString('hex'), at: new Date().toISOString(), label: `${fix.rule} in ${written} places`, files };
+  const entry: Kept = { id: randomBytes(4).toString('hex'), at: new Date().toISOString(), label: `${fix.rule} in ${covered} places`, files };
   await keep(root, [...await history(root), entry]);
   delete kept[key];
   await writeFile(pageFixesFile(root), JSON.stringify(kept));
-  return [`Applied in ${written} ${written === 1 ? 'place' : 'places'} across ${files.length} ${files.length === 1 ? 'file' : 'files'} (${fix.rule}).`,
+  return [`Applied for ${covered} of ${places.length} ${places.length === 1 ? 'place' : 'places'}, in ${strings} ${strings === 1 ? 'edit' : 'edits'} across ${files.length} ${files.length === 1 ? 'file' : 'files'} (${fix.rule}).`,
+    ...[...kinds].map(([where, n]) => `- ${n} written on ${where}`),
     ...left,
     `Undo: plumber undo ${entry.id}`, 'Next: run the page check again.', ''].join('\n');
 }

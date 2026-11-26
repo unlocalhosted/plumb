@@ -28,7 +28,7 @@ export interface CraftRecord {
   path?: string;
   suggest?: { kind: string; from?: string; to?: string; text?: string; why?: string; site?: { file: string; line: number; column: number } } | null;
   /** a finding about a habit (one per page): every place it was found, each with the classes its fix swaps there */
-  places?: { file: string; line: number; column: number; text: string; from?: string; to?: string }[];
+  places?: { file: string; line: number; column: number; text: string; from?: string; to?: string; chain?: { file: string; line: number; column: number }[] }[];
   by?: 'rule' | 'model'; soft?: boolean; judged?: boolean; file: string | null; line: number | null; column: number | null; component: string | null; tag: string; count: number;
 }
 export interface CraftPage { route: string; url: string; read: number; complete: boolean; findings: CraftRecord[]; spec?: unknown;
@@ -403,9 +403,9 @@ export function craftFindings(pages: CraftPage[], root: string): Finding[] {
   for (const [rule, { record, places }] of folds) {
     const all = [...places.values()].sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line || a.column - b.column);
     const sites: Site[] = all.map(p => ({ file: resolve(root, p.file), line: p.line, column: p.column, text: p.to ? `${p.from} → ${p.to}` : p.text }));
-    const written = all.filter(p => p.to).map(p => ({ file: resolve(root, p.file), line: p.line, column: p.column, from: p.from ?? '', to: p.to! }));
+    const written = all.filter(p => p.to).map(p => ({ file: resolve(root, p.file), line: p.line, column: p.column, from: p.from ?? '', to: p.to!, ...(p.chain?.length ? { chain: p.chain } : {}) }));
     const key = `${rule}:page`, docs = docsUrl(rule), first = written[0];
-    const apply = first ? { key: fixKey(key), from: first.from, to: first.to, ...(record.suggest?.why ? { why: record.suggest.why } : {}), at: { file: first.file, line: first.line, column: first.column }, more: written.slice(1) } : undefined;
+    const apply = first ? { key: fixKey(key), from: first.from, to: first.to, ...(record.suggest?.why ? { why: record.suggest.why } : {}), at: { file: first.file, line: first.line, column: first.column }, more: written } : undefined;
     const declaration: Declaration = { prop: rule, value: record.text, refs: [], when: [], site: sites[0]!, owner: { kind: 'element', name: record.component ?? record.tag }, origin: 'class' };
     found.set(key, { ...(apply ? { apply } : {}), ...makeFinding({ key, rule, family: 'craft', severity: (record as { soft?: boolean }).soft ? 'info' : 'error', sites, declaration, decisions: [],
       title: record.title, because: record.because, ...(record.action ? { action: record.action } : {}) }), ...(docs ? { docs } : {}) });

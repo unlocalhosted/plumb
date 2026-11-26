@@ -91,7 +91,7 @@ export interface Finding {
    * taken with `plumber apply <key>` the way the fix bar takes it. */
   apply?: { key: string; from: string; to: string; why?: string; at?: { file: string; line: number; column: number };
     /** the other places the same fix is written, each with its own classes: one apply, one undo */
-    more?: { file: string; line: number; column: number; from: string; to: string }[] };
+    more?: { file: string; line: number; column: number; from: string; to: string; chain?: { file: string; line: number; column: number }[] }[] };
   accept: string;
   /** Suggestible tokens only; decisions also retains non-choice metadata. */
   choices?: Decision[];

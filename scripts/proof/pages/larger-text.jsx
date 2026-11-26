@@ -1,6 +1,10 @@
 // The test page for the larger-text reality (docs/briefs/realities.md): the page is opened again with the browser's
 // default text size at 24px. Text written in rem grows; text written in pixels does not; a box sized for one text
 // size cuts its words.
+// a size held in a variable two lines read, and one passed into a component: the fix is written where each class is
+const lettering = 'text-[11px] uppercase tracking-wide text-slate-500';
+function Note({ className, children }) { return <p className={className}>{children}</p>; }
+
 export function App() {
   return (
     <main className="mx-auto grid max-w-xl gap-8 p-10">
@@ -14,6 +18,13 @@ export function App() {
 
       {/* text-fixed again, another size: the same habit, so the page gets one note and one fix that writes both */}
       <p id="fixed-class-2" className="text-[12px] text-slate-500">Card details are kept by the payment provider.</p>
+
+      {/* text-fixed through a variable: both lines read it, and one edit to the variable fixes both */}
+      <p id="fixed-var-1" className={lettering}>Billing period</p>
+      <p id="fixed-var-2" className={`${lettering} mt-1`}>Next charge</p>
+
+      {/* text-fixed through a component: the class is written here, where Note is used */}
+      <Note className="text-[13px] text-slate-600">Prices include tax where it applies.</Note>
 
       {/* text-fixed, as advice: a pixel size written inline */}
       <p id="fixed-inline" style={{ fontSize: '13px' }} className="text-slate-700">Receipts are sent to the billing address.</p>

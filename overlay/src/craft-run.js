@@ -266,7 +266,7 @@ async function readOnce(overlay, { timeout = 60000, quiet = 600, grey = false, s
         // a check that speaks of a habit (fold: 'page') is one finding for the page: every place it was found is
         // kept on it, each with its own fix, so one note carries one fix that writes them all
         const fold = m.craft?.fold === 'page';
-        const place = fold && site ? { file: site.file, line: site.line, column: site.column, text: m.text, ...(m.craft?.suggest?.kind === 'class' ? { from: m.craft.suggest.from ?? '', to: m.craft.suggest.to } : {}) } : null;
+        const place = fold && site ? { el: item.el, file: site.file, line: site.line, column: site.column, text: m.text, ...(m.craft?.suggest?.kind === 'class' ? { from: m.craft.suggest.from ?? '', to: m.craft.suggest.to } : {}) } : null;
         const key = fold ? `${m.rule}|page` : [m.rule, m.text, site ? `${site.file}:${site.line}:${site.column}` : item.file ?? ''].join('|');
         const hit = found.get(key);
         if (hit) {
@@ -286,6 +286,15 @@ async function readOnce(overlay, { timeout = 60000, quiet = 600, grey = false, s
           path: pathKey(item.el),
         });
       }
+    }
+    // a habit's fix is written where each class really is: a class passed in through a component is written at the
+    // usage, so each place keeps the usages above it (locate's chain; asked only for these, it costs a moment each)
+    for (const f of found.values()) for (const p of f.places ?? []) {
+      if (!p.el) continue;
+      const up = await locate(p.el, { chain: true }).catch(() => null);
+      const chain = (up?.chain ?? []).slice(1, 9).filter((l) => l?.file).map(({ file, line, column }) => ({ file, line, column }));
+      if (chain.length) p.chain = chain;
+      delete p.el;
     }
     // a folded finding found in more than one place says so in its words
     for (const f of found.values()) if (f.places?.length > 1) Object.assign(f, (({ title, because }) => ({ title, because }))(say(f.rule, { ...f.evidence, many: f.places.length })));

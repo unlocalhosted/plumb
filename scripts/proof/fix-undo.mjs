@@ -57,7 +57,9 @@ async function check() {
   const at = (f) => `${f.rule}|${f.line}|${f.column}`;
   const places = new Map([...findings].map(([k, f]) => [at(f), k]));
   const fixes = report.findings.filter((f) => f.apply && f.sites[0] && (!only.size || only.has(f.rule)))
-    .map((f) => ({ key: f.apply.key, from: f.apply.from, to: f.apply.to, rule: f.rule, id: places.get(at({ rule: f.rule, ...f.sites[0] })) }))
+    .map((f) => ({ key: f.apply.key, from: f.apply.from, to: f.apply.to, rule: f.rule, id: places.get(at({ rule: f.rule, ...f.sites[0] }))
+      // a habit's finding stands on the first place met on the page, and lists its places in source order
+      ?? (f.apply.more ? [...findings].find(([, r]) => r.rule === f.rule && r.places)?.[0] : undefined) }))
     .filter((f) => f.id).map((f) => ({ ...f, record: findings.get(f.id) }));
   return { findings, fixes };
 }
