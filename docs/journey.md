@@ -7366,6 +7366,32 @@ into its own browser. Your app isn't changed.", then the findings.
   counts as one kind are ours.
 - **Media hooks:** `http://rauno-08-montek-dev.localhost:4420/__judge/?seen=1`, "Space against belonging".
 
+### 167. Rhythm and edges: like things that almost agree (2026-11-27)
+
+- **The itch:** a designer sees a set of like things as a rhythm, and sees at once the one that is a few pixels
+  off. The spec calls this "nearly regular". It needs no meant side, so it works on any page.
+- **What was built:** in every row and column of the seen picture, the things of one kind are taken as a set
+  (`kinds` in `bench/judged/see.js`: a block of text by its type, a box by its frame, a group by the kinds it
+  holds). One attribute at a time is asked of the set (`bench/judged/regular.js`): the left edge in a column, the
+  top edge in a row, width or height for boxes and pictures, and the gap to the next where the like things stand
+  together. Where at least three and at least two in three share a value, the ones a little off it are slips. Off
+  by 4px or less is firm, 4 to 8px is worth a look, and further is taken as a choice and left alone. A column is
+  also asked for the left edge all its things share, of whatever kind. The view has a fourth reading, "Rhythm and
+  edges".
+- **A fault found by looking:** the first run called three cards in a carousel "nearly on one line". They are
+  tilted on purpose, and the box round a tilted thing is not its edge. Anything turned or slanted is now left out,
+  here and in the spacing reading.
+- **What it says on seventeen pages:** one finding. In shadcn's row of eight sponsor pictures seven are 36px tall
+  and one is 34.5px. Nothing else almost agrees. These are polished portfolios, so that is believable, and it
+  was checked the other way: with one post title on Max Leiter's page pushed 3px to the right, in the browser's
+  memory, the reading says "nearly on one edge, 3px to the right" for that title and nothing else.
+- **What it does not reach:** none of Rauno's five points filed under regular. Three are about balance and
+  proportion (a menu that throws a page off balance, three blocks with three proportions). One is about a list's
+  bullets leaving the line the text has set, and the browser draws bullets where a page's own code cannot measure
+  them. One could not be recovered.
+- **The numbers:** 1px, 4px and 8px. None is published. They follow plumber's own check on list rows.
+- **Media hooks:** `http://rauno-21-shadcn-com.localhost:4420/__judge/?seen=1`, "Rhythm and edges".
+
 ## Open gaps
 
 - Of the five comparisons in the engine spec, two have a first cut: "alike", for whether a thing looks pressable

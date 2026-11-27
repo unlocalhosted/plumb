@@ -102,6 +102,13 @@ gives every row and column with the gap between each two neighbours, `belongs` i
 belong together from the page's structure, and `near.js`, pure, compares them by one ratio. No judge has looked at
 what it says.
 
+A fourth reading, "Rhythm and edges", is the spec's "nearly regular": sets of like things in one row or column
+that almost share an edge, a size or a gap (`kinds` in `see.js` says what is like what; `regular.js`, pure, judges
+one attribute of one set).
+
+Every reading is taken twice, six seconds apart, and a finding that rests on something that moved or changed size
+is left out: a tile that cycles through its own contents is not a page at rest.
+
 To test against a page as a reviewer saw it, make a set whose app is the web archive and whose screen path is the
 copy's address in its `if_` form, with `"scripts": false`: the copy is then served as a still. One exists locally
 for shadcn's page of 2026-10-20 (`sets/rauno-21b-shadcn-as-he-saw-it`, not in git).

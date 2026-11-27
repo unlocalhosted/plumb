@@ -39,6 +39,7 @@ const FILES = {
   '/__judge/seen.js': [join(here, 'seen.js'), 'text/javascript; charset=utf-8'],
   '/__judge/alike.js': [join(here, 'alike.js'), 'text/javascript; charset=utf-8'],
   '/__judge/near.js': [join(here, 'near.js'), 'text/javascript; charset=utf-8'],
+  '/__judge/regular.js': [join(here, 'regular.js'), 'text/javascript; charset=utf-8'],
   '/__judge/soft.js': [join(here, '../../overlay/src/soft.js'), 'text/javascript; charset=utf-8'],
   '/__judge/tokens.css': [join(here, '../../overlay/src/tokens.css'), 'text/css; charset=utf-8'],
 };

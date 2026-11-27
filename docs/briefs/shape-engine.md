@@ -274,6 +274,13 @@ symmetry groups does not (van der Helm and Leeuwenberg 1996, in the 2012 review,
 source read gives it. Plumber's check on list rows uses two steps of the spacing scale; that is a convention.
 Mirror symmetry and alternation are left for later: repetition covers every judged case so far.
 
+Added on 2026-11-27 with the first cut (journey entry 167). A set is the things of one kind in one row or column.
+"Most" is at least three and at least two in three. A slip is 1 to 4px off the shared value and is firm, 4 to 8px
+is shown as worth a look, and further is a choice. A column is also asked for the one left edge all its things
+share. Turned or slanted things are left out. *All ours.* On seventeen portfolio pages it made one finding, and it
+reaches none of the expert's five points filed here: three are about balance and proportion, which this section
+does not yet describe, and one is about list bullets, which a page's own code cannot measure.
+
 ## 17. Loud and important
 
 For a unit among its neighbours, on each of three attributes: how far it is from the neighbours' middle value,

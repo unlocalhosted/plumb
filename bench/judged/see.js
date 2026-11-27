@@ -11,6 +11,7 @@
 import { boxOf, grow, levels, places, runs, settle, RATIO } from './seen.js';
 import { judge } from './alike.js';
 import { judge as near, RATIO as APART } from './near.js';
+import { judge as regular } from './regular.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const host = (url) => url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
@@ -234,6 +235,28 @@ export function belongs(run, got) {
   return out;
 }
 
+// What kind of thing a part of the seen picture is, as one string: a block of text by its type, a box by its frame,
+// a group by the kinds it holds (a run of one kind counted once, so a card with three lines and one with four are
+// one kind). Two parts with one string are a set, and a set is what "nearly regular" is asked of.
+export function kinds(got, win) {
+  const memo = new Map(), ctx = Object.assign(win.document.createElement('canvas'), { width: 1, height: 1 }).getContext('2d', { willReadFrequently: true });
+  const hue = (c) => { ctx.clearRect(0, 0, 1, 1); ctx.fillStyle = '#000'; ctx.fillStyle = c; ctx.fillRect(0, 0, 1, 1); return [...ctx.getImageData(0, 0, 1, 1).data].join(','); };
+  const frame = (el) => { const s = win.getComputedStyle(el); return `${hue(s.backgroundColor)}/${parseFloat(s.borderTopWidth) > 0 && s.borderTopStyle !== 'none' ? `${s.borderTopWidth} ${hue(s.borderTopColor)}` : ''}/${Math.round(parseFloat(s.borderTopLeftRadius) || 0)}`; };
+  const of = (n) => {
+    if (memo.has(n)) return memo.get(n);
+    let k;
+    if (n.type === 'unit') {
+      const u = got.units[n.unit], el = got.els[n.unit].el, s = win.getComputedStyle(el);
+      k = u.kind === 'text' ? `t:${s.fontFamily.split(',')[0]}|${s.fontSize}|${s.fontWeight}|${hue(s.color)}|${s.textTransform}` : u.kind === 'picture' ? 'p' : `b:${frame(el)}`;
+    } else {
+      const inner = []; for (const c of n.children) { const x = of(c); if (inner.at(-1) !== x) inner.push(x); }
+      k = `${n.type === 'box' ? `B:${frame(got.els[n.unit].el)}` : n.type[0] + (n.axis ?? '')}(${inner.join(',')})`;
+    }
+    memo.set(n, k); return k;
+  };
+  return of;
+}
+
 const CSS = `
   .desk.two { display: grid; grid-template-columns: minmax(0, 1fr) 360px; }
   .view { position: relative; overflow: hidden; min-height: 0; }
@@ -313,7 +336,8 @@ export function see(el, root, base, loaded, soften) {
     <main class="desk two">
       <div class="view"><div class="stage"><iframe title="The page being read"></iframe><div class="layer"><div class="seen"></div></div></div></div>
       <aside class="side">
-        <div class="modes"><button type="button" class="chip" data-mode="groups" aria-pressed="true">Groups</button><button type="button" class="chip" data-mode="alike" aria-pressed="false">Look against role</button><button type="button" class="chip" data-mode="near" aria-pressed="false">Space against belonging</button></div>
+        <div class="modes"><button type="button" class="chip" data-mode="groups" aria-pressed="true">Groups</button><button type="button" class="chip" data-mode="alike" aria-pressed="false">Look against role</button><button type="button" class="chip" data-mode="near" aria-pressed="false">Space against belonging</button><button type="button" class="chip" data-mode="even" aria-pressed="false">Rhythm and edges</button></div>
+        <div class="pane even" hidden></div>
         <div class="pane alike" hidden></div>
         <div class="pane near" hidden></div>
         <div class="pane groups">
@@ -336,7 +360,7 @@ export function see(el, root, base, loaded, soften) {
   const frame = $('iframe'), layer = $('.layer'), seen = $('.seen'), stage = $('.stage'), view = $('.view');
   const screen = set.screens.find((s) => s.id === new URL(location.href).searchParams.get('screen')) ?? set.screens[0];
   let scale = 1, got = null, tree = null, flat = [], level = 1, units = false, over = null, held = false;
-  let mode = 'groups', found = null, pick = null, spaced = [], npick = null, agreeing = false, moved = 0;
+  let mode = 'groups', found = null, pick = null, spaced = [], npick = null, agreeing = false, moved = 0, evens = [], epick = null;
 
   const fit = () => {
     const w = screen?.width ?? set.width ?? 1440, room = view.clientWidth - 32, tallness = view.clientHeight - 32;
@@ -399,8 +423,45 @@ export function see(el, root, base, loaded, soften) {
       <button type="button" class="chip" data-agree aria-pressed="${agreeing}">Show the ones that agree</button>
       ${shown.length ? `<ul class="finds">${shown.map(({ s, n }) => { const g = s.v.gaps; return `<li><button type="button" data-near="${n}" aria-pressed="${n === npick}"><b>${s.tier === 'note' ? 'Worth a look: ' : ''}${SPACE[s.v.outcome][0]}</b><span>${g[s.v.between]}px between two groups, ${g[s.v.inside]}px inside one. ${s.v.r === Infinity ? '' : `That is ${Math.round(s.v.r * 100) / 100} times.`}</span><span><em>${esc(words(s.run.items[s.v.between]))}</em> · <em>${esc(words(s.run.items[s.v.between + 1]))}</em></span><span>${s.run.axis === 'y' ? 'A column' : 'A row'} of ${s.run.items.length}, in ${new Set(s.groups).size} groups read from ${s.how === 'headings' ? 'its headings' : 'the page’s structure'}</span></button></li>`; }).join('')}</ul>` : '<p>Nothing to show.</p>'}`;
   };
+  // nearly regular: a set of like things, the value most of them share, and the ones a little off it
+  const EVEN = {
+    edge: ['Nearly on the column’s edge', (e) => `${e.v.count} of ${e.members.length} things in this column start on one left edge.`, (o) => `${Math.abs(o.by)}px to the ${o.by > 0 ? 'right' : 'left'} of it`],
+    left: ['Nearly on one edge', (e) => `${e.v.count} of ${e.members.length} start on the same left edge.`, (o) => `${Math.abs(o.by)}px to the ${o.by > 0 ? 'right' : 'left'} of it`],
+    top: ['Nearly on one line', (e) => `${e.v.count} of ${e.members.length} sit on the same top edge.`, (o) => `${Math.abs(o.by)}px ${o.by > 0 ? 'below' : 'above'} it`],
+    width: ['Nearly one width', (e) => `${e.v.count} of ${e.members.length} are ${e.v.common}px wide.`, (o) => `${Math.abs(o.by)}px ${o.by > 0 ? 'wider' : 'narrower'}`],
+    height: ['Nearly one height', (e) => `${e.v.count} of ${e.members.length} are ${e.v.common}px tall.`, (o) => `${Math.abs(o.by)}px ${o.by > 0 ? 'taller' : 'shorter'}`],
+    gap: ['Nearly even spacing', (e) => `${e.v.count} of ${e.members.length - 1} gaps are ${e.v.common}px.`, (o) => `${Math.abs(o.by)}px ${o.by > 0 ? 'wider' : 'tighter'}`],
+  };
+  const drawEven = () => {
+    const html = [];
+    evens.forEach((e, n) => {
+      if (epick !== null && epick !== n) return;
+      const rs = e.members.map(nowOf);
+      if (epick !== null) rs.forEach((r) => { if (r.w) html.push(`<div class="g t-run leaf" style="left:${r.x - 2}px;top:${r.y - 2}px;width:${r.w + 4}px;height:${r.h + 4}px"></div>`); });
+      for (const o of e.v.slips) {
+        if (e.what === 'gap') {
+          const a = rs[o.at], b = rs[o.at + 1]; if (!a.w || !b.w) continue;
+          const r = e.axis === 'y' ? { x: Math.min(a.x, b.x), y: a.y + a.h, w: Math.max(a.x + a.w, b.x + b.w) - Math.min(a.x, b.x), h: Math.max(2, b.y - a.y - a.h) } : { x: a.x + a.w, y: Math.min(a.y, b.y), w: Math.max(2, b.x - a.x - a.w), h: Math.max(a.y + a.h, b.y + b.h) - Math.min(a.y, b.y) };
+          html.push(`<div class="gap t-odd" style="left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px"></div>`);
+        } else { const r = rs[o.at]; if (r.w) html.push(`<div class="g t-odd odd" style="left:${r.x - 3}px;top:${r.y - 3}px;width:${r.w + 6}px;height:${r.h + 6}px"></div>`); }
+      }
+      // the edge the others share, as a line
+      if (epick !== null && (e.what === 'left' || e.what === 'top' || e.what === 'edge')) {
+        const ok = rs.filter((r, k) => r.w && !e.v.slips.some((o) => o.at === k)); if (!ok.length) return;
+        const all = rs.filter((r) => r.w), x0 = Math.min(...all.map((r) => r.x)), y0 = Math.min(...all.map((r) => r.y)), x1 = Math.max(...all.map((r) => r.x + r.w)), y1 = Math.max(...all.map((r) => r.y + r.h));
+        html.push(e.what !== 'top' ? `<div class="gap t-run" style="left:${ok[0].x - 1}px;top:${y0 - 8}px;width:2px;height:${y1 - y0 + 16}px"></div>` : `<div class="gap t-run" style="left:${x0 - 8}px;top:${ok[0].y - 1}px;width:${x1 - x0 + 16}px;height:2px"></div>`);
+      }
+    });
+    seen.innerHTML = html.join('');
+  };
+  const listEven = () => {
+    $('.even').innerHTML = `<div><h2>Rhythm and edges</h2><p>Sets of like things that almost share an edge, a size or a gap. A difference of a few pixels is nobody's intention. A larger one is taken as a choice and left alone. No judge has checked this.</p></div>
+      <p>${evens.filter((e) => e.v.firm).length} firm, off by 4px or less. ${evens.filter((e) => !e.v.firm).length} only worth a look.</p>
+      ${evens.length ? `<ul class="finds">${evens.map((e, n) => { const [title, most, off] = EVEN[e.what]; return `<li><button type="button" data-even="${n}" aria-pressed="${n === epick}"><b>${e.v.firm ? '' : 'Worth a look: '}${title}</b><span>${most(e)} ${e.v.slips.length === 1 ? 'One is' : `${e.v.slips.length} are`} off: ${e.v.slips.slice(0, 3).map(off).join(', ')}.</span><span>${e.v.slips.slice(0, 3).map((o) => `<em>${esc(words(e.members[o.at]))}</em>`).join(' · ')}</span><span>${e.axis === 'y' ? 'A column' : 'A row'} of ${e.members.length} ${e.what === 'edge' ? 'things of more than one kind' : 'like things'}</span></button></li>`; }).join('')}</ul>` : '<p>Nothing here almost agrees.</p>'}`;
+  };
   const draw = () => {
     if (!tree) return;
+    if (mode === 'even') return drawEven();
     if (mode === 'alike') return drawAlike();
     if (mode === 'near') return drawNear();
     const h = stage.clientHeight, w = stage.clientWidth, html = [];
@@ -455,30 +516,59 @@ export function see(el, root, base, loaded, soften) {
       const v = near({ gaps: part.gaps, groups: b.groups, skip: b.skip });
       return v ? { run: part, v, groups: b.groups, how: b.how, tier: v.outcome === 'agree' ? 'agree' : 'note' } : null;
     })).filter(Boolean);
-    // a second look a few seconds on: a tile that cycles through its own contents is not a page at rest, and a
-    // finding read off it is about one frame. Anything whose two gaps have changed, or whose things are gone, is
-    // left out and counted.
-    if (spaced.some((s) => s.tier !== 'agree')) {
+    // nearly regular: in every row and column, the like things, one attribute at a time
+    const kind = kinds(got, win); evens = [];
+    // a thing that is turned or slanted has no edge to line up: the box round it is not what is drawn
+    const slant = new Map(), turned = (n) => unitsIn(n).some((u) => {
+      for (let e = got.els[u].el; e && e !== win.document.body; e = e.parentElement) {
+        if (!slant.has(e)) { const t = win.getComputedStyle(e).transform, m = /^matrix\(([^)]+)\)/.exec(t)?.[1].split(',').map(Number); slant.set(e, t.startsWith('matrix3d') || (!!m && (Math.abs(m[1]) > 0.001 || Math.abs(m[2]) > 0.001))); }
+        if (slant.get(e)) return true;
+      }
+      return false;
+    });
+    for (const run of runs(tree, got.units)) {
+      const by = new Map(); run.items.forEach((it, k) => { const key = kind(it); (by.get(key) ?? by.set(key, []).get(key)).push(k); });
+      // the edge a whole column has set, whatever the things in it are (a list's bullets against its paragraphs)
+      if (run.axis === 'y' && run.items.length >= 4 && !run.items.some(turned)) { const v = regular(run.items.map((it) => boxOf(it).x)); if (v) evens.push({ what: 'edge', axis: 'y', members: run.items, v: { ...v, firm: false } }); }
+      for (const [key, at] of by) {
+        if (at.length < 4) continue;
+        const members = at.map((k) => run.items[k]), boxes = members.map(boxOf), solid = !key.startsWith('t:');
+        if (members.some(turned)) continue;
+        const ask = (what, values, mem = members, least) => { const v = regular(values, least); if (v) evens.push({ what, axis: run.axis, members: mem, v }); };
+        if (run.axis === 'y') { ask('left', boxes.map((b) => b.x)); if (solid) ask('width', boxes.map((b) => b.w)); }
+        else { ask('top', boxes.map((b) => b.y)); if (solid) ask('height', boxes.map((b) => b.h)); }
+        // spacing: only where the like things stand next to each other with nothing else between
+        let from = 0;
+        for (let i = 1; i <= at.length; i++) if (i === at.length || at[i] !== at[i - 1] + 1) {
+          if (i - from >= 5) ask('gap', at.slice(from, i - 1).map((k) => Math.round(run.gaps[k])), at.slice(from, i).map((k) => run.items[k]), 5);
+          from = i;
+        }
+      }
+    }
+    // one slip, said once: the column's edge is left out where the like things in it already say the same
+    evens = evens.filter((e) => e.what !== 'edge' || !evens.some((o) => o.what === 'left' && e.v.slips.every((x) => o.v.slips.some((y) => o.members[y.at] === e.members[x.at]))));
+    evens.sort((a, b) => Number(b.v.firm) - Number(a.v.firm)); epick = null;
+    // A second look six seconds on. A tile that cycles through its own contents is not a page at rest, and a
+    // finding read off it is about one frame. A finding is left out, and counted, when a thing it rests on has
+    // gone, or is no longer where it was or the size it was. A clock ticking inside its own box changes nothing.
+    if (spaced.some((s) => s.tier !== 'agree') || evens.length) {
       $('.tally').textContent = 'Looking once more, to leave out anything that is still changing.';
-      // what the page changes by itself in six seconds: a thing beside one of the two gaps that is gone, or is no
-      // longer where it was or the size it was. A clock that ticks inside its own box changes nothing here.
       const before = win.scrollY; await new Promise((f) => setTimeout(f, 6000));
       let shifted = false;
-      const alive = (s) => {
-        if (win.scrollY !== before) return false;
-        return [s.v.between, s.v.inside].every((k) => [s.run.items[k], s.run.items[k + 1]].every((n) => {
-          if (!unitsIn(n).every((u) => got.els[u].el.isConnected)) return false;
-          const now = nowOf(n), was = boxOf(n);
-          if (['x', 'y', 'w', 'h'].every((d) => Math.abs(now[d] - was[d]) <= 2)) return true;
-          shifted = true; return false;
-        }));
+      const rests = (n) => {
+        if (win.scrollY !== before || !unitsIn(n).every((u) => got.els[u].el.isConnected)) return false;
+        const now = nowOf(n), was = boxOf(n);
+        if (['x', 'y', 'w', 'h'].every((d) => Math.abs(now[d] - was[d]) <= 2)) return true;
+        shifted = true; return false;
       };
-      const kept = spaced.filter((s) => s.tier === 'agree' || alive(s));
+      const kept = spaced.filter((s) => s.tier === 'agree' || [s.v.between, s.v.inside].every((k) => [s.run.items[k], s.run.items[k + 1]].every((n) => rests(n) && !turned(n))));
+      const firmly = evens.filter((e) => e.members.every(rests));
       // things had not finished settling when the page was read (a late picture pushes everything down): read again
       if (shifted && attempt < 2) return again(attempt + 1);
-      moved = spaced.length - kept.length; spaced = kept;
+      moved = spaced.length - kept.length + evens.length - firmly.length; spaced = kept; evens = firmly;
     } else moved = 0;
-    window.__seen = { got, tree, found, spaced, words, moved };
+    listEven();
+    window.__seen = { got, tree, found, spaced, words, moved, evens };
     const rank = { claim: 0, note: 1, agree: 2 }; spaced.sort((a, b) => rank[a.tier] - rank[b.tier] || a.v.r - b.v.r); npick = null; listNear();
     const count = (k) => got.units.filter((u) => u.kind === k).length;
     $('.tally').textContent = `${count('text')} blocks of text, ${count('picture')} pictures, ${count('box')} drawn boxes and ${count('line')} lines, read at ${win.innerWidth} wide.${settled ? '' : ' The page was still moving after 8 seconds, so it was read as it stood.'}`;
@@ -529,7 +619,12 @@ export function see(el, root, base, loaded, soften) {
   layer.addEventListener('pointerleave', () => { over = null; draw(); });
   $('.side').addEventListener('click', (e) => {
     const l = e.target.closest('[data-level]'), u = e.target.closest('[data-units]'), m = e.target.closest('[data-mode]'), f = e.target.closest('[data-find]');
-    const nr = e.target.closest('[data-near]');
+    const nr = e.target.closest('[data-near]'), ev = e.target.closest('[data-even]');
+    if (ev) {
+      epick = epick === Number(ev.dataset.even) ? null : Number(ev.dataset.even); listEven();
+      if (epick !== null) { const x = evens[epick], m = x.members[x.v.slips[0].at]; got.els[unitsIn(m)[0]].el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+      return draw();
+    }
     if (e.target.closest('[data-agree]')) { agreeing = !agreeing; listNear(); return draw(); }
     if (nr) {
       npick = npick === Number(nr.dataset.near) ? null : Number(nr.dataset.near); listNear();
@@ -539,7 +634,7 @@ export function see(el, root, base, loaded, soften) {
     if (m) {
       mode = m.dataset.mode;
       for (const b of root.querySelectorAll('[data-mode]')) b.setAttribute('aria-pressed', String(b.dataset.mode === mode));
-      $('.pane.alike').hidden = mode !== 'alike'; $('.pane.groups').hidden = mode !== 'groups'; $('.pane.near').hidden = mode !== 'near';
+      $('.pane.alike').hidden = mode !== 'alike'; $('.pane.groups').hidden = mode !== 'groups'; $('.pane.near').hidden = mode !== 'near'; $('.pane.even').hidden = mode !== 'even';
       return draw();
     }
     if (f && found) {
