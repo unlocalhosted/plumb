@@ -110,6 +110,9 @@ A fifth reading, "Boxes and what they hold", is the spec's layer on enclosure in
 past its drawn box, and things cut off where the page draws no edge. The seen picture keeps only what shows: every
 unit is cut down to the part inside the clipping boxes round it.
 
+A sixth reading, "What is loud", shows the three largest blocks of text on the first screen (nothing judged) and
+finds blocks where a coloured accent covers half the letters or more (`loudest` and `accents` in `see.js`).
+
 Every reading is taken twice, six seconds apart, and a finding that rests on something that moved or changed size
 is left out: a tile that cycles through its own contents is not a page at rest.
 

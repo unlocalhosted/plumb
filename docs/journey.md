@@ -7426,6 +7426,29 @@ into its own browser. Your app isn't changed.", then the findings.
   point about the cards on his Craft page, which rests on a frame alone and so cannot be firm.
 - **Media hooks:** `http://rauno-08-montek-dev.localhost:4420/__judge/?seen=1`, "Look against role".
 
+### 169. What is loud: the part a page can answer without its words being read (2026-11-27)
+
+- **The itch:** the last of the spec's comparisons sets how loud a thing is drawn against how much it matters.
+  Thirteen of Rauno's points are filed there, more than under any other, and most say that the loudest thing on
+  a page is not the one that says the most.
+- **What can be built tonight, and what cannot:** knowing which sentence says the most needs the words to be
+  read by a model. That is one of the open decisions in the spec, it costs money per page, and no number for it
+  has a source, so it is not built. Two things need no reading of words and are built
+  (`accents` and `loudest` in `bench/judged/see.js`, reading "What is loud").
+- **A highlight on most of the text:** in a block of text, the share of letters drawn in a coloured accent beside
+  a neutral colour. At half or more the accent no longer picks anything out. The principle is published (a thing
+  stands out by differing from what surrounds it, Wolfe and Horowitz 2017). The half is one expert's remark.
+- **The proof:** on Rizwan Khan's page, where Rauno wrote that there was about 45 percent too much yellow, the
+  reading finds the introduction with 66 percent of its letters in the accent. We had counted 63 percent by hand
+  on the archived copy. It finds two more blocks on that page, at 80 and 81 percent, and nothing on nine other
+  pages.
+- **The loudest text, shown and not judged:** the three largest blocks of text on the first screen, outlined, so
+  a person can say whether the engine's sense of loud is theirs. On Jamie Scott Craik's page the loudest is now
+  the line about what he builds, at 96px, and his name is 20px. When Rauno reviewed it the name was the largest
+  thing and he asked for exactly this swap.
+- **Also in the view:** each reading's button now carries its count of firm findings.
+- **Media hooks:** `http://rauno-40-rizwanakhan-com.localhost:4420/__judge/?seen=1`, "What is loud".
+
 ## Open gaps
 
 - Of the five comparisons in the engine spec, two have a first cut: "alike", for whether a thing looks pressable

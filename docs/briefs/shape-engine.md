@@ -318,6 +318,12 @@ much. So a finding says "drawn louder than", never "people will look here". Rhyt
 guiding, so a broken rhythm belongs to section 16.
 *Not known:* how close "about as loud" is. The half in the last row is the expert's remark turned into a number. Nobody measured it.
 
+Added on 2026-11-27 with the first cut (journey entry 169). Only the last row of the table is built: the share of a
+block's letters in a coloured accent. On the one page with a judged case it reads 66 percent where we had counted
+63 by hand. The three loudest blocks of text on the first screen are shown and not judged. The first three rows
+need to know which thing matters most, and on a public page that means reading the words with a model (decision 4
+in section 9). It was not built: it is the owner's decision and a cost per page.
+
 ## 18. The page in more than one state
 
 Each reading above is of one still picture. Plumber already reads a page at four window sizes. The expert's points

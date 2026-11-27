@@ -272,6 +272,44 @@ export function belongs(run, got) {
   return out;
 }
 
+// Loud (docs/briefs/shape-engine.md, section 17), the part a page can answer without reading its words.
+//   accents(got, win)  blocks of text where the accent covers most of the letters. A highlight picks something out
+//                      only while most of the block is not highlighted (a thing stands out by differing from what
+//                      surrounds it: Wolfe and Horowitz 2017). The accent is a colour with clear hue beside a
+//                      neutral one; two greys are not judged, since nothing says which of them is the emphasis.
+//                      → [{ unit, share, letters, accent, base }]
+//   loudest(got, win, top)  the blocks of text on the first screen in order of type size, then weight: what the
+//                      engine takes as shouting, shown so a person can say whether it is. Nothing is judged.
+// The numbers are not published: at least 80 letters, the accent on half or more (one expert's remark, on a page
+// where it was 63 percent), the other colour on at least 15 percent, hue of 80 of 255 against 40.
+export function accents(got, win) {
+  const out = [], ctx = Object.assign(win.document.createElement('canvas'), { width: 1, height: 1 }).getContext('2d', { willReadFrequently: true }), known = new Map();
+  const rgb = (c) => { if (!known.has(c)) { ctx.clearRect(0, 0, 1, 1); ctx.fillStyle = '#000'; ctx.fillStyle = c; ctx.fillRect(0, 0, 1, 1); known.set(c, [...ctx.getImageData(0, 0, 1, 1).data]); } return known.get(c); };
+  const hue = (c) => Math.max(c[0], c[1], c[2]) - Math.min(c[0], c[1], c[2]);
+  got.units.forEach((u, i) => {
+    if (u.kind !== 'text') return;
+    const el = got.els[i].el, by = new Map(); let all = 0;
+    const walk = win.document.createTreeWalker(el, 4);
+    for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+      // only the text this block sets in its own lines
+      let p = n.parentElement, mine = true; for (let e = p; e && e !== el; e = e.parentElement) { const d = win.getComputedStyle(e).display; if (d !== 'inline' && d !== 'contents') { mine = false; break; } }
+      const count = n.nodeValue.replace(/\s/g, '').length; if (!mine || !count) continue;
+      const c = rgb(win.getComputedStyle(p).color), key = c.slice(0, 3).join(','); by.set(key, { c, n: (by.get(key)?.n ?? 0) + count }); all += count;
+    }
+    if (all < 80 || by.size < 2) return;
+    const list = [...by.values()].sort((a, b) => hue(b.c) - hue(a.c)), accent = list[0], rest = list.slice(1).filter((x) => hue(x.c) <= 40);
+    const base = rest.sort((a, b) => b.n - a.n)[0];
+    if (!base || hue(accent.c) < 80 || accent.n / all < 0.5 || base.n / all < 0.15) return;
+    out.push({ unit: i, share: Math.round((accent.n / all) * 100), letters: all, accent: accent.c, base: base.c });
+  });
+  return out;
+}
+export function loudest(got, win, top = 3) {
+  const tall = win.innerHeight, rows = [];
+  got.units.forEach((u, i) => { if (u.kind !== 'text' || u.y >= tall || u.y + u.h <= 0) return; const s = win.getComputedStyle(got.els[i].el); rows.push({ unit: i, size: parseFloat(s.fontSize), weight: Number(s.fontWeight) || 400 }); });
+  return rows.sort((a, b) => b.size - a.size || b.weight - a.weight).slice(0, top);
+}
+
 // What kind of thing a part of the seen picture is, as one string: a block of text by its type, a box by its frame,
 // a group by the kinds it holds (a run of one kind counted once, so a card with three lines and one with four are
 // one kind). Two parts with one string are a set, and a set is what "nearly regular" is asked of.
@@ -373,7 +411,8 @@ export function see(el, root, base, loaded, soften) {
     <main class="desk two">
       <div class="view"><div class="stage"><iframe title="The page being read"></iframe><div class="layer"><div class="seen"></div></div></div></div>
       <aside class="side">
-        <div class="modes"><button type="button" class="chip" data-mode="groups" aria-pressed="true">Groups</button><button type="button" class="chip" data-mode="alike" aria-pressed="false">Look against role</button><button type="button" class="chip" data-mode="near" aria-pressed="false">Space against belonging</button><button type="button" class="chip" data-mode="even" aria-pressed="false">Rhythm and edges</button><button type="button" class="chip" data-mode="held" aria-pressed="false">Boxes and what they hold</button></div>
+        <div class="modes"><button type="button" class="chip" data-mode="groups" aria-pressed="true">Groups</button><button type="button" class="chip" data-mode="alike" aria-pressed="false">Look against role</button><button type="button" class="chip" data-mode="near" aria-pressed="false">Space against belonging</button><button type="button" class="chip" data-mode="even" aria-pressed="false">Rhythm and edges</button><button type="button" class="chip" data-mode="held" aria-pressed="false">Boxes and what they hold</button><button type="button" class="chip" data-mode="loud" aria-pressed="false">What is loud</button></div>
+        <div class="pane loud" hidden></div>
         <div class="pane held" hidden></div>
         <div class="pane even" hidden></div>
         <div class="pane alike" hidden></div>
@@ -398,7 +437,7 @@ export function see(el, root, base, loaded, soften) {
   const frame = $('iframe'), layer = $('.layer'), seen = $('.seen'), stage = $('.stage'), view = $('.view');
   const screen = set.screens.find((s) => s.id === new URL(location.href).searchParams.get('screen')) ?? set.screens[0];
   let scale = 1, got = null, tree = null, flat = [], level = 1, units = false, over = null, held = false;
-  let mode = 'groups', found = null, pick = null, spaced = [], npick = null, agreeing = false, moved = 0, evens = [], epick = null, boxed = [], hpick = null;
+  let mode = 'groups', found = null, pick = null, spaced = [], npick = null, agreeing = false, moved = 0, evens = [], epick = null, boxed = [], hpick = null, shouts = [], tops = [], lpick = null;
 
   const fit = () => {
     const w = screen?.width ?? set.width ?? 1440, room = view.clientWidth - 32, tallness = view.clientHeight - 32;
@@ -522,8 +561,23 @@ export function see(el, root, base, loaded, soften) {
       <p>${boxed.filter((h) => h.tier === 'claim').length} firm. ${boxed.filter((h) => h.tier !== 'claim').length} only worth a look.</p>
       ${boxed.length ? `<ul class="finds">${boxed.map((h, n) => `<li><button type="button" data-held="${n}" aria-pressed="${n === hpick}"><b>${h.tier === 'claim' ? '' : 'Worth a look: '}${HELD[h.kind]}</b><span>${esc(h.say)}</span><span>${h.units.slice(0, 3).map((i) => `<em>${esc(words(leaf(i)))}</em>`).join(' · ')}</span></button></li>`).join('')}</ul>` : '<p>Nothing is cut off or runs past its box.</p>'}`;
   };
+  // what is loud: the loudest text on the first screen (nothing judged), and blocks where the accent is on most of it
+  const hexOf = (c) => `#${c.slice(0, 3).map((v) => v.toString(16).padStart(2, '0')).join('')}`;
+  const drawLoud = () => {
+    const html = [];
+    if (lpick === null) tops.forEach((t, k) => { const r = nowOf(leaf(t.unit)); if (r.w) html.push(`<div class="g ${k ? 't-run leaf' : 't-odd odd'}" style="left:${r.x - 4}px;top:${r.y - 4}px;width:${r.w + 8}px;height:${r.h + 8}px"></div>`); });
+    shouts.forEach((s, n) => { if (lpick !== null && lpick !== n) return; const r = nowOf(leaf(s.unit)); if (r.w) html.push(`<div class="g t-odd odd" style="left:${r.x - 4}px;top:${r.y - 4}px;width:${r.w + 8}px;height:${r.h + 8}px"></div>`); });
+    seen.innerHTML = html.join('');
+  };
+  const listLoud = () => {
+    $('.loud').innerHTML = `<div><h2>What is loud</h2><p>The loudest text on the first screen, by type size and then weight, outlined so you can say whether the engine's ear is right. Nothing is judged there. Whether the loudest thing is the one that matters most needs the words to be read, and that is not built.</p></div>
+      <ol class="finds">${tops.map((t) => `<li><span><em>${esc(words(leaf(t.unit)))}</em> ${t.size}px, weight ${t.weight}</span></li>`).join('')}</ol>
+      <div><h2>A highlight on most of the text</h2><p>A block where a coloured accent covers half the letters or more, so it no longer picks anything out.</p></div>
+      ${shouts.length ? `<ul class="finds">${shouts.map((s, n) => `<li><button type="button" data-loud="${n}" aria-pressed="${n === lpick}"><b>The accent is on most of this text</b><span>${s.share}% of ${s.letters} letters are in ${hexOf(s.accent)}, and the rest in ${hexOf(s.base)}.</span><span><em>${esc(words(leaf(s.unit)))}</em></span></button></li>`).join('')}</ul>` : '<p>No block has its accent on most of its letters.</p>'}`;
+  };
   const draw = () => {
     if (!tree) return;
+    if (mode === 'loud') return drawLoud();
     if (mode === 'held') return drawHeld();
     if (mode === 'even') return drawEven();
     if (mode === 'alike') return drawAlike();
@@ -667,6 +721,7 @@ export function see(el, root, base, loaded, soften) {
       if (across > 2 || down > lh2 * 0.6) boxed.push({ kind: 'spill', tier: 'claim', units: [i], box: boxAt.get(b), say: `This text runs ${Math.round(Math.max(across, down))}px past the box it is in.` });
     });
     boxed.sort((a, b) => Number(b.tier === 'claim') - Number(a.tier === 'claim')); hpick = null;
+    shouts = accents(got, win); tops = loudest(got, win); lpick = null;
     // A second look six seconds on. A tile that cycles through its own contents is not a page at rest, and a
     // finding read off it is about one frame. A finding is left out, and counted, when a thing it rests on has
     // gone, or is no longer where it was or the size it was. A clock ticking inside its own box changes nothing.
@@ -686,8 +741,11 @@ export function see(el, root, base, loaded, soften) {
       if (shifted && attempt < 2) return again(attempt + 1);
       moved = spaced.length - kept.length + evens.length - firmly.length + boxed.length - holding.length; spaced = kept; evens = firmly; boxed = holding;
     } else moved = 0;
-    listEven(); listHeld();
-    window.__seen = { got, tree, found, spaced, words, moved, evens, held: boxed };
+    listEven(); listHeld(); listLoud();
+    // each reading's button says how many firm findings it has, so a person knows where to look first
+    const firmIn = { alike: found.findings.filter((f) => f.firm).length, near: spaced.filter((s) => s.tier === 'claim').length, even: evens.filter((e) => e.v.firm).length, held: boxed.filter((h) => h.tier === 'claim').length, loud: shouts.length };
+    for (const b of root.querySelectorAll('[data-mode]')) { const n = firmIn[b.dataset.mode]; b.dataset.name ??= b.textContent; b.textContent = n ? `${b.dataset.name} · ${n}` : b.dataset.name; }
+    window.__seen = { got, tree, found, spaced, words, moved, evens, held: boxed, loud: shouts.map((s) => ({ tier: 'claim', kind: 'accent', say: `${s.share}% of ${s.letters} letters in the accent: ${words(leaf(s.unit))}` })), tops: tops.map((t) => `${words(leaf(t.unit))} (${t.size}px/${t.weight})`) };
     const rank = { claim: 0, note: 1, agree: 2 }; spaced.sort((a, b) => rank[a.tier] - rank[b.tier] || a.v.r - b.v.r); npick = null; listNear();
     const count = (k) => got.units.filter((u) => u.kind === k).length;
     $('.tally').textContent = `${count('text')} blocks of text, ${count('picture')} pictures, ${count('box')} drawn boxes and ${count('line')} lines, read at ${win.innerWidth} wide.${settled ? '' : ' The page was still moving after 8 seconds, so it was read as it stood.'}`;
@@ -738,7 +796,12 @@ export function see(el, root, base, loaded, soften) {
   layer.addEventListener('pointerleave', () => { over = null; draw(); });
   $('.side').addEventListener('click', (e) => {
     const l = e.target.closest('[data-level]'), u = e.target.closest('[data-units]'), m = e.target.closest('[data-mode]'), f = e.target.closest('[data-find]');
-    const nr = e.target.closest('[data-near]'), ev = e.target.closest('[data-even]'), hd = e.target.closest('[data-held]');
+    const nr = e.target.closest('[data-near]'), ev = e.target.closest('[data-even]'), hd = e.target.closest('[data-held]'), ld = e.target.closest('[data-loud]');
+    if (ld) {
+      lpick = lpick === Number(ld.dataset.loud) ? null : Number(ld.dataset.loud); listLoud();
+      if (lpick !== null) got.els[shouts[lpick].unit].el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      return draw();
+    }
     if (hd) {
       hpick = hpick === Number(hd.dataset.held) ? null : Number(hd.dataset.held); listHeld();
       if (hpick !== null) got.els[boxed[hpick].units[0]].el.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
@@ -758,7 +821,7 @@ export function see(el, root, base, loaded, soften) {
     if (m) {
       mode = m.dataset.mode;
       for (const b of root.querySelectorAll('[data-mode]')) b.setAttribute('aria-pressed', String(b.dataset.mode === mode));
-      $('.pane.alike').hidden = mode !== 'alike'; $('.pane.groups').hidden = mode !== 'groups'; $('.pane.near').hidden = mode !== 'near'; $('.pane.even').hidden = mode !== 'even'; $('.pane.held').hidden = mode !== 'held';
+      $('.pane.alike').hidden = mode !== 'alike'; $('.pane.groups').hidden = mode !== 'groups'; $('.pane.near').hidden = mode !== 'near'; $('.pane.even').hidden = mode !== 'even'; $('.pane.held').hidden = mode !== 'held'; $('.pane.loud').hidden = mode !== 'loud';
       return draw();
     }
     if (f && found) {
