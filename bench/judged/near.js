@@ -10,13 +10,16 @@
 //               → null when there is nothing to compare (one group, or no group with two things in it), else
 //                 { r, outcome, between, inside }
 //                 r        the smallest gap between two groups divided by the largest gap inside a group
-//                 outcome  'opposite' (r under 1: a thing reads as part of the next group), 'nearly' (1 to 1.5: the
-//                          eye cannot tell where a group ends) or 'agree'
+//                 outcome  'agree' (r at 1.5 or over), 'opposite' (r at 1/1.5 or under: the gap inside a group is
+//                          the one that reads as a break) or 'nearly' (in between: the two gaps are too alike for
+//                          space to say where a group ends)
 //                 between, inside  which gap each of the two was, as a place in `gaps`
 //
 // The one number here is published: grouping in a lattice of dots followed the ratio of the two distances, and past
 // about 1.5 the longer one was almost never seen as the grouping (Kubovy and Wagemans 1995, as reported in Wagemans
 // and others 2012). It was measured on dots. Whether it holds for blocks of text and cards is not known.
+// The same ratio is used both ways. The first cut called anything under 1 "the opposite", and that made a claim out
+// of 17px against 19px. Inside 1.5 either way the eye has no grouping to read, so that whole band is "nearly".
 
 export const RATIO = 1.5;
 
@@ -26,5 +29,5 @@ export function judge(run) {
   if (!between.length || !inside.length) return null;
   const b = between.reduce((m, k) => (gaps[k] < gaps[m] ? k : m)), i = inside.reduce((m, k) => (gaps[k] > gaps[m] ? k : m));
   const r = gaps[i] === 0 ? Infinity : gaps[b] / gaps[i];
-  return { r, outcome: r < 1 ? 'opposite' : r < RATIO ? 'nearly' : 'agree', between: b, inside: i, gaps };
+  return { r, outcome: r >= RATIO ? 'agree' : r <= 1 / RATIO ? 'opposite' : 'nearly', between: b, inside: i, gaps };
 }

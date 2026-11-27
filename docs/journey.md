@@ -7331,6 +7331,41 @@ into its own browser. Your app isn't changed.", then the findings.
 - **Media hooks:** `http://rauno-21-shadcn-com.localhost:4420/__judge/?seen=1`, "Space against belonging";
   pictures in `docs/research/harvests/raunofreiberg-portfolio-reviews/local/near/` (not in git).
 
+### 166. Spacing findings judged one by one and cut down to what holds (2026-11-27)
+
+- **The itch:** the owner went to sleep with one instruction: "use your own judgement, make sure you are not
+  wrong, double check and drive this to completion". The spacing reading of entry 165 had made eleven findings on
+  sixteen pages and nobody had looked at them.
+- **How we judged:** each finding was printed with every thing and every gap in its row or column, and the doubtful
+  ones were looked at on the page. Most did not hold, and each failure had a cause in the reading.
+- **What was wrong, and what replaced it:**
+  - 17px against 19px had been called "the opposite". The published ratio is now used both ways: at 1.5 or more
+    space agrees, at 1/1.5 or less it says the opposite, and everything between is "space does not say".
+  - A title above a list, a header row above a table and a "view all" link under a list were each taken for a
+    group beside the others. One thing alone at the head or the end of a level now leads or closes it, and its
+    gap is not judged.
+  - Rows divided by hairlines were measured as if nothing lay between them. The seen picture now reads a line
+    drawn as one or two edges of a box, and a faint one (black at 8%) by how it lands on what is behind. A gap
+    with a line in it is not judged. The old test for thin drawn things could never fire, and that is fixed.
+  - The last heading on a page swallowed everything after it, down to the footer. The gaps inside the last
+    heading's group are no longer used.
+  - A tile that cycles through its own contents gave a finding about one frame. The page is looked at again six
+    seconds on, and a finding is left out when a thing beside its gap has gone, moved or changed size. If things
+    had only not finished settling, the page is read again.
+  - A rule that took any repeating pattern in the page's build for a run of groups made one wrong grouping and no
+    right one. It is removed.
+- **Two tiers, so that a doubtful reading is never stated as a fault:** a finding is firm only in a column, and
+  only on a gap between two groups of one kind (built the same way, or each led by a heading). Everything else is
+  shown as "worth a look". Rows are never firm: a row is often spread to both edges, and its gaps are then the
+  layout's.
+- **What is left on the sixteen pages:** two firm findings, both looked at. On Montek Singh Kundan's page the
+  sections are about 29px apart and things inside a section are as far apart as that. On Lochie Axon's page a
+  heading has the same space above it as below. Seven more are only worth a look, among them shadcn's sponsors
+  block, where seven things in a column are all 16 to 19px apart.
+- **Not known:** whether the 1.5 measured on dots holds for text and cards. The rules for what leads, closes and
+  counts as one kind are ours.
+- **Media hooks:** `http://rauno-08-montek-dev.localhost:4420/__judge/?seen=1`, "Space against belonging".
+
 ## Open gaps
 
 - Of the five comparisons in the engine spec, two have a first cut: "alike", for whether a thing looks pressable

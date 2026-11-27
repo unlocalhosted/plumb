@@ -116,9 +116,16 @@ export function places(tree, units) {
 }
 
 // every row and column of the seen picture as one sequence: the things in order along it, and the gap between each
-// two neighbours. A split inside a split along the same direction is the same row, so it is laid flat into it.
-export function runs(tree) {
-  const out = [];
+// two neighbours, and whether a drawn line lies in that gap. A split inside a split along the same direction is
+// the same row, so it is laid flat into it.
+export function runs(tree, units = []) {
+  const out = [], lines = units.filter((u) => u.kind === 'line');
+  // a drawn line lying in the gap between two neighbours, across at least half of the narrower one
+  const ruled = (axis, a, b) => {
+    const along = far(axis), across = far(axis === 'y' ? 'x' : 'y'), from = along(a)[1] - 1, to = along(b)[0] + 1;
+    const [a0, a1] = across(a), [b0, b1] = across(b), need = Math.min(a1 - a0, b1 - b0) / 2, lo = Math.min(a0, b0), hi = Math.max(a1, b1);
+    return lines.some((l) => { const [s, e] = along(l), [c0, c1] = across(l); return s >= from && e <= to && Math.min(c1, hi) - Math.max(c0, lo) >= need; });
+  };
   const axisOf = (n) => (n.type === 'box' ? n.how?.axis : n.type === 'run' || n.type === 'groups' ? n.axis : undefined);
   const flat = (n, axis) => (n.children ?? []).flatMap((c) => (c.type !== 'box' && axisOf(c) === axis ? flat(c, axis) : [c]));
   const walk = (n, above) => {
@@ -126,7 +133,7 @@ export function runs(tree) {
     if (axis && !(n.type !== 'box' && axis === above)) {
       const span = far(axis), items = flat(n, axis).sort((a, b) => span(boxOf(a))[0] - span(boxOf(b))[0]);
       const gaps = items.slice(1).map((it, k) => span(boxOf(it))[0] - span(boxOf(items[k]))[1]);
-      if (items.length >= 2) out.push({ axis, items, gaps });
+      if (items.length >= 2) out.push({ axis, items, gaps, ruled: items.slice(1).map((it, k) => ruled(axis, boxOf(items[k]), boxOf(it))) });
     }
     for (const c of n.children ?? []) walk(c, axis);
   };

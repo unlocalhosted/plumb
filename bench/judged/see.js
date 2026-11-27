@@ -8,7 +8,7 @@
 //               role (what the page is built to do with it), for alike.js. The look is read from styles; the role
 //               from tags, roles and addresses, which is the weaker reading the spec allows where there is no source.
 //   see(...)    the view: the page in a frame, the tree from seen.js outlined over it one level at a time.
-import { grow, levels, places, runs, settle, RATIO } from './seen.js';
+import { boxOf, grow, levels, places, runs, settle, RATIO } from './seen.js';
 import { judge } from './alike.js';
 import { judge as near, RATIO as APART } from './near.js';
 
@@ -39,11 +39,18 @@ export function read(win) {
     }
     return parts.length ? parts : null;
   };
+  // an edge that shows: it has a width, and its colour as it lands on what is behind differs from it. A hairline
+  // of black at 8% is a line
+  const edge = (s, side, behind) => {
+    if (!(parseFloat(s[`border${side}Width`]) > 0) || s[`border${side}Style`] === 'none') return false;
+    const raw = colour(s[`border${side}Color`]), a = raw[3] / 255;
+    return raw[3] > 0 && apart([0, 1, 2].map((k) => raw[k] * a + behind[k] * (1 - a)), behind) > SHOWS;
+  };
   const drawn = (s, behind) => {
     // a fill is judged as it lands on what is behind it: a card of white at 4% on a dark page is a card
     const raw = colour(s.backgroundColor), a = raw[3] / 255, c = [0, 1, 2].map((k) => raw[k] * a + behind[k] * (1 - a)), fill = raw[3] > 0 && apart(c, behind) > SHOWS;
     let sides = 0;
-    for (const side of ['Top', 'Right', 'Bottom', 'Left']) if (parseFloat(s[`border${side}Width`]) > 0 && s[`border${side}Style`] !== 'none' && colour(s[`border${side}Color`])[3] > 38) sides++;
+    for (const side of ['Top', 'Right', 'Bottom', 'Left']) if (edge(s, side, behind)) sides++;
     return fill || sides >= 3 || s.boxShadow !== 'none' || s.backgroundImage !== 'none' ? { fill: fill ? c : null } : null;
   };
   const walk = (el, parent, behind) => {
@@ -57,12 +64,21 @@ export function read(win) {
       if (s.display !== 'contents' && c.checkVisibility?.({ checkOpacity: true, checkVisibilityCSS: true }) === false) continue;
       if (PICTURE.has(c.localName)) { if (big) push('picture', c, parent, r); continue; }
       let here = parent, back = behind;
-      const d = big && !inline(s) && drawn(s, behind);
+      const some = (r.width >= 3 || r.height >= 3) && r.width > 0.5 && r.height > 0.5 && !inline(s);
+      const d = some && drawn(s, behind);
       if (d) {
         // the page's own ground is not a box on it
         if (r.width >= vw * 0.95 && r.height >= tall * 0.95) back = d.fill ?? behind;
         else if (Math.min(r.width, r.height) <= 2) push('line', c, parent, r);
-        else { here = push('box', c, parent, r); back = d.fill ?? behind; }
+        else if (big) { here = push('box', c, parent, r); back = d.fill ?? behind; }
+      } else if (!inline(s) && (r.width >= 3 || r.height >= 3)) {
+        // an edge drawn on one or two sides is a line: the rule under a row, the bar beside a quote
+        const edges = ['Top', 'Right', 'Bottom', 'Left'].filter((side) => edge(s, side, behind));
+        if (edges.length && edges.length <= 2) for (const side of edges) {
+          const w = parseFloat(s[`border${side}Width`]);
+          push('line', c, parent, side === 'Top' ? { left: r.left, top: r.top, width: r.width, height: w } : side === 'Bottom' ? { left: r.left, top: r.bottom - w, width: r.width, height: w }
+            : side === 'Left' ? { left: r.left, top: r.top, width: w, height: r.height } : { left: r.right - w, top: r.top, width: w, height: r.height });
+        }
       }
       const parts = inline(s) ? null : ink(c);
       if (parts) { const t = inkBox(parts); if (t.width >= 3 && t.height >= 3) push('text', c, here, t, parts); }
@@ -180,8 +196,10 @@ export function belongs(run, got) {
     let g = 0, groups = branch.map((b, k) => (k && b !== branch[k - 1] ? ++g : g)), how = 'structure';
     const skip = new Set();
     if (g === branch.length - 1) {
-      if (!heads.some(Boolean)) return false;
+      if (!heads.slice(1).some(Boolean)) return false;
       g = 0; groups = heads.map((h, k) => (k && h ? ++g : g)); how = 'headings';
+      // nothing says where the last heading's group ends, so the gaps inside it are not used
+      for (let k = groups.lastIndexOf(g), first = groups.indexOf(g); k > first; k--) skip.add(k - 1);
     } else {
       // a group that is only a heading joins the group after it
       for (let id = g - 1; id >= 0; id--) if (groups.every((x, k) => x !== id || heads[k])) groups.forEach((x, k) => { if (x === id) groups[k] = id + 1; });
@@ -196,8 +214,20 @@ export function belongs(run, got) {
       const first = groups.indexOf(id), last = groups.lastIndexOf(id);
       if (first === last && run.items[lo + first].type === 'box') { if (first > 0) skip.add(first - 1); if (first < groups.length - 1) skip.add(first); }
     }
+    // one thing alone at the head of a level leads all of it (a title, a table's header row), and one alone at
+    // its end closes all of it (a "view all" link): neither is a group beside the others, so its gap is not judged
+    const m = groups.length;
+    if (groups[0] !== groups[1]) skip.add(0);
+    if (groups[m - 1] !== groups[m - 2]) skip.add(m - 2);
+    // a drawn line in a gap already sets the two sides apart
+    run.ruled?.forEach((yes, k) => { if (yes && k >= lo && k < lo + m - 1) skip.add(k - lo); });
     if (new Set(groups).size < 2) return false;
-    out.push({ from: lo, groups, skip, how });
+    // the gaps a firm claim may rest on: between two groups of one kind. Built the same way (the same tag and
+    // class), or each led by a heading. A title block beside a list, or a menu beside icons, are told apart by
+    // more than space, so a close gap between them is only worth a look.
+    const sig = (b) => `${b.localName}.${typeof b.className === 'string' ? b.className : ''}`, sure = new Set();
+    for (let k = 0; k < m - 1; k++) if (groups[k] !== groups[k + 1] && (how === 'headings' ? heads[groups.indexOf(groups[k])] && heads[k + 1] : sig(branch[k]) === sig(branch[k + 1]))) sure.add(k);
+    out.push({ from: lo, groups, skip, how, sure });
     return true;
   };
   level(0, run.items.length - 1);
@@ -306,7 +336,7 @@ export function see(el, root, base, loaded, soften) {
   const frame = $('iframe'), layer = $('.layer'), seen = $('.seen'), stage = $('.stage'), view = $('.view');
   const screen = set.screens.find((s) => s.id === new URL(location.href).searchParams.get('screen')) ?? set.screens[0];
   let scale = 1, got = null, tree = null, flat = [], level = 1, units = false, over = null, held = false;
-  let mode = 'groups', found = null, pick = null, spaced = [], npick = null, agreeing = false;
+  let mode = 'groups', found = null, pick = null, spaced = [], npick = null, agreeing = false, moved = 0;
 
   const fit = () => {
     const w = screen?.width ?? set.width ?? 1440, room = view.clientWidth - 32, tallness = view.clientHeight - 32;
@@ -364,10 +394,10 @@ export function see(el, root, base, loaded, soften) {
   };
   const listNear = () => {
     const count = (o) => spaced.filter((s) => s.v.outcome === o).length, shown = spaced.map((s, n) => ({ s, n })).filter(({ s }) => s.v.outcome !== 'agree' || agreeing);
-    $('.near').innerHTML = `<div><h2>Space against belonging</h2><p>In each row or column, the space between two groups should be at least ${APART} times the largest space inside a group. Which things belong together is read from the page's structure, which is a weak reading. No judge has checked this.</p></div>
-      <p>${spaced.length} rows and columns hold groups. Space agrees in ${count('agree')}, cannot tell in ${count('nearly')}, says the opposite in ${count('opposite')}.</p>
+    $('.near').innerHTML = `<div><h2>Space against belonging</h2><p>In each row or column, the space between two groups should be at least ${APART} times the largest space inside a group. Closer than that either way, space does not say where a group ends. Which things belong together is read from the page's structure, which is a weak reading. No judge has checked this.</p></div>
+      <p>${spaced.length} rows and columns hold groups. Space agrees in ${count('agree')}. ${spaced.filter((s) => s.tier === 'claim').length} firm, between groups of one kind in a column. ${spaced.filter((s) => s.tier === 'note').length} only worth a look.${moved ? ` ${moved} left out because that part of the page was still changing.` : ''}</p>
       <button type="button" class="chip" data-agree aria-pressed="${agreeing}">Show the ones that agree</button>
-      ${shown.length ? `<ul class="finds">${shown.map(({ s, n }) => { const g = s.v.gaps; return `<li><button type="button" data-near="${n}" aria-pressed="${n === npick}"><b>${SPACE[s.v.outcome][0]}</b><span>${g[s.v.between]}px between two groups, ${g[s.v.inside]}px inside one. ${s.v.r === Infinity ? '' : `That is ${Math.round(s.v.r * 100) / 100} times.`}</span><span><em>${esc(words(s.run.items[s.v.between]))}</em> · <em>${esc(words(s.run.items[s.v.between + 1]))}</em></span><span>${s.run.axis === 'y' ? 'A column' : 'A row'} of ${s.run.items.length}, in ${new Set(s.groups).size} groups read from ${s.how === 'headings' ? 'its headings' : 'the page’s structure'}</span></button></li>`; }).join('')}</ul>` : '<p>Nothing to show.</p>'}`;
+      ${shown.length ? `<ul class="finds">${shown.map(({ s, n }) => { const g = s.v.gaps; return `<li><button type="button" data-near="${n}" aria-pressed="${n === npick}"><b>${s.tier === 'note' ? 'Worth a look: ' : ''}${SPACE[s.v.outcome][0]}</b><span>${g[s.v.between]}px between two groups, ${g[s.v.inside]}px inside one. ${s.v.r === Infinity ? '' : `That is ${Math.round(s.v.r * 100) / 100} times.`}</span><span><em>${esc(words(s.run.items[s.v.between]))}</em> · <em>${esc(words(s.run.items[s.v.between + 1]))}</em></span><span>${s.run.axis === 'y' ? 'A column' : 'A row'} of ${s.run.items.length}, in ${new Set(s.groups).size} groups read from ${s.how === 'headings' ? 'its headings' : 'the page’s structure'}</span></button></li>`; }).join('')}</ul>` : '<p>Nothing to show.</p>'}`;
   };
   const draw = () => {
     if (!tree) return;
@@ -399,7 +429,8 @@ export function see(el, root, base, loaded, soften) {
     for (let n = 0; n < 14; n++) { await new Promise((f) => setTimeout(f, 600)); const now = mark(read(win)); if (now === last) return true; last = now; }
     return false;
   };
-  const again = async () => {
+  const again = async (turn) => {
+    const attempt = typeof turn === 'number' ? turn : 0;
     const win = frame.contentWindow; if (!win?.document?.body) return;
     $('.tally').textContent = 'Waiting for the page to stop moving.';
     const settled = await still();
@@ -414,12 +445,41 @@ export function see(el, root, base, loaded, soften) {
       const at = e && where.get(blocks.get(e)); if (at) Object.assign(row, { unit: blocks.get(e), scope: at.scope, row: at.row, group: at.group });
     });
     found.findings = judge(found.rows); pick = null; list();
-    spaced = runs(tree).flatMap((run) => belongs(run, got).map((b) => {
+    spaced = runs(tree, got.units).flatMap((run) => belongs(run, got).map((b) => {
       const part = { axis: run.axis, items: run.items.slice(b.from, b.from + b.groups.length), gaps: run.gaps.slice(b.from, b.from + b.groups.length - 1) };
+      // a firm claim: a column, judged only on the gaps between groups of one kind. Rows are left as notes: a row
+      // is often spread to both edges, and its gaps are then the layout's and say nothing about belonging.
+      const unsure = new Set(b.skip); b.groups.forEach((g, k) => { if (k < b.groups.length - 1 && g !== b.groups[k + 1] && !b.sure.has(k)) unsure.add(k); });
+      const firm = run.axis === 'y' ? near({ gaps: part.gaps, groups: b.groups, skip: unsure }) : null;
+      if (firm && firm.outcome !== 'agree') return { run: part, v: firm, groups: b.groups, how: b.how, tier: 'claim' };
       const v = near({ gaps: part.gaps, groups: b.groups, skip: b.skip });
-      return v ? { run: part, v, groups: b.groups, how: b.how } : null;
+      return v ? { run: part, v, groups: b.groups, how: b.how, tier: v.outcome === 'agree' ? 'agree' : 'note' } : null;
     })).filter(Boolean);
-    const rank = { opposite: 0, nearly: 1, agree: 2 }; spaced.sort((a, b) => rank[a.v.outcome] - rank[b.v.outcome] || a.v.r - b.v.r); npick = null; listNear();
+    // a second look a few seconds on: a tile that cycles through its own contents is not a page at rest, and a
+    // finding read off it is about one frame. Anything whose two gaps have changed, or whose things are gone, is
+    // left out and counted.
+    if (spaced.some((s) => s.tier !== 'agree')) {
+      $('.tally').textContent = 'Looking once more, to leave out anything that is still changing.';
+      // what the page changes by itself in six seconds: a thing beside one of the two gaps that is gone, or is no
+      // longer where it was or the size it was. A clock that ticks inside its own box changes nothing here.
+      const before = win.scrollY; await new Promise((f) => setTimeout(f, 6000));
+      let shifted = false;
+      const alive = (s) => {
+        if (win.scrollY !== before) return false;
+        return [s.v.between, s.v.inside].every((k) => [s.run.items[k], s.run.items[k + 1]].every((n) => {
+          if (!unitsIn(n).every((u) => got.els[u].el.isConnected)) return false;
+          const now = nowOf(n), was = boxOf(n);
+          if (['x', 'y', 'w', 'h'].every((d) => Math.abs(now[d] - was[d]) <= 2)) return true;
+          shifted = true; return false;
+        }));
+      };
+      const kept = spaced.filter((s) => s.tier === 'agree' || alive(s));
+      // things had not finished settling when the page was read (a late picture pushes everything down): read again
+      if (shifted && attempt < 2) return again(attempt + 1);
+      moved = spaced.length - kept.length; spaced = kept;
+    } else moved = 0;
+    window.__seen = { got, tree, found, spaced, words, moved };
+    const rank = { claim: 0, note: 1, agree: 2 }; spaced.sort((a, b) => rank[a.tier] - rank[b.tier] || a.v.r - b.v.r); npick = null; listNear();
     const count = (k) => got.units.filter((u) => u.kind === k).length;
     $('.tally').textContent = `${count('text')} blocks of text, ${count('picture')} pictures, ${count('box')} drawn boxes and ${count('line')} lines, read at ${win.innerWidth} wide.${settled ? '' : ' The page was still moving after 8 seconds, so it was read as it stood.'}`;
     steps(); draw();

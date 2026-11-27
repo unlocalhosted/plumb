@@ -183,8 +183,8 @@ gap between groups / the largest gap inside a group**.
 
 | r | Outcome | Said |
 |---|---|---|
-| under 1 | The page says the opposite of what is meant. | "These read as belonging to the next group." |
-| 1 to 1.5 | Nearly. The eye cannot tell where one group ends. | "The space between these groups is too close to the space inside them." |
+| 1/1.5 and under | The page says the opposite of what is meant. | "The gap inside this group is the one that reads as a break." |
+| between 1/1.5 and 1.5 | Nearly. The eye cannot tell where one group ends. | "The space between these groups is too close to the space inside them." |
 | 1.5 and over | Agree. | Silence. |
 
 The same ratio answers a second question with no meant side at all: in a grid, the gap across against the gap down
@@ -201,6 +201,11 @@ is set only against the next level in: a gap inside a group that has groups of i
 And a group that is one drawn box is already set apart by the box, so the gap beside it is not judged. On a page
 with no source the groups come from how the page is built, and that proved the weak part: a section label built
 as a neighbour of its cards was read as a group of its own.
+
+Changed on 2026-11-27 after every finding was judged (journey entry 166). The ratio is used both ways, so the
+table above no longer calls 17 against 19 "the opposite". One thing alone at the head or end of a level leads or
+closes it and is not a group. A gap with a drawn line in it is not judged. A finding is firm only in a column and
+only between two groups of one kind; the rest are shown as worth a look. *All of these are ours.*
 
 ## 14. Alike
 
