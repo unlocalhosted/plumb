@@ -6203,6 +6203,13 @@ into its own browser. Your app isn't changed.", then the findings.
   after another while a count runs up to 20, and they fly back into the page as it looks after the sync. The window
   now shows only the page, and Clean up is framed so the bar sits at its foot. Stills:
   `cards-scene-stills.jpg`, `cards-panel-stills.jpg`, `bottom-stills.jpg` (local).
+- **Why a raw hex is wrong, shown instead of said (2026-11-27).** The owner: "just bring 2 buttons and show comparison
+  like same color but one with token and one withouth". A hex and its token look the same, so no recording of the
+  page could show the difference. Before plumber opens, the Invite button now lifts out of the page and splits into
+  two identical green buttons, labelled `bg-[#18b070]` and `bg-primary`. A "Your brand colour" chip is wired to the
+  token button only. The brand turns violet and only the token button follows, while the hex one stays green inside
+  a coral ring. Then the buttons go home and plumber makes the real swap, with no film pill on top of its own labels.
+  Stills: `invite-scene-stills.jpg`, `invite-flip.png` (local).
 
 - **One at a time, from any toy (2026-11-26).** The owner: "just fix the things one by one clicking on a single item
   should give the tour like experience". Until now only the main button toured, and it showed 4 of 80 fixes; a single
