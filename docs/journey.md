@@ -6185,6 +6185,15 @@ into its own browser. Your app isn't changed.", then the findings.
   will change with its value in a pill ("#18b070 hard-coded", "10px, made up"), it turns sky as it lands ("primary,
   your token", "p-3 · 12px × 20 cards"), and each fix is held about three seconds before the film moves on. Stills:
   `docs/films/launch-03-draft/change-stills.jpg` (local).
+- **Words on the stage, and no stray card (2026-11-27).** The owner: the captions "look so bad white blocks no
+  interaction and transition similar to previous video", and "remove the hard to read card at the start". The
+  captions were white boxes laid over the page, so they covered it and didn't look like film 2. Now the words sit on
+  the stage above the page in the display face, like film 2's, arriving word by word. The problem word is coral
+  ("hard-coded", "10px") and the fix is mint (`bg-primary`, `p-3`). The page is seen through a framed window under
+  the words, and the window opens out into the closing shot. The card was plumber's contrast finding on the Invite
+  button, a different issue from the colour story: its tip and card fill 23 frames of the take. The film holds the
+  clean frame before them, and plumber is unchanged. Rough cut 5 (55 s, half size): `rough-cut-5.mp4`, stills
+  `cut5-stills.jpg` (local, in `docs/films/launch-03-draft/`).
 
 - **One at a time, from any toy (2026-11-26).** The owner: "just fix the things one by one clicking on a single item
   should give the tour like experience". Until now only the main button toured, and it showed 4 of 80 fixes; a single
