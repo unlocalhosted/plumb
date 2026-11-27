@@ -1,15 +1,15 @@
 // Alike against same role (docs/briefs/shape-engine.md, section 14, first cut): pieces of text that look exactly the
 // same and are not the same kind of thing. Pure: plain rows in, findings out.
 //
-//   judge(pieces)  pieces: [{ look, role, set, text, carrier, size, weight, contrast, unit, scope, row }]
+//   judge(pieces)  pieces: [{ look, role, text, carrier, size, weight, contrast, unit, scope, row, group }]
 //                    look  everything drawn about the piece's letters, as one string (see.js builds it)
 //                    role  what the page is built to do with it: 'plain' | 'page' (a link to another page of the site)
 //                          | 'jump' (a link down this page) | 'leaves' (a link to another site) | 'control'
-//                    set   the row or list the piece sits in with its neighbours, as a number, or -1
 //                    carrier  the link or control the piece is inside, as a number, or -1
 //                    size, weight, contrast  how loud its letters are, used only to order the pieces of one carrier
-//                    unit, scope, row  where it sits in the seen picture (seen.js, places): the block of text it is
-//                            part of, the kind of ground that block is on, and the row it stands in, or -1
+//                    unit, scope, row, group  where it sits in the seen picture (seen.js, places): the block of text
+//                            it is part of, the kind of ground that block is on, the row it stands in, and the
+//                            row or column it stands in, each a number or -1
 //                  → findings: [{ kind, odd: [row numbers], many: [row numbers], look, beside, scope }]
 //                    beside  true when the pieces sit side by side with others drawn the same, false when each is
 //                            on a line of its own
@@ -81,9 +81,10 @@ export function judge(pieces) {
     else if (plain.length >= 2 && press.length && press.length < plain.length) findings.push({ kind: 'pressable-plain', odd: press, many: plain, look, beside: side, scope });
     // one row of links that look the same and act differently
     const sets = new Map();
-    for (const i of press) if (pieces[i].set >= 0 && pieces[i].role !== 'control') (sets.get(pieces[i].set) ?? sets.set(pieces[i].set, []).get(pieces[i].set)).push(i);
+    // a set is what the seen picture shows as one row or one column: links in separate blocks, standing together
+    for (const i of press) if (pieces[i].group >= 0 && pieces[i].role !== 'control') push(sets, pieces[i].group, i);
     for (const members of sets.values()) {
-      if (members.length < LEAST) continue;
+      if (new Set(members.map((i) => pieces[i].unit)).size < LEAST) continue;
       // judged here: a link that jumps down this page beside one that opens a page. A link that leaves the site
       // beside one that stays is not: on the first page tried it made three findings and no judge had marked one,
       // and the reviewer's own limit is that a link named after another service needs no mark.

@@ -8,7 +8,7 @@
 //               role (what the page is built to do with it), for alike.js. The look is read from styles; the role
 //               from tags, roles and addresses, which is the weaker reading the spec allows where there is no source.
 //   see(...)    the view: the page in a frame, the tree from seen.js outlined over it one level at a time.
-import { grow, levels, places, RATIO } from './seen.js';
+import { grow, levels, places, settle, RATIO } from './seen.js';
 import { judge } from './alike.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -82,7 +82,7 @@ const bare = (h) => h.replace(/^www\./, '');
 const real = (url) => { const m = url.host === 'web.archive.org' && /^\/web\/\d+[a-z_]*\/(https?:\/\/.+)$/.exec(url.pathname + url.search + url.hash); try { return m ? new URL(m[1]) : url; } catch { return url; } };
 
 export function pieces(win, site) {
-  const doc = win.document, rows = [], els = [], sets = new Map(), carriers = new Map();
+  const doc = win.document, rows = [], els = [], carriers = new Map();
   const here = real(new URL(win.location.href)), home = here.host === win.location.host ? bare(site) : bare(here.host);
   const ctx = Object.assign(doc.createElement('canvas'), { width: 1, height: 1 }).getContext('2d', { willReadFrequently: true }), known = new Map();
   const colour = (c) => { if (!known.has(c)) { ctx.clearRect(0, 0, 1, 1); ctx.fillStyle = '#000'; ctx.fillStyle = c; ctx.fillRect(0, 0, 1, 1); known.set(c, [...ctx.getImageData(0, 0, 1, 1).data]); } return known.get(c); };
@@ -127,17 +127,15 @@ export function pieces(win, site) {
     const cs = carrier && win.getComputedStyle(carrier), boxed = cs && (colour(cs.backgroundColor)[3] >= 128 || parseFloat(cs.borderTopWidth) > 0);
     const ink = hex(colour(st.color)), family = st.fontFamily.split(',')[0].replace(/["']/g, '').trim();
     const look = [family, st.fontSize, st.fontWeight, ink, under ? 'u' : '', st.textTransform, st.fontStyle, boxed ? `box${hex(colour(cs.backgroundColor))}` : ''].join('|');
-    const words = [`${parseFloat(st.fontSize)}px`, `weight ${st.fontWeight}`, ink, under ? 'underlined' : 'no underline', boxed ? 'in a box of its own' : ''].filter(Boolean).join(', ');
-    let holder = (carrier ?? el).parentElement; if (holder?.localName === 'li') holder = holder.parentElement;
-    if (!sets.has(holder)) sets.set(holder, sets.size);
+    const words = [`${Math.round(parseFloat(st.fontSize) * 10) / 10}px`, `weight ${st.fontWeight}`, ink, under ? 'underlined' : 'no underline', boxed ? 'in a box of its own' : ''].filter(Boolean).join(', ');
     if (carrier && !carriers.has(carrier)) carriers.set(carrier, carriers.size);
     // how far the letters stand off what is behind them (the usual contrast ratio). Only ever used to order pieces.
     let back = [255, 255, 255, 255];
     for (let e = el; e; e = e.parentElement) { const c = colour(win.getComputedStyle(e).backgroundColor); if (c[3] >= 128) { back = c; break; } }
     const lum = (c) => { const [r, g, b2] = c.slice(0, 3).map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b2; };
     const l1 = lum(colour(st.color)), l2 = lum(back), contrast = Math.round(((Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05)) * 10) / 10;
-    rows.push({ look, words, role, set: sets.get(holder), carrier: carrier ? carriers.get(carrier) : -1, size: parseFloat(st.fontSize), weight: Number(st.fontWeight) || 400, contrast,
-      unit: -1, scope: 'ground', row: -1, text: text.trim().replace(/\s+/g, ' ').slice(0, 60) }); els.push({ el, parts });
+    rows.push({ look, words, role, carrier: carrier ? carriers.get(carrier) : -1, size: parseFloat(st.fontSize), weight: Number(st.fontWeight) || 400, contrast,
+      unit: -1, scope: 'ground', row: -1, group: -1, text: text.trim().replace(/\s+/g, ' ').slice(0, 60) }); els.push({ el, parts });
   }
   return { rows, els };
 }
@@ -298,14 +296,14 @@ export function see(el, root, base, loaded, soften) {
     const win = frame.contentWindow; if (!win?.document?.body) return;
     $('.tally').textContent = 'Waiting for the page to stop moving.';
     const settled = await still();
-    got = read(win); tree = grow(got.units); flat = levels(tree); over = null;
+    got = read(win); got.units = settle(got.units); tree = grow(got.units); flat = levels(tree); over = null;
     found = pieces(win, new URL(set.app).host);
     // where each piece sits, from the seen picture: the block of text it is part of, then that block's place
     const blocks = new Map(), where = places(tree, got.units);
     got.units.forEach((u, i) => { if (u.kind === 'text') blocks.set(got.els[i].el, i); });
     found.rows.forEach((row, i) => {
       let e = found.els[i].el; while (e && !blocks.has(e)) e = e.parentElement;
-      const at = e && where.get(blocks.get(e)); if (at) Object.assign(row, { unit: blocks.get(e), scope: at.scope, row: at.row });
+      const at = e && where.get(blocks.get(e)); if (at) Object.assign(row, { unit: blocks.get(e), scope: at.scope, row: at.row, group: at.group });
     });
     found.findings = judge(found.rows); pick = null; list();
     const count = (k) => got.units.filter((u) => u.kind === k).length;

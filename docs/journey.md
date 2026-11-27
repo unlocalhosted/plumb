@@ -7169,12 +7169,36 @@ into its own browser. Your app isn't changed.", then the findings.
 - **Media hooks:** `http://rauno-17-blvdmitry-me.localhost:4420/__judge/?seen=1`; a picture of its groups at
   `docs/research/harvests/raunofreiberg-portfolio-reviews/local/after/dima-groups.png` (not in git).
 
+### 162. The missed menu case (2026-11-27)
+
+- **The itch:** Rauno's point about one menu, where some items scroll down the page and others open a new page,
+  was the one judged case the text layer missed, and the cause was not known.
+- **How we found it:** by printing every link on that page with where it leads and where the seen picture puts it.
+- **The system behind it:** two separate things. The page has changed since his review. Today all four items of
+  the menu open another page, so the fault is not on the live page, and the web archive kept no copy from then.
+  And had the fault been there, the layer would still have missed it. The menu's links lie on a rounded shape that
+  the page's code makes their neighbour and not their container. The seen picture followed the code, so the shape
+  overlapped every link and the menu was read as a pile. The layer also took "one set of links" from the code
+  (links that share a parent), and here each link has a wrapper of its own.
+- **The fix:** what lies wholly on a drawn box is in it, however the page is built (`settle` in
+  `bench/judged/seen.js`). A set of links is now what the seen picture shows as one row or one column, with at
+  least three links in separate blocks (`bench/judged/alike.js`).
+- **The proof:** with the menu's first link pointed back down the page, changed in the browser's memory to match
+  what he met, the layer makes one finding there: one row of links, two kinds, on "Work". On the page as it is
+  today it makes none. The six pages give the same three findings as in entry 161.
+- **The limit of that proof:** it is a rebuilt case. We changed one link ourselves. It is not the page he saw.
+- **Media hooks:** `docs/research/harvests/raunofreiberg-portfolio-reviews/local/after/jscraik-menu.png` (not in
+  git).
+
 ## Open gaps
 
 - The layer that compares how text looks with what it does now takes where a piece sits from the seen picture
   ([entry 161](#161-where-a-piece-sits-now-comes-from-the-seen-picture-2026-11-27)). Its rule that things inside
   boxes are in a different place from things on the page itself has no source and has been run on six pages.
-  Rauno's menu case is still missed, cause not found.
+  Rauno's menu case is caught only on a rebuilt copy
+  ([entry 162](#162-the-missed-menu-case-2026-11-27)): the live page no
+  longer has the fault. Of his points marked as cases for the engine, nobody has checked which are still on the
+  live pages today.
 - Plumber's page check reads nothing on a public site, because it judges only elements tied to an app's source
   ([entry 156](#156-plumber-reads-nothing-on-a-public-site-2026-11-26)). Until it can, an expert's review of a live
   site cannot be scored against it.

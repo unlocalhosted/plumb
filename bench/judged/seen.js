@@ -62,6 +62,24 @@ function cut(nodes, depth = 0) {
   return { type: 'groups', axis: t.axis, ratio: Math.round(ratio * 10) / 10, children: clusters.map((c) => cut(c, depth + 1)) };
 }
 
+// What lies on a drawn box is in it, however the page is built. A shape set behind a row of links is their box
+// though the page's code makes it their neighbour, and read as a neighbour it overlaps them all and makes a pile.
+// Gives new rows, with each one's parent moved to the smallest box beside it that it lies wholly on.
+export function settle(units) {
+  const out = units.map((u) => ({ ...u })), beside = new Map();
+  out.forEach((u, i) => (beside.get(u.parent) ?? beside.set(u.parent, []).get(u.parent)).push(i));
+  const area = (u) => u.w * u.h, on = (b, u) => u.x >= b.x - 1 && u.y >= b.y - 1 && u.x + u.w <= b.x + b.w + 1 && u.y + u.h <= b.y + b.h + 1;
+  for (const all of beside.values()) {
+    const boxes = all.filter((i) => units[i].kind === 'box');
+    for (const i of all) {
+      let best = -1;
+      for (const b of boxes) if (b !== i && area(units[b]) > area(units[i]) && on(units[b], units[i]) && (best < 0 || area(units[b]) < area(units[best]))) best = b;
+      if (best >= 0) out[i].parent = best;
+    }
+  }
+  return out;
+}
+
 export function grow(units) {
   const kids = new Map();
   units.forEach((u, i) => { if (u.kind !== 'line') (kids.get(u.parent) ?? kids.set(u.parent, []).get(u.parent)).push(i); });
@@ -82,10 +100,11 @@ export function grow(units) {
 //          things inside the cards of one grid share a scope, and differ from the things on the page itself)
 //   row    a number when the first split above it is a row (things side by side), the same number for everything
 //          in that row; -1 when it stands in a column, in a pile or alone
+//   group  the same, for a row or a column: the number of the first split above it, or -1 in a pile or alone
 export function places(tree, units) {
   const out = new Map(); let id = 0;
   const walk = (n, split) => {
-    if (n.type === 'unit') { const b = units[n.unit].parent; out.set(n.unit, { scope: b < 0 ? 'ground' : `in:${units[b].parent}`, row: split?.axis === 'x' ? split.id : -1 }); return; }
+    if (n.type === 'unit') { const b = units[n.unit].parent; out.set(n.unit, { scope: b < 0 ? 'ground' : `in:${units[b].parent}`, row: split?.axis === 'x' ? split.id : -1, group: split?.axis ? split.id : -1 }); return; }
     const next = n.type !== 'box' ? { id: id++, axis: n.axis } : n.how ? { id: id++, axis: n.how.axis } : split;
     for (const c of n.children ?? []) walk(c, next);
   };
