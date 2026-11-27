@@ -78,7 +78,7 @@ const bare = (h) => h.replace(/^www\./, '');
 const real = (url) => { const m = url.host === 'web.archive.org' && /^\/web\/\d+[a-z_]*\/(https?:\/\/.+)$/.exec(url.pathname + url.search + url.hash); try { return m ? new URL(m[1]) : url; } catch { return url; } };
 
 export function pieces(win, site) {
-  const doc = win.document, rows = [], els = [], sets = new Map();
+  const doc = win.document, rows = [], els = [], sets = new Map(), carriers = new Map();
   const here = real(new URL(win.location.href)), home = here.host === win.location.host ? bare(site) : bare(here.host);
   const ctx = Object.assign(doc.createElement('canvas'), { width: 1, height: 1 }).getContext('2d', { willReadFrequently: true }), known = new Map();
   const colour = (c) => { if (!known.has(c)) { ctx.clearRect(0, 0, 1, 1); ctx.fillStyle = '#000'; ctx.fillStyle = c; ctx.fillRect(0, 0, 1, 1); known.set(c, [...ctx.getImageData(0, 0, 1, 1).data]); } return known.get(c); };
@@ -103,12 +103,21 @@ export function pieces(win, site) {
     }
     return false;
   };
+  // words kept for a screen reader and cut away from the eye: something round them is clipped down to a dot
+  const unseen = (el) => {
+    for (let e = el; e && e !== doc.body; e = e.parentElement) {
+      const st = win.getComputedStyle(e);
+      if (st.overflow === 'visible' && st.clipPath === 'none') continue;
+      const r = e.getBoundingClientRect(); if (r.width < 3 || r.height < 3) return true;
+    }
+    return false;
+  };
   for (const el of doc.body.querySelectorAll('*')) {
     if (NEVER.has(el.localName) || PICTURE.has(el.localName) || el.closest('svg')) continue;
     const parts = []; let text = '';
     for (const n of el.childNodes) if (n.nodeType === 3 && n.nodeValue.trim()) { const r = doc.createRange(); r.selectNodeContents(n); parts.push(r); text += ` ${n.nodeValue.trim()}`; }
     if (!parts.length || !/[\p{L}\p{N}]/u.test(text) || el.checkVisibility?.({ checkOpacity: true, checkVisibilityCSS: true }) === false) continue;
-    const box = inkBox(parts); if (box.width < 3 || box.height < 3) continue;
+    const box = inkBox(parts); if (box.width < 3 || box.height < 3 || unseen(el)) continue;
     const st = win.getComputedStyle(el), [role, carrier] = roleOf(el), under = lined(el);
     // a carrier with a fill or an outline of its own is a button: its letters are not compared with bare text
     const cs = carrier && win.getComputedStyle(carrier), boxed = cs && (colour(cs.backgroundColor)[3] >= 128 || parseFloat(cs.borderTopWidth) > 0);
@@ -117,7 +126,14 @@ export function pieces(win, site) {
     const words = [`${parseFloat(st.fontSize)}px`, `weight ${st.fontWeight}`, ink, under ? 'underlined' : 'no underline', boxed ? 'in a box of its own' : ''].filter(Boolean).join(', ');
     let holder = (carrier ?? el).parentElement; if (holder?.localName === 'li') holder = holder.parentElement;
     if (!sets.has(holder)) sets.set(holder, sets.size);
-    rows.push({ look, words, role, set: sets.get(holder), text: text.trim().replace(/\s+/g, ' ').slice(0, 60) }); els.push({ el, parts });
+    if (carrier && !carriers.has(carrier)) carriers.set(carrier, carriers.size);
+    // how far the letters stand off what is behind them (the usual contrast ratio). Only ever used to order pieces.
+    let back = [255, 255, 255, 255];
+    for (let e = el; e; e = e.parentElement) { const c = colour(win.getComputedStyle(e).backgroundColor); if (c[3] >= 128) { back = c; break; } }
+    const lum = (c) => { const [r, g, b2] = c.slice(0, 3).map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b2; };
+    const l1 = lum(colour(st.color)), l2 = lum(back), contrast = Math.round(((Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05)) * 10) / 10;
+    rows.push({ look, words, role, set: sets.get(holder), carrier: carrier ? carriers.get(carrier) : -1, size: parseFloat(st.fontSize), weight: Number(st.fontWeight) || 400, contrast,
+      x: box.left, y: box.top, w: box.width, h: box.height, text: text.trim().replace(/\s+/g, ' ').slice(0, 60) }); els.push({ el, parts });
   }
   return { rows, els };
 }
@@ -243,7 +259,7 @@ export function see(el, root, base, loaded, soften) {
   const list = () => {
     const rows = found.rows;
     $('.alike').innerHTML = `<div><h2>Look against role</h2><p>Pieces of text that are drawn exactly alike and are not the same kind of thing. This is what the reading says. No judge has checked it.</p></div>
-      ${found.findings.length ? `<ul class="finds">${found.findings.map((f, k) => { const [title, body] = SAID[f.kind](f, rows); return `<li><button type="button" data-find="${k}" aria-pressed="${k === pick}"><b>${title}</b><span>${esc(body)}</span><span>${f.odd.slice(0, 6).map((i) => `<em>${esc(rows[i].text)}</em>`).join(' · ')}${f.odd.length > 6 ? ` and ${f.odd.length - 6} more` : ''}</span><span>Drawn as: ${esc(rows[f.odd[0]].words)}</span></button></li>`; }).join('')}</ul>` : '<p>Nothing on this page looks like one thing and is another.</p>'}`;
+      ${found.findings.length ? `<ul class="finds">${found.findings.map((f, k) => { const [title, body] = SAID[f.kind](f, rows); return `<li><button type="button" data-find="${k}" aria-pressed="${k === pick}"><b>${title}</b><span>${esc(body)}</span><span>${f.odd.slice(0, 6).map((i) => `<em>${esc(rows[i].text)}</em>`).join(' · ')}${f.odd.length > 6 ? ` and ${f.odd.length - 6} more` : ''}</span><span>Drawn as: ${esc(rows[f.odd[0]].words)}, ${f.beside ? 'side by side with others drawn the same' : 'each on a line of its own'}</span></button></li>`; }).join('')}</ul>` : '<p>Nothing on this page looks like one thing and is another.</p>'}`;
   };
   const draw = () => {
     if (!tree) return;

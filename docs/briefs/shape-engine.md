@@ -216,6 +216,13 @@ from the seen picture alone (units that are alike and lined up), so a page with 
 *Not known:* how large a difference reads as "different" for any attribute. The review gives no numbers for
 likeness. "One step of the page's own scale" is plumber's convention, taken from its check on rows of a list.
 
+Added on 2026-11-27, after the owner judged the first four findings (journey entry 160). Two things decide which
+units are compared at all. A link that holds several pieces drawn differently is one thing to press, and only its
+loudest piece stands for it. A look is compared only among units that sit the same way. In the first cut "sit the
+same way" is two cases: side by side with others drawn the same, or each on a line of its own. It should come from
+the seen picture instead (the same box, the same kind of place in a group), and until it does this layer will keep
+needing one more rule per page. *Both are ours and have no source.*
+
 ## 15. Enclosed and joined
 
 Both are yes or no. A unit is enclosed by a drawn box when it lies inside it. Two units are joined when they share

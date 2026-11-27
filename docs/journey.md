@@ -7099,8 +7099,43 @@ into its own browser. Your app isn't changed.", then the findings.
   the page's text.
 - **Media hooks:** `http://rauno-21b-shadcn-as-he-saw-it.localhost:4420/__judge/?seen=1`, "Look against role".
 
+### 160. The first findings judged by the owner and two causes of noise fixed (2026-11-27)
+
+- **The itch:** the layer that compares how text looks with what it does had made four findings no judge had
+  marked. Rauno's reviews could say what it missed and could not say whether these four were noise.
+- **How we found it:** the owner looked at the four on their pages and agreed with this reading. One is real:
+  shadcn's three plain headings, drawn like the link headings today as they were when Rauno saw them. One is half
+  real: on Thamer's page the project names can be pressed and are drawn like the body text, though a list of rows
+  is a common way to say "press here" too. Two are noise.
+- **The system behind it:** the layer compared type and nothing else, and that failed in two ways. On Thamer's page
+  each row of the work list is one link, so every word in a row counted as something you can press, and two grey
+  section labels were set against the grey years and descriptions inside the rows. On Dima Belyaev's page a project
+  title was set against the tabs because both are 14px medium, though the tabs show what they are by sitting side
+  by side.
+- **What changed** (`bench/judged/alike.js`): a link that holds pieces drawn differently is one thing to press, and
+  only its loudest piece stands for it. A look is compared only among pieces that sit the same way, side by side
+  with others drawn the same or each on a line of its own. Words clipped away from the eye for a screen reader are
+  no longer read (`bench/judged/see.js`). The two rules are ours and have no source. "Loudest" is an order (larger,
+  then heavier, then further from what is behind it) that stands in until the loud layer of the spec exists.
+- **The proof:** the six pages again. The two noise findings are gone. The real one, the half real one and the
+  finding on the page as Rauno saw it all stay. The two pages that gave nothing still give nothing, so his menu
+  case is still missed.
+- **What the fix brought:** one new finding on Dima Belyaev's page. The month at the top of a calendar is a button
+  and is drawn like the three project titles. We read it as noise of the same family, since the month sits inside
+  the calendar's own box between two arrows. The owner has not judged it.
+- **A dead end, named:** one more rule for each noise finding. Where a piece sits (which box it is in, which group
+  it is part of) is what the seen picture is for, and this layer should take it from there. On that same page the
+  grouping still reads nothing, so that fault now stands in the way.
+- **Media hooks:** before and after pictures of the findings, kept out of git because they show other people's
+  sites: `docs/research/harvests/raunofreiberg-portfolio-reviews/local/four/` and `local/after/`.
+
 ## Open gaps
 
+- The layer that compares how text looks with what it does
+  ([entry 160](#160-the-first-findings-judged-by-the-owner-and-two-causes-of-noise-fixed-2026-11-27)) takes where a
+  piece sits from two rules of its own. It should take it from the seen picture: which box a piece is in and which
+  group it is part of. One finding waits on that (a calendar's month set against project titles), and on that page
+  the grouping reads nothing. Rauno's menu case is still missed, cause not found.
 - Plumber's page check reads nothing on a public site, because it judges only elements tied to an app's source
   ([entry 156](#156-plumber-reads-nothing-on-a-public-site-2026-11-26)). Until it can, an expert's review of a live
   site cannot be scored against it.

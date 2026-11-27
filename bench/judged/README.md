@@ -88,7 +88,9 @@ The same view has a second reading, "Look against role", the spec's layer on ali
 cut. `see.js` reads every piece of text with its look (face, size, weight, colour, underline) and its role (plain, a
 link to a page, a link down this page, a link away, a control). `alike.js`, pure, reports text drawn exactly like the
 things that can be pressed, things that can be pressed drawn exactly like plain text, and one row of look-alike links
-where some jump down the page and some open another. Nothing it says has been checked by a judge.
+where some jump down the page and some open another. A link that holds a whole row counts once, by its loudest
+piece, and a look is compared only among pieces that sit the same way (side by side, or each on its own line). The
+owner has judged its first four findings (journey entry 160). Nothing since has been checked by a judge.
 
 To test against a page as a reviewer saw it, make a set whose app is the web archive and whose screen path is the
 copy's address in its `if_` form, with `"scripts": false`: the copy is then served as a still. One exists locally
