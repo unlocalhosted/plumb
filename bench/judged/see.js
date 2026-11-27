@@ -29,7 +29,16 @@ export function read(win) {
     return known.get(s);
   };
   const apart = (a, b) => Math.max(Math.abs(a[0] - b[0]), Math.abs(a[1] - b[1]), Math.abs(a[2] - b[2]));
-  const push = (kind, el, parent, r, parts) => { units.push({ parent, kind, x: r.left, y: r.top, w: r.width, h: r.height }); els.push({ el, parts }); return units.length - 1; };
+  // A unit is what shows. A box that clips (a scroller, a carousel, a clamped paragraph) hides what lies past its
+  // edge, so each unit is cut down to the part inside every clipping box round it, and one wholly outside is not a
+  // unit. `cut` keeps how much was hidden on each side, and `clips` the boxes that did it.
+  const lay = [];  // every block's own left and right edge: the lines the layout has set
+  const push = (kind, el, parent, r, parts, clip) => {
+    const x0 = Math.max(r.left, clip.x0), y0 = Math.max(r.top, clip.y0), x1 = Math.min(r.left + r.width, clip.x1), y1 = Math.min(r.top + r.height, clip.y1);
+    if (kind === 'line' ? x1 - x0 <= 0 || y1 - y0 <= 0 : x1 - x0 < 3 || y1 - y0 < 3) return -1;
+    units.push({ parent, kind, x: x0, y: y0, w: x1 - x0, h: y1 - y0, cut: { l: x0 - r.left, r: r.left + r.width - x1, t: y0 - r.top, b: r.top + r.height - y1 } });
+    els.push({ el, parts, clips: clip.by }); return units.length - 1;
+  };
   const inline = (s) => s.display === 'inline' || s.display === 'contents';
   // the lines of text a block sets itself: its own text, and the text of what flows in its lines
   const ink = (el) => {
@@ -54,40 +63,51 @@ export function read(win) {
     for (const side of ['Top', 'Right', 'Bottom', 'Left']) if (edge(s, side, behind)) sides++;
     return fill || sides >= 3 || s.boxShadow !== 'none' || s.backgroundImage !== 'none' ? { fill: fill ? c : null } : null;
   };
-  const walk = (el, parent, behind) => {
+  const walk = (el, parent, behind, clip) => {
     for (const c of el.children) {
       if (NEVER.has(c.localName)) continue;
       const s = win.getComputedStyle(c), r = c.getBoundingClientRect(), big = r.width >= 3 && r.height >= 3;
+      // what this element hides of its own contents
+      let inner = clip;
+      const cx = s.overflowX !== 'visible', cy = s.overflowY !== 'visible';
+      if ((cx || cy) && s.display !== 'contents' && !inline(s)) {
+        const x0 = r.left + c.clientLeft, y0 = r.top + c.clientTop;
+        inner = { x0: cx ? Math.max(clip.x0, x0) : clip.x0, x1: cx ? Math.min(clip.x1, x0 + c.clientWidth) : clip.x1, y0: cy ? Math.max(clip.y0, y0) : clip.y0, y1: cy ? Math.min(clip.y1, y0 + c.clientHeight) : clip.y1, by: [...clip.by, { el: c, x: cx, y: cy }] };
+      }
+      if (big && !inline(s) && s.display !== 'contents') lay.push({ el: c, x0: r.left, x1: r.right });
       // parked above or left of the page, where no scrolling reaches it (a "skip to content" link at rest)
       if (big && (r.bottom + win.scrollY <= 0 || r.right + win.scrollX <= 0)) continue;
       // an element with no box of its own (display: contents) still shows what is inside it, and the browser's own
       // "is it visible" says no for it. One such wrapper round a whole app left the page read as empty.
       if (s.display !== 'contents' && c.checkVisibility?.({ checkOpacity: true, checkVisibilityCSS: true }) === false) continue;
-      if (PICTURE.has(c.localName)) { if (big) push('picture', c, parent, r); continue; }
+      if (PICTURE.has(c.localName)) { if (big) push('picture', c, parent, r, null, clip); continue; }
       let here = parent, back = behind;
       const some = (r.width >= 3 || r.height >= 3) && r.width > 0.5 && r.height > 0.5 && !inline(s);
       const d = some && drawn(s, behind);
       if (d) {
         // the page's own ground is not a box on it
         if (r.width >= vw * 0.95 && r.height >= tall * 0.95) back = d.fill ?? behind;
-        else if (Math.min(r.width, r.height) <= 2) push('line', c, parent, r);
-        else if (big) { here = push('box', c, parent, r); back = d.fill ?? behind; }
+        else if (Math.min(r.width, r.height) <= 2) push('line', c, parent, r, null, clip);
+        else if (big) { const at = push('box', c, parent, r, null, clip); if (at >= 0) { here = at; back = d.fill ?? behind; } }
       } else if (!inline(s) && (r.width >= 3 || r.height >= 3)) {
         // an edge drawn on one or two sides is a line: the rule under a row, the bar beside a quote
         const edges = ['Top', 'Right', 'Bottom', 'Left'].filter((side) => edge(s, side, behind));
         if (edges.length && edges.length <= 2) for (const side of edges) {
           const w = parseFloat(s[`border${side}Width`]);
           push('line', c, parent, side === 'Top' ? { left: r.left, top: r.top, width: r.width, height: w } : side === 'Bottom' ? { left: r.left, top: r.bottom - w, width: r.width, height: w }
-            : side === 'Left' ? { left: r.left, top: r.top, width: w, height: r.height } : { left: r.right - w, top: r.top, width: w, height: r.height });
+            : side === 'Left' ? { left: r.left, top: r.top, width: w, height: r.height } : { left: r.right - w, top: r.top, width: w, height: r.height }, null, clip);
         }
       }
       const parts = inline(s) ? null : ink(c);
-      if (parts) { const t = inkBox(parts); if (t.width >= 3 && t.height >= 3) push('text', c, here, t, parts); }
-      walk(c, here, back);
+      if (parts) { const t = inkBox(parts); if (t.width >= 3 && t.height >= 3) push('text', c, here, t, parts, inner); }
+      walk(c, here, back, inner);
     }
   };
-  walk(doc.body, -1, (() => { const b = colour(win.getComputedStyle(doc.body).backgroundColor); return b[3] >= 128 ? b : colour(win.getComputedStyle(doc.documentElement).backgroundColor)[3] >= 128 ? colour(win.getComputedStyle(doc.documentElement).backgroundColor) : [255, 255, 255, 255]; })());
-  return { units, els };
+  // the page itself hides what lies past its right edge when there is nowhere to scroll to
+  const wide = Math.max(doc.documentElement.scrollWidth, vw);
+  const page = { x0: -win.scrollX, x1: wide - win.scrollX, y0: -Infinity, y1: Infinity, by: [] };
+  walk(doc.body, -1, (() => { const b = colour(win.getComputedStyle(doc.body).backgroundColor); return b[3] >= 128 ? b : colour(win.getComputedStyle(doc.documentElement).backgroundColor)[3] >= 128 ? colour(win.getComputedStyle(doc.documentElement).backgroundColor) : [255, 255, 255, 255]; })(), page);
+  return { units, els, lay, vw };
 }
 // one box round every line of a block's text
 export function inkBox(parts) {
@@ -116,13 +136,14 @@ export function pieces(win, site, seen) {
     let to; try { to = real(new URL(raw, win.location.href)); } catch { return ['page', c]; }
     if (!/^https?:$/.test(to.protocol)) return ['leaves', c];
     if (to.host !== win.location.host && bare(to.host) !== home) return ['leaves', c];
-    return [to.hash && to.pathname.replace(/\/$/, '') === here.pathname.replace(/\/$/, '') ? 'jump' : 'page', c];
+    const same = to.pathname.replace(/\/$/, '') === here.pathname.replace(/\/$/, '');
+    return [same ? (to.hash ? 'jump' : 'here') : 'page', c];
   };
   // a line under the letters, however it is drawn: on the element, on what it flows inside, or as a bottom border
   const lined = (el) => {
     for (let e = el, n = 0; e && n < 6; e = e.parentElement, n++) {
       const st = win.getComputedStyle(e);
-      if (st.textDecorationLine.includes('underline') || (st.display === 'inline' && parseFloat(st.borderBottomWidth) > 0 && st.borderBottomStyle !== 'none')) return true;
+      if (st.textDecorationLine.includes('underline') || (st.display === 'inline' && ((parseFloat(st.borderBottomWidth) > 0 && st.borderBottomStyle !== 'none') || st.backgroundImage !== 'none' || st.boxShadow !== 'none'))) return true;
       if (st.display !== 'inline') break;
     }
     return false;
@@ -136,17 +157,28 @@ export function pieces(win, site, seen) {
     }
     return false;
   };
+  // drawn through a blend with what is behind: the colour the page asks for is not the colour that shows
+  const mixed = new Map(), blended = (el) => {
+    for (let e = el; e && e !== doc.body; e = e.parentElement) { if (!mixed.has(e)) mixed.set(e, win.getComputedStyle(e).mixBlendMode !== 'normal'); if (mixed.get(e)) return true; }
+    return false;
+  };
   for (const el of doc.body.querySelectorAll('*')) {
     if (NEVER.has(el.localName) || PICTURE.has(el.localName) || el.closest('svg')) continue;
     const parts = []; let text = '';
     for (const n of el.childNodes) if (n.nodeType === 3 && n.nodeValue.trim()) { const r = doc.createRange(); r.selectNodeContents(n); parts.push(r); text += ` ${n.nodeValue.trim()}`; }
     if (!parts.length || !/[\p{L}\p{N}]/u.test(text) || el.checkVisibility?.({ checkOpacity: true, checkVisibilityCSS: true }) === false) continue;
-    const box = inkBox(parts); if (box.width < 3 || box.height < 3 || unseen(el)) continue;
+    const box = inkBox(parts); if (box.width < 3 || box.height < 3 || unseen(el) || blended(el)) continue;
     const st = win.getComputedStyle(el), [role, carrier] = roleOf(el), under = lined(el);
     // a carrier with a fill or an outline of its own is a button: its letters are not compared with bare text
     const cs = carrier && win.getComputedStyle(carrier), boxed = cs && (colour(cs.backgroundColor)[3] >= 128 || parseFloat(cs.borderTopWidth) > 0);
     const ink = hex(colour(st.color)), family = st.fontFamily.split(',')[0].replace(/["']/g, '').trim();
-    const look = [family, st.fontSize, st.fontWeight, ink, under ? 'u' : '', st.textTransform, st.fontStyle, boxed ? `box${hex(colour(cs.backgroundColor))}` : ''].join('|');
+    // how strongly it is drawn: links at half strength beside labels at full are not drawn alike
+    let strength = 1; for (let e = el; e && e !== doc.body; e = e.parentElement) strength *= parseFloat(win.getComputedStyle(e).opacity);
+    // a mark that travels with it: an icon inside the link or the block, or something the page adds before or after
+    // the words (an arrow). Marked and unmarked text are not drawn alike either.
+    const home = carrier ?? el, added = (e, which) => { const c = win.getComputedStyle(e, which).content; return c && c !== 'none' && c !== 'normal' && c !== '""' && c !== "''"; };
+    const marked = !!home.querySelector('svg, img, picture') || [home, el].some((e) => added(e, '::before') || added(e, '::after'));
+    const look = [family, st.fontSize, st.fontWeight, ink, under ? 'u' : '', st.textTransform, st.fontStyle, boxed ? `box${hex(colour(cs.backgroundColor))}` : '', `s${Math.round(strength * 20)}`, marked ? 'm' : ''].join('|');
     const words = [`${Math.round(parseFloat(st.fontSize) * 10) / 10}px`, `weight ${st.fontWeight}`, ink, under ? 'underlined' : 'no underline', boxed ? 'in a box of its own' : ''].filter(Boolean).join(', ');
     if (carrier && !carriers.has(carrier)) carriers.set(carrier, carriers.size);
     // how far the letters stand off what is behind them (the usual contrast ratio). Only ever used to order pieces.
@@ -155,7 +187,7 @@ export function pieces(win, site, seen) {
     const lum = (c) => { const [r, g, b2] = c.slice(0, 3).map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b2; };
     const l1 = lum(colour(st.color)), l2 = lum(back), contrast = Math.round(((Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05)) * 10) / 10;
     rows.push({ look, words, role, carrier: carrier ? carriers.get(carrier) : -1, size: parseFloat(st.fontSize), weight: Number(st.fontWeight) || 400, contrast,
-      kind: 'text', unit: -1, scope: 'ground', row: -1, group: -1, text: text.trim().replace(/\s+/g, ' ').slice(0, 60) }); els.push({ el, parts });
+      kind: 'text', unit: -1, scope: 'ground', row: -1, group: -1, place: '', up: -1, text: text.trim().replace(/\s+/g, ' ').slice(0, 60) }); els.push({ el, parts });
   }
   // every drawn box of the seen picture, with the look of its frame (fill, outline, corners, shadow) and its role.
   // A box is pressable when it is a link or a control, is inside one, or holds one that covers nearly all of it.
@@ -163,14 +195,19 @@ export function pieces(win, site, seen) {
   seen?.units.forEach((u, i) => {
     if (u.kind !== 'box') return;
     const el = seen.els[i].el, st = win.getComputedStyle(el), area = u.w * u.h;
-    let [role] = roleOf(el);
+    let [role, carrier] = roleOf(el);
     if (role === 'plain') for (const c of el.querySelectorAll(CARRIER)) { const r = c.getBoundingClientRect(); if (r.width * r.height >= area * 0.8) { [role] = roleOf(c); break; } }
+    // a small box inside a large link (a tag on a card that is one link) is a part of that link, not a thing to press
+    else if (carrier && carrier !== el) { const r = carrier.getBoundingClientRect(); if (area < r.width * r.height * 0.8) role = 'part'; }
+    if (blended(el)) return;
     const raw = colour(st.backgroundColor), fill = raw[3] ? `${hex(raw)}${raw[3] < 250 ? `/${Math.round(raw[3] / 2.55)}%` : ''}` : '';
     const edge = parseFloat(st.borderTopWidth) > 0 && st.borderTopStyle !== 'none' ? `${Math.round(parseFloat(st.borderTopWidth) * 10) / 10}px ${hex(colour(st.borderTopColor))}` : '';
     const corner = Math.round(parseFloat(st.borderTopLeftRadius) || 0), shade = st.boxShadow !== 'none', picture = st.backgroundImage !== 'none';
-    const look = ['box', fill, edge, corner, shade ? 's' : '', picture ? 'i' : ''].join('|');
+    // a box drawn only by a picture behind it is a picture: two of them are not "drawn alike"
+    if (!fill && !edge && !shade) return;
+    const look = ['box', fill, edge, corner, shade ? 's' : '', picture ? `i${st.backgroundImage.length}:${st.backgroundImage.slice(0, 60)}` : ''].join('|');
     const words = [fill ? `filled ${fill}` : 'no fill', edge ? `outline ${edge}` : 'no outline', corner ? `${corner}px corners` : 'square corners', shade ? 'a shadow' : '', picture ? 'a picture or gradient behind' : ''].filter(Boolean).join(', ');
-    rows.push({ look, words, role, carrier: -1, size: 0, weight: 0, contrast: 0, kind: 'box', unit: i, scope: 'ground', row: -1, group: -1, text: (el.textContent ?? '').trim().replace(/\s+/g, ' ').slice(0, 40) || 'a box with no words' });
+    rows.push({ look, words, role, carrier: -1, size: 0, weight: 0, contrast: 0, kind: 'box', unit: i, scope: 'ground', row: -1, group: -1, place: '', up: -1, text: (el.textContent ?? '').trim().replace(/\s+/g, ' ').slice(0, 40) || 'a box with no words' });
     els.push({ el, parts: null });
   });
   return { rows, els };
@@ -296,11 +333,11 @@ const WAYS = { page: 'open another page of the site', jump: 'jump down this page
 const many = (n, one, more) => `${n} ${n === 1 ? one : more}`;
 const SAID = {
   'looks-pressable': (f, rows) => (rows[f.odd[0]].kind === 'box'
-    ? ['A box that looks pressable, and is not', `${many(f.odd.length, 'box is', 'boxes are')} drawn exactly like ${f.many.length} boxes that can be pressed. Nothing happens when you press ${f.odd.length === 1 ? 'it' : 'them'}.`]
-    : ['Looks pressable, and is not', `${many(f.odd.length, 'piece of text is', 'pieces of text are')} drawn exactly like ${f.many.length} things that can be pressed. Nothing happens when you press ${f.odd.length === 1 ? 'it' : 'them'}.`]),
+    ? ['Boxes drawn the same, and only some can be pressed', `${many(f.odd.length, 'box does', 'boxes do')} nothing when pressed and ${f.odd.length === 1 ? 'is' : 'are'} drawn exactly like ${f.many.length} that can be pressed.`]
+    : ['Drawn the same, and only some can be pressed', `${many(f.odd.length, 'piece of text does', 'pieces of text do')} nothing when pressed and ${f.odd.length === 1 ? 'is' : 'are'} drawn exactly like ${f.many.length} things that can be pressed.`]),
   'pressable-plain': (f, rows) => (rows[f.odd[0]].kind === 'box'
-    ? ['A box that can be pressed, and does not look it', `${many(f.odd.length, 'box that can be pressed is', 'boxes that can be pressed are')} drawn exactly like ${f.many.length} boxes that do nothing. At rest nothing says which is which.`]
-    : ['Can be pressed, and does not look it', `${many(f.odd.length, 'thing that can be pressed is', 'things that can be pressed are')} drawn exactly like ${f.many.length} pieces of plain text. At rest nothing says which is which.`]),
+    ? ['Boxes drawn the same, and only some can be pressed', `${many(f.odd.length, 'box can', 'boxes can')} be pressed and ${f.odd.length === 1 ? 'is' : 'are'} drawn exactly like ${f.many.length} that do nothing. At rest nothing says which is which.`]
+    : ['Drawn the same, and only some can be pressed', `${many(f.odd.length, 'thing can', 'things can')} be pressed and ${f.odd.length === 1 ? 'is' : 'are'} drawn exactly like ${f.many.length} pieces of plain text. At rest nothing says which is which.`]),
   'one-set-two-ways': (f, rows) => {
     const jumps = [...f.many, ...f.odd].filter((i) => rows[i].role === 'jump').length, rest = f.many.length + f.odd.length - jumps;
     return ['One row of links, two kinds', `These links sit together and look the same. ${many(jumps, 'jumps', 'jump')} down this page and ${many(rest, 'opens', 'open')} another page.`];
@@ -336,7 +373,8 @@ export function see(el, root, base, loaded, soften) {
     <main class="desk two">
       <div class="view"><div class="stage"><iframe title="The page being read"></iframe><div class="layer"><div class="seen"></div></div></div></div>
       <aside class="side">
-        <div class="modes"><button type="button" class="chip" data-mode="groups" aria-pressed="true">Groups</button><button type="button" class="chip" data-mode="alike" aria-pressed="false">Look against role</button><button type="button" class="chip" data-mode="near" aria-pressed="false">Space against belonging</button><button type="button" class="chip" data-mode="even" aria-pressed="false">Rhythm and edges</button></div>
+        <div class="modes"><button type="button" class="chip" data-mode="groups" aria-pressed="true">Groups</button><button type="button" class="chip" data-mode="alike" aria-pressed="false">Look against role</button><button type="button" class="chip" data-mode="near" aria-pressed="false">Space against belonging</button><button type="button" class="chip" data-mode="even" aria-pressed="false">Rhythm and edges</button><button type="button" class="chip" data-mode="held" aria-pressed="false">Boxes and what they hold</button></div>
+        <div class="pane held" hidden></div>
         <div class="pane even" hidden></div>
         <div class="pane alike" hidden></div>
         <div class="pane near" hidden></div>
@@ -360,7 +398,7 @@ export function see(el, root, base, loaded, soften) {
   const frame = $('iframe'), layer = $('.layer'), seen = $('.seen'), stage = $('.stage'), view = $('.view');
   const screen = set.screens.find((s) => s.id === new URL(location.href).searchParams.get('screen')) ?? set.screens[0];
   let scale = 1, got = null, tree = null, flat = [], level = 1, units = false, over = null, held = false;
-  let mode = 'groups', found = null, pick = null, spaced = [], npick = null, agreeing = false, moved = 0, evens = [], epick = null;
+  let mode = 'groups', found = null, pick = null, spaced = [], npick = null, agreeing = false, moved = 0, evens = [], epick = null, boxed = [], hpick = null;
 
   const fit = () => {
     const w = screen?.width ?? set.width ?? 1440, room = view.clientWidth - 32, tallness = view.clientHeight - 32;
@@ -369,7 +407,12 @@ export function see(el, root, base, loaded, soften) {
   };
   // where a node is now: the page may have scrolled since it was read
   const nowOf = (n) => {
-    if (n.type === 'unit' || n.type === 'box') { const { el: e, parts } = got.els[n.unit]; const r = parts ? inkBox(parts) : e.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height }; }
+    if (n.type === 'unit' || n.type === 'box') {
+      const { el: e, parts, clips } = got.els[n.unit]; const r = parts ? inkBox(parts) : e.getBoundingClientRect();
+      let x0 = r.left, y0 = r.top, x1 = r.left + r.width, y1 = r.top + r.height;
+      for (const c of clips ?? []) { const b = c.el.getBoundingClientRect(); if (c.x) { x0 = Math.max(x0, b.left + c.el.clientLeft); x1 = Math.min(x1, b.left + c.el.clientLeft + c.el.clientWidth); } if (c.y) { y0 = Math.max(y0, b.top + c.el.clientTop); y1 = Math.min(y1, b.top + c.el.clientTop + c.el.clientHeight); } }
+      return { x: x0, y: y0, w: Math.max(0, x1 - x0), h: Math.max(0, y1 - y0) };
+    }
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
     for (const c of n.children) { const r = nowOf(c); if (!r.w) continue; x0 = Math.min(x0, r.x); y0 = Math.min(y0, r.y); x1 = Math.max(x1, r.x + r.w); y1 = Math.max(y1, r.y + r.h); }
     return x1 < x0 ? { x: 0, y: 0, w: 0, h: 0 } : { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
@@ -386,7 +429,7 @@ export function see(el, root, base, loaded, soften) {
   const list = () => {
     const rows = found.rows;
     $('.alike').innerHTML = `<div><h2>Look against role</h2><p>Pieces of text that are drawn exactly alike and are not the same kind of thing. This is what the reading says. No judge has checked it.</p></div>
-      ${found.findings.length ? `<ul class="finds">${found.findings.map((f, k) => { const [title, body] = SAID[f.kind](f, rows); return `<li><button type="button" data-find="${k}" aria-pressed="${k === pick}"><b>${title}</b><span>${esc(body)}</span><span>${f.odd.slice(0, 6).map((i) => `<em>${esc(rows[i].text)}</em>`).join(' · ')}${f.odd.length > 6 ? ` and ${f.odd.length - 6} more` : ''}</span><span>Drawn as: ${esc(rows[f.odd[0]].words)}, ${f.beside ? 'side by side with others drawn the same' : 'each on a line of its own'}, ${f.scope === 'ground' ? 'on the page itself' : 'inside boxes'}</span></button></li>`; }).join('')}</ul>` : '<p>Nothing on this page looks like one thing and is another.</p>'}`;
+      ${found.findings.length ? `<ul class="finds">${found.findings.map((f, k) => { const [title, body] = SAID[f.kind](f, rows); return `<li><button type="button" data-find="${k}" aria-pressed="${k === pick}"><b>${f.firm ? '' : 'Worth a look: '}${title}</b><span>${esc(body)}</span><span>${f.odd.slice(0, 6).map((i) => `<em>${esc(rows[i].text)}</em>`).join(' · ')}${f.odd.length > 6 ? ` and ${f.odd.length - 6} more` : ''}</span><span>Drawn as: ${esc(rows[f.odd[0]].words)}, ${f.beside ? 'side by side with others drawn the same' : 'each on a line of its own'}, ${f.scope === 'ground' ? 'on the page itself' : 'inside boxes'}</span></button></li>`; }).join('')}</ul>` : '<p>Nothing on this page looks like one thing and is another.</p>'}`;
   };
   // space against belonging: the gap between two groups, and the largest gap inside one
   const SPACE = { opposite: ['Space says the opposite', 't-odd'], nearly: ['Space does not say where a group ends', 't-near'], agree: ['Space agrees', 't-agree'] };
@@ -459,8 +502,29 @@ export function see(el, root, base, loaded, soften) {
       <p>${evens.filter((e) => e.v.firm).length} firm, off by 4px or less. ${evens.filter((e) => !e.v.firm).length} only worth a look.</p>
       ${evens.length ? `<ul class="finds">${evens.map((e, n) => { const [title, most, off] = EVEN[e.what]; return `<li><button type="button" data-even="${n}" aria-pressed="${n === epick}"><b>${e.v.firm ? '' : 'Worth a look: '}${title}</b><span>${most(e)} ${e.v.slips.length === 1 ? 'One is' : `${e.v.slips.length} are`} off: ${e.v.slips.slice(0, 3).map(off).join(', ')}.</span><span>${e.v.slips.slice(0, 3).map((o) => `<em>${esc(words(e.members[o.at]))}</em>`).join(' · ')}</span><span>${e.axis === 'y' ? 'A column' : 'A row'} of ${e.members.length} ${e.what === 'edge' ? 'things of more than one kind' : 'like things'}</span></button></li>`; }).join('')}</ul>` : '<p>Nothing here almost agrees.</p>'}`;
   };
+  // boxes and what they hold: a thing cut off where nothing is drawn, text that runs past its box
+  const HELD = { cut: 'Cut off where nothing is drawn', sliced: 'A line of text cut through', spill: 'Text runs past its box' };
+  const leaf = (i) => ({ type: 'unit', unit: i, rect: { x: got.units[i].x, y: got.units[i].y, w: got.units[i].w, h: got.units[i].h } });
+  const drawHeld = () => {
+    const html = [];
+    boxed.forEach((h, n) => {
+      if (hpick !== null && hpick !== n) return;
+      const rs = h.units.map((i) => nowOf(leaf(i))).filter((r) => r.w);
+      rs.forEach((r) => html.push(`<div class="g t-odd odd" style="left:${r.x - 3}px;top:${r.y - 3}px;width:${r.w + 6}px;height:${r.h + 6}px"></div>`));
+      if (hpick === null || !rs.length) return;
+      if (h.kind === 'cut') { const y0 = Math.min(...rs.map((r) => r.y)), y1 = Math.max(...rs.map((r) => r.y + r.h)), b = h.el.getBoundingClientRect(), x = h.side === 'r' ? b.left + h.el.clientLeft + h.el.clientWidth : b.left + h.el.clientLeft; html.push(`<div class="gap t-odd" style="left:${x - 1}px;top:${y0 - 12}px;width:2px;height:${y1 - y0 + 24}px"></div>`); }
+      if (h.box !== undefined) { const r = nowOf(leaf(h.box)); if (r.w) html.push(`<div class="g t-run leaf" style="left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px"></div>`); }
+    });
+    seen.innerHTML = html.join('');
+  };
+  const listHeld = () => {
+    $('.held').innerHTML = `<div><h2>Boxes and what they hold</h2><p>A thing cut off at a place where the page has drawn no edge and set no line, and text that runs out of the box it is in. No judge has checked this.</p></div>
+      <p>${boxed.filter((h) => h.tier === 'claim').length} firm. ${boxed.filter((h) => h.tier !== 'claim').length} only worth a look.</p>
+      ${boxed.length ? `<ul class="finds">${boxed.map((h, n) => `<li><button type="button" data-held="${n}" aria-pressed="${n === hpick}"><b>${h.tier === 'claim' ? '' : 'Worth a look: '}${HELD[h.kind]}</b><span>${esc(h.say)}</span><span>${h.units.slice(0, 3).map((i) => `<em>${esc(words(leaf(i)))}</em>`).join(' · ')}</span></button></li>`).join('')}</ul>` : '<p>Nothing is cut off or runs past its box.</p>'}`;
+  };
   const draw = () => {
     if (!tree) return;
+    if (mode === 'held') return drawHeld();
     if (mode === 'even') return drawEven();
     if (mode === 'alike') return drawAlike();
     if (mode === 'near') return drawNear();
@@ -500,10 +564,20 @@ export function see(el, root, base, loaded, soften) {
     // where each piece sits, from the seen picture: the block of text it is part of, then that block's place
     const blocks = new Map(), where = places(tree, got.units);
     got.units.forEach((u, i) => { if (u.kind === 'text') blocks.set(got.els[i].el, i); });
+    // which block of text leads a group: the first thing, reading from the top left, of a part that holds several
+    const heads = new Map(), firstOf = (n) => { while (n.children?.length) n = n.children[0]; return n.unit; };
+    // A split inside a split along the same direction is one column, so every group in it, however deep, is a
+    // sister of the others: the number given is the outermost column's.
+    let cols = 0;
+    const lead = (n, above) => {
+      const axis = n.type === 'box' ? n.how?.axis : n.axis, col = !axis ? above : n.type !== 'box' && above && above.axis === axis ? above : { id: cols++, axis };
+      for (const c of n.children ?? []) { if (axis && unitsIn(c).length >= 2) { const u = firstOf(c); (heads.get(u) ?? heads.set(u, []).get(u)).push(col.id); } lead(c, col); }
+    };
+    lead(tree, null);
     found.rows.forEach((row, i) => {
       if (row.kind === 'box') { const at = where.get(row.unit); if (at) Object.assign(row, at); return; }
       let e = found.els[i].el; while (e && !blocks.has(e)) e = e.parentElement;
-      const at = e && where.get(blocks.get(e)); if (at) Object.assign(row, { unit: blocks.get(e), scope: at.scope, row: at.row, group: at.group });
+      const at = e && where.get(blocks.get(e)); if (at) Object.assign(row, { unit: blocks.get(e), scope: at.scope, row: at.row, group: at.group, place: at.place, up: at.up, heads: heads.get(blocks.get(e)) ?? [] });
     });
     found.findings = judge(found.rows); pick = null; list();
     spaced = runs(tree, got.units).flatMap((run) => belongs(run, got).map((b) => {
@@ -548,10 +622,55 @@ export function see(el, root, base, loaded, soften) {
     // one slip, said once: the column's edge is left out where the like things in it already say the same
     evens = evens.filter((e) => e.what !== 'edge' || !evens.some((o) => o.what === 'left' && e.v.slips.every((x) => o.v.slips.some((y) => o.members[y.at] === e.members[x.at]))));
     evens.sort((a, b) => Number(b.v.firm) - Number(a.v.firm)); epick = null;
+    // boxes and what they hold
+    const boxAt = new Map(); got.units.forEach((u, i) => { if (u.kind === 'box') boxAt.set(got.els[i].el, i); });
+    boxed = [];
+    const inEdge = (k, side) => { const b = k.el.getBoundingClientRect(); return side === 'r' ? b.left + k.el.clientLeft + k.el.clientWidth : b.left + k.el.clientLeft; };
+    const cuts = new Map();
+    got.units.forEach((u, i) => {
+      if (u.kind === 'line' || u.w < 8) return;
+      for (const side of ['l', 'r']) {
+        if (u.cut[side] < 8) continue;
+        const c = [...got.els[i].clips].reverse().find((k) => k.x && Math.abs(inEdge(k, side) - (side === 'r' ? u.x + u.w : u.x)) <= 1);
+        if (c) (cuts.get(c.el) ?? cuts.set(c.el, { el: c.el, l: [], r: [] }).get(c.el))[side].push(i);
+      }
+    });
+    for (const rec of cuts.values()) for (const side of ['l', 'r']) {
+      if (!rec[side].length) continue;
+      const el = rec.el, s = win.getComputedStyle(el), edge = inEdge(rec, side);
+      // fine: the edge is the clipping box's own drawn edge, or a drawn box round it ends there; the cut is faded
+      // out; it is the window's edge; or it is a line the layout has set, where two or more other blocks begin or end
+      let drawnThere = boxAt.has(el);
+      for (let a = el.parentElement; a && !drawnThere; a = a.parentElement) if (boxAt.has(a)) { const r = a.getBoundingClientRect(); drawnThere = Math.abs(r.left - edge) <= 2 || Math.abs(r.right - edge) <= 2; }
+      if (drawnThere || [s.maskImage, s.webkitMaskImage].some((m) => m && m !== 'none') || edge <= 1 || edge >= got.vw - 1) continue;
+      const tally = new Map(); for (const o of got.lay) if (!o.el.contains(el) && !el.contains(o.el)) for (const x of [o.x0, o.x1]) tally.set(Math.round(x), (tally.get(Math.round(x)) ?? 0) + 1);
+      let on = 0, close = Infinity; for (const [x, n] of tally) { if (Math.abs(x - edge) <= 1) on += n; else if (n >= 2) close = Math.min(close, Math.abs(x - edge)); }
+      if (on >= 2) continue;
+      const n = rec[side].length;
+      boxed.push({ kind: 'cut', tier: 'note', units: rec[side], side, el, say: `${n === 1 ? 'One thing is' : `${n} things are`} cut off on the ${side === 'r' ? 'right' : 'left'}, at a place where the page draws no edge and no other block begins or ends.${close <= 8 ? ` The nearest line the layout has set is ${Math.round(close)}px away.` : ''}` });
+    }
+    got.units.forEach((u, i) => {
+      if (u.kind !== 'text') return;
+      const el = got.els[i].el, st = win.getComputedStyle(el);
+      const c = [...got.els[i].clips].reverse().find((k) => k.y), over = c && win.getComputedStyle(c.el).overflowY;
+      if (u.cut.b > 2 && u.h >= 8 && (over === 'hidden' || over === 'clip')) {
+        const lh = parseFloat(st.lineHeight) || parseFloat(st.fontSize) * 1.2, part = u.cut.b % lh;
+        if (part > 2 && part < lh - 2) boxed.push({ kind: 'sliced', tier: 'note', units: [i], say: 'The box this text is in ends part of the way through a line.' });
+      }
+      let b = el, flow = true;
+      while (b && !boxAt.has(b)) { const p = win.getComputedStyle(b).position; if (p === 'absolute' || p === 'fixed') flow = false; b = b.parentElement; }
+      if (!b || !flow) return;
+      const bx = got.units[boxAt.get(b)];
+      // sideways, a line's box is its letters. Up and down it is the line's height, which is often taller than a
+      // small box whose letters still fit, so only more than half a line counts there
+      const lh2 = parseFloat(st.lineHeight) || parseFloat(st.fontSize) * 1.2, across = Math.max(bx.x - u.x, u.x + u.w - bx.x - bx.w), down = Math.max(bx.y - u.y, u.y + u.h - bx.y - bx.h);
+      if (across > 2 || down > lh2 * 0.6) boxed.push({ kind: 'spill', tier: 'claim', units: [i], box: boxAt.get(b), say: `This text runs ${Math.round(Math.max(across, down))}px past the box it is in.` });
+    });
+    boxed.sort((a, b) => Number(b.tier === 'claim') - Number(a.tier === 'claim')); hpick = null;
     // A second look six seconds on. A tile that cycles through its own contents is not a page at rest, and a
     // finding read off it is about one frame. A finding is left out, and counted, when a thing it rests on has
     // gone, or is no longer where it was or the size it was. A clock ticking inside its own box changes nothing.
-    if (spaced.some((s) => s.tier !== 'agree') || evens.length) {
+    if (spaced.some((s) => s.tier !== 'agree') || evens.length || boxed.length) {
       $('.tally').textContent = 'Looking once more, to leave out anything that is still changing.';
       const before = win.scrollY; await new Promise((f) => setTimeout(f, 6000));
       let shifted = false;
@@ -562,13 +681,13 @@ export function see(el, root, base, loaded, soften) {
         shifted = true; return false;
       };
       const kept = spaced.filter((s) => s.tier === 'agree' || [s.v.between, s.v.inside].every((k) => [s.run.items[k], s.run.items[k + 1]].every((n) => rests(n) && !turned(n))));
-      const firmly = evens.filter((e) => e.members.every(rests));
+      const firmly = evens.filter((e) => e.members.every(rests)), holding = boxed.filter((h) => h.units.every((i) => rests(leaf(i))));
       // things had not finished settling when the page was read (a late picture pushes everything down): read again
       if (shifted && attempt < 2) return again(attempt + 1);
-      moved = spaced.length - kept.length + evens.length - firmly.length; spaced = kept; evens = firmly;
+      moved = spaced.length - kept.length + evens.length - firmly.length + boxed.length - holding.length; spaced = kept; evens = firmly; boxed = holding;
     } else moved = 0;
-    listEven();
-    window.__seen = { got, tree, found, spaced, words, moved, evens };
+    listEven(); listHeld();
+    window.__seen = { got, tree, found, spaced, words, moved, evens, held: boxed };
     const rank = { claim: 0, note: 1, agree: 2 }; spaced.sort((a, b) => rank[a.tier] - rank[b.tier] || a.v.r - b.v.r); npick = null; listNear();
     const count = (k) => got.units.filter((u) => u.kind === k).length;
     $('.tally').textContent = `${count('text')} blocks of text, ${count('picture')} pictures, ${count('box')} drawn boxes and ${count('line')} lines, read at ${win.innerWidth} wide.${settled ? '' : ' The page was still moving after 8 seconds, so it was read as it stood.'}`;
@@ -619,7 +738,12 @@ export function see(el, root, base, loaded, soften) {
   layer.addEventListener('pointerleave', () => { over = null; draw(); });
   $('.side').addEventListener('click', (e) => {
     const l = e.target.closest('[data-level]'), u = e.target.closest('[data-units]'), m = e.target.closest('[data-mode]'), f = e.target.closest('[data-find]');
-    const nr = e.target.closest('[data-near]'), ev = e.target.closest('[data-even]');
+    const nr = e.target.closest('[data-near]'), ev = e.target.closest('[data-even]'), hd = e.target.closest('[data-held]');
+    if (hd) {
+      hpick = hpick === Number(hd.dataset.held) ? null : Number(hd.dataset.held); listHeld();
+      if (hpick !== null) got.els[boxed[hpick].units[0]].el.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
+      return draw();
+    }
     if (ev) {
       epick = epick === Number(ev.dataset.even) ? null : Number(ev.dataset.even); listEven();
       if (epick !== null) { const x = evens[epick], m = x.members[x.v.slips[0].at]; got.els[unitsIn(m)[0]].el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
@@ -634,7 +758,7 @@ export function see(el, root, base, loaded, soften) {
     if (m) {
       mode = m.dataset.mode;
       for (const b of root.querySelectorAll('[data-mode]')) b.setAttribute('aria-pressed', String(b.dataset.mode === mode));
-      $('.pane.alike').hidden = mode !== 'alike'; $('.pane.groups').hidden = mode !== 'groups'; $('.pane.near').hidden = mode !== 'near'; $('.pane.even').hidden = mode !== 'even';
+      $('.pane.alike').hidden = mode !== 'alike'; $('.pane.groups').hidden = mode !== 'groups'; $('.pane.near').hidden = mode !== 'near'; $('.pane.even').hidden = mode !== 'even'; $('.pane.held').hidden = mode !== 'held';
       return draw();
     }
     if (f && found) {

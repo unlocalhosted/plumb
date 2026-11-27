@@ -224,6 +224,11 @@ Sets are found from the meant picture first (the children of one list, the insta
 from the seen picture alone (units that are alike and lined up), so a page with no source still has sets.
 
 *Stands on:* likeness adds to nearness as evidence of belonging (Kubovy and van den Berg 2008, in the 2012 review).
+Changed on 2026-11-27 after the findings on eighteen pages were looked at (journey entry 168). The look of text
+also holds how strongly it is drawn and whether a mark travels with it. A finding is firm only when the odd ones
+stand in one row or column with the others, or each leads one of a set of sister groups. Boxes are compared by
+their frame and are never firm. *Ours.*
+
 *Not known:* how large a difference reads as "different" for any attribute. The review gives no numbers for
 likeness. "One step of the page's own scale" is plumber's convention, taken from its check on rows of a list.
 
@@ -249,6 +254,13 @@ review).
 *Not known:* which wins when enclosure and nearness disagree. The review does not say, and adds that grouping cues
 "sometimes combine additively, sometimes nonadditively". This spec does not rank them: where two cues disagree
 about a grouping, that disagreement is itself reported as nearly.
+
+Added on 2026-11-27 with the first cut (journey entry 168). A unit is what shows: it is cut down to the part inside
+every clipping box round it. Two readings are built. Text that runs past the drawn box it is in is firm, sideways
+by more than 2px or up and down by more than half a line. A thing cut off where the page draws no edge and the
+layout has set no line is only shown as worth a look, because a cropped picture of a product is cut on purpose and
+the page does not say which it is. "A drawn box whose content is not one thing" is not built: it needs the meant
+picture from source. *The thresholds are ours.*
 
 ## 16. Nearly regular
 

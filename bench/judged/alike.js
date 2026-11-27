@@ -1,7 +1,9 @@
 // Alike against same role (docs/briefs/shape-engine.md, section 14, first cut): pieces of text that look exactly the
 // same and are not the same kind of thing. Pure: plain rows in, findings out.
 //
-//   judge(pieces)  pieces: [{ look, role, text, carrier, size, weight, contrast, unit, scope, row, group }]
+//   judge(pieces)  pieces: [{ look, role, text, carrier, size, weight, contrast, unit, scope, row, group, heads }]
+//                    heads  the rows and columns of the seen picture in which this piece is the first thing of a
+//                           group of several (what a heading is to its section), as numbers
 //                    look  everything drawn about the piece's letters, as one string (see.js builds it)
 //                    role  what the page is built to do with it: 'plain' | 'page' (a link to another page of the site)
 //                          | 'jump' (a link down this page) | 'leaves' (a link to another site) | 'control'
@@ -10,7 +12,7 @@
 //                    unit, scope, row, group  where it sits in the seen picture (seen.js, places): the block of text
 //                            it is part of, the kind of ground that block is on, the row it stands in, and the
 //                            row or column it stands in, each a number or -1
-//                  → findings: [{ kind, odd: [row numbers], many: [row numbers], look, beside, scope }]
+//                  → findings: [{ kind, odd: [row numbers], many: [row numbers], look, beside, scope, firm }]
 //                    beside  true when the pieces sit side by side with others drawn the same, false when each is
 //                            on a line of its own
 //                    'looks-pressable'  text drawn exactly like the things that can be pressed, and it cannot
@@ -34,6 +36,9 @@
 
 const LEAST = 3;
 const pressable = (role) => role !== 'plain';
+// not compared with anything: a part of a larger link, and a link to the page you are already on (it is drawn as
+// "you are here", which is its own meaning)
+const out = (role) => role === 'part' || role === 'here';
 
 const push = (map, key, v) => (map.get(key) ?? map.set(key, []).get(key)).push(v);
 
@@ -63,7 +68,20 @@ function beside(pieces, rows) {
 
 export function judge(pieces) {
   const findings = [], looks = new Map(), part = parts(pieces);
-  pieces.forEach((p, i) => { if (!part.has(i)) push(looks, p.look, i); });
+  pieces.forEach((p, i) => { if (!part.has(i) && !out(p.role)) push(looks, p.look, i); });
+  // a link whose letters are set one by one is one thing to press, not nine
+  const things = (rows) => { const seen = new Set(); return rows.filter((i) => { const c = pieces[i].carrier; if (c < 0) return true; if (seen.has(c)) return false; seen.add(c); return true; }); };
+  // Firm only when the odd ones stand with the others. A name drawn like the project titles further down is the
+  // same look in another place, and is only worth a look. Boxes are never firm: a frame alone says too little
+  // about what is inside it. Two of the first three findings called firm on a looser rule were wrong when looked at.
+  const firm = (odd, many) => {
+    if (pieces[odd[0]].kind === 'box') return false;
+    // side by side in one row or column of the seen picture: a button among plain facts in one footer line
+    const together = odd.every((i) => pieces[i].group >= 0 && many.some((j) => pieces[j].group === pieces[i].group));
+    // or each leading one of a set of sister groups: a heading that is not a link among headings that are
+    const sisters = odd.every((i) => pieces[i].heads?.length && many.some((j) => pieces[j].heads?.some((r) => pieces[i].heads.includes(r))));
+    return together || sisters;
+  };
   const settings = [];
   for (const [look, every] of looks) {
     const scopes = new Map();
@@ -75,10 +93,11 @@ export function judge(pieces) {
   }
   for (const [look, rows, side, scope] of settings) {
     if (rows.length < LEAST) continue;
-    const press = rows.filter((i) => pressable(pieces[i].role)), plain = rows.filter((i) => !pressable(pieces[i].role));
+    const press = things(rows.filter((i) => pressable(pieces[i].role))), plain = rows.filter((i) => !pressable(pieces[i].role));
+    if (press.length + plain.length < LEAST) continue;
     // one look, two kinds of thing: the fewer are the odd ones. A tie is left alone: nothing says which is meant.
-    if (press.length >= 2 && plain.length && plain.length < press.length) findings.push({ kind: 'looks-pressable', odd: plain, many: press, look, beside: side, scope });
-    else if (plain.length >= 2 && press.length && press.length < plain.length) findings.push({ kind: 'pressable-plain', odd: press, many: plain, look, beside: side, scope });
+    if (press.length >= 2 && plain.length && plain.length < press.length) findings.push({ kind: 'looks-pressable', odd: plain, many: press, look, beside: side, scope, firm: firm(plain, press) });
+    else if (plain.length >= 2 && press.length && press.length < plain.length) findings.push({ kind: 'pressable-plain', odd: press, many: plain, look, beside: side, scope, firm: firm(press, plain) });
     // one row of links that look the same and act differently
     const sets = new Map();
     // a set is what the seen picture shows as one row or one column: links in separate blocks, standing together
@@ -93,7 +112,7 @@ export function judge(pieces) {
       for (const i of members) (ways.get(way(pieces[i].role)) ?? ways.set(way(pieces[i].role), []).get(way(pieces[i].role))).push(i);
       if (ways.size < 2) continue;
       const sorted = [...ways.values()].sort((a, b) => b.length - a.length);
-      findings.push({ kind: 'one-set-two-ways', odd: sorted.slice(1).flat(), many: sorted[0], look, beside: side, scope });
+      findings.push({ kind: 'one-set-two-ways', odd: sorted.slice(1).flat(), many: sorted[0], look, beside: side, scope, firm: true });
     }
   }
   return findings;

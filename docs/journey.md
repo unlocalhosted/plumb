@@ -7392,6 +7392,40 @@ into its own browser. Your app isn't changed.", then the findings.
 - **The numbers:** 1px, 4px and 8px. None is published. They follow plumber's own check on list rows.
 - **Media hooks:** `http://rauno-21-shadcn-com.localhost:4420/__judge/?seen=1`, "Rhythm and edges".
 
+### 168. Boxes and what they hold; look against role judged again on more pages (2026-11-27)
+
+- **The itch:** two things at once. The spec's layer on enclosure was not started. And the look-against-role layer
+  had only ever been looked at on six pages; run on eighteen it made about twenty findings nobody had checked.
+- **The seen picture first:** a unit is now what shows. A box that clips (a scroller, a carousel, a clamped
+  paragraph) hides what lies past its edge, so every unit is cut down to the part inside each clipping box round
+  it, and one wholly outside is no unit. Before this a carousel of fifteen pictures counted as fifteen things in a
+  row when two could be seen.
+- **Enclosure, first cut** (`bench/judged/see.js`, reading "Boxes and what they hold"): text that runs past the
+  drawn box it is in, and a thing cut off at a place where the page draws no edge and no other block begins or
+  ends. A cut that is faded out, or lands on a drawn edge, the window's edge or a line the layout has set, is
+  fine.
+- **What looking showed, for enclosure:** five "text runs 3px past its box" were a line's height being taller than
+  a small label whose letters fit. Up and down, only more than half a line now counts. The two cut findings are
+  inside a tile that shows a cropped product screen, which may be the intent, so every cut is shown as worth a
+  look and none is firm. On sixteen pages enclosure makes no firm finding. It does not find Rauno's cut-off row
+  of tiles: that row is cut by the window, not by a box.
+- **What looking showed, for look against role:** two of the first three findings called firm were wrong.
+  On one page the links are drawn at half strength and the labels at full. On another every link carries a small
+  arrow. The look now includes how strongly a thing is drawn and whether a mark travels with it (an icon inside
+  the link, or something the page adds before or after the words), and an underline drawn as a background or a
+  shadow counts as an underline. Also fixed: a link to the page you are on is "you are here" and is compared with
+  nothing; a link whose letters are set one by one is one thing, not nine; a tag inside a card that is one link
+  is a part of that link; a box drawn only by a picture behind it is a picture; text drawn through a blend is
+  left out, since its colour is not the colour that shows.
+- **Firm is now hard to earn:** the odd ones must stand in one row or column with the others, or each must lead
+  one of a set of sister groups, as a heading leads its section. Boxes are never firm. The wording no longer
+  says which side is at fault: "drawn the same, and only some can be pressed".
+- **What is left on eighteen pages:** four firm. Shadcn's three headings, on the page today and as Rauno saw it.
+  On Montek Singh Kundan's page five links inside one sentence are drawn exactly like the sentence. On Shubhransh's
+  page one menu item jumps down the page and four open another. Nine more are worth a look, among them Rauno's own
+  point about the cards on his Craft page, which rests on a frame alone and so cannot be firm.
+- **Media hooks:** `http://rauno-08-montek-dev.localhost:4420/__judge/?seen=1`, "Look against role".
+
 ## Open gaps
 
 - Of the five comparisons in the engine spec, two have a first cut: "alike", for whether a thing looks pressable

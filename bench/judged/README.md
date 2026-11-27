@@ -106,6 +106,10 @@ A fourth reading, "Rhythm and edges", is the spec's "nearly regular": sets of li
 that almost share an edge, a size or a gap (`kinds` in `see.js` says what is like what; `regular.js`, pure, judges
 one attribute of one set).
 
+A fifth reading, "Boxes and what they hold", is the spec's layer on enclosure in its first cut: text that runs
+past its drawn box, and things cut off where the page draws no edge. The seen picture keeps only what shows: every
+unit is cut down to the part inside the clipping boxes round it.
+
 Every reading is taken twice, six seconds apart, and a finding that rests on something that moved or changed size
 is left out: a tile that cycles through its own contents is not a page at rest.
 

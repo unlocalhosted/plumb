@@ -101,17 +101,26 @@ export function grow(units) {
 //   row    a number when the first split above it is a row (things side by side), the same number for everything
 //          in that row; -1 when it stands in a column, in a pile or alone
 //   group  the same, for a row or a column: the number of the first split above it, or -1 in a pile or alone
+//   place  the kind of place it has there: the direction of that split, and whether it leads it, ends it or
+//          sits in the middle ("y:lead" is what a heading over its section has)
+//   up     the number of the whole column or row that split is part of: two things that each lead a group, with
+//          one `up`, lead sister groups of one column
 export function places(tree, units) {
   const out = new Map(); let id = 0;
-  const put = (i, split) => { const b = units[i].parent; out.set(i, { scope: b < 0 ? 'ground' : `in:${units[b].parent}`, row: split?.axis === 'x' ? split.id : -1, group: split?.axis ? split.id : -1 }); };
-  const walk = (n, split) => {
-    if (n.type === 'unit') return put(n.unit, split);
+  const put = (i, split, pos) => { const b = units[i].parent; out.set(i, { scope: b < 0 ? 'ground' : `in:${units[b].parent}`, row: split?.axis === 'x' ? split.id : -1, group: split?.axis ? split.id : -1, place: `${split?.axis ?? '-'}:${pos}`, up: split?.up ?? -1 }); };
+  const walk = (n, split, pos) => {
+    if (n.type === 'unit') return put(n.unit, split, pos);
     // a drawn box has a place of its own, as well as the things inside it
-    if (n.type === 'box') put(n.unit, split);
-    const next = n.type !== 'box' ? { id: id++, axis: n.axis } : n.how ? { id: id++, axis: n.how.axis } : split;
-    for (const c of n.children ?? []) walk(c, next);
+    if (n.type === 'box') put(n.unit, split, pos);
+    const cut = n.type !== 'box' || n.how, axis = n.type !== 'box' ? n.axis : n.how?.axis;
+    // a split inside a split along the same direction is one column (or row): `up` is the number of the outermost
+    const next = !cut ? split : { id: id, axis, up: n.type !== 'box' && split && split.axis === axis ? split.up : id++ };
+    if (cut && next.up !== next.id) id++;
+    const kids = n.children ?? [];
+    // a box round one thing passes its own place down to it
+    kids.forEach((c, k) => walk(c, next, cut ? (k === 0 ? 'lead' : k === kids.length - 1 ? 'end' : 'mid') : pos));
   };
-  walk(tree, null);
+  walk(tree, null, 'lead');
   return out;
 }
 
