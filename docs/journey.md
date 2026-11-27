@@ -7199,6 +7199,38 @@ into its own browser. Your app isn't changed.", then the findings.
 - **Media hooks:** `docs/research/harvests/raunofreiberg-portfolio-reviews/local/after/jscraik-menu.png` (not in
   git).
 
+### 163. His eight points for the text layer on the pages today (2026-11-27)
+
+- **The itch:** one of Rauno's cases had vanished from its live page (entry 162). If many had, a miss by the layer
+  could mean a wrong engine or a page that moved on, and the layer would have no score worth the name.
+- **How we checked:** each of his eight points filed under "alike, but not the same role" was looked at on its
+  live page on 2026-11-27, by reading the page's links, by a picture of the page, and for one point by putting the
+  pointer on a photo. The web archive was asked for a copy of each page near his review of 2026-10-19.
+- **Still on the live page, seven of eight:**
+  - 3.6, rauno.me: five sheets drawn the same, two leave the site and three stay. Archive copy two days before.
+  - 3.8, rauno.me/craft: cards with a "View Production" or "Read Essay" bar are links, cards without are not, and
+    they look the same otherwise. Archive copy two days after.
+  - 12.3, jerryddi.com: a dense screenshot beside a tile with one ring and two lines. Archive copy a week before.
+  - 17.3, blvdmitry.me: four articles under the third tab, all leave the site, none carries a mark. The nearest
+    archive copy is from July, three months before.
+  - 21.3, shadcn.com: the three plain headings drawn like the link headings, now with no underline. Archive copy
+    a day after, which we already use.
+  - 38.2, maxleiter.com: two panels built and drawn the same way. Archive copy four days before.
+  - 40.4, rizwanakhan.com: the photo is not a link and tilts and lifts under the pointer. Archive copy three days
+    before.
+- **Gone, one of eight:** 10.3, jscraik.com. No archive copy.
+- **What the layer reaches, as built:** two of the eight. It finds 21.3 on the live page and on the archive copy,
+  and it catches 10.3 only on a copy we rebuilt. A third, 3.6, is the fault a switched-off rule looked for (a link
+  that leaves beside one that stays), dropped after it made three findings on shadcn's page that no judge had
+  marked. Whether it would find 3.6 has not been tried.
+- **What the other five need:** 3.8 and 38.2 are about boxes and cards, and the layer compares text only. 40.4
+  and 17.3 need the page in a second state, under the pointer or with a tab pressed. 12.3 needs a measure of how
+  much detail a tile holds, which nothing in the spec has yet.
+- **The fear was mostly wrong:** pages moving on cost one case of eight. The other five misses come from what the
+  layer is able to compare.
+- **Media hooks:** pictures of each page as checked, in
+  `docs/research/harvests/raunofreiberg-portfolio-reviews/local/seven/` (not in git).
+
 ## Open gaps
 
 - The layer that compares how text looks with what it does now takes where a piece sits from the seen picture
@@ -7206,8 +7238,9 @@ into its own browser. Your app isn't changed.", then the findings.
   boxes are in a different place from things on the page itself has no source and has been run on six pages.
   Rauno's menu case is caught only on a rebuilt copy
   ([entry 162](#162-the-missed-menu-case-2026-11-27)): the live page no
-  longer has the fault. Of his points marked as cases for the engine, nobody has checked which are still on the
-  live pages today.
+  longer has the fault. His eight points for this layer are checked against the live pages
+  ([entry 163](#163-his-eight-points-for-the-text-layer-on-the-pages-today-2026-11-27)): seven are still there and
+  the layer reaches two. The other points marked as cases for the engine have not been checked this way.
 - Plumber's page check reads nothing on a public site, because it judges only elements tied to an app's source
   ([entry 156](#156-plumber-reads-nothing-on-a-public-site-2026-11-26)). Until it can, an expert's review of a live
   site cannot be scored against it.
