@@ -191,7 +191,10 @@ export const tabShift = rule('tab-shift', 'size', function (el, facts) {
   if (roleOf(el) !== 'tab' || el.getAttribute('aria-selected') !== 'true' || !shown(el, facts)) return;
   const list = el.closest('[role="tablist"]'), other = list && tabsOf(list).find((t) => t !== el && t.getAttribute('aria-selected') !== 'true' && drawn(t, facts));
   if (!other) return;
-  const a = facts.style(el), b = facts.style(other), differs = SIZING.find(([p]) => a[p] !== b[p]);
+  // a border that separates tabs is left off the first (or last) one by its place in the row, not by being selected
+  const tabs = tabsOf(list).filter((t) => drawn(t, facts));
+  const edge = (t, p) => (/Left|Top/.test(p) && tabs[0] === t) || (/Right|Bottom/.test(p) && tabs.at(-1) === t);
+  const a = facts.style(el), b = facts.style(other), differs = SIZING.find(([p]) => a[p] !== b[p] && !(p.startsWith('border') && (edge(el, p) || edge(other, p))));
   if (!differs) return;
   return found(this, el, { prop: differs[1] }, { value: `${differs[1]}: ${a[differs[0]]} / ${b[differs[0]]}`, confidence: 0.85, advice: `Keep the ${differs[1]} the same on every tab and show selection with colour and an underline drawn on a pseudo-element.` });
 });

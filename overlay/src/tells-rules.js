@@ -96,7 +96,7 @@ export const numbering = rule('numbering', 'text', TEXT, function (el, facts) {
 const SEPARATORS = /\s[·•|]\s|·|•/g;
 export const statusChain = rule('status-chain', 'text', 'p,div,span,small,li,dd,figcaption', function (el, facts) {
   const text = trimmed(el.textContent);
-  if (text.length > 160 || el.closest(`nav, footer, [aria-label*="breadcrumb" i], ${CODE}, ${CONTROL}, table`)) return;
+  if (text.length > 160 || el.closest(`nav, footer, [aria-label*="breadcrumb" i], ${CODE}, ${CONTROL}, table, [role="tablist"]`)) return;
   const count = (text.match(SEPARATORS) ?? []).length;
   if (count < 2 || el.querySelectorAll('a').length >= 2) return;
   // a row of cells (a grid row, a table-like list) holds its separators in different cells: no one line reads as a chain
@@ -415,6 +415,12 @@ export const divider = rule('divider', 'divider', 'hr,div,span,li,section,articl
   if (el.closest(`${CODE}, table, ${CONTROL}, [role="tablist"], [role="menu"], [role="separator"][aria-orientation]`)) return;
   if (lineLike(el, facts)) {
     if (!shown(el, facts) && el.localName !== 'hr') return;
+    // a line placed by hand (absolute: a guide, a tick, a track, a string in a drawing) is part of a drawing, and a short
+    // rule beside words in a row is an ornament on a label: neither stands between two parts
+    const s = facts.style(el), p = el.parentElement, ps = p && facts.style(p), r = facts.rect(el);
+    if (el.localName !== 'hr' && /absolute|fixed/.test(s.position)) return;
+    if (p && /flex/.test(ps.display) && !/column/.test(ps.flexDirection) && r.width > r.height && [...p.children].some((k) => k !== el && trimmed(k.textContent))) return;
+    if (p?.querySelector('[role="slider"], input[type="range"]')) return;
     return found(this, el, { count: 1 }, { value: el.localName === 'hr' ? '<hr>' : 'a 1px line', confidence: 0.8, advice: 'Delete the line. Space between the parts separates them.' });
   }
   // rows split by borders: said once, on what holds them

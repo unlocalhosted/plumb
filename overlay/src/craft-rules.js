@@ -438,6 +438,8 @@ export const layeredShadow = {
     const layers = shadows(s.boxShadow).map((l, i) => ({ ...l, colour: rgb(raw[i].match(COLOUR)?.[0]) })).filter((l) => !l.inset && (l.blur > 0 || l.x || l.y));
     if (layers.length !== 1 || layers[0].blur < T.blur) return [];
     const l = layers[0];
+    // a glow (no offset) is light all round, not a lift: one soft blur is what it means; inside a picture it is its own
+    if ((!l.x && !l.y) || inPicture(el, facts)) return [];
     // the layers keep the shadow's own colour (a tinted shadow stays tinted); only its alpha is spread across them
     const [r, g, bl] = l.colour ?? [0, 0, 0];
     const cls = utility(el, 'shadow');
@@ -812,16 +814,34 @@ const drawnScale = (el) => {
   const m = el.getScreenCTM?.();
   return m ? Math.hypot(m.a, m.b) || 1 : 1;
 };
+// A picture drawn on the page: a canvas laid out in its own units and scaled as one to fit, like a film frame, a phone
+// mock or a page shown as a thumbnail. What is inside follows that picture's design (its type, greys, strokes, shadows),
+// not the page's, so the checks that hold the page to its own system leave it alone. A canvas is a box with a container
+// of its own (sized in cqw) that is scaled, or any box scaled down or up by a third or more; a hover's 1.05 is not one
+export const inPicture = (el, facts) => {
+  for (let n = el?.parentElement; n && n !== document.body; n = n.parentElement) {
+    const s = facts.style(n);
+    if (!s.transform || s.transform === 'none') continue;
+    const m = s.transform.match(/matrix\(([^,]+),\s*([^,]+)/), k = m ? Math.hypot(parseFloat(m[1]), parseFloat(m[2])) : 1;
+    if ((s.containerType && s.containerType !== 'normal' && Math.abs(k - 1) > 0.02) || k <= 0.75 || k >= 1.33) return true;
+  }
+  return false;
+};
+// words that hold no letter or figure: a separator dot, a dash, a slash. Nothing to read, so no contrast or weight to judge
+// A key named on a keycap (<kbd>/</kbd>) is read, however short
+export const marksOnly = (el) => !el.closest('kbd') && !el.querySelector('kbd') && !/[\p{L}\p{N}]/u.test(el.textContent ?? '');
 export const leading = {
   id: 'craft/leading', family: 'craft', number: [14], owns: ['line-height'], once: 'ancestor', reads: ['style', 'rect', 'text'],
   check({ el, facts }, theme) {
     const T = theme.spec(this.id);
     if (!facts.text(el)) return [];
     // words in a drawing have no line boxes: SVG text is placed line by line by hand, and line-height does nothing
-    if (el.closest('svg')) return [];
+    if (el.closest('svg') || inPicture(el, facts)) return [];
     const s = facts.style(el), fs = px(s.fontSize), lh = px(s.lineHeight);
-    if (!lh || !fs) return [];
+    if (!lh || !fs || s.visibility === 'hidden') return [];
     const ratio = lh / fs, lines = lineCount(el);
+    // one line placed out of the flow: its line height moves nothing around it, and centring by translate keeps it put
+    if (lines <= 1 && /absolute|fixed/.test(s.position)) return [];
     // a size written as a zoom of a design size (`text-[length:calc(var(--z)*15px)]`, a scaled mockup) is that design
     // size: 15px body text drawn at 2.4×, not 36px display text
     const designed = scaledSize(el) ?? fs;
@@ -1017,7 +1037,7 @@ export const contrast = {
   id: 'craft/contrast', family: 'craft', number: [24], owns: ['color'], once: 'ancestor', reads: ['style', 'text', 'ground'],
   check({ el, facts }, theme) {
     const T = theme.spec(this.id);
-    if (!facts.text(el) || el.closest('[aria-hidden="true"]')) return [];
+    if (!facts.text(el) || el.closest('[aria-hidden="true"]') || marksOnly(el) || inPicture(el, facts)) return [];
     const s = facts.style(el);
     // words kept for a screen reader and cut out of sight (sr-only: a box of a pixel or two, clipped by overflow or by
     // clip-path) are not drawn, so there is nothing to read
@@ -1857,6 +1877,10 @@ export const scrollbarGutter = {
     if (el === document.body || el === document.documentElement) return [];
     const s = facts.style(el);
     if (!/auto/.test(s.overflowY) || s.scrollbarGutter !== 'auto') return [];
+    // asked to scroll sideways only (overflow-x-auto), with no height cap: it grows to what it holds, so it never
+    // scrolls down, and its scrollbar runs along the bottom
+    const cls = classesOf(el);
+    if (/(^|\s)overflow-x-(auto|scroll)(\s|$)/.test(cls) && !/(^|\s)overflow-(y-)?(auto|scroll)(\s|$)/.test(cls) && s.maxHeight === 'none') return [];
     // a strip that scrolls sideways (overflow-x-auto computes overflow-y as auto too) with nothing to scroll down: its
     // scrollbar runs along the bottom and never takes width from what is in it
     if (/auto|scroll/.test(s.overflowX) && el.scrollWidth > el.clientWidth + 1 && el.scrollHeight <= el.clientHeight + 1) return [];
@@ -2645,7 +2669,9 @@ export const weightLevels = {
   id: 'craft/weight-levels', family: 'craft', number: [17], owns: ['font-weight'], once: 'ancestor', reads: ['style', 'text', 'census'],
   check({ el, facts }, theme) {
     const T = theme.spec(this.id);
-    if (!facts.text(el) || !facts.census || el.closest('svg')) return [];
+    if (!facts.text(el) || !facts.census || el.closest('svg') || marksOnly(el) || inPicture(el, facts)) return [];
+    // the logo's wordmark (one word in the link home) keeps the weight it was drawn with
+    { const home = el.closest('a[href="/"], a[aria-label*="home" i]'); if (home && !/\s/.test((home.textContent ?? '').trim())) return []; }
     // words kept for screen readers only (a 1px clipped box) are never seen, so their weight is no one's choice
     { const r = facts.rect(el); if (r.width <= 2 || r.height <= 2) return []; }
     const c = facts.census('weights');
@@ -2680,7 +2706,11 @@ export const greyLevels = {
     if (!k || k.count / c.sample > T.minority || c.clusters.slice(0, 3).includes(k)) return [];
     // the page's own ink is never a stray, however many faint labels outnumber it on one page
     const own = facts.style(el).color;
-    if (own === facts.style(document.body).color) return [];
+    if (own === facts.style(document.body).color || inPicture(el, facts)) return [];
+    // the ink of a filled control (a button's words on its own fill) is chosen for that fill, not from the page's greys
+    for (let n = el; n && n !== document.body; n = n.parentElement) {
+      if (alpha(rgb(facts.style(n).backgroundColor)) > 0.5) { if (n.matches('button, a, [role="button"]') || n.closest('button, [role="button"]')) return []; break; }
+    }
     // nor a colour set by one of the theme's colour tokens (text-muted), on this element or the one it inherits from
     for (let n = el; n && n !== document.body; n = n.parentElement) {
       if (n !== el && facts.style(n).color !== own) break;
@@ -2776,6 +2806,9 @@ export const elevationLadder = {
     while (hi < sorted.length - 1 && sorted[hi + 1].value / Math.max(sorted[hi].value, 0.001) < T.step) hi++;
     const near = sorted.slice(lo, hi + 1).sort((x, y) => y.count - x.count || Math.abs(x.value - b) - Math.abs(y.value - b))[0];
     if (!near || near === own || near.count <= own.count) return [];
+    // the run can chain levels a step apart each into one, until 18px is told to take 8px: those two are a clear step
+    // apart. Said only when the level it is told to take is itself within a step of this one
+    if (Math.max(near.value, b) / Math.max(Math.min(near.value, b), 0.001) >= T.step) return [];
     // the class that sets the level, never the one that colours it (shadow-black/5 beside shadow-md)
     const level = (x) => utility(x, 'shadow', { not: { test: (rest) => isColour(rest, theme) } });
     const cls = level(el);
@@ -2911,8 +2944,12 @@ export const strokeWeight = {
     const svg = facts.kids(el).find((k) => k.localName === 'svg');
     const w = svg && facts.stroke(svg);
     if (!w) return [];
+    if (inPicture(svg, facts)) return [];
     const size = svg.clientWidth || facts.rect(svg).width;
-    if (size >= T.big && w > T.heavy) {
+    // filled art with an outline (a sticker, an illustration) is drawn thick on purpose; the check is for line icons
+    const filled = () => { const shapes = [...svg.querySelectorAll('path, circle, rect, ellipse, polygon')].slice(0, 40);
+      return shapes.filter((p) => { const f = getComputedStyle(p).fill; return f && f !== 'none' && (/url\(/.test(f) || alpha(rgb(f) ?? [0, 0, 0, 0]) > 0); }).length > shapes.length / 2; };
+    if (size >= T.big && w > T.heavy && !filled()) {
       // the stroke stays the width it's drawn at (2 in a 24 box) however big the icon is drawn
       return [{ ...say(this.id, { w, big: true }), key: this.id, text: 'svg', props: ['stroke-width'], value: fmt(w), n: w,
         evidence: { stroke: Math.round(w * 10) / 10, size: Math.round(size) }, confidence: 0.84,

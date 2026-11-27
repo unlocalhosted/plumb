@@ -184,6 +184,9 @@ export const labelOnGeneric = rule('label-on-generic', 'name', function (el, fac
 // §3 Choosing the name: "Do include a control's visible text in its accessible name" (2.5.3 Label in Name)
 export const labelInName = rule('label-in-name', 'name', function (el, facts) {
   if (!el.hasAttribute('aria-label') || !el.matches(CONTROL) || !shown(el, facts)) return;
+  // a control whose name never comes from its content (a slider, a field, a list): what is drawn on it is its value or
+  // its parts, not a label someone reads out to press it
+  if (/^(slider|progressbar|meter|scrollbar|spinbutton|textbox|searchbox|combobox|listbox|tree|grid|treegrid|tablist|menu|menubar|radiogroup|toolbar)$/.test(el.getAttribute('role') ?? '')) return;
   const norm = (t) => trimmed(t).toLowerCase().replace(/[^\p{L}\p{N} ]/gu, '').replace(/\s+/g, ' ').trim();
   const visible = norm(el.innerText ?? ''), label = norm(el.getAttribute('aria-label'));
   // what is shown has to hold a word someone would say: a drawing's numbers, or one mark, is not a label

@@ -3668,6 +3668,28 @@
   },
   {
    "route": "/motion/vocabulary",
+   "rule": "tells/heavy-weight",
+   "file": "src/motion/examples/BurstExample.tsx",
+   "line": 65,
+   "said": "Set at weight 800.",
+   "verdict": "right",
+   "why": "read against the source: it says what is there",
+   "judged": "2026-11-27",
+   "by": "Claude (one reader, not independent)"
+  },
+  {
+   "route": "/motion/vocabulary",
+   "rule": "tells/heavy-weight",
+   "file": "src/motion/examples/BurstExample.tsx",
+   "line": 66,
+   "said": "Set at weight 800.",
+   "verdict": "right",
+   "why": "read against the source: it says what is there",
+   "judged": "2026-11-27",
+   "by": "Claude (one reader, not independent)"
+  },
+  {
+   "route": "/motion/vocabulary",
    "rule": "tells/negative-tracking",
    "file": "src/pages/VocabularyPage.tsx",
    "line": 137,
@@ -5302,6 +5324,28 @@
    "said": "Sizes written in pixels here stay as they are when someone sets a larger text size in their browser. Everything around them grows and they do not.",
    "verdict": "right",
    "why": "text sized in pixels that ignores the reader's text size (same check and line, judged on /)",
+   "judged": "2026-11-27",
+   "by": "Claude (one reader, not independent)"
+  },
+  {
+   "route": "/templates",
+   "rule": "craft/text-opacity",
+   "file": "src/pages/templates/StatusLine.tsx",
+   "line": 40,
+   "said": "This text uses opacity 0.507045. Use a colour instead.",
+   "verdict": "wrong",
+   "why": "an opacity part way through a fade (0.507), a moment of the animation, not the words’ colour",
+   "judged": "2026-11-27",
+   "by": "Claude (one reader, not independent)"
+  },
+  {
+   "route": "/templates",
+   "rule": "craft/text-opacity",
+   "file": "src/pages/TemplatesPage.tsx",
+   "line": 120,
+   "said": "This text uses opacity 0.42. Use a colour instead.",
+   "verdict": "right",
+   "why": "words faded with opacity 0.42 rather than given a colour",
    "judged": "2026-11-27",
    "by": "Claude (one reader, not independent)"
   },

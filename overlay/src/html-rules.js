@@ -250,6 +250,8 @@ export const summaryNoCue = rule('summary-no-cue', 'marker', function (el, facts
   if (el.localName !== 'summary' || !shown(el, facts)) return;
   const s = facts.style(el);
   if (s.display === 'list-item' && s.listStyleType !== 'none') return;
+  // a summary that can't be pressed (pointer-events: none: kept open at this width) has nothing to cue
+  if (s.pointerEvents === 'none') return;
   if (el.querySelector('svg, img, [class*="icon" i], [class*="chevron" i], [class*="arrow" i]')) return;
   const drawnBy = (pseudo) => { const c = getComputedStyle(el, pseudo).content; return c && c !== 'none' && c !== 'normal'; };
   if (drawnBy('::before') || drawnBy('::after') || drawnBy('::marker') && s.display === 'list-item') return;

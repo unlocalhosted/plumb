@@ -6529,6 +6529,38 @@ into its own browser. Your app isn't changed.", then the findings.
   places are not fixed yet.
 - **Media hooks:** the compare report beside a page's findings, before and after a fix of one of the wrong kinds.
 
+### 164. Fixing the false alarms on the answer keys by cause (2026-11-27)
+
+- **The itch:** the answer keys for crafting-ui and algorecall (entry 160) found 70 findings that were wrong. The
+  owner: "Yes, fix them".
+- **The system behind it:** most came from a few causes, not 70 separate slips. Plumber held a picture drawn on the
+  page (a film frame, a phone mock, both scaled as one) to the page's own type, greys, line widths and shadows. It
+  judged separator dots, dashes and slashes as if they were words. The shadow check chained close levels into one run
+  and told an 18px shadow to become 8px. Smaller ones: a scroller asked to scroll sideways only was told its scrollbar
+  takes width, short lines beside a label and lines placed by hand were read as dividers, a slider was asked to say its
+  marks in its name, the first tab's missing separator read as a style change, a toggle that can't be pressed at this
+  width was asked for an arrow, a button's own ink was held to the page's greys, the logo's weight was questioned, a
+  glow was asked to be layered, and stickers were judged as thin line icons.
+- **The fix:** one change per cause. A box scaled as one to fit (with its own container, or by a third or more) is a
+  picture, and the checks that hold the page to its system leave what is inside it alone. Words with no letter or
+  figure are marks, except a key named on a keycap. The shadow check only names a level within a step of the shadow
+  it judges. Each smaller cause got its own rule in its check.
+- **One mistake on the way:** the first build skipped the "/" key hint on crafting-ui's search, which a person reads.
+  The answer key caught it; key names now count as words.
+- **The proof:** all 52 pages of the three apps run again on the test server and compared with their keys. Real
+  findings lost: none (crafting-ui 421 kept, algorecall 407, cal.com 368). Wrong ones gone: 41 of 49 on crafting-ui,
+  all 26 on algorecall. Cal.com's past bookings page showed two states across runs (one read only 24 elements); both
+  are in its key now.
+- **Answer keys corrected:** reading them again showed 6 verdicts of mine were wrong. On algorecall's settings page,
+  three shadows judged right on other pages are told there to take the 8px level, so they are wrong there. Two lone
+  code marks (a bracket, an arrow) are marks. One finding now says a different thing (10px against 8px) and is right.
+  35 new findings (from this build and from checks added by other sessions) were judged and added.
+- **Still wrong:** 8 on crafting-ui. Three fixed lists and two ends of a scale need the source to tell, which the page
+  check cannot read. Also one sticker drawn with a white cut line, one measuring guide in the hero, and one fade caught
+  part way. Cal.com has two new ones from the larger-text check: a carousel track and a description clamped to three
+  lines on purpose.
+- **Media hooks:** the compare report before and after, one page of crafting-ui's motion lessons with its film frames.
+
 ### 142. The dial in the overlay (2026-11-26)
 
 - **The itch.** The owner asked how a person sees the page's other states: "we need to come up with some way like
@@ -8942,6 +8974,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
 
+- Plumber no longer judges a picture drawn on the page (a film frame, a phone mock) by the page's own type and greys, no longer reads separator dots as words, and no longer tells an 18px shadow to become 8px: 67 of 75 false alarms on three real apps are gone, with no real finding lost. [Entry 164](#164-fixing-the-false-alarms-on-the-answer-keys-by-cause-2026-11-27)
 - crafting-ui and algorecall now have answer keys like cal.com's: 956 judged places on 34 pages, so a change that makes plumber worse on either app shows in one command. Plumber is right on 90% and 95% of the places scored; the 70 wrong ones are listed. [Entry 160](#160-answer-keys-for-crafting-ui-and-algorecall-2026-11-27)
 - On the dial, Longer words now also says what lost its place: a table column that moves, cards whose buttons stop lining up, a badge that gets squeezed, each with its fix shown on the page. [Entry 154](#154-other-data-on-the-dial-2026-11-26)
 - Plumber now tries cards and list rows with a longer name: it says when a row of cards stops lining up, when a badge gets squeezed, and when a label pushes its row out, each with the fix written. Quiet on six real pages; seen firing on a test page only. [Entry 152](#152-other-data-cards-and-list-rows-2026-11-26)

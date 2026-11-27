@@ -332,6 +332,28 @@
   },
   {
    "route": "/apps",
+   "rule": "craft/text-clips",
+   "file": "modules/apps/components/AppCard.tsx",
+   "line": 130,
+   "said": "With a larger text size set in the browser, 60px of what this holds is cut off.",
+   "verdict": "wrong",
+   "why": "a description clamped to three lines on purpose (line-clamp-3)",
+   "judged": "2026-11-27",
+   "by": "Claude (one reader, not independent)"
+  },
+  {
+   "route": "/apps",
+   "rule": "craft/text-clips",
+   "file": "modules/apps/components/Slider.tsx",
+   "line": 75,
+   "said": "With a larger text size set in the browser, 30px of what this holds is cut off.",
+   "verdict": "wrong",
+   "why": "a carousel track, which hides the slides off its edges on purpose",
+   "judged": "2026-11-27",
+   "by": "Claude (one reader, not independent)"
+  },
+  {
+   "route": "/apps",
    "rule": "experience/font-display",
    "file": "modules/shell/Shell.tsx",
    "line": 44,
@@ -1278,6 +1300,17 @@
   },
   {
    "route": "/availability/3",
+   "rule": "craft/text-clips",
+   "file": "modules/schedules/components/Schedule.tsx",
+   "line": 26,
+   "said": "With a larger text size set in the browser, 38px of what this holds is cut off.",
+   "verdict": "unsure",
+   "why": "named at a wrapper component; what is cut inside it was not checked",
+   "judged": "2026-11-27",
+   "by": "Claude (one reader, not independent)"
+  },
+  {
+   "route": "/availability/3",
    "rule": "craft/z-index-war",
    "file": "modules/schedules/components/Schedule.tsx",
    "line": 26,
@@ -1422,6 +1455,17 @@
   {
    "route": "/bookings/past",
    "rule": "a11y/control-name",
+   "file": "../../packages/ui/components/form/select/components.tsx",
+   "line": 19,
+   "said": "This menu has nothing a screen reader can say.",
+   "verdict": "right",
+   "why": "read against the source: it says what is there (the bookings page read in another state, same finding as on its other pages)",
+   "judged": "2026-11-27",
+   "by": "Claude (one reader, not independent)"
+  },
+  {
+   "route": "/bookings/past",
+   "rule": "a11y/control-name",
    "file": "components/booking/actions/BookingActionsDropdown.tsx",
    "line": 545,
    "said": "This button has nothing a screen reader can say.",
@@ -1521,6 +1565,17 @@
   {
    "route": "/bookings/past",
    "rule": "craft/concentric-radius",
+   "file": "../../packages/ui/components/form/toggleGroup/ToggleGroup.tsx",
+   "line": 81,
+   "said": "This 10px corner sits 2px inside a 10px corner. Use 8px.",
+   "verdict": "right",
+   "why": "read against the source: it says what is there (the bookings page read in another state, same finding as on its other pages)",
+   "judged": "2026-11-27",
+   "by": "Claude (one reader, not independent)"
+  },
+  {
+   "route": "/bookings/past",
+   "rule": "craft/concentric-radius",
    "file": "modules/bookings/components/BookingListContainer.tsx",
    "line": 166,
    "said": "This 10px corner sits 2px inside a 10px corner. Use 8px.",
@@ -1538,6 +1593,17 @@
    "verdict": "right",
    "why": "read against the source: it says what is there (same check and line, judged on /event-types/3)",
    "judged": "2026-11-26",
+   "by": "Claude (one reader, not independent)"
+  },
+  {
+   "route": "/bookings/past",
+   "rule": "craft/declared-gap",
+   "file": "../../packages/ui/components/form/select/components.tsx",
+   "line": 86,
+   "said": "These parts are 8px apart only because that much space is left over. A longer title closes it.",
+   "verdict": "unsure",
+   "why": "two parts at either end of a select, with room to spare",
+   "judged": "2026-11-27",
    "by": "Claude (one reader, not independent)"
   },
   {
@@ -1642,6 +1708,17 @@
   {
    "route": "/bookings/past",
    "rule": "craft/input-zoom",
+   "file": "../../packages/ui/components/form/select/components.tsx",
+   "line": 19,
+   "said": "This field’s text is 14px. iPhone zooms in on anything under 16px.",
+   "verdict": "right",
+   "why": "read against the source: it says what is there (the bookings page read in another state, same finding as on its other pages)",
+   "judged": "2026-11-27",
+   "by": "Claude (one reader, not independent)"
+  },
+  {
+   "route": "/bookings/past",
+   "rule": "craft/input-zoom",
    "file": "modules/data-table/components/DataTablePagination.tsx",
    "line": 33,
    "said": "This field’s text is 14px. iPhone zooms in on anything under 16px.",
@@ -1685,6 +1762,17 @@
   },
   {
    "route": "/bookings/past",
+   "rule": "experience/font-display",
+   "file": "modules/shell/Shell.tsx",
+   "line": 209,
+   "said": "\"calFont\" loads with no font-display.",
+   "verdict": "right",
+   "why": "read against the source: it says what is there (the bookings page read in another state, same finding as on its other pages)",
+   "judged": "2026-11-27",
+   "by": "Claude (one reader, not independent)"
+  },
+  {
+   "route": "/bookings/past",
    "rule": "experience/preconnect-missing",
    "file": "modules/shell/Shell.tsx",
    "line": 44,
@@ -1692,6 +1780,17 @@
    "verdict": "right",
    "why": "read against the source: it says what is there (same check and line, judged on /event-types/3)",
    "judged": "2026-11-26",
+   "by": "Claude (one reader, not independent)"
+  },
+  {
+   "route": "/bookings/past",
+   "rule": "experience/preconnect-missing",
+   "file": "modules/shell/Shell.tsx",
+   "line": 209,
+   "said": "2 files come from fonts.googleapis.com with no preconnect.",
+   "verdict": "right",
+   "why": "read against the source: it says what is there (the bookings page read in another state, same finding as on its other pages)",
+   "judged": "2026-11-27",
    "by": "Claude (one reader, not independent)"
   },
   {
@@ -1707,6 +1806,17 @@
   },
   {
    "route": "/bookings/past",
+   "rule": "experience/script-blocking",
+   "file": "modules/shell/Shell.tsx",
+   "line": 209,
+   "said": "1 scripts in the head stop the page being read until they run.",
+   "verdict": "unsure",
+   "why": "a script in the head of the dev build; whether it blocks in production was not checked",
+   "judged": "2026-11-27",
+   "by": "Claude (one reader, not independent)"
+  },
+  {
+   "route": "/bookings/past",
    "rule": "experience/skip-link",
    "file": "modules/shell/Shell.tsx",
    "line": 44,
@@ -1714,6 +1824,17 @@
    "verdict": "right",
    "why": "read against the source: it says what is there (same check and line, judged on /event-types/3)",
    "judged": "2026-11-26",
+   "by": "Claude (one reader, not independent)"
+  },
+  {
+   "route": "/bookings/past",
+   "rule": "experience/skip-link",
+   "file": "modules/shell/Shell.tsx",
+   "line": 209,
+   "said": "12 stops come before the page’s content and there is no skip link.",
+   "verdict": "right",
+   "why": "read against the source: it says what is there (the bookings page read in another state, same finding as on its other pages)",
+   "judged": "2026-11-27",
    "by": "Claude (one reader, not independent)"
   },
   {
@@ -1729,6 +1850,17 @@
   },
   {
    "route": "/bookings/past",
+   "rule": "html/h1-missing",
+   "file": "modules/shell/Shell.tsx",
+   "line": 209,
+   "said": "This page has no h1.",
+   "verdict": "right",
+   "why": "read against the source: it says what is there (the bookings page read in another state, same finding as on its other pages)",
+   "judged": "2026-11-27",
+   "by": "Claude (one reader, not independent)"
+  },
+  {
+   "route": "/bookings/past",
    "rule": "html/zoom-disabled",
    "file": "modules/shell/Shell.tsx",
    "line": 44,
@@ -1740,6 +1872,17 @@
   },
   {
    "route": "/bookings/past",
+   "rule": "html/zoom-disabled",
+   "file": "modules/shell/Shell.tsx",
+   "line": 209,
+   "said": "The viewport says user-scalable=no.",
+   "verdict": "right",
+   "why": "read against the source: it says what is there (the bookings page read in another state, same finding as on its other pages)",
+   "judged": "2026-11-27",
+   "by": "Claude (one reader, not independent)"
+  },
+  {
+   "route": "/bookings/past",
    "rule": "tells/many-shades",
    "file": "modules/shell/Shell.tsx",
    "line": 44,
@@ -1747,6 +1890,17 @@
    "verdict": "right",
    "why": "read against the source: it says what is there (same check and line, judged on /event-types/3)",
    "judged": "2026-11-26",
+   "by": "Claude (one reader, not independent)"
+  },
+  {
+   "route": "/bookings/past",
+   "rule": "tells/transition-all",
+   "file": "../../packages/ui/components/form/select/components.tsx",
+   "line": 86,
+   "said": "Every property here animates when it changes.",
+   "verdict": "right",
+   "why": "read against the source: it says what is there (the bookings page read in another state, same finding as on its other pages)",
+   "judged": "2026-11-27",
    "by": "Claude (one reader, not independent)"
   },
   {
@@ -3456,6 +3610,17 @@
   },
   {
    "route": "/pro/30min",
+   "rule": "craft/text-fixed",
+   "file": "modules/bookings/components/DatePicker.tsx",
+   "line": 133,
+   "said": "This text stays at 10px when someone sets a larger text size in their browser. Everything around it grows and it does not.",
+   "verdict": "right",
+   "why": "text sized in pixels that ignores the reader’s text size",
+   "judged": "2026-11-27",
+   "by": "Claude (one reader, not independent)"
+  },
+  {
+   "route": "/pro/30min",
    "rule": "craft/weight-levels",
    "file": "../../packages/features/bookings/components/Header.tsx",
    "line": 199,
@@ -3819,6 +3984,28 @@
   },
   {
    "route": "/settings/my-account/appearance",
+   "rule": "craft/text-clips",
+   "file": "app/(use-page-wrapper)/settings/(settings-layout)/SettingsLayoutAppDirClient.tsx",
+   "line": 419,
+   "said": "With a larger text size set in the browser, 130px of what this holds is cut off.",
+   "verdict": "unsure",
+   "why": "the settings menu at a larger text size; whether the cut is the hidden side overflow or the part that scrolls was not checked",
+   "judged": "2026-11-27",
+   "by": "Claude (one reader, not independent)"
+  },
+  {
+   "route": "/settings/my-account/appearance",
+   "rule": "craft/text-clips",
+   "file": "app/(use-page-wrapper)/settings/(settings-layout)/SettingsLayoutAppDirClient.tsx",
+   "line": 500,
+   "said": "With a larger text size set in the browser, 167px of what this holds is cut off.",
+   "verdict": "unsure",
+   "why": "the settings menu at a larger text size; whether the cut is the hidden side overflow or the part that scrolls was not checked",
+   "judged": "2026-11-27",
+   "by": "Claude (one reader, not independent)"
+  },
+  {
+   "route": "/settings/my-account/appearance",
    "rule": "experience/font-display",
    "file": "modules/shell/Shell.tsx",
    "line": 44,
@@ -4145,6 +4332,28 @@
    "verdict": "right",
    "why": "read against the source: it says what is there",
    "judged": "2026-11-26",
+   "by": "Claude (one reader, not independent)"
+  },
+  {
+   "route": "/settings/my-account/calendars",
+   "rule": "craft/text-clips",
+   "file": "app/(use-page-wrapper)/settings/(settings-layout)/SettingsLayoutAppDirClient.tsx",
+   "line": 419,
+   "said": "With a larger text size set in the browser, 130px of what this holds is cut off.",
+   "verdict": "unsure",
+   "why": "the settings menu at a larger text size; whether the cut is the hidden side overflow or the part that scrolls was not checked",
+   "judged": "2026-11-27",
+   "by": "Claude (one reader, not independent)"
+  },
+  {
+   "route": "/settings/my-account/calendars",
+   "rule": "craft/text-clips",
+   "file": "app/(use-page-wrapper)/settings/(settings-layout)/SettingsLayoutAppDirClient.tsx",
+   "line": 500,
+   "said": "With a larger text size set in the browser, 167px of what this holds is cut off.",
+   "verdict": "unsure",
+   "why": "the settings menu at a larger text size; whether the cut is the hidden side overflow or the part that scrolls was not checked",
+   "judged": "2026-11-27",
    "by": "Claude (one reader, not independent)"
   },
   {
@@ -4486,6 +4695,28 @@
    "verdict": "right",
    "why": "read against the source: it says what is there",
    "judged": "2026-11-26",
+   "by": "Claude (one reader, not independent)"
+  },
+  {
+   "route": "/settings/my-account/general",
+   "rule": "craft/text-clips",
+   "file": "app/(use-page-wrapper)/settings/(settings-layout)/SettingsLayoutAppDirClient.tsx",
+   "line": 419,
+   "said": "With a larger text size set in the browser, 130px of what this holds is cut off.",
+   "verdict": "unsure",
+   "why": "the settings menu at a larger text size; whether the cut is the hidden side overflow or the part that scrolls was not checked",
+   "judged": "2026-11-27",
+   "by": "Claude (one reader, not independent)"
+  },
+  {
+   "route": "/settings/my-account/general",
+   "rule": "craft/text-clips",
+   "file": "app/(use-page-wrapper)/settings/(settings-layout)/SettingsLayoutAppDirClient.tsx",
+   "line": 500,
+   "said": "With a larger text size set in the browser, 167px of what this holds is cut off.",
+   "verdict": "unsure",
+   "why": "the settings menu at a larger text size; whether the cut is the hidden side overflow or the part that scrolls was not checked",
+   "judged": "2026-11-27",
    "by": "Claude (one reader, not independent)"
   },
   {
@@ -4985,6 +5216,28 @@
   },
   {
    "route": "/settings/my-account/profile",
+   "rule": "craft/text-clips",
+   "file": "app/(use-page-wrapper)/settings/(settings-layout)/SettingsLayoutAppDirClient.tsx",
+   "line": 419,
+   "said": "With a larger text size set in the browser, 130px of what this holds is cut off.",
+   "verdict": "unsure",
+   "why": "the settings menu at a larger text size; whether the cut is the hidden side overflow or the part that scrolls was not checked",
+   "judged": "2026-11-27",
+   "by": "Claude (one reader, not independent)"
+  },
+  {
+   "route": "/settings/my-account/profile",
+   "rule": "craft/text-clips",
+   "file": "app/(use-page-wrapper)/settings/(settings-layout)/SettingsLayoutAppDirClient.tsx",
+   "line": 500,
+   "said": "With a larger text size set in the browser, 167px of what this holds is cut off.",
+   "verdict": "unsure",
+   "why": "the settings menu at a larger text size; whether the cut is the hidden side overflow or the part that scrolls was not checked",
+   "judged": "2026-11-27",
+   "by": "Claude (one reader, not independent)"
+  },
+  {
+   "route": "/settings/my-account/profile",
    "rule": "experience/font-display",
    "file": "modules/shell/Shell.tsx",
    "line": 44,
@@ -5245,6 +5498,28 @@
    "verdict": "right",
    "why": "read against the source: it says what is there",
    "judged": "2026-11-26",
+   "by": "Claude (one reader, not independent)"
+  },
+  {
+   "route": "/settings/security/password",
+   "rule": "craft/text-clips",
+   "file": "app/(use-page-wrapper)/settings/(settings-layout)/SettingsLayoutAppDirClient.tsx",
+   "line": 419,
+   "said": "With a larger text size set in the browser, 130px of what this holds is cut off.",
+   "verdict": "unsure",
+   "why": "the settings menu at a larger text size; whether the cut is the hidden side overflow or the part that scrolls was not checked",
+   "judged": "2026-11-27",
+   "by": "Claude (one reader, not independent)"
+  },
+  {
+   "route": "/settings/security/password",
+   "rule": "craft/text-clips",
+   "file": "app/(use-page-wrapper)/settings/(settings-layout)/SettingsLayoutAppDirClient.tsx",
+   "line": 500,
+   "said": "With a larger text size set in the browser, 167px of what this holds is cut off.",
+   "verdict": "unsure",
+   "why": "the settings menu at a larger text size; whether the cut is the hidden side overflow or the part that scrolls was not checked",
+   "judged": "2026-11-27",
    "by": "Claude (one reader, not independent)"
   },
   {

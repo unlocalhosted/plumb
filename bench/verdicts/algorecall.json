@@ -786,8 +786,8 @@
    "file": "src/pages/curriculum/layouts/ArraysHashingLayout.tsx",
    "line": 151,
    "said": "Contrast is 14 on the APCA scale at 13px. Text this size needs 60.",
-   "verdict": "right",
-   "why": "text measured under the APCA line for its size; the colour and ground are the page's own",
+   "verdict": "wrong",
+   "why": "a lone bracket or arrow of the expression, not words; the words beside it carry the finding (judged again)",
    "judged": "2026-11-27",
    "by": "Claude (one reader, not independent)"
   },
@@ -797,8 +797,8 @@
    "file": "src/pages/curriculum/layouts/ArraysHashingLayout.tsx",
    "line": 152,
    "said": "Contrast is 7 on the APCA scale at 13px. Text this size needs 60.",
-   "verdict": "right",
-   "why": "text measured under the APCA line for its size; the colour and ground are the page's own",
+   "verdict": "wrong",
+   "why": "a lone bracket or arrow of the expression, not words; the words beside it carry the finding (judged again)",
    "judged": "2026-11-27",
    "by": "Claude (one reader, not independent)"
   },
@@ -1959,6 +1959,17 @@
   },
   {
    "route": "/problems",
+   "rule": "craft/text-clips",
+   "file": "src/platform/ui/buttons/MintButton.tsx",
+   "line": 154,
+   "said": "With a larger text size set in the browser, 6px of what this holds is cut off.",
+   "verdict": "right",
+   "why": "with a larger browser text size the box cuts its words",
+   "judged": "2026-11-27",
+   "by": "Claude (one reader, not independent)"
+  },
+  {
+   "route": "/problems",
    "rule": "craft/text-opacity",
    "file": "src/pages/problems/FilterBar.tsx",
    "line": 136,
@@ -2207,6 +2218,28 @@
    "said": "One 24px blur looks like a smudge. Stack a few smaller ones.",
    "verdict": "right",
    "why": "one large blur where a stack would look like light (same check and line, judged on /terms)",
+   "judged": "2026-11-27",
+   "by": "Claude (one reader, not independent)"
+  },
+  {
+   "route": "/progress",
+   "rule": "craft/text-clips",
+   "file": "src/platform/ui/buttons/MintButton.tsx",
+   "line": 154,
+   "said": "With a larger text size set in the browser, 6px of what this holds is cut off.",
+   "verdict": "right",
+   "why": "with a larger browser text size the box cuts its words",
+   "judged": "2026-11-27",
+   "by": "Claude (one reader, not independent)"
+  },
+  {
+   "route": "/progress",
+   "rule": "craft/text-fixed",
+   "file": "src/pages/StatsPage.tsx",
+   "line": 203,
+   "said": "Sizes written in pixels here stay as they are when someone sets a larger text size in their browser. Everything around them grows and they do not.",
+   "verdict": "right",
+   "why": "text sized in pixels that ignores the reader’s text size",
    "judged": "2026-11-27",
    "by": "Claude (one reader, not independent)"
   },
@@ -2622,9 +2655,9 @@
    "rule": "craft/elevation-ladder",
    "file": "src/pages/settings/parts.tsx",
    "line": 258,
-   "said": "This shadow blurs 18px; the page’s 8px level is too close to tell apart.",
-   "verdict": "wrong",
-   "why": "the levels were chained through the ones between; 18px against 8px, or 32px against 18px, are clear steps apart",
+   "said": "This shadow blurs 10px; the page’s 8px level is too close to tell apart.",
+   "verdict": "right",
+   "why": "now said as 10px against the page’s 8px level, a step too small to tell apart (judged again)",
    "judged": "2026-11-27",
    "by": "Claude (one reader, not independent)"
   },
@@ -2645,8 +2678,8 @@
    "file": "src/platform/layout/TabBar.tsx",
    "line": 62,
    "said": "This shadow blurs 24px; the page’s 8px level is too close to tell apart.",
-   "verdict": "right",
-   "why": "a shadow a small step from a level the page uses more (same check and line, judged on /today)",
+   "verdict": "wrong",
+   "why": "on this page it is told to take the 8px level, a clear step away; the verdict from another page did not hold here (judged again)",
    "judged": "2026-11-27",
    "by": "Claude (one reader, not independent)"
   },
@@ -2656,8 +2689,8 @@
    "file": "src/platform/ui/AdminFeedbackDock.tsx",
    "line": 459,
    "said": "This shadow blurs 15px; the page’s 8px level is too close to tell apart.",
-   "verdict": "right",
-   "why": "a shadow a small step from a level the page uses more (same check and line, judged on /showcase)",
+   "verdict": "wrong",
+   "why": "on this page it is told to take the 8px level, a clear step away; the verdict from another page did not hold here (judged again)",
    "judged": "2026-11-27",
    "by": "Claude (one reader, not independent)"
   },
@@ -2667,8 +2700,8 @@
    "file": "src/platform/ui/buttons/MintButton.tsx",
    "line": 259,
    "said": "This shadow blurs 18px; the page’s 8px level is too close to tell apart.",
-   "verdict": "right",
-   "why": "a shadow a small step from a level the page uses more (same check and line, judged on /tree)",
+   "verdict": "wrong",
+   "why": "on this page it is told to take the 8px level, a clear step away; the verdict from another page did not hold here (judged again)",
    "judged": "2026-11-27",
    "by": "Claude (one reader, not independent)"
   },
@@ -4137,6 +4170,17 @@
   },
   {
    "route": "/signup",
+   "rule": "craft/text-clips",
+   "file": "src/platform/ui/buttons/MintButton.tsx",
+   "line": 154,
+   "said": "With a larger text size set in the browser, 6px of what this holds is cut off.",
+   "verdict": "right",
+   "why": "with a larger browser text size the box cuts its words",
+   "judged": "2026-11-27",
+   "by": "Claude (one reader, not independent)"
+  },
+  {
+   "route": "/signup",
    "rule": "experience/link-target-renamed",
    "file": "src/pages/auth/notes.tsx",
    "line": 39,
@@ -4286,6 +4330,17 @@
    "said": "One 24px blur looks like a smudge. Stack a few smaller ones.",
    "verdict": "right",
    "why": "one large blur where a stack would look like light",
+   "judged": "2026-11-27",
+   "by": "Claude (one reader, not independent)"
+  },
+  {
+   "route": "/terms",
+   "rule": "craft/text-clips",
+   "file": "src/platform/ui/buttons/MintButton.tsx",
+   "line": 154,
+   "said": "With a larger text size set in the browser, 6px of what this holds is cut off.",
+   "verdict": "right",
+   "why": "with a larger browser text size the box cuts its words",
    "judged": "2026-11-27",
    "by": "Claude (one reader, not independent)"
   },
@@ -4943,6 +4998,17 @@
    "rule": "craft/text-opacity",
    "file": "src/pages/curriculum/illustrations/SapphireIllustrations.tsx",
    "line": 1299,
+   "said": "This text uses opacity 0.6. Use card-foreground, the colour it shows as.",
+   "verdict": "unsure",
+   "why": "labels inside an illustration; the ground it measured (a dark card) may not be what is behind them",
+   "judged": "2026-11-27",
+   "by": "Claude (one reader, not independent)"
+  },
+  {
+   "route": "/tree",
+   "rule": "craft/text-opacity",
+   "file": "src/pages/curriculum/illustrations/SapphireIllustrations.tsx",
+   "line": 1326,
    "said": "This text uses opacity 0.6. Use card-foreground, the colour it shows as.",
    "verdict": "unsure",
    "why": "labels inside an illustration; the ground it measured (a dark card) may not be what is behind them",
