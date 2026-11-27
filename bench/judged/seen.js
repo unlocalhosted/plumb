@@ -115,6 +115,25 @@ export function places(tree, units) {
   return out;
 }
 
+// every row and column of the seen picture as one sequence: the things in order along it, and the gap between each
+// two neighbours. A split inside a split along the same direction is the same row, so it is laid flat into it.
+export function runs(tree) {
+  const out = [];
+  const axisOf = (n) => (n.type === 'box' ? n.how?.axis : n.type === 'run' || n.type === 'groups' ? n.axis : undefined);
+  const flat = (n, axis) => (n.children ?? []).flatMap((c) => (c.type !== 'box' && axisOf(c) === axis ? flat(c, axis) : [c]));
+  const walk = (n, above) => {
+    const axis = axisOf(n);
+    if (axis && !(n.type !== 'box' && axis === above)) {
+      const span = far(axis), items = flat(n, axis).sort((a, b) => span(boxOf(a))[0] - span(boxOf(b))[0]);
+      const gaps = items.slice(1).map((it, k) => span(boxOf(it))[0] - span(boxOf(items[k]))[1]);
+      if (items.length >= 2) out.push({ axis, items, gaps });
+    }
+    for (const c of n.children ?? []) walk(c, axis);
+  };
+  walk(tree, undefined);
+  return out;
+}
+
 // every node with its level: 1 for the parts the page first splits into, 2 for what each part splits into, and so
 // on. A part may be a single unit.
 export function levels(tree) {

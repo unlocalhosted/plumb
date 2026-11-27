@@ -196,6 +196,12 @@ past about 1.5 the longer direction was "almost never seen" (Kubovy and Wagemans
 *Not known:* whether 1.5 holds for blocks of text and cards. It was measured on dots shown for a third of a second.
 Plumber has one check in this place today, for an inner gap larger than the outer one, which is the first row.
 
+Added on 2026-11-27 with the first cut (journey entry 165). Two rules came out of the first run, *both ours*. Space
+is set only against the next level in: a gap inside a group that has groups of its own is judged one level down.
+And a group that is one drawn box is already set apart by the box, so the gap beside it is not judged. On a page
+with no source the groups come from how the page is built, and that proved the weak part: a section label built
+as a neighbour of its cards was read as a group of its own.
+
 ## 14. Alike
 
 Each unit has a look: its kind (text, picture, box), size, fill, text colour, type size, weight, corner, border, and

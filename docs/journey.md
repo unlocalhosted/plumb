@@ -7296,11 +7296,40 @@ into its own browser. Your app isn't changed.", then the findings.
   inside a wrapper with no box, and things that lie on a shape, and it can say where each thing sits.
 - **Media hooks:** `http://rauno-03-rauno-me.localhost:4420/__judge/?seen=1&screen=craft`, "Look against role".
 
+### 165. Space against belonging, drawn over real pages (2026-11-27)
+
+- **The itch:** the owner sent the work back to shape (entry 164). The first thing a designer reads on a page is
+  what belongs with what, and space is how a page says it.
+- **What was built:** the spec's section on nearness, in its first cut. Every row and column of the seen picture is
+  read as a sequence of things with the gap between each two neighbours (`runs` in `bench/judged/seen.js`). Which
+  neighbours belong together is read from the page's own structure (`belongs` in `bench/judged/see.js`), and the
+  two are compared by one ratio: the smallest gap between two groups over the largest gap inside one
+  (`bench/judged/near.js`). Under 1 the space says the opposite. From 1 to 1.5 the eye cannot tell where a group
+  ends. The view has a third reading, "Space against belonging", that draws both gaps and the groups.
+- **Two rules added after the first run, both ours:** space is only set against the next level in, so a gap inside
+  a group that has groups of its own is judged one level down. And a group that is one drawn box is already set
+  apart by its box, so the gap beside it is not judged. The first run had set a menu bar's distance from the page
+  against the largest gap anywhere in the page.
+- **What it says on six pages:** 25 rows and columns hold groups. Space agrees in 17, cannot tell in 2 and says
+  the opposite in 6. Three we looked at: on shadcn's page a small label sits 19px under its heading and 17px above
+  the faces it names; on Max Leiter's page "View all posts" sits closer to the last post than the posts sit to
+  each other; on Jamie Scott Craik's page a section label is as far from its first card as the cards are from each
+  other.
+- **Where it is weak:** which things belong together. On a public page that comes from how the page is built, and
+  a page is often built in a way that says nothing about meaning. In the third case above the reading took the
+  section label for a group of its own, when it belongs with the cards under it. Lines that divide rows are not
+  seen at all when they are drawn as one edge of a row.
+- **Not judged:** no person has looked at any of these. The 1.5 is the published number, measured on dots.
+- **Also fixed:** a link parked above the page, where no scrolling reaches it, is no longer read as drawn.
+- **Media hooks:** `http://rauno-21-shadcn-com.localhost:4420/__judge/?seen=1`, "Space against belonging";
+  pictures in `docs/research/harvests/raunofreiberg-portfolio-reviews/local/near/` (not in git).
+
 ## Open gaps
 
-- Of the five comparisons in the engine spec, only "alike" has been built on, and only for whether a thing looks
-  pressable ([entry 164](#164-boxes-join-the-comparison-and-the-owner-asks-whether-we-have-drifted-2026-11-27)).
-  Near, enclosed, nearly regular and loud are not started.
+- Of the five comparisons in the engine spec, two have a first cut: "alike", for whether a thing looks pressable
+  ([entry 164](#164-boxes-join-the-comparison-and-the-owner-asks-whether-we-have-drifted-2026-11-27)), and "near"
+  ([entry 165](#165-space-against-belonging-drawn-over-real-pages-2026-11-27)), which no person has judged yet
+  and whose reading of what belongs together is weak. Enclosed, nearly regular and loud are not started.
 - The layer that compares how text looks with what it does now takes where a piece sits from the seen picture
   ([entry 161](#161-where-a-piece-sits-now-comes-from-the-seen-picture-2026-11-27)). Its rule that things inside
   boxes are in a different place from things on the page itself has no source and has been run on six pages.

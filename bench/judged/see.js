@@ -8,8 +8,9 @@
 //               role (what the page is built to do with it), for alike.js. The look is read from styles; the role
 //               from tags, roles and addresses, which is the weaker reading the spec allows where there is no source.
 //   see(...)    the view: the page in a frame, the tree from seen.js outlined over it one level at a time.
-import { grow, levels, places, settle, RATIO } from './seen.js';
+import { grow, levels, places, runs, settle, RATIO } from './seen.js';
 import { judge } from './alike.js';
+import { judge as near, RATIO as APART } from './near.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const host = (url) => url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
@@ -49,6 +50,8 @@ export function read(win) {
     for (const c of el.children) {
       if (NEVER.has(c.localName)) continue;
       const s = win.getComputedStyle(c), r = c.getBoundingClientRect(), big = r.width >= 3 && r.height >= 3;
+      // parked above or left of the page, where no scrolling reaches it (a "skip to content" link at rest)
+      if (big && (r.bottom + win.scrollY <= 0 || r.right + win.scrollX <= 0)) continue;
       // an element with no box of its own (display: contents) still shows what is inside it, and the browser's own
       // "is it visible" says no for it. One such wrapper round a whole app left the page read as empty.
       if (s.display !== 'contents' && c.checkVisibility?.({ checkOpacity: true, checkVisibilityCSS: true }) === false) continue;
@@ -156,6 +159,51 @@ export function pieces(win, site, seen) {
   return { rows, els };
 }
 
+// The meant side of "near": which neighbours in a row or column belong together, read from the page's own
+// structure. This is the weaker reading the spec allows where there is no source. Things under one branch of the
+// part that holds the whole row belong together; a heading belongs with what follows it; and where every thing is
+// a branch of its own, each heading starts a group.
+const HEAD = 'h1, h2, h3, h4, h5, h6, [role="heading"]';
+const unitsIn = (n, out = []) => { if (n.unit !== undefined) out.push(n.unit); for (const c of n.children ?? []) unitsIn(c, out); return out; };
+const lca = (a, b) => { while (a && !a.contains(b)) a = a.parentElement; return a; };
+// Gives one comparison per level of the structure: { from, groups, skip, how }, for the things from place `from`
+// on. A gap inside a group that has groups of its own is skipped at this level and judged one level down, so space
+// is only ever set against the next level in. A gap beside a group that is one drawn box is skipped too: the box
+// already sets that group apart, and space need not.
+export function belongs(run, got) {
+  const anchors = run.items.map((n) => unitsIn(n).map((u) => got.els[u].el).reduce(lca)), out = [];
+  const level = (lo, hi) => {
+    const mine = anchors.slice(lo, hi + 1), top = mine.reduce(lca);
+    if (!top || mine.some((a) => a === top)) return false;
+    const branch = mine.map((a) => { while (a.parentElement !== top) a = a.parentElement; return a; });
+    const heads = mine.map((a) => { const h = a.closest(HEAD); return !!h && h !== top && top.contains(h); });
+    let g = 0, groups = branch.map((b, k) => (k && b !== branch[k - 1] ? ++g : g)), how = 'structure';
+    const skip = new Set();
+    if (g === branch.length - 1) {
+      if (!heads.some(Boolean)) return false;
+      g = 0; groups = heads.map((h, k) => (k && h ? ++g : g)); how = 'headings';
+    } else {
+      // a group that is only a heading joins the group after it
+      for (let id = g - 1; id >= 0; id--) if (groups.every((x, k) => x !== id || heads[k])) groups.forEach((x, k) => { if (x === id) groups[k] = id + 1; });
+      if (new Set(groups).size < 2) return false;
+      // a group with groups of its own: its gaps belong to the level below
+      for (const id of new Set(groups)) {
+        const first = groups.indexOf(id), last = groups.lastIndexOf(id);
+        if (last > first && level(lo + first, lo + last)) for (let k = first; k < last; k++) skip.add(k);
+      }
+    }
+    for (const id of new Set(groups)) {
+      const first = groups.indexOf(id), last = groups.lastIndexOf(id);
+      if (first === last && run.items[lo + first].type === 'box') { if (first > 0) skip.add(first - 1); if (first < groups.length - 1) skip.add(first); }
+    }
+    if (new Set(groups).size < 2) return false;
+    out.push({ from: lo, groups, skip, how });
+    return true;
+  };
+  level(0, run.items.length - 1);
+  return out;
+}
+
 const CSS = `
   .desk.two { display: grid; grid-template-columns: minmax(0, 1fr) 360px; }
   .view { position: relative; overflow: hidden; min-height: 0; }
@@ -181,6 +229,8 @@ const CSS = `
   .layer.using { pointer-events: none; }
   .modes { display: flex; gap: var(--pl-space-3); } .modes .chip[aria-pressed="true"] { background: var(--pl-ink); color: var(--pl-paper); }
   .pane { display: grid; align-content: start; gap: var(--pl-space-6); }
+  .t-near { --h: var(--pl-butter); } .t-agree { --h: var(--pl-mint, var(--pl-sky)); }
+  .gap { position: absolute; box-sizing: border-box; background: color-mix(in oklab, var(--h) 55%, transparent); box-shadow: 0 0 0 1px var(--pl-halo); border-radius: 2px; }
   .t-odd { --h: var(--pl-pink); } .g.odd { border-width: 3px; border-radius: 6px; }
   .finds { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pl-space-3); }
   .finds button { display: grid; gap: var(--pl-space-2); width: 100%; text-align: left; padding: var(--pl-space-5); border: 0; border-radius: 14px; background: var(--pl-paper-2); color: inherit; cursor: pointer; font: inherit; }
@@ -233,8 +283,9 @@ export function see(el, root, base, loaded, soften) {
     <main class="desk two">
       <div class="view"><div class="stage"><iframe title="The page being read"></iframe><div class="layer"><div class="seen"></div></div></div></div>
       <aside class="side">
-        <div class="modes"><button type="button" class="chip" data-mode="groups" aria-pressed="true">Groups</button><button type="button" class="chip" data-mode="alike" aria-pressed="false">Look against role</button></div>
+        <div class="modes"><button type="button" class="chip" data-mode="groups" aria-pressed="true">Groups</button><button type="button" class="chip" data-mode="alike" aria-pressed="false">Look against role</button><button type="button" class="chip" data-mode="near" aria-pressed="false">Space against belonging</button></div>
         <div class="pane alike" hidden></div>
+        <div class="pane near" hidden></div>
         <div class="pane groups">
         <div><h2>Level</h2><p>Level 1 is the parts the page first falls into. Each level after splits those parts again.</p></div>
         <div class="steps"></div>
@@ -255,7 +306,7 @@ export function see(el, root, base, loaded, soften) {
   const frame = $('iframe'), layer = $('.layer'), seen = $('.seen'), stage = $('.stage'), view = $('.view');
   const screen = set.screens.find((s) => s.id === new URL(location.href).searchParams.get('screen')) ?? set.screens[0];
   let scale = 1, got = null, tree = null, flat = [], level = 1, units = false, over = null, held = false;
-  let mode = 'groups', found = null, pick = null;
+  let mode = 'groups', found = null, pick = null, spaced = [], npick = null, agreeing = false;
 
   const fit = () => {
     const w = screen?.width ?? set.width ?? 1440, room = view.clientWidth - 32, tallness = view.clientHeight - 32;
@@ -283,9 +334,45 @@ export function see(el, root, base, loaded, soften) {
     $('.alike').innerHTML = `<div><h2>Look against role</h2><p>Pieces of text that are drawn exactly alike and are not the same kind of thing. This is what the reading says. No judge has checked it.</p></div>
       ${found.findings.length ? `<ul class="finds">${found.findings.map((f, k) => { const [title, body] = SAID[f.kind](f, rows); return `<li><button type="button" data-find="${k}" aria-pressed="${k === pick}"><b>${title}</b><span>${esc(body)}</span><span>${f.odd.slice(0, 6).map((i) => `<em>${esc(rows[i].text)}</em>`).join(' · ')}${f.odd.length > 6 ? ` and ${f.odd.length - 6} more` : ''}</span><span>Drawn as: ${esc(rows[f.odd[0]].words)}, ${f.beside ? 'side by side with others drawn the same' : 'each on a line of its own'}, ${f.scope === 'ground' ? 'on the page itself' : 'inside boxes'}</span></button></li>`; }).join('')}</ul>` : '<p>Nothing on this page looks like one thing and is another.</p>'}`;
   };
+  // space against belonging: the gap between two groups, and the largest gap inside one
+  const SPACE = { opposite: ['Space says the opposite', 't-odd'], nearly: ['Space does not say where a group ends', 't-near'], agree: ['Space agrees', 't-agree'] };
+  const words = (n) => { const u = unitsIn(n).find((i) => got.units[i].kind === 'text'); return u === undefined ? 'a picture or a box' : got.els[u].el.textContent.trim().replace(/\s+/g, ' ').slice(0, 36); };
+  const gapBox = (s, k) => {
+    const a = nowOf(s.run.items[k]), b = nowOf(s.run.items[k + 1]); if (!a.w || !b.w) return null;
+    return s.run.axis === 'y'
+      ? { x: Math.min(a.x, b.x), y: a.y + a.h, w: Math.max(a.x + a.w, b.x + b.w) - Math.min(a.x, b.x), h: Math.max(2, b.y - a.y - a.h) }
+      : { x: a.x + a.w, y: Math.min(a.y, b.y), w: Math.max(2, b.x - a.x - a.w), h: Math.max(a.y + a.h, b.y + b.h) - Math.min(a.y, b.y) };
+  };
+  const drawNear = () => {
+    const html = [];
+    const bar = (s, k, cls) => { const r = gapBox(s, k); if (r) html.push(`<div class="gap ${cls}" style="left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px"></div>`); };
+    spaced.forEach((s, n) => {
+      if (npick !== null && npick !== n) return;
+      if (npick === null && s.v.outcome === 'agree' && !agreeing) return;
+      bar(s, s.v.between, SPACE[s.v.outcome][1]);
+      if (npick === null) return;
+      bar(s, s.v.inside, 't-run');
+      // each group as the page means it
+      const ids = [...new Set(s.groups)];
+      for (const id of ids) {
+        let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+        s.run.items.forEach((it, k) => { if (s.groups[k] !== id) return; const r = nowOf(it); if (!r.w) return; x0 = Math.min(x0, r.x); y0 = Math.min(y0, r.y); x1 = Math.max(x1, r.x + r.w); y1 = Math.max(y1, r.y + r.h); });
+        if (x1 > x0) html.push(`<div class="g t-run leaf" style="left:${x0 - 4}px;top:${y0 - 3}px;width:${x1 - x0 + 8}px;height:${y1 - y0 + 6}px"></div>`);
+      }
+    });
+    seen.innerHTML = html.join('');
+  };
+  const listNear = () => {
+    const count = (o) => spaced.filter((s) => s.v.outcome === o).length, shown = spaced.map((s, n) => ({ s, n })).filter(({ s }) => s.v.outcome !== 'agree' || agreeing);
+    $('.near').innerHTML = `<div><h2>Space against belonging</h2><p>In each row or column, the space between two groups should be at least ${APART} times the largest space inside a group. Which things belong together is read from the page's structure, which is a weak reading. No judge has checked this.</p></div>
+      <p>${spaced.length} rows and columns hold groups. Space agrees in ${count('agree')}, cannot tell in ${count('nearly')}, says the opposite in ${count('opposite')}.</p>
+      <button type="button" class="chip" data-agree aria-pressed="${agreeing}">Show the ones that agree</button>
+      ${shown.length ? `<ul class="finds">${shown.map(({ s, n }) => { const g = s.v.gaps; return `<li><button type="button" data-near="${n}" aria-pressed="${n === npick}"><b>${SPACE[s.v.outcome][0]}</b><span>${g[s.v.between]}px between two groups, ${g[s.v.inside]}px inside one. ${s.v.r === Infinity ? '' : `That is ${Math.round(s.v.r * 100) / 100} times.`}</span><span><em>${esc(words(s.run.items[s.v.between]))}</em> · <em>${esc(words(s.run.items[s.v.between + 1]))}</em></span><span>${s.run.axis === 'y' ? 'A column' : 'A row'} of ${s.run.items.length}, in ${new Set(s.groups).size} groups read from ${s.how === 'headings' ? 'its headings' : 'the page’s structure'}</span></button></li>`; }).join('')}</ul>` : '<p>Nothing to show.</p>'}`;
+  };
   const draw = () => {
     if (!tree) return;
     if (mode === 'alike') return drawAlike();
+    if (mode === 'near') return drawNear();
     const h = stage.clientHeight, w = stage.clientWidth, html = [];
     shown = [];
     const add = (n, leaf) => {
@@ -327,6 +414,12 @@ export function see(el, root, base, loaded, soften) {
       const at = e && where.get(blocks.get(e)); if (at) Object.assign(row, { unit: blocks.get(e), scope: at.scope, row: at.row, group: at.group });
     });
     found.findings = judge(found.rows); pick = null; list();
+    spaced = runs(tree).flatMap((run) => belongs(run, got).map((b) => {
+      const part = { axis: run.axis, items: run.items.slice(b.from, b.from + b.groups.length), gaps: run.gaps.slice(b.from, b.from + b.groups.length - 1) };
+      const v = near({ gaps: part.gaps, groups: b.groups, skip: b.skip });
+      return v ? { run: part, v, groups: b.groups, how: b.how } : null;
+    })).filter(Boolean);
+    const rank = { opposite: 0, nearly: 1, agree: 2 }; spaced.sort((a, b) => rank[a.v.outcome] - rank[b.v.outcome] || a.v.r - b.v.r); npick = null; listNear();
     const count = (k) => got.units.filter((u) => u.kind === k).length;
     $('.tally').textContent = `${count('text')} blocks of text, ${count('picture')} pictures, ${count('box')} drawn boxes and ${count('line')} lines, read at ${win.innerWidth} wide.${settled ? '' : ' The page was still moving after 8 seconds, so it was read as it stood.'}`;
     steps(); draw();
@@ -376,10 +469,17 @@ export function see(el, root, base, loaded, soften) {
   layer.addEventListener('pointerleave', () => { over = null; draw(); });
   $('.side').addEventListener('click', (e) => {
     const l = e.target.closest('[data-level]'), u = e.target.closest('[data-units]'), m = e.target.closest('[data-mode]'), f = e.target.closest('[data-find]');
+    const nr = e.target.closest('[data-near]');
+    if (e.target.closest('[data-agree]')) { agreeing = !agreeing; listNear(); return draw(); }
+    if (nr) {
+      npick = npick === Number(nr.dataset.near) ? null : Number(nr.dataset.near); listNear();
+      if (npick !== null) { const s = spaced[npick], u0 = unitsIn(s.run.items[s.v.between])[0]; got.els[u0].el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+      return draw();
+    }
     if (m) {
       mode = m.dataset.mode;
       for (const b of root.querySelectorAll('[data-mode]')) b.setAttribute('aria-pressed', String(b.dataset.mode === mode));
-      $('.pane.alike').hidden = mode !== 'alike'; $('.pane.groups').hidden = mode !== 'groups';
+      $('.pane.alike').hidden = mode !== 'alike'; $('.pane.groups').hidden = mode !== 'groups'; $('.pane.near').hidden = mode !== 'near';
       return draw();
     }
     if (f && found) {

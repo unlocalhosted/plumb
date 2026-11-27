@@ -97,6 +97,11 @@ owner has judged its first four findings (journey entry 160). Nothing since has 
 boxes are read too, by the look of their frame, and judged by the same rules. `&screen=<id>` opens another screen
 of the set.
 
+A third reading, "Space against belonging", is the spec's layer on nearness in its first cut. `runs` in `seen.js`
+gives every row and column with the gap between each two neighbours, `belongs` in `see.js` reads which neighbours
+belong together from the page's structure, and `near.js`, pure, compares them by one ratio. No judge has looked at
+what it says.
+
 To test against a page as a reviewer saw it, make a set whose app is the web archive and whose screen path is the
 copy's address in its `if_` form, with `"scripts": false`: the copy is then served as a still. One exists locally
 for shadcn's page of 2026-10-20 (`sets/rauno-21b-shadcn-as-he-saw-it`, not in git).
