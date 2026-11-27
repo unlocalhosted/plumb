@@ -93,7 +93,9 @@ piece, and a look is compared only among pieces that sit the same way. The seen 
 (`places` in `seen.js`): on the page itself or inside boxes, and in a row beside others drawn the same or not. A
 set of links is one row or one column of the seen picture. What lies wholly on a drawn box counts as inside it,
 even where the page's code makes the two neighbours (`settle` in `seen.js`). The
-owner has judged its first four findings (journey entry 160). Nothing since has been checked by a judge.
+owner has judged its first four findings (journey entry 160). Nothing since has been checked by a judge. Drawn
+boxes are read too, by the look of their frame, and judged by the same rules. `&screen=<id>` opens another screen
+of the set.
 
 To test against a page as a reviewer saw it, make a set whose app is the web archive and whose screen path is the
 copy's address in its `if_` form, with `"scripts": false`: the copy is then served as a still. One exists locally

@@ -95,7 +95,7 @@ export function grow(units) {
   return top.length ? cut(top) : { type: 'pile', children: [] };
 }
 
-// where each single thing sits, for a layer that must only compare things that sit alike:
+// where each single thing and each drawn box sits, for a layer that must only compare things that sit alike:
 //   scope  'ground' when no drawn box is round it, else 'in:' and the row number of whatever holds its box (so the
 //          things inside the cards of one grid share a scope, and differ from the things on the page itself)
 //   row    a number when the first split above it is a row (things side by side), the same number for everything
@@ -103,8 +103,11 @@ export function grow(units) {
 //   group  the same, for a row or a column: the number of the first split above it, or -1 in a pile or alone
 export function places(tree, units) {
   const out = new Map(); let id = 0;
+  const put = (i, split) => { const b = units[i].parent; out.set(i, { scope: b < 0 ? 'ground' : `in:${units[b].parent}`, row: split?.axis === 'x' ? split.id : -1, group: split?.axis ? split.id : -1 }); };
   const walk = (n, split) => {
-    if (n.type === 'unit') { const b = units[n.unit].parent; out.set(n.unit, { scope: b < 0 ? 'ground' : `in:${units[b].parent}`, row: split?.axis === 'x' ? split.id : -1, group: split?.axis ? split.id : -1 }); return; }
+    if (n.type === 'unit') return put(n.unit, split);
+    // a drawn box has a place of its own, as well as the things inside it
+    if (n.type === 'box') put(n.unit, split);
     const next = n.type !== 'box' ? { id: id++, axis: n.axis } : n.how ? { id: id++, axis: n.how.axis } : split;
     for (const c of n.children ?? []) walk(c, next);
   };

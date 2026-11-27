@@ -81,7 +81,7 @@ const bare = (h) => h.replace(/^www\./, '');
 // a link kept by the web archive points at the archive: the address it stood for is inside its path
 const real = (url) => { const m = url.host === 'web.archive.org' && /^\/web\/\d+[a-z_]*\/(https?:\/\/.+)$/.exec(url.pathname + url.search + url.hash); try { return m ? new URL(m[1]) : url; } catch { return url; } };
 
-export function pieces(win, site) {
+export function pieces(win, site, seen) {
   const doc = win.document, rows = [], els = [], carriers = new Map();
   const here = real(new URL(win.location.href)), home = here.host === win.location.host ? bare(site) : bare(here.host);
   const ctx = Object.assign(doc.createElement('canvas'), { width: 1, height: 1 }).getContext('2d', { willReadFrequently: true }), known = new Map();
@@ -135,8 +135,24 @@ export function pieces(win, site) {
     const lum = (c) => { const [r, g, b2] = c.slice(0, 3).map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b2; };
     const l1 = lum(colour(st.color)), l2 = lum(back), contrast = Math.round(((Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05)) * 10) / 10;
     rows.push({ look, words, role, carrier: carrier ? carriers.get(carrier) : -1, size: parseFloat(st.fontSize), weight: Number(st.fontWeight) || 400, contrast,
-      unit: -1, scope: 'ground', row: -1, group: -1, text: text.trim().replace(/\s+/g, ' ').slice(0, 60) }); els.push({ el, parts });
+      kind: 'text', unit: -1, scope: 'ground', row: -1, group: -1, text: text.trim().replace(/\s+/g, ' ').slice(0, 60) }); els.push({ el, parts });
   }
+  // every drawn box of the seen picture, with the look of its frame (fill, outline, corners, shadow) and its role.
+  // A box is pressable when it is a link or a control, is inside one, or holds one that covers nearly all of it.
+  // Not read: a link stretched over a card by a pseudo-element, and how large the box is.
+  seen?.units.forEach((u, i) => {
+    if (u.kind !== 'box') return;
+    const el = seen.els[i].el, st = win.getComputedStyle(el), area = u.w * u.h;
+    let [role] = roleOf(el);
+    if (role === 'plain') for (const c of el.querySelectorAll(CARRIER)) { const r = c.getBoundingClientRect(); if (r.width * r.height >= area * 0.8) { [role] = roleOf(c); break; } }
+    const raw = colour(st.backgroundColor), fill = raw[3] ? `${hex(raw)}${raw[3] < 250 ? `/${Math.round(raw[3] / 2.55)}%` : ''}` : '';
+    const edge = parseFloat(st.borderTopWidth) > 0 && st.borderTopStyle !== 'none' ? `${Math.round(parseFloat(st.borderTopWidth) * 10) / 10}px ${hex(colour(st.borderTopColor))}` : '';
+    const corner = Math.round(parseFloat(st.borderTopLeftRadius) || 0), shade = st.boxShadow !== 'none', picture = st.backgroundImage !== 'none';
+    const look = ['box', fill, edge, corner, shade ? 's' : '', picture ? 'i' : ''].join('|');
+    const words = [fill ? `filled ${fill}` : 'no fill', edge ? `outline ${edge}` : 'no outline', corner ? `${corner}px corners` : 'square corners', shade ? 'a shadow' : '', picture ? 'a picture or gradient behind' : ''].filter(Boolean).join(', ');
+    rows.push({ look, words, role, carrier: -1, size: 0, weight: 0, contrast: 0, kind: 'box', unit: i, scope: 'ground', row: -1, group: -1, text: (el.textContent ?? '').trim().replace(/\s+/g, ' ').slice(0, 40) || 'a box with no words' });
+    els.push({ el, parts: null });
+  });
   return { rows, els };
 }
 
@@ -176,8 +192,12 @@ const CSS = `
 const WAYS = { page: 'open another page of the site', jump: 'jump down this page', leaves: 'leave the site', control: 'do something here' };
 const many = (n, one, more) => `${n} ${n === 1 ? one : more}`;
 const SAID = {
-  'looks-pressable': (f, rows) => ['Looks pressable, and is not', `${many(f.odd.length, 'piece of text is', 'pieces of text are')} drawn exactly like ${f.many.length} things that can be pressed. Nothing happens when you press ${f.odd.length === 1 ? 'it' : 'them'}.`],
-  'pressable-plain': (f, rows) => ['Can be pressed, and does not look it', `${many(f.odd.length, 'thing that can be pressed is', 'things that can be pressed are')} drawn exactly like ${f.many.length} pieces of plain text. At rest nothing says which is which.`],
+  'looks-pressable': (f, rows) => (rows[f.odd[0]].kind === 'box'
+    ? ['A box that looks pressable, and is not', `${many(f.odd.length, 'box is', 'boxes are')} drawn exactly like ${f.many.length} boxes that can be pressed. Nothing happens when you press ${f.odd.length === 1 ? 'it' : 'them'}.`]
+    : ['Looks pressable, and is not', `${many(f.odd.length, 'piece of text is', 'pieces of text are')} drawn exactly like ${f.many.length} things that can be pressed. Nothing happens when you press ${f.odd.length === 1 ? 'it' : 'them'}.`]),
+  'pressable-plain': (f, rows) => (rows[f.odd[0]].kind === 'box'
+    ? ['A box that can be pressed, and does not look it', `${many(f.odd.length, 'box that can be pressed is', 'boxes that can be pressed are')} drawn exactly like ${f.many.length} boxes that do nothing. At rest nothing says which is which.`]
+    : ['Can be pressed, and does not look it', `${many(f.odd.length, 'thing that can be pressed is', 'things that can be pressed are')} drawn exactly like ${f.many.length} pieces of plain text. At rest nothing says which is which.`]),
   'one-set-two-ways': (f, rows) => {
     const jumps = [...f.many, ...f.odd].filter((i) => rows[i].role === 'jump').length, rest = f.many.length + f.odd.length - jumps;
     return ['One row of links, two kinds', `These links sit together and look the same. ${many(jumps, 'jumps', 'jump')} down this page and ${many(rest, 'opens', 'open')} another page.`];
@@ -233,7 +253,7 @@ export function see(el, root, base, loaded, soften) {
   soften(root);
   const $ = (sel) => root.querySelector(sel);
   const frame = $('iframe'), layer = $('.layer'), seen = $('.seen'), stage = $('.stage'), view = $('.view');
-  const screen = set.screens[0];
+  const screen = set.screens.find((s) => s.id === new URL(location.href).searchParams.get('screen')) ?? set.screens[0];
   let scale = 1, got = null, tree = null, flat = [], level = 1, units = false, over = null, held = false;
   let mode = 'groups', found = null, pick = null;
 
@@ -253,7 +273,7 @@ export function see(el, root, base, loaded, soften) {
   // look against role: the odd pieces of every finding, or one finding's odd pieces among the ones they look like
   const drawAlike = () => {
     const html = [];
-    const put = (i, cls) => { const r = inkBox(found.els[i].parts); if (r.width) html.push(`<div class="g ${cls}" style="left:${r.left - 4}px;top:${r.top - 3}px;width:${r.width + 8}px;height:${r.height + 6}px"></div>`); };
+    const put = (i, cls) => { const { el: e, parts } = found.els[i], r = parts ? inkBox(parts) : e.getBoundingClientRect(); if (r.width) html.push(`<div class="g ${cls}" style="left:${r.left - 4}px;top:${r.top - 3}px;width:${r.width + 8}px;height:${r.height + 6}px"></div>`); };
     if (pick !== null) { const f = found.findings[pick]; f.many.forEach((i) => put(i, 't-run leaf')); f.odd.forEach((i) => put(i, 't-odd odd')); }
     else for (const f of found.findings) f.odd.forEach((i) => put(i, 't-odd odd'));
     seen.innerHTML = html.join('');
@@ -297,11 +317,12 @@ export function see(el, root, base, loaded, soften) {
     $('.tally').textContent = 'Waiting for the page to stop moving.';
     const settled = await still();
     got = read(win); got.units = settle(got.units); tree = grow(got.units); flat = levels(tree); over = null;
-    found = pieces(win, new URL(set.app).host);
+    found = pieces(win, new URL(set.app).host, got);
     // where each piece sits, from the seen picture: the block of text it is part of, then that block's place
     const blocks = new Map(), where = places(tree, got.units);
     got.units.forEach((u, i) => { if (u.kind === 'text') blocks.set(got.els[i].el, i); });
     found.rows.forEach((row, i) => {
+      if (row.kind === 'box') { const at = where.get(row.unit); if (at) Object.assign(row, at); return; }
       let e = found.els[i].el; while (e && !blocks.has(e)) e = e.parentElement;
       const at = e && where.get(blocks.get(e)); if (at) Object.assign(row, { unit: blocks.get(e), scope: at.scope, row: at.row, group: at.group });
     });

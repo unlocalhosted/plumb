@@ -7263,8 +7263,35 @@ into its own browser. Your app isn't changed.", then the findings.
 - **Media hooks:** pictures of each page as checked, in
   `docs/research/harvests/raunofreiberg-portfolio-reviews/local/seven/` (not in git).
 
+### 164. Boxes join the comparison and the owner asks whether we have drifted (2026-11-27)
+
+- **The itch:** two of Rauno's points for this layer are about cards and boxes, and the layer compared text only.
+  While that was being built the owner wrote: "i hope we have not deterred from our original task and still
+  aligned on the original task of ability to look at shapes in a way designer look at things".
+- **What was built:** every drawn box of the seen picture is read with the look of its frame (fill, outline,
+  corners, shadow) and whether it can be pressed, and is judged by the same rules as text
+  (`bench/judged/see.js`). The view opens any screen of a set with `&screen=<id>`.
+- **The proof:** on rauno.me's Craft page the layer makes one finding: 26 cards that can be pressed are drawn
+  exactly like 55 cards that do nothing. That is his point there, that it is easy to miss which entries can be
+  clicked. The six pages give the same three findings as before and none about boxes.
+- **A claim taken back:** the two panels on Max Leiter's page are not in reach of this. Neither panel is a link.
+  Telling them apart needs to know what each panel is for.
+- **The honest answer to the owner's question:** the work stayed on the engine and narrowed inside it. Of the five
+  things the spec compares (what belongs together, what is enclosed, what is alike, what is regular, what is
+  loud), seven steps in a row went to one corner of one: does a thing look pressable. That corner is the nearest
+  to a linter and the furthest from how a designer looks at a page.
+- **The system behind the drift:** the next step was chosen by where judged cases existed, and after that by
+  whatever the last page showed. The spec's order (near after the seen picture) was set aside for that reason in
+  entry 159, and nothing pulled the work back.
+- **What did serve the original task:** the seen picture itself. It now reads cards with a faint fill, pages
+  inside a wrapper with no box, and things that lie on a shape, and it can say where each thing sits.
+- **Media hooks:** `http://rauno-03-rauno-me.localhost:4420/__judge/?seen=1&screen=craft`, "Look against role".
+
 ## Open gaps
 
+- Of the five comparisons in the engine spec, only "alike" has been built on, and only for whether a thing looks
+  pressable ([entry 164](#164-boxes-join-the-comparison-and-the-owner-asks-whether-we-have-drifted-2026-11-27)).
+  Near, enclosed, nearly regular and loud are not started.
 - The layer that compares how text looks with what it does now takes where a piece sits from the seen picture
   ([entry 161](#161-where-a-piece-sits-now-comes-from-the-seen-picture-2026-11-27)). Its rule that things inside
   boxes are in a different place from things on the page itself has no source and has been run on six pages.
