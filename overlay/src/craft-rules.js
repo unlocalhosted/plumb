@@ -3283,7 +3283,12 @@ export const scrollChain = {
     if (s.overscrollBehaviorY && s.overscrollBehaviorY !== 'auto') return [];
     const page = document.scrollingElement;
     if (!page || page.scrollHeight <= page.clientHeight + 4) return []; // nothing behind it to move
-    if (el.closest('dialog, [role="dialog"], [role="alertdialog"], [aria-modal="true"]')) return [];
+    // a dialog that locks the page (overflow hidden on the root or the body) has no page behind it to move, and the
+    // dialog check speaks there. One that leaves the page free is a layer the hand rests on, and the page moves at its
+    // end (found on a real app, 2026-11-27: a command palette, not marked modal, whose list ran on into the page)
+    const layer = el.closest('dialog, [role="dialog"], [role="alertdialog"], [aria-modal="true"]');
+    const locked = (n) => /^(?:hidden|clip)$/.test(getComputedStyle(n).overflowY);
+    if (layer && (locked(document.documentElement) || locked(document.body))) return [];
     // placed out of flow and laid over what is around it: a box placed against the page itself, or one that reaches
     // outside the box it is placed in (a popover hanging below its button). One that sits inside that box (a pane
     // filling a card, the screen of a drawn device) is part of the card, which is in the page's flow
@@ -3294,7 +3299,7 @@ export const scrollChain = {
       const a = n.getBoundingClientRect(), b = cb.getBoundingClientRect();
       return a.top < b.top - 2 || a.bottom > b.bottom + 2 || a.left < b.left - 2 || a.right > b.right + 2;
     };
-    let held = false;
+    let held = !!layer;
     for (let n = el, d = 0; n && n !== document.body && d < 4; n = n.parentElement, d++) {
       const p = facts.style(n).position;
       // fixed or stuck in place, or laid over the page out of its flow: a menu or list in a popover (maybepratikk, 2026-11-25)

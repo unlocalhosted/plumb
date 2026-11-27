@@ -83,6 +83,15 @@ export function App() {
         <div className="rounded-lg bg-slate-100 p-3 text-sm text-slate-800">The open note</div>
       </section>
 
+      {/* scroll-chain: a palette drawn over a demo, a dialog not marked modal, with the page left free to scroll */}
+      <div className="relative h-80 rounded-lg bg-slate-100">
+        <div id="palette" role="dialog" aria-label="Command palette" className="absolute left-1/2 top-6 w-72 -translate-x-1/2 overflow-hidden rounded-xl bg-white shadow-lg">
+          <ul id="palette-list" role="listbox" className="max-h-48 overflow-y-auto p-1.5 text-sm text-slate-800">
+            {notes.map((n) => <li key={n} role="option" aria-selected="false" className="rounded px-2.5 py-1.5">{n}</li>)}
+          </ul>
+        </div>
+      </div>
+
       {/* native-accent: browser-drawn controls beside green buttons */}
       <form className="grid gap-4">
         <label className="flex items-center gap-2 text-sm text-slate-800"><input id="box" type="checkbox" defaultChecked /> Email me the weekly summary</label>

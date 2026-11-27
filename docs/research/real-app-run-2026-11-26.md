@@ -228,8 +228,8 @@ Proof, run on vm-agent at main `18475229` plus these edits:
   `menu-batch {"own":{"craft/empty-box":0,"craft/scroll-chain":1},…,"diff":[],"thrown":[]}`. Each fault is still
   found once: the empty error line, the fixed panel, and the popover list.
 
-All nine places that were wrong or arguable are now fixed. The two possible `scroll-chain` misses were looked at
-after; neither is a miss (see Misses).
+All nine places that were wrong or arguable are now fixed. Of the two possible `scroll-chain` misses, one was real
+(the palette's list) and is fixed (see Misses).
 
 ## Right findings
 
@@ -247,31 +247,41 @@ same look, rows that touch, one class each. Arguable on the edit, right on the f
 ## Misses
 
 The app was skimmed in its source for the places each check is about. Two possible misses came up, both for
-`scroll-chain`. Measured after the run, neither one is a miss:
+`scroll-chain`. Both were then tried by hand on the drawn page, with Playwright on vm-agent: one is a real miss, now
+fixed, and one is not a miss.
 
-- **A side column that fills the screen.** `src/pages/MomentPage.tsx:301`: on every lesson page, the left column
-  (film, drawing, knobs) is `overflow-y-auto` inside a section that is `100svh − 5.5rem` tall, and the page scrolls on
-  below it. It has no `overscroll-behavior`. The column never overflows, because the film and the drawing are sized
-  from the window's height. Measured on `/motion/moments/apple-intention` with Playwright on vm-agent
-  (a one-off script reading the column's heights at three window sizes):
-  `1280 800 {"colH":712,"scrollH":712,"clientH":712,…}`, `1440 900 {"colH":812,"scrollH":812,"clientH":812,…}`,
-  `1280 640 {"colH":552,"scrollH":552,"clientH":552,…}`. With nothing to scroll, silence was right.
-  The check did have a real gap, though. The case note (`scroll-batch.md`, row 5) names a scroll area "filling a side
-  of it" as a case to catch, and the code only looked for a fixed, sticky or absolute box. It now also catches a
-  scroll column at least 60% of the window tall with another column beside it. A tall block with nothing beside it,
-  such as a code block or a table, stays quiet. The new case is on `scroll-batch.jsx` (`#side`).
-- **The command palette's list.** `src/demos/CommandPaletteDemo.tsx:394`: `max-h-64 overflow-y-auto` with no
-  `overscroll-behavior`. The palette is only on the page after a click (`{open && …}`, line 368), so a read of the
-  page can't see it. When it is open, it sits inside `role="dialog"` (line 371). The case note leaves dialogs to the
-  existing dialog check ("this one must stay quiet where that one speaks"), so this is not this check's place.
+- **The command palette's list: a real miss, fixed.** `src/demos/CommandPaletteDemo.tsx:394`: `max-h-64
+  overflow-y-auto`, no `overscroll-behavior`, inside `role="dialog"` with no `aria-modal` (line 371), and the page
+  is left free to scroll. Opened with its Search button on `/patterns/command-palette` at 1280×800, then scrolled
+  with the wheel over the list, 150px a turn (each step is list position / list end @ page position):
+  `{"listH":256,"scrollH":435,"ob":"auto","pageY":0,"bodyOverflow":"visible","htmlOverflow":"visible"}` then
+  `150/179@0 179/179@0 179/179@150 179/179@300 179/179@450 …`. The list reaches its end on the second turn, and every
+  turn after that moves the page under the open palette.
+  The check missed it for two reasons. A read loads the page fresh, so the palette was closed. And even when open,
+  the check skipped anything inside a dialog. The case note leaves dialogs to the dialog check, but that check only
+  speaks when the page is locked with `overflow: hidden`, so a dialog that leaves the page free fell between the two.
+  The check now skips a dialog only when the root or the body is locked. A dialog that leaves the page free counts
+  as a layer over the page, like a fixed panel. The case is on `scroll-batch.jsx` (`#palette`). On the real page the
+  palette still opens only on a click, so a read still can't see it there. That part is a limit of reading, not of
+  the check.
+- **A side column that fills the screen: not a miss.** `src/pages/MomentPage.tsx:301`: on every lesson page, the
+  left column (film, drawing, knobs) is `overflow-y-auto` inside a section that is `100svh − 5.5rem` tall, and the
+  page scrolls on below it. It has no `overscroll-behavior`. The column never overflows, because the film and the
+  drawing are sized from the window's height. Measured on `/motion/moments/apple-intention` at eight window sizes,
+  as column height / content height: 1280×800 712/712, 1440×900 812/812, 1280×640 552/552, 1280×500 412/412,
+  1280×420 332/332, 1024×700 612/612, 900×700 612/612, 768×900 812/812. With nothing to scroll, silence was right.
+  The look did find a real gap. The case note (`scroll-batch.md`, row 5) names a scroll area "filling a side of it"
+  as a case to catch, and the code only looked for a fixed, sticky or absolute box. It now also catches a scroll
+  column at least 60% of the window tall with another column beside it. A tall block with nothing beside it, such as
+  a code block or a table, stays quiet. The case is on `scroll-batch.jsx` (`#side`).
 
-Proof of the side-column change, at main `afc84ab9` plus the edit, on vm-agent:
+Proof of both changes, at main `2a84206c` plus only these edits, on vm-agent:
 
 - Real pages (`run-batch.mjs`, the two lesson pages, `/patterns/command-palette` and `/patterns/modal-dialog`):
-  no `scroll-chain` finding on any of them. The only finding among the four checks fixed today is the right
-  `row-dead-zone` one on the two pattern pages (`{"gap":4,"rows":5,"by":"gap"}`). Nothing thrown.
-- Proof pages (`on-off.mjs --rules craft/scroll-chain --page …`): `scroll-batch {"own":{"craft/scroll-chain":2},"leaked":0,"thrown":[]}`
-  (the fixed panel and the new side column) and `menu-batch {"own":{"craft/scroll-chain":1},"leaked":0,"thrown":[]}`.
+  no `scroll-chain` finding on any of them. The only finding among the four checks fixed during this work is the
+  right `row-dead-zone` one on the two pattern pages (`{"gap":4,"rows":5,"by":"gap"}`). Nothing thrown.
+- Proof pages (`on-off.mjs --rules craft/scroll-chain --page …`): `scroll-batch {"own":{"craft/scroll-chain":3},"leaked":0,"thrown":[]}`
+  (the fixed panel, the side column, the palette) and `menu-batch {"own":{"craft/scroll-chain":1},"leaked":0,"thrown":[]}`.
   The pane inside a card, the in-flow block and the panel that keeps its scroll stay quiet.
 
 Places where silence was right (the near misses held on a real app):

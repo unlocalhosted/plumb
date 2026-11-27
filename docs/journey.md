@@ -6296,12 +6296,14 @@ into its own browser. Your app isn't changed.", then the findings.
   leaves alone a box given its height on purpose. The scroll check now counts a placed box as over the page only when
   it reaches outside the box it sits in, as a popover does. Both findings are gone on the real pages, and each proof
   page still catches its fault once.
-- **The two possible misses, measured:** neither was a miss. The lesson pages' side column is sized to the window and
-  never has anything to scroll (712 of 712px at 1280×800, the same at two other sizes). The palette's list exists
-  only after a click and sits in a dialog, which another check owns. The look did find a real gap: the scroll check's
-  own spec asks it to catch a scroll area filling a side of the page, and the code only knew about fixed and
-  absolute panels. It now catches a scroll column most of the window tall with another column beside it. The proof
-  page catches the new case, and the real pages gained no finding.
+- **The two possible misses, tried by hand:** one was real. The command palette's list reaches its end on the
+  second wheel turn, and every turn after moves the page under the open palette. The check had skipped every dialog,
+  leaving them to the dialog check, but that one only speaks when the page is locked, so a palette that leaves the
+  page free fell between the two. A dialog now counts as a layer over the page unless the page is locked. The side
+  column was not a miss: it is sized to the window and never has anything to scroll, at eight window sizes. The look
+  still found a gap there: the check's spec asks it to catch a scroll area filling a side of the page, and now it
+  does. The proof page catches both new cases, and the real pages gained no finding. A read still can't open the
+  palette by itself, so on the real page it stays unseen until something clicks it.
 - **Media hooks:** the Base UI switch beside its hidden input; the practice list with its 4px strips.
 
 ### 145. Scoring every check on algorecall (2026-11-26)
