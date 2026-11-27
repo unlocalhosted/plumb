@@ -218,10 +218,11 @@ likeness. "One step of the page's own scale" is plumber's convention, taken from
 
 Added on 2026-11-27, after the owner judged the first four findings (journey entry 160). Two things decide which
 units are compared at all. A link that holds several pieces drawn differently is one thing to press, and only its
-loudest piece stands for it. A look is compared only among units that sit the same way. In the first cut "sit the
-same way" is two cases: side by side with others drawn the same, or each on a line of its own. It should come from
-the seen picture instead (the same box, the same kind of place in a group), and until it does this layer will keep
-needing one more rule per page. *Both are ours and have no source.*
+loudest piece stands for it. A look is compared only among units that sit the same way, and the seen picture says
+how a unit sits: on the page itself or inside boxes (the things inside the boxes of one set share a place), and in
+a row beside others drawn the same or not. *Both are ours and have no source.* The first cut answered "sits the
+same way" with a rule of its own and needed a new one on the next page. Asking the seen picture cleared that page
+with no new rule (journey entry 161).
 
 ## 15. Enclosed and joined
 

@@ -7147,13 +7147,34 @@ into its own browser. Your app isn't changed.", then the findings.
 - **Media hooks:** before and after pictures of the findings, kept out of git because they show other people's
   sites: `docs/research/harvests/raunofreiberg-portfolio-reviews/local/four/` and `local/after/`.
 
+### 161. Where a piece sits now comes from the seen picture (2026-11-27)
+
+- **The itch:** after the two fixes of entry 160, a calendar's month was set against three project titles, and the
+  cure on offer was a third rule. The owner chose to fix the seen picture first.
+- **How we found it:** on Dima Belyaev's page the grouping view said "0 blocks of text" while the text reading
+  found the whole page.
+- **The system behind it:** two faults in how the drawn page is read. The whole app there sits in a wrapper that
+  has no box of its own, the browser's "is this visible" answer for such a wrapper is no, and so everything in it
+  was skipped. The cards on that page are filled with white at 4%, and the reading counted only fills that are
+  mostly opaque, so it saw no cards.
+- **The fix:** a wrapper with no box is walked into. A fill is judged as it lands on what is behind it
+  (`bench/judged/see.js`). The layer that compares look with role then asks the seen picture where each piece sits
+  (`places` in `bench/judged/seen.js`): on the page itself or inside boxes, where the things inside the cards of
+  one set share a place, and in a row beside others drawn the same or not. The layer's own same-line test is gone.
+- **The proof:** Dima's page now reads 63 blocks of text and 15 drawn boxes, and the calendar finding is gone with
+  no rule about calendars. The six pages give three findings, the three the owner kept in entry 160. Max Leiter's
+  page, where Rauno's point is two panels drawn as one, went from 0 drawn boxes to 10.
+- **Not known:** "inside boxes is a different place from the page itself" is ours and has no source. Nobody has
+  looked at the groups on Dima's page to say they are the ones a person sees. Rauno's menu case is still missed.
+- **Media hooks:** `http://rauno-17-blvdmitry-me.localhost:4420/__judge/?seen=1`; a picture of its groups at
+  `docs/research/harvests/raunofreiberg-portfolio-reviews/local/after/dima-groups.png` (not in git).
+
 ## Open gaps
 
-- The layer that compares how text looks with what it does
-  ([entry 160](#160-the-first-findings-judged-by-the-owner-and-two-causes-of-noise-fixed-2026-11-27)) takes where a
-  piece sits from two rules of its own. It should take it from the seen picture: which box a piece is in and which
-  group it is part of. One finding waits on that (a calendar's month set against project titles), and on that page
-  the grouping reads nothing. Rauno's menu case is still missed, cause not found.
+- The layer that compares how text looks with what it does now takes where a piece sits from the seen picture
+  ([entry 161](#161-where-a-piece-sits-now-comes-from-the-seen-picture-2026-11-27)). Its rule that things inside
+  boxes are in a different place from things on the page itself has no source and has been run on six pages.
+  Rauno's menu case is still missed, cause not found.
 - Plumber's page check reads nothing on a public site, because it judges only elements tied to an app's source
   ([entry 156](#156-plumber-reads-nothing-on-a-public-site-2026-11-26)). Until it can, an expert's review of a live
   site cannot be scored against it.

@@ -89,7 +89,8 @@ cut. `see.js` reads every piece of text with its look (face, size, weight, colou
 link to a page, a link down this page, a link away, a control). `alike.js`, pure, reports text drawn exactly like the
 things that can be pressed, things that can be pressed drawn exactly like plain text, and one row of look-alike links
 where some jump down the page and some open another. A link that holds a whole row counts once, by its loudest
-piece, and a look is compared only among pieces that sit the same way (side by side, or each on its own line). The
+piece, and a look is compared only among pieces that sit the same way. The seen picture says how a piece sits
+(`places` in `seen.js`): on the page itself or inside boxes, and in a row beside others drawn the same or not. The
 owner has judged its first four findings (journey entry 160). Nothing since has been checked by a judge.
 
 To test against a page as a reviewer saw it, make a set whose app is the web archive and whose screen path is the

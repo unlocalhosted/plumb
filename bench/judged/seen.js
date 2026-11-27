@@ -77,6 +77,22 @@ export function grow(units) {
   return top.length ? cut(top) : { type: 'pile', children: [] };
 }
 
+// where each single thing sits, for a layer that must only compare things that sit alike:
+//   scope  'ground' when no drawn box is round it, else 'in:' and the row number of whatever holds its box (so the
+//          things inside the cards of one grid share a scope, and differ from the things on the page itself)
+//   row    a number when the first split above it is a row (things side by side), the same number for everything
+//          in that row; -1 when it stands in a column, in a pile or alone
+export function places(tree, units) {
+  const out = new Map(); let id = 0;
+  const walk = (n, split) => {
+    if (n.type === 'unit') { const b = units[n.unit].parent; out.set(n.unit, { scope: b < 0 ? 'ground' : `in:${units[b].parent}`, row: split?.axis === 'x' ? split.id : -1 }); return; }
+    const next = n.type !== 'box' ? { id: id++, axis: n.axis } : n.how ? { id: id++, axis: n.how.axis } : split;
+    for (const c of n.children ?? []) walk(c, next);
+  };
+  walk(tree, null);
+  return out;
+}
+
 // every node with its level: 1 for the parts the page first splits into, 2 for what each part splits into, and so
 // on. A part may be a single unit.
 export function levels(tree) {

@@ -8,7 +8,7 @@
 //               role (what the page is built to do with it), for alike.js. The look is read from styles; the role
 //               from tags, roles and addresses, which is the weaker reading the spec allows where there is no source.
 //   see(...)    the view: the page in a frame, the tree from seen.js outlined over it one level at a time.
-import { grow, levels, RATIO } from './seen.js';
+import { grow, levels, places, RATIO } from './seen.js';
 import { judge } from './alike.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -39,15 +39,19 @@ export function read(win) {
     return parts.length ? parts : null;
   };
   const drawn = (s, behind) => {
-    const c = colour(s.backgroundColor), fill = c[3] >= 128 && apart(c, behind) > SHOWS;
+    // a fill is judged as it lands on what is behind it: a card of white at 4% on a dark page is a card
+    const raw = colour(s.backgroundColor), a = raw[3] / 255, c = [0, 1, 2].map((k) => raw[k] * a + behind[k] * (1 - a)), fill = raw[3] > 0 && apart(c, behind) > SHOWS;
     let sides = 0;
     for (const side of ['Top', 'Right', 'Bottom', 'Left']) if (parseFloat(s[`border${side}Width`]) > 0 && s[`border${side}Style`] !== 'none' && colour(s[`border${side}Color`])[3] > 38) sides++;
     return fill || sides >= 3 || s.boxShadow !== 'none' || s.backgroundImage !== 'none' ? { fill: fill ? c : null } : null;
   };
   const walk = (el, parent, behind) => {
     for (const c of el.children) {
-      if (NEVER.has(c.localName) || c.checkVisibility?.({ checkOpacity: true, checkVisibilityCSS: true }) === false) continue;
+      if (NEVER.has(c.localName)) continue;
       const s = win.getComputedStyle(c), r = c.getBoundingClientRect(), big = r.width >= 3 && r.height >= 3;
+      // an element with no box of its own (display: contents) still shows what is inside it, and the browser's own
+      // "is it visible" says no for it. One such wrapper round a whole app left the page read as empty.
+      if (s.display !== 'contents' && c.checkVisibility?.({ checkOpacity: true, checkVisibilityCSS: true }) === false) continue;
       if (PICTURE.has(c.localName)) { if (big) push('picture', c, parent, r); continue; }
       let here = parent, back = behind;
       const d = big && !inline(s) && drawn(s, behind);
@@ -133,7 +137,7 @@ export function pieces(win, site) {
     const lum = (c) => { const [r, g, b2] = c.slice(0, 3).map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b2; };
     const l1 = lum(colour(st.color)), l2 = lum(back), contrast = Math.round(((Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05)) * 10) / 10;
     rows.push({ look, words, role, set: sets.get(holder), carrier: carrier ? carriers.get(carrier) : -1, size: parseFloat(st.fontSize), weight: Number(st.fontWeight) || 400, contrast,
-      x: box.left, y: box.top, w: box.width, h: box.height, text: text.trim().replace(/\s+/g, ' ').slice(0, 60) }); els.push({ el, parts });
+      unit: -1, scope: 'ground', row: -1, text: text.trim().replace(/\s+/g, ' ').slice(0, 60) }); els.push({ el, parts });
   }
   return { rows, els };
 }
@@ -259,7 +263,7 @@ export function see(el, root, base, loaded, soften) {
   const list = () => {
     const rows = found.rows;
     $('.alike').innerHTML = `<div><h2>Look against role</h2><p>Pieces of text that are drawn exactly alike and are not the same kind of thing. This is what the reading says. No judge has checked it.</p></div>
-      ${found.findings.length ? `<ul class="finds">${found.findings.map((f, k) => { const [title, body] = SAID[f.kind](f, rows); return `<li><button type="button" data-find="${k}" aria-pressed="${k === pick}"><b>${title}</b><span>${esc(body)}</span><span>${f.odd.slice(0, 6).map((i) => `<em>${esc(rows[i].text)}</em>`).join(' · ')}${f.odd.length > 6 ? ` and ${f.odd.length - 6} more` : ''}</span><span>Drawn as: ${esc(rows[f.odd[0]].words)}, ${f.beside ? 'side by side with others drawn the same' : 'each on a line of its own'}</span></button></li>`; }).join('')}</ul>` : '<p>Nothing on this page looks like one thing and is another.</p>'}`;
+      ${found.findings.length ? `<ul class="finds">${found.findings.map((f, k) => { const [title, body] = SAID[f.kind](f, rows); return `<li><button type="button" data-find="${k}" aria-pressed="${k === pick}"><b>${title}</b><span>${esc(body)}</span><span>${f.odd.slice(0, 6).map((i) => `<em>${esc(rows[i].text)}</em>`).join(' · ')}${f.odd.length > 6 ? ` and ${f.odd.length - 6} more` : ''}</span><span>Drawn as: ${esc(rows[f.odd[0]].words)}, ${f.beside ? 'side by side with others drawn the same' : 'each on a line of its own'}, ${f.scope === 'ground' ? 'on the page itself' : 'inside boxes'}</span></button></li>`; }).join('')}</ul>` : '<p>Nothing on this page looks like one thing and is another.</p>'}`;
   };
   const draw = () => {
     if (!tree) return;
@@ -295,7 +299,15 @@ export function see(el, root, base, loaded, soften) {
     $('.tally').textContent = 'Waiting for the page to stop moving.';
     const settled = await still();
     got = read(win); tree = grow(got.units); flat = levels(tree); over = null;
-    found = pieces(win, new URL(set.app).host); found.findings = judge(found.rows); pick = null; list();
+    found = pieces(win, new URL(set.app).host);
+    // where each piece sits, from the seen picture: the block of text it is part of, then that block's place
+    const blocks = new Map(), where = places(tree, got.units);
+    got.units.forEach((u, i) => { if (u.kind === 'text') blocks.set(got.els[i].el, i); });
+    found.rows.forEach((row, i) => {
+      let e = found.els[i].el; while (e && !blocks.has(e)) e = e.parentElement;
+      const at = e && where.get(blocks.get(e)); if (at) Object.assign(row, { unit: blocks.get(e), scope: at.scope, row: at.row });
+    });
+    found.findings = judge(found.rows); pick = null; list();
     const count = (k) => got.units.filter((u) => u.kind === k).length;
     $('.tally').textContent = `${count('text')} blocks of text, ${count('picture')} pictures, ${count('box')} drawn boxes and ${count('line')} lines, read at ${win.innerWidth} wide.${settled ? '' : ' The page was still moving after 8 seconds, so it was read as it stood.'}`;
     steps(); draw();
