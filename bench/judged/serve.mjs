@@ -16,6 +16,7 @@
 //   judgements/<screen>.<judge>.json   the looks and the marks, saved as they are made
 //   screens/<screen>.<judge>.json      the screen as plain data, taken when the judge says the screen is done
 import http from 'node:http';
+import { matters, spent } from './words.mjs';
 import https from 'node:https';
 import net from 'node:net';
 import { execFile } from 'node:child_process';
@@ -40,6 +41,7 @@ const FILES = {
   '/__judge/alike.js': [join(here, 'alike.js'), 'text/javascript; charset=utf-8'],
   '/__judge/near.js': [join(here, 'near.js'), 'text/javascript; charset=utf-8'],
   '/__judge/regular.js': [join(here, 'regular.js'), 'text/javascript; charset=utf-8'],
+  '/__judge/loud.js': [join(here, 'loud.js'), 'text/javascript; charset=utf-8'],
   '/__judge/soft.js': [join(here, '../../overlay/src/soft.js'), 'text/javascript; charset=utf-8'],
   '/__judge/tokens.css': [join(here, '../../overlay/src/tokens.css'), 'text/css; charset=utf-8'],
 };
@@ -112,6 +114,11 @@ async function judging(req, res, url, name) {
     const [file, type] = FILES[url.pathname];
     res.writeHead(200, { 'content-type': type, 'cache-control': 'no-store' });
     return res.end(await readFile(file));
+  }
+  // which words on a screen matter most, read by a model (words.mjs). `only: "kept"` never spends.
+  if (req.method === 'POST' && url.pathname === '/__judge/words') {
+    const asked = await body(req, 1 << 20);
+    return json(res, 200, { ...(await matters(asked?.pieces, { only: asked?.only })), spent: spent() });
   }
   if (name === null) { // the list of sets
     if (req.method === 'GET' && url.pathname === '/__judge/set') {

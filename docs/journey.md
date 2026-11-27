@@ -7495,13 +7495,43 @@ into its own browser. Your app isn't changed.", then the findings.
   `http://rauno-40-rizwanakhan-com.localhost:4420/__judge/?seen=1` ("What is loud"),
   `http://rauno-21-shadcn-com.localhost:4420/__judge/?seen=1`.
 
+### 171. A model reads the words, so loud can be set against what matters (2026-11-27)
+
+- **The itch:** the owner, on waking: "now add the model to read words". It was the one open decision the first
+  build had left to them, and it is where most of Rauno's points sit: thirteen say the loudest thing on a page is
+  not the one that says the most.
+- **What was built:** the bench's server asks a model which block of text on the first screen tells a first-time
+  visitor the most (`bench/judged/words.mjs`), and a pure judgement sets that against how loud each block is drawn
+  (`bench/judged/loud.js`). The three outcomes are the spec's: the loudest text is the one that says the most;
+  something of substance is drawn louder than it; or the loudest text says little, or the text that says the most
+  is in the quieter half of the screen's type. The reading "What is loud" shows the verdict with the model's one
+  sentence of reason under "how we know".
+- **The two sides are read apart:** the model gets the words and their order and nothing about how they are drawn.
+  If it saw the type sizes it would be judging the seen side too, and the comparison would mean nothing.
+- **Money:** it uses Claude Opus 5.5 through the official SDK, at about two cents a screen. Every answer is kept on
+  disk by what was asked, so a screen is paid for once, and numbers are left out of that name so a ticking clock
+  does not make a page new every second. Looking at a page never spends: the view only fetches an answer already
+  paid for, and a person presses "Read the words" to buy one. Every paid call is logged with its tokens and cost.
+  There is a ceiling of two dollars, after which it stops asking.
+- **What is proven and what is not:** the judgement was tried on five made-up screens and gives the outcomes the
+  spec's table asks for. The whole path, from the page through the server to the drawing, was run with an answer
+  written by hand and labelled as a stand-in, on the page where the name is 36px and the sentence about her work is
+  18px; the view drew it as "the loudest text says little", and the stand-in was then removed. **No model has been
+  asked anything.** There is no key for the model on this machine, the server answers "no key", and nothing has
+  been spent.
+- **Needed from the owner:** a key in the environment the bench runs in. Then the 39 expert sites can be read for
+  about a dollar, and each reading checked by eye against Rauno's points.
+- **Media hooks:** `http://rauno-40-rizwanakhan-com.localhost:4420/__judge/?seen=1`, "What is loud".
+
 ## Open gaps
 
 - The shape engine's first build is in the judging bench and nowhere else
   ([entry 170](#170-the-first-build-of-the-shape-engine-run-to-its-end-in-one-night-2026-11-27)). The spec is not
   signed off. None of its numbers has been set against judged screens. Eight of its ten firm findings have been
-  seen by no judge. It does not read the meaning of words, the page in a second state, or balance and proportion,
-  and most of the expert's points need one of those.
+  seen by no judge. It does not read the page in a second state, or balance and proportion, and many of the
+  expert's points need one of those. A model to read the meaning of words is built
+  ([entry 171](#171-a-model-reads-the-words-so-loud-can-be-set-against-what-matters-2026-11-27)) and has never
+  been run: there is no key for it on this machine.
 - The layer that compares how text looks with what it does now takes where a piece sits from the seen picture
   ([entry 161](#161-where-a-piece-sits-now-comes-from-the-seen-picture-2026-11-27)). Its rule that things inside
   boxes are in a different place from things on the page itself has no source and has been run on six pages.

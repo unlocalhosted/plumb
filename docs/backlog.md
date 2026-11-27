@@ -22,7 +22,7 @@ engineer would do." These calls were open questions until then. Each is decided 
 | Call | Decision | Why |
 |---|---|---|
 | The shape engine's first build (2026-11-27) | Built on judgement, in the bench only, after the owner said to drive it to the end: six readings, firm findings kept apart from ones only worth a look | A doubtful reading stated as a fault costs more trust than a missed one. Journey entry 170 |
-| A model to read which words matter most | Not built | It is a cost per page and one of the spec's open decisions, so it stays the owner's. "What is loud" does only what needs no reading of words (2026-11-27) |
+| A model to read which words matter most | Built on the owner's word, 2026-11-27, and waiting for a key | The owner said "now add the model to read words". It runs in the bench's server, never sees how a page is drawn, costs about two cents a screen, keeps every answer and stops at two dollars. Journey entry 171 |
 | The footer's game | Only true findings on our homepage, none staged; false ones left out of the count | It is a public claim about an LLM-made page and a demo of the product: it has to hold when a visitor checks it (2026-11-22) |
 | What react-plumber.com serves | A static export of a commit, without `web/public/research` | Every page pre-renders; the research is unlinked, partly about private apps, and bundles others' components without licences (2026-11-22) |
 | A row's title in a softened colour | Leave it | It is a deliberate fourth level; lifting it is a redesign, not a tidy-up |

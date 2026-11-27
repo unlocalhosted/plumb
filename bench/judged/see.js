@@ -12,6 +12,7 @@ import { boxOf, grow, levels, places, runs, settle, RATIO } from './seen.js';
 import { judge } from './alike.js';
 import { judge as near, RATIO as APART } from './near.js';
 import { judge as regular } from './regular.js';
+import { judge as louder } from './loud.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const host = (url) => url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
@@ -306,6 +307,18 @@ export function accents(got, win) {
   });
   return out;
 }
+// The blocks of text on the first screen, in reading order, each with its words and how loud its type is. The
+// words go to a model, the loudness never does: the two sides are read apart.
+export function firstScreen(got, win) {
+  const tall = win.innerHeight, rows = [];
+  got.units.forEach((u, i) => {
+    if (u.kind !== 'text' || u.y >= tall || u.y + u.h <= 0) return;
+    const { el, parts } = got.els[i], s = win.getComputedStyle(el);
+    const text = (parts ?? []).map((p) => ('startContainer' in p ? p.toString() : p.textContent)).join(' ').replace(/\s+/g, ' ').trim();
+    if (/[\p{L}\p{N}]/u.test(text)) rows.push({ id: i, text, size: parseFloat(s.fontSize), weight: Number(s.fontWeight) || 400, x: u.x, y: u.y });
+  });
+  return rows.sort((a, b) => a.y - b.y || a.x - b.x);
+}
 export function loudest(got, win, top = 3) {
   const tall = win.innerHeight, rows = [];
   got.units.forEach((u, i) => { if (u.kind !== 'text' || u.y >= tall || u.y + u.h <= 0) return; const s = win.getComputedStyle(got.els[i].el); rows.push({ unit: i, size: parseFloat(s.fontSize), weight: Number(s.fontWeight) || 400 }); });
@@ -439,7 +452,7 @@ export function see(el, root, base, loaded, soften) {
   const frame = $('iframe'), layer = $('.layer'), seen = $('.seen'), stage = $('.stage'), view = $('.view');
   const screen = set.screens.find((s) => s.id === new URL(location.href).searchParams.get('screen')) ?? set.screens[0];
   let scale = 1, got = null, tree = null, flat = [], level = 1, units = false, over = null, held = false;
-  let mode = 'groups', found = null, pick = null, spaced = [], npick = null, agreeing = false, moved = 0, evens = [], epick = null, boxed = [], hpick = null, shouts = [], tops = [], lpick = null;
+  let mode = 'groups', found = null, pick = null, spaced = [], npick = null, agreeing = false, moved = 0, evens = [], epick = null, boxed = [], hpick = null, shouts = [], tops = [], lpick = null, screenful = [], said = null, meant = null;
 
   const fit = () => {
     const w = screen?.width ?? set.width ?? 1440, room = view.clientWidth - 32, tallness = view.clientHeight - 32;
@@ -567,13 +580,46 @@ export function see(el, root, base, loaded, soften) {
   const hexOf = (c) => `#${c.slice(0, 3).map((v) => v.toString(16).padStart(2, '0')).join('')}`;
   const drawLoud = () => {
     const html = [];
-    if (lpick === null) tops.forEach((t, k) => { const r = nowOf(leaf(t.unit)); if (r.w) html.push(`<div class="g ${k ? 't-run leaf' : 't-odd odd'}" style="left:${r.x - 4}px;top:${r.y - 4}px;width:${r.w + 8}px;height:${r.h + 8}px"></div>`); });
+    if (lpick === null && !meant) tops.forEach((t, k) => { const r = nowOf(leaf(t.unit)); if (r.w) html.push(`<div class="g ${k ? 't-run leaf' : 't-odd odd'}" style="left:${r.x - 4}px;top:${r.y - 4}px;width:${r.w + 8}px;height:${r.h + 8}px"></div>`); });
+    // with the words read: the loudest in blue, the one that says the most in pink (or both as one when they agree)
+    if (lpick === null && meant) for (const [id, cls] of meant.outcome === 'agree' ? [[meant.main, 't-agree']] : [[meant.top, 't-run'], [meant.main, 't-odd odd']]) { const r = nowOf(leaf(id)); if (r.w) html.push(`<div class="g ${cls}" style="left:${r.x - 4}px;top:${r.y - 4}px;width:${r.w + 8}px;height:${r.h + 8}px"></div>`); }
     shouts.forEach((s, n) => { if (lpick !== null && lpick !== n) return; const r = nowOf(leaf(s.unit)); if (r.w) html.push(`<div class="g t-odd odd" style="left:${r.x - 4}px;top:${r.y - 4}px;width:${r.w + 8}px;height:${r.h + 8}px"></div>`); });
     seen.innerHTML = html.join('');
   };
+  // loud against important: the words of the first screen, read by a model in the bench's server, set against how
+  // loud each block is drawn
+  const SAYS = {
+    agree: () => 'The loudest text is the text that says the most.',
+    disagree: (top) => (top.role === 'minor' ? 'The loudest text says little, and the text that says the most is drawn quieter.' : 'The text that says the most is among the quietest on the screen.'),
+    nearly: () => 'Something else is drawn louder than the text that says the most.',
+  };
+  const WHY_NOT = {
+    'no-key': 'No key for the model is set where the bench runs, so the words have not been read.',
+    'not-read': 'The words on this screen have not been read yet. Reading them costs about two cents.',
+    ceiling: 'The spending ceiling is reached, so nothing more is read until it is raised.',
+    'nothing-to-read': 'There is no text on the first screen to read.',
+  };
+  const ask = async (only) => {
+    if (!screenful.length) { said = { error: 'nothing-to-read' }; meant = null; return; }
+    try { said = await (await fetch('/__judge/words', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ pieces: screenful.map(({ id, text }) => ({ id, text })), only }) })).json(); }
+    catch { said = { error: 'failed' }; }
+    meant = said.roles ? louder(screenful.map((p) => ({ ...p, role: said.roles[p.id] ?? 'minor' }))) : null;
+  };
+  const listMeant = () => {
+    const spend = said?.spent ? `<p>Spent so far on reading words: $${said.spent.dollars.toFixed(2)}, on ${said.spent.calls} ${said.spent.calls === 1 ? 'screen' : 'screens'}.</p>` : '';
+    if (!said?.roles) return `<p>${WHY_NOT[said?.error] ?? `The model could not be asked just now (${esc(said?.error ?? 'no answer')}).`}</p>${said?.error === 'no-key' || said?.error === 'ceiling' || said?.error === 'nothing-to-read' ? '' : '<button type="button" class="chip" data-read>Read the words</button>'}${spend}`;
+    if (!meant) return `<p>All the text on this screen is drawn equally loud, so there is nothing to compare.</p>${spend}`;
+    const by = new Map(screenful.map((p) => [p.id, { ...p, role: said.roles[p.id] ?? 'minor' }])), top = by.get(meant.top), main = by.get(meant.main);
+    return `<ul class="finds"><li><button type="button" data-meant aria-pressed="false"><b>${meant.outcome === 'nearly' ? 'Worth a look: ' : ''}${SAYS[meant.outcome](top)}</b>
+      ${meant.outcome === 'agree' ? '' : `<span>Loudest: <em>${esc(top.text.slice(0, 60))}</em>, ${top.size}px.</span>`}
+      <span>Says the most: <em>${esc(main.text.slice(0, 90))}</em>, ${main.size}px, step ${meant.level} of ${meant.levels} in loudness.</span>
+      <span>How we know: a model read the words (${esc(said.model)}), without being told how anything is drawn. ${esc(said.why)}</span></button></li></ul>${spend}`;
+  };
   const listLoud = () => {
-    $('.loud').innerHTML = `<div><h2>What is loud</h2><p>The loudest text on the first screen, by type size and then weight, outlined so you can say whether the engine's ear is right. Nothing is judged there. Whether the loudest thing is the one that matters most needs the words to be read, and that is not built.</p></div>
+    $('.loud').innerHTML = `<div><h2>What is loud</h2><p>The loudest text on the first screen, by type size and then weight, outlined so you can say whether the engine's ear is right. Nothing is judged there.</p></div>
       <ol class="finds">${tops.map((t) => `<li><span><em>${esc(words(leaf(t.unit)))}</em> ${t.size}px, weight ${t.weight}</span></li>`).join('')}</ol>
+      <div><h2>Does the loudest text say the most?</h2><p>Which words matter most is not something a page says about itself, so a model reads them.</p></div>
+      ${listMeant()}
       <div><h2>A highlight on most of the text</h2><p>A block where a coloured accent covers half the letters or more, so it no longer picks anything out.</p></div>
       ${shouts.length ? `<ul class="finds">${shouts.map((s, n) => `<li><button type="button" data-loud="${n}" aria-pressed="${n === lpick}"><b>The accent is on most of this text</b><span>${s.share}% of ${s.letters} letters are in ${hexOf(s.accent)}, and the rest in ${hexOf(s.base)}.</span><span><em>${esc(words(leaf(s.unit)))}</em></span></button></li>`).join('')}</ul>` : '<p>No block has its accent on most of its letters.</p>'}`;
   };
@@ -732,6 +778,8 @@ export function see(el, root, base, loaded, soften) {
     });
     boxed.sort((a, b) => Number(b.tier === 'claim') - Number(a.tier === 'claim')); hpick = null;
     shouts = accents(got, win); tops = loudest(got, win); lpick = null;
+    // the words are only fetched here if they were read before: nothing is spent by looking at a page
+    screenful = firstScreen(got, win); await ask('kept');
     // A second look six seconds on. A tile that cycles through its own contents is not a page at rest, and a
     // finding read off it is about one frame. A finding is left out, and counted, when a thing it rests on has
     // gone, or is no longer where it was or the size it was. A clock ticking inside its own box changes nothing.
@@ -753,9 +801,9 @@ export function see(el, root, base, loaded, soften) {
     } else moved = 0;
     listEven(); listHeld(); listLoud();
     // each reading's button says how many firm findings it has, so a person knows where to look first
-    const firmIn = { alike: found.findings.filter((f) => f.firm).length, near: spaced.filter((s) => s.tier === 'claim').length, even: evens.filter((e) => e.v.firm).length, held: boxed.filter((h) => h.tier === 'claim').length, loud: shouts.length };
+    const firmIn = { alike: found.findings.filter((f) => f.firm).length, near: spaced.filter((s) => s.tier === 'claim').length, even: evens.filter((e) => e.v.firm).length, held: boxed.filter((h) => h.tier === 'claim').length, loud: shouts.length + (meant?.outcome === 'disagree' ? 1 : 0) };
     for (const b of root.querySelectorAll('[data-mode]')) { const n = firmIn[b.dataset.mode]; b.dataset.name ??= b.textContent; b.textContent = n ? `${b.dataset.name} · ${n}` : b.dataset.name; }
-    window.__seen = { got, tree, found, spaced, words, moved, evens, held: boxed, loud: shouts.map((s) => ({ tier: 'claim', kind: 'accent', say: `${s.share}% of ${s.letters} letters in the accent: ${words(leaf(s.unit))}` })), tops: tops.map((t) => `${words(leaf(t.unit))} (${t.size}px/${t.weight})`) };
+    window.__seen = { got, tree, found, spaced, words, moved, evens, held: boxed, loud: shouts.map((s) => ({ tier: 'claim', kind: 'accent', say: `${s.share}% of ${s.letters} letters in the accent: ${words(leaf(s.unit))}` })), tops: tops.map((t) => `${words(leaf(t.unit))} (${t.size}px/${t.weight})`), said, meant, screenful };
     const rank = { claim: 0, note: 1, agree: 2 }; spaced.sort((a, b) => rank[a.tier] - rank[b.tier] || a.v.r - b.v.r); npick = null; listNear();
     const count = (k) => got.units.filter((u) => u.kind === k).length;
     $('.tally').textContent = `${count('text')} blocks of text, ${count('picture')} pictures, ${count('box')} drawn boxes and ${count('line')} lines, read at ${win.innerWidth} wide.${settled ? '' : ' The page was still moving after 8 seconds, so it was read as it stood.'}`;
@@ -807,6 +855,8 @@ export function see(el, root, base, loaded, soften) {
   $('.side').addEventListener('click', (e) => {
     const l = e.target.closest('[data-level]'), u = e.target.closest('[data-units]'), m = e.target.closest('[data-mode]'), f = e.target.closest('[data-find]');
     const nr = e.target.closest('[data-near]'), ev = e.target.closest('[data-even]'), hd = e.target.closest('[data-held]'), ld = e.target.closest('[data-loud]');
+    if (e.target.closest('[data-read]')) { e.target.closest('[data-read]').textContent = 'Reading…'; return ask().then(() => { listLoud(); draw(); }); }
+    if (e.target.closest('[data-meant]') && meant) { got.els[meant.main].el.scrollIntoView({ block: 'center', behavior: 'smooth' }); lpick = null; return draw(); }
     if (ld) {
       lpick = lpick === Number(ld.dataset.loud) ? null : Number(ld.dataset.loud); listLoud();
       if (lpick !== null) got.els[shouts[lpick].unit].el.scrollIntoView({ block: 'center', behavior: 'smooth' });

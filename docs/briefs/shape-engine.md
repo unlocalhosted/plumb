@@ -14,7 +14,7 @@ what building it changed. Where a note and the text above it differ, the note is
 | Look against role | 14 | 4 | "nearly alike"; boxes are never firm |
 | Boxes and what they hold | 15 | 0 | joined; a box whose content is not one thing |
 | Rhythm and edges | 16 | 1 | balance and proportion; mirror and alternation |
-| What is loud | 17 | 3, on one page | which thing matters most (needs words read) |
+| What is loud | 17 | 3, on one page | loud against what matters is built and not yet run (no key); pictures are not ranked |
 
 Two of those ten are points the expert made. Each of the ten was looked at on its page. No number has been set against judged screens (section 19).
 
@@ -159,7 +159,7 @@ trust: each is checked against the judged screens before it is used.
 
 **Taken on Claude's judgement on 2026-11-27, each open to be overturned.** 2: built as proposed. 3: yes, and it
 proved the weakest link, so any finding that rests on it alone is shown as "worth a look" and never as a fault.
-4: not taken. It costs money per page and is the owner's. 5: not done, and it is now the thing most needed: the
+4: taken by the owner on 2026-11-27 and built, see section 17. 5: not done, and it is now the thing most needed: the
 first build's numbers stand on conventions.
 
 ## 10. Not known
@@ -346,6 +346,14 @@ block's letters in a coloured accent. On the one page with a judged case it read
 63 by hand. The three loudest blocks of text on the first screen are shown and not judged. The first three rows
 need to know which thing matters most, and on a public page that means reading the words with a model (decision 4
 in section 9). It was not built: it is the owner's decision and a cost per page.
+
+Added on 2026-11-27, after the owner took decision 4 (journey entry 171). The first three rows are built for text.
+A model is given the words of the first screen in reading order, and nothing about how they are drawn, and names
+the one block that says the most, the blocks of substance and the minor ones. Loudness is an order (larger type,
+then heavier) with no threshold. Agree: the block that says the most is as loud as anything on the screen.
+Disagree: the loudest block is a minor one, or the block that says the most is in the quieter half of the screen's
+steps of loudness. Nearly: something of substance is louder than it. Pictures are not ranked, so a logo drawn as a
+picture is not yet "the loudest thing". It has not been run: no key for the model was on the machine.
 
 ## 18. The page in more than one state
 
