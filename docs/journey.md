@@ -6194,6 +6194,15 @@ into its own browser. Your app isn't changed.", then the findings.
   button, a different issue from the colour story: its tip and card fill 23 frames of the take. The film holds the
   clean frame before them, and plumber is unchanged. Rough cut 5 (55 s, half size): `rough-cut-5.mp4`, stills
   `cut5-stills.jpg` (local, in `docs/films/launch-03-draft/`).
+- **Scenes made of the page's own pieces (2026-11-27).** The owner, on rough cut 5: three labels on screen at once
+  ("tell me how its a good choice?"), empty space under the bar, and "just showing a page with moving text doesn't
+  really cut it". The system behind all three: the film was a camera over a recording, and every explanation was
+  stacked on top of plumber's own labels. The cards' fix is now a scene of its own, cut from the take's real frames.
+  One card lifts out of the page and its 10px padding is drawn as a coral band. Plumber's editor panel slides in
+  beside it, and the band grows to 12px and turns sky. Then the other 11 cards fly out into a line-up and change one
+  after another while a count runs up to 20, and they fly back into the page as it looks after the sync. The window
+  now shows only the page, and Clean up is framed so the bar sits at its foot. Stills:
+  `cards-scene-stills.jpg`, `cards-panel-stills.jpg`, `bottom-stills.jpg` (local).
 
 - **One at a time, from any toy (2026-11-26).** The owner: "just fix the things one by one clicking on a single item
   should give the tour like experience". Until now only the main button toured, and it showed 4 of 80 fixes; a single
