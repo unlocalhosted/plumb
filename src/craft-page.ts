@@ -90,9 +90,12 @@ export async function settle(page: Page, network = 5000): Promise<boolean> {
       const left = Math.max(0, end - Date.now());
       const still = await page.evaluate(({ window: ms, placeholder }) => new Promise<boolean>((resolve) => {
         let changed = false;
+        // a placeholder stands in for content, so it has some size: a pulsing status dot (8px, "Live") is the page
+        // at rest, and reading it as loading held every run of that page for the full limit (ledger example, 53 s)
+        const waiting = () => [...document.querySelectorAll(placeholder)].some((el) => { const box = el.getBoundingClientRect(); return box.width > 16 || box.height > 16; });
         const watch = new MutationObserver((list) => { if (list.some((m) => m.type === 'characterData' || m.addedNodes.length || m.removedNodes.length)) changed = true; });
         watch.observe(document.body, { subtree: true, childList: true, characterData: true });
-        setTimeout(() => { watch.disconnect(); resolve(!changed && !document.querySelector(placeholder)); }, ms);
+        setTimeout(() => { watch.disconnect(); resolve(!changed && !waiting()); }, ms);
       }), { window: Math.min(STILL, left), placeholder: PLACEHOLDER }).catch(() => true);
       if (still && out === 0 && Date.now() - last >= STILL) { settled = true; break; }
       if (!left) break;

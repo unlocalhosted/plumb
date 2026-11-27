@@ -6831,6 +6831,24 @@ into its own browser. Your app isn't changed.", then the findings.
   (algorecall, craftingattention) and were not run. 54 seconds is slow for a narrow run and the cause is not known.
 - **Media hooks:** the Members table with the long name, before and after.
 
+### 156. A status dot that read as "still loading" (2026-11-27)
+
+- **The itch:** a narrow run is meant to answer in seconds. On the sloppy ledger example it took 53 to 54 seconds,
+  on a page of about 100 elements.
+- **How we found it:** the same run with one other-data check and then with a check that reads no other data: 53.4
+  and 53.1 seconds. The time went on the page, not on the checks.
+- **The system behind it:** before reading a page, plumber waits until it stops loading, up to 30 seconds. One sign
+  of loading is anything with the pulse animation, because skeleton placeholders use it. The ledger header has an
+  8px green dot beside "Live" that pulses for good. Every run of that page waited out the full limit, and the page
+  was reported as read before it settled.
+- **What we chose:** a placeholder stands in for content, so it has some size. A pulsing thing no wider and no
+  taller than 16px is the page at rest. A thin skeleton line still counts, because it is wide.
+- **The fix and the proof:** the same narrow run on the same page: 17.3 seconds, the same one finding, 101 elements
+  read.
+- **Not shown:** 17 seconds is still more than the 7 the test page takes, and where the rest goes was not looked
+  at. No real page with skeletons was run again to see that it is still waited for. No test.
+- **Media hooks:** none worth a picture; the two times are the story.
+
 ### 151. A judged set: real screens marked by a person (2026-11-26)
 
 - **The itch:** the owner wants plumber to "look at the shape rather than the details", and for design laws to
