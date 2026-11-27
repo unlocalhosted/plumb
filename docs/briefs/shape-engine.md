@@ -11,12 +11,12 @@ what building it changed. Where a note and the text above it differ, the note is
 |---|---|---|---|
 | Groups (the seen picture) | 12 | none, by design | |
 | Space against belonging | 13 | 2 | rows are never firm; a grid's rows against its columns |
-| Look against role | 14 | 5 | "nearly alike"; boxes are never firm |
+| Look against role | 14 | 4 | "nearly alike"; boxes are never firm |
 | Boxes and what they hold | 15 | 0 | joined; a box whose content is not one thing |
 | Rhythm and edges | 16 | 1 | balance and proportion; mirror and alternation |
 | What is loud | 17 | 3, on one page | which thing matters most (needs words read) |
 
-Two of those eleven are points the expert made. No number has been set against judged screens (section 19).
+Two of those ten are points the expert made. Each of the ten was looked at on its page. No number has been set against judged screens (section 19).
 
 Written 2026-11-26 as: no code until signed off. Part one (sections 1 to 10) is the
 core: the idea, the two pictures, the comparisons, the judgement. The owner agreed to its idea on 2026-11-26. Part

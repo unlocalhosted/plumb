@@ -177,7 +177,9 @@ export function pieces(win, site, seen) {
     // a mark that travels with it: an icon inside the link or the block, or something the page adds before or after
     // the words (an arrow). Marked and unmarked text are not drawn alike either.
     const home = carrier ?? el, added = (e, which) => { const c = win.getComputedStyle(e, which).content; return c && c !== 'none' && c !== 'normal' && c !== '""' && c !== "''"; };
-    const marked = !!home.querySelector('svg, img, picture') || [home, el].some((e) => added(e, '::before') || added(e, '::after'));
+    // For plain text only a mark of its own counts: an icon inside a link in the sentence is that link's mark (one
+    // page draws each link's underline as a small picture inside it, and the sentence round them has none).
+    const marked = (carrier ? !!home.querySelector('svg, img, picture') : [...el.querySelectorAll('svg, img, picture')].some((m) => !m.closest(CARRIER))) || [home, el].some((e) => added(e, '::before') || added(e, '::after'));
     const look = [family, st.fontSize, st.fontWeight, ink, under ? 'u' : '', st.textTransform, st.fontStyle, boxed ? `box${hex(colour(cs.backgroundColor))}` : '', `s${Math.round(strength * 20)}`, marked ? 'm' : ''].join('|');
     const words = [`${Math.round(parseFloat(st.fontSize) * 10) / 10}px`, `weight ${st.fontWeight}`, ink, under ? 'underlined' : 'no underline', boxed ? 'in a box of its own' : ''].filter(Boolean).join(', ');
     if (carrier && !carriers.has(carrier)) carriers.set(carrier, carriers.size);
@@ -335,7 +337,7 @@ export function kinds(got, win) {
 const CSS = `
   .desk.two { display: grid; grid-template-columns: minmax(0, 1fr) 360px; }
   .view { position: relative; overflow: hidden; min-height: 0; }
-  .side { overflow: auto; min-height: 0; background: var(--pl-paper); padding: var(--pl-space-6) var(--pl-space-6) 48px; display: grid; align-content: start; gap: var(--pl-space-6); }
+  .side { overflow: hidden auto; min-height: 0; grid-template-columns: minmax(0, 1fr); background: var(--pl-paper); padding: var(--pl-space-6) var(--pl-space-6) 48px; display: grid; align-content: start; gap: var(--pl-space-6); }
   .side h2 { font: var(--pl-card-title); margin: 0; } .side p { font: var(--pl-card-meta); color: var(--pl-ink-2); margin: 0; }
   .bar a.path { text-decoration: none; } .acts a { text-decoration: none; }
   .bar .where { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; } .bar .ask { min-width: 0; } .bar .acts { white-space: nowrap; }
@@ -355,7 +357,7 @@ const CSS = `
   .g.on { background: color-mix(in oklab, var(--h) 22%, transparent); }
   .g.leaf { border-width: 1.5px; border-radius: 4px; box-shadow: none; }
   .layer.using { pointer-events: none; }
-  .modes { display: flex; gap: var(--pl-space-3); } .modes .chip[aria-pressed="true"] { background: var(--pl-ink); color: var(--pl-paper); }
+  .modes { display: flex; flex-wrap: wrap; gap: var(--pl-space-3); } .modes .chip { white-space: nowrap; } .modes .chip[aria-pressed="true"] { background: var(--pl-ink); color: var(--pl-paper); }
   .pane { display: grid; align-content: start; gap: var(--pl-space-6); }
   .t-near { --h: var(--pl-butter); } .t-agree { --h: var(--pl-mint, var(--pl-sky)); }
   .gap { position: absolute; box-sizing: border-box; background: color-mix(in oklab, var(--h) 55%, transparent); box-shadow: 0 0 0 1px var(--pl-halo); border-radius: 2px; }
