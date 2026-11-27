@@ -1,6 +1,24 @@
 # Spec: judging the shape of a page
 
-Status: DRAFT for the owner's sign-off, 2026-11-26. No code until signed off. Part one (sections 1 to 10) is the
+Status: DRAFT, not signed off. The owner agreed to the idea on 2026-11-26 and, on 2026-11-27, told Claude to build
+the layers on its own judgement and drive them to the end. So a first build now exists, in the judging bench only
+(`bench/judged`), and this document was written before it: each section from 13 to 17 ends with a dated note on
+what building it changed. Where a note and the text above it differ, the note is what was built.
+
+**What is built, 2026-11-27** (journey entries 158 to 170):
+
+| Reading in the bench | Section | Firm findings on 39 expert sites | Not built |
+|---|---|---|---|
+| Groups (the seen picture) | 12 | none, by design | |
+| Space against belonging | 13 | 2 | rows are never firm; a grid's rows against its columns |
+| Look against role | 14 | 5 | "nearly alike"; boxes are never firm |
+| Boxes and what they hold | 15 | 0 | joined; a box whose content is not one thing |
+| Rhythm and edges | 16 | 1 | balance and proportion; mirror and alternation |
+| What is loud | 17 | 3, on one page | which thing matters most (needs words read) |
+
+Two of those eleven are points the expert made. No number has been set against judged screens (section 19).
+
+Written 2026-11-26 as: no code until signed off. Part one (sections 1 to 10) is the
 core: the idea, the two pictures, the comparisons, the judgement. The owner agreed to its idea on 2026-11-26. Part
 two (sections 11 to 20) is the detail: each reading, each number and where it comes from, and the order of work.
 
@@ -138,6 +156,11 @@ trust: each is checked against the judged screens before it is used.
 4. **Words.** "Loud against important" needs a model to read what matters. In the first build or not.
 5. **Data before code.** Section 19 puts more judged screens ahead of every layer but the first. That asks for your
    time: about twenty more screens marked.
+
+**Taken on Claude's judgement on 2026-11-27, each open to be overturned.** 2: built as proposed. 3: yes, and it
+proved the weakest link, so any finding that rests on it alone is shown as "worth a look" and never as a fault.
+4: not taken. It costs money per page and is the owner's. 5: not done, and it is now the thing most needed: the
+first build's numbers stand on conventions.
 
 ## 10. Not known
 

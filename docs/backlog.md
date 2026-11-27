@@ -21,6 +21,8 @@ engineer would do." These calls were open questions until then. Each is decided 
 
 | Call | Decision | Why |
 |---|---|---|
+| The shape engine's first build (2026-11-27) | Built on judgement, in the bench only, after the owner said to drive it to the end: six readings, firm findings kept apart from ones only worth a look | A doubtful reading stated as a fault costs more trust than a missed one. Journey entry 170 |
+| A model to read which words matter most | Not built | It is a cost per page and one of the spec's open decisions, so it stays the owner's. "What is loud" does only what needs no reading of words (2026-11-27) |
 | The footer's game | Only true findings on our homepage, none staged; false ones left out of the count | It is a public claim about an LLM-made page and a demo of the product: it has to hold when a visitor checks it (2026-11-22) |
 | What react-plumber.com serves | A static export of a commit, without `web/public/research` | Every page pre-renders; the research is unlinked, partly about private apps, and bundles others' components without licences (2026-11-22) |
 | A row's title in a softened colour | Leave it | It is a deliberate fourth level; lifting it is a redesign, not a tidy-up |
@@ -65,6 +67,11 @@ reserved.)
 
 ## Doesn't do yet
 
+- **The shape engine, beyond its first build (2026-11-27).** In the bench and not in plumber. Not reached: the
+  meaning of words (which thing matters most), the page in a second state (under the pointer, a tab pressed,
+  scrolled), balance and proportion, a row cut off by the window, list bullets off the text's line, "nearly alike".
+  No number is set against judged screens: there are seven with the owner's mark and about twenty more are needed.
+  The spec (`docs/briefs/shape-engine.md`) is a draft.
 - **Tells that need reading, the rest (2026-11-19).** The subtitle check is built (journey: "Subtitles that repeat the
   heading"). Still open: a label said twice (label, placeholder, helper text), a number said twice (a KPI and
   the sentence under it), slogans, most narrating captions, and an icon that says nothing its name does not (needs a

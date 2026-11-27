@@ -7449,12 +7449,54 @@ into its own browser. Your app isn't changed.", then the findings.
 - **Also in the view:** each reading's button now carries its count of firm findings.
 - **Media hooks:** `http://rauno-40-rizwanakhan-com.localhost:4420/__judge/?seen=1`, "What is loud".
 
+### 170. The first build of the shape engine, run to its end in one night (2026-11-27)
+
+- **The itch:** the owner, before sleeping: "i am done with saying yes to everything drive it to the end and use
+  your own judgement ... make sure you are not wrong, double check and drive this to completion".
+- **What "the end" was taken to be:** the first build the spec proposes. The seen picture, and on it one reading
+  for each comparison a page can answer by itself: space against belonging, look against role, rhythm and edges,
+  boxes and what they hold, what is loud. All of it in the judging bench, drawn over live pages, with every
+  finding either checked by eye or shown as only worth a look.
+- **How the checking went:** each reading was run on the pages, every finding printed with the things round it,
+  the doubtful ones looked at on the page, each failure traced to a cause in the reading, the cause fixed, and
+  the pages run again. That loop ran until a final pass over pages never looked at before brought nothing new
+  that failed. Entries 166 to 169 hold each reading's causes.
+- **The rule that kept it from being wrong:** two tiers everywhere. A finding is firm only where the reading has
+  earned it and a person has looked. Anything resting on a weaker reading is shown as "worth a look" and never
+  stated as a fault. Every page is read twice, six seconds apart, and what moved is left out.
+- **The final pass:** 41 reads of 39 expert sites (one site also as the web archive kept it, one also on a second
+  page). Space: 60 rows and columns hold groups, space agrees in 51, 2 firm, 7 worth a look. Look against role:
+  25 findings, 6 firm, which is 5 distinct. Rhythm: 2 firm, which is 1 distinct. Boxes: 13, none firm. Loud: 3,
+  all on one page. Ten findings were left out because the page was still changing.
+- **The eleven distinct firm findings:** shadcn's three plain headings drawn like the link headings; one of its
+  eight sponsor pictures 1.5px shorter than the rest; on Montek Singh Kundan's page, sections no further apart
+  than the things inside them, and five links inside one sentence drawn exactly like the sentence; on Lochie
+  Axon's page a heading with the same space above it as below; on Shubhransh's page one menu item that jumps down
+  the page among four that open another; on Marcelo's page his name drawn like seven titles that are links; on
+  Praveen Juge's page one section label that is a link among three that are not; and on Rizwan Khan's page three
+  blocks with 66, 80 and 81 percent of their letters in the accent colour.
+- **Against the expert:** two of the eleven are points Rauno made (the headings, the yellow). The other nine are
+  the engine's own and no judge has seen them. Of his 120 points the first build reaches few: most need the page
+  in another state, the meaning of its words, or a sense of balance and proportion that no reading here has.
+- **Decisions taken on judgement, each open to be overturned:** the first build is what the spec proposed. The
+  meant picture on a public page is read from how the page is built, and that proved the weakest link in every
+  reading that used it. No model reads words: it costs money per page and was the owner's to decide. No finding
+  is firm on a number without a source unless the number is only a pixel tolerance.
+- **Not done:** the spec is still a draft and is not signed off. No number has been set against judged screens,
+  because there are still only seven screens with the owner's mark. Nothing here is in plumber: it is all in the
+  bench. Rauno's cut-off row of tiles, his points on balance, and "the loudest thing is not the one that says the
+  most" are not reached.
+- **Media hooks:** `http://rauno-08-montek-dev.localhost:4420/__judge/?seen=1` (two readings with firm findings),
+  `http://rauno-40-rizwanakhan-com.localhost:4420/__judge/?seen=1` ("What is loud"),
+  `http://rauno-21-shadcn-com.localhost:4420/__judge/?seen=1`.
+
 ## Open gaps
 
-- Of the five comparisons in the engine spec, two have a first cut: "alike", for whether a thing looks pressable
-  ([entry 164](#164-boxes-join-the-comparison-and-the-owner-asks-whether-we-have-drifted-2026-11-27)), and "near"
-  ([entry 165](#165-space-against-belonging-drawn-over-real-pages-2026-11-27)), which no person has judged yet
-  and whose reading of what belongs together is weak. Enclosed, nearly regular and loud are not started.
+- The shape engine's first build is in the judging bench and nowhere else
+  ([entry 170](#170-the-first-build-of-the-shape-engine-run-to-its-end-in-one-night-2026-11-27)). The spec is not
+  signed off. None of its numbers has been set against judged screens. Nine of its eleven firm findings have been
+  seen by no judge. It does not read the meaning of words, the page in a second state, or balance and proportion,
+  and most of the expert's points need one of those.
 - The layer that compares how text looks with what it does now takes where a piece sits from the seen picture
   ([entry 161](#161-where-a-piece-sits-now-comes-from-the-seen-picture-2026-11-27)). Its rule that things inside
   boxes are in a different place from things on the page itself has no source and has been run on six pages.
@@ -9164,6 +9206,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W48
 
+- The judging bench can now read the shape of any public page six ways (what groups with what, look against role, space against belonging, rhythm and edges, boxes and what they hold, what is loud) and draw each over the live page. On 39 design portfolios it makes eleven firm findings, each looked at, and shows the weaker ones only as worth a look. It is the first build of the shape engine's spec and is not in plumber yet. ([entry 170](#170-the-first-build-of-the-shape-engine-run-to-its-end-in-one-night-2026-11-27))
 - Plumber no longer judges a picture drawn on the page (a film frame, a phone mock) by the page's own type and greys, no longer reads separator dots as words, and no longer tells an 18px shadow to become 8px: 67 of 75 false alarms on three real apps are gone, with no real finding lost. [Entry 164](#164-fixing-the-false-alarms-on-the-answer-keys-by-cause-2026-11-27)
 - crafting-ui and algorecall now have answer keys like cal.com's: 956 judged places on 34 pages, so a change that makes plumber worse on either app shows in one command. Plumber is right on 90% and 95% of the places scored; the 70 wrong ones are listed. [Entry 160](#160-answer-keys-for-crafting-ui-and-algorecall-2026-11-27)
 - On the dial, Longer words now also says what lost its place: a table column that moves, cards whose buttons stop lining up, a badge that gets squeezed, each with its fix shown on the page. [Entry 154](#154-other-data-on-the-dial-2026-11-26)

@@ -623,11 +623,12 @@ export function see(el, root, base, loaded, soften) {
     // A split inside a split along the same direction is one column, so every group in it, however deep, is a
     // sister of the others: the number given is the outermost column's.
     let cols = 0;
-    const lead = (n, above) => {
+    // Sisters are also at one depth: the sub-headings inside one section are not sisters of the sections.
+    const lead = (n, above, depth) => {
       const axis = n.type === 'box' ? n.how?.axis : n.axis, col = !axis ? above : n.type !== 'box' && above && above.axis === axis ? above : { id: cols++, axis };
-      for (const c of n.children ?? []) { if (axis && unitsIn(c).length >= 2) { const u = firstOf(c); (heads.get(u) ?? heads.set(u, []).get(u)).push(col.id); } lead(c, col); }
+      for (const c of n.children ?? []) { if (axis && unitsIn(c).length >= 2) { const u = firstOf(c); (heads.get(u) ?? heads.set(u, []).get(u)).push(`${col.id}@${depth}`); } lead(c, col, depth + (axis ? 1 : 0)); }
     };
-    lead(tree, null);
+    lead(tree, null, 0);
     found.rows.forEach((row, i) => {
       if (row.kind === 'box') { const at = where.get(row.unit); if (at) Object.assign(row, at); return; }
       let e = found.els[i].el; while (e && !blocks.has(e)) e = e.parentElement;
@@ -662,13 +663,17 @@ export function see(el, root, base, loaded, soften) {
         if (at.length < 4) continue;
         const members = at.map((k) => run.items[k]), boxes = members.map(boxOf), solid = !key.startsWith('t:');
         if (members.some(turned)) continue;
-        const ask = (what, values, mem = members, least) => { const v = regular(values, least); if (v) evens.push({ what, axis: run.axis, members: mem, v }); };
+        // bare shapes (ticks, dots, strokes) are often set unevenly on purpose: a slip among them is only worth a look
+        const bare = key.startsWith('b:');
+        const ask = (what, values, mem = members, least) => { const v = regular(values, least); if (v) evens.push({ what, axis: run.axis, members: mem, v: bare ? { ...v, firm: false } : v }); };
         if (run.axis === 'y') { ask('left', boxes.map((b) => b.x)); if (solid) ask('width', boxes.map((b) => b.w)); }
         else { ask('top', boxes.map((b) => b.y)); if (solid) ask('height', boxes.map((b) => b.h)); }
         // spacing: only where the like things stand next to each other with nothing else between
         let from = 0;
         for (let i = 1; i <= at.length; i++) if (i === at.length || at[i] !== at[i - 1] + 1) {
-          if (i - from >= 5) ask('gap', at.slice(from, i - 1).map((k) => Math.round(run.gaps[k])), at.slice(from, i).map((k) => run.items[k]), 5);
+          // words set side by side differ in width, and when each is centred on a mark (the numbers along a ruler)
+          // the space between their letters is not the spacing: text is asked for its gaps in columns only
+          if (i - from >= 5 && (solid || run.axis === 'y')) ask('gap', at.slice(from, i - 1).map((k) => Math.round(run.gaps[k])), at.slice(from, i).map((k) => run.items[k]), 5);
           from = i;
         }
       }
@@ -718,6 +723,9 @@ export function see(el, root, base, loaded, soften) {
       // sideways, a line's box is its letters. Up and down it is the line's height, which is often taller than a
       // small box whose letters still fit, so only more than half a line counts there
       const lh2 = parseFloat(st.lineHeight) || parseFloat(st.fontSize) * 1.2, across = Math.max(bx.x - u.x, u.x + u.w - bx.x - bx.w), down = Math.max(bx.y - u.y, u.y + u.h - bx.y - bx.h);
+      // text that lies mostly outside its box was never in it to the eye (a row laid out past a collapsed parent)
+      const ix = Math.min(u.x + u.w, bx.x + bx.w) - Math.max(u.x, bx.x), iy = Math.min(u.y + u.h, bx.y + bx.h) - Math.max(u.y, bx.y);
+      if (ix <= 0 || iy <= 0 || ix * iy < u.w * u.h * 0.5) return;
       if (across > 2 || down > lh2 * 0.6) boxed.push({ kind: 'spill', tier: 'claim', units: [i], box: boxAt.get(b), say: `This text runs ${Math.round(Math.max(across, down))}px past the box it is in.` });
     });
     boxed.sort((a, b) => Number(b.tier === 'claim') - Number(a.tier === 'claim')); hpick = null;
