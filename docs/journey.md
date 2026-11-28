@@ -6235,6 +6235,11 @@ into its own browser. Your app isn't changed.", then the findings.
   is 0.8 s shorter, and the line holds about 12.6 seconds. The film went from 55 to 49 seconds. The closing line is
   now the owner's: "Unslopify your apps with React Plumber." Stills: `cleanup-tight-stills.jpg` and
   `closing-stills.jpg` (local).
+  The owner then asked for a shorter ending: the closing now holds 4.2 seconds, so the film is 47 seconds
+  (rough cut 9). The owner chose to render the final at full size before fixing the two framing spots still open
+  (plumber's message box in the corner during the cards, the Backlog header on the frame's top edge).
+  The final rendered at 1920 × 1080 and 60 fps on vm-agent in 124 s: 47.2 seconds, saved on the Desktop as
+  `react-plumber-launch.mp4`.
 
 - **One at a time, from any toy (2026-11-26).** The owner: "just fix the things one by one clicking on a single item
   should give the tour like experience". Until now only the main button toured, and it showed 4 of 80 fixes; a single
