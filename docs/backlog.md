@@ -259,6 +259,11 @@ and icon passes' cases, and the palette after a write, were tested again through
 - Still wrong on crafting-ui after journey entry 144 (2026-11-26): a11y/label-in-name on a timeline region that shows
   its marks; craft/contrast on lone "·" separators; craft/declared-gap on axis ticks placed by hand; craft/half-pixel on
   a part inside a scaled drawing; tells/divider on a measuring guide in the hero.
+- 23 test files fail on main, the same on 2026-11-27 (7862c2ba) as on 2026-11-28, so not from the 0.8.0 work: adoption,
+  bare-gates, bare-plain, blueprint-responsive, causes-model, classes, cli-findings, cli-setup, craft-judge, craft-run,
+  craft-scope, craft-wave7, dead-try, doctor-three-lines, edits-places, false-positives, ledger, locate-bench,
+  packaging, project-layouts, readiness, report-nits and report (41 tests, all wrong answers, none timed out; run on
+  vm-agent). Each needs sorting: a test that no longer says what plumber does, or plumber gone wrong.
 - Still wrong after journey entry 164 (2026-11-27): on crafting-ui, three lists fixed in the code read as lists that
   can grow and two ends of a scale (both need the source, which the page check cannot read), one sticker with a white
   cut line, one measuring guide in the hero, one fade caught part way; on cal.com, the larger-text check on a carousel
