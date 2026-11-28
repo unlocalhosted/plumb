@@ -14,7 +14,7 @@ what building it changed. Where a note and the text above it differ, the note is
 | Look against role | 14 | 4 | "nearly alike"; boxes are never firm |
 | Boxes and what they hold | 15 | 0 | joined; a box whose content is not one thing |
 | Rhythm and edges | 16 | 1 | balance and proportion; mirror and alternation |
-| What is loud | 17 | 3, on one page | loud against what matters was run on 40 screens and is a note only: 23 "disagree", none a fault; pictures are not ranked |
+| What is loud | 17 | 3, on one page | loud against what matters is a note only. Reworked 2026-11-28 so a label and what it heads are one unit: 3 of 41 reads still "disagree" (23 before). Pictures and boxes are not ranked |
 
 Two of those ten are points the expert made. Each of the ten was looked at on its page. No number has been set against judged screens (section 19).
 
@@ -366,6 +366,48 @@ louder a label may be than what it heads; and loudness read only among things th
 inside a demo is not ranked with the page's own text. One judged case exists for it (Rauno 10.1), and that page
 has since been changed, so there is nothing to set a number against.
 
+Added on 2026-11-28, reworked on the owner's word (journey entry 173). Both changes come from this section's own
+first line: loudness belongs to a unit among its neighbours.
+
+**A label and what it heads are one unit.** A block of text heads what comes after it in its group. For as long as
+no text comes before it there, it also heads what comes after that group in the next group out. The groups are the
+seen picture's (section 12), so no new number is used. A name over a sentence heads the sentence. A section's
+heading heads its section and nothing before it. That the first text of a group heads it is how pages are built
+and not a published finding: plumber's convention. Among things drawn on top of each other there is no order, so
+there the engine says it cannot read what heads what and gives no verdict.
+
+**Text inside another drawn box is not ranked with the page's own.** A block inside a drawn box that does not also
+hold the block that says the most is left out of the order. It is loud among the things in its own box (a card's
+title, a meter's reading); on the page it is the box that competes. Boxes and pictures are still not ranked as
+wholes, so a loud card, or a logo drawn as a picture, is silence for now.
+
+The table for text, as built:
+
+| Compared | Outcome | Said |
+|---|---|---|
+| The loudest text is the text that says the most | Agree. | Silence. |
+| The loudest text is a label (the reading called it minor: a name, a greeting, a heading) and it heads the text that says the most | Agree: one unit. | Silence. How many times larger the label is, is shown and not judged. |
+| The loudest text is of substance and is not the text that says the most | Nearly. | "Something of substance is drawn louder than the text that says the most." |
+| The loudest text is a label over some other part of the screen | Disagree. | "The loudest text is a label over another part of the screen." |
+
+The clause "the most important one is among the quietest" is gone. It was counted in steps of type, and a screen
+with many sizes set it off whatever the page did. Every outcome but "agree" is still shown as "worth a look" and
+counts as no firm finding.
+
+Run on the kept readings (41 reads of 39 sites; four pages whose words had changed since the reading were given
+it again by matching the same words): 29 agree, 3 nearly, 3 disagree, 2 not judged, 3 with all their text at one
+size, and 1 a loading screen. Of the 23 that disagreed before, 18 now agree, 2 are not judged and 3 still disagree.
+In 18 of the 29 the loudest text is a label over the main text, from the same size and heavier up to 3 times its
+size, and the expert faulted none of them for it. The three that still disagree are two sites (one saved twice)
+where a section's heading is louder than an intro set as body text: 40px against 17px, and 16px against 14px. The
+three "nearly" are two headlines over a line the reading found says more, and one sentence drawn a word at a time.
+The two not judged are pages drawn over a full-page picture, which the seen picture reads as one pile.
+
+*Not known:* how many times larger a label may be than what it heads before it drowns it. The view now shows that
+figure on every page where a label heads the main text, so judged screens can set it. The shape of the one judged
+case (Rauno 10.1, a first heading of substance over a second one that says more) comes out as "nearly"; the live
+page no longer has that shape, so this is the rule run on a hand-made copy of the shape and not on the page.
+
 ## 18. The page in more than one state
 
 Each reading above is of one still picture. Plumber already reads a page at four window sizes. The expert's points
@@ -385,9 +427,10 @@ and brings its own judged cases.
 | Regular: a slip against a choice | Two steps | Plumber's convention |
 | Drawn: a fill that shows | Half see-through | Plumber's convention |
 | Loud: "about as loud" | Not set | Nothing |
+| Loud: how many times larger a label may be than what it heads | Not set | Nothing. Seen on 18 expert sites: up to 3 times, none faulted |
 | Loud: accent share | A half | One remark by one expert |
 
-Two of eight have a published source. No number is used in a finding the owner sees until it has been run against
+Two of nine have a published source. No number is used in a finding the owner sees until it has been run against
 judged screens, at several values, and the value that agrees best with the judges is kept, with the share of
 agreement written beside it. That needs more judged screens than exist: the owner has marked one thing on seven
 screens. About twenty more screens from apps known for their design would give each reading a handful of cases.

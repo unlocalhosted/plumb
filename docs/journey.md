@@ -7577,16 +7577,53 @@ into its own browser. Your app isn't changed.", then the findings.
 - **Media hooks:** pictures of every verdict that is not an agreement, with the readings and the verdict list, in
   `docs/research/harvests/raunofreiberg-portfolio-reviews/local/words/` (local).
 
+### 173. A name and the sentence under it are one thing (2026-11-28)
+
+- **The itch:** the first run of loud against what matters said "disagree" on 23 of 41 pages, and none was a fault
+  ([entry 172](#172-the-words-are-read-without-a-key-and-the-comparison-does-not-hold-2026-11-28)). The owner, asked
+  whether to rework it so a heading and the text under it count as one thing: "Yes, rework it".
+- **The system behind it:** the comparison ranked every block of text on the screen against every other. A designer
+  does not look that way. A name over a sentence reads as one thing, and the number in a meter is loud inside the
+  meter. The spec's own first line already said so: loudness belongs to a unit among its neighbours.
+- **What changed, in two rules.** A label (a name, a greeting, a heading) heads what comes after it in its group,
+  read from the groups the seen picture already has, so no new number came in. If the loudest text is a label and
+  the text that says the most is under it, the two are one thing and nothing is said. And text inside a drawn box
+  that does not hold the main text is left out of the order: it is the box that competes, and boxes are not ranked
+  yet.
+- **Dead ends on the way:** the first cut of "heads" needed the label to be the first text of its group, and missed
+  a name with a small "hey, it's me" line above it. The second let a project's title head the next project. What
+  stayed: the first text of a group heads the group, and the last text before a block sits over that block.
+- **What it says now, on the same 41 reads:** 29 agree, 3 are a line of substance louder than the main one, 3 are a
+  section's heading louder than an intro set as body text, 2 are not judged, 3 have all their text at one size and
+  1 is a loading screen. Of the 23 from before, 18 are now silence, 2 are not judged and 3 remain.
+- **Looked at on the page:** Stephen Jude's name at 48px over "6+ years as a Product Designer." at 20px is now
+  outlined as one thing. On shadcn's page a project's heading at 16px is 1.1 times the intro above it, and the view
+  says so as worth a look. On Manish's page a textured picture lies under everything, so the seen picture reads the
+  whole page as one pile, and the view says it cannot read what heads what.
+- **The judged case:** Rauno's "make the second heading the first one" is a first heading of substance over a second
+  one that says more. A hand-made copy of that shape comes out as "nearly". The live page no longer has the shape,
+  so this is not a catch on a page.
+- **Still not known:** how many times larger a label may be than what it heads. The view now shows that figure
+  wherever a label heads the main text: on these 18 pages it runs from the same size to 3 times, and the expert
+  faulted none. That is 18 cases nobody objected to and no case anybody did, so it sets no number.
+- **Limits found:** a page whose words change between two visits loses its kept reading; four were given theirs
+  again by matching the same words. A full-page picture under the content makes the page a pile. Pictures and
+  boxes are not ranked, so a logo drawn as a picture, or a loud card, is silence.
+- **Media hooks:** before and after pictures of the same pages in
+  `docs/research/harvests/raunofreiberg-portfolio-reviews/local/words/` and `local/words-reworked/` (local), with
+  the list of verdicts.
+
 ## Open gaps
 
 - The shape engine's first build is in the judging bench and nowhere else
   ([entry 170](#170-the-first-build-of-the-shape-engine-run-to-its-end-in-one-night-2026-11-27)). The spec is not
   signed off. None of its numbers has been set against judged screens. Eight of its ten firm findings have been
   seen by no judge. It does not read the page in a second state, or balance and proportion, and many of the
-  expert's points need one of those. The words of 40 first screens have been read
-  ([entry 172](#172-the-words-are-read-without-a-key-and-the-comparison-does-not-hold-2026-11-28)), and the
-  comparison of loud against what matters did not hold: 23 pages "disagree" and none is a fault. It is a note
-  only until there are judged screens to say how much louder a name may be than the sentence under it.
+  expert's points need one of those. The words of 40 first screens have been read, and loud against what matters now counts a
+  label and the text under it as one thing
+  ([entry 173](#173-a-name-and-the-sentence-under-it-are-one-thing-2026-11-28)): 3 of 41 reads still differ, where
+  23 did. It is still a note only. No judged screen says how many times larger a label may be than what it heads,
+  pictures and boxes are not ranked, and a full-page picture under the content leaves a page not judged.
 - The layer that compares how text looks with what it does now takes where a piece sits from the seen picture
   ([entry 161](#161-where-a-piece-sits-now-comes-from-the-seen-picture-2026-11-27)). Its rule that things inside
   boxes are in a different place from things on the page itself has no source and has been run on six pages.

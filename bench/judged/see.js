@@ -12,7 +12,7 @@ import { boxOf, grow, levels, places, runs, settle, RATIO } from './seen.js';
 import { judge } from './alike.js';
 import { judge as near, RATIO as APART } from './near.js';
 import { judge as regular } from './regular.js';
-import { judge as louder } from './loud.js';
+import { judge as louder, heads, ranked } from './loud.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const host = (url) => url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
@@ -584,16 +584,17 @@ export function see(el, root, base, loaded, soften) {
     const html = [];
     if (lpick === null && !meant) tops.forEach((t, k) => { const r = nowOf(leaf(t.unit)); if (r.w) html.push(`<div class="g ${k ? 't-run leaf' : 't-odd odd'}" style="left:${r.x - 4}px;top:${r.y - 4}px;width:${r.w + 8}px;height:${r.h + 8}px"></div>`); });
     // with the words read: the loudest in blue, the one that says the most in pink (or both as one when they agree)
-    if (lpick === null && meant) for (const [id, cls] of meant.outcome === 'agree' ? [[meant.main, 't-agree']] : [[meant.top, 't-run'], [meant.main, 't-odd odd']]) { const r = nowOf(leaf(id)); if (r.w) html.push(`<div class="g ${cls}" style="left:${r.x - 4}px;top:${r.y - 4}px;width:${r.w + 8}px;height:${r.h + 8}px"></div>`); }
+    if (lpick === null && meant) for (const [id, cls] of meant.outcome === 'agree' ? [...(meant.top === meant.main ? [] : [[meant.top, 't-run']]), [meant.main, 't-agree']] : [[meant.top, 't-run'], [meant.main, 't-odd odd']]) { const r = nowOf(leaf(id)); if (r.w) html.push(`<div class="g ${cls}" style="left:${r.x - 4}px;top:${r.y - 4}px;width:${r.w + 8}px;height:${r.h + 8}px"></div>`); }
     shouts.forEach((s, n) => { if (lpick !== null && lpick !== n) return; const r = nowOf(leaf(s.unit)); if (r.w) html.push(`<div class="g t-odd odd" style="left:${r.x - 4}px;top:${r.y - 4}px;width:${r.w + 8}px;height:${r.h + 8}px"></div>`); });
     seen.innerHTML = html.join('');
   };
   // loud against important: the words of the first screen, read by a model in the bench's server, set against how
   // loud each block is drawn
   const SAYS = {
-    agree: () => 'The loudest text is the text that says the most.',
-    disagree: (top) => (top.role === 'minor' ? 'The loudest text is a name or a label, and the text that says the most is drawn quieter.' : 'The text that says the most is among the quietest on the screen.'),
-    nearly: () => 'Something else is drawn louder than the text that says the most.',
+    agree: (m) => (m.over ? 'The loudest text is a name or a label over the text that says the most, so the two read as one thing.' : 'The loudest text is the text that says the most.'),
+    nearly: (m) => (m.over ? 'The line over the text that says the most is drawn louder than it, and says less.' : 'Something else of substance is drawn louder than the text that says the most.'),
+    disagree: () => 'The loudest text is a label over another part of the screen, and the text that says the most is drawn quieter.',
+    blind: () => 'The loudest text is a name or a label, and this part of the page is drawn as things on top of each other, so what it heads cannot be read.',
   };
   const WHY_NOT = {
     'no-key': 'No key for the model is set where the bench runs, so the words have not been read.',
@@ -605,22 +606,27 @@ export function see(el, root, base, loaded, soften) {
     if (!screenful.length) { said = { error: 'nothing-to-read' }; meant = null; return; }
     try { said = await (await fetch('/__judge/words', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ pieces: screenful.map(({ id, text }) => ({ id, text })), only }) })).json(); }
     catch { said = { error: 'failed' }; }
-    meant = said.roles ? louder(screenful.map((p) => ({ ...p, role: said.roles[p.id] ?? 'minor' }))) : null;
+    // a label and what it heads are one thing, and text inside some other drawn box is not ranked with the page's own
+    const all = screenful.map((p) => ({ ...p, role: said.roles?.[p.id] ?? 'minor' })), main = all.find((p) => p.role === 'main');
+    const among = main ? ranked(all, got.units, main.id) : all;
+    meant = said.roles ? louder(among, (id) => heads(tree, got.units, id)) : null;
+    if (meant) meant.left = all.length - among.length;
   };
   const listMeant = () => {
     const spend = said?.spent ? `<p>Spent so far on reading words: $${said.spent.dollars.toFixed(2)}, on ${said.spent.calls} ${said.spent.calls === 1 ? 'screen' : 'screens'}.</p>` : '';
     if (!said?.roles) return `<p>${WHY_NOT[said?.error] ?? `The model could not be asked just now (${esc(said?.error ?? 'no answer')}).`}</p>${said?.error === 'no-key' || said?.error === 'ceiling' || said?.error === 'nothing-to-read' ? '' : '<button type="button" class="chip" data-read>Read the words</button>'}${spend}`;
     if (!meant) return `<p>All the text on this screen is drawn equally loud, so there is nothing to compare.</p>${spend}`;
     const by = new Map(screenful.map((p) => [p.id, { ...p, role: said.roles[p.id] ?? 'minor' }])), top = by.get(meant.top), main = by.get(meant.main);
-    return `<ul class="finds"><li><button type="button" data-meant aria-pressed="false"><b>${meant.outcome === 'agree' ? '' : 'Worth a look: '}${SAYS[meant.outcome](top)}</b>
-      ${meant.outcome === 'agree' ? '' : `<span>Loudest: <em>${esc(top.text.slice(0, 60))}</em>, ${top.size}px, ${top.size > main.size ? `${Math.round(top.size / main.size * 10) / 10} times the size of the text that says the most` : 'the same size and heavier'}.</span>`}
+    return `<ul class="finds"><li><button type="button" data-meant aria-pressed="false"><b>${meant.outcome === 'agree' ? '' : meant.outcome === 'blind' ? 'Not judged: ' : 'Worth a look: '}${SAYS[meant.outcome](meant)}</b>
+      ${meant.top === meant.main ? '' : `<span>Loudest: <em>${esc(top.text.slice(0, 60))}</em>, ${top.size}px, ${top.size > main.size ? `${Math.round(top.size / main.size * 10) / 10} times the size of the text that says the most` : 'the same size and heavier'}.${meant.outcome === 'agree' ? ' How many times is too many has not been measured, so this is not judged.' : ''}</span>`}
       <span>Says the most: <em>${esc(main.text.slice(0, 90))}</em>, ${main.size}px, step ${meant.level} of ${meant.levels} in loudness.</span>
+      ${meant.left ? `<span>Left out of the order: ${meant.left} ${meant.left === 1 ? 'block' : 'blocks'} of text inside a card or another drawn box. Such text is loud among the things in its own box.</span>` : ''}
       <span>How we know: a model read the words (${esc(said.model)}), without being told how anything is drawn. ${esc(said.why)}</span></button></li></ul>${spend}`;
   };
   const listLoud = () => {
     $('.loud').innerHTML = `<div><h2>What is loud</h2><p>The loudest text on the first screen, by type size and then weight, outlined so you can say whether the engine's ear is right. Nothing is judged there.</p></div>
       <ol class="finds">${tops.map((t) => `<li><span><em>${esc(words(leaf(t.unit)))}</em> ${t.size}px, weight ${t.weight}</span></li>`).join('')}</ol>
-      <div><h2>Does the loudest text say the most?</h2><p>Which words matter most is not something a page says about itself, so a model reads them. This is never stated as a fault: a name or a heading is often the loudest text and is doing its job, and how much louder is too much has not been measured.</p></div>
+      <div><h2>Does the loudest text say the most?</h2><p>Which words matter most is not something a page says about itself, so a model reads them. A name or a heading over that text counts as one thing with it, so a loud name is silence. Anything else is shown as worth a look and never as a fault: how much louder is too much has not been measured.</p></div>
       ${listMeant()}
       <div><h2>A highlight on most of the text</h2><p>A block where a coloured accent covers half the letters or more, so it no longer picks anything out.</p></div>
       ${shouts.length ? `<ul class="finds">${shouts.map((s, n) => `<li><button type="button" data-loud="${n}" aria-pressed="${n === lpick}"><b>The accent is on most of this text</b><span>${s.share}% of ${s.letters} letters are in ${hexOf(s.accent)}, and the rest in ${hexOf(s.base)}.</span><span><em>${esc(words(leaf(s.unit)))}</em></span></button></li>`).join('')}</ul>` : '<p>No block has its accent on most of its letters.</p>'}`;

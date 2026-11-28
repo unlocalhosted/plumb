@@ -119,8 +119,10 @@ pure, compares that with the order of loudness. It needs `ANTHROPIC_API_KEY`, or
 in the environment the server runs in. A screen costs about two cents and is paid for once: answers are kept in
 `.words/` (not in git) with a log of every paid call, and a ceiling of two dollars (`PLUMBER_WORDS_BUDGET` raises
 it). Opening a page spends nothing. The "Read the words" button does. A reading can also be made without a key
-and put in `.words/` under the name `keyOf` gives; the view shows who read it. The comparison is shown as "worth a
-look" and never as a fault: on its first run it disagreed with 23 of 41 pages, and none was one.
+and put in `.words/` under the name `keyOf` gives; the view shows who read it. A label (a name, a greeting, a
+heading) and the text it heads count as one thing (`heads` in `loud.js`, read from the seen tree), and text inside
+a drawn box that does not hold the main text is left out of the order (`ranked`). What is left is shown as "worth
+a look" and never as a fault: 3 of 41 reads, where the first cut had 23 and none of them was one.
 
 Every reading is taken twice, six seconds apart, and a finding that rests on something that moved or changed size
 is left out: a tile that cycles through its own contents is not a page at rest.
