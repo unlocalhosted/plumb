@@ -7642,8 +7642,13 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   now counts as still where before it never did. The reopenings now wait for Twenty's loading placeholders, which is
   the wait doing its job. The whole page went only from 167 s to 158 s, because the reopenings loaded more slowly
   this time; the dev server's time to load the page varies by 10 to 20 s from one load to the next.
-- **What is left:** each fresh browser loads Twenty's 4,884 source files again (9 to 35 s each time), and plumber's
-  own read takes 36 s on settings and 75 s on the people table. Those two are now the cost.
+- **Then the files:** each fresh browser loaded Twenty's 4,884 source files again, 9 to 35 s each time. Now every
+  page in a run is given the scripts and stylesheets an earlier page loaded, from memory; the page, its data and
+  plumber's own requests still go out. Loading the main page went from 21 s to 6 s and each reopening from 14–35 s
+  to 8–11 s (the browser still runs every file). The settings page took 140 s, down from 167 s, with the same 23
+  findings.
+- **What is left:** plumber's own read, 37 to 59 s on settings and 75 s on the people table; and 18 s before the
+  first load, most of it the check that plumber is installed, which loads the whole page once more.
 - **Media hooks:** the stopwatch lines before and after, side by side.
 
 ### Open gaps from the 0.4.0 release work

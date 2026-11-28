@@ -142,12 +142,43 @@ export async function inside<T>(browser: Browser, url: string, contextOptions: B
   } finally { await context.close(); }
 }
 
+/**
+ * One download of the app's code per run: every page the run opens (the main read, each reopening, each width) gets
+ * the scripts and stylesheets an earlier page already loaded, from memory. A fresh browser has an empty cache, and a
+ * dev server serves its source as one file per module: Twenty's settings page is 4,884 files, 9 to 35 s each time it
+ * was opened, six or more times a page (2026-11-28). The page itself, its data and plumber's own requests still go out.
+ */
+export function shareFiles(browser: Browser): void {
+  type File = { status: number; headers: Record<string, string>; body: Buffer };
+  const files = new Map<string, File>();
+  const code = (request: import('playwright').Request) => request.method() === 'GET' && ['script', 'stylesheet'].includes(request.resourceType()) && !request.url().includes('/__plumb/');
+  const newContext = browser.newContext.bind(browser);
+  browser.newContext = async (options = {}) => {
+    const context = await newContext(options);
+    context.on('response', response => {
+      const request = response.request();
+      if (response.status() !== 200 || !code(request) || files.has(request.url())) return;
+      response.body().then(body => {
+        const headers = { ...response.headers() };
+        delete headers['content-encoding']; delete headers['content-length'];
+        files.set(request.url(), { status: 200, headers, body });
+      }, () => {});
+    });
+    await context.route('**/*', route => {
+      const file = code(route.request()) ? files.get(route.request().url()) : undefined;
+      return file ? route.fulfill(file) : route.fallback();
+    });
+    return context;
+  };
+  browser.newPage = async (options = {}) => { const context = await browser.newContext(options), page = await context.newPage(); page.once('close', () => { context.close().catch(() => {}); }); return page; };
+}
+
 /** Responses of the app (not of Plumb) held back by `delay` ms. Returns when the first and last were let through. */
 export async function hold(page: Page, delay: number): Promise<{ first(): number | null; last(): number | null }> {
   let first: number | null = null, last: number | null = null;
   await page.route('**/*', async route => {
     const request = route.request();
-    if (!['fetch', 'xhr'].includes(request.resourceType()) || request.url().includes('/__plumb/')) return route.continue();
+    if (!['fetch', 'xhr'].includes(request.resourceType()) || request.url().includes('/__plumb/')) return route.fallback();
     first ??= Date.now();
     await sleep(delay);
     last = Date.now();

@@ -2,7 +2,7 @@ import { join, relative, resolve } from 'node:path';
 import { mkdir } from 'node:fs/promises';
 import { cacheDirectory, ignoreCache } from './paths.js';
 import { UsageError } from './errors.js';
-import { ask, desktop, hold, inside, open, reloaded, settle, sleep, tag, timed } from './craft-page.js';
+import { ask, desktop, hold, inside, open, reloaded, settle, shareFiles, sleep, tag, timed } from './craft-page.js';
 import type { Browser, Page } from './craft-page.js';
 import { hasAnswers, judge } from './craft-judge.js';
 import type { Grey } from './craft-judge.js';
@@ -286,6 +286,7 @@ function proofRun(browser: Browser, without: string[], only: string[] = []): voi
 /** Open every route in headless Chromium and run the craft engine over the whole page. */
 export async function craftRun(options: CraftRunOptions): Promise<CraftPage[]> {
   const browser = await launchChromium();
+  shareFiles(browser);
   let stopOwn: (() => Promise<void>) | undefined;
   try {
     const pages: CraftPage[] = [], base = await reachable(options.url);
