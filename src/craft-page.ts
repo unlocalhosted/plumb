@@ -11,6 +11,17 @@ export const RECORDER = fileURLToPath(new URL('../overlay/src/craft-record.js', 
 export const sleep = (ms: number) => new Promise<void>(done => setTimeout(done, ms));
 export const desktop = { width: 1280, height: 800 };
 
+// PLUMBER_TIME=1: each step's time on stderr (`time <page> <step> <ms> @<since start>`), to see where a page check goes
+const TIMING = !!process.env.PLUMBER_TIME, START = Date.now(), tags = new WeakMap<Page, string>();
+let pages = 0;
+export const tag = (page: Page, name: string) => { tags.set(page, name); };
+export async function timed<T>(page: Page | null, what: string, work: () => Promise<T>): Promise<T> {
+  if (!TIMING) return work();
+  const from = Date.now();
+  try { return await work(); }
+  finally { process.stderr.write(`time ${(page && tags.get(page)) ?? '-'} ${what} ${Date.now() - from} @${((Date.now() - START) / 1000).toFixed(1)}\n`); }
+}
+
 /** The page reloaded under a question (a file saved, a dev server's watcher): its context went, or the new page was
  *  asked before plumber's script was back on it ("reading 'craft'", U66). A closed page is not a reload. */
 export const reloaded = (error: unknown) => /Execution context was destroyed|navigation|plumb-not-ready|reading 'craft'/i.test(String((error as Error)?.message ?? error));
@@ -31,6 +42,9 @@ export const RELOADING = 30000;
  *  for and asked again while the reloads last, up to RELOADING ms; then the last reload's error is thrown for the
  *  caller to say (U66: touched once a second for 12 s, a count of 4 tries gave up while the saves still came). */
 export async function ask<T>(page: Page, args: Record<string, unknown>, within = RELOADING): Promise<T> {
+  return timed(page, `ask:${args.op ?? 'read'}`, () => asking<T>(page, args, within));
+}
+async function asking<T>(page: Page, args: Record<string, unknown>, within: number): Promise<T> {
   const until = Date.now() + within;
   for (;;) {
     try {
@@ -48,16 +62,19 @@ export async function ask<T>(page: Page, args: Record<string, unknown>, within =
 
 /** Open a route and wait for the overlay. `ready` also waits for the server's first read of the project. */
 export async function open(page: Page, url: string, timeout: number, ready: boolean): Promise<void> {
-  try { await page.goto(url, { waitUntil: 'load', timeout }); }
+  const loads = { script: 0, other: 0 }, count = (r: import('playwright').Request) => { loads[r.resourceType() === 'script' ? 'script' : 'other']++; };
+  if (TIMING) page.on('request', count);
+  try { await timed(page, 'goto', () => page.goto(url, { waitUntil: 'load', timeout })); }
   catch (error) { throw new UsageError(`Could not open ${url}: ${(error as Error).message.split('\n')[0]}\n  → start your dev server, then: plumber craft --url <its address>`); }
   // a dev server that reloads once (dependency optimizing) destroys the first context: try again
   for (let attempt = 0; ; attempt++) {
     try {
-      await page.waitForFunction(() => (window as unknown as { __plumb?: { overlay?: unknown } }).__plumb?.overlay, undefined, { timeout: Math.min(timeout, 15000) });
+      await timed(page, 'overlay', () => page.waitForFunction(() => (window as unknown as { __plumb?: { overlay?: unknown } }).__plumb?.overlay, undefined, { timeout: Math.min(timeout, 15000) }));
+      if (TIMING) { page.off('request', count); process.stderr.write(`time ${tags.get(page) ?? '-'} loaded scripts=${loads.script} other=${loads.other}\n`); }
       if (!ready) return;
       // ready() waits while the server reads; a server that never finishes is a timeout, not a hang
-      await page.evaluate((limit) => Promise.race([(window as unknown as { __plumb: { ready(): Promise<unknown> } }).__plumb.ready(),
-        new Promise((_, reject) => setTimeout(() => reject(new Error(`the overlay was not ready after ${limit}ms`)), limit))]), timeout);
+      await timed(page, 'ready', () => page.evaluate((limit) => Promise.race([(window as unknown as { __plumb: { ready(): Promise<unknown> } }).__plumb.ready(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error(`the overlay was not ready after ${limit}ms`)), limit))]), timeout));
       return;
     } catch (error) {
       const message = (error as Error).message;
@@ -76,12 +93,18 @@ export async function open(page: Page, url: string, timeout: number, ready: bool
 const STILL = 800;
 const PLACEHOLDER = '[aria-busy="true"], .animate-pulse, [data-loading="true"], [class*="skeleton" i]';
 export async function settle(page: Page, network = 5000): Promise<boolean> {
+  return timed(page, `settle(${network})`, () => settling(page, network)).then(v => { if (TIMING) process.stderr.write(`time ${tags.get(page) ?? '-'} settled=${v}\n`); return v; });
+}
+async function settling(page: Page, network: number): Promise<boolean> {
   const end = Date.now() + network;
-  await page.waitForLoadState('networkidle', { timeout: network }).catch(() => {});
+  // not the browser's own "network idle": the overlay keeps one request open to its server (news of the project,
+  // /__plumb/readiness), so on any app with plumber installed that never came and every wait ran its whole limit
+  // (Twenty: 50 s of a 167 s page, 2026-11-28). Requests are counted here instead, leaving plumber's own out.
   // requests out right now, counted from here on (the overlay's own reads to /__plumb/ are not the page's)
-  let out = 0, last = Date.now(), settled = false;
+  let out = 0, last = Date.now(), settled = false, why = '';
+  const outs: string[] = [];
   const mine = (r: import('playwright').Request) => !r.url().includes('/__plumb/') && ['fetch', 'xhr', 'script', 'document', 'stylesheet'].includes(r.resourceType());
-  const sent = (r: import('playwright').Request) => { if (mine(r)) { out++; last = Date.now(); } };
+  const sent = (r: import('playwright').Request) => { if (mine(r)) { out++; last = Date.now(); if (TIMING) outs.push(r.url().slice(-60)); } };
   const done = (r: import('playwright').Request) => { if (mine(r)) { out = Math.max(0, out - 1); last = Date.now(); } };
   page.on('request', sent); page.on('requestfinished', done); page.on('requestfailed', done);
   try {
@@ -98,10 +121,12 @@ export async function settle(page: Page, network = 5000): Promise<boolean> {
         setTimeout(() => { watch.disconnect(); resolve(!changed && !waiting()); }, ms);
       }), { window: Math.min(STILL, left), placeholder: PLACEHOLDER }).catch(() => true);
       if (still && out === 0 && Date.now() - last >= STILL) { settled = true; break; }
+      if (TIMING) why = !still ? await page.evaluate((placeholder) => [...document.querySelectorAll(placeholder)].filter((el) => { const b = el.getBoundingClientRect(); return b.width > 16 || b.height > 16; }).slice(0, 3).map((el) => `${el.tagName.toLowerCase()}.${String(el.className).slice(0, 40)}`).join(' ') || 'changing', PLACEHOLDER).catch(() => '?') : `requests out=${out} ${outs.slice(-2).join(' ')}`;
       if (!left) break;
     }
   } finally { page.off('request', sent); page.off('requestfinished', done); page.off('requestfailed', done); }
   await page.evaluate(() => document.fonts.ready).catch(() => {});
+  if (TIMING && !settled) process.stderr.write(`time ${tags.get(page) ?? '-'} unsettled: ${why}\n`);
   return settled;
 }
 
@@ -110,9 +135,10 @@ export async function inside<T>(browser: Browser, url: string, contextOptions: B
   const context = await browser.newContext(contextOptions);
   try {
     const page = await context.newPage();
+    tag(page, `ctx${++pages}`);
     await page.addInitScript({ path: RECORDER });
     await before?.(page);
-    return await work(page);
+    return await timed(page, 'whole', () => work(page));
   } finally { await context.close(); }
 }
 

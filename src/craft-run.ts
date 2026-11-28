@@ -2,7 +2,7 @@ import { join, relative, resolve } from 'node:path';
 import { mkdir } from 'node:fs/promises';
 import { cacheDirectory, ignoreCache } from './paths.js';
 import { UsageError } from './errors.js';
-import { ask, desktop, hold, inside, open, reloaded, settle, sleep } from './craft-page.js';
+import { ask, desktop, hold, inside, open, reloaded, settle, sleep, tag, timed } from './craft-page.js';
 import type { Browser, Page } from './craft-page.js';
 import { hasAnswers, judge } from './craft-judge.js';
 import type { Grey } from './craft-judge.js';
@@ -143,7 +143,7 @@ async function takePairs(browser: Browser, url: string, main: Page, timeout: num
   // asked once the page has settled: what it fetches on mount (a list loading its rows) comes after the overlay is ready
   await settle(main);
   const needs = await ask<{ dark: boolean; scrolled: boolean; held: boolean; bigtext?: boolean; data?: boolean }>(main, { op: 'needs' });
-  const give = async (condition: string, data: unknown) => { if (process.env.PLUMBER_DEBUG) process.stderr.write(`craft: ${condition} pair ${JSON.stringify(data)?.slice(0, 600)}\n`); if (data) await ask(main, { op: 'pair', condition, data }); };
+  const give = async (condition: string, data: unknown) => { if (process.env.PLUMBER_TIME) process.stderr.write(`time main pair-done ${condition}\n`); if (process.env.PLUMBER_DEBUG) process.stderr.write(`craft: ${condition} pair ${JSON.stringify(data)?.slice(0, 600)}\n`); if (data) await ask(main, { op: 'pair', condition, data }); };
   if (needs.dark) await give('dark', await inside(browser, url, { viewport: desktop, colorScheme: 'dark' }, timeout, async page => {
     await open(page, url, timeout, false); await settle(page); return ask(page, { op: 'snapshot' });
   }).catch(quiet('dark')));
@@ -171,6 +171,7 @@ async function takeStates(browser: Browser, url: string, timeout: number): Promi
     const out: CraftRecord[] = [], width = viewport.width;
     // a dev server that reloads the page once (it found a new dependency) takes the overlay away mid-read: once more
     const read = () => inside(browser, url, { viewport, reducedMotion: 'no-preference' }, timeout, async page => {
+      tag(page, `w${width}`);
       const kept = out.length;
       try {
       await open(page, url, timeout, true);
@@ -297,6 +298,7 @@ export async function craftRun(options: CraftRunOptions): Promise<CraftPage[]> {
       const url = new URL(route, base).href;
       // motion on: a page loaded with reduced motion hides every animation from every rule
       const page = await browser.newPage({ reducedMotion: 'no-preference', viewport: options.viewport ?? desktop });
+      tag(page, 'main');
       try {
         await open(page, url, options.timeout, true);
         // the route's own code and data first: a page judged while its route was still being fetched (a dev server
@@ -304,7 +306,7 @@ export async function craftRun(options: CraftRunOptions): Promise<CraftPage[]> {
         // a page still loading at the limit is read as it stands, and said to be (a dev server's first compile of a
         // data route took longer than the limit on cal.com, and the half-drawn page was read in silence, 2026-11-26)
         const settled = await settle(page, Math.min(options.timeout, 30000));
-        if (options.pairs !== false) await takePairs(browser, url, page, options.timeout);
+        if (options.pairs !== false) await timed(page, 'pairs', () => takePairs(browser, url, page, options.timeout));
         if (options.probe !== false && (!options.only?.length || (await ask<{ probe?: boolean }>(page, { op: 'needs' })).probe)) {
           const list = await takeProbes(browser, url, options.timeout, { budget: options.probeBudget ?? 24, drag: options.probeDrag === true, ...(options.scope ? { scope: options.scope } : {}), ...(options.recordProbe ? { record: options.recordProbe } : {}) }).catch(quiet('probes'));
           if (process.env.PLUMBER_DEBUG) process.stderr.write(`craft: probes ${JSON.stringify(list)?.slice(0, 1500)}\n`);
@@ -320,7 +322,7 @@ export async function craftRun(options: CraftRunOptions): Promise<CraftPage[]> {
           if (!reloaded(error)) throw error;
           throw new Error(`${url} kept reloading while Plumber was reading it, for 30 s (a file changing, or the dev server restarting). Run it again once the page is still.`);
         }
-        await photograph(page, result.findings, options.root);
+        await timed(page, 'photograph', () => photograph(page, result.findings, options.root));
         if (process.env.PLUMBER_DEBUG && result.grey) process.stderr.write(`craft: grey ${JSON.stringify(result.grey)?.slice(0, 800)}\n`);
         if (result.grey) {
           // a model is never asked when CI is set: the answers kept in the project are all there is
@@ -334,7 +336,7 @@ export async function craftRun(options: CraftRunOptions): Promise<CraftPage[]> {
           // with every width that showed it
           const place = (record: CraftRecord) => `${record.rule}|${record.file}:${record.line}:${record.column}`;
           const seen = new Set(result.findings.map(place)), first = new Map<string, CraftRecord>();
-          for (const record of await takeStates(browser, url, options.timeout).catch(quiet('states')) ?? []) {
+          for (const record of await timed(page, 'states', () => takeStates(browser, url, options.timeout)).catch(quiet('states')) ?? []) {
             if (seen.has(place(record))) continue;
             const kept = first.get(place(record));
             if (!kept) first.set(place(record), { ...record, evidence: { ...record.evidence, widths: [record.evidence.width] } });

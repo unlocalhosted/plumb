@@ -7589,6 +7589,26 @@ into its own browser. Your app isn't changed.", then the findings.
 - Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
+### 172. Timing a Twenty page check, and the wait plumber's own request kept open (2026-11-28)
+
+- **The itch:** Twenty's pages crawled, and the owner asked: "why is it so slow?" Each page took about three minutes.
+  Two guesses at a fix (end the wait early, reopen the page side by side) saved nothing and were taken back.
+- **How we found it:** stopwatches on each step of a page check (`PLUMBER_TIME=1` prints each step's time). On a
+  Twenty settings page of 167 s: 13 s starting the browser, 21 s loading the page, 35 s waiting for it to be still,
+  three reopenings (dark, larger text, other data) of 15 to 22 s each, and 36 s for plumber's own read. Every wait
+  ran to its limit, and a list of what the page asked for once it had loaded showed one request: plumber's own.
+- **The system behind it:** the overlay keeps one request open to its server so it hears when the project changes.
+  The wait first asked the browser for "network quiet", which never comes while any request is open, so on every
+  app with plumber installed each wait used its whole limit. The wait's own request count already leaves plumber's
+  requests out, but the browser's check counted them.
+- **The fix and the proof:** the browser's check is gone. The main page's wait went from 35 s to 5 s, and the page
+  now counts as still where before it never did. The reopenings now wait for Twenty's loading placeholders, which is
+  the wait doing its job. The whole page went only from 167 s to 158 s, because the reopenings loaded more slowly
+  this time; the dev server's time to load the page varies by 10 to 20 s from one load to the next.
+- **What is left:** each fresh browser loads Twenty's 4,884 source files again (9 to 35 s each time), and plumber's
+  own read takes 36 s on settings and 75 s on the people table. Those two are now the cost.
+- **Media hooks:** the stopwatch lines before and after, side by side.
+
 ### Open gaps from the 0.4.0 release work
 
 - Writes without a reload: the demo is on Fast Refresh now; the 85 test fixtures are not, and no readiness row says
