@@ -1,9 +1,35 @@
 # Changelog
 
-## 0.8.0 · 2026-11-24
+## 0.8.0 · 2026-11-28
 
 Everything since 0.7.0, as a person using it sees it.
 
+- **The page check opens your page in more ways.** Besides the main read, it now reads the page at four window
+  sizes (full HD, a laptop, an iPhone and a large Samsung phone), with a larger default text size set in the browser,
+  and with other data: bigger numbers, more rows, longer words in cards and list rows. A layout that holds in one of
+  these and breaks in another is found, and the finding says where it was seen.
+- **New checks.** Scroll snapping; scrolling that runs on into the page from a list, a dialog or a side column;
+  native controls; dead strips between menu rows; a tooltip cut off by the screen; menus that move the page;
+  columns that move when the data changes; and nine checks from CSS Protips. A tooltip's fix is written on its own
+  line, and three checks that only gave advice now write their fix.
+- **A habit is one note.** The same thing done in many places is one finding with one fix that writes every place,
+  each at the line where its class really is. A place it can't write says why.
+- **Fewer wrong findings on real apps.** Plumber was measured against about 1,480 places judged by hand on three
+  real apps, and the causes of its wrong findings were fixed: shapes and words in SVG drawings are the drawing's,
+  what nobody sees isn't judged for looks, glows and pictures drawn at a scale are left alone, and a pulsing status
+  dot is not a page still loading. It now keeps 98 to 100% of the right findings on each app, and most of the wrong
+  ones are gone. The same page gives the same findings run after run.
+- **Older React apps get their lines.** On React 17 and 18, a component used from another package of a monorepo,
+  or from a file another tool rewrote first, is placed at the line that uses it. On Twenty, 255 of 400 elements on a
+  settings page have their line, up from 1.
+- **The page check is faster.** Its waits used to run to their limit on any app with plumber installed, because
+  plumber's own open connection kept the page from ever looking idle. It also downloaded your app's code again
+  for every way it opened the page; now it downloads it once per run.
+  On crafting-ui a page check takes 18 s where it took 25 s, with the same findings; on Twenty, 140 s where it took 167 s.
+- **`craft --only <check>`** runs the named checks alone, with only the readings they need, for a quick look while
+  you work on one thing.
+- **Break it is a dial.** Its bar counts each stop before you go there, a stop waits for a still page before it
+  measures, and Longer words says what lost its place.
 - **`plumber apply` and `plumber undo`.** An agent (or a person) takes a whole problem group from `check --agent` in
   one command; the list shows the line on every group plumber can write. It writes with the fix bar's writer and
   guards, asks for `--token` when several tokens fit, and refuses what needs a person. `plumber undo` puts the files

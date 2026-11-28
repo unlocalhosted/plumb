@@ -9525,6 +9525,11 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - You can lay out one element again: Alt+click something with two or more parts, open Measurements, and pick stacked, side by side, two columns, lined up or fit as many as fit, shown on the page as you point; Sync writes the classes. In 0.7.0, on GitHub; npm publish is the owner's step ([entry](#94-the-x-ray-card-gets-a-layout-picker-2026-11-23)).
 - You can give one element a move again: Alt+click, open Measurements, and pick from the moves that suit it, each playing as you point at it; Sync writes it with your own curve where one is close. In 0.7.0, on GitHub; npm publish is the owner's step ([entry](#93-the-x-ray-card-gets-a-motion-picker-2026-11-23)).
 - You can pick a shadow for one element again: Alt+click, open Measurements, and choose one of your shadow tokens, each drawn as it looks; Sync writes it in your code, where that element's classes are written. In 0.7.0, on GitHub; npm publish is the owner's step ([entry](#92-the-x-ray-card-gets-a-shadow-picker-2026-11-23)).
+- The page check is faster on every app with plumber installed: its waits no longer run to their limit, and it
+  downloads the app's code once per run. Crafting-ui pages take 18 s where they took 25 s, with the same findings
+  (entry 172).
+- React 17 and 18 apps get the line where each component is used; Twenty went from 1 placed element of 400 to 255
+  (entry 173).
 
 ## Shipped · 2026-W47
 - The second launch film shows a badge poking through an open menu, the real Enter fix, four more fixes with their guides, and 24 principles falling into a bento grid beside 100+ ([entry](#93-rough-cut-2-the-badge-that-showed-through-the-menu-2026-11-23)).
