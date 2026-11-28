@@ -7740,6 +7740,26 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   first load, most of it the check that plumber is installed, which loads the whole page once more.
 - **Media hooks:** the stopwatch lines before and after, side by side.
 
+### 173. Lines in the code for an older React app (Twenty) (2026-11-28)
+
+- **The itch:** Twenty, an open-source CRM, was added as a fourth app to measure plumber on. On its settings pages
+  plumber could tie 1 element of about 400 to the line in the code that draws it, so almost every finding came
+  without a place.
+- **How we found it:** the first page reads of Twenty, and a count of how many elements had a place.
+- **The system behind it:** plumber finds where a component is used from a record React keeps when it creates an
+  element. React 19 keeps a stack; React 17 and 18 keep only a note of the file and line, and plumber read only the
+  stack. Twenty is on React 18, and much of its interface comes from a sibling package (its own UI kit), so the
+  usages were refused as "not in your code". A second cause: Twenty's styling tool takes its style blocks out of each
+  file before React's compiler sees it, so the recorded line sits above the real one (recorded at 49, opening at 69).
+- **What we chose:** read React 18's note when there is no stack. When the recorded line misses, take the component's
+  opening below that line, only if the component opens exactly once in the file; when it opens twice or more,
+  nothing is guessed.
+- **The fix and the proof:** 255 of 400 elements on Twenty's experience settings page now have their line. The three
+  other apps (React 19) were read again with the fix and compared with their answer keys: crafting-ui kept all 421
+  right findings, algorecall 400 of 407 (the 7 missing were run-to-run noise that the version from before today shows
+  too), cal.com all 368, with the same known wrong ones.
+- **Media hooks:** a Twenty page with findings before (no places) and after (each with its file and line).
+
 ### Open gaps from the 0.4.0 release work
 
 - Writes without a reload: the demo is on Fast Refresh now; the 85 test fixtures are not, and no readiness row says

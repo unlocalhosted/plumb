@@ -315,7 +315,11 @@ async function usageOf(element, fiber, options) {
     if (up.tag === 3) break;
     if (!componentFiber(up)) continue;
     nearest ??= up;
-    const frame = await creationFrame(up);
+    // React 17/18 keep no creation stack: where a component was used is its _debugSource, the JSX that made it. A
+    // component from a sibling package of a monorepo (twenty-ui's title, used at a settings page's line) was refused
+    // as "not in your code" for want of it (Twenty, 2026-11-27)
+    const old = !stackOf(up) && up._debugSource?.fileName && !runtime(up._debugSource.fileName) ? up._debugSource : null;
+    const frame = old ? { fileName: 'file://' + old.fileName, lineNumber: old.lineNumber, columnNumber: (old.columnNumber ?? 1) - 1 } : await creationFrame(up);
     if (!frame) continue;
     // A component whose creation could not be read is not "not yours": stepping past it answered with a wider place
     // (algorecall's dock button, named at the line that uses the dock in one run and inside the dock in the next).
@@ -329,7 +333,15 @@ async function usageOf(element, fiber, options) {
     if (!index || index.untracked) continue;
     if (index.stale) return refuse('source-mismatch', index.stale);
     const at = { file: index.file, line: frame.lineNumber, column: frame.columnNumber + 1 };
-    const row = index.rows.find(row => row.kind === 'component' && atRow(frame, row));
+    let row = index.rows.find(row => row.kind === 'component' && atRow(frame, row));
+    // React 18's record is of the file as its compiler saw it: a plugin that rewrote the file first (Linaria taking its
+    // style blocks out) moved every line up (Twenty's layout, recorded at 49, opens at 69). Lines are only ever taken
+    // out, so the opening sits at or below the record: when the component opens exactly once there in the file, that
+    // is its place; twice or more, it stays unplaced
+    if (!row && old) {
+      const name = nameOf(up), same = index.rows.filter(row => row.kind === 'component' && row.tag === name);
+      if (same.length === 1 && same[0].line >= frame.lineNumber) row = same[0];
+    }
     if (!row) return refuse('not-indexed', { ...at, component: nameOf(up), step: 'usage-off-an-opening' });
     const link = { file: index.file, line: row.line, column: row.column, component: row.tag, props: row.props.filter(carrier), usage: true };
     return { ...link, tag: element.localName, via: 'usage', chain: [link], index: 0 };
