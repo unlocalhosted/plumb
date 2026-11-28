@@ -122,7 +122,10 @@ it). Opening a page spends nothing. The "Read the words" button does. A reading 
 and put in `.words/` under the name `keyOf` gives; the view shows who read it. A label (a name, a greeting, a
 heading) and the text it heads count as one thing (`heads` in `loud.js`, read from the seen tree), and text inside
 a drawn box that does not hold the main text is left out of the order (`ranked`). What is left is shown as "worth
-a look" and never as a fault: 3 of 41 reads, where the first cut had 23 and none of them was one.
+a look" and never as a fault: 3 of 41 reads, where the first cut had 23 and none of them was one. A picture that
+sits over the main text and is taller than a line of any text there is set against it too (`pictured`): its height
+against the type, the room it takes against the text's block, and "worth a look" only when it takes more room.
+What a picture says is not read. On the same reads: 6 of 41 pages have one, 3 are "worth a look", and one of those is the hero picture Rauno would remove.
 
 Every reading is taken twice, six seconds apart, and a finding that rests on something that moved or changed size
 is left out: a tile that cycles through its own contents is not a page at rest.

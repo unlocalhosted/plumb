@@ -14,7 +14,7 @@ what building it changed. Where a note and the text above it differ, the note is
 | Look against role | 14 | 4 | "nearly alike"; boxes are never firm |
 | Boxes and what they hold | 15 | 0 | joined; a box whose content is not one thing |
 | Rhythm and edges | 16 | 1 | balance and proportion; mirror and alternation |
-| What is loud | 17 | 3, on one page | loud against what matters is a note only. Reworked 2026-11-28 so a label and what it heads are one unit: 3 of 41 reads still "disagree" (23 before). Pictures and boxes are not ranked |
+| What is loud | 17 | 3, on one page | loud against what matters is a note only. Reworked 2026-11-28 so a label and what it heads are one unit: 3 of 41 reads still "disagree" (23 before). A picture over the main text is set against it: 6 of 41 pages have one, 3 are "worth a look", and one of those is the hero picture Rauno would remove. Pictures elsewhere and boxes with words are not ranked |
 
 Two of those ten are points the expert made. Each of the ten was looked at on its page. No number has been set against judged screens (section 19).
 
@@ -408,6 +408,49 @@ figure on every page where a label heads the main text, so judged screens can se
 case (Rauno 10.1, a first heading of substance over a second one that says more) comes out as "nearly"; the live
 page no longer has that shape, so this is the rule run on a hand-made copy of the shape and not on the page.
 
+Added on 2026-11-28, after the owner said to rank pictures (journey entry 174).
+
+**Corrected first.** The note above calls the judged case Rauno 10.1 "a first heading of substance over a second
+one that says more", and says the expert faulted no label for being loud. Both are wrong. The frame kept from his
+recording shows that the first heading was the person's name, in large serif type, over a much smaller line about
+the work. So he did fault a name for being louder than the sentence under it. The reworked rule is silent on that
+shape: it shows how many times larger the name is and gives no verdict. His point 4.3 is the same thing with the
+name drawn as a picture. Those are the two judged cases for the number this section does not have.
+
+**A picture over the text that says the most is set against it.** The picture has to sit where a heading would:
+it heads that text, by the same reading of the seen picture as a label. It also has to be drawn taller than a line
+of any text in the order. Such a picture is shown with two figures. One is its height against that text's type
+size, because height is the scale text is ordered on. The other is the room it takes against the room that text's
+block takes, because this section reads size as area. A picture that takes more room than the text that says the
+most is the biggest thing there, and is shown as "worth a look". One that takes less (an avatar, a wordmark) has
+its figures shown and nothing judged, as a label has. What a picture says is not read: the words go to a model and
+the picture does not. So nothing here is ever a fault.
+
+Three things follow from how pages are built, and have no published source. A drawn box with no words in it is a
+picture's frame and does not take the picture out of the order. A level of the seen picture where nothing else has
+words is passed through when reading what heads what, so a picture in its frame has the frame's place. Pictures
+anywhere else on the screen (work shown after the introduction, tiles in cards) are not ranked: they are what the
+text introduces. Drawn boxes with words in them are still not ranked as wholes.
+
+Run on the 41 reads. The text verdicts are the same as before on the saved page data. On the live pages three
+readings were lost again because the pages' words had changed, so 38 were read. Six pages have a picture over the
+text that says the most that is taller than a line of any text there. Three are "worth a look". One is Rauno 7.2,
+the hero picture he would remove: 380 by 475px, 31.7 times the type under it and 19.9 times the room of the
+sentence that says the most, which starts 685px down. One is the photo over the introduction on the site of point
+4.3, which he did not fault. One is a headline drawn as a picture, so the words the model read do not include the
+page's own headline. Three are shown and not judged: an avatar 5 times the type under it, and two small marks.
+The wordmark of point 4.3 is seen on that page as a second picture over the text: 476 by 65px, 3.8 times the
+type, 0.8 of the room. It is shown and not judged. A first cut marked a card that sits beside the main text, in a
+row, as over it; a picture now has to end above where that text starts.
+
+*Not known:* how many times larger a label or a picture may be than the text under it. What is measured so far:
+on 18 sites a label runs up to 3 times the size of the text it heads and the expert faulted none. The wordmark he
+did fault is 3.8 times as tall as the type under it, and a wordmark's height is about the height of its capital
+letters, so set as type it would be near 5 times. The name he faulted in type cannot be measured from the frame
+that was kept. Two cases set no number. Also not known: whether a picture says anything, which needs a model that
+is shown the picture. And the bench's first screen is its own frame, which is taller than a laptop's window, so
+the share of the screen a picture fills reads low.
+
 ## 18. The page in more than one state
 
 Each reading above is of one still picture. Plumber already reads a page at four window sizes. The expert's points
@@ -427,7 +470,7 @@ and brings its own judged cases.
 | Regular: a slip against a choice | Two steps | Plumber's convention |
 | Drawn: a fill that shows | Half see-through | Plumber's convention |
 | Loud: "about as loud" | Not set | Nothing |
-| Loud: how many times larger a label may be than what it heads | Not set | Nothing. Seen on 18 expert sites: up to 3 times, none faulted |
+| Loud: how many times larger a label or a picture may be than the text under it | Not set | Nothing. Seen on 18 expert sites: labels up to 3 times, none faulted. Faulted twice: a wordmark 3.8 times as tall as the type under it, and a name in type that could not be measured |
 | Loud: accent share | A half | One remark by one expert |
 
 Two of nine have a published source. No number is used in a finding the owner sees until it has been run against

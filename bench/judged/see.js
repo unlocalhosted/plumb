@@ -12,7 +12,7 @@ import { boxOf, grow, levels, places, runs, settle, RATIO } from './seen.js';
 import { judge } from './alike.js';
 import { judge as near, RATIO as APART } from './near.js';
 import { judge as regular } from './regular.js';
-import { judge as louder, heads, ranked } from './loud.js';
+import { judge as louder, heads, ranked, pictured } from './loud.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const host = (url) => url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
@@ -317,9 +317,22 @@ export function firstScreen(got, win) {
     if (Math.min(u.x + u.w, got.vw) - Math.max(u.x, 0) < u.w / 2) return;
     const { el, parts } = got.els[i], s = win.getComputedStyle(el);
     const text = (parts ?? []).map((p) => ('startContainer' in p ? p.toString() : p.textContent)).join(' ').replace(/\s+/g, ' ').trim();
-    if (/[\p{L}\p{N}]/u.test(text)) rows.push({ id: i, text, size: parseFloat(s.fontSize), weight: Number(s.fontWeight) || 400, x: u.x, y: u.y });
+    // one line's height: what the page set, or the height the first line is drawn at
+    const first = (parts ?? []).map((p) => p.getClientRects?.()[0]).find(Boolean), line = parseFloat(s.lineHeight) || first?.height || parseFloat(s.fontSize);
+    if (/[\p{L}\p{N}]/u.test(text)) rows.push({ id: i, text, size: parseFloat(s.fontSize), weight: Number(s.fontWeight) || 400, x: u.x, y: u.y, line, area: u.w * u.h });
   });
   return rows.sort((a, b) => a.y - b.y || a.x - b.x);
+}
+// The pictures on the first screen, each with its size and how much of the screen it fills.
+export function firstPictures(got, win) {
+  const tall = win.innerHeight, wide = got.vw, rows = [];
+  got.units.forEach((u, i) => {
+    if (u.kind !== 'picture' || u.y >= tall || u.y + u.h <= 0 || Math.min(u.x + u.w, wide) - Math.max(u.x, 0) < u.w / 2) return;
+    const on = (Math.min(u.y + u.h, tall) - Math.max(u.y, 0)) * (Math.min(u.x + u.w, wide) - Math.max(u.x, 0));
+    // two pictures drawn in one place (a still under its video) are one picture to the eye
+    if (!rows.some((r) => r.x === u.x && r.y === u.y && r.w === Math.round(u.w) && r.h === Math.round(u.h))) rows.push({ id: i, x: u.x, y: u.y, w: Math.round(u.w), h: Math.round(u.h), share: Math.round(100 * on / (tall * wide)) });
+  });
+  return rows;
 }
 export function loudest(got, win, top = 3) {
   const tall = win.innerHeight, rows = [];
@@ -454,7 +467,7 @@ export function see(el, root, base, loaded, soften) {
   const frame = $('iframe'), layer = $('.layer'), seen = $('.seen'), stage = $('.stage'), view = $('.view');
   const screen = set.screens.find((s) => s.id === new URL(location.href).searchParams.get('screen')) ?? set.screens[0];
   let scale = 1, got = null, tree = null, flat = [], level = 1, units = false, over = null, held = false;
-  let mode = 'groups', found = null, pick = null, spaced = [], npick = null, agreeing = false, moved = 0, evens = [], epick = null, boxed = [], hpick = null, shouts = [], tops = [], lpick = null, screenful = [], said = null, meant = null;
+  let mode = 'groups', found = null, pick = null, spaced = [], npick = null, agreeing = false, moved = 0, evens = [], epick = null, boxed = [], hpick = null, shouts = [], tops = [], lpick = null, screenful = [], said = null, meant = null, overs = [];
 
   const fit = () => {
     const w = screen?.width ?? set.width ?? 1440, room = view.clientWidth - 32, tallness = view.clientHeight - 32;
@@ -584,6 +597,7 @@ export function see(el, root, base, loaded, soften) {
     const html = [];
     if (lpick === null && !meant) tops.forEach((t, k) => { const r = nowOf(leaf(t.unit)); if (r.w) html.push(`<div class="g ${k ? 't-run leaf' : 't-odd odd'}" style="left:${r.x - 4}px;top:${r.y - 4}px;width:${r.w + 8}px;height:${r.h + 8}px"></div>`); });
     // with the words read: the loudest in blue, the one that says the most in pink (or both as one when they agree)
+    if (lpick === null && overs.length) for (const [id, cls] of [...overs.map((p) => [p.id, 't-run']), ...(meant ? [] : [[overs[0].main, overs[0].room > 1 ? 't-odd odd' : 't-agree']])]) { const r = nowOf(leaf(id)); if (r.w) html.push(`<div class="g ${cls}" style="left:${r.x - 4}px;top:${r.y - 4}px;width:${r.w + 8}px;height:${r.h + 8}px"></div>`); }
     if (lpick === null && meant) for (const [id, cls] of meant.outcome === 'agree' ? [...(meant.top === meant.main ? [] : [[meant.top, 't-run']]), [meant.main, 't-agree']] : [[meant.top, 't-run'], [meant.main, 't-odd odd']]) { const r = nowOf(leaf(id)); if (r.w) html.push(`<div class="g ${cls}" style="left:${r.x - 4}px;top:${r.y - 4}px;width:${r.w + 8}px;height:${r.h + 8}px"></div>`); }
     shouts.forEach((s, n) => { if (lpick !== null && lpick !== n) return; const r = nowOf(leaf(s.unit)); if (r.w) html.push(`<div class="g t-odd odd" style="left:${r.x - 4}px;top:${r.y - 4}px;width:${r.w + 8}px;height:${r.h + 8}px"></div>`); });
     seen.innerHTML = html.join('');
@@ -611,22 +625,33 @@ export function see(el, root, base, loaded, soften) {
     const among = main ? ranked(all, got.units, main.id) : all;
     meant = said.roles ? louder(among, (id) => heads(tree, got.units, id)) : null;
     if (meant) meant.left = all.length - among.length;
+    // a picture over the text that says the most is set against it too: by height against its type, by room against its block
+    const at = (id) => heads(tree, got.units, id);
+    overs = main ? pictured(ranked(firstPictures(got, frame.contentWindow), got.units, main.id), among, main.id, at).map((p) => ({ ...p, main: main.id, down: Math.round(main.y) })) : [];
+  };
+  const listShown = () => {
+    if (!overs.length) return '';
+    const p = overs[0], big = p.room > 1, also = overs.slice(1);
+    return `<li><button type="button" data-meant aria-pressed="false"><b>${big ? 'Worth a look: a picture sits over the text that says the most, and it is the biggest thing there.' : 'A picture sits over the text that says the most and is drawn taller than a line of any text here.'}</b>
+      <span>The picture: ${p.w} by ${p.h}px, ${p.times} times the height of that text's type${big ? ` and ${p.room} times the room its block takes` : ''}. It fills ${p.share}% of the first screen, and the text that says the most starts ${p.down}px down.</span>
+      ${also.length ? `<span>Also over it: ${also.map((a) => `${a.w} by ${a.h}px, ${a.times} times`).join('; ')}.</span>` : ''}
+      <span>${big ? 'What a picture says is not read, so this is something to look at and never a fault.' : 'What a picture says is not read, and how much taller is too much has not been measured, so this is not judged.'}</span></button></li>`;
   };
   const listMeant = () => {
     const spend = said?.spent ? `<p>Spent so far on reading words: $${said.spent.dollars.toFixed(2)}, on ${said.spent.calls} ${said.spent.calls === 1 ? 'screen' : 'screens'}.</p>` : '';
     if (!said?.roles) return `<p>${WHY_NOT[said?.error] ?? `The model could not be asked just now (${esc(said?.error ?? 'no answer')}).`}</p>${said?.error === 'no-key' || said?.error === 'ceiling' || said?.error === 'nothing-to-read' ? '' : '<button type="button" class="chip" data-read>Read the words</button>'}${spend}`;
-    if (!meant) return `<p>All the text on this screen is drawn equally loud, so there is nothing to compare.</p>${spend}`;
+    if (!meant) return `<p>All the text on this screen is drawn equally loud, so there is nothing to compare.</p>${overs.length ? `<ul class="finds">${listShown()}</ul>` : ''}${spend}`;
     const by = new Map(screenful.map((p) => [p.id, { ...p, role: said.roles[p.id] ?? 'minor' }])), top = by.get(meant.top), main = by.get(meant.main);
     return `<ul class="finds"><li><button type="button" data-meant aria-pressed="false"><b>${meant.outcome === 'agree' ? '' : meant.outcome === 'blind' ? 'Not judged: ' : 'Worth a look: '}${SAYS[meant.outcome](meant)}</b>
       ${meant.top === meant.main ? '' : `<span>Loudest: <em>${esc(top.text.slice(0, 60))}</em>, ${top.size}px, ${top.size > main.size ? `${Math.round(top.size / main.size * 10) / 10} times the size of the text that says the most` : 'the same size and heavier'}.${meant.outcome === 'agree' ? ' How many times is too many has not been measured, so this is not judged.' : ''}</span>`}
       <span>Says the most: <em>${esc(main.text.slice(0, 90))}</em>, ${main.size}px, step ${meant.level} of ${meant.levels} in loudness.</span>
       ${meant.left ? `<span>Left out of the order: ${meant.left} ${meant.left === 1 ? 'block' : 'blocks'} of text inside a card or another drawn box. Such text is loud among the things in its own box.</span>` : ''}
-      <span>How we know: a model read the words (${esc(said.model)}), without being told how anything is drawn. ${esc(said.why)}</span></button></li></ul>${spend}`;
+      <span>How we know: a model read the words (${esc(said.model)}), without being told how anything is drawn. ${esc(said.why)}</span></button></li>${listShown()}</ul>${spend}`;
   };
   const listLoud = () => {
     $('.loud').innerHTML = `<div><h2>What is loud</h2><p>The loudest text on the first screen, by type size and then weight, outlined so you can say whether the engine's ear is right. Nothing is judged there.</p></div>
       <ol class="finds">${tops.map((t) => `<li><span><em>${esc(words(leaf(t.unit)))}</em> ${t.size}px, weight ${t.weight}</span></li>`).join('')}</ol>
-      <div><h2>Does the loudest text say the most?</h2><p>Which words matter most is not something a page says about itself, so a model reads them. A name or a heading over that text counts as one thing with it, so a loud name is silence. Anything else is shown as worth a look and never as a fault: how much louder is too much has not been measured.</p></div>
+      <div><h2>Does the loudest text say the most?</h2><p>Which words matter most is not something a page says about itself, so a model reads them. A name or a heading over that text counts as one thing with it, so a loud name is silence. A picture over that text is set against it too, by its height and by the room it takes; pictures anywhere else are not ranked. Anything else is shown as worth a look and never as a fault: how much louder is too much has not been measured.</p></div>
       ${listMeant()}
       <div><h2>A highlight on most of the text</h2><p>A block where a coloured accent covers half the letters or more, so it no longer picks anything out.</p></div>
       ${shouts.length ? `<ul class="finds">${shouts.map((s, n) => `<li><button type="button" data-loud="${n}" aria-pressed="${n === lpick}"><b>The accent is on most of this text</b><span>${s.share}% of ${s.letters} letters are in ${hexOf(s.accent)}, and the rest in ${hexOf(s.base)}.</span><span><em>${esc(words(leaf(s.unit)))}</em></span></button></li>`).join('')}</ul>` : '<p>No block has its accent on most of its letters.</p>'}`;
@@ -811,7 +836,7 @@ export function see(el, root, base, loaded, soften) {
     // each reading's button says how many firm findings it has, so a person knows where to look first
     const firmIn = { alike: found.findings.filter((f) => f.firm).length, near: spaced.filter((s) => s.tier === 'claim').length, even: evens.filter((e) => e.v.firm).length, held: boxed.filter((h) => h.tier === 'claim').length, loud: shouts.length };
     for (const b of root.querySelectorAll('[data-mode]')) { const n = firmIn[b.dataset.mode]; b.dataset.name ??= b.textContent; b.textContent = n ? `${b.dataset.name} · ${n}` : b.dataset.name; }
-    window.__seen = { got, tree, found, spaced, words, moved, evens, held: boxed, loud: shouts.map((s) => ({ tier: 'claim', kind: 'accent', say: `${s.share}% of ${s.letters} letters in the accent: ${words(leaf(s.unit))}` })), tops: tops.map((t) => `${words(leaf(t.unit))} (${t.size}px/${t.weight})`), said, meant, screenful };
+    window.__seen = { got, tree, found, spaced, words, moved, evens, held: boxed, loud: shouts.map((s) => ({ tier: 'claim', kind: 'accent', say: `${s.share}% of ${s.letters} letters in the accent: ${words(leaf(s.unit))}` })), tops: tops.map((t) => `${words(leaf(t.unit))} (${t.size}px/${t.weight})`), said, meant, screenful, pictures: overs };
     const rank = { claim: 0, note: 1, agree: 2 }; spaced.sort((a, b) => rank[a.tier] - rank[b.tier] || a.v.r - b.v.r); npick = null; listNear();
     const count = (k) => got.units.filter((u) => u.kind === k).length;
     $('.tally').textContent = `${count('text')} blocks of text, ${count('picture')} pictures, ${count('box')} drawn boxes and ${count('line')} lines, read at ${win.innerWidth} wide.${settled ? '' : ' The page was still moving after 8 seconds, so it was read as it stood.'}`;

@@ -7613,6 +7613,42 @@ into its own browser. Your app isn't changed.", then the findings.
   `docs/research/harvests/raunofreiberg-portfolio-reviews/local/words/` and `local/words-reworked/` (local), with
   the list of verdicts.
 
+### 174. A picture over the main text is seen, and one judged case was read wrongly (2026-11-28)
+
+- **The itch:** the owner said yes to ranking pictures, "so a logo louder than the text is seen". Two of Rauno's
+  points are about a picture that is louder than the words: a name drawn as a logo over a 17px introduction, and a
+  hero picture he would take off the page.
+- **My mistake, found on the way:** entry 173 and the spec said that Rauno had faulted no name for being louder
+  than the sentence under it, and described his one judged case as a heading of substance. His own recording shows
+  the opposite. The first heading on that page was the person's name in large serif type, over a much smaller line
+  about the work, and he said to swap them. So the rule of entry 173, which treats a name and its sentence as one
+  thing, says nothing about the shape he objected to. It shows how many times larger the name is and stops there.
+- **How we found it:** by opening the frame kept from his recording before building anything, to see what the
+  judged cases looked like.
+- **The system behind it:** the reading ordered text by its type size. A picture has no type size, so it had no
+  place in the order and could not be the loudest thing.
+- **What we tried, and what we chose:** putting every picture on the first screen in the order makes the work a
+  portfolio shows the loudest thing on most pages, which is ordinary. Counting any picture taller than a line of
+  text marks small icons. Counting only pictures bigger than the main text misses the logo, which is tall and
+  takes less room than two lines of text. Chosen: only a picture that sits over the main text, where a heading
+  would. It is shown when it is taller than a line of any text there, with its height against the type and the
+  room it takes against the text. It is marked "worth a look" only when it takes more room than the text. What a
+  picture says is not read, so nothing is ever called a fault.
+- **The fix and the proof:** on the 41 reads, six pages have a picture over the main text that is taller than any line of
+  text there. Three are marked "worth a look". One is the hero picture Rauno would remove, caught on the live
+  page: 380 by 475px, 20 times the room of the sentence that says the most, which starts 685px down. One is a
+  photo over an introduction that he did not fault. One is a headline drawn as a picture, so the model never read
+  the page's real headline. Three are shown and not judged: an avatar and two small marks. The logo he called too
+  big is seen and measured, 3.8 times as tall as the type under it, and not judged. A first cut marked a card
+  beside the text as over it; a picture now has to end above where the text starts. The text verdicts did not
+  change on the saved page data. Nothing was spent.
+- **Still open:** the number. Unfaulted names run up to 3 times the text under them on 18 sites. The faulted logo
+  is 3.8 times as tall as the type under it. That is two judged cases and sets nothing. Whether a picture says
+  anything needs a model that is shown the picture.
+- **References:** Rauno Freiberg's portfolio reviews, shared by the owner (`docs/references.md`, 2026-11-26).
+- **Media hooks:** the two judged pages with the picture outlined, in
+  `docs/research/harvests/raunofreiberg-portfolio-reviews/local/pictures/` (local).
+
 ## Open gaps
 
 - The shape engine's first build is in the judging bench and nowhere else
@@ -7622,8 +7658,11 @@ into its own browser. Your app isn't changed.", then the findings.
   expert's points need one of those. The words of 40 first screens have been read, and loud against what matters now counts a
   label and the text under it as one thing
   ([entry 173](#173-a-name-and-the-sentence-under-it-are-one-thing-2026-11-28)): 3 of 41 reads still differ, where
-  23 did. It is still a note only. No judged screen says how many times larger a label may be than what it heads,
-  pictures and boxes are not ranked, and a full-page picture under the content leaves a page not judged.
+  23 did. It is still a note only. A picture that sits over the main text is now set against it
+  ([entry 174](#174-a-picture-over-the-main-text-is-seen-and-one-judged-case-was-read-wrongly-2026-11-28)):
+  6 of 41 pages have one, 3 are "worth a look", and one of those is the hero picture Rauno would remove. Two judged cases exist for how many times larger a name may be than the text under it, and they set
+  no number. What a picture says is not read, boxes with words are not ranked, pictures elsewhere on the screen
+  are not ranked, and a full-page picture under the content leaves a page not judged.
 - The layer that compares how text looks with what it does now takes where a piece sits from the seen picture
   ([entry 161](#161-where-a-piece-sits-now-comes-from-the-seen-picture-2026-11-27)). Its rule that things inside
   boxes are in a different place from things on the page itself has no source and has been run on six pages.
