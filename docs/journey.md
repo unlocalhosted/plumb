@@ -6229,6 +6229,13 @@ into its own browser. Your app isn't changed.", then the findings.
   `text-sm font-medium` → `type-body-small font-medium`. Then the pieces go home. A count pill was tried and taken
   out, because it said the same thing as the words above. Stills: `type-beat-stills.jpg` (local).
 
+- **A shorter Clean up, and the owner's closing line (2026-11-28).** In rough cut 7 one line stayed on screen for
+  about 16 seconds while plumber worked. The recording only keeps a frame when the page changes, and it showed three
+  gaps of 1.5, 2.5 and 1.5 seconds where nothing moved. Those gaps now play four to five times faster, the text beat
+  is 0.8 s shorter, and the line holds about 12.6 seconds. The film went from 55 to 49 seconds. The closing line is
+  now the owner's: "Unslopify your apps with React Plumber." Stills: `cleanup-tight-stills.jpg` and
+  `closing-stills.jpg` (local).
+
 - **One at a time, from any toy (2026-11-26).** The owner: "just fix the things one by one clicking on a single item
   should give the tour like experience". Until now only the main button toured, and it showed 4 of 80 fixes; a single
   toy still played the old way, with a dark card under the top bar that he read as a tooltip. Now a toy and the main
