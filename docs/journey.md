@@ -6220,8 +6220,14 @@ into its own browser. Your app isn't changed.", then the findings.
   `p-[10px]` → `p-3`). A line in words under it changes with it ("a raw hex, left behind when your brand changes" →
   "your brand colour, wherever it changes"). The Invite scene now ends on this beat, and the 11 seconds of plumber's
   own swap in the take are cut. In the cards scene the beat replaces plumber's editor panel and the pill above the
-  card. Stills: `change-beat-stills.jpg` (local). Still to do: the text styles part needs the same beat. It needs the
-  real style names Clean up writes, which the take didn't keep.
+  card. Stills: `change-beat-stills.jpg` (local).
+- **The text styles, shown in the code too (2026-11-28).** Clean up's text pass changes almost nothing you can see:
+  14px stays 14px. The take had kept the whole diff (`all.diff` beside the take on vm-agent), so the names on screen
+  are the ones Clean up wrote. Right after the click, three pieces of text lift out of the page: the Backlog column
+  header, an issue key and an issue title. Each sits beside its line of code, and the lines roll over one after
+  another: `text-sm font-medium` → `type-title-small`, `font-medium` → `type-body-caption font-medium`,
+  `text-sm font-medium` → `type-body-small font-medium`. Then the pieces go home. A count pill was tried and taken
+  out, because it said the same thing as the words above. Stills: `type-beat-stills.jpg` (local).
 
 - **One at a time, from any toy (2026-11-26).** The owner: "just fix the things one by one clicking on a single item
   should give the tour like experience". Until now only the main button toured, and it showed 4 of 80 fixes; a single
