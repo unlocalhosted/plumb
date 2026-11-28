@@ -131,6 +131,12 @@ person or the work, or nothing). Only a picture that says nothing and is the big
 call that would show a picture to a model is not built; a reading is made by hand and put in `.words/` under the
 name `keyOf` in `pictures.mjs` gives. On the same reads: 6 of 41 pages have one, 3 are "worth a look", and one of those is the hero picture Rauno would remove.
 
+"The last screen" is the one reading of a second state. Pressing it scrolls the page as far as it goes and asks
+whether the window then holds a link to another page of the same site (`last.js`; the site is the set's `app`). A
+menu fixed to the window counts. A site of one page, and a last screen with buttons that are not links, are not
+judged. A screen of a set can be another address at another width, which is how a long article is read at phone
+width: `"screens": [{ "id": "article-phone", "path": "/…", "width": 390 }]`, opened with `&screen=article-phone`.
+
 Every reading is taken twice, six seconds apart, and a finding that rests on something that moved or changed size
 is left out: a tile that cycles through its own contents is not a page at rest.
 

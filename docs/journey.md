@@ -7688,12 +7688,45 @@ into its own browser. Your app isn't changed.", then the findings.
 - **Media hooks:** the two judged pages with the reading beside them, in
   `docs/research/harvests/raunofreiberg-portfolio-reviews/local/pictures-read/` (local).
 
+### 176. The page scrolled to its end: the first second state (2026-11-28)
+
+- **The itch:** every reading looked at a page at rest. Many of Rauno's points are about what a page looks like
+  after you do something to it, and the engine had no way to see any of them. The owner said yes to reading a page
+  in a second state.
+- **How we chose the state:** the spec already lists the states his points call for, in order. The first, a very
+  wide window, was already a setting in the bench. The next is the page scrolled to its end.
+- **What his points ask of that state:** four of his points are about it. Two are about a page that ends with
+  nothing to go on to, one is about a menu that turns unreadable over a coloured footer, and one is about a video
+  that shows when the page is pulled past its end. We built the first kind. The page of the menu point stops at its loading screen in the bench's browser. The pulled page needs
+  a phone.
+- **The system behind it:** the bench read the whole page in one still picture, so it knew what was at the bottom.
+  It did not know what stays in the window when you get there. A menu fixed to the window is on the last screen
+  too, and that changes the answer, so the page has to be scrolled for real.
+- **What it does:** it scrolls the page as far as it goes, waits for it to stand still, and looks at the window.
+  It asks the code which things there lead to another page of the same site. If one does, it says nothing. If none
+  does, it says the page ends with nothing to go on to, and how many screens up the nearest way on is.
+- **What we got wrong first:** two home pages were marked and neither deserved it. One was a site of a single
+  page, which has no other page to go to. One ended in a list of work whose rows are buttons, and a button's
+  target is not written in the code. Both are now left alone, and the second is shown as not judged.
+- **The fix and the proof:** Rauno's article, read at phone width, is marked: the only link on its last screen
+  leaves the site, and the nearest link to another page is 14.2 screens up. That is what his own phone picture
+  shows. None of the 41 home pages is marked.
+- **What this does not prove:** one catch on one page. Home pages mostly end in a footer with links, so they were
+  never going to be marked, and the set holds one long article. Whether a link that leaves the site should count
+  as a way on is our call, with no source behind it.
+- **References:** Rauno Freiberg's portfolio reviews and Layr's reference, both shared by the owner
+  (`docs/references.md`, 2026-11-26).
+- **Media hooks:** the article's last screen with the reading beside it, in
+  `docs/research/harvests/raunofreiberg-portfolio-reviews/local/last-screen/` (local).
+
 ## Open gaps
 
 - The shape engine's first build is in the judging bench and nowhere else
   ([entry 170](#170-the-first-build-of-the-shape-engine-run-to-its-end-in-one-night-2026-11-27)). The spec is not
   signed off. None of its numbers has been set against judged screens. Eight of its ten firm findings have been
-  seen by no judge. It does not read the page in a second state, or balance and proportion, and many of the
+  seen by no judge. It reads one second state, the page scrolled to its end
+  ([entry 176](#176-the-page-scrolled-to-its-end-the-first-second-state-2026-11-28)), with one judged page caught.
+  It does not read the other states, or balance and proportion, and many of the
   expert's points need one of those. The words of 40 first screens have been read, and loud against what matters now counts a
   label and the text under it as one thing
   ([entry 173](#173-a-name-and-the-sentence-under-it-are-one-thing-2026-11-28)): 3 of 41 reads still differ, where

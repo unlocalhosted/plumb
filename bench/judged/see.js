@@ -13,6 +13,7 @@ import { judge } from './alike.js';
 import { judge as near, RATIO as APART } from './near.js';
 import { judge as regular } from './regular.js';
 import { judge as louder, heads, ranked, pictured } from './loud.js';
+import { judge as ending } from './last.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const host = (url) => url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
@@ -449,8 +450,9 @@ export function see(el, root, base, loaded, soften) {
     <main class="desk two">
       <div class="view"><div class="stage"><iframe title="The page being read"></iframe><div class="layer"><div class="seen"></div></div></div></div>
       <aside class="side">
-        <div class="modes"><button type="button" class="chip" data-mode="groups" aria-pressed="true">Groups</button><button type="button" class="chip" data-mode="alike" aria-pressed="false">Look against role</button><button type="button" class="chip" data-mode="near" aria-pressed="false">Space against belonging</button><button type="button" class="chip" data-mode="even" aria-pressed="false">Rhythm and edges</button><button type="button" class="chip" data-mode="held" aria-pressed="false">Boxes and what they hold</button><button type="button" class="chip" data-mode="loud" aria-pressed="false">What is loud</button></div>
+        <div class="modes"><button type="button" class="chip" data-mode="groups" aria-pressed="true">Groups</button><button type="button" class="chip" data-mode="alike" aria-pressed="false">Look against role</button><button type="button" class="chip" data-mode="near" aria-pressed="false">Space against belonging</button><button type="button" class="chip" data-mode="even" aria-pressed="false">Rhythm and edges</button><button type="button" class="chip" data-mode="held" aria-pressed="false">Boxes and what they hold</button><button type="button" class="chip" data-mode="loud" aria-pressed="false">What is loud</button><button type="button" class="chip" data-mode="end" aria-pressed="false">The last screen</button></div>
         <div class="pane loud" hidden></div>
+        <div class="pane last" hidden></div>
         <div class="pane held" hidden></div>
         <div class="pane even" hidden></div>
         <div class="pane alike" hidden></div>
@@ -475,7 +477,7 @@ export function see(el, root, base, loaded, soften) {
   const frame = $('iframe'), layer = $('.layer'), seen = $('.seen'), stage = $('.stage'), view = $('.view');
   const screen = set.screens.find((s) => s.id === new URL(location.href).searchParams.get('screen')) ?? set.screens[0];
   let scale = 1, got = null, tree = null, flat = [], level = 1, units = false, over = null, held = false;
-  let mode = 'groups', found = null, pick = null, spaced = [], npick = null, agreeing = false, moved = 0, evens = [], epick = null, boxed = [], hpick = null, shouts = [], tops = [], lpick = null, screenful = [], said = null, meant = null, overs = [];
+  let mode = 'groups', found = null, pick = null, spaced = [], npick = null, agreeing = false, moved = 0, evens = [], epick = null, boxed = [], hpick = null, shouts = [], tops = [], lpick = null, screenful = [], said = null, meant = null, overs = [], ended = null;
 
   const fit = () => {
     const w = screen?.width ?? set.width ?? 1440, room = view.clientWidth - 32, tallness = view.clientHeight - 32;
@@ -675,8 +677,51 @@ export function see(el, root, base, loaded, soften) {
       <div><h2>A highlight on most of the text</h2><p>A block where a coloured accent covers half the letters or more, so it no longer picks anything out.</p></div>
       ${shouts.length ? `<ul class="finds">${shouts.map((s, n) => `<li><button type="button" data-loud="${n}" aria-pressed="${n === lpick}"><b>The accent is on most of this text</b><span>${s.share}% of ${s.letters} letters are in ${hexOf(s.accent)}, and the rest in ${hexOf(s.base)}.</span><span><em>${esc(words(leaf(s.unit)))}</em></span></button></li>`).join('')}</ul>` : '<p>No block has its accent on most of its letters.</p>'}`;
   };
+  // the last screen: the page scrolled as far as it goes, and what the window then offers to go on to
+  const readEnd = async () => {
+    const win = frame.contentWindow, doc = win.document, root = doc.scrollingElement ?? doc.documentElement, wait = (ms) => new Promise((f) => setTimeout(f, ms));
+    // what scrolls: the window, or the largest box of the page's own that does
+    const box = root.scrollHeight > win.innerHeight + 1 ? null : [...doc.querySelectorAll('body *')].filter((e) => e.scrollHeight > e.clientHeight + 1 && /(auto|scroll)/.test(win.getComputedStyle(e).overflowY) && e.clientWidth * e.clientHeight >= win.innerWidth * win.innerHeight / 2).sort((a, b) => b.clientWidth * b.clientHeight - a.clientWidth * a.clientHeight)[0] ?? null;
+    const high = box ? box.clientHeight : win.innerHeight, tall = () => (box ?? root).scrollHeight, at = () => (box ? box.scrollTop : win.scrollY);
+    if (tall() <= high + 1) return { screens: 1, links: [] };
+    // a page can grow as it is scrolled, so go to the end until the end stops moving
+    for (let n = 0, was = -1; n < 8; n++) { (box ?? win).scrollTo({ top: tall(), behavior: 'instant' }); await wait(700); if (at() === was) break; was = at(); }
+    const here = win.location, site = (h) => h.replace(/^www\./, ''), own = set.app ? site(new URL(set.app).hostname) : null, links = [];
+    for (const a of doc.querySelectorAll('a[href]')) {
+      const r = a.getBoundingClientRect(); if (r.width < 1 || r.height < 1 || a.checkVisibility?.({ opacityProperty: true, visibilityProperty: true }) === false) continue;
+      let to; try { to = new URL(a.getAttribute('href'), here.href); } catch { continue; }
+      const ours = /^https?:$/.test(to.protocol) && (to.origin === here.origin || site(to.hostname) === own);
+      let stays = false; for (let e = a; e && e !== doc.documentElement && !stays; e = e.parentElement) stays = /fixed|sticky/.test(win.getComputedStyle(e).position);
+      links.push({ el: a, kind: !ours ? 'elsewhere' : to.pathname === here.pathname && to.search === here.search ? 'place' : 'page', here: r.bottom > 0 && r.top < win.innerHeight && r.right > 0 && r.left < win.innerWidth, up: r.bottom <= 0 ? -r.bottom / high : r.top < win.innerHeight && r.bottom > 0 && !(r.right > 0 && r.left < win.innerWidth) ? null : 0, stays });
+    }
+    // things to press that are not links: where they lead is not in the code
+    const press = [...doc.querySelectorAll('button, [role="button"], [role="link"], summary, [onclick]')].filter((e) => { const r = e.getBoundingClientRect(); return !e.closest('a[href]') && !e.disabled && r.width >= 1 && r.height >= 1 && r.bottom > 0 && r.top < win.innerHeight && r.right > 0 && r.left < win.innerWidth && e.checkVisibility?.({ opacityProperty: true, visibilityProperty: true }) !== false; });
+    return { screens: Math.round(tall() / high * 10) / 10, links, press: press.length, pressed: press };
+  };
+  const listEnd = () => {
+    const head = '<div><h2>The last screen</h2><p>The page scrolled as far as it goes. Someone who has read to the end needs somewhere to go next, so the last screen is checked for a link to another page of this site. A menu fixed to the window counts, because it is still there.</p></div>';
+    if (!ended) return void ($('.last').innerHTML = `${head}<p>Scrolling to the end\u2026</p>`);
+    const v = ended.v, n = (k, one, many) => `${k} ${k === 1 ? one : many}`;
+    if (!v) return void ($('.last').innerHTML = `${head}<p>The page fits in one screen, so its first screen is its last.</p>`);
+    if (v.outcome === 'alone') return void ($('.last').innerHTML = `${head}<p>This page links to no other page of its own site, so there is nowhere on the site to go on to. Not judged.</p><p>The page is ${ended.screens} screens tall at ${frame.contentWindow.innerWidth} wide.</p>`);
+    if (v.outcome === 'blind') return void ($('.last').innerHTML = `${head}<p>Not judged: the last screen has no link to another page of this site, and it has ${n(v.press, 'thing', 'things')} to press that ${v.press === 1 ? 'is not a link' : 'are not links'}. Where a button leads is not in the code, so whether one of them is a way on cannot be read.</p><p>The page is ${ended.screens} screens tall at ${frame.contentWindow.innerWidth} wide.</p>`);
+    const offers = [v.back ? n(v.back, 'link that jumps within this page', 'links that jump within this page') : '', v.away ? n(v.away, 'link that leaves the site', 'links that leave the site') : ''].filter(Boolean).join(' and ');
+    $('.last').innerHTML = `${head}${v.outcome === 'agree'
+      ? `<p>The last screen has ${n(v.ways, 'link', 'links')} to another page of this site${v.stay ? `, ${v.stay === v.ways ? 'all' : v.stay} fixed to the window` : ''}. Nothing to say.</p>`
+      : `<ul class="finds"><li><button type="button" aria-pressed="false"><b>Worth a look: the page ends with nothing to go on to.</b><span>The last screen has no link to another page of this site. ${v.up === null ? 'The others are off the window to the side.' : `The nearest one is ${v.up} ${v.up === 1 ? 'screen' : 'screens'} up.`}</span><span>${offers ? `What the last screen does offer: ${offers}.` : 'The last screen has nothing to press.'}</span><span>How much of a way on a page owes its reader has not been measured, so this is something to look at and never a fault.</span></button></li></ul>`}
+      <p>The page is ${ended.screens} screens tall at ${frame.contentWindow.innerWidth} wide.</p>`;
+  };
+  const drawEnd = () => {
+    seen.innerHTML = [...(ended?.links ?? []), ...(ended?.pressed ?? []).map((el) => ({ el, kind: 'press' }))].filter((l) => l.el.isConnected).map((l) => { const r = l.el.getBoundingClientRect(); return r.bottom > 0 && r.top < frame.contentWindow.innerHeight && r.width ? `<div class="g ${l.kind === 'page' ? 't-agree' : 't-run'}" style="left:${r.left - 3}px;top:${r.top - 3}px;width:${r.width + 6}px;height:${r.height + 6}px"></div>` : ''; }).join('');
+  };
+  const showEnd = async () => {
+    listEnd();
+    if (!ended) { const end = await readEnd(); ended = { ...end, v: ending(end) }; window.__seen.end = { ...ended, pressed: undefined, links: ended.links.map(({ el, ...l }) => ({ ...l, text: el.textContent.trim().replace(/\s+/g, ' ').slice(0, 40), href: el.getAttribute('href') })) }; }
+    listEnd(); if (mode === 'end') drawEnd();
+  };
   const draw = () => {
     if (!tree) return;
+    if (mode === 'end') return drawEnd();
     if (mode === 'loud') return drawLoud();
     if (mode === 'held') return drawHeld();
     if (mode === 'even') return drawEven();
@@ -829,7 +874,7 @@ export function see(el, root, base, loaded, soften) {
       if (across > 2 || down > lh2 * 0.6) boxed.push({ kind: 'spill', tier: 'claim', units: [i], box: boxAt.get(b), say: `This text runs ${Math.round(Math.max(across, down))}px past the box it is in.` });
     });
     boxed.sort((a, b) => Number(b.tier === 'claim') - Number(a.tier === 'claim')); hpick = null;
-    shouts = accents(got, win); tops = loudest(got, win); lpick = null;
+    shouts = accents(got, win); tops = loudest(got, win); lpick = null; ended = null;
     // the words are only fetched here if they were read before: nothing is spent by looking at a page
     screenful = firstScreen(got, win); await ask('kept');
     // A second look six seconds on. A tile that cycles through its own contents is not a page at rest, and a
@@ -933,7 +978,8 @@ export function see(el, root, base, loaded, soften) {
     if (m) {
       mode = m.dataset.mode;
       for (const b of root.querySelectorAll('[data-mode]')) b.setAttribute('aria-pressed', String(b.dataset.mode === mode));
-      $('.pane.alike').hidden = mode !== 'alike'; $('.pane.groups').hidden = mode !== 'groups'; $('.pane.near').hidden = mode !== 'near'; $('.pane.even').hidden = mode !== 'even'; $('.pane.held').hidden = mode !== 'held'; $('.pane.loud').hidden = mode !== 'loud';
+      $('.pane.alike').hidden = mode !== 'alike'; $('.pane.groups').hidden = mode !== 'groups'; $('.pane.near').hidden = mode !== 'near'; $('.pane.even').hidden = mode !== 'even'; $('.pane.held').hidden = mode !== 'held'; $('.pane.loud').hidden = mode !== 'loud'; $('.pane.last').hidden = mode !== 'end';
+      if (mode === 'end') { seen.innerHTML = ''; return void showEnd(); }
       return draw();
     }
     if (f && found) {

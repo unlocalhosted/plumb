@@ -15,6 +15,7 @@ what building it changed. Where a note and the text above it differ, the note is
 | Boxes and what they hold | 15 | 0 | joined; a box whose content is not one thing |
 | Rhythm and edges | 16 | 1 | balance and proportion; mirror and alternation |
 | What is loud | 17 | 3, on one page | loud against what matters is a note only. Reworked 2026-11-28 so a label and what it heads are one unit: 3 of 41 reads still "disagree" (23 before). A picture over the main text is set against it: 6 of 41 pages have one, 3 are "worth a look", and one of those is the hero picture Rauno would remove. Seven of those pictures were then looked at, not blind: one page is still marked, the one he faulted. Pictures elsewhere and boxes with words are not ranked |
+| The last screen (the page scrolled to its end) | 18 | none, by design: a note only. One judged page is marked and no home page | fixed things against the ground under them; the other states |
 
 Two of those ten are points the expert made. Each of the ten was looked at on its page. No number has been set against judged screens (section 19).
 
@@ -496,6 +497,42 @@ add states in which a still picture shows what the resting page hides, in the or
 a window 2,560 wide, the page scrolled to its end, text selected, focus moved through the page, scrollbars always
 shown. The first build reads the resting page at the four sizes plumber has. Each further state is a later layer
 and brings its own judged cases.
+
+Added on 2026-11-28, on the owner's word (journey entry 176): the first further state. A window 2,560 wide is
+already a setting of a screen in the bench, and one judged page is read that way. The next state in the order is
+the page scrolled to its end.
+
+**The last screen.** The seen side is what is in the window once the page has been scrolled as far as it goes. The
+bench scrolls it and waits until it stands still. The resting picture cannot stand in for this: a menu fixed to
+the window is on the last screen too, and that is only known once the page has moved. The meant side comes from
+the code: which things on that screen lead to another page of the same site, which only jump within the page (back
+to the top), and which leave the site.
+
+| Compared | Outcome | Said |
+|---|---|---|
+| The last screen has a link to another page of the site | Agree. | Silence. |
+| It has none, and nothing else there can be pressed | Worth a look. | "The page ends with nothing to go on to." With how many screens up the nearest link to another page is, and what the last screen does offer: a way back to the top, links that leave the site. |
+| It has none, and it has buttons or rows that can be pressed and are not links | Not judged. | Where a button leads is not in the code, so whether one of them is a way on cannot be read. |
+
+A page that fits in one screen has no last screen of its own and is not read. A page that links to no other page
+of its site anywhere (a site of one page) has nowhere on the site to go on to, and is not judged. A site that
+scrolls a box of its own and not the window is scrolled by that box.
+
+*Stands on:* two of the expert's points, one seen in his picture of a phone (42.1) and one by his word (41.6), and
+the "complete flow" law in Layr's reference (`docs/references.md`, 2026-11-26). No published number is used:
+whether the window at the end holds such a link is a yes or a no.
+*Not known:* whether a link that leaves the site is a way on. Here it is not, and it is shown.
+*Not built:* the contrast of things fixed to the window against each ground the page slides under them (39.3). The
+one judged page for it stops at its loading screen in the bench's browser. The other states of this section.
+
+Run on the 41 home pages at desktop width and on the one judged screen, an article at phone width. The article
+(Rauno 42.1) is marked: its last screen has one link, which leaves the site, and the nearest link to another page
+is 14.2 screens up. No home page is marked. Of the 41, 24 have a link to another page on their last screen (on 10
+of them a menu fixed to the window is among those links), 7 fit in one screen, 7 are sites of one page, 2 are
+not judged because their last screen has buttons, and 1 stops at its loading screen and is not counted. Two home
+pages were marked by the first cut and were wrong: one ended in rows that are buttons, which is why buttons now
+leave a page not judged. One catch and no false mark is a thin result. The set has one long article in it, and
+long articles are where a page ends with nothing to go on to.
 
 ## 19. The numbers
 
