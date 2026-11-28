@@ -60,9 +60,27 @@ async function asking<T>(page: Page, args: Record<string, unknown>, within: numb
   }
 }
 
+/** The page's own requests in flight, counted from the moment it is opened (plumber's own left out), so a wait that
+ *  starts later still sees a file asked for before it: a route whose code was still on its way looked still, and was
+ *  judged as its loading screen (e2e/packs "arrives late", 2026-11-28). */
+type Flight = { out: Set<import('playwright').Request>; last: number };
+const flights = new WeakMap<Page, Flight>();
+const mine = (r: import('playwright').Request) => !r.url().includes('/__plumb/') && ['fetch', 'xhr', 'script', 'document', 'stylesheet'].includes(r.resourceType());
+function track(page: Page): Flight {
+  let flight = flights.get(page);
+  if (flight) return flight;
+  const f: Flight = { out: new Set(), last: Date.now() };
+  page.on('request', r => { if (mine(r)) { f.out.add(r); f.last = Date.now(); } });
+  const done = (r: import('playwright').Request) => { if (f.out.delete(r)) f.last = Date.now(); };
+  page.on('requestfinished', done); page.on('requestfailed', done);
+  flights.set(page, f);
+  return f;
+}
+
 /** Open a route and wait for the overlay. `ready` also waits for the server's first read of the project. */
 export async function open(page: Page, url: string, timeout: number, ready: boolean): Promise<void> {
   const loads = { script: 0, other: 0 }, count = (r: import('playwright').Request) => { loads[r.resourceType() === 'script' ? 'script' : 'other']++; };
+  track(page);
   if (TIMING) page.on('request', count);
   try { await timed(page, 'goto', () => page.goto(url, { waitUntil: 'load', timeout })); }
   catch (error) { throw new UsageError(`Could not open ${url}: ${(error as Error).message.split('\n')[0]}\n  → start your dev server, then: plumber craft --url <its address>`); }
@@ -99,32 +117,25 @@ async function settling(page: Page, network: number): Promise<boolean> {
   const end = Date.now() + network;
   // not the browser's own "network idle": the overlay keeps one request open to its server (news of the project,
   // /__plumb/readiness), so on any app with plumber installed that never came and every wait ran its whole limit
-  // (Twenty: 50 s of a 167 s page, 2026-11-28). Requests are counted here instead, leaving plumber's own out.
-  // requests out right now, counted from here on (the overlay's own reads to /__plumb/ are not the page's)
-  let out = 0, last = Date.now(), settled = false, why = '';
-  const outs: string[] = [];
-  const mine = (r: import('playwright').Request) => !r.url().includes('/__plumb/') && ['fetch', 'xhr', 'script', 'document', 'stylesheet'].includes(r.resourceType());
-  const sent = (r: import('playwright').Request) => { if (mine(r)) { out++; last = Date.now(); if (TIMING) outs.push(r.url().slice(-60)); } };
-  const done = (r: import('playwright').Request) => { if (mine(r)) { out = Math.max(0, out - 1); last = Date.now(); } };
-  page.on('request', sent); page.on('requestfinished', done); page.on('requestfailed', done);
-  try {
-    while (Date.now() < end) {
-      // the page's own changes for one window: elements added or removed, words changed, a placeholder still up
-      const left = Math.max(0, end - Date.now());
-      const still = await page.evaluate(({ window: ms, placeholder }) => new Promise<boolean>((resolve) => {
-        let changed = false;
-        // a placeholder stands in for content, so it has some size: a pulsing status dot (8px, "Live") is the page
-        // at rest, and reading it as loading held every run of that page for the full limit (ledger example, 53 s)
-        const waiting = () => [...document.querySelectorAll(placeholder)].some((el) => { const box = el.getBoundingClientRect(); return box.width > 16 || box.height > 16; });
-        const watch = new MutationObserver((list) => { if (list.some((m) => m.type === 'characterData' || m.addedNodes.length || m.removedNodes.length)) changed = true; });
-        watch.observe(document.body, { subtree: true, childList: true, characterData: true });
-        setTimeout(() => { watch.disconnect(); resolve(!changed && !waiting()); }, ms);
-      }), { window: Math.min(STILL, left), placeholder: PLACEHOLDER }).catch(() => true);
-      if (still && out === 0 && Date.now() - last >= STILL) { settled = true; break; }
-      if (TIMING) why = !still ? await page.evaluate((placeholder) => [...document.querySelectorAll(placeholder)].filter((el) => { const b = el.getBoundingClientRect(); return b.width > 16 || b.height > 16; }).slice(0, 3).map((el) => `${el.tagName.toLowerCase()}.${String(el.className).slice(0, 40)}`).join(' ') || 'changing', PLACEHOLDER).catch(() => '?') : `requests out=${out} ${outs.slice(-2).join(' ')}`;
-      if (!left) break;
-    }
-  } finally { page.off('request', sent); page.off('requestfinished', done); page.off('requestfailed', done); }
+  // (Twenty: 50 s of a 167 s page, 2026-11-28). The page's own requests are counted instead, from when it was opened.
+  const flight = track(page);
+  let settled = false, why = '';
+  while (Date.now() < end) {
+    // the page's own changes for one window: elements added or removed, words changed, a placeholder still up
+    const left = Math.max(0, end - Date.now());
+    const still = await page.evaluate(({ window: ms, placeholder }) => new Promise<boolean>((resolve) => {
+      let changed = false;
+      // a placeholder stands in for content, so it has some size: a pulsing status dot (8px, "Live") is the page
+      // at rest, and reading it as loading held every run of that page for the full limit (ledger example, 53 s)
+      const waiting = () => [...document.querySelectorAll(placeholder)].some((el) => { const box = el.getBoundingClientRect(); return box.width > 16 || box.height > 16; });
+      const watch = new MutationObserver((list) => { if (list.some((m) => m.type === 'characterData' || m.addedNodes.length || m.removedNodes.length)) changed = true; });
+      watch.observe(document.body, { subtree: true, childList: true, characterData: true });
+      setTimeout(() => { watch.disconnect(); resolve(!changed && !waiting()); }, ms);
+    }), { window: Math.min(STILL, left), placeholder: PLACEHOLDER }).catch(() => true);
+    if (still && flight.out.size === 0 && Date.now() - flight.last >= STILL) { settled = true; break; }
+    if (TIMING) why = !still ? await page.evaluate((placeholder) => [...document.querySelectorAll(placeholder)].filter((el) => { const b = el.getBoundingClientRect(); return b.width > 16 || b.height > 16; }).slice(0, 3).map((el) => `${el.tagName.toLowerCase()}.${String(el.className).slice(0, 40)}`).join(' ') || 'changing', PLACEHOLDER).catch(() => '?') : `requests out=${flight.out.size} ${[...flight.out].slice(0, 2).map((r) => r.url().slice(-60)).join(' ')}`;
+    if (!left) break;
+  }
   await page.evaluate(() => document.fonts.ready).catch(() => {});
   if (TIMING && !settled) process.stderr.write(`time ${tags.get(page) ?? '-'} unsettled: ${why}\n`);
   return settled;
