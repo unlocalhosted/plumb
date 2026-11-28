@@ -323,14 +323,22 @@ export function firstScreen(got, win) {
   });
   return rows.sort((a, b) => a.y - b.y || a.x - b.x);
 }
-// The pictures on the first screen, each with its size and how much of the screen it fills.
+// The pictures on the first screen, each with its size, how much of the screen it fills, what the page's code says
+// about it (`code`: the words it gives the picture, and whether it marks it as decoration) and the name a reading of
+// it is kept under (`source`: its address, or for a picture drawn by script its place in the page).
 export function firstPictures(got, win) {
   const tall = win.innerHeight, wide = got.vw, rows = [];
   got.units.forEach((u, i) => {
     if (u.kind !== 'picture' || u.y >= tall || u.y + u.h <= 0 || Math.min(u.x + u.w, wide) - Math.max(u.x, 0) < u.w / 2) return;
     const on = (Math.min(u.y + u.h, tall) - Math.max(u.y, 0)) * (Math.min(u.x + u.w, wide) - Math.max(u.x, 0));
     // two pictures drawn in one place (a still under its video) are one picture to the eye
-    if (!rows.some((r) => r.x === u.x && r.y === u.y && r.w === Math.round(u.w) && r.h === Math.round(u.h))) rows.push({ id: i, x: u.x, y: u.y, w: Math.round(u.w), h: Math.round(u.h), share: Math.round(100 * on / (tall * wide)) });
+    if (rows.some((r) => r.x === u.x && r.y === u.y && r.w === Math.round(u.w) && r.h === Math.round(u.h))) return;
+    const el = got.els[i].el, tag = el.localName, src = el.currentSrc || el.src || el.poster || '', at = win.location;
+    const own = (el.getAttribute('alt') || el.getAttribute('aria-label') || el.querySelector?.(':scope > title')?.textContent || '').trim().slice(0, 120);
+    const code = { words: own, decoration: !own && (el.getAttribute('alt') === '' || el.getAttribute('aria-hidden') === 'true' || el.getAttribute('role') === 'presentation') };
+    let path = ''; try { const a = new URL(src, at.href); path = a.pathname + a.search; } catch { /* no address */ }
+    const source = `${at.hostname}|${src ? path : tag === 'svg' ? `svg:${el.outerHTML.slice(0, 20000)}` : `${tag}:${at.pathname}#${[...win.document.querySelectorAll(tag)].indexOf(el)}`}`;
+    rows.push({ id: i, x: u.x, y: u.y, w: Math.round(u.w), h: Math.round(u.h), share: Math.round(100 * on / (tall * wide)), code, source });
   });
   return rows;
 }
@@ -628,14 +636,25 @@ export function see(el, root, base, loaded, soften) {
     // a picture over the text that says the most is set against it too: by height against its type, by room against its block
     const at = (id) => heads(tree, got.units, id);
     overs = main ? pictured(ranked(firstPictures(got, frame.contentWindow), got.units, main.id), among, main.id, at).map((p) => ({ ...p, main: main.id, down: Math.round(main.y) })) : [];
+    // what each of those pictures says, where a reading of it is kept
+    if (overs.length) try { const { read } = await (await fetch('/__judge/pictures', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ pictures: overs.map(({ id, source }) => ({ id, source })) }) })).json(); for (const p of overs) p.read = read?.[p.id] ?? null; } catch { /* shown as not read */ }
   };
+  const HEAD = {
+    nothing: (big) => (big ? 'Worth a look: the biggest thing over the text that says the most is a picture that says nothing about the person or the work.' : 'A picture that says nothing about the person or the work sits over the text that says the most.'),
+    shows: () => 'A picture of the person or the work sits over the text that says the most, so the two read as one thing.',
+    words: (big, p) => `A picture that is mostly words sits over the text that says the most${p.read.words ? `: “${esc(p.read.words.slice(0, 60))}”` : ''}. It is a label drawn as a picture.`,
+  };
+  const codeSays = (p) => (p.code.words ? `The page's code names it “${esc(p.code.words)}”.` : p.code.decoration ? 'The page\'s code gives it no words and marks it as decoration.' : 'The page\'s code gives it no words.');
   const listShown = () => {
     if (!overs.length) return '';
     const p = overs[0], big = p.room > 1, also = overs.slice(1);
-    return `<li><button type="button" data-meant aria-pressed="false"><b>${big ? 'Worth a look: a picture sits over the text that says the most, and it is the biggest thing there.' : 'A picture sits over the text that says the most and is drawn taller than a line of any text here.'}</b>
+    const says = p.read?.says, flagged = says ? says === 'nothing' && big : big;
+    return `<li><button type="button" data-meant aria-pressed="false"><b>${says ? HEAD[says](big, p) : big ? 'Worth a look: a picture sits over the text that says the most, and it is the biggest thing there.' : 'A picture sits over the text that says the most and is drawn taller than a line of any text here.'}</b>
       <span>The picture: ${p.w} by ${p.h}px, ${p.times} times the height of that text's type${big ? ` and ${p.room} times the room its block takes` : ''}. It fills ${p.share}% of the first screen, and the text that says the most starts ${p.down}px down.</span>
-      ${also.length ? `<span>Also over it: ${also.map((a) => `${a.w} by ${a.h}px, ${a.times} times`).join('; ')}.</span>` : ''}
-      <span>${big ? 'What a picture says is not read, so this is something to look at and never a fault.' : 'What a picture says is not read, and how much taller is too much has not been measured, so this is not judged.'}</span></button></li>`;
+      <span>${codeSays(p)}</span>
+      ${also.length ? `<span>Also over it: ${also.map((a) => `${a.w} by ${a.h}px, ${a.times} times${a.read ? ` (${a.read.says === 'words' ? `words: “${esc((a.read.words ?? '').slice(0, 40))}”` : a.read.says === 'shows' ? 'shows the person or the work' : 'says nothing about the person or the work'})` : a.code.words ? ` (the code names it “${esc(a.code.words.slice(0, 40))}”)` : ''}`).join('; ')}.</span>` : ''}
+      ${says ? `<span>How we know: the picture was looked at (${esc(p.read.model)}), without its size or its place. ${esc(p.read.why)}</span>` : '<span>This picture has not been looked at, so what it says is not known.</span>'}
+      <span>${flagged ? 'Something to look at and never a fault.' : 'How much bigger is too much has not been measured, so this is not judged.'}</span></button></li>`;
   };
   const listMeant = () => {
     const spend = said?.spent ? `<p>Spent so far on reading words: $${said.spent.dollars.toFixed(2)}, on ${said.spent.calls} ${said.spent.calls === 1 ? 'screen' : 'screens'}.</p>` : '';

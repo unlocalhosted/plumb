@@ -7656,6 +7656,33 @@ into its own browser. Your app isn't changed.", then the findings.
 - **Media hooks:** the two judged pages with the picture outlined, in
   `docs/research/harvests/raunofreiberg-portfolio-reviews/local/pictures/` (local).
 
+### 175. The pictures over the main text are looked at (2026-11-28)
+
+- **The itch:** the bench could say a picture was the biggest thing over the main text and not whether it said
+  anything. It marked three pages, and Rauno had faulted one of them. His reason was about meaning: the picture
+  says nothing about the person. The owner said yes to reading what the pictures say.
+- **How we found it:** entry 174's own list of what did not work.
+- **The system behind it:** the meant side of the comparison was made of words only. A picture has none, so it had
+  no meaning the engine could set against its size.
+- **What we found in the code first:** every page already says something about its pictures. One gives its logo
+  the person's name. Three mark their largest picture as decoration, by an empty description or by hiding it from
+  screen readers. That is the author's own word and costs nothing to read. It could not decide the matter: one of
+  the three "decorations" is the page's headline, drawn as a picture.
+- **What we chose:** the bench cuts each picture out, scales it to one size and shows it to a reader with the
+  words of the screen, and without its size or place. The reader answers one of three: it is mostly words, it
+  shows the person or the work, or it shows neither. Only the last one, on a picture that is also the biggest
+  thing there, is marked "worth a look". The code's word is shown beside it.
+- **The fix and the proof:** seven pictures on five pages were looked at, in the owner's session, with no paid
+  call. Three are words, three show the person or the work, one says nothing. One page is still marked, where
+  three were: the hero picture Rauno would remove, now with his reason. The photograph he did not fault reads as
+  the person's own photography and is no longer marked. The headline drawn as a picture reads as words.
+- **What this does not prove:** the look was not blind. I had seen these pages, the sizes and Rauno's verdicts
+  before looking, and two of the seven readings are weak. Seven pictures say nothing about pages nobody has
+  judged. The paid call that would show a picture to a model from the bench is not built.
+- **References:** Rauno Freiberg's portfolio reviews, shared by the owner (`docs/references.md`, 2026-11-26).
+- **Media hooks:** the two judged pages with the reading beside them, in
+  `docs/research/harvests/raunofreiberg-portfolio-reviews/local/pictures-read/` (local).
+
 ## Open gaps
 
 - The shape engine's first build is in the judging bench and nowhere else
@@ -7668,8 +7695,11 @@ into its own browser. Your app isn't changed.", then the findings.
   23 did. It is still a note only. A picture that sits over the main text is now set against it
   ([entry 174](#174-a-picture-over-the-main-text-is-seen-and-one-judged-case-was-read-wrongly-2026-11-28)):
   6 of 41 pages have one, 3 are "worth a look", and one of those is the hero picture Rauno would remove. Two judged cases exist for how many times larger a name may be than the text under it, and they set
-  no number. What a picture says is not read, boxes with words are not ranked, pictures elsewhere on the screen
-  are not ranked, and a full-page picture under the content leaves a page not judged.
+  no number. Seven of those pictures have been looked at
+  ([entry 175](#175-the-pictures-over-the-main-text-are-looked-at-2026-11-28)), by a reader that had already
+  seen the pages, and one page is still marked: the one he faulted. The paid call that would show a picture to
+  a model is not built, boxes with words are not ranked, pictures elsewhere on the screen are not ranked, and a
+  full-page picture under the content leaves a page not judged.
 - The layer that compares how text looks with what it does now takes where a piece sits from the seen picture
   ([entry 161](#161-where-a-piece-sits-now-comes-from-the-seen-picture-2026-11-27)). Its rule that things inside
   boxes are in a different place from things on the page itself has no source and has been run on six pages.

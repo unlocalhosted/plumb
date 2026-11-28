@@ -125,7 +125,11 @@ a drawn box that does not hold the main text is left out of the order (`ranked`)
 a look" and never as a fault: 3 of 41 reads, where the first cut had 23 and none of them was one. A picture that
 sits over the main text and is taller than a line of any text there is set against it too (`pictured`): its height
 against the type, the room it takes against the text's block, and "worth a look" only when it takes more room.
-What a picture says is not read. On the same reads: 6 of 41 pages have one, 3 are "worth a look", and one of those is the hero picture Rauno would remove.
+What such a picture says comes from two places: the page's code (the words it gives the picture, or that it marks
+it as decoration), read in the view, and a kept reading of the picture itself (`pictures.mjs`: words, shows the
+person or the work, or nothing). Only a picture that says nothing and is the biggest thing there is marked. The
+call that would show a picture to a model is not built; a reading is made by hand and put in `.words/` under the
+name `keyOf` in `pictures.mjs` gives. On the same reads: 6 of 41 pages have one, 3 are "worth a look", and one of those is the hero picture Rauno would remove.
 
 Every reading is taken twice, six seconds apart, and a finding that rests on something that moved or changed size
 is left out: a tile that cycles through its own contents is not a page at rest.

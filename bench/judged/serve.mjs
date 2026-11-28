@@ -17,6 +17,7 @@
 //   screens/<screen>.<judge>.json      the screen as plain data, taken when the judge says the screen is done
 import http from 'node:http';
 import { matters, spent } from './words.mjs';
+import { shows } from './pictures.mjs';
 import https from 'node:https';
 import net from 'node:net';
 import { execFile } from 'node:child_process';
@@ -120,6 +121,8 @@ async function judging(req, res, url, name) {
     const asked = await body(req, 1 << 20);
     return json(res, 200, { ...(await matters(asked?.pieces, { only: asked?.only })), spent: spent() });
   }
+  // what a picture over the main text says, from the readings that are kept (pictures.mjs). Never spends.
+  if (req.method === 'POST' && url.pathname === '/__judge/pictures') return json(res, 200, shows((await body(req, 1 << 20))?.pictures));
   if (name === null) { // the list of sets
     if (req.method === 'GET' && url.pathname === '/__judge/set') {
       const sets = [];

@@ -14,7 +14,7 @@ what building it changed. Where a note and the text above it differ, the note is
 | Look against role | 14 | 4 | "nearly alike"; boxes are never firm |
 | Boxes and what they hold | 15 | 0 | joined; a box whose content is not one thing |
 | Rhythm and edges | 16 | 1 | balance and proportion; mirror and alternation |
-| What is loud | 17 | 3, on one page | loud against what matters is a note only. Reworked 2026-11-28 so a label and what it heads are one unit: 3 of 41 reads still "disagree" (23 before). A picture over the main text is set against it: 6 of 41 pages have one, 3 are "worth a look", and one of those is the hero picture Rauno would remove. Pictures elsewhere and boxes with words are not ranked |
+| What is loud | 17 | 3, on one page | loud against what matters is a note only. Reworked 2026-11-28 so a label and what it heads are one unit: 3 of 41 reads still "disagree" (23 before). A picture over the main text is set against it: 6 of 41 pages have one, 3 are "worth a look", and one of those is the hero picture Rauno would remove. Seven of those pictures were then looked at, not blind: one page is still marked, the one he faulted. Pictures elsewhere and boxes with words are not ranked |
 
 Two of those ten are points the expert made. Each of the ten was looked at on its page. No number has been set against judged screens (section 19).
 
@@ -450,6 +450,44 @@ letters, so set as type it would be near 5 times. The name he faulted in type ca
 that was kept. Two cases set no number. Also not known: whether a picture says anything, which needs a model that
 is shown the picture. And the bench's first screen is its own frame, which is taller than a laptop's window, so
 the share of the screen a picture fills reads low.
+
+Added on 2026-11-28, after the owner said to read what the pictures say (journey entry 175).
+
+**What a picture over the main text means is read from two places.** The first is the page's own code, which costs
+nothing: the words it gives the picture (its alternative text, its label, its title), or the fact that it gives
+none and marks the picture as decoration (an empty alternative text, or hidden from screen readers). The second is
+a reading of the picture itself. The reader is shown the picture, scaled so its longest side is always the same,
+and the words of the first screen. It is not told how large the picture is drawn or where. It answers one of three:
+
+| The picture | Called | Then |
+|---|---|---|
+| is mostly words: a name, a logo's words, a headline | words | It is a label drawn as a picture, and the words are given. Its figures are shown and not judged, as a label's are. |
+| shows the person, the work, or something the words speak of | shows | It is of substance and one thing with the text under it. Its figures are shown and not judged. |
+| shows none of those | nothing | When it is also the biggest thing there: "worth a look", said as "the biggest thing over the text that says the most is a picture that says nothing about the person or the work". |
+
+A picture that has not been read keeps the earlier wording. The code's word is shown beside the reading and decides
+nothing by itself: a page can mark a picture as decoration and draw its headline in it. Every outcome is still a
+note and never a fault.
+
+*Stands on:* the same rule as the rest of this section: the loudest thing should be the thing that says the most.
+That the code's marking of a picture as decoration is the author's own statement of what it means is the HTML
+standard's (an empty `alt` is for an image that adds nothing to the content).
+*Not built:* the paid call that would show a picture to the model from the bench's server. The readings so far
+were made in the owner's session and kept where the bench looks for them.
+
+Run on the five pages that still have a picture over the main text (the sixth changed between visits and has none
+now): seven pictures were looked at. Three are words (a wordmark, a signature, and a headline with its paragraph
+drawn as a picture), three show the person or the work, and one says nothing: the hero picture of Rauno 7.2. So of
+the three pages marked "worth a look" before, one is still marked, and it is the one he faulted, for the reason he
+gave. The code marks all three of those pictures as decoration, so the code's word alone would not have told them
+apart. Two of the seven readings are weak and say so: a photograph that may be the person's own, and a drawn face
+used as a logo. The look was not blind. The reader had seen these pages, their sizes and the expert's verdicts
+earlier in the same session, and seven pictures prove nothing about how a reader does on pages it has not seen.
+
+*Not known:* how a reader that has not seen the page would call the same pictures. Where the picture is words (the
+headline drawn as a picture), those words are still missing from the reading of the screen's text, so the text
+called "the most" on that page is the wrong one. A picture drawn by script has no address, so its reading is kept
+by its place in the page and is lost when the page changes.
 
 ## 18. The page in more than one state
 
