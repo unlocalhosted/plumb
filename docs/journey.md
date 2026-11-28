@@ -7535,15 +7535,52 @@ into its own browser. Your app isn't changed.", then the findings.
   about a dollar, and each reading checked by eye against Rauno's points.
 - **Media hooks:** `http://rauno-40-rizwanakhan-com.localhost:4420/__judge/?seen=1`, "What is loud".
 
+### 172. The words are read, without a key, and the comparison does not hold (2026-11-28)
+
+- **The itch:** the owner, on being asked for a key: "why can't you do it from here why do you need separate key ?"
+  They were right. The reading had been built to call a paid service, when the session the owner was already
+  talking to is a model that can read.
+- **Why the bench could not simply borrow that session:** the bench is its own program. The command-line Claude on
+  this machine is signed out, and the app's sign-in belongs to the app. So the words were read in the session
+  itself, by hand, and the answers were put where the bench keeps a model's answers, each labelled with who read it.
+- **How it was read:** a script collected the words of each first screen in reading order into one file, and how
+  loud each block is into another that was not opened. Forty screens were read from the words alone, with the same
+  instruction the paid call would have got. Not fully blind: pictures of about ten of these pages had been looked
+  at on earlier days. Two readings are marked weak, because nothing on those screens says what the person does.
+- **What the comparison said:** on 41 reads of 39 sites, 8 agree, 3 are "nearly", 23 disagree, 3 have all their
+  text at one size, and 4 could not be matched again (one is a loading screen; on three the words changed between
+  two visits).
+- **Looked at on the page, none of the 23 is a fault.** In 14 the loudest text is the person's name used as a
+  title. In 6 it is a section or project heading. In 3 it is text inside a demo: a line number, a meter reading, a
+  floating label. A name or a heading is loud because it labels what is under it. The spec's row, "the loudest unit
+  is minor", calls that a disagreement, and it is the most ordinary thing on a page.
+- **Against Rauno's thirteen points:** one of them is this comparison on text, "make the second heading the first
+  one". That page has since done what he said: its statement is now 96px and the loudest thing, and the bench reads
+  it as agreeing. Two more are about a picture that is louder than the text, and pictures are not ranked. The other
+  ten are about other pages, other states or advice on the work. So the reading caught no judged case, and there
+  was none left on the live pages for it to catch.
+- **What changed:** the comparison is now shown as "worth a look" only, with how many times larger the loudest
+  text is, and it no longer counts as a firm finding. One mistake of the seen side is fixed: on a page that runs
+  sideways, three words set at 720px and almost wholly past the window's edge were being called the loudest text.
+- **What it would take to make it a judgement:** how much louder a name may be than the sentence under it. The
+  spec already lists that number as not known, and there are no judged screens to set it from. Also seen: a
+  paragraph whose words are set larger than the paragraph itself is measured at the wrong size, a sentence drawn
+  one word at a time is read as many blocks, and text inside a demo is ranked with the page's own text.
+- **Money:** nothing was spent. The paid path is still in the bench and still needs a key; the answers kept from
+  this run are shown by the same view.
+- **Media hooks:** pictures of every verdict that is not an agreement, with the readings and the verdict list, in
+  `docs/research/harvests/raunofreiberg-portfolio-reviews/local/words/` (local).
+
 ## Open gaps
 
 - The shape engine's first build is in the judging bench and nowhere else
   ([entry 170](#170-the-first-build-of-the-shape-engine-run-to-its-end-in-one-night-2026-11-27)). The spec is not
   signed off. None of its numbers has been set against judged screens. Eight of its ten firm findings have been
   seen by no judge. It does not read the page in a second state, or balance and proportion, and many of the
-  expert's points need one of those. A model to read the meaning of words is built
-  ([entry 171](#171-a-model-reads-the-words-so-loud-can-be-set-against-what-matters-2026-11-27)) and has never
-  been run: there is no key for it on this machine.
+  expert's points need one of those. The words of 40 first screens have been read
+  ([entry 172](#172-the-words-are-read-without-a-key-and-the-comparison-does-not-hold-2026-11-28)), and the
+  comparison of loud against what matters did not hold: 23 pages "disagree" and none is a fault. It is a note
+  only until there are judged screens to say how much louder a name may be than the sentence under it.
 - The layer that compares how text looks with what it does now takes where a piece sits from the seen picture
   ([entry 161](#161-where-a-piece-sits-now-comes-from-the-seen-picture-2026-11-27)). Its rule that things inside
   boxes are in a different place from things on the page itself has no source and has been run on six pages.

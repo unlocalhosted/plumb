@@ -313,6 +313,8 @@ export function firstScreen(got, win) {
   const tall = win.innerHeight, rows = [];
   got.units.forEach((u, i) => {
     if (u.kind !== 'text' || u.y >= tall || u.y + u.h <= 0) return;
+    // on a page that runs sideways, a block that is mostly past the window's edge is not on the first screen
+    if (Math.min(u.x + u.w, got.vw) - Math.max(u.x, 0) < u.w / 2) return;
     const { el, parts } = got.els[i], s = win.getComputedStyle(el);
     const text = (parts ?? []).map((p) => ('startContainer' in p ? p.toString() : p.textContent)).join(' ').replace(/\s+/g, ' ').trim();
     if (/[\p{L}\p{N}]/u.test(text)) rows.push({ id: i, text, size: parseFloat(s.fontSize), weight: Number(s.fontWeight) || 400, x: u.x, y: u.y });
@@ -590,7 +592,7 @@ export function see(el, root, base, loaded, soften) {
   // loud each block is drawn
   const SAYS = {
     agree: () => 'The loudest text is the text that says the most.',
-    disagree: (top) => (top.role === 'minor' ? 'The loudest text says little, and the text that says the most is drawn quieter.' : 'The text that says the most is among the quietest on the screen.'),
+    disagree: (top) => (top.role === 'minor' ? 'The loudest text is a name or a label, and the text that says the most is drawn quieter.' : 'The text that says the most is among the quietest on the screen.'),
     nearly: () => 'Something else is drawn louder than the text that says the most.',
   };
   const WHY_NOT = {
@@ -610,15 +612,15 @@ export function see(el, root, base, loaded, soften) {
     if (!said?.roles) return `<p>${WHY_NOT[said?.error] ?? `The model could not be asked just now (${esc(said?.error ?? 'no answer')}).`}</p>${said?.error === 'no-key' || said?.error === 'ceiling' || said?.error === 'nothing-to-read' ? '' : '<button type="button" class="chip" data-read>Read the words</button>'}${spend}`;
     if (!meant) return `<p>All the text on this screen is drawn equally loud, so there is nothing to compare.</p>${spend}`;
     const by = new Map(screenful.map((p) => [p.id, { ...p, role: said.roles[p.id] ?? 'minor' }])), top = by.get(meant.top), main = by.get(meant.main);
-    return `<ul class="finds"><li><button type="button" data-meant aria-pressed="false"><b>${meant.outcome === 'nearly' ? 'Worth a look: ' : ''}${SAYS[meant.outcome](top)}</b>
-      ${meant.outcome === 'agree' ? '' : `<span>Loudest: <em>${esc(top.text.slice(0, 60))}</em>, ${top.size}px.</span>`}
+    return `<ul class="finds"><li><button type="button" data-meant aria-pressed="false"><b>${meant.outcome === 'agree' ? '' : 'Worth a look: '}${SAYS[meant.outcome](top)}</b>
+      ${meant.outcome === 'agree' ? '' : `<span>Loudest: <em>${esc(top.text.slice(0, 60))}</em>, ${top.size}px, ${top.size > main.size ? `${Math.round(top.size / main.size * 10) / 10} times the size of the text that says the most` : 'the same size and heavier'}.</span>`}
       <span>Says the most: <em>${esc(main.text.slice(0, 90))}</em>, ${main.size}px, step ${meant.level} of ${meant.levels} in loudness.</span>
       <span>How we know: a model read the words (${esc(said.model)}), without being told how anything is drawn. ${esc(said.why)}</span></button></li></ul>${spend}`;
   };
   const listLoud = () => {
     $('.loud').innerHTML = `<div><h2>What is loud</h2><p>The loudest text on the first screen, by type size and then weight, outlined so you can say whether the engine's ear is right. Nothing is judged there.</p></div>
       <ol class="finds">${tops.map((t) => `<li><span><em>${esc(words(leaf(t.unit)))}</em> ${t.size}px, weight ${t.weight}</span></li>`).join('')}</ol>
-      <div><h2>Does the loudest text say the most?</h2><p>Which words matter most is not something a page says about itself, so a model reads them.</p></div>
+      <div><h2>Does the loudest text say the most?</h2><p>Which words matter most is not something a page says about itself, so a model reads them. This is never stated as a fault: a name or a heading is often the loudest text and is doing its job, and how much louder is too much has not been measured.</p></div>
       ${listMeant()}
       <div><h2>A highlight on most of the text</h2><p>A block where a coloured accent covers half the letters or more, so it no longer picks anything out.</p></div>
       ${shouts.length ? `<ul class="finds">${shouts.map((s, n) => `<li><button type="button" data-loud="${n}" aria-pressed="${n === lpick}"><b>The accent is on most of this text</b><span>${s.share}% of ${s.letters} letters are in ${hexOf(s.accent)}, and the rest in ${hexOf(s.base)}.</span><span><em>${esc(words(leaf(s.unit)))}</em></span></button></li>`).join('')}</ul>` : '<p>No block has its accent on most of its letters.</p>'}`;
@@ -801,7 +803,7 @@ export function see(el, root, base, loaded, soften) {
     } else moved = 0;
     listEven(); listHeld(); listLoud();
     // each reading's button says how many firm findings it has, so a person knows where to look first
-    const firmIn = { alike: found.findings.filter((f) => f.firm).length, near: spaced.filter((s) => s.tier === 'claim').length, even: evens.filter((e) => e.v.firm).length, held: boxed.filter((h) => h.tier === 'claim').length, loud: shouts.length + (meant?.outcome === 'disagree' ? 1 : 0) };
+    const firmIn = { alike: found.findings.filter((f) => f.firm).length, near: spaced.filter((s) => s.tier === 'claim').length, even: evens.filter((e) => e.v.firm).length, held: boxed.filter((h) => h.tier === 'claim').length, loud: shouts.length };
     for (const b of root.querySelectorAll('[data-mode]')) { const n = firmIn[b.dataset.mode]; b.dataset.name ??= b.textContent; b.textContent = n ? `${b.dataset.name} · ${n}` : b.dataset.name; }
     window.__seen = { got, tree, found, spaced, words, moved, evens, held: boxed, loud: shouts.map((s) => ({ tier: 'claim', kind: 'accent', say: `${s.share}% of ${s.letters} letters in the accent: ${words(leaf(s.unit))}` })), tops: tops.map((t) => `${words(leaf(t.unit))} (${t.size}px/${t.weight})`), said, meant, screenful };
     const rank = { claim: 0, note: 1, agree: 2 }; spaced.sort((a, b) => rank[a.tier] - rank[b.tier] || a.v.r - b.v.r); npick = null; listNear();

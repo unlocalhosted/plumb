@@ -14,7 +14,7 @@ what building it changed. Where a note and the text above it differ, the note is
 | Look against role | 14 | 4 | "nearly alike"; boxes are never firm |
 | Boxes and what they hold | 15 | 0 | joined; a box whose content is not one thing |
 | Rhythm and edges | 16 | 1 | balance and proportion; mirror and alternation |
-| What is loud | 17 | 3, on one page | loud against what matters is built and not yet run (no key); pictures are not ranked |
+| What is loud | 17 | 3, on one page | loud against what matters was run on 40 screens and is a note only: 23 "disagree", none a fault; pictures are not ranked |
 
 Two of those ten are points the expert made. Each of the ten was looked at on its page. No number has been set against judged screens (section 19).
 
@@ -354,6 +354,17 @@ then heavier) with no threshold. Agree: the block that says the most is as loud 
 Disagree: the loudest block is a minor one, or the block that says the most is in the quieter half of the screen's
 steps of loudness. Nearly: something of substance is louder than it. Pictures are not ranked, so a logo drawn as a
 picture is not yet "the loudest thing". It has not been run: no key for the model was on the machine.
+
+Added on 2026-11-28, after the first run (journey entry 172). The words of 40 first screens were read in the
+owner's session, with no paid call. The second and third rows of the table did not hold. Of 41 reads, 23 came out
+as "disagree", and looked at on the page none is a fault: in 14 the loudest text is the person's name used as a
+title, in 6 a section or project heading, in 3 text inside a demo. A name or a heading is loud because it labels
+what is under it, so "the loudest unit is minor" describes most pages. The comparison is now a note only ("worth a
+look", with how many times larger) and counts as no firm finding. Before it can be a judgement the table needs two
+things it does not have: a label and the thing it heads treated as one unit, or a measured answer to how much
+louder a label may be than what it heads; and loudness read only among things that sit the same way, so text
+inside a demo is not ranked with the page's own text. One judged case exists for it (Rauno 10.1), and that page
+has since been changed, so there is nothing to set a number against.
 
 ## 18. The page in more than one state
 
