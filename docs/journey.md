@@ -6210,6 +6210,18 @@ into its own browser. Your app isn't changed.", then the findings.
   token button only. The brand turns violet and only the token button follows, while the hex one stays green inside
   a coral ring. Then the buttons go home and plumber makes the real swap, with no film pill on top of its own labels.
   Stills: `invite-scene-stills.jpg`, `invite-flip.png` (local).
+- **Every change shown the same way, in the code (2026-11-28).** The owner, after rough cut 6: "apart from padding
+  change i dont really see it … for the folks who haven't seen how its working they wont know much what is
+  happening". The cause: most of plumber's fixes change the code, not the look. A token is the same green as the hex
+  it replaces, and the text styles move by a pixel or two. The film was pointed at the page, so the only proof on
+  screen was plumber's toolbar, which a newcomer can't read. We chose one change beat for every fix, and the owner
+  picked the version with code on screen. A white code card shows the real line (`TopBar.jsx`, `Board.jsx:35`), and
+  the hard-coded value sits in coral, then rolls over to the token in mint (`bg-[#18b070]` → `bg-primary`,
+  `p-[10px]` → `p-3`). A line in words under it changes with it ("a raw hex, left behind when your brand changes" →
+  "your brand colour, wherever it changes"). The Invite scene now ends on this beat, and the 11 seconds of plumber's
+  own swap in the take are cut. In the cards scene the beat replaces plumber's editor panel and the pill above the
+  card. Stills: `change-beat-stills.jpg` (local). Still to do: the text styles part needs the same beat. It needs the
+  real style names Clean up writes, which the take didn't keep.
 
 - **One at a time, from any toy (2026-11-26).** The owner: "just fix the things one by one clicking on a single item
   should give the tour like experience". Until now only the main button toured, and it showed 4 of 80 fixes; a single
